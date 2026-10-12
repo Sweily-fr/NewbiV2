@@ -40,6 +40,7 @@ import { fr } from "date-fns/locale";
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
 import { useLazyVisible } from "../hooks/useLazyVisible";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Hauteur réservée pour une carte tant que son contenu n'est pas monté.
 const BOARD_CARD_MIN_HEIGHT = 92;
@@ -61,7 +62,8 @@ function LazyTaskCard({ task, index, column, scrollRootRef, ...cardProps }) {
       data-dnd-column-id={column.id}
       data-dnd-index={index}
       style={isVisible ? undefined : { minHeight: BOARD_CARD_MIN_HEIGHT }}
-      className="cursor-grab active:cursor-grabbing mb-1.5 sm:mb-2 last:mb-0"
+      // Curseur de déplacement seulement si le rôle permet d'écrire
+      className={`${cardProps.canEdit ? "cursor-grab active:cursor-grabbing " : ""}mb-1.5 sm:mb-2 last:mb-0`}
     >
       {isVisible ? <TaskCard task={task} {...cardProps} /> : null}
     </div>
@@ -419,6 +421,12 @@ function KanbanColumnSimpleInner({
 }) {
   const [showInlineAdd, setShowInlineAdd] = useState(false);
 
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateKanban = !isReady || canDo("kanban", "create");
+  const canEditKanban = !isReady || canDo("kanban", "edit");
+  const canDeleteKanban = !isReady || canDo("kanban", "delete");
+
   // Ref pour le conteneur scrollable de la colonne
   const scrollContainerRef = useRef(null);
 
@@ -508,7 +516,7 @@ function KanbanColumnSimpleInner({
           {/* Header de la colonne — drag handle for column reorder */}
           <div
             data-dnd-column-handle
-            className="flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing px-2 pt-0.5 mb-1 sm:mb-1.5"
+            className={`flex items-center justify-between gap-2 px-2 pt-0.5 mb-1 sm:mb-1.5 ${canEditKanban ? "cursor-grab active:cursor-grabbing" : ""}`}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div
@@ -577,21 +585,25 @@ function KanbanColumnSimpleInner({
                   <DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">
                     Options du groupe
                   </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={() => onEditColumn(column)}
-                    className="gap-2"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Renommer
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onEditColumn(column)}
-                    className="gap-2"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                    Modifier le status
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  {canEditKanban && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => onEditColumn(column)}
+                        className="gap-2"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Renommer
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onEditColumn(column)}
+                        className="gap-2"
+                      >
+                        <Settings className="h-3.5 w-3.5" />
+                        Modifier le status
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem
                     onClick={() => onToggleCollapse(column.id)}
                     className="gap-2"
@@ -599,35 +611,41 @@ function KanbanColumnSimpleInner({
                     <ChevronLeft className="h-3.5 w-3.5" />
                     Replier le groupe
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => onDeleteColumn(column)}
-                    variant="destructive"
-                    className="gap-2 text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Supprimer
-                  </DropdownMenuItem>
+                  {canDeleteKanban && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onDeleteColumn(column)}
+                        variant="destructive"
+                        className="gap-2 text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                style={{ color: column.color || "#94a3b8" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowInlineAdd(true);
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = `${column.color || "#94a3b8"}25`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                <Plus className="h-4 w-4" strokeWidth={2.5} />
-              </Button>
+              {canCreateKanban && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  style={{ color: column.color || "#94a3b8" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowInlineAdd(true);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = `${column.color || "#94a3b8"}25`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2.5} />
+                </Button>
+              )}
             </div>
           </div>
 
@@ -638,7 +656,7 @@ function KanbanColumnSimpleInner({
             className="kanban-column-scroll p-1 pb-2 rounded-lg transition-colors overflow-y-auto"
             style={{ minHeight: "50px" }}
           >
-            {showInlineAdd && (
+            {showInlineAdd && canCreateKanban && (
               <InlineNewTask
                 columnId={column.id}
                 boardId={boardId}
@@ -670,11 +688,13 @@ function KanbanColumnSimpleInner({
                   workspaceId={workspaceId}
                   allBoardTags={allBoardTags}
                   members={members}
+                  canEdit={canEditKanban}
+                  canDelete={canDeleteKanban}
                 />
               ))
             )}
 
-            {!showInlineAdd && (
+            {!showInlineAdd && canCreateKanban && (
               <Button
                 variant="ghost"
                 size="sm"

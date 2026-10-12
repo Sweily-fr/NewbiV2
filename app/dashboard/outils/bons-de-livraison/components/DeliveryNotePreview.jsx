@@ -11,6 +11,7 @@ import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { ItemCellWithImage } from "@/src/components/pdf/PdfItemImage";
 import { visibleItemImage } from "@/src/utils/item-image";
 import { DELIVERY_NOTE_STATUS_LABELS } from "@/src/graphql/deliveryNoteQueries";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 /**
  * Aperçu A4 d'un bon de livraison (écran et PDF).
@@ -96,7 +97,7 @@ const renderLines = (text) =>
 const formatQuantity = (value) => {
   const num = parseFloat(value);
   if (isNaN(num)) return "0";
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(num);

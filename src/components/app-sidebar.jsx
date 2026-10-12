@@ -526,8 +526,11 @@ export function AppSidebar({
     if (session?.user) {
       fetchInvitations();
 
-      // Rafraîchir toutes les 30 secondes
-      const interval = setInterval(fetchInvitations, 30000);
+      // Rafraîchir toutes les 2 minutes (30 s avant) : un badge
+      // d'invitations n'a pas besoin de plus, et chaque passage relit les
+      // invitations reçues et envoyées (plus l'organisation complète en écho).
+      // Le marquage « lu » rafraîchit tout de suite (événement ci-dessous).
+      const interval = setInterval(fetchInvitations, 120000);
 
       // Écouter les marquages "lu" depuis le panneau de notifications
       const handleNotificationsRead = () => fetchInvitations();

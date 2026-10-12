@@ -11,21 +11,37 @@ export function normalizeCurrencyCode(currency) {
  * Une facture d'achat n'est pas forcément en euros (justificatif en USD...),
  * le suffixe « € » codé en dur est donc à proscrire.
  */
-export function formatCurrencyAmount(amount, currency) {
-  const code = normalizeCurrencyCode(currency);
-  const value = Number(amount) || 0;
-  try {
-    return new Intl.NumberFormat("fr-FR", {
+// Formateurs mis en cache par devise : en construire un coûte ~70 fois plus
+// cher que de l'utiliser, et ces fonctions tournent dans chaque cellule de
+// montant des tableaux.
+const amountFormatters = new Map();
+let plainAmountFormatter;
+
+function getAmountFormatter(code) {
+  let formatter = amountFormatters.get(code);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: code,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    });
+    amountFormatters.set(code, formatter);
+  }
+  return formatter;
+}
+
+export function formatCurrencyAmount(amount, currency) {
+  const code = normalizeCurrencyCode(currency);
+  const value = Number(amount) || 0;
+  try {
+    return getAmountFormatter(code).format(value);
   } catch {
-    return `${new Intl.NumberFormat("fr-FR", {
+    plainAmountFormatter ??= new Intl.NumberFormat("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value)} ${code}`;
+    });
+    return `${plainAmountFormatter.format(value)} ${code}`;
   }
 }
 

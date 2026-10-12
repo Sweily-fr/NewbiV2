@@ -5,6 +5,7 @@ import { useApolloClient } from "@apollo/client";
 import { useForm, FormProvider } from "react-hook-form";
 import {
   Boxes,
+  KeyRound,
   CreditCard,
   Scale,
   Shield,
@@ -54,11 +55,12 @@ import EspacesSection from "./settings/espaces-section";
 import FacturationSection from "./settings/facturation-section";
 import { SubscriptionSection } from "./settings/subscription-section";
 import { SecuritySection } from "./settings/security-section";
-import PersonnesSection from "./settings/personnes-section";
+import RolesSection from "./settings/roles-section";
 import UserInfoSection from "./settings/user-info-section";
 import { NotificationsSection } from "./settings/notifications-section";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { BankAccountsSection } from "./settings/bank-accounts-section";
 import { ApplicationsSection } from "./settings/applications-section";
 import { EInvoicingSection } from "./settings/e-invoicing-section";
@@ -77,7 +79,8 @@ export function SettingsModal({
   const [pendingTab, setPendingTab] = useState(null);
   const { data: session } = useSession();
   const { isActive } = useSubscription();
-  const { getUserRole, isOwner, isAdmin } = usePermissions();
+  const { getUserRole } = usePermissions();
+  const { can, isReady: permissionsReady } = useMyPermissions();
   const apolloClient = useApolloClient();
   const {
     organization,
@@ -87,8 +90,14 @@ export function SettingsModal({
     updateOrganization,
   } = useActiveOrganization();
 
-  // Vérifier si l'utilisateur peut modifier les paramètres d'organisation
-  const canManageOrgSettings = isOwner() || isAdmin();
+  // Droits du rôle sur les modules du compte (Paramètres > Membres > Rôles)
+  const canManageOrgSettings = can("orgSettings", "write");
+  const canManageIntegrations = can("integrations", "write");
+  const canManageSubscription = can("billing", "write");
+  // Onglets masqués quand le rôle n'a aucun accès (en attendant la grille,
+  // on les laisse visibles pour ne pas les faire clignoter)
+  const showIntegrations = !permissionsReady || can("integrations", "read");
+  const showBilling = !permissionsReady || can("billing", "read");
 
   // La facturation électronique transmet le régime de TVA dérivé à SuperPDP :
   // toute modification TVA sauvegardée ici doit y être répercutée (cf. onSuccess).
@@ -484,10 +493,29 @@ export function SettingsModal({
   };
 
   const renderContent = () => {
+    // Onglet ouvert directement (palette, menus, bannières) sans le droit
+    // de le voir : rien n'est affiché
+    const deniedTab =
+      (["facturation", "subscription"].includes(activeTab) && !showBilling) ||
+      ([
+        "comptes-bancaires",
+        "facturation-electronique",
+        "applications",
+      ].includes(activeTab) &&
+        !showIntegrations);
+    if (deniedTab) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          Votre rôle ne permet pas d&apos;accéder à cette section.
+        </p>
+      );
+    }
     // Les composants vont maintenant utiliser useFormContext()
     switch (activeTab) {
       case "espaces":
-        return <EspacesSection canManageOrgSettings={canManageOrgSettings} />;
+        return <EspacesSection onTabChange={handleTabChange} />;
+      case "roles":
+        return <RolesSection />;
       case "preferences":
         return <PreferencesSection onClose={() => onOpenChange(false)} />;
       case "notifications":
@@ -527,12 +555,14 @@ export function SettingsModal({
           <FacturationSection
             organization={organization}
             session={session}
-            canManageSubscription={isOwner()}
+            canManageSubscription={canManageSubscription}
             onTabChange={handleTabChange}
           />
         );
       case "subscription":
-        return <SubscriptionSection canManageSubscription={isOwner()} />;
+        return (
+          <SubscriptionSection canManageSubscription={canManageSubscription} />
+        );
       case "securite":
         return (
           <SecuritySection
@@ -543,20 +573,18 @@ export function SettingsModal({
         );
       case "comptes-bancaires":
         return (
-          <BankAccountsSection canManageOrgSettings={canManageOrgSettings} />
+          <BankAccountsSection canManageOrgSettings={canManageIntegrations} />
         );
       case "facturation-electronique":
         return (
           <EInvoicingSection
-            canManageOrgSettings={canManageOrgSettings}
+            canManageOrgSettings={canManageIntegrations}
             organization={organization}
             onNavigateToTab={handleTabChange}
           />
         );
       case "applications":
         return <ApplicationsSection />;
-      case "personnes":
-        return <PersonnesSection />;
       case "user-info":
         return <UserInfoSection onTabChange={handleTabChange} />;
       default:
@@ -604,9 +632,10 @@ export function SettingsModal({
           icon: Boxes,
           // Espaces toujours accessible (retirer un membre = sécurité d'accès, même en unpaid)
         },
+        { id: "roles", label: "Rôles", icon: KeyRound },
       ],
     },
-    {
+    showIntegrations && {
       title: "Intégrations",
       items: [
         { id: "applications", label: "Applications", icon: LayoutGrid },
@@ -622,14 +651,14 @@ export function SettingsModal({
         },
       ],
     },
-    {
+    showBilling && {
       title: "Facturation",
       items: [
         { id: "subscription", label: "Abonnement", icon: Crown },
         { id: "facturation", label: "Facturation", icon: DollarSign },
       ],
     },
-  ];
+  ].filter(Boolean);
 
   // Déterminer si on est sur mobile
   const [isMobile, setIsMobile] = useState(false);
@@ -659,6 +688,9 @@ export function SettingsModal({
           formIsSubmitting={formIsSubmitting}
           isDirty={isDirty}
           onSubmit={handleSubmit(handleSaveAll, handleInvalidForm)}
+          canManageOrgSettings={canManageOrgSettings}
+          canManageSubscription={canManageSubscription}
+          showBilling={showBilling}
         />
       </FormProvider>
     );
@@ -686,7 +718,7 @@ export function SettingsModal({
             {/* Desktop Layout */}
             <div className="flex h-full overflow-hidden">
               {/* Sidebar Desktop */}
-              <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto max-h-[92vh]">
+              <div className="w-60 shrink-0 bg-gray-50 dark:bg-[#171717] overflow-y-auto max-h-[92vh]">
                 <div className="p-4">
                   <h2 className="text-sm font-medium text-gray-500 mb-4">
                     Paramètres
@@ -780,7 +812,7 @@ export function SettingsModal({
               </div>
 
               {/* Content Area Desktop */}
-              <div className="flex-1 bg-white dark:bg-[#0A0A0A] flex flex-col min-h-0">
+              <div className="flex-1 min-w-0 bg-white dark:bg-[#0A0A0A] flex flex-col min-h-0">
                 <div className="flex-1 overflow-y-auto min-h-0">
                   <div className="p-12 pb-6">{renderContent()}</div>
                 </div>
@@ -795,26 +827,21 @@ export function SettingsModal({
                   >
                     Annuler
                   </Button>
-                  {[
-                    "generale",
-                    "coordonnees-bancaires",
-                    "informations-legales",
-                  ].includes(activeTab) && (
-                    <Button
-                      type="submit"
-                      disabled={
-                        formIsSubmitting || !isDirty || !canManageOrgSettings
-                      }
-                      className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
-                      title={
-                        !canManageOrgSettings
-                          ? "Seuls les owners et admins peuvent modifier les paramètres"
-                          : ""
-                      }
-                    >
-                      {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
-                    </Button>
-                  )}
+                  {/* Sauvegarder : « Modifier » les informations de l'entreprise */}
+                  {canManageOrgSettings &&
+                    [
+                      "generale",
+                      "coordonnees-bancaires",
+                      "informations-legales",
+                    ].includes(activeTab) && (
+                      <Button
+                        type="submit"
+                        disabled={formIsSubmitting || !isDirty}
+                        className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
+                      >
+                        {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+                      </Button>
+                    )}
                 </div>
               </div>
             </div>

@@ -11,6 +11,7 @@ import Stripe from "stripe";
 import {
   send2FAEmail,
   sendOrganizationInvitationEmail,
+  sendSMSInDevelopment,
   sendVerificationOtpEmail,
 } from "./auth-utils";
 // Import dynamique pour éviter le bundling Edge Runtime (Node.js only)
@@ -24,6 +25,7 @@ import {
   viewer,
   accountant,
 } from "./permissions";
+import { organizationAc, organizationRoles } from "./organization-roles";
 
 // ✅ Fonction de déduplication atomique avec MongoDB
 async function isEventAlreadyProcessed(eventId, eventType) {
@@ -425,6 +427,16 @@ export const stripePlugin = stripe({
               referenceId = creationResult.organizationId;
               console.log(
                 `✅ [STRIPE WEBHOOK] Organisation traitée via shared utility: ${referenceId}`,
+              );
+
+              // Les métadonnées du checkout portent l'ancien espace actif :
+              // on y inscrit le nouvel espace pour les synchros suivantes.
+              const { stampSubscriptionOrganization } =
+                await import("./org-creation.js");
+              await stampSubscriptionOrganization(
+                stripe,
+                subscription,
+                referenceId,
               );
 
               // Ne pas continuer vers la création d'abonnement normale
@@ -1463,6 +1475,16 @@ export const organizationPlugin = organization({
   // Better Auth a des problèmes avec les limites dynamiques async
   membershipLimit: 200,
   creatorRole: "owner",
+  // Rôles prédéfinis (Super admin, Administrateur, Éditeur, Membre,
+  // Comptable) + rôles personnalisés de chaque espace (collection
+  // organizationRole, écrite par l'API). Sans `roles`, Better Auth refusait
+  // « viewer » et « accountant » (ROLE_NOT_FOUND). Les routes de création de
+  // rôle de Better Auth sont fermées dans auth-hooks.js.
+  ac: organizationAc,
+  roles: organizationRoles,
+  dynamicAccessControl: {
+    enabled: true,
+  },
   schema: {
     organization: {
       additionalFields: {

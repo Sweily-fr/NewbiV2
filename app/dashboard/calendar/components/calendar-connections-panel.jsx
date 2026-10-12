@@ -15,6 +15,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { toast } from "@/src/components/ui/sonner";
 import { useCalendarConnections } from "@/src/hooks/useCalendarConnections";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { CalendarConnectionCard } from "./calendar-connection-card";
 import { AppleCredentialsDialog } from "./apple-credentials-dialog";
 import { useSession } from "@/src/lib/auth-client";
@@ -81,13 +82,17 @@ const providers = [
   },
 ];
 
-export function CalendarConnectionsPanel() {
+// canManage : connecter, synchroniser, déconnecter (rôle avec écriture sur
+// le calendrier) ; sinon consultation des calendriers déjà connectés
+export function CalendarConnectionsPanel({ canManage = true }) {
   const { connections, loading, refetch } = useCalendarConnections();
   const [showAppleDialog, setShowAppleDialog] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [connecting, setConnecting] = useState(null);
   const { data: sessionData } = useSession();
   const isReady = !!sessionData?.user;
+  // Espace actif : l'API y vérifie le droit « Modifier » du calendrier
+  const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
@@ -112,7 +117,7 @@ export function CalendarConnectionsPanel() {
 
   const handleCalendarConnect = useCallback(
     async (provider) => {
-      if (!isReady) {
+      if (!isReady || !workspaceId) {
         toast.error(
           "Session non disponible. Veuillez rafraichir la page et reessayer.",
         );
@@ -130,13 +135,18 @@ export function CalendarConnectionsPanel() {
           `/api/calendar-connect/${provider}/authorize`,
           {
             credentials: "include",
+            headers: { "x-workspace-id": workspaceId },
           },
         );
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
-            errorData.error || errorData.details || `Erreur ${response.status}`,
+            // Refus du rôle : { error: "FORBIDDEN", message } côté API
+            errorData.message ||
+              errorData.error ||
+              errorData.details ||
+              `Erreur ${response.status}`,
           );
         }
 
@@ -157,8 +167,11 @@ export function CalendarConnectionsPanel() {
         setConnecting(null);
       }
     },
-    [isReady],
+    [isReady, workspaceId],
   );
+
+  // Rien à consulter ni à connecter : pas de bouton
+  if (!canManage && connections.length === 0) return null;
 
   return (
     <>
@@ -200,6 +213,7 @@ export function CalendarConnectionsPanel() {
                       key={connection.id}
                       connection={connection}
                       onRefresh={refetch}
+                      canManage={canManage}
                     />
                   ))}
                 </div>
@@ -207,7 +221,7 @@ export function CalendarConnectionsPanel() {
             )}
 
             {/* Available providers */}
-            {availableProviders.length > 0 && (
+            {canManage && availableProviders.length > 0 && (
               <>
                 {connections.length > 0 && <Separator />}
                 <div className="space-y-2">

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useQuery } from "@apollo/client";
-import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
+import { GET_BOARDS_NAV } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import {
@@ -41,10 +41,12 @@ import {
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
-import Link from "next/link";
+// Liens préchargés à l'intention de clic (voir nav-link.jsx).
+import Link from "@/src/components/nav-link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
-import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 import {
   DiagramLineIcon as Landmark,
   UsersIcon as Users,
@@ -71,8 +73,27 @@ export function NavMain({
   const { isActive, loading, subscription } = useSubscription();
   const { setOpenMobile, isMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const { getUserRole } = usePermissions();
-  const userRole = getUserRole();
+  // Pages masquées selon le rôle (Paramètres > Membres > Rôles). Tant que la
+  // grille n'est pas chargée, rien n'est masqué pour éviter un clignotement.
+  const {
+    can,
+    canDo,
+    isReady: permissionsReady,
+    role: permissionsRole,
+    levels: permissionLevels,
+  } = useMyPermissions();
+  const canSee = (url) => {
+    const moduleKey = moduleForPath(url);
+    if (!permissionsReady || !moduleKey) return true;
+    return (
+      can(moduleKey, "read") &&
+      !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+    );
+  };
+  // Raccourcis « Nouveau … » : action « create » du module
+  const canCreate = (moduleKey) =>
+    !permissionsReady || canDo(moduleKey, "create");
+  const visibleItems = (list) => list.filter((item) => canSee(item.url));
   const { workspaceId } = useWorkspace();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
@@ -85,7 +106,7 @@ export function NavMain({
   const debouncedKanbanSearch = useDebouncedValue(kanbanSearchTerm, 300);
 
   // Récupérer les tableaux Kanban
-  const { data: kanbanData } = useQuery(GET_BOARDS, {
+  const { data: kanbanData } = useQuery(GET_BOARDS_NAV, {
     variables: { workspaceId },
     skip: !workspaceId,
     fetchPolicy: "cache-and-network",
@@ -161,7 +182,15 @@ export function NavMain({
         initialStates[item.title] = isSubActive;
       }
     });
-    setAccountingMenuStates(initialStates);
+    // Même état qu'avant : on garde l'objet existant pour que React saute le
+    // rendu (un nouvel objet à chaque navigation re-rendait toute la sidebar).
+    setAccountingMenuStates((prev) => {
+      const keys = Object.keys(initialStates);
+      const unchanged =
+        keys.length === Object.keys(prev).length &&
+        keys.every((key) => prev[key] === initialStates[key]);
+      return unchanged ? prev : initialStates;
+    });
   }, [items, pathname]);
 
   // Garder les menus ouverts si un sous-lien est actif
@@ -232,40 +261,49 @@ export function NavMain({
               className="min-w-[180px] text-[.8125rem]"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
-              {/* Actions rapides (masquées pour le comptable) */}
-              {userRole !== "accountant" && (
+              {/* Actions rapides (selon les droits de création du rôle) */}
+              {(canCreate("invoices") ||
+                canCreate("quotes") ||
+                canCreate("purchaseOrders") ||
+                canCreate("deliveryNotes")) && (
                 <>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/dashboard/outils/factures/new"
-                      onClick={handleLinkClick}
-                      className="cursor-pointer flex justify-between w-full"
-                    >
-                      <span>Nouvelle facture</span>
-                      <Plus className="h-4 w-4" />
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/dashboard/outils/devis/new"
-                      onClick={handleLinkClick}
-                      className="cursor-pointer flex justify-between w-full"
-                    >
-                      <span>Nouveau devis</span>
-                      <Plus className="h-4 w-4" />
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/dashboard/outils/bons-commande/new"
-                      onClick={handleLinkClick}
-                      className="cursor-pointer flex justify-between w-full"
-                    >
-                      <span>Nouveau bon de commande</span>
-                      <Plus className="h-4 w-4" />
-                    </Link>
-                  </DropdownMenuItem>
-                  {deliveryNotesAllowed && (
+                  {canCreate("invoices") && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/dashboard/outils/factures/new"
+                        onClick={handleLinkClick}
+                        className="cursor-pointer flex justify-between w-full"
+                      >
+                        <span>Nouvelle facture</span>
+                        <Plus className="h-4 w-4" />
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {canCreate("quotes") && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/dashboard/outils/devis/new"
+                        onClick={handleLinkClick}
+                        className="cursor-pointer flex justify-between w-full"
+                      >
+                        <span>Nouveau devis</span>
+                        <Plus className="h-4 w-4" />
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {canCreate("purchaseOrders") && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/dashboard/outils/bons-commande/new"
+                        onClick={handleLinkClick}
+                        className="cursor-pointer flex justify-between w-full"
+                      >
+                        <span>Nouveau bon de commande</span>
+                        <Plus className="h-4 w-4" />
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {deliveryNotesAllowed && canCreate("deliveryNotes") && (
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard/outils/bons-de-livraison/new"
@@ -434,8 +472,8 @@ export function NavMain({
               className="min-w-[180px] text-[.8125rem]"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
-              {/* Action rapide: Nouveau client (masquée pour le comptable) */}
-              {userRole !== "accountant" && (
+              {/* Action rapide: Nouveau client (selon les droits du rôle) */}
+              {canCreate("clients") && (
                 <>
                   <DropdownMenuItem asChild>
                     <Link
@@ -667,19 +705,22 @@ export function NavMain({
                 </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuSeparator className="my-1" />
-
-              {/* Créer une nouvelle liste */}
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/dashboard/outils/kanban?new=true"
-                  onClick={handleLinkClick}
-                  className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="text-xs">Nouvelle liste</span>
-                </Link>
-              </DropdownMenuItem>
+              {/* Créer une nouvelle liste : « Créer » du kanban */}
+              {canCreate("kanban") && (
+                <>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/outils/kanban?new=true"
+                      onClick={handleLinkClick}
+                      className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="text-xs">Nouvelle liste</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </SidebarMenuItem>
         </DropdownMenu>
@@ -1219,20 +1260,13 @@ export function NavMain({
       <SidebarGroupContent className="flex flex-col gap-1 pt-2">
         <SidebarMenu>
           {/* Dashboard */}
-          {items.map((item) => renderSimpleItem(item))}
+          {visibleItems(items).map((item) => renderSimpleItem(item))}
 
           {/* Menu Ventes avec sous-menus et actions rapides */}
           {navVentes.length > 0 &&
             (() => {
-              // Filtrer les items pour le comptable (pas de Catalogues)
-              const accountantAllowedVentes = ["Factures clients", "Devis"];
-              const filteredNavVentes = (
-                userRole === "accountant"
-                  ? navVentes.filter((item) =>
-                      accountantAllowedVentes.includes(item.title),
-                    )
-                  : navVentes
-              ).filter(
+              // Pages sans accès pour le rôle masquées
+              const filteredNavVentes = visibleItems(navVentes).filter(
                 (item) =>
                   deliveryNotesAllowed ||
                   item.url !== "/dashboard/outils/bons-de-livraison",
@@ -1244,11 +1278,11 @@ export function NavMain({
             })()}
 
           {/* Menu Finances (Transactions + Prévision) */}
-          {navFinances.length > 0 &&
+          {visibleItems(navFinances).length > 0 &&
             renderCollapsibleMenu(
               "Pilotage",
               Landmark,
-              navFinances,
+              visibleItems(navFinances),
               isFinancesOpen,
               setIsFinancesOpen,
               isFinancesSubActive,
@@ -1256,10 +1290,10 @@ export function NavMain({
             )}
 
           {/* Menu Clients (CRM) avec sous-menus et action rapide */}
-          {navClients.length > 0 && renderClientsMenu()}
+          {visibleItems(navClients).length > 0 && renderClientsMenu()}
 
           {/* Factures d'achat, Calendrier */}
-          {navAfterVentes.map((item) => renderSimpleItem(item))}
+          {visibleItems(navAfterVentes).map((item) => renderSimpleItem(item))}
         </SidebarMenu>
 
         {/* Séparateur visuel */}
@@ -1267,18 +1301,13 @@ export function NavMain({
 
         <SidebarMenu>
           {/* Menu Projets avec tableaux Kanban */}
-          {userRole !== "accountant" && renderProjetsMenu()}
+          {canSee("/dashboard/outils/kanban") && renderProjetsMenu()}
 
           {/* Menu Documents avec sous-menus */}
           {navDocuments.length > 0 &&
             (() => {
-              // Filtrer les items pour le comptable (uniquement Documents partagés)
-              const filteredNavDocuments =
-                userRole === "accountant"
-                  ? navDocuments.filter(
-                      (item) => item.title === "Documents partagés",
-                    )
-                  : navDocuments;
+              // Pages sans accès pour le rôle masquées
+              const filteredNavDocuments = visibleItems(navDocuments);
               return (
                 filteredNavDocuments.length > 0 &&
                 renderCollapsibleMenu(
@@ -1294,12 +1323,11 @@ export function NavMain({
             })()}
 
           {/* Menu Communication avec sous-menus */}
-          {userRole !== "accountant" &&
-            navCommunication.length > 0 &&
+          {visibleItems(navCommunication).length > 0 &&
             renderCollapsibleMenu(
               "Communication",
               MessageSquare,
-              navCommunication,
+              visibleItems(navCommunication),
               isCommunicationOpen,
               setIsCommunicationOpen,
               isCommunicationSubActive,

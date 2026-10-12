@@ -495,8 +495,8 @@ export function TaskImageUpload({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {/* Zone de drop */}
-      {canAddMore && (
+      {/* Zone de drop (masquée si l'ajout est désactivé, ex. rôle en lecture) */}
+      {canAddMore && !disabled && (
         <div
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -620,10 +620,14 @@ export function TaskImageUpload({
         </div>
       )}
 
-      {!canAddMore && (
+      {!canAddMore && !disabled && (
         <p className="text-xs text-muted-foreground text-center">
           Limite de {maxImages} fichiers atteinte
         </p>
+      )}
+
+      {disabled && displayFiles.length === 0 && (
+        <p className="text-xs text-muted-foreground">Aucune pièce jointe</p>
       )}
     </div>
   );

@@ -38,6 +38,7 @@ import {
   DISCOUNT_TYPE_LABELS,
   INVOICE_STATUS_LABELS,
 } from "@/src/graphql/invoiceQueries";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function InvoiceForm({
   data,
@@ -256,7 +257,7 @@ export default function InvoiceForm({
                       siret: client.siret,
                       vatNumber: client.vatNumber,
                     }
-                  : null
+                  : null,
               );
             }}
             placeholder="Rechercher ou sélectionner un client..."
@@ -303,7 +304,7 @@ export default function InvoiceForm({
                               updateItem(
                                 index,
                                 "description",
-                                product.description
+                                product.description,
                               );
                               updateItem(index, "quantity", product.quantity);
                               updateItem(index, "unitPrice", product.unitPrice);
@@ -335,7 +336,7 @@ export default function InvoiceForm({
                           updateItem(
                             index,
                             "quantity",
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         disabled={!canEdit}
@@ -343,7 +344,7 @@ export default function InvoiceForm({
                         step="0.01"
                         className={cn(
                           errors[`item_${index}_quantity`] &&
-                            "border-destructive"
+                            "border-destructive",
                         )}
                       />
                       {errors[`item_${index}_quantity`] && (
@@ -362,7 +363,7 @@ export default function InvoiceForm({
                           updateItem(
                             index,
                             "unitPrice",
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         disabled={!canEdit}
@@ -370,7 +371,7 @@ export default function InvoiceForm({
                         step="0.01"
                         className={cn(
                           errors[`item_${index}_unitPrice`] &&
-                            "border-destructive"
+                            "border-destructive",
                         )}
                       />
                       {errors[`item_${index}_unitPrice`] && (
@@ -389,7 +390,7 @@ export default function InvoiceForm({
                           updateItem(
                             index,
                             "taxRate",
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         disabled={!canEdit}
@@ -416,7 +417,7 @@ export default function InvoiceForm({
                   <div className="mt-2 text-right">
                     <p className="text-sm text-muted-foreground">
                       Total:{" "}
-                      {new Intl.NumberFormat("fr-FR", {
+                      {getNumberFormat("fr-FR", {
                         style: "currency",
                         currency: "EUR",
                       }).format(item.total || 0)}
@@ -470,7 +471,7 @@ export default function InvoiceForm({
                       <SelectItem key={value} value={value}>
                         {label}
                       </SelectItem>
-                    )
+                    ),
                   )}
                 </SelectContent>
               </Select>
@@ -494,7 +495,7 @@ export default function InvoiceForm({
                       <SelectItem key={value} value={value}>
                         {label}
                       </SelectItem>
-                    )
+                    ),
                   )}
                 </SelectContent>
               </Select>

@@ -11,6 +11,7 @@ import { Button } from "@/src/components/ui/button";
 import { Settings } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { LegalInfoDialog } from "@/src/components/legal-info-dialog";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 /**
  * Les informations légales appartiennent à l'organisation et non au document :
@@ -20,6 +21,9 @@ import { LegalInfoDialog } from "@/src/components/legal-info-dialog";
  * pour que le pied de page de l'aperçu suive sans recharger.
  */
 export default function LegalInfoSettingsSection({ organization }) {
+  // Modifier les informations : droit « Informations de l'entreprise »
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditOrgSettings = !isReady || canWrite("orgSettings");
   const { setValue } = useFormContext();
   const [showDialog, setShowDialog] = useState(false);
   // L'organisation reçue en prop est chargée une fois par l'éditeur : on garde
@@ -105,15 +109,17 @@ export default function LegalInfoSettingsSection({ organization }) {
             votre numéro de TVA et votre régime de TVA sont communs à tous vos
             documents.
           </p>
-          <Button
-            type="button"
-            variant="link"
-            className="p-0 h-auto font-medium flex items-center gap-1 underline"
-            onClick={() => setShowDialog(true)}
-          >
-            <Settings className="h-4 w-4" />
-            Modifier vos informations légales
-          </Button>
+          {canEditOrgSettings && (
+            <Button
+              type="button"
+              variant="link"
+              className="p-0 h-auto font-medium flex items-center gap-1 underline"
+              onClick={() => setShowDialog(true)}
+            >
+              <Settings className="h-4 w-4" />
+              Modifier vos informations légales
+            </Button>
+          )}
         </div>
       </CardContent>
 

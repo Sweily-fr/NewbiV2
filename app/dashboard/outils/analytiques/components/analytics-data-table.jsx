@@ -15,12 +15,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -44,7 +50,8 @@ const CLIENT_COLUMNS = [
     accessorKey: "clientType",
     header: "Type",
     cell: ({ row }) =>
-      CLIENT_TYPE_LABELS[row.getValue("clientType")] || row.getValue("clientType"),
+      CLIENT_TYPE_LABELS[row.getValue("clientType")] ||
+      row.getValue("clientType"),
   },
   {
     accessorKey: "totalHT",
@@ -147,7 +154,7 @@ function DataTableInner({ columns, data, title }) {
 
   const sortableColumns = useMemo(
     () => makeColumnsWithSorting(columns),
-    [columns]
+    [columns],
   );
 
   const table = useReactTable({
@@ -178,18 +185,14 @@ function DataTableInner({ columns, data, title }) {
                     <TableHead
                       key={header.id}
                       className={
-                        idx === 0
-                          ? "pl-6"
-                          : idx === colCount - 1
-                            ? "pr-6"
-                            : ""
+                        idx === 0 ? "pl-6" : idx === colCount - 1 ? "pr-6" : ""
                       }
                     >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -213,7 +216,7 @@ function DataTableInner({ columns, data, title }) {
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -243,7 +246,9 @@ export function AnalyticsClientTable({ revenueByClient, loading }) {
       <div className="px-4 sm:px-6">
         <Card className="shadow-xs flex flex-col min-h-0 py-4">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Détail par client</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Détail par client
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
             <Skeleton className="min-h-[200px] w-full" />
@@ -268,7 +273,9 @@ export function AnalyticsProductTable({ revenueByProduct, loading }) {
       <div className="px-4 sm:px-6">
         <Card className="shadow-xs flex flex-col min-h-0 py-4">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Détail par produit / service</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Détail par produit / service
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
             <Skeleton className="min-h-[200px] w-full" />

@@ -22,9 +22,13 @@ import {
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export default function BankingConnectButton() {
   const { workspaceId } = useWorkspace();
+  // Connecter une banque : droit « Applications et banques » du rôle
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canConnectBank = !permissionsReady || canDo("integrations", "manage");
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isOwner
@@ -93,6 +97,9 @@ export default function BankingConnectButton() {
       </Button>
     );
   }
+
+  // Rôle sans droit de connecter une banque : pas de bouton
+  if (!canConnectBank) return null;
 
   return (
     <>

@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const STATUS_LABELS = {
   DRAFT: "Brouillon",
@@ -33,7 +34,7 @@ const buildStatusColors = (chartColors) => {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -142,6 +143,7 @@ export function AnalyticsStatusChart({ statusBreakdown, loading }) {
               <PieChart>
                 <Tooltip content={<CustomTooltip />} cursor={false} />
                 <Pie
+                  animationDuration={300}
                   data={chartData}
                   dataKey="totalTTC"
                   nameKey="name"

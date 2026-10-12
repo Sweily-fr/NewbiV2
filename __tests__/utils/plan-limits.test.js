@@ -27,7 +27,7 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.bankAccounts).toBe(1);
     expect(plan.storage).toBe(50);
     expect(plan.fileTransferMaxGB).toBe(5);
-    expect(plan.availableRoles).toEqual(["member", "accountant"]);
+    expect(plan.availableRoles).toEqual(["viewer", "member", "accountant"]);
     expect(plan.exports).toEqual(["csv", "excel"]);
     expect(plan.esignature).toBe("ses");
     expect(plan.documentAutomations).toBe(5);
@@ -53,7 +53,12 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.bankAccounts).toBe(3);
     expect(plan.storage).toBe(200);
     expect(plan.fileTransferMaxGB).toBe(15);
-    expect(plan.availableRoles).toEqual(["member", "accountant", "admin"]);
+    expect(plan.availableRoles).toEqual([
+      "viewer",
+      "member",
+      "admin",
+      "accountant",
+    ]);
     expect(plan.exports).toEqual(["csv", "excel", "fec"]);
     expect(plan.esignature).toBe("ses");
     expect(plan.documentAutomations).toBe(-1);
@@ -80,10 +85,10 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.storage).toBe(500);
     expect(plan.fileTransferMaxGB).toBe(50);
     expect(plan.availableRoles).toEqual([
-      "member",
-      "accountant",
-      "admin",
       "viewer",
+      "member",
+      "admin",
+      "accountant",
     ]);
     expect(plan.exports).toEqual(["csv", "excel", "fec", "sage", "cegid"]);
     expect(plan.esignature).toBe("qes");

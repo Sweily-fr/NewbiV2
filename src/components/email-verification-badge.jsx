@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, X, RefreshCw } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
@@ -52,7 +52,7 @@ export function EmailVerificationBadge({ className }) {
     <div
       className={cn(
         "mx-2 mb-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-3",
-        className
+        className,
       )}
     >
       <div className="flex items-start gap-3">

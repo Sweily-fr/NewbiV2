@@ -41,6 +41,7 @@ import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
 import { AnimatePresence } from "framer-motion";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
@@ -80,6 +81,24 @@ export default function PurchaseOrderRowActions({
   const purchaseOrder = row.original;
 
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditPurchaseOrders = !isReady || canDo("purchaseOrders", "edit");
+  const canCreatePurchaseOrders = !isReady || canDo("purchaseOrders", "create");
+  const canDeletePurchaseOrders = !isReady || canDo("purchaseOrders", "delete");
+  const canSendPurchaseOrders = !isReady || canDo("purchaseOrders", "send");
+  const canChangePurchaseOrderStatus =
+    !isReady || canDo("purchaseOrders", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizePurchaseOrders =
+    !isReady ||
+    canDo("purchaseOrders", "create") ||
+    canDo("purchaseOrders", "edit");
+  // Conversion : action « convert » du BC et création de la facture
+  const canConvertPurchaseOrders =
+    !isReady || canDo("purchaseOrders", "convert");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
   const { workspaceId } = useRequiredWorkspace();
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
@@ -197,12 +216,18 @@ export default function PurchaseOrderRowActions({
     purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
 
+  // Actions de statut : action « status » des bons de commande
   const hasStatusActions =
-    isDraft || isConfirmed || isValidated || isInProgress;
+    (canFinalizePurchaseOrders && isDraft) ||
+    (canChangePurchaseOrderStatus &&
+      (isConfirmed || isValidated || isInProgress));
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+    (isValidated || isInProgress || isDelivered) &&
+    !hasLinkedInvoices &&
+    canConvertPurchaseOrders &&
+    canCreateInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
@@ -218,7 +243,7 @@ export default function PurchaseOrderRowActions({
         />
         <ButtonGroup>
           {/* Icône d'envoi par email */}
-          {!isDraft && (
+          {!isDraft && canSendPurchaseOrders && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -258,19 +283,21 @@ export default function PurchaseOrderRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSaveAsTemplate?.(purchaseOrder);
-                }}
-                disabled={isReadOnly}
-              >
-                <BookTemplate className="mr-2 h-4 w-4" />
-                Sauv. modèle
-              </DropdownMenuItem>
+              {canCreatePurchaseOrders && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSaveAsTemplate?.(purchaseOrder);
+                  }}
+                  disabled={isReadOnly}
+                >
+                  <BookTemplate className="mr-2 h-4 w-4" />
+                  Sauv. modèle
+                </DropdownMenuItem>
+              )}
               {/* Comme les devis en attente : un BC confirmé reste modifiable
                   (l'API verrouille seulement préfixe/numéro et DELIVERED) */}
-              {(isDraft || isConfirmed) && (
+              {canEditPurchaseOrders && (isDraft || isConfirmed) && (
                 <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier
@@ -282,7 +309,7 @@ export default function PurchaseOrderRowActions({
                 <DropdownMenuSeparator />
               )}
 
-              {isDraft && (
+              {canFinalizePurchaseOrders && isDraft && (
                 <DropdownMenuItem
                   onClick={handleConfirm}
                   disabled={isLoading || isReadOnly}
@@ -292,7 +319,7 @@ export default function PurchaseOrderRowActions({
                 </DropdownMenuItem>
               )}
 
-              {isConfirmed && (
+              {canChangePurchaseOrderStatus && isConfirmed && (
                 <>
                   <DropdownMenuItem
                     onClick={handleValidate}
@@ -320,7 +347,7 @@ export default function PurchaseOrderRowActions({
                 </>
               )}
 
-              {isValidated && (
+              {canChangePurchaseOrderStatus && isValidated && (
                 <DropdownMenuItem
                   onClick={handleStartProgress}
                   disabled={isLoading || isReadOnly}
@@ -330,7 +357,7 @@ export default function PurchaseOrderRowActions({
                 </DropdownMenuItem>
               )}
 
-              {isInProgress && (
+              {canChangePurchaseOrderStatus && isInProgress && (
                 <DropdownMenuItem
                   onClick={handleDeliver}
                   disabled={isLoading || isReadOnly}
@@ -351,7 +378,7 @@ export default function PurchaseOrderRowActions({
               )}
 
               {/* Suppression */}
-              {isDraft && (
+              {isDraft && canDeletePurchaseOrders && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

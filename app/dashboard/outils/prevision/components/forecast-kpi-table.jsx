@@ -10,12 +10,13 @@ import {
 } from "lucide-react";
 import { getCategoryLabel } from "@/lib/category-icons-config";
 import { cn } from "@/src/lib/utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // ─── Formatters ───
 
 const formatCurrency = (value) => {
   if (value === null || value === undefined) return "NA";
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -25,7 +26,7 @@ const formatCurrency = (value) => {
 
 const formatCompact = (value) => {
   if (value === null || value === undefined || value === 0) return "-";
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     maximumFractionDigits: 0,
   }).format(Math.round(value));
 };

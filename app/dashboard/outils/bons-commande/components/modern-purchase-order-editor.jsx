@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { pickItemImage } from "@/src/utils/item-image";
 import { FormProvider } from "react-hook-form";
@@ -32,9 +34,9 @@ import { Button } from "@/src/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePurchaseOrderEditor } from "../hooks/use-purchase-order-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedQuoteForm from "@/app/dashboard/outils/devis/components/enhanced-quote-form";
-import QuoteSettingsView from "@/app/dashboard/outils/devis/components/quote-settings-view";
 import { toast } from "@/src/components/ui/sonner";
 import {
   updateOrganization,
@@ -43,9 +45,6 @@ import {
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useClient } from "@/src/graphql/clientQueries";
-import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
-import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
-import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
 import {
   usePurchaseOrderTemplates,
   GET_PURCHASE_ORDER_TEMPLATES,
@@ -54,6 +53,7 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
@@ -68,6 +68,52 @@ import {
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { getNumberFormat } from "@/src/lib/intl-cache";
+import { chunkLoadFallback } from "@/src/lib/chunk-load-fallback";
+import { usePreloadOnIdle } from "@/src/hooks/usePreloadOnIdle";
+import { useUnsavedChangesWarning } from "@/src/hooks/useUnsavedChangesWarning";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const QuoteSettingsView = dynamic(
+  () =>
+    import("@/app/dashboard/outils/devis/components/quote-settings-view").catch(
+      chunkLoadFallback,
+    ),
+  { ssr: false },
+);
+const ClientsModal = dynamic(
+  () =>
+    import("@/app/dashboard/clients/components/clients-modal").catch(
+      chunkLoadFallback,
+    ),
+  { ssr: false },
+);
+const SendDocumentModal = dynamic(
+  () =>
+    import("@/app/dashboard/outils/factures/components/send-document-modal")
+      .then((m) => m.SendDocumentModal)
+      .catch(chunkLoadFallback),
+  { ssr: false },
+);
+const SavePurchaseOrderTemplateDialog = dynamic(
+  () =>
+    import("./SavePurchaseOrderTemplateDialog")
+      .then((m) => m.SavePurchaseOrderTemplateDialog)
+      .catch(chunkLoadFallback),
+  { ssr: false },
+);
+
+// Préchargées quand le navigateur est inactif après l'ouverture de l'éditeur :
+// déjà là si une nouvelle version est mise en ligne pendant la saisie.
+const preloadEditorModules = () =>
+  Promise.all([
+    import("@/app/dashboard/outils/devis/components/quote-settings-view"),
+    import("@/app/dashboard/clients/components/clients-modal"),
+    import("@/app/dashboard/outils/factures/components/send-document-modal"),
+    import("./SavePurchaseOrderTemplateDialog"),
+  ]);
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -102,6 +148,11 @@ export default function ModernPurchaseOrderEditor({
   // Template selector (create mode only)
   const { workspaceId } = useWorkspace();
   const { templates, loading: templatesLoading } = usePurchaseOrderTemplates();
+  // Modèles : enregistrer = action « create », supprimer = « delete » (tout
+  // autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canSaveTemplate = !isReady || canDo("purchaseOrders", "create");
+  const canManageTemplates = !isReady || canDo("purchaseOrders", "delete");
   const [deleteTemplateMutation] = useMutation(DELETE_PURCHASE_ORDER_TEMPLATE, {
     refetchQueries: [
       { query: GET_PURCHASE_ORDER_TEMPLATES, variables: { workspaceId } },
@@ -196,23 +247,6 @@ export default function ModernPurchaseOrderEditor({
     enabled: mode !== "create" && !loading,
   });
 
-  // Afficher un message si le BC n'existe pas
-  if (
-    mode !== "create" &&
-    !loading &&
-    !loadedPurchaseOrder &&
-    purchaseOrderError
-  ) {
-    return (
-      <ResourceNotFound
-        resourceType="bon de commande"
-        resourceName="Ce bon de commande"
-        listUrl="/dashboard/outils/bons-commande"
-        homeUrl="/dashboard"
-      />
-    );
-  }
-
   const isReadOnly = mode === "view";
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
@@ -226,6 +260,11 @@ export default function ModernPurchaseOrderEditor({
   const hasClient = !!(watchedClient && watchedClient.id);
   const hasUserChanges = hasClient && hasItems;
   const guardActive = hasUserChanges && !isReadOnly;
+
+  // Modifications non enregistrées : confirmation du navigateur avant de
+  // recharger ou fermer l'onglet.
+  useUnsavedChangesWarning(guardActive && isDirty);
+  usePreloadOnIdle(preloadEditorModules);
 
   useEffect(() => {
     if (!guardActive) return;
@@ -289,6 +328,25 @@ export default function ModernPurchaseOrderEditor({
 
   const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
 
+  // Afficher un message si le BC n'existe pas.
+  // Placé après le dernier hook : avant, le nombre de hooks appelés
+  // variait d'un rendu à l'autre (règle des hooks).
+  if (
+    mode !== "create" &&
+    !loading &&
+    !loadedPurchaseOrder &&
+    purchaseOrderError
+  ) {
+    return (
+      <ResourceNotFound
+        resourceType="bon de commande"
+        resourceName="Ce bon de commande"
+        listUrl="/dashboard/outils/bons-commande"
+        homeUrl="/dashboard"
+      />
+    );
+  }
+
   const handleCloseSettings = () => {
     if (closeSettingsHandler) {
       closeSettingsHandler();
@@ -318,7 +376,7 @@ export default function ModernPurchaseOrderEditor({
         number: `${result.purchaseOrder.prefix || "BC"}-${result.purchaseOrder.number}`,
         clientName: result.purchaseOrder.client?.name,
         clientEmail: result.purchaseOrder.client?.email,
-        totalAmount: new Intl.NumberFormat("fr-FR", {
+        totalAmount: getNumberFormat("fr-FR", {
           style: "currency",
           currency: "EUR",
         }).format(result.purchaseOrder.finalTotalTTC || 0),
@@ -555,7 +613,7 @@ export default function ModernPurchaseOrderEditor({
                     </Button>
 
                     {((isCreating && templates.length > 0) ||
-                      (!isCreating && purchaseOrderId)) && (
+                      (!isCreating && purchaseOrderId && canSaveTemplate)) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="icon" title="Modèles">
@@ -602,31 +660,39 @@ export default function ModernPurchaseOrderEditor({
                                   </div>
                                 </DropdownMenuItem>
                               ))}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onSelect={() => setShowManageTemplates(true)}
-                                className="gap-2"
-                              >
-                                <SlidersHorizontal className="h-4 w-4 shrink-0" />
-                                <span className="text-sm">
-                                  Gérer les modèles
-                                </span>
-                              </DropdownMenuItem>
+                              {canManageTemplates && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onSelect={() =>
+                                      setShowManageTemplates(true)
+                                    }
+                                    className="gap-2"
+                                  >
+                                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
+                                    <span className="text-sm">
+                                      Gérer les modèles
+                                    </span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </>
                           )}
 
                           {/* Sauvegarder comme modèle (mode édition) */}
-                          {!isCreating && purchaseOrderId && (
-                            <DropdownMenuItem
-                              onSelect={() => setShowSaveTemplateDialog(true)}
-                              className="gap-2"
-                            >
-                              <BookTemplate className="h-4 w-4 shrink-0" />
-                              <span className="text-sm">
-                                Sauvegarder comme modèle
-                              </span>
-                            </DropdownMenuItem>
-                          )}
+                          {!isCreating &&
+                            purchaseOrderId &&
+                            canSaveTemplate && (
+                              <DropdownMenuItem
+                                onSelect={() => setShowSaveTemplateDialog(true)}
+                                className="gap-2"
+                              >
+                                <BookTemplate className="h-4 w-4 shrink-0" />
+                                <span className="text-sm">
+                                  Sauvegarder comme modèle
+                                </span>
+                              </DropdownMenuItem>
+                            )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
@@ -721,9 +787,14 @@ export default function ModernPurchaseOrderEditor({
                 feraient disparaître puis réapparaître à chaque modification. */}
             {debouncedFormData ? (
               <>
-                <div ref={pdfRef}>{previewElement}</div>
+                <A4PreviewFrame>
+                  <div ref={pdfRef}>{previewElement}</div>
+                </A4PreviewFrame>
                 {/* Hors de pdfRef : les PDF navigateur ajoutent déjà l'annexe */}
-                <DocumentAnnexPreview annex={formData?.annex} />
+                <DocumentAnnexPreview
+                  annex={formData?.annex}
+                  className="mx-auto max-w-[794px]"
+                />
               </>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
@@ -735,7 +806,7 @@ export default function ModernPurchaseOrderEditor({
       </div>
 
       {/* Modal d'édition du client */}
-      {formData.client && (
+      {formData.client && showEditClient && (
         <ClientsModal
           open={showEditClient}
           onOpenChange={setShowEditClient}
@@ -792,7 +863,7 @@ export default function ModernPurchaseOrderEditor({
       </AlertDialog>
 
       {/* Modal d'envoi par email */}
-      {createdPurchaseOrderData && (
+      {createdPurchaseOrderData && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}
@@ -817,7 +888,7 @@ export default function ModernPurchaseOrderEditor({
       )}
 
       {/* Dialog de sauvegarde comme modèle */}
-      {purchaseOrderId && (
+      {purchaseOrderId && showSaveTemplateDialog && (
         <SavePurchaseOrderTemplateDialog
           purchaseOrderId={purchaseOrderId}
           purchaseOrderNumber={`${formData?.prefix || "BC"}-${formData?.number || ""}`}

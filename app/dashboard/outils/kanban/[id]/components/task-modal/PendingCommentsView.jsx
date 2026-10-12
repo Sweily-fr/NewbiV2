@@ -12,6 +12,8 @@ export function PendingCommentsView({
   removePendingComment,
   updatePendingComment,
   currentUser,
+  // Saisie masquée sans l'action « comment » du kanban
+  canComment = true,
 }) {
   const { data: session } = useSession();
   const [newComment, setNewComment] = useState("");
@@ -147,27 +149,29 @@ export function PendingCommentsView({
         </div>
       </div>
 
-      <div className="pb-3 pl-3 pr-3 pt-3 space-y-2 flex-shrink-0 border-t border-border">
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Ajouter un commentaire..."
-          className="min-h-[80px] text-sm bg-background border-border"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              handleAddComment();
-            }
-          }}
-        />
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">Cmd/Ctrl + Entrée pour envoyer</span>
-          <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
-            <Send className="h-3 w-3 mr-2" />
-            Envoyer
-          </Button>
+      {canComment && (
+        <div className="pb-3 pl-3 pr-3 pt-3 space-y-2 flex-shrink-0 border-t border-border">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Ajouter un commentaire..."
+            className="min-h-[80px] text-sm bg-background border-border"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleAddComment();
+              }
+            }}
+          />
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">Cmd/Ctrl + Entrée pour envoyer</span>
+            <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
+              <Send className="h-3 w-3 mr-2" />
+              Envoyer
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

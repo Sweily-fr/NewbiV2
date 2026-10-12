@@ -42,6 +42,7 @@ import {
 } from "@/src/graphql/clientQueries";
 import { GET_ORGANIZATION_MEMBERS } from "@/src/graphql/kanbanQueries";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 const toolbarItems = [
   { icon: Bold, tooltip: "Gras", command: "bold" },
@@ -503,6 +504,10 @@ export default function ClientNotesTab({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  const { canDo, isReady } = useMyPermissions();
+  // Ajout, modification et suppression des notes = action « notes » des
+  // clients (tout autorisé tant que la grille n'est pas chargée)
+  const canManageNotes = !isReady || canDo("clients", "notes");
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const { data: session } = useSession();
@@ -561,14 +566,16 @@ export default function ClientNotesTab({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Note composer */}
-      <div className="px-4 sm:px-6 py-4 border-b border-[#eeeff1] dark:border-[#232323] flex-shrink-0">
-        <NoteComposer
-          onSubmit={handleAddNote}
-          disabled={isReadOnly || addingNote}
-          members={members}
-        />
-      </div>
+      {/* Note composer (masqué si le rôle ne permet pas les notes) */}
+      {canManageNotes && (
+        <div className="px-4 sm:px-6 py-4 border-b border-[#eeeff1] dark:border-[#232323] flex-shrink-0">
+          <NoteComposer
+            onSubmit={handleAddNote}
+            disabled={isReadOnly || addingNote}
+            members={members}
+          />
+        </div>
+      )}
 
       {/* Notes list */}
       <div className="flex-1 overflow-y-auto">
@@ -623,64 +630,69 @@ export default function ClientNotesTab({
                               {formatNoteDate(note.createdAt)}
                             </span>
                           </div>
-                          {note.userId === session?.user?.id && (
-                            <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="!size-7 text-muted-foreground hover:text-[#5a50ff]"
-                                disabled={isReadOnly}
-                                title={readOnlyTooltip}
-                                onClick={() => setEditingNoteId(note.id)}
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </Button>
-                              <AlertDialog
-                                open={noteToDelete === note.id}
-                                onOpenChange={(open) =>
-                                  !open && setNoteToDelete(null)
-                                }
-                              >
-                                <AlertDialogTrigger asChild>
+                          {note.userId === session?.user?.id &&
+                            canManageNotes && (
+                              <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity">
+                                {canManageNotes && (
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="!size-7 text-muted-foreground hover:text-destructive"
+                                    className="!size-7 text-muted-foreground hover:text-[#5a50ff]"
                                     disabled={isReadOnly}
                                     title={readOnlyTooltip}
-                                    onClick={() => setNoteToDelete(note.id)}
+                                    onClick={() => setEditingNoteId(note.id)}
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Edit2 className="h-3.5 w-3.5" />
                                   </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogTitle>
-                                    Supprimer la note
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Êtes-vous sûr de vouloir supprimer cette
-                                    note ? Cette action ne peut pas être
-                                    annulée.
-                                  </AlertDialogDescription>
-                                  <div className="flex gap-2 justify-end">
-                                    <AlertDialogCancel>
-                                      Annuler
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => {
-                                        handleDeleteNote(note.id);
-                                        setNoteToDelete(null);
-                                      }}
-                                      disabled={deletingNote}
-                                      className="bg-destructive text-white hover:bg-destructive/90"
-                                    >
-                                      Supprimer
-                                    </AlertDialogAction>
-                                  </div>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          )}
+                                )}
+                                {canManageNotes && (
+                                  <AlertDialog
+                                    open={noteToDelete === note.id}
+                                    onOpenChange={(open) =>
+                                      !open && setNoteToDelete(null)
+                                    }
+                                  >
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="!size-7 text-muted-foreground hover:text-destructive"
+                                        disabled={isReadOnly}
+                                        title={readOnlyTooltip}
+                                        onClick={() => setNoteToDelete(note.id)}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogTitle>
+                                        Supprimer la note
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Êtes-vous sûr de vouloir supprimer cette
+                                        note ? Cette action ne peut pas être
+                                        annulée.
+                                      </AlertDialogDescription>
+                                      <div className="flex gap-2 justify-end">
+                                        <AlertDialogCancel>
+                                          Annuler
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => {
+                                            handleDeleteNote(note.id);
+                                            setNoteToDelete(null);
+                                          }}
+                                          disabled={deletingNote}
+                                          className="bg-destructive text-white hover:bg-destructive/90"
+                                        >
+                                          Supprimer
+                                        </AlertDialogAction>
+                                      </div>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                              </div>
+                            )}
                         </div>
                         {isHtml(note.content) ? (
                           <div

@@ -81,7 +81,9 @@ import ClientsModal from "@/app/dashboard/outils/transactions/components/clients
 import { OcrComparisonDialog } from "./ocr-comparison-dialog";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliationGraphQL";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatDateForInput = (dateValue) => {
   if (!dateValue) return "";
@@ -133,6 +135,24 @@ function DateField({ value, onChange, placeholder = "Choisir une date" }) {
   );
 }
 
+// Information en lecture simple (rôle sans « Modifier ») : libellé + valeur,
+// jamais un champ grisé.
+function ReadOnlyField({ label, value }) {
+  return (
+    <div className="space-y-1 min-w-0">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium truncate">{value || "-"}</p>
+    </div>
+  );
+}
+
+// Date "YYYY-MM-DD" au format long français (lecture simple).
+const formatLongDate = (value) => {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00`);
+  return isNaN(date.getTime()) ? "" : format(date, "PPP", { locale: fr });
+};
+
 // Taux de TVA (%) déduit des montants stockés ; 20 par défaut si pas de HT.
 const vatRateFromAmounts = (totalHT, totalVAT) => {
   const ht = Number(totalHT) || 0;
@@ -144,7 +164,7 @@ const vatRateFromAmounts = (totalHT, totalVAT) => {
 const currencySymbol = (currency) => {
   try {
     return (
-      new Intl.NumberFormat("fr-FR", {
+      getNumberFormat("fr-FR", {
         style: "currency",
         currency: currency || "EUR",
       })
@@ -260,6 +280,16 @@ export function ImportedInvoiceSidebar({
 
   const isLoading = updateLoading || deleteLoading || validateLoading;
 
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditImported = !isReady || canDo("importedInvoices", "edit");
+  const canDeleteImported = !isReady || canDo("importedInvoices", "delete");
+  // Rapprochement bancaire : action « reconcile » des transactions
+  const canReadBanking = !isReady || canRead("banking");
+  const canLinkTransactions = !isReady || canDo("banking", "reconcile");
+  // Création rapide d'un client : action « create » des clients
+  const canCreateClients = !isReady || canDo("clients", "create");
+
   // Rapprochement bancaire (N↔N) : transactions liées, recherche manuelle.
   const {
     linkImportedInvoice,
@@ -328,15 +358,13 @@ export function ImportedInvoiceSidebar({
   const linkedTransactions = invoice?.linkedTransactions || [];
   const canReconcile = !["REJECTED", "ARCHIVED"].includes(invoice?.status);
 
-  if (!invoice) return null;
-
   const needsValidation =
-    invoice.status === "PENDING_REVIEW" || invoice.status === "UPLOADED";
+    invoice?.status === "PENDING_REVIEW" || invoice?.status === "UPLOADED";
   const isReviewMode = !!reviewInfo;
   const onClose = () => onOpenChange(false);
 
-  const isPDF = invoice.file?.mimeType === "application/pdf";
-  const isImage = invoice.file?.mimeType?.startsWith("image/");
+  const isPDF = invoice?.file?.mimeType === "application/pdf";
+  const isImage = invoice?.file?.mimeType?.startsWith("image/");
 
   // Nouvelle facture affichée → formulaire réinitialisé depuis ses valeurs.
   useEffect(() => {
@@ -350,7 +378,13 @@ export function ImportedInvoiceSidebar({
     // que le tiroir. savedRef garde la valeur stockée afin que le patch ne
     // soit pas vide.
     const storedVAT = Number(invoice.totalVAT) || 0;
-    if (storedVAT !== data.totalVAT) {
+    // Rôle sans « Modifier » : aucune écriture (l'API la refuserait). Écriture
+    // automatique : droit confirmé par la grille chargée, pas seulement supposé
+    if (
+      storedVAT !== data.totalVAT &&
+      isReady &&
+      canDo("importedInvoices", "edit")
+    ) {
       savedRef.current = { ...data, totalVAT: storedVAT };
       commitFields(["totalHT", "totalVAT", "totalTTC"], data);
     }
@@ -393,7 +427,8 @@ export function ImportedInvoiceSidebar({
     GET_IMPORTED_INVOICE_CLIENT_SUGGESTION,
     {
       variables: { id: invoice?.id },
-      skip: !open || !invoice?.id || !!invoice?.client?.id,
+      // Association automatique = modification : inutile sans droit d'écriture
+      skip: !open || !invoice?.id || !!invoice?.client?.id || !canEditImported,
       fetchPolicy: "network-only",
     },
   );
@@ -412,6 +447,9 @@ export function ImportedInvoiceSidebar({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedClient?.id, invoice?.id]);
+
+  // Après tous les hooks : leur ordre doit rester identique à chaque rendu
+  if (!invoice) return null;
 
   const handleConfirmDelete = async () => {
     try {
@@ -452,7 +490,7 @@ export function ImportedInvoiceSidebar({
   };
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: invoice.currency || "EUR",
     }).format(amount || 0);
@@ -693,7 +731,7 @@ export function ImportedInvoiceSidebar({
           <div className="flex items-center gap-2 shrink-0">
             {/* Relance l'OCR sur le fichier stocké (tout le document), sans
                 réimport : les valeurs lues sont comparées avant application. */}
-            {invoice.file?.url && (
+            {invoice.file?.url && canEditImported && (
               <Button
                 type="button"
                 variant="outline"
@@ -734,210 +772,320 @@ export function ImportedInvoiceSidebar({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Client : association à un client existant, ou création */}
-          <section className="rounded-lg border p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Building className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Client
-                </p>
-              </div>
-              {editData.clientId ? (
-                <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  Associé
-                </span>
-              ) : (
-                <span className="text-xs text-amber-700 dark:text-amber-400">
-                  Aucun client associé
-                </span>
-              )}
-            </div>
-            <ClientCombobox
-              value={editData.clientId}
-              selectedName={editData.clientName}
-              onChange={(client) => {
-                const next = {
-                  clientId: client ? client.id : null,
-                  clientName: client
-                    ? client.type === "INDIVIDUAL"
-                      ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
-                      : client.name || editData.clientName
-                    : editData.clientName,
-                };
-                setEditData({ ...editData, ...next });
-                commitFields(["clientId", "clientName"], next);
-              }}
-            />
-            {!editData.clientId && editData.clientName && (
-              <p className="text-xs text-muted-foreground truncate">
-                Nom lu sur la facture : {editData.clientName}
-              </p>
-            )}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 -ml-2 font-normal text-[#5A50FF] hover:text-[#5A50FF] hover:bg-[#5A50FF]/10"
-              onClick={() => setShowCreateClient(true)}
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Créer un client
-            </Button>
-          </section>
+          {/* Sans « Modifier » : informations en lecture simple (libellé +
+              valeur), sans champ grisé */}
+          {!canEditImported ? (
+            <div className="min-w-0 space-y-4">
+              <section className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                      Client
+                    </p>
+                  </div>
+                  {editData.clientId ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Associé
+                    </span>
+                  ) : (
+                    <span className="text-xs text-amber-700 dark:text-amber-400">
+                      Aucun client associé
+                    </span>
+                  )}
+                </div>
+                {editData.clientName && (
+                  <p className="text-sm font-medium truncate">
+                    {editData.clientId
+                      ? editData.clientName
+                      : `Nom lu sur la facture : ${editData.clientName}`}
+                  </p>
+                )}
+              </section>
 
-          {/* Informations : champs enregistrés à la perte de focus */}
-          <section className="rounded-lg border p-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                Informations
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>N° de facture</Label>
-              <Input
-                onBlur={() => commitFields(["originalInvoiceNumber"])}
-                value={editData.originalInvoiceNumber}
-                placeholder="Ex. F-202603-0012"
-                onChange={(e) =>
-                  setEditData({
-                    ...editData,
-                    originalInvoiceNumber: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2 min-w-0">
-                <Label>Date d'émission</Label>
-                <DateField
-                  value={editData.invoiceDate}
-                  onChange={(value) => {
-                    setEditData({ ...editData, invoiceDate: value });
-                    commitFields(["invoiceDate"], { invoiceDate: value });
-                  }}
+              <section className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Informations
+                  </p>
+                </div>
+                <ReadOnlyField
+                  label="N° de facture"
+                  value={editData.originalInvoiceNumber}
                 />
-              </div>
-              <div className="space-y-2 min-w-0">
-                <Label>Échéance</Label>
-                <DateField
-                  value={editData.dueDate}
-                  onChange={(value) => {
-                    setEditData({ ...editData, dueDate: value });
-                    commitFields(["dueDate"], { dueDate: value });
-                  }}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2 min-w-0">
-                <Label>Catégorie</Label>
-                <Select
-                  value={editData.category}
-                  onValueChange={(value) => {
-                    setEditData({ ...editData, category: value });
-                    commitFields(["category"], { category: value });
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(EXPENSE_CATEGORY_LABELS).map(
-                      ([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 min-w-0">
-                <Label>Moyen de paiement</Label>
-                <Select
-                  value={editData.paymentMethod}
-                  onValueChange={(value) => {
-                    setEditData({ ...editData, paymentMethod: value });
-                    commitFields(["paymentMethod"], { paymentMethod: value });
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PAYMENT_METHOD_LABELS).map(
-                      ([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </section>
+                <div className="grid grid-cols-2 gap-3">
+                  <ReadOnlyField
+                    label="Date d'émission"
+                    value={formatLongDate(editData.invoiceDate)}
+                  />
+                  <ReadOnlyField
+                    label="Échéance"
+                    value={formatLongDate(editData.dueDate)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <ReadOnlyField
+                    label="Catégorie"
+                    value={
+                      EXPENSE_CATEGORY_LABELS[editData.category] ||
+                      editData.category
+                    }
+                  />
+                  <ReadOnlyField
+                    label="Moyen de paiement"
+                    value={
+                      PAYMENT_METHOD_LABELS[editData.paymentMethod] ||
+                      editData.paymentMethod
+                    }
+                  />
+                </div>
+              </section>
 
-          {/* Montants : HT et taux pilotent la TVA et le TTC */}
-          <section className="rounded-lg border p-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                Montants
-              </p>
+              <section className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Montants
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <ReadOnlyField
+                    label="HT"
+                    value={formatAmount(editData.totalHT)}
+                  />
+                  <ReadOnlyField
+                    label="TVA"
+                    value={`${editData.vatRate ?? 0} %`}
+                  />
+                  <ReadOnlyField
+                    label="TTC"
+                    value={formatAmount(editData.totalTTC)}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">
+                    Montant de TVA ({editData.vatRate ?? 0} %)
+                  </span>
+                  <span className="font-medium">
+                    {formatAmount(editData.totalVAT)}
+                  </span>
+                </div>
+              </section>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2 min-w-0">
-                <Label>HT ({symbol})</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  onBlur={() => commitFields(AMOUNT_FIELDS)}
-                  value={editData.totalHT ?? ""}
-                  onChange={(e) => applyHT(e.target.value)}
+          ) : (
+            <div className="min-w-0 space-y-4">
+              {/* Client : association à un client existant, ou création */}
+              <section className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                      Client
+                    </p>
+                  </div>
+                  {editData.clientId ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Associé
+                    </span>
+                  ) : (
+                    <span className="text-xs text-amber-700 dark:text-amber-400">
+                      Aucun client associé
+                    </span>
+                  )}
+                </div>
+                <ClientCombobox
+                  value={editData.clientId}
+                  selectedName={editData.clientName}
+                  onChange={(client) => {
+                    const next = {
+                      clientId: client ? client.id : null,
+                      clientName: client
+                        ? client.type === "INDIVIDUAL"
+                          ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
+                          : client.name || editData.clientName
+                        : editData.clientName,
+                    };
+                    setEditData({ ...editData, ...next });
+                    commitFields(["clientId", "clientName"], next);
+                  }}
                 />
-              </div>
-              <div className="space-y-2 min-w-0">
-                <Label>TVA (%)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  inputMode="decimal"
-                  onBlur={() => commitFields(AMOUNT_FIELDS)}
-                  value={editData.vatRate ?? ""}
-                  onChange={(e) => applyVatRate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 min-w-0">
-                <Label>TTC ({symbol})</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  onBlur={() => commitFields(AMOUNT_FIELDS)}
-                  value={editData.totalTTC ?? ""}
-                  onChange={(e) => applyTTC(e.target.value)}
-                />
-              </div>
+                {!editData.clientId && editData.clientName && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    Nom lu sur la facture : {editData.clientName}
+                  </p>
+                )}
+                {canCreateClients && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 -ml-2 font-normal text-[#5A50FF] hover:text-[#5A50FF] hover:bg-[#5A50FF]/10"
+                    onClick={() => setShowCreateClient(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Créer un client
+                  </Button>
+                )}
+              </section>
+
+              {/* Informations : champs enregistrés à la perte de focus */}
+              <section className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Informations
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>N° de facture</Label>
+                  <Input
+                    onBlur={() => commitFields(["originalInvoiceNumber"])}
+                    value={editData.originalInvoiceNumber}
+                    placeholder="Ex. F-202603-0012"
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        originalInvoiceNumber: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2 min-w-0">
+                    <Label>Date d'émission</Label>
+                    <DateField
+                      value={editData.invoiceDate}
+                      onChange={(value) => {
+                        setEditData({ ...editData, invoiceDate: value });
+                        commitFields(["invoiceDate"], { invoiceDate: value });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2 min-w-0">
+                    <Label>Échéance</Label>
+                    <DateField
+                      value={editData.dueDate}
+                      onChange={(value) => {
+                        setEditData({ ...editData, dueDate: value });
+                        commitFields(["dueDate"], { dueDate: value });
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2 min-w-0">
+                    <Label>Catégorie</Label>
+                    <Select
+                      value={editData.category}
+                      onValueChange={(value) => {
+                        setEditData({ ...editData, category: value });
+                        commitFields(["category"], { category: value });
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(EXPENSE_CATEGORY_LABELS).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 min-w-0">
+                    <Label>Moyen de paiement</Label>
+                    <Select
+                      value={editData.paymentMethod}
+                      onValueChange={(value) => {
+                        setEditData({ ...editData, paymentMethod: value });
+                        commitFields(["paymentMethod"], {
+                          paymentMethod: value,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(PAYMENT_METHOD_LABELS).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </section>
+
+              {/* Montants : HT et taux pilotent la TVA et le TTC */}
+              <section className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Montants
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2 min-w-0">
+                    <Label>HT ({symbol})</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      onBlur={() => commitFields(AMOUNT_FIELDS)}
+                      value={editData.totalHT ?? ""}
+                      onChange={(e) => applyHT(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2 min-w-0">
+                    <Label>TVA (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      inputMode="decimal"
+                      onBlur={() => commitFields(AMOUNT_FIELDS)}
+                      value={editData.vatRate ?? ""}
+                      onChange={(e) => applyVatRate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2 min-w-0">
+                    <Label>TTC ({symbol})</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      onBlur={() => commitFields(AMOUNT_FIELDS)}
+                      value={editData.totalTTC ?? ""}
+                      onChange={(e) => applyTTC(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">
+                    Montant de TVA ({editData.vatRate ?? 0} %)
+                  </span>
+                  <span className="font-medium">
+                    {formatAmount(editData.totalVAT)}
+                  </span>
+                </div>
+              </section>
             </div>
-            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-sm">
-              <span className="text-muted-foreground">
-                Montant de TVA ({editData.vatRate ?? 0} %)
-              </span>
-              <span className="font-medium">
-                {formatAmount(editData.totalVAT)}
-              </span>
-            </div>
-          </section>
+          )}
 
           {/* Paiement bancaire : encaissements liés (N↔N), recherche
                   manuelle de transaction. */}
-          {canReconcile && (
+          {canReconcile && canReadBanking && (
             <section className="rounded-lg border p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -963,7 +1111,7 @@ export function ImportedInvoiceSidebar({
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">
-                          {new Intl.NumberFormat("fr-FR", {
+                          {getNumberFormat("fr-FR", {
                             style: "currency",
                             currency: "EUR",
                           }).format(tx.amount || 0)}
@@ -979,16 +1127,18 @@ export function ImportedInvoiceSidebar({
                           documentId={invoice.id}
                         />
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                        disabled={isUnlinkingImported}
-                        onClick={() => handleUnlinkTransaction(tx.id)}
-                        title="Détacher cette transaction"
-                      >
-                        <Unlink className="h-4 w-4" />
-                      </Button>
+                      {canLinkTransactions && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          disabled={isUnlinkingImported}
+                          onClick={() => handleUnlinkTransaction(tx.id)}
+                          title="Détacher cette transaction"
+                        >
+                          <Unlink className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1002,7 +1152,7 @@ export function ImportedInvoiceSidebar({
                   Validez d'abord la facture pour pouvoir la rapprocher d'une
                   transaction.
                 </p>
-              ) : !showTransactionPicker ? (
+              ) : !canLinkTransactions ? null : !showTransactionPicker ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1060,7 +1210,7 @@ export function ImportedInvoiceSidebar({
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">
-                                {new Intl.NumberFormat("fr-FR", {
+                                {getNumberFormat("fr-FR", {
                                   style: "currency",
                                   currency: "EUR",
                                 }).format(tx.amount || 0)}
@@ -1145,48 +1295,54 @@ export function ImportedInvoiceSidebar({
           )}
         </div>
 
-        {/* Actions Footer */}
-        <div className="border-t p-4 mt-auto shrink-0 bg-background space-y-2">
-          <>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isLoading}
-                className="flex-1 font-normal text-destructive hover:text-destructive [&_svg]:text-destructive"
-              >
-                <TrashIcon className="h-4 w-4 mr-2" />
-                Supprimer
-              </Button>
-              {needsValidation && (
+        {/* Actions Footer (masqué si le rôle ne permet aucune action) */}
+        {(canDeleteImported ||
+          (needsValidation && canEditImported) ||
+          isReviewMode) && (
+          <div className="border-t p-4 mt-auto shrink-0 bg-background space-y-2">
+            <>
+              <div className="flex gap-2">
+                {canDeleteImported && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={isLoading}
+                    className="flex-1 font-normal text-destructive hover:text-destructive [&_svg]:text-destructive"
+                  >
+                    <TrashIcon className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </Button>
+                )}
+                {needsValidation && canEditImported && (
+                  <Button
+                    variant="primary"
+                    onClick={handleValidate}
+                    disabled={isLoading}
+                    className="flex-1 font-medium gap-1.5"
+                  >
+                    {validateLoading ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ClipboardTickIcon className="h-4 w-4" />
+                    )}
+                    Valider
+                  </Button>
+                )}
+              </div>
+              {isReviewMode && (
                 <Button
-                  variant="primary"
-                  onClick={handleValidate}
+                  variant="ghost"
+                  onClick={handleSkip}
                   disabled={isLoading}
-                  className="flex-1 font-medium gap-1.5"
+                  className="w-full text-muted-foreground font-normal"
                 >
-                  {validateLoading ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ClipboardTickIcon className="h-4 w-4" />
-                  )}
-                  Valider
+                  Passer
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               )}
-            </div>
-            {isReviewMode && (
-              <Button
-                variant="ghost"
-                onClick={handleSkip}
-                disabled={isLoading}
-                className="w-full text-muted-foreground font-normal"
-              >
-                Passer
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            )}
-          </>
-        </div>
+            </>
+          </div>
+        )}
       </motion.div>
 
       {/* Comparaison valeurs actuelles / nouvelle analyse OCR */}

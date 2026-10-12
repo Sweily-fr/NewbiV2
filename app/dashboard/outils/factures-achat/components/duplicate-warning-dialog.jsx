@@ -12,11 +12,23 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { ExternalLink } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
-const formatAmount = (value) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
-    value || 0,
-  );
+// Montant dans la devise du doublon (une facture en dollars n'est pas
+// affichée en euros), EUR à défaut ou si le code est invalide
+const formatAmount = (value, currency) => {
+  try {
+    return getNumberFormat("fr-FR", {
+      style: "currency",
+      currency: currency || "EUR",
+    }).format(value || 0);
+  } catch {
+    return getNumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+    }).format(value || 0);
+  }
+};
 
 const formatDate = (value) => {
   if (!value) return "";
@@ -75,7 +87,7 @@ export function DuplicateWarningDialog({
                   {d.invoiceNumber ? ` - ${d.invoiceNumber}` : ""}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatAmount(d.amountTTC)}
+                  {formatAmount(d.amountTTC, d.currency)}
                   {d.issueDate ? ` - ${formatDate(d.issueDate)}` : ""}
                 </p>
               </div>

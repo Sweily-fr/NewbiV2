@@ -27,9 +27,10 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useExcludeForecastOccurrence } from "@/src/hooks/useForecastOccurrences";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { cn } from "@/src/lib/utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,

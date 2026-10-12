@@ -81,6 +81,32 @@ export const GET_BANKING_ACCOUNT = gql`
 /**
  * Récupérer les transactions (bancaires + manuelles)
  */
+// Transactions des graphiques Analytiques : seulement les champs qu'ils lisent
+// et bornées par une date de début (période affichée, au moins 365 jours pour
+// les options du graphique de solde). GET_TRANSACTIONS (limit 0) rapatriait
+// tout l'historique avec les factures liées résolues ligne par ligne.
+export const GET_ANALYTICS_TRANSACTIONS = gql`
+  query GetAnalyticsTransactions(
+    $workspaceId: ID!
+    $filters: TransactionFiltersInput
+    $limit: Int
+  ) {
+    transactions(workspaceId: $workspaceId, filters: $filters, limit: $limit) {
+      id
+      provider
+      status
+      amount
+      description
+      category
+      date
+      processedAt
+      createdAt
+      metadata
+      linkedInvoiceIds
+    }
+  }
+`;
+
 export const GET_TRANSACTIONS = gql`
   query GetTransactions(
     $workspaceId: ID!
@@ -741,6 +767,7 @@ export const CONFIRM_TRANSACTION_RECEIPT_INVOICE = gql`
     $action: ReceiptInvoiceProposalAction!
     $values: ReceiptInvoiceValuesInput
     $purchaseInvoiceId: ID
+    $acknowledgedDuplicateId: ID
   ) {
     confirmTransactionReceiptInvoice(
       transactionId: $transactionId
@@ -749,10 +776,21 @@ export const CONFIRM_TRANSACTION_RECEIPT_INVOICE = gql`
       action: $action
       values: $values
       purchaseInvoiceId: $purchaseInvoiceId
+      acknowledgedDuplicateId: $acknowledgedDuplicateId
     ) {
       success
       message
       purchaseInvoiceId
+      duplicate {
+        id
+        invoiceNumber
+        supplierName
+        amountTTC
+        currency
+        issueDate
+        reason
+        linkTransaction
+      }
     }
   }
 `;

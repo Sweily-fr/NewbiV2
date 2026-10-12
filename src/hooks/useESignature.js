@@ -13,7 +13,7 @@ import {
   RETRY_SIGNATURE,
   SIGNATURE_STATUS_UPDATED,
 } from "@/src/graphql/esignatureQueries";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 
 /**
  * Hook pour récupérer le statut de signature d'un document
@@ -130,7 +130,7 @@ export function useRequestSignature() {
       });
 
       if (data?.requestDocumentSignature?.success) {
-        posthog.capture("esignature_requested", {
+        capture("esignature_requested", {
           document_type: input.documentType,
           document_id: input.documentId,
         });

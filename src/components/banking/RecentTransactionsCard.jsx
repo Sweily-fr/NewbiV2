@@ -15,6 +15,7 @@ import { useQuery } from "@apollo/client";
 import { GET_TRANSACTIONS } from "@/src/graphql/queries/banking";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "@/app/dashboard/outils/transactions/components/merchant-logo";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 /**
  * Card affichant les transactions récentes
@@ -26,6 +27,8 @@ export default function RecentTransactionsCard({
   accountId,
   limit = 5,
   isLoading = false,
+  // Requête différée (droits du rôle pas encore chargés sur l'accueil)
+  skip = false,
 }) {
   const router = useRouter();
 
@@ -37,14 +40,17 @@ export default function RecentTransactionsCard({
       limit,
     },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId,
+    skip: !workspaceId || skip,
   });
 
   const recentTransactions = data?.transactions || [];
-  const loading = isLoading || queryLoading;
+  // Squelette au premier chargement seulement : en cache-and-network, loading
+  // reste à true pendant la revalidation même quand le cache a les données, et
+  // le squelette remplaçait la liste à chaque visite de la page.
+  const loading = (isLoading || queryLoading) && !data?.transactions;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);

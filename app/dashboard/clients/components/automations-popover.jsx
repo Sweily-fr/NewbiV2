@@ -56,6 +56,7 @@ import {
 } from "@/src/hooks/useClientAutomations";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   useCrmEmailAutomations,
   useCreateCrmEmailAutomation,
@@ -117,7 +118,15 @@ const EMAIL_TIMING_TYPES = [
   { value: "AFTER_DATE", label: "Après" },
 ];
 
-function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
+function AutomationRow({
+  automation,
+  lists,
+  onUpdate,
+  onDelete,
+  onToggle,
+  canEdit = true,
+  canRemove = true,
+}) {
   const [localData, setLocalData] = useState({
     triggerType: automation.triggerType,
     actionType: automation.actionType,
@@ -144,6 +153,59 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
     setLocalData({ ...localData, isActive: newIsActive });
     onToggle(automation.id);
   };
+
+  // Sans « Modifier » : règle affichée en lecture simple (texte), sans
+  // sélecteurs grisés
+  if (!canEdit) {
+    const targetList = lists.find((l) => l.id === localData.targetListId);
+    return (
+      <div className="flex items-center gap-2 py-2">
+        <span className="text-sm text-muted-foreground w-12 flex-shrink-0">
+          Quand
+        </span>
+        <span className="text-sm w-[200px] truncate">
+          {TRIGGER_TYPES.find((t) => t.value === localData.triggerType)
+            ?.label || "-"}
+        </span>
+        <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <span className="text-sm w-[150px] truncate">
+          {ACTION_TYPES.find((a) => a.value === localData.actionType)?.label ||
+            "-"}
+        </span>
+        <span className="flex-1 min-w-[120px] flex items-center gap-2 text-sm truncate">
+          {targetList ? (
+            <>
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: targetList.color }}
+              />
+              <span className="truncate">{targetList.name}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">
+              {automation.targetList?.name || "-"}
+            </span>
+          )}
+        </span>
+        <span className="text-xs text-muted-foreground flex-shrink-0">
+          {localData.isActive ? "Active" : "Inactive"}
+        </span>
+        {canRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(automation);
+            }}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2 py-2">
@@ -213,17 +275,19 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
         className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
       />
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(automation);
-        }}
-        className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      {canRemove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(automation);
+          }}
+          className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -347,7 +411,14 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
   );
 }
 
-function EmailAutomationRow({ automation, onEdit, onDelete, onToggle }) {
+function EmailAutomationRow({
+  automation,
+  onEdit,
+  onDelete,
+  onToggle,
+  canEdit = true,
+  canRemove = true,
+}) {
   const [isActive, setIsActive] = useState(automation.isActive);
 
   const handleToggle = () => {
@@ -377,35 +448,46 @@ function EmailAutomationRow({ automation, onEdit, onDelete, onToggle }) {
         </p>
       </div>
 
-      <Switch
-        checked={isActive}
-        onCheckedChange={handleToggle}
-        className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
-      />
+      {/* Lecture seule : statut affiché sans interrupteur */}
+      {canEdit ? (
+        <Switch
+          checked={isActive}
+          onCheckedChange={handleToggle}
+          className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
+        />
+      ) : (
+        <span className="text-xs text-muted-foreground flex-shrink-0">
+          {isActive ? "Active" : "Inactive"}
+        </span>
+      )}
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onEdit(automation);
-        }}
-        className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff] flex-shrink-0"
-      >
-        <Pencil className="h-4 w-4" />
-      </Button>
+      {canEdit && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(automation);
+          }}
+          className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff] flex-shrink-0"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )}
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(automation);
-        }}
-        className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      {canRemove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(automation);
+          }}
+          className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -621,16 +703,32 @@ export default function AutomationsPopover({ trigger }) {
   const planLimits = getPlanLimits(subscription?.plan);
   const canUseClientAutomations = planLimits.clientAutomations;
   const canUseEmailAutomations = planLimits.crmEmailAutomations;
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canReadAutomations = !isReady || canRead("automations");
+  const canCreateAutomations = !isReady || canDo("automations", "create");
+  // Modifier et activer / désactiver = action « edit »
+  const canEditAutomations = !isReady || canDo("automations", "edit");
+  const canDeleteAutomations = !isReady || canDo("automations", "delete");
+  // Listes et champs personnalisés : modules à part (requêtes sautées sans
+  // lecture)
+  const canReadClientLists = !isReady || canRead("clientLists");
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const automationsWorkspaceId = canReadAutomations ? workspaceId : null;
 
   const {
     automations,
     loading: automationsLoading,
     refetch,
-  } = useClientAutomations(workspaceId);
-  const { lists, loading: listsLoading } = useClientLists(workspaceId);
+  } = useClientAutomations(automationsWorkspaceId);
+  const { lists, loading: listsLoading } = useClientLists(
+    canReadAutomations && canReadClientLists ? workspaceId : null,
+  );
   const { automations: emailAutomations, refetch: refetchEmailAutomations } =
-    useCrmEmailAutomations(workspaceId);
-  const { fields: customFields } = useClientCustomFields(workspaceId);
+    useCrmEmailAutomations(automationsWorkspaceId);
+  const { fields: customFields } = useClientCustomFields(
+    canReadAutomations && canReadCustomFields ? workspaceId : null,
+  );
   const { createAutomation } = useCreateClientAutomation();
   const { updateAutomation } = useUpdateClientAutomation();
   const { deleteAutomation } = useDeleteClientAutomation();
@@ -740,6 +838,9 @@ export default function AutomationsPopover({ trigger }) {
   const activeEmailCount = emailAutomations.filter((a) => a.isActive).length;
   const activeCount = activeListCount + activeEmailCount;
 
+  // Sans lecture des automatisations, le bouton n'apparaît pas
+  if (!canReadAutomations) return null;
+
   return (
     <>
       <Popover
@@ -831,8 +932,10 @@ export default function AutomationsPopover({ trigger }) {
                     </div>
                   ) : automations.length === 0 && !showNewForm ? (
                     <p className="text-sm text-muted-foreground text-center py-6">
-                      Aucune automatisation. Cliquez sur "Ajouter" pour
-                      commencer.
+                      {/* Pas d'invitation à « Ajouter » sans le droit de créer */}
+                      {canCreateAutomations
+                        ? 'Aucune automatisation. Cliquez sur "Ajouter" pour commencer.'
+                        : "Aucune automatisation."}
                     </p>
                   ) : (
                     <>
@@ -844,6 +947,8 @@ export default function AutomationsPopover({ trigger }) {
                           onUpdate={handleUpdate}
                           onDelete={setDeletingAutomation}
                           onToggle={handleToggle}
+                          canEdit={canEditAutomations}
+                          canRemove={canDeleteAutomations}
                         />
                       ))}
                     </>
@@ -858,27 +963,29 @@ export default function AutomationsPopover({ trigger }) {
                   )}
                 </div>
 
-                <div className="p-4 border-t">
-                  {!showNewForm && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowNewForm(true)}
-                      className="w-full justify-start text-muted-foreground"
-                      disabled={lists.length === 0}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Ajouter une automatisation
-                    </Button>
-                  )}
+                {canCreateAutomations && (
+                  <div className="p-4 border-t">
+                    {!showNewForm && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowNewForm(true)}
+                        className="w-full justify-start text-muted-foreground"
+                        disabled={lists.length === 0}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter une automatisation
+                      </Button>
+                    )}
 
-                  {lists.length === 0 && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      Créez d'abord des listes pour configurer des
-                      automatisations.
-                    </p>
-                  )}
-                </div>
+                    {lists.length === 0 && (
+                      <p className="text-xs text-amber-600 mt-2">
+                        Créez d'abord des listes pour configurer des
+                        automatisations.
+                      </p>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               {/* Onglet Automatisations Email */}
@@ -903,8 +1010,9 @@ export default function AutomationsPopover({ trigger }) {
                     <div className="p-4 space-y-1 max-h-[300px] overflow-y-auto">
                       {emailAutomations.length === 0 && !showNewEmailForm ? (
                         <p className="text-sm text-muted-foreground text-center py-6">
-                          Aucune automatisation email. Cliquez sur "Ajouter"
-                          pour commencer.
+                          {canCreateAutomations
+                            ? 'Aucune automatisation email. Cliquez sur "Ajouter" pour commencer.'
+                            : "Aucune automatisation email."}
                         </p>
                       ) : (
                         <>
@@ -928,6 +1036,8 @@ export default function AutomationsPopover({ trigger }) {
                                 }}
                                 onDelete={setDeletingEmailAutomation}
                                 onToggle={handleToggleEmail}
+                                canEdit={canEditAutomations}
+                                canRemove={canDeleteAutomations}
                               />
                             ),
                           )}
@@ -944,30 +1054,32 @@ export default function AutomationsPopover({ trigger }) {
                       )}
                     </div>
 
-                    <div className="p-4 border-t">
-                      {!showNewEmailForm && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingEmailAutomation(null);
-                            setShowNewEmailForm(true);
-                          }}
-                          className="w-full justify-start text-muted-foreground"
-                          disabled={dateFields.length === 0}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Ajouter une automatisation email
-                        </Button>
-                      )}
+                    {canCreateAutomations && (
+                      <div className="p-4 border-t">
+                        {!showNewEmailForm && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingEmailAutomation(null);
+                              setShowNewEmailForm(true);
+                            }}
+                            className="w-full justify-start text-muted-foreground"
+                            disabled={dateFields.length === 0}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Ajouter une automatisation email
+                          </Button>
+                        )}
 
-                      {dateFields.length === 0 && (
-                        <p className="text-xs text-amber-600 mt-2">
-                          Créez d'abord un champ personnalisé de type "Date"
-                          pour configurer des automatisations email.
-                        </p>
-                      )}
-                    </div>
+                        {dateFields.length === 0 && (
+                          <p className="text-xs text-amber-600 mt-2">
+                            Créez d'abord un champ personnalisé de type "Date"
+                            pour configurer des automatisations email.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </TabsContent>

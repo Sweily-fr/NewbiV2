@@ -1,15 +1,37 @@
 import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
 import AttributionCapture from "@/src/components/AttributionCapture";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
-import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
 import { ForceDesktopViewport } from "@/src/components/force-desktop-viewport";
 import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 import { SITE_URL } from "@/src/lib/site";
+
+// Même police et même variable que geist/font/mono, mais sans préchargement :
+// la variante mono (71 kB) était préchargée sur toutes les pages alors qu'elle
+// ne sert qu'à quelques montants et codes. Elle se charge à la première
+// utilisation (repli système en attendant).
+const GeistMono = localFont({
+  src: "../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2",
+  variable: "--font-geist-mono",
+  adjustFontFallback: false,
+  fallback: [
+    "ui-monospace",
+    "SFMono-Regular",
+    "Roboto Mono",
+    "Menlo",
+    "Monaco",
+    "Liberation Mono",
+    "DejaVu Sans Mono",
+    "Courier New",
+    "monospace",
+  ],
+  weight: "100 900",
+  preload: false,
+});
 
 export const viewport = {
   width: "device-width",
@@ -201,7 +223,9 @@ export default function RootLayout({ children }) {
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />
-        {/* <DevAnimationTrigger /> */}
+        {/* <DevAnimationTrigger /> : réimporter depuis
+            @/src/components/dev-animation-trigger pour le réactiver. Même
+            inutilisé, son import chargeait framer-motion sur toutes les pages. */}
       </body>
     </html>
   );

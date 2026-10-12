@@ -63,8 +63,18 @@ export function ChartBarMultiple() {
               cursor={false}
               content={<ChartTooltipContent indicator="dashed" />}
             />
-            <Bar dataKey="desktop" fill={remap("#5B4FFF")} radius={4} />
-            <Bar dataKey="mobile" fill={remap("#a44fff")} radius={4} />
+            <Bar
+              animationDuration={300}
+              dataKey="desktop"
+              fill={remap("#5B4FFF")}
+              radius={4}
+            />
+            <Bar
+              animationDuration={300}
+              dataKey="mobile"
+              fill={remap("#a44fff")}
+              radius={4}
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

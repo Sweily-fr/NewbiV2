@@ -123,6 +123,12 @@ export function KanbanGanttView({
   updateTask,
   workspaceId,
   boardTitle,
+  // Rôle sans l'action « edit » : pas de redimensionnement des barres
+  readOnly = false,
+  // Rôle sans l'action « create » : pas de création de tâche au clic
+  canCreate = !readOnly,
+  // Rôle sans l'action « export » : pas d'export PDF
+  canExport = true,
 }) {
   // Date de référence de la période affichée. Volontairement NON alignée sur
   // le lundi : un jeudi 2 juillet doit afficher Q3/juillet, pas Q2/juin (le
@@ -764,6 +770,7 @@ export function KanbanGanttView({
     };
 
     const handleClick = (e) => {
+      if (!canCreate) return;
       // Ne pas créer de tâche si on vient de redimensionner
       if (justResizedRef.current) {
         return;
@@ -820,7 +827,7 @@ export function KanbanGanttView({
       timeline.removeEventListener("mouseleave", handleMouseLeave);
       timeline.removeEventListener("click", handleClick);
     };
-  }, [daysToDisplay, dayWidth, columns, onEditTask]);
+  }, [daysToDisplay, dayWidth, columns, onEditTask, canCreate]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-10rem)] bg-background">
@@ -876,72 +883,74 @@ export function KanbanGanttView({
               <SelectItem value="year">Année</SelectItem>
             </SelectContent>
           </Select>
-          <Popover open={exportOpen} onOpenChange={setExportOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-3 text-xs gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Exporter PDF</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              {/* Choix de la période à exporter */}
-              <div className="p-3 space-y-1.5">
-                <div className="text-xs font-medium text-muted-foreground mb-2">
-                  Période à exporter
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {EXPORT_PERIODS.map((preset) => (
-                    <Button
-                      key={preset.value}
-                      variant={
-                        exportPeriod === preset.value ? "default" : "outline"
-                      }
-                      size="sm"
-                      className="h-7 text-xs justify-start"
-                      onClick={() => setExportPeriod(preset.value)}
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Calendrier pour la période personnalisée */}
-              {exportPeriod === "custom" && (
-                <div className="border-t px-3 py-3 flex justify-center">
-                  <RangeCalendar
-                    mode="range"
-                    selected={exportRange}
-                    onSelect={setExportRange}
-                    locale={fr}
-                    numberOfMonths={1}
-                    defaultMonth={exportRange?.from}
-                    className="p-0"
-                  />
-                </div>
-              )}
-
-              {/* Période retenue + action */}
-              <div className="border-t px-3 py-3 flex items-center justify-between gap-3">
-                <p className="text-xs text-muted-foreground">
-                  {exportPeriodLabel}
-                </p>
+          {canExport && (
+            <Popover open={exportOpen} onOpenChange={setExportOpen}>
+              <PopoverTrigger asChild>
                 <Button
+                  variant="outline"
                   size="sm"
-                  className="h-7 px-3 text-xs gap-1.5 flex-shrink-0"
-                  onClick={handleExportPDF}
-                  disabled={isCustomIncomplete}
+                  className="h-7 px-3 text-xs gap-1.5"
                 >
                   <Download className="h-3.5 w-3.5" />
-                  Exporter
+                  <span className="hidden sm:inline">Exporter PDF</span>
                 </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                {/* Choix de la période à exporter */}
+                <div className="p-3 space-y-1.5">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                    Période à exporter
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {EXPORT_PERIODS.map((preset) => (
+                      <Button
+                        key={preset.value}
+                        variant={
+                          exportPeriod === preset.value ? "default" : "outline"
+                        }
+                        size="sm"
+                        className="h-7 text-xs justify-start"
+                        onClick={() => setExportPeriod(preset.value)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Calendrier pour la période personnalisée */}
+                {exportPeriod === "custom" && (
+                  <div className="border-t px-3 py-3 flex justify-center">
+                    <RangeCalendar
+                      mode="range"
+                      selected={exportRange}
+                      onSelect={setExportRange}
+                      locale={fr}
+                      numberOfMonths={1}
+                      defaultMonth={exportRange?.from}
+                      className="p-0"
+                    />
+                  </div>
+                )}
+
+                {/* Période retenue + action */}
+                <div className="border-t px-3 py-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    {exportPeriodLabel}
+                  </p>
+                  <Button
+                    size="sm"
+                    className="h-7 px-3 text-xs gap-1.5 flex-shrink-0"
+                    onClick={handleExportPDF}
+                    disabled={isCustomIncomplete}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Exporter
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
 
@@ -1240,8 +1249,12 @@ export function KanbanGanttView({
           >
             <div
               // overflow-x-clip : les poignées de resize (right: -10px) des
-              // barres en bord de période ne doivent pas créer de scroll
-              className="relative cursor-pointer overflow-x-clip"
+              // barres en bord de période ne doivent pas créer de scroll.
+              // Pas de curseur « clic » sans droit de création
+              className={cn(
+                "relative overflow-x-clip",
+                canCreate && "cursor-pointer",
+              )}
               style={{
                 minWidth: `${daysToDisplay.length * dayWidth}px`,
                 minHeight: `${Math.max(allTasks.length, 20) * 45}px`,
@@ -1289,7 +1302,7 @@ export function KanbanGanttView({
               </div>
 
               {/* Cercle qui suit le curseur - masqué sur mobile/tablette */}
-              {cursorPosition.visible && !isOverTask && (
+              {canCreate && cursorPosition.visible && !isOverTask && (
                 <div
                   className="fixed pointer-events-none hidden md:block"
                   style={{
@@ -1401,7 +1414,7 @@ export function KanbanGanttView({
                                 >
                                   <TaskPresenceOverlay taskId={task.id} />
                                   {/* Poignée de redimensionnement gauche */}
-                                  {task.startDate && !isSliver && (
+                                  {!readOnly && task.startDate && !isSliver && (
                                     <div
                                       className="absolute top-1 bottom-1 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-full"
                                       style={{
@@ -1415,7 +1428,7 @@ export function KanbanGanttView({
                                   )}
 
                                   {/* Poignée de redimensionnement droite */}
-                                  {task.dueDate && !isSliver && (
+                                  {!readOnly && task.dueDate && !isSliver && (
                                     <div
                                       className="absolute top-1 bottom-1 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-full"
                                       style={{

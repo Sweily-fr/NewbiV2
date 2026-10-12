@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { launchBrowser } from "@/src/lib/puppeteer";
+import { launchBrowser, securePdfPage } from "@/src/lib/puppeteer";
 import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   hasInternalSecret,
   toObjectId,
   apiError,
@@ -15,7 +15,7 @@ import {
  * POST /api/delivery-notes/generate-pdf
  *
  * Génère le PDF d'un bon de livraison via Puppeteer (même pipeline que les
- * bons de commande). L'auth (session + appartenance à l'organisation) est
+ * bons de commande). L'auth (session + droit « Voir » des bons de livraison) est
  * vérifiée ICI, avant de lancer le navigateur. Puppeteer appelle ensuite
  * /api/delivery-notes/data/[id] avec X-Internal-Secret.
  */
@@ -36,7 +36,12 @@ async function handler(request) {
     if (!deliveryNote) {
       return apiError(404, "Bon de livraison introuvable");
     }
-    await requireOrgMembership(user.id, deliveryNote.workspaceId);
+    await requireOrgAction(
+      user.id,
+      deliveryNote.workspaceId,
+      "deliveryNotes",
+      "view",
+    );
   }
 
   let browser = null;
@@ -54,11 +59,11 @@ async function handler(request) {
       "http://localhost:3000";
     const generatorUrl = `${baseUrl}/pdf-generator/delivery-note/${deliveryNoteId}${VECTOR_PDF_ENABLED ? "?mode=print" : ""}`;
 
-    if (process.env.INTERNAL_API_SECRET) {
-      await page.setExtraHTTPHeaders({
-        "x-internal-secret": process.env.INTERNAL_API_SECRET,
-      });
-    }
+    // Secret interne posé sur les seules requêtes vers le site (jamais vers
+    // un domaine tiers) ; hors du site, seules les images publiques R2
+    // passent : pas de requête du serveur vers une URL choisie par
+    // l'utilisateur (logo, image d'article, données d'aperçu)
+    await securePdfPage(page, baseUrl);
 
     await page.goto(generatorUrl, {
       waitUntil: "networkidle0",

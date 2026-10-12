@@ -3,7 +3,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import {
   hasInternalSecret,
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   toObjectId,
   apiError,
   withErrorHandler,
@@ -15,7 +15,7 @@ import { resolveCompanyInfo } from "@/src/lib/document-company-info";
  *
  * Dual-access route (Principle 4):
  * - Puppeteer (PDF generation): authenticated via X-Internal-Secret header
- * - Authenticated user: verified via session + org membership
+ * - Authenticated user: session + droit « Voir » du module dans l.espace
  */
 async function handler(request, { params }) {
   const { id } = await params;
@@ -39,9 +39,14 @@ async function handler(request, { params }) {
     return apiError(404, "Avoir introuvable");
   }
 
-  // Membership check (only for authenticated users, not Puppeteer)
+  // Droit « Voir » du module (utilisateurs connectés ; pas Puppeteer)
   if (authenticatedUserId) {
-    await requireOrgMembership(authenticatedUserId, creditNote.workspaceId);
+    await requireOrgAction(
+      authenticatedUserId,
+      creditNote.workspaceId,
+      "creditNotes",
+      "view",
+    );
   }
 
   // Fetch related client data if present

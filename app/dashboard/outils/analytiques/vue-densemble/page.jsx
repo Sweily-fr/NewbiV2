@@ -94,6 +94,10 @@ export default function VueDensemblePage() {
   // T1 — filtre période sur la carte CA
   const [caPeriod, setCaPeriod] = useState("year");
 
+  // skipTransactions : le solde (comptes + espèces) vient du résumé calculé
+  // par l'API (dashboardSummary, le même que l'Accueil). Sans cette option, la
+  // page retéléchargeait tout l'historique bancaire à chaque visite pour ce
+  // seul montant.
   const {
     bankAccounts,
     bankBalance,
@@ -102,7 +106,7 @@ export default function VueDensemblePage() {
     invoices,
     isLoading: bankLoading,
     formatCurrency,
-  } = useDashboardData();
+  } = useDashboardData({ skipTransactions: true });
 
   // T2 — Stats des factures d'achats pour la carte "À Payer" : totalUnpaid
   // couvre TOUS les statuts non payés (dont TO_PROCESS, statut par défaut des
@@ -319,7 +323,7 @@ export default function VueDensemblePage() {
               config={incomeChartConfig}
               data={incomeChartData}
               hideMobileCurve={true}
-              isLoading={incomeFlowLoading}
+              isLoading={incomeFlowLoading && !incomeFlowData}
               onPeriodChange={setIncomePeriod}
               serverFiltered
             />
@@ -335,7 +339,7 @@ export default function VueDensemblePage() {
               config={expenseChartConfig}
               data={expenseChartData}
               hideMobileCurve={true}
-              isLoading={expenseFlowLoading}
+              isLoading={expenseFlowLoading && !expenseFlowData}
               onPeriodChange={setExpensePeriod}
               serverFiltered
             />

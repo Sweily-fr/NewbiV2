@@ -11,6 +11,7 @@ import { Button } from "@/src/components/ui/button";
 import { Settings } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { CompanyInfoDialog } from "@/src/components/company-info-dialog";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Champs du document alimentés par la modale, pour que l'aperçu suive sans
 // recharger l'organisation.
@@ -40,6 +41,9 @@ const SYNCED_FIELDS = [
  * immédiatement, comme les coordonnées bancaires.
  */
 export default function CompanyInfoSettingsSection({ organization }) {
+  // Modifier les informations : droit « Informations de l'entreprise »
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditOrgSettings = !isReady || canWrite("orgSettings");
   const { setValue } = useFormContext();
   const [showDialog, setShowDialog] = useState(false);
   // L'organisation reçue en prop est chargée une fois par l'éditeur : on garde
@@ -95,15 +99,17 @@ export default function CompanyInfoSettingsSection({ organization }) {
             Votre logo, votre dénomination, votre adresse, votre nom commercial
             et votre activité réglementée sont communs à tous vos documents.
           </p>
-          <Button
-            type="button"
-            variant="link"
-            className="p-0 h-auto font-medium flex items-center gap-1 underline"
-            onClick={() => setShowDialog(true)}
-          >
-            <Settings className="h-4 w-4" />
-            Modifier vos informations entreprise
-          </Button>
+          {canEditOrgSettings && (
+            <Button
+              type="button"
+              variant="link"
+              className="p-0 h-auto font-medium flex items-center gap-1 underline"
+              onClick={() => setShowDialog(true)}
+            >
+              <Settings className="h-4 w-4" />
+              Modifier vos informations entreprise
+            </Button>
+          )}
         </div>
       </CardContent>
 

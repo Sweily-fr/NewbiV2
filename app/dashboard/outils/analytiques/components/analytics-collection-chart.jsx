@@ -19,9 +19,10 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -194,6 +195,7 @@ export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
             />
             <Tooltip content={<CustomTooltip colors={colors} />} />
             <Bar
+              animationDuration={300}
               dataKey="collectedTTC"
               name="Facture TTC encaissée"
               fill={COLLECTED_COLOR}
@@ -202,6 +204,7 @@ export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
               barSize={20}
             />
             <Bar
+              animationDuration={300}
               dataKey="unpaidTTC"
               name="Facture TTC impayée"
               fill={UNPAID_COLOR}

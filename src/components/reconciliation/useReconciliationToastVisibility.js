@@ -33,9 +33,12 @@ const hasOpenOverlay = () => {
  * du 15/09/2026) : chaque carte a son bouton « Masquer », c'est le seul geste
  * qui écarte une suggestion.
  *
+ * @param {boolean} enabled - observe le DOM seulement s'il y a des toasts à
+ *   afficher : l'observateur surveille tout le body (sous-arbre + attributs),
+ *   inutile la plupart du temps, quand aucune suggestion n'est en attente.
  * @returns {boolean} true si les toasts peuvent s'afficher
  */
-export function useReconciliationToastVisibility() {
+export function useReconciliationToastVisibility(enabled = true) {
   const [overlayOpen, setOverlayOpen] = useState(false);
 
   // Panneau ouvert → masquage, réévalué à chaque mutation du DOM (les
@@ -43,6 +46,7 @@ export function useReconciliationToastVisibility() {
   // attribut style du body).
   useEffect(() => {
     if (
+      !enabled ||
       typeof document === "undefined" ||
       typeof MutationObserver === "undefined"
     ) {
@@ -73,7 +77,7 @@ export function useReconciliationToastVisibility() {
       observer.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [enabled]);
 
   return !overlayOpen;
 }

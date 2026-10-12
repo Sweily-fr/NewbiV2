@@ -20,9 +20,10 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -178,6 +179,7 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
             />
             <Tooltip content={<CustomTooltip remap={remap} />} />
             <Area
+              animationDuration={300}
               type="bump"
               dataKey="cumulativeHT"
               stroke={remap("#5b50ff")}
@@ -186,6 +188,7 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
               strokeWidth={1.5}
             />
             <Area
+              animationDuration={300}
               type="bump"
               dataKey="cumulativeTTC"
               stroke={remap("#5b50ff")}

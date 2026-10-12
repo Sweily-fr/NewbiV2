@@ -22,8 +22,12 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useClient } from "@/src/graphql/clientQueries";
 import { useQuoteNumber } from "./use-quote-number";
-import posthog from "posthog-js";
-import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
+import { capture } from "@/src/lib/analytics";
+import {
+  formatCalendarDate,
+  formatLocalDate,
+  refreshDraftDates,
+} from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
@@ -31,6 +35,7 @@ import {
   normalizeAnnex,
   toAnnexInput,
 } from "@/src/utils/document-annex";
+import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1883,7 +1888,7 @@ export function useQuoteEditor({
             return false;
           }
 
-          posthog.capture("quote_created", {
+          capture("quote_created", {
             client_name: input.client?.name,
             currency: input.currency,
             status: "DRAFT",
@@ -2259,7 +2264,7 @@ export function useQuoteEditor({
             setValue("number", result.number);
           }
 
-          posthog.capture("quote_sent", {
+          capture("quote_sent", {
             client_name: input.client?.name,
             currency: input.currency,
             is_new_quote: !existingQuote?.id,
@@ -2641,12 +2646,8 @@ function transformQuoteToFormData(quote) {
             return "";
           }
 
-          const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-          const day = String(dateObj.getDate()).padStart(2, "0");
-          const result = `${year}-${month}-${day}`;
-
-          return result;
+          // Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM)
+          return formatCalendarDate(dateObj);
         } else {
           return "";
         }
@@ -2693,13 +2694,8 @@ function transformQuoteToFormData(quote) {
         return "";
       }
 
-      // Formater en YYYY-MM-DD
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const day = String(dateObj.getDate()).padStart(2, "0");
-      const result = `${year}-${month}-${day}`;
-
-      return result;
+      // Formater en YYYY-MM-DD (minuit UTC lu en date calendaire)
+      return formatCalendarDate(dateObj);
     } catch {
       return "";
     }
@@ -3310,7 +3306,7 @@ function transformFormDataToInput(
               }
             : null,
           shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
-          shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+          shippingVatRate: shippingVatRateOf(formData.shipping.shippingVatRate),
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,

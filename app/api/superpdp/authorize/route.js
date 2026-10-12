@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
@@ -9,7 +9,7 @@ import {
 /**
  * GET /api/superpdp/authorize
  *
- * Authentifie la session, vérifie l'appartenance à l'organisation, puis proxifie
+ * Authentifie la session, exige le droit de gérer les applications, puis proxifie
  * vers le backend Express (sécurisé par x-internal-secret) qui génère l'URL OAuth.
  */
 async function handler(request) {
@@ -24,7 +24,9 @@ async function handler(request) {
   }
 
   const { user } = await requireSession(request);
-  await requireOrgMembership(user.id, organizationId);
+  // Activer la facturation électronique : droit de gérer les applications
+  // (un rôle qui n'a que « Voir » est refusé)
+  await requireOrgAction(user.id, organizationId, "integrations", "manage");
 
   const backendUrl = (
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"

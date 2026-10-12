@@ -9,6 +9,7 @@ import {
 } from "@/src/hooks/useClientLists";
 import { useDeleteClient } from "@/src/hooks/useClients";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import {
@@ -138,7 +139,13 @@ export default function ClientsTable({
   const { addToLists } = useAddClientToLists();
   const { removeFromLists } = useRemoveClientFromLists();
   const { deleteClient } = useDeleteClient();
-  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
+  const { canRead, isReady } = useMyPermissions();
+  // Colonnes des champs personnalisés : données du module « Champs
+  // personnalisés » (requête sautée sans lecture)
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const { fields: customFieldDefinitions } = useClientCustomFields(
+    canReadCustomFields ? workspaceId : null,
+  );
   const [assigningLists, setAssigningLists] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

@@ -169,12 +169,14 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
               )}
             />
             <Bar
+              animationDuration={300}
               dataKey="invoiceCount"
               fill={remap("#5b50ff")}
               radius={[4, 4, 0, 0]}
               barSize={16}
             />
             <Bar
+              animationDuration={300}
               dataKey="expenseCount"
               fill={remap("#f87171")}
               radius={[4, 4, 0, 0]}

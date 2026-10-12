@@ -29,11 +29,12 @@ import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 import { TutorialProvider } from "@/src/contexts/tutorial-context";
-import { BottomNavBar } from "@/src/components/bottom-nav-bar";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 import { SessionGateProvider } from "@/src/contexts/session-gate-context";
 import { InactivityDetector } from "@/src/components/inactivity-detector";
 import { SessionValidityDetector } from "@/src/components/session-validity-detector";
 import { OrgChangeCrossTabDetector } from "@/src/components/org-change-cross-tab-detector";
+import { ModuleRouteGuard } from "@/src/components/rbac/ModuleRouteGuard";
 
 // Composants lourds ou rarement affichés : chargés dans leur propre chunk pour
 // alléger le bundle commun du dashboard (payé sur chaque page).
@@ -66,6 +67,12 @@ const TutorialOverlay = dynamic(
     ),
   { ssr: false },
 );
+// Barre de navigation et bannière d'installation : téléphone et petite
+// tablette seulement (la barre est masquée en CSS au-delà de 768 px).
+const BottomNavBar = dynamic(
+  () => import("@/src/components/bottom-nav-bar").then((m) => m.BottomNavBar),
+  { ssr: false },
+);
 const PwaInstallBanner = dynamic(
   () =>
     import("@/src/components/pwa-install-banner").then(
@@ -79,9 +86,35 @@ function DashboardContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const isMobile = useIsMobile();
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
+
+  // Lien vers un onglet des paramètres (ex. ?parametres=roles dans une
+  // demande d'accès) : ouvre la fenêtre sur cet onglet puis retire le
+  // paramètre de l'adresse
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("parametres");
+    if (!tab) return;
+    setSettingsInitialTab(tab);
+    setSettingsModalOpen(true);
+    params.delete("parametres");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [pathname, router]);
+
+  // Même ouverture depuis un toast ou une notification, sans changer de page
+  useEffect(() => {
+    const openSettings = (event) => {
+      setSettingsInitialTab(event.detail?.tab || "preferences");
+      setSettingsModalOpen(true);
+    };
+    window.addEventListener("newbi:open-settings", openSettings);
+    return () =>
+      window.removeEventListener("newbi:open-settings", openSettings);
+  }, []);
 
   // Les chunks de la modale de paramètres (~11 000 lignes de sections) et de
   // la sidebar communautaire ne sont téléchargés qu'à la première ouverture.
@@ -266,7 +299,9 @@ function DashboardContent({ children }) {
           />
           <div className="flex flex-1 flex-col overflow-y-auto">
             <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
-              <SessionGateProvider>{children}</SessionGateProvider>
+              <SessionGateProvider>
+                <ModuleRouteGuard>{children}</ModuleRouteGuard>
+              </SessionGateProvider>
               <InactivityDetector />
               <SessionValidityDetector />
               <OrgChangeCrossTabDetector />
@@ -351,10 +386,10 @@ function DashboardContent({ children }) {
         <TutorialOverlay />
 
         {/* PWA install banner — mobile uniquement */}
-        <PwaInstallBanner />
+        {isMobile && <PwaInstallBanner />}
 
         {/* Bottom Navigation Bar — mobile uniquement */}
-        {!settingsModalOpen && (
+        {isMobile && !settingsModalOpen && (
           <BottomNavBar
             onOpenSettings={() => {
               setSettingsInitialTab("preferences");

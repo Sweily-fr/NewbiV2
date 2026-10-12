@@ -160,7 +160,9 @@ async function handler(request) {
   );
 
   // 3. Récupérer l'abonnement actuel avec lock pour éviter les requêtes concurrentes
-  // ✅ CRITIQUE #5: Lock pour éviter les modifications concurrentes
+  // ✅ CRITIQUE #5: Lock pour éviter les modifications concurrentes. Chaque
+  // verrou porte son identifiant : une requête ne libère jamais que le sien.
+  const lockId = crypto.randomUUID();
   const lockResult = await mongoDb.collection("subscription").findOneAndUpdate(
     {
       referenceId: organizationId,
@@ -174,6 +176,7 @@ async function handler(request) {
       $set: {
         _lock: true,
         _lockUntil: Date.now() + 30000, // Lock pour 30 secondes max
+        _lockId: lockId,
       },
     },
     { returnDocument: "after" },
@@ -189,31 +192,29 @@ async function handler(request) {
     );
   }
 
-  // Fonction pour libérer le lock
+  // Fonction pour libérer le lock (le nôtre seulement : déjà libéré par la
+  // mise à jour du plan, ou repris par une autre requête après expiration,
+  // il n'est pas touché)
   const releaseLock = async () => {
     try {
       await mongoDb
         .collection("subscription")
         .updateOne(
-          { referenceId: organizationId },
-          { $set: { _lock: false }, $unset: { _lockUntil: 1 } },
+          { referenceId: organizationId, _lockId: lockId },
+          { $set: { _lock: false }, $unset: { _lockUntil: 1, _lockId: 1 } },
         );
     } catch (e) {
       console.error("Erreur libération lock:", e);
     }
   };
 
+  // Le verrou est libéré à la sortie, quel que soit le retour : les refus
+  // (paiement en retard, sièges payants, downgrade impossible, prix non
+  // configuré…) le gardaient jusqu'à son expiration et bloquaient toute
+  // nouvelle tentative pendant 30 secondes.
   try {
     // 3. Utiliser l'abonnement récupéré avec le lock
     const subscription = lockResult;
-
-    if (!subscription) {
-      await releaseLock();
-      return NextResponse.json(
-        { error: "Aucun abonnement trouvé" },
-        { status: 404 },
-      );
-    }
 
     const currentPlan = subscription.plan;
     const previousPlan = currentPlan; // Garder pour rollback
@@ -465,7 +466,6 @@ async function handler(request) {
       console.log(`✅ [CHANGE PLAN] Abonnement Stripe mis à jour`);
     } catch (stripeError) {
       console.error(`❌ [CHANGE PLAN] Erreur Stripe:`, stripeError);
-      await releaseLock();
       return NextResponse.json(
         { error: "Erreur lors de la mise à jour Stripe" },
         { status: 500 },
@@ -483,7 +483,7 @@ async function handler(request) {
             updatedAt: new Date(),
             _lock: false,
           },
-          $unset: { _lockUntil: 1 },
+          $unset: { _lockUntil: 1, _lockId: 1 },
         },
       );
       console.log(`✅ [CHANGE PLAN] MongoDB mis à jour`);
@@ -518,7 +518,6 @@ async function handler(request) {
         }
       }
 
-      await releaseLock();
       return NextResponse.json(
         { error: "Erreur lors de la mise à jour. Veuillez réessayer." },
         { status: 500 },
@@ -611,10 +610,8 @@ async function handler(request) {
       isAnnual,
       warnings: warnings.length > 0 ? warnings : undefined,
     });
-  } catch (error) {
-    // Libérer le lock en cas d'erreur non gérée
+  } finally {
     await releaseLock();
-    throw error;
   }
 }
 

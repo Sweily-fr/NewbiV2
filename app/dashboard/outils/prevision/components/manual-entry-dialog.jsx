@@ -54,11 +54,13 @@ import {
 } from "lucide-react";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { useMuteDetectedRecurrence } from "@/src/hooks/useDetectedRecurrences";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import CategorySearchSelect from "@/src/components/category-search-select";
 import {
   getCategoryLabel,
   isCategoryOfType,
 } from "@/lib/category-icons-config";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Catégorie (sous-catégorie fine ou code large hérité) gardée seulement si
 // elle est du sens demandé (une catégorie de dépense n'est pas valide pour
@@ -75,7 +77,7 @@ const FREQUENCIES = [
 ];
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -132,6 +134,10 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
   const { excludeOccurrence, loading: excluding } =
     useExcludeForecastOccurrence();
   const [toDelete, setToDelete] = useState(null);
+  // Retirer une occurrence d'un mois : action « edit » du rôle (tout
+  // autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canDo("forecast", "edit");
 
   const confirmDelete = async () => {
     if (!toDelete) return;
@@ -204,15 +210,17 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
                   {isIncome ? "+" : "−"}
                   {formatCurrency(occ.amount)}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setToDelete(occ)}
-                  disabled={excluding}
-                  className="p-1 rounded-md text-muted-foreground/40 hover:text-red-500 hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                  title="Supprimer cette prévision pour ce mois"
-                >
-                  <Trash2 size={13} />
-                </button>
+                {canEditForecast && (
+                  <button
+                    type="button"
+                    onClick={() => setToDelete(occ)}
+                    disabled={excluding}
+                    className="p-1 rounded-md text-muted-foreground/40 hover:text-red-500 hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                    title="Supprimer cette prévision pour ce mois"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -273,6 +281,10 @@ export function ManualEntryDialog({
   const { deleteEntry, loading: deleting } = useDeleteManualCashflowEntry();
   const { setMuted } = useMuteDetectedRecurrence();
   const { isScenario, scenarioName } = useForecastScenario();
+  // Supprimer une saisie : action « delete » du rôle (tout autorisé tant
+  // que la grille n'est pas chargée)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canDeleteForecast = !permissionsReady || canDo("forecast", "delete");
   // Ouverture depuis le « + » d'une récurrence détectée : la saisie créée
   // remplace la détection, masquée à l'enregistrement pour ne pas compter le
   // montant deux fois (dans un scénario, masquée dans ce scénario seulement).
@@ -755,7 +767,7 @@ export function ManualEntryDialog({
                 {/* Footer */}
                 <div className="flex items-center justify-between border-t border-border/40 mt-auto px-5 py-3 -mx-5">
                   <div>
-                    {entry?.id && (
+                    {entry?.id && canDeleteForecast && (
                       <button
                         type="button"
                         onClick={handleDelete}

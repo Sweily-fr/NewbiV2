@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { Package, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import PurchaseOrderSidebar from "@/app/dashboard/outils/bons-commande/components/purchase-order-sidebar";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
@@ -17,6 +19,7 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/src/components/ui/empty";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function safeFormatDate(dateString) {
   if (!dateString) return "-";
@@ -34,8 +37,17 @@ function safeFormatDate(dateString) {
   }
 }
 
-export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId }) {
+export default function ClientPurchaseOrdersTab({
+  purchaseOrders = [],
+  clientId,
+}) {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
+  const newDocumentHref = `/dashboard/outils/bons-commande/new?clientId=${clientId}`;
+  const { canDo, isReady } = useMyPermissions();
+  // Bouton « Nouveau » = action « create » (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canCreatePurchaseOrders = !isReady || canDo("purchaseOrders", "create");
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -50,11 +62,11 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
           if (isNaN(dateB.getTime())) return -1;
           return dateB - dateA;
         }),
-    [purchaseOrders, clientId]
+    [purchaseOrders, clientId],
   );
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat("fr-FR", {
+    getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);
@@ -66,7 +78,7 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
       <span
         className={cn(
           "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
-          colors
+          colors,
         )}
       >
         {label}
@@ -87,14 +99,17 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
               Ce client n&apos;a pas encore de bon de commande.
             </EmptyDescription>
           </EmptyHeader>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouveau bon de commande
-          </Button>
+          {canCreatePurchaseOrders && (
+            <Button
+              variant="outline"
+              className="mt-4"
+              {...prefetchIntent(newDocumentHref)}
+              onClick={() => router.push(newDocumentHref)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nouveau bon de commande
+            </Button>
+          )}
         </Empty>
       </div>
     );
@@ -103,14 +118,19 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
-        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">Bons de commande</h3>
-        <Button
-          variant="outline"
-          onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nouveau bon de commande
-        </Button>
+        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
+          Bons de commande
+        </h3>
+        {canCreatePurchaseOrders && (
+          <Button
+            variant="outline"
+            {...prefetchIntent(newDocumentHref)}
+            onClick={() => router.push(newDocumentHref)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nouveau bon de commande
+          </Button>
+        )}
       </div>
 
       <div className="overflow-auto">

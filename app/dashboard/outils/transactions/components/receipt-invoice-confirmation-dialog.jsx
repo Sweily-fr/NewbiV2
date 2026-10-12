@@ -36,6 +36,7 @@ import {
   summarizeVatLines,
   toVatLinesForm,
 } from "@/src/utils/purchase-invoice-vat";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Largeur de la colonne de saisie, le document occupant le reste
 const FORM_PANE_WIDTH = 420;
@@ -146,7 +147,7 @@ const DUPLICATE_REASONS = {
 
 const formatAmount = (amount, currency = "EUR") =>
   typeof amount === "number"
-    ? new Intl.NumberFormat("fr-FR", {
+    ? getNumberFormat("fr-FR", {
         style: "currency",
         currency: currency || "EUR",
       }).format(amount)
@@ -426,7 +427,9 @@ export function ReceiptInvoiceConfirmationDialog({
                   Math.abs(Number(transaction?.amount) || 0),
                   transaction?.currency,
                 )}
-                {transaction?.description ? ` · ${transaction.description}` : ""}
+                {transaction?.description
+                  ? ` · ${transaction.description}`
+                  : ""}
               </DialogDescription>
               <div className="mt-3 md:hidden">
                 <DocumentEyeButton

@@ -79,7 +79,6 @@ function ManageDevicesContent() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState(null);
-  const [currentToken, setCurrentToken] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
     type: null,
@@ -91,7 +90,6 @@ function ManageDevicesContent() {
       try {
         const res = await fetch("/api/check-session-limit");
         const data = await res.json();
-        setCurrentToken(data.currentSessionToken);
         setSessions(
           (data.sessions || []).map((s) => ({
             ...s,
@@ -99,7 +97,9 @@ function ManageDevicesContent() {
             os: parseOS(s.userAgent),
             deviceType: parseDeviceType(s.userAgent),
             activity: formatActivity(s.updatedAt || s.createdAt),
-            isCurrent: s.token === data.currentSessionToken,
+            // Calculé par le serveur : les jetons de session ne sont plus
+            // exposés au navigateur
+            isCurrent: Boolean(s.isCurrent),
           })),
         );
       } catch {
@@ -111,16 +111,16 @@ function ManageDevicesContent() {
     fetchSessions();
   }, []);
 
-  const handleRevoke = async (token) => {
-    setRevoking(token);
+  const handleRevoke = async (sessionId) => {
+    setRevoking(sessionId);
     try {
       const res = await fetch("/api/revoke-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionToken: token }),
+        body: JSON.stringify({ sessionId }),
       });
       if (res.ok) {
-        setSessions((prev) => prev.filter((s) => s.token !== token));
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
         toast.success("Session révoquée");
       }
     } catch {
@@ -137,7 +137,6 @@ function ManageDevicesContent() {
       const res = await fetch("/api/revoke-all-other-sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentSessionToken: currentToken }),
       });
       if (res.ok) {
         setSessions((prev) => prev.filter((s) => s.isCurrent));
@@ -270,14 +269,14 @@ function ManageDevicesContent() {
                         setConfirmDialog({
                           open: true,
                           type: "revoke-one",
-                          token: session.token,
+                          token: session.id,
                         })
                       }
-                      disabled={revoking === session.token}
+                      disabled={revoking === session.id}
                       className="text-[12px] text-muted-foreground/40 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer disabled:opacity-50 shrink-0"
                       aria-label={`Révoquer la session ${session.browser} sur ${session.os}`}
                     >
-                      {revoking === session.token ? (
+                      {revoking === session.id ? (
                         <Loader2 className="size-3 animate-spin" />
                       ) : (
                         "Révoquer"

@@ -59,6 +59,7 @@ import { useQuery } from "@apollo/client";
 import { GET_CLIENT } from "@/src/graphql/queries/clients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
@@ -74,6 +75,19 @@ export default function ClientsModal({
   const [isMobile, setIsMobile] = useState(false);
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // enregistrer = « edit » sur une fiche existante, « create » sinon
+  const canSaveClient =
+    !isReady || canDo("clients", client ? "edit" : "create");
+  // Rappel = nouvel événement du calendrier
+  const canCreateReminder = !isReady || canDo("calendar", "create");
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  // Rattachement à la liste courante = modification de la liste
+  const canEditClientLists = !isReady || canDo("clientLists", "edit");
+  const roleTooltip = !canSaveClient
+    ? "Votre rôle ne permet pas cette action"
+    : undefined;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -180,8 +194,9 @@ export default function ClientsModal({
   }, [fullClient]);
 
   // Définitions des champs personnalisés (pour valider les champs obligatoires)
-  const { fields: customFieldDefinitions } =
-    useClientCustomFields(finalWorkspaceId);
+  const { fields: customFieldDefinitions } = useClientCustomFields(
+    canReadCustomFields ? finalWorkspaceId : null,
+  );
 
   // Handler pour les changements de champs personnalisés
   const handleCustomFieldChange = (fieldId, value) => {
@@ -625,7 +640,7 @@ export default function ClientsModal({
         }
 
         // Si un defaultListId est fourni, ajouter le contact à cette liste
-        if (defaultListId && workspaceId && result?.id) {
+        if (defaultListId && workspaceId && result?.id && canEditClientLists) {
           try {
             await addToLists(workspaceId, result.id, [defaultListId]);
           } catch (error) {
@@ -1482,21 +1497,25 @@ export default function ClientsModal({
                   >
                     Annuler
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      loading ||
-                      Object.keys(errors).length > 0 ||
-                      Object.keys(customErrors).length > 0
-                    }
-                    className="flex-1"
-                  >
-                    {loading
-                      ? "Enregistrement..."
-                      : client
-                        ? "Modifier"
-                        : "Créer un contact"}
-                  </Button>
+                  {canSaveClient && (
+                    <Button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        !canSaveClient ||
+                        Object.keys(errors).length > 0 ||
+                        Object.keys(customErrors).length > 0
+                      }
+                      title={roleTooltip}
+                      className="flex-1"
+                    >
+                      {loading
+                        ? "Enregistrement..."
+                        : client
+                          ? "Modifier"
+                          : "Créer un contact"}
+                    </Button>
+                  )}
                 </div>
               </form>
             </div>
@@ -2294,22 +2313,26 @@ export default function ClientsModal({
                   >
                     Annuler
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      loading ||
-                      Object.keys(errors).length > 0 ||
-                      Object.keys(customErrors).length > 0
-                    }
-                    className="flex-1 font-normal"
-                    size="sm"
-                  >
-                    {loading
-                      ? "Enregistrement..."
-                      : client
-                        ? "Modifier"
-                        : "Créer un contact"}
-                  </Button>
+                  {canSaveClient && (
+                    <Button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        !canSaveClient ||
+                        Object.keys(errors).length > 0 ||
+                        Object.keys(customErrors).length > 0
+                      }
+                      title={roleTooltip}
+                      className="flex-1 font-normal"
+                      size="sm"
+                    >
+                      {loading
+                        ? "Enregistrement..."
+                        : client
+                          ? "Modifier"
+                          : "Créer un contact"}
+                    </Button>
+                  )}
                 </div>
               </form>
             </TabsContent>
@@ -2318,7 +2341,7 @@ export default function ClientsModal({
               value="activity"
               className="flex-1 overflow-hidden m-0 flex flex-col"
             >
-              {isEditing && (
+              {isEditing && canCreateReminder && (
                 <div className="flex-shrink-0 px-4 py-2 border-b flex justify-end">
                   <Button
                     type="button"

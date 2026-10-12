@@ -149,6 +149,14 @@ const notificationCategories = {
         email: true,
         push: true,
       },
+      {
+        key: "kanban_mention",
+        label: "Mentions dans les tâches",
+        description:
+          "Quand quelqu'un vous mentionne dans un commentaire de tâche",
+        email: true,
+        push: true,
+      },
     ],
   },
 };
@@ -719,6 +727,15 @@ export function NotificationsSection({ onClose }) {
                       if (!notification.read) {
                         markActivityAsRead(notification.id);
                       }
+                      // Demande d'accès : bascule sur l'onglet Rôles
+                      if (notification.type === "ACCESS_REQUESTED") {
+                        window.dispatchEvent(
+                          new CustomEvent("newbi:open-settings", {
+                            detail: { tab: "roles" },
+                          }),
+                        );
+                        return;
+                      }
                       if (notification.data?.url) {
                         if (onClose) onClose();
                         try {
@@ -751,7 +768,8 @@ export function NotificationsSection({ onClose }) {
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
                       {notification.type === "PURCHASE_INVOICE_RECEIVED" ||
-                      notification.type === "DOCUMENT_IMPORTED" ? (
+                      notification.type === "DOCUMENT_IMPORTED" ||
+                      notification.type === "ACCESS_REQUESTED" ? (
                         <>
                           <p className="text-sm truncate max-w-[600px] font-medium">
                             {notification.title || "Nouvelle facture reçue"}

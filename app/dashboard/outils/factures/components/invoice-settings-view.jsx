@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 import LegalInfoSettingsSection from "@/src/components/settings/legal-info-settings-section";
 import DocumentAnnexField from "@/src/components/documents/document-annex-field";
@@ -80,6 +81,10 @@ export default function InvoiceSettingsView({
     formState: { errors },
   } = useFormContext();
   const data = watch();
+  // Coordonnées bancaires communes : paramètres de l'entreprise (tout
+  // autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditOrgSettings = !isReady || canWrite("orgSettings");
 
   // Hook pour la numérotation séquentielle des factures
   const autoNumbering = data.autoNumbering || false;
@@ -564,17 +569,19 @@ export default function InvoiceSettingsView({
                     ? "Votre IBAN, votre BIC et le nom de votre banque sont communs à tous vos documents."
                     : "Aucune coordonnée bancaire n'est configurée pour votre entreprise."}
                 </p>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 h-auto font-medium flex items-center gap-1 underline"
-                  onClick={() => setShowBankDetailsDialog(true)}
-                >
-                  <Settings className="h-4 w-4" />
-                  {hasBankDetails
-                    ? "Modifier vos coordonnées bancaires"
-                    : "Configurer les coordonnées bancaires"}
-                </Button>
+                {canEditOrgSettings && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto font-medium flex items-center gap-1 underline"
+                    onClick={() => setShowBankDetailsDialog(true)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    {hasBankDetails
+                      ? "Modifier vos coordonnées bancaires"
+                      : "Configurer les coordonnées bancaires"}
+                  </Button>
+                )}
               </div>
 
               {hasBankDetails && (
@@ -1102,25 +1109,19 @@ export default function InvoiceSettingsView({
         </div>
       </div>
 
-      {/* Boutons fixes en bas */}
-      <div className="flex-shrink-0 border-t bg-background pt-4">
-        <div className="max-w-2xl mx-auto flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={handleCancelClick}
-            disabled={!canEdit}
-          >
-            Annuler
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSaveClick}
-            disabled={!canEdit}
-          >
-            {saveLabel}
-          </Button>
+      {/* Boutons fixes en bas : masqués en lecture seule (consultation) */}
+      {canEdit && (
+        <div className="flex-shrink-0 border-t bg-background pt-4">
+          <div className="max-w-2xl mx-auto flex justify-end gap-3">
+            <Button variant="outline" onClick={handleCancelClick}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleSaveClick}>
+              {saveLabel}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Dialog de confirmation */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

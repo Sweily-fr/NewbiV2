@@ -471,12 +471,15 @@ export default function ImportStepMapping({
                         <SelectValue placeholder="Choisir un champ..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__create__">
-                          <span className="flex items-center gap-1">
-                            <Plus className="h-3 w-3" />
-                            Créer un champ
-                          </span>
-                        </SelectItem>
+                        {/* Création réservée à l'écriture sur les champs */}
+                        {onCreateCustomField && (
+                          <SelectItem value="__create__">
+                            <span className="flex items-center gap-1">
+                              <Plus className="h-3 w-3" />
+                              Créer un champ
+                            </span>
+                          </SelectItem>
+                        )}
                         {availableExistingCustomFields.length > 0 && (
                           <>
                             <SelectSeparator />

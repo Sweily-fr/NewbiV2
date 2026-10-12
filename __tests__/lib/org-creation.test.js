@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ObjectId } from "mongodb";
 
 // `org-creation.js` dynamically imports `./auth-utils.js` from inside the
@@ -43,6 +43,7 @@ import { createOrganizationWithSubscription } from "@/src/lib/org-creation";
  */
 function buildCollection(overrides = {}) {
   return {
+    find: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue([]) })),
     findOne: vi.fn().mockResolvedValue(null),
     insertOne: vi.fn().mockResolvedValue({ insertedId: new ObjectId() }),
     updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
@@ -162,21 +163,23 @@ describe("createOrganizationWithSubscription — new org path", () => {
   });
 });
 
-describe("createOrganizationWithSubscription — existing membership", () => {
-  it("updates the existing organization when user already has a member doc", async () => {
-    const existingOrgId = new ObjectId();
-    const existingMember = {
-      userId: new ObjectId(userId),
-      organizationId: existingOrgId,
-    };
-    const existingOrg = { _id: existingOrgId, siret: "11111111100011" };
+/** Appartenances renvoyées par member.find(). */
+const membershipsOf = (...list) =>
+  vi.fn(() => ({ toArray: vi.fn().mockResolvedValue(list) }));
 
+describe("createOrganizationWithSubscription — existing membership", () => {
+  it("reuses an owned organization with the same SIRET", async () => {
+    const existingOrgId = new ObjectId();
     const collections = {
       member: buildCollection({
-        findOne: vi.fn().mockResolvedValue(existingMember),
+        find: membershipsOf({
+          userId: new ObjectId(userId),
+          organizationId: existingOrgId,
+          role: "owner",
+        }),
       }),
       organization: buildCollection({
-        findOne: vi.fn().mockResolvedValue(existingOrg),
+        findOne: vi.fn().mockResolvedValue({ _id: existingOrgId }),
       }),
     };
     const mongoDb = buildMongoDb(collections);
@@ -192,29 +195,30 @@ describe("createOrganizationWithSubscription — existing membership", () => {
     expect(result.orgUpdated).toBe(true);
     expect(result.orgCreated).toBe(false);
     expect(result.organizationId).toBe(existingOrgId.toString());
-    // organization.updateOne is called for the update
+    // Recherche limitée aux espaces dont il est propriétaire
+    const [query] = collections.organization.findOne.mock.calls[0];
+    expect(query).toEqual({
+      _id: { $in: [existingOrgId] },
+      siret: "11111111100011",
+    });
     expect(collections.organization.updateOne).toHaveBeenCalled();
-    // No new org inserted
     expect(collections.organization.insertOne).not.toHaveBeenCalled();
   });
 
-  it("creates a NEW org when existing org has a different SIRET (second org)", async () => {
+  it("creates a NEW org when the owned org has a different SIRET (second org)", async () => {
     const oldOrgId = new ObjectId();
     const newOrgId = new ObjectId();
     const collections = {
       member: buildCollection({
-        findOne: vi.fn().mockResolvedValue({
+        find: membershipsOf({
           userId: new ObjectId(userId),
           organizationId: oldOrgId,
+          role: "owner",
         }),
       }),
       organization: buildCollection({
-        findOne: vi
-          .fn()
-          // First lookup: existing org by member's organizationId → has DIFFERENT SIRET
-          .mockResolvedValueOnce({ _id: oldOrgId, siret: "AAAAAAAAAAAAAA" })
-          // Second lookup: looking up by new SIRET → not found
-          .mockResolvedValueOnce(null),
+        // Aucun espace possédé avec ce SIRET
+        findOne: vi.fn().mockResolvedValue(null),
         insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),
       }),
     };
@@ -232,14 +236,16 @@ describe("createOrganizationWithSubscription — existing membership", () => {
     expect(collections.organization.insertOne).toHaveBeenCalledTimes(1);
   });
 
-  it("attaches user to an existing org found by SIRET when user has no membership", async () => {
-    const existingOrgId = new ObjectId();
+  it("never attaches the user to someone else's org found by SIRET", async () => {
+    const strangerOrgId = new ObjectId();
+    const newOrgId = new ObjectId();
     const collections = {
-      member: buildCollection({ findOne: vi.fn().mockResolvedValue(null) }),
+      member: buildCollection({ find: membershipsOf() }),
       organization: buildCollection({
         findOne: vi
           .fn()
-          .mockResolvedValueOnce({ _id: existingOrgId, siret: "999" }),
+          .mockResolvedValue({ _id: strangerOrgId, siret: "999" }),
+        insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),
       }),
     };
     const mongoDb = buildMongoDb(collections);
@@ -251,9 +257,83 @@ describe("createOrganizationWithSubscription — existing membership", () => {
       subscriptionInfo: null,
     });
 
-    expect(result.orgUpdated).toBe(true);
+    expect(result.orgCreated).toBe(true);
+    expect(result.organizationId).toBe(newOrgId.toString());
+    // Ni mise à jour ni rattachement de l'espace du tiers
+    for (const [filter] of collections.organization.updateOne.mock.calls) {
+      expect(String(filter._id)).not.toBe(strangerOrgId.toString());
+    }
+    for (const [filter] of collections.member.updateOne.mock.calls) {
+      expect(String(filter.organizationId)).not.toBe(strangerOrgId.toString());
+    }
+  });
+
+  it("never overwrites an org where the user is only an invited member", async () => {
+    const invitingOrgId = new ObjectId();
+    const newOrgId = new ObjectId();
+    const collections = {
+      member: buildCollection({
+        find: membershipsOf({
+          userId: new ObjectId(userId),
+          organizationId: invitingOrgId,
+          role: "member",
+        }),
+        // Ancien code : première appartenance trouvée
+        findOne: vi.fn().mockResolvedValue({
+          userId: new ObjectId(userId),
+          organizationId: invitingOrgId,
+          role: "member",
+        }),
+      }),
+      organization: buildCollection({
+        findOne: vi.fn().mockResolvedValue({ _id: invitingOrgId, siret: "" }),
+        insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),
+      }),
+    };
+    const mongoDb = buildMongoDb(collections);
+
+    const result = await createOrganizationWithSubscription({
+      mongoDb,
+      userId,
+      orgData: { companyName: "Ma société", siret: "12345678900011" },
+      subscriptionInfo: null,
+    });
+
+    expect(result.orgCreated).toBe(true);
+    expect(result.organizationId).toBe(newOrgId.toString());
+    for (const [filter] of collections.organization.updateOne.mock.calls) {
+      expect(String(filter._id)).not.toBe(invitingOrgId.toString());
+    }
+  });
+
+  it("reuses the owned org already linked to the same Stripe subscription (replay)", async () => {
+    const ownedOrgId = new ObjectId();
+    const collections = {
+      member: buildCollection({
+        find: membershipsOf({
+          userId: new ObjectId(userId),
+          organizationId: ownedOrgId,
+          role: "owner",
+        }),
+      }),
+      subscription: buildCollection({
+        findOne: vi
+          .fn()
+          .mockResolvedValue({ referenceId: ownedOrgId.toString() }),
+      }),
+      organization: buildCollection(),
+    };
+    const mongoDb = buildMongoDb(collections);
+
+    const result = await createOrganizationWithSubscription({
+      mongoDb,
+      userId,
+      orgData: { companyName: "Acme" },
+      subscriptionInfo: { id: "sub_1", status: "active", customer: "cus_1" },
+    });
+
     expect(result.orgCreated).toBe(false);
-    expect(result.organizationId).toBe(existingOrgId.toString());
+    expect(result.organizationId).toBe(ownedOrgId.toString());
     expect(collections.organization.insertOne).not.toHaveBeenCalled();
   });
 
@@ -730,6 +810,14 @@ describe("createOrganizationWithSubscription — pending data cleanup", () => {
 
 // Lot 3 — app-managed trial branch
 describe("createOrganizationWithSubscription — appTrialDays branch", () => {
+  // L'essai géré par l'application n'existe que sous ENABLE_APP_TRIAL
+  beforeEach(() => {
+    vi.stubEnv("ENABLE_APP_TRIAL", "true");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("grants a 30-day app trial when appTrialDays is set and no subscriptionInfo", async () => {
     const newOrgId = new ObjectId();
     const orgUpdates = [];
@@ -773,23 +861,24 @@ describe("createOrganizationWithSubscription — appTrialDays branch", () => {
     const otherOrgId = new ObjectId();
     const orgUpdates = [];
 
-    // First call (.findOne in step 1) returns null = no existing membership match,
-    // so we create a new org. Second call (.findOne in step 4b decision-16
-    // lookup) returns the OTHER user's org with hasUsedTrial=true.
-    const memberFindOne = vi
-      .fn()
-      .mockResolvedValueOnce(null) // step 1: no existing member
-      .mockResolvedValueOnce({
-        userId: new ObjectId(userId),
-        organizationId: otherOrgId,
-      }); // step 4b: yes, user has another org
+    // Step 1 (.findOne) returns null = no existing membership match, so we
+    // create a new org. Step 4b (decision-16 lookup, .find on every other
+    // membership) returns the user's OTHER org, which has hasUsedTrial=true.
+    const memberFindOne = vi.fn().mockResolvedValue(null);
+    const memberFind = vi.fn(() => ({
+      toArray: vi
+        .fn()
+        .mockResolvedValue([
+          { userId: new ObjectId(userId), organizationId: otherOrgId },
+        ]),
+    }));
 
     const orgFindOne = vi
       .fn()
       .mockResolvedValueOnce({ _id: otherOrgId, hasUsedTrial: true });
 
     const collections = {
-      member: buildCollection({ findOne: memberFindOne }),
+      member: buildCollection({ findOne: memberFindOne, find: memberFind }),
       organization: buildCollection({
         findOne: orgFindOne,
         insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),
@@ -844,5 +933,72 @@ describe("createOrganizationWithSubscription — appTrialDays branch", () => {
       (u) => u?.$set?.onboardingStep === "completed",
     );
     expect(completedPatch).toBeUndefined();
+  });
+});
+
+describe("stampSubscriptionOrganization", () => {
+  it("inscrit le nouvel espace dans les métadonnées Stripe", async () => {
+    const { stampSubscriptionOrganization } =
+      await import("@/src/lib/org-creation");
+    const update = vi.fn().mockResolvedValue({});
+    const stripe = { subscriptions: { update } };
+    const orgId = new ObjectId();
+
+    const done = await stampSubscriptionOrganization(
+      stripe,
+      {
+        id: "sub_1",
+        metadata: { organizationId: "ancien", isNewOrganization: "true" },
+      },
+      orgId,
+    );
+
+    expect(done).toBe(true);
+    expect(update).toHaveBeenCalledWith("sub_1", {
+      metadata: {
+        referenceId: orgId.toString(),
+        organizationId: orgId.toString(),
+      },
+    });
+  });
+
+  it("ne rappelle pas Stripe si les métadonnées sont déjà bonnes", async () => {
+    const { stampSubscriptionOrganization } =
+      await import("@/src/lib/org-creation");
+    const update = vi.fn();
+    const done = await stampSubscriptionOrganization(
+      { subscriptions: { update } },
+      { id: "sub_1", metadata: { referenceId: "o1", organizationId: "o1" } },
+      "o1",
+    );
+    expect(done).toBe(false);
+    expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe("attachSubscriptionToOrganization", () => {
+  it("crée l'abonnement sans toucher aux membres ni à l'identité de l'espace", async () => {
+    const { attachSubscriptionToOrganization } =
+      await import("@/src/lib/org-creation");
+    const orgId = new ObjectId();
+    const mongoDb = buildMongoDb({
+      subscription: buildCollection({
+        findOne: vi.fn().mockResolvedValue(null),
+      }),
+    });
+
+    const created = await attachSubscriptionToOrganization({
+      mongoDb,
+      organizationId: orgId.toString(),
+      subscriptionInfo: { id: "sub_1", status: "active", customer: "cus_1" },
+    });
+
+    expect(created).toBe(true);
+    const doc = mongoDb._cache.subscription.insertOne.mock.calls[0][0];
+    expect(doc.referenceId).toBe(orgId.toString());
+    expect(mongoDb._cache.member).toBeUndefined();
+    const [, update] = mongoDb._cache.organization.updateOne.mock.calls[0];
+    expect(update.$set.companyName).toBeUndefined();
+    expect(update.$set.siret).toBeUndefined();
   });
 });

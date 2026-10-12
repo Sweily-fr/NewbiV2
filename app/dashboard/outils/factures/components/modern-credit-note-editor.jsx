@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef } from "react";
 import { FormProvider } from "react-hook-form";
 import {
@@ -16,9 +18,9 @@ import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useCreditNoteEditor } from "../hooks/use-credit-note-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import EnhancedCreditNoteForm from "./enhanced-credit-note-form";
 import { getActiveOrganization } from "@/src/lib/organization-client";
-import { SendDocumentModal } from "./send-document-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,26 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import { getNumberFormat } from "@/src/lib/intl-cache";
+import { chunkLoadFallback } from "@/src/lib/chunk-load-fallback";
+import { usePreloadOnIdle } from "@/src/hooks/usePreloadOnIdle";
+import { useUnsavedChangesWarning } from "@/src/hooks/useUnsavedChangesWarning";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const SendDocumentModal = dynamic(
+  () =>
+    import("./send-document-modal")
+      .then((m) => m.SendDocumentModal)
+      .catch(chunkLoadFallback),
+  { ssr: false },
+);
+
+// Préchargées quand le navigateur est inactif après l'ouverture de l'éditeur :
+// déjà là si une nouvelle version est mise en ligne pendant la saisie.
+const preloadEditorModules = () =>
+  Promise.all([import("./send-document-modal")]);
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -92,6 +114,11 @@ export default function ModernCreditNoteEditor({
   // (Les avoirs n'ont pas de concept de brouillon : on propose juste de rester ou quitter.)
   const hasUserChanges = isDirty;
   const guardActive = hasUserChanges && !isReadOnly;
+
+  // Modifications non enregistrées : confirmation du navigateur avant de
+  // recharger ou fermer l'onglet.
+  useUnsavedChangesWarning(guardActive);
+  usePreloadOnIdle(preloadEditorModules);
 
   // Retour vers la LISTE des factures : on arrive sur l'avoir depuis la liste
   // (sidebar ou menu de ligne). La page détail /factures/[id] rouvre un éditeur
@@ -164,7 +191,7 @@ export default function ModernCreditNoteEditor({
           number: `${result.creditNote.prefix || "AV"}-${result.creditNote.number}`,
           clientName: result.creditNote.client?.name,
           clientEmail: result.creditNote.client?.email,
-          totalAmount: new Intl.NumberFormat("fr-FR", {
+          totalAmount: getNumberFormat("fr-FR", {
             style: "currency",
             currency: "EUR",
           }).format(amount),
@@ -319,22 +346,24 @@ export default function ModernCreditNoteEditor({
         {/* Right Panel - PDF Preview */}
         <div className="hidden lg:flex bg-muted/30 border-l flex-col h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto pl-4 pr-4 pt-6 pb-6 md:pl-18 md:pr-18 md:pt-22 md:pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a]">
-            <div ref={pdfRef}>
-              <UniversalPreviewPDF
-                data={{
-                  ...formData,
-                  originalInvoice,
-                  // L'avoir reprend les champs personnalisés de la facture d'origine
-                  client: formData.client && {
-                    ...formData.client,
-                    documentFields:
-                      originalInvoice?.client?.documentFields ??
-                      formData.client.documentFields,
-                  },
-                }}
-                type="creditNote"
-              />
-            </div>
+            <A4PreviewFrame>
+              <div ref={pdfRef}>
+                <UniversalPreviewPDF
+                  data={{
+                    ...formData,
+                    originalInvoice,
+                    // L'avoir reprend les champs personnalisés de la facture d'origine
+                    client: formData.client && {
+                      ...formData.client,
+                      documentFields:
+                        originalInvoice?.client?.documentFields ??
+                        formData.client.documentFields,
+                    },
+                  }}
+                  type="creditNote"
+                />
+              </div>
+            </A4PreviewFrame>
           </div>
         </div>
       </div>
@@ -364,7 +393,7 @@ export default function ModernCreditNoteEditor({
       </AlertDialog>
 
       {/* Modal d'envoi par email */}
-      {createdCreditNoteData && (
+      {createdCreditNoteData && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}

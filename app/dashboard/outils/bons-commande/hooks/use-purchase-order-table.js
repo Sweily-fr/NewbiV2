@@ -36,6 +36,7 @@ import PurchaseOrderRowActions from "../components/purchase-order-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -78,13 +79,6 @@ const formatDateForSearch = (dateValue) => {
       `${day}`,
       `${month}/${year}`,
       `${month}-${year}`,
-      date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }),
-      date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-      date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
     ].filter((value, index, self) => value && self.indexOf(value) === index);
   } catch {
     return [];
@@ -567,7 +561,7 @@ export function usePurchaseOrderTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -597,7 +591,7 @@ export function usePurchaseOrderTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -645,7 +639,7 @@ export function usePurchaseOrderTable({
 
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -702,6 +696,22 @@ export function usePurchaseOrderTable({
     }
   }, [data]);
 
+  // Filtres de colonnes mémoïsés : un tableau recréé à chaque rendu faisait
+  // recalculer à react-table tout le modèle filtré (recherche comprise) à
+  // chaque rendu, même sans changement de filtre.
+  const columnFilters = useMemo(
+    () => [
+      ...(statusFilter.length > 0
+        ? [{ id: "status", value: statusFilter }]
+        : []),
+      ...(clientFilter.length > 0
+        ? [{ id: "client", value: clientFilter }]
+        : []),
+      ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+    ],
+    [statusFilter, clientFilter, dateFilter],
+  );
+
   // Create table instance with optimized settings
   const table = useReactTable({
     data,
@@ -725,15 +735,7 @@ export function usePurchaseOrderTable({
     state: {
       globalFilter,
       columnVisibility,
-      columnFilters: [
-        ...(statusFilter.length > 0
-          ? [{ id: "status", value: statusFilter }]
-          : []),
-        ...(clientFilter.length > 0
-          ? [{ id: "client", value: clientFilter }]
-          : []),
-        ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
-      ],
+      columnFilters,
     },
     filterFns: {
       status: memoizedStatusFilter,

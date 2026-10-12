@@ -9,6 +9,7 @@ import { WorkspacePreview } from "@/src/components/create-workspace/workspace-pr
 import { PlanForm } from "@/src/components/create-workspace/plan-form";
 import { InviteForm } from "@/src/components/create-workspace/invite-form";
 import { ConfirmationForm } from "@/src/components/create-workspace/confirmation-form";
+import { DEFAULT_INVITE_ROLE } from "@/src/lib/role-labels";
 
 export default function CreateWorkspacePage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function CreateWorkspacePage() {
   const [isNameFocused, setIsNameFocused] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(savedState?.selectedPlan || null);
   const [isAnnual, setIsAnnual] = useState(savedState?.isAnnual ?? true);
-  const [members, setMembers] = useState(savedState?.members || [{ email: "", role: "member" }, { email: "", role: "member" }]);
+  const [members, setMembers] = useState(savedState?.members || [{ email: "", role: DEFAULT_INVITE_ROLE }, { email: "", role: DEFAULT_INVITE_ROLE }]);
   const [logoUrl, setLogoUrl] = useState(savedState?.logoUrl || null);
 
   // Persist form state to sessionStorage on change

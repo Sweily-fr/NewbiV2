@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Palette, ChevronDown, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import {
+  Palette,
+  ChevronDown,
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import {
   Collapsible,
@@ -22,8 +29,11 @@ import { cn } from "@/src/lib/utils";
 import { useCalendarColorLabels } from "@/src/hooks/useCalendarColorLabels";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 
-export function ColorLegend() {
-  const { labels, loading, updateLoading, updateLabels } = useCalendarColorLabels();
+// canEdit : ajout et modification des étiquettes (rôle avec écriture sur le
+// calendrier) ; sinon légende en consultation
+export function ColorLegend({ canEdit = true }) {
+  const { labels, loading, updateLoading, updateLabels } =
+    useCalendarColorLabels();
   const [isOpen, setIsOpen] = useState(false);
 
   // Modal state
@@ -51,7 +61,7 @@ export function ColorLegend() {
       setLabelText(entry.label);
       setDialogOpen(true);
     },
-    [labels]
+    [labels],
   );
 
   const handleSave = useCallback(async () => {
@@ -65,17 +75,24 @@ export function ColorLegend() {
     if (editingIndex !== null) {
       // Edit existing
       newLabels = labels.map((entry, i) =>
-        i === editingIndex ? { color: selectedColor, label: trimmed } : { color: entry.color, label: entry.label }
+        i === editingIndex
+          ? { color: selectedColor, label: trimmed }
+          : { color: entry.color, label: entry.label },
       );
     } else {
       // Add new
-      newLabels = [...labels.map(({ color, label }) => ({ color, label })), { color: selectedColor, label: trimmed }];
+      newLabels = [
+        ...labels.map(({ color, label }) => ({ color, label })),
+        { color: selectedColor, label: trimmed },
+      ];
     }
 
     try {
       await updateLabels(newLabels);
       setDialogOpen(false);
-      toast.success(editingIndex !== null ? "Étiquette modifiée" : "Étiquette ajoutée");
+      toast.success(
+        editingIndex !== null ? "Étiquette modifiée" : "Étiquette ajoutée",
+      );
     } catch {
       toast.error("Erreur lors de la sauvegarde");
     }
@@ -98,14 +115,18 @@ export function ColorLegend() {
         toast.error("Erreur lors de la suppression");
       }
     },
-    [labels, updateLabels]
+    [labels, updateLabels],
   );
 
   if (loading) return null;
 
   return (
     <>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="px-2 sm:px-4">
+      <Collapsible
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className="px-2 sm:px-4"
+      >
         <div className="flex items-center gap-2">
           <CollapsibleTrigger asChild>
             <Button
@@ -118,7 +139,7 @@ export function ColorLegend() {
               <ChevronDown
                 className={cn(
                   "h-3.5 w-3.5 transition-transform duration-200",
-                  isOpen && "rotate-180"
+                  isOpen && "rotate-180",
                 )}
               />
             </Button>
@@ -128,26 +149,42 @@ export function ColorLegend() {
         <CollapsibleContent>
           <div className="pt-2 pb-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
-              {labels.map((entry, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => openEditDialog(index)}
-                  className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
-                >
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-xs text-muted-foreground truncate flex-1 text-left">
-                    {entry.label}
-                  </span>
-                  <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
-                </button>
-              ))}
+              {labels.map((entry, index) =>
+                canEdit ? (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => openEditDialog(index)}
+                    className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="text-xs text-muted-foreground truncate flex-1 text-left">
+                      {entry.label}
+                    </span>
+                    <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                  </button>
+                ) : (
+                  // Sans « Modifier » : légende en lecture simple
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 py-1 px-1.5"
+                  >
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="text-xs text-muted-foreground truncate flex-1 text-left">
+                      {entry.label}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
 
-            {labels.length < 20 && (
+            {canEdit && labels.length < 20 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -167,7 +204,9 @@ export function ColorLegend() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingIndex !== null ? "Modifier l'étiquette" : "Nouvelle étiquette"}
+              {editingIndex !== null
+                ? "Modifier l'étiquette"
+                : "Nouvelle étiquette"}
             </DialogTitle>
             <DialogDescription>
               {editingIndex !== null
@@ -179,7 +218,9 @@ export function ColorLegend() {
           <div className="space-y-4 py-2">
             {/* Color picker */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Couleur</label>
+              <label className="text-sm font-medium text-foreground">
+                Couleur
+              </label>
               <ColorPicker
                 color={selectedColor}
                 onChange={setSelectedColor}
@@ -218,10 +259,17 @@ export function ColorLegend() {
               <div />
             )}
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setDialogOpen(false)} disabled={updateLoading}>
+              <Button
+                variant="ghost"
+                onClick={() => setDialogOpen(false)}
+                disabled={updateLoading}
+              >
                 Annuler
               </Button>
-              <Button onClick={handleSave} disabled={updateLoading || !labelText.trim()}>
+              <Button
+                onClick={handleSave}
+                disabled={updateLoading || !labelText.trim()}
+              >
                 {updateLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : null}

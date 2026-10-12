@@ -6,7 +6,7 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { getExternalSource } from "@/src/components/document-source-badge";
-import { FileDown } from "lucide-react";
+import { FileDown, KeyRound } from "lucide-react";
 
 // Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
 // rafraîchir sans recharger la page, par nom d'opération GraphQL.
@@ -28,7 +28,9 @@ const IMPORTED_DOCUMENT_QUERIES = {
   PURCHASE_INVOICE: ["GetPurchaseInvoices", "GetPurchaseInvoiceStats"],
 };
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useSession } from "@/src/lib/auth-client";
 import {
   GET_NOTIFICATIONS,
   GET_UNREAD_NOTIFICATIONS_COUNT,
@@ -44,8 +46,11 @@ import {
  * Le polling (60s) s'active uniquement en fallback si le WebSocket échoue.
  */
 export const useActivityNotifications = (options = {}) => {
+  const router = useRouter();
   const { limit = 50, offset = 0, unreadOnly = false } = options;
   const { workspaceId } = useWorkspace();
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id;
   const [wsConnected, setWsConnected] = useState(true);
 
   // Pas de polling si WebSocket connecté, fallback 60s sinon
@@ -94,12 +99,44 @@ export const useActivityNotifications = (options = {}) => {
 
   const apolloClient = useApolloClient();
 
+  // Notification reçue par WebSocket, si elle est bien destinée à
+  // l'utilisateur connecté. L'API filtre désormais le destinataire ; ce
+  // contrôle protège aussi d'une API pas encore à jour, qui diffusait les
+  // notifications à tout l'espace (toasts des autres membres).
+  const incomingNotification =
+    currentUserId &&
+    subscriptionData?.notificationReceived &&
+    String(subscriptionData.notificationReceived.userId) ===
+      String(currentUserId)
+      ? subscriptionData.notificationReceived
+      : null;
+
   // Rafraîchir quand une nouvelle notification arrive via WebSocket
   useEffect(() => {
-    const incoming = subscriptionData?.notificationReceived;
+    const incoming = incomingNotification;
     if (!incoming) return;
     refetch();
     refetchUnreadCount();
+
+    // Demande d'accès d'un membre (super admin) : toast avec un lien vers
+    // l'onglet Rôles des paramètres
+    if (incoming.type === "ACCESS_REQUESTED") {
+      if (!rememberToasted(incoming.id)) return;
+      toast.document(incoming.title || "Demande d'accès", {
+        description: incoming.message,
+        fallbackIcon: KeyRound,
+        action: {
+          label: "Gérer les rôles",
+          onClick: () =>
+            window.dispatchEvent(
+              new CustomEvent("newbi:open-settings", {
+                detail: { tab: "roles" },
+              }),
+            ),
+        },
+      });
+      return;
+    }
 
     // Document importé (Qonto…) ou reçu via la PDP : la liste concernée se
     // met à jour toute seule, avec un toast cliquable.
@@ -140,10 +177,18 @@ export const useActivityNotifications = (options = {}) => {
       logoAlt: ext?.name,
       fallbackIcon: ext?.icon || FileDown,
       action: url
-        ? { label: "Voir", onClick: () => window.location.assign(url) }
+        ? {
+            label: "Voir",
+            // Route interne : navigation client (window.location.assign
+            // rechargeait toute l'application).
+            onClick: () =>
+              url.startsWith("/") && !url.startsWith("//")
+                ? router.push(url)
+                : window.location.assign(url),
+          }
         : undefined,
     });
-  }, [subscriptionData, refetch, refetchUnreadCount, apolloClient]);
+  }, [incomingNotification, refetch, refetchUnreadCount, apolloClient, router]);
 
   // Marquer une notification comme lue
   const markAsRead = useCallback(
@@ -203,7 +248,7 @@ export const useActivityNotifications = (options = {}) => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    newNotification: subscriptionData?.notificationReceived,
+    newNotification: incomingNotification,
   };
 };
 

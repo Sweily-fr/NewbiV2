@@ -7,7 +7,7 @@ import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking"
 
 /**
  * Suggestions de rapprochement facture d'achat ↔ transaction (débit).
- * Miroir de useReconciliationSuggestions (factures client), polling 60s.
+ * Miroir de useReconciliationSuggestions (factures client), polling 3 min.
  */
 export const usePurchaseInvoiceReconciliationSuggestions = () => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
@@ -17,7 +17,10 @@ export const usePurchaseInvoiceReconciliationSuggestions = () => {
     {
       variables: { workspaceId },
       skip: !workspaceId || workspaceLoading,
-      pollInterval: 60000,
+      // Toutes les 3 min (au lieu de 60 s) : le calcul est fait par l'API pour
+      // chaque onglet ouvert, et les nouvelles transactions n'arrivent qu'aux
+      // synchros bancaires. Les liaisons depuis le toast rafraîchissent tout de suite.
+      pollInterval: 180000,
       // Suspendre le polling quand l'onglet est en arrière-plan
       skipPollAttempt: () => typeof document !== "undefined" && document.hidden,
       errorPolicy: "all",

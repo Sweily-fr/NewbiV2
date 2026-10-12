@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { FormProvider } from "react-hook-form";
 import { X, LoaderCircle, Settings } from "lucide-react";
@@ -20,15 +22,47 @@ import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useClient } from "@/src/graphql/clientQueries";
-import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
-import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 import { formatDeliveryNoteReference } from "@/src/graphql/deliveryNoteQueries";
 import { useDeliveryNoteEditor } from "../hooks/use-delivery-note-editor";
 import EnhancedDeliveryNoteForm from "./enhanced-delivery-note-form";
-import DeliveryNoteSettingsView from "./delivery-note-settings-view";
 import { toast } from "@/src/components/ui/sonner";
 import DeliveryNotePreview from "./DeliveryNotePreview";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
+import { chunkLoadFallback } from "@/src/lib/chunk-load-fallback";
+import { usePreloadOnIdle } from "@/src/hooks/usePreloadOnIdle";
+import { useUnsavedChangesWarning } from "@/src/hooks/useUnsavedChangesWarning";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const DeliveryNoteSettingsView = dynamic(
+  () => import("./delivery-note-settings-view").catch(chunkLoadFallback),
+  { ssr: false },
+);
+const ClientsModal = dynamic(
+  () =>
+    import("@/app/dashboard/clients/components/clients-modal").catch(
+      chunkLoadFallback,
+    ),
+  { ssr: false },
+);
+const SendDocumentModal = dynamic(
+  () =>
+    import("@/app/dashboard/outils/factures/components/send-document-modal")
+      .then((m) => m.SendDocumentModal)
+      .catch(chunkLoadFallback),
+  { ssr: false },
+);
+
+// Préchargées quand le navigateur est inactif après l'ouverture de l'éditeur :
+// déjà là si une nouvelle version est mise en ligne pendant la saisie.
+const preloadEditorModules = () =>
+  Promise.all([
+    import("./delivery-note-settings-view"),
+    import("@/app/dashboard/clients/components/clients-modal"),
+    import("@/app/dashboard/outils/factures/components/send-document-modal"),
+  ]);
 
 const LIST_URL = "/dashboard/outils/bons-de-livraison";
 
@@ -110,15 +144,6 @@ export default function ModernDeliveryNoteEditor({
     enabled: mode !== "create" && !loading,
   });
 
-  if (
-    mode !== "create" &&
-    !loading &&
-    !loadedDeliveryNote &&
-    deliveryNoteError
-  ) {
-    return <ResourceNotFound listUrl={LIST_URL} homeUrl="/dashboard" />;
-  }
-
   const isCreating = mode === "create";
   const isFinalized = !isCreating && !isDraft;
 
@@ -130,6 +155,11 @@ export default function ModernDeliveryNoteEditor({
     Array.isArray(watchedItems) &&
     watchedItems.length > 0 &&
     form.formState.isDirty;
+
+  // Modifications non enregistrées : confirmation du navigateur avant de
+  // recharger ou fermer l'onglet.
+  useUnsavedChangesWarning(hasUserChanges);
+  usePreloadOnIdle(preloadEditorModules);
 
   useEffect(() => {
     if (!hasUserChanges) return;
@@ -148,6 +178,17 @@ export default function ModernDeliveryNoteEditor({
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [hasUserChanges]);
+
+  // Retour anticipé placé après le dernier hook : le placer avant changeait
+  // le nombre de hooks appelés d'un rendu à l'autre (règle des hooks)
+  if (
+    mode !== "create" &&
+    !loading &&
+    !loadedDeliveryNote &&
+    deliveryNoteError
+  ) {
+    return <ResourceNotFound listUrl={LIST_URL} homeUrl="/dashboard" />;
+  }
 
   const leaveEditor = () => {
     bypassGuardRef.current = true;
@@ -315,7 +356,7 @@ export default function ModernDeliveryNoteEditor({
         <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
           <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
             {debouncedPreview ? (
-              <div>{previewElement}</div>
+              <A4PreviewFrame>{previewElement}</A4PreviewFrame>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
@@ -325,7 +366,7 @@ export default function ModernDeliveryNoteEditor({
         </div>
       </div>
 
-      {formData.client && (
+      {formData.client && showEditClient && (
         <ClientsModal
           open={showEditClient}
           onOpenChange={setShowEditClient}
@@ -382,7 +423,7 @@ export default function ModernDeliveryNoteEditor({
         </AlertDialogContent>
       </AlertDialog>
 
-      {createdDeliveryNote && (
+      {createdDeliveryNote && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}

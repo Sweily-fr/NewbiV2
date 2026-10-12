@@ -8,7 +8,7 @@ import {
   UNBLOCK_CLIENT,
   ASSIGN_CLIENT_MEMBERS,
 } from "../graphql/mutations/clients";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 import { GET_CLIENTS, GET_CLIENT } from "../graphql/queries/clients";
 import { GET_CLIENT_LISTS } from "../graphql/queries/clientLists";
 import { toast } from "@/src/components/ui/sonner";
@@ -48,7 +48,12 @@ function useAutoRetryOnError({ error, refetch, enabled = true }) {
   return { isRetrying: !!error && attempts < MAX_AUTO_RETRIES };
 }
 
-export const useClients = (page = 1, limit = 10, search = "") => {
+export const useClients = (
+  page = 1,
+  limit = 10,
+  search = "",
+  { skip = false } = {},
+) => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
   const {
@@ -58,13 +63,14 @@ export const useClients = (page = 1, limit = 10, search = "") => {
     refetch,
   } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
-    skip: !workspaceId,
+    // skip : clients fournis par l'appelant, ou rôle sans accès aux clients
+    skip: !workspaceId || skip,
   });
 
   const { isRetrying } = useAutoRetryOnError({
     error,
     refetch,
-    enabled: !!workspaceId,
+    enabled: !!workspaceId && !skip,
   });
 
   return {
@@ -133,7 +139,7 @@ export const useCreateClient = () => {
       awaitRefetchQueries: false,
       onCompleted: (data) => {
         const newClient = data?.createClient;
-        posthog.capture("client_created", {
+        capture("client_created", {
           client_type: newClient?.type,
         });
         toast.success("Client créé avec succès");

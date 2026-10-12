@@ -38,6 +38,8 @@ import { Progress } from "@/src/components/ui/progress";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { toast } from "@/src/components/ui/sonner";
 import { getPlanLimits, getSeatPrice } from "@/src/lib/plan-limits";
+import { useOrganizationRoles } from "@/src/hooks/useOrganizationRoles";
+import { DEFAULT_INVITE_ROLE } from "@/src/lib/role-labels";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -49,7 +51,7 @@ export function InviteMemberModal({
 }) {
   const [emails, setEmails] = useState([]);
   const [inputValue, setInputValue] = useState("");
-  const [role, setRole] = useState("member");
+  const [role, setRole] = useState(DEFAULT_INVITE_ROLE);
   const [seatsInfo, setSeatsInfo] = useState(null);
   const [existingMembers, setExistingMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,13 +62,17 @@ export function InviteMemberModal({
   const inputRef = useRef(null);
 
   const targetOrganizationId = propOrganizationId || dashboardOrganization?.id;
+  const { roles: organizationRoles, getRoleLabel } = useOrganizationRoles(
+    targetOrganizationId,
+    { skip: !open },
+  );
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!open) {
       setEmails([]);
       setInputValue("");
-      setRole("member");
+      setRole(DEFAULT_INVITE_ROLE);
       setShowPaidSeatsConfirm(false);
       setPaidSeatsInfo(null);
     }
@@ -263,25 +269,12 @@ export function InviteMemberModal({
 
   // Get available roles based on plan
   const isFreelance = seatsInfo?.plan === "freelance";
+  // Rôles prédéfinis de l'offre puis rôles personnalisés de l'espace
   const getAvailableRoles = () => {
-    return getPlanLimits(seatsInfo?.plan).availableRoles;
-  };
-
-  const getRoleLabel = (r) => {
-    switch (r) {
-      case "admin":
-        return "Administrateur";
-      case "member":
-        return "Membre";
-      case "viewer":
-        return "Lecteur";
-      case "accountant":
-        return "Comptable";
-      case "owner":
-        return "Propriétaire";
-      default:
-        return r;
-    }
+    const custom = organizationRoles
+      .filter((r) => !r.predefined)
+      .map((r) => r.key);
+    return [...getPlanLimits(seatsInfo?.plan).availableRoles, ...custom];
   };
 
   // Vérifier les limites et demander confirmation si sièges payants
@@ -398,7 +391,7 @@ export function InviteMemberModal({
 
     setEmails([]);
     setInputValue("");
-    setRole("member");
+    setRole(DEFAULT_INVITE_ROLE);
     setShowPaidSeatsConfirm(false);
     setPaidSeatsInfo(null);
     onOpenChange(false);

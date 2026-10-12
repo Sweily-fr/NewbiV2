@@ -65,6 +65,20 @@ export function getFullOrganizationCached(orgId, { force = false } = {}) {
   return promise;
 }
 
+/**
+ * Amorce le cache avec une organisation déjà complète (membres compris), par
+ * exemple celle que Better Auth fournit déjà à useWorkspace. Sans ça, le cache
+ * restait vide dans ce cas : usePermissions repartait en chargement à chaque
+ * montage et les gardes de page (RBAC, rôle, boutons) retardaient l'affichage
+ * de la page de deux cycles de rendu.
+ */
+export function primeFullOrganization(orgId, org) {
+  if (!orgId || !org?.members) return;
+  const entry = cache.get(orgId);
+  if (entry && Date.now() - entry.fetchedAt < CACHE_TTL) return;
+  cache.set(orgId, { org, fetchedAt: Date.now() });
+}
+
 /** Invalide une organisation (ou tout le cache sans argument). */
 export function invalidateFullOrganizationCache(orgId) {
   if (orgId) {

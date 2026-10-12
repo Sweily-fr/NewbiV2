@@ -14,12 +14,12 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { getPlanLimits, getSeatPrice } from "@/src/lib/plan-limits";
+import {
+  DEFAULT_INVITE_ROLE,
+  PREDEFINED_ROLE_LABELS,
+} from "@/src/lib/role-labels";
 
-const ROLE_LABELS = {
-  admin: "Administrateur",
-  member: "Membre",
-  accountant: "Comptable",
-};
+const ROLE_LABELS = PREDEFINED_ROLE_LABELS;
 
 export function InviteForm({
   members,
@@ -59,11 +59,11 @@ export function InviteForm({
     const alreadyAdapted =
       members.length === 2 &&
       members[0].role === "accountant" &&
-      members[1].role === "member";
+      members[1].role === DEFAULT_INVITE_ROLE;
     if (allEmpty && !alreadyAdapted) {
       setMembers([
         { email: "", role: "accountant" },
-        { email: "", role: "member" },
+        { email: "", role: DEFAULT_INVITE_ROLE },
       ]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +84,9 @@ export function InviteForm({
   const addRow = () => {
     // Freelance : comptable gratuit d'abord, puis l'utilisateur payant
     const defaultRole =
-      isFreelance && !isAccountantLimitReached ? "accountant" : "member";
+      isFreelance && !isAccountantLimitReached
+        ? "accountant"
+        : DEFAULT_INVITE_ROLE;
     setMembers([...members, { email: "", role: defaultRole }]);
   };
 

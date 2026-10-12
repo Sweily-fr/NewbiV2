@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useQuery, useMutation } from "@apollo/client";
 import { useRouter } from "next/navigation";
 import { Clock, Square, ExternalLink } from "lucide-react";
@@ -29,6 +30,9 @@ export function FloatingTimer() {
   const { workspaceId } = useWorkspace();
   const [taskTimes, setTaskTimes] = useState({});
   const [isOpen, setIsOpen] = useState(false);
+  // Arrêter un minuteur : « Modifier » du kanban
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canEditKanban = !permissionsReady || canDo("kanban", "edit");
 
   // Récupérer les tâches avec timer actif
   const { data, loading } = useQuery(GET_ACTIVE_TIMERS, {
@@ -254,16 +258,18 @@ export function FloatingTimer() {
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleStopTimer(task.id)}
-                        disabled={stopping}
-                        title="Arrêter le timer"
-                      >
-                        <Square className="h-3.5 w-3.5" />
-                      </Button>
+                      {canEditKanban && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleStopTimer(task.id)}
+                          disabled={stopping}
+                          title="Arrêter le timer"
+                        >
+                          <Square className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );

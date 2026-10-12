@@ -1,41 +1,38 @@
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { NextResponse } from "next/server";
+import {
+  apiError,
+  requireOrgAction,
+  requireSession,
+  withErrorHandler,
+} from "@/src/lib/security";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+/**
+ * POST /api/stripe/connect/disconnect (retirée)
+ *
+ * Ancienne route sans authentification qui répondait « déconnecté avec
+ * succès » sans rien faire. Plus aucun écran ni l'app mobile ne l'appelle :
+ * la déconnexion passe par la mutation GraphQL `disconnectStripe` de l'API,
+ * qui vérifie déjà le droit « Gérer » sur les applications de l'espace.
+ *
+ * On exige la session et ce même droit, puis on renvoie 410 au lieu d'un
+ * faux succès.
+ */
+async function handler(request) {
+  const { user, session } = await requireSession(request);
 
-export async function POST(request) {
-  try {
-    const { userId } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId est requis' },
-        { status: 400 }
-      );
-    }
-
-    // Ici vous devriez récupérer l'ID du compte Stripe depuis votre base de données
-    // Pour cet exemple, nous simulons la récupération
-    // const stripeAccountId = await getUserStripeAccountId(userId);
-    
-    // Si vous avez l'ID du compte Stripe, vous pouvez le supprimer
-    // await stripe.accounts.del(stripeAccountId);
-
-    // Ici vous devriez supprimer l'ID du compte Stripe de votre base de données
-    // await removeUserStripeAccount(userId);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Compte Stripe déconnecté avec succès',
-    });
-
-  } catch (error) {
-    console.error('Erreur déconnexion Stripe:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la déconnexion du compte Stripe' },
-      { status: 500 }
-    );
+  const orgId = session?.activeOrganizationId;
+  if (!orgId) {
+    return apiError(400, "Aucun espace actif");
   }
+  await requireOrgAction(user.id, orgId, "integrations", "manage");
+
+  return NextResponse.json(
+    {
+      error:
+        "Route retirée : déconnectez Stripe depuis Paramètres, Applications.",
+    },
+    { status: 410 },
+  );
 }
+
+export const POST = withErrorHandler(handler);

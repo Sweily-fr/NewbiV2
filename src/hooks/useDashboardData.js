@@ -7,6 +7,7 @@ import {
   GET_TRANSACTIONS,
 } from "@/src/graphql/queries/banking";
 import { GET_DASHBOARD_SUMMARY } from "@/src/graphql/queries/dashboardAggregation";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Durée de validité du cache (5 minutes)
 const CACHE_TTL = 5 * 60 * 1000;
@@ -21,11 +22,15 @@ const CACHE_KEY = "dashboard_last_fetch";
  *   Les pages analytics et transactions gardent skipTransactions=false (défaut).
  * @param {boolean} options.skipInvoices - Si true, ne charge pas la liste des factures.
  *   La page Transactions n'affiche aucune facture : inutile de rapatrier la liste.
+ * @param {boolean} options.skipBanking - Si true, ne charge aucune donnée bancaire
+ *   (comptes, summary, transactions). L'accueil l'active quand le rôle ne peut
+ *   pas lire les transactions : l'API refuserait ces requêtes.
  * @param {string} options.accountId - Filtre optionnel par compte bancaire (pour le summary backend).
  */
 export function useDashboardData({
   skipTransactions = false,
   skipInvoices = false,
+  skipBanking = false,
   accountId = null,
 } = {}) {
   const { workspaceId } = useRequiredWorkspace();
@@ -65,7 +70,7 @@ export function useDashboardData({
     variables: { workspaceId },
     fetchPolicy: "cache-first",
     nextFetchPolicy: "cache-first",
-    skip: !workspaceId,
+    skip: !workspaceId || skipBanking,
   });
 
   // Summary backend (stats pré-calculées) — utilisé quand skipTransactions=true
@@ -79,7 +84,7 @@ export function useDashboardData({
       accountId: accountId === "all" ? null : accountId,
     },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId || !skipTransactions,
+    skip: !workspaceId || !skipTransactions || skipBanking,
   });
 
   // Transactions brutes — skippé sur le dashboard (graphiques font leurs propres queries)
@@ -90,7 +95,7 @@ export function useDashboardData({
   } = useQuery(GET_TRANSACTIONS, {
     variables: { workspaceId, limit: 0 },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId || skipTransactions,
+    skip: !workspaceId || skipTransactions || skipBanking,
   });
 
   // Premier chargement
@@ -176,14 +181,18 @@ export function useDashboardData({
   ]);
 
   const refreshData = useCallback(async () => {
-    const promises = [refetchBankAccounts?.()];
+    const promises = [];
     // Un refetch Apollo s'exécute même sur une query "skip" : ne pas relancer
-    // la liste des factures quand elle n'est pas chargée sur cette page.
+    // la liste des factures ni les données bancaires quand elles ne sont pas
+    // chargées sur cette page.
     if (!skipInvoices) promises.push(refetchInvoices?.());
-    if (skipTransactions) {
-      promises.push(refetchSummary?.());
-    } else {
-      promises.push(refetchBankTransactions?.());
+    if (!skipBanking) {
+      promises.push(refetchBankAccounts?.());
+      if (skipTransactions) {
+        promises.push(refetchSummary?.());
+      } else {
+        promises.push(refetchBankTransactions?.());
+      }
     }
     await Promise.all(promises);
     updateCacheTimestamp();
@@ -194,6 +203,7 @@ export function useDashboardData({
     refetchBankTransactions,
     skipTransactions,
     skipInvoices,
+    skipBanking,
     updateCacheTimestamp,
   ]);
 
@@ -221,7 +231,7 @@ export function useDashboardData({
     accountsLoading,
     transactionsLoading: skipTransactions
       ? summaryLoading
-      : bankLoading || !transactionsData,
+      : bankLoading || (!skipBanking && !transactionsData),
     refreshData,
     invalidateCache,
     cacheInfo: {
@@ -233,7 +243,7 @@ export function useDashboardData({
       ttl: CACHE_TTL,
     },
     formatCurrency: (amount) => {
-      return new Intl.NumberFormat("fr-FR", {
+      return getNumberFormat("fr-FR", {
         style: "currency",
         currency: "EUR",
       }).format(amount || 0);

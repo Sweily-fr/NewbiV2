@@ -1,27 +1,61 @@
 import { NextResponse } from "next/server";
 import { mongoDb } from "@/src/lib/mongodb";
+import { getModuleActions } from "@/src/lib/organization-roles";
 import {
+  apiError,
   requireSession,
-  requireOrgMembership,
   toObjectId,
   withErrorHandler,
 } from "@/src/lib/security";
 
 /**
+ * Identité seule d'un membre, pour un rôle sans « Voir les membres » : de
+ * quoi afficher et assigner un collègue (assignation d'un client sur
+ * l'app mobile) et désigner le super admin qui peut donner un accès (page
+ * d'accès refusé). Ni les rôles des autres, ni les dates, ni les
+ * invitations en attente.
+ */
+function memberIdentity(member) {
+  const isOwner = String(member.role || "")
+    .toLowerCase()
+    .split(",")
+    .map((r) => r.trim())
+    .includes("owner");
+  return {
+    id: member.id,
+    email: member.email,
+    name: member.name,
+    avatar: member.avatar,
+    image: member.image,
+    type: "member",
+    ...(isOwner ? { role: "owner" } : {}),
+  };
+}
+
+/**
  * GET /api/organizations/[organizationId]/members
  *
- * Retrieve members and invitations for an organization.
- * Auth: session + org membership (any role can view members).
- * NOUVEAU-4 fix: was missing membership check — cross-tenant read was possible.
+ * Membres et invitations d'un espace.
+ * Auth : session + membre de l'espace (NOUVEAU-4 : pas de lecture d'un autre
+ * espace). La liste complète (rôles, statuts, invitations) suit le droit
+ * « Voir les membres » (page Membres) ; sans lui, l'identité des membres
+ * seulement (cf. memberIdentity).
  */
 async function handler(request, { params }) {
   const { user } = await requireSession(request);
   const { organizationId } = await params;
 
-  // Membership check — closes cross-tenant gap (NOUVEAU-4)
-  await requireOrgMembership(user.id, organizationId);
-
   const orgObjectId = toObjectId(organizationId);
+
+  const { role, actions } = await getModuleActions(mongoDb, {
+    userId: user.id,
+    organizationId: orgObjectId,
+    moduleKey: "team",
+  });
+  if (!role) {
+    throw apiError(403, "Non autorisé");
+  }
+  const canViewTeam = actions.includes("view");
 
   // Fetch members with user lookup
   const members = await mongoDb
@@ -72,6 +106,13 @@ async function handler(request, { params }) {
       },
     ])
     .toArray();
+
+  if (!canViewTeam) {
+    return NextResponse.json({
+      success: true,
+      data: members.map(memberIdentity),
+    });
+  }
 
   // Fetch invitations
   const invitations = await mongoDb

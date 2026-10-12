@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { CSSProperties } from "react"
-import { Badge } from "@/src/components/reui/badge"
-import { Bar, BarChart, XAxis } from "recharts"
+import { CSSProperties } from "react";
+import { Badge } from "@/src/components/reui/badge";
+import { Bar, BarChart, XAxis } from "recharts";
 
 import {
   Card,
@@ -10,14 +10,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/src/components/ui/card"
+} from "@/src/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@/src/components/ui/chart"
-import { TrendingDownIcon } from "lucide-react"
+} from "@/src/components/ui/chart";
+import { TrendingDownIcon } from "lucide-react";
 
 const chartData = [
   { month: "Jan", desktop: 340, mobile: 180 },
@@ -26,7 +26,7 @@ const chartData = [
   { month: "Apr", desktop: 620, mobile: 350 },
   { month: "May", desktop: 450, mobile: 240 },
   { month: "Jun", desktop: 780, mobile: 390 },
-]
+];
 
 const chartConfig = {
   desktop: {
@@ -37,7 +37,7 @@ const chartConfig = {
     label: "Mobile",
     color: "var(--chart-2)",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function ChartBarPattern() {
   return (
@@ -122,7 +122,7 @@ export function ChartBarPattern() {
                           {value} 2024
                         </span>
                       </div>
-                    )
+                    );
                   }}
                   formatter={(value, name) => (
                     <div className="flex w-full items-center justify-between gap-2">
@@ -149,6 +149,7 @@ export function ChartBarPattern() {
               }
             />
             <Bar
+              animationDuration={300}
               dataKey="desktop"
               fill="url(#chart3-diagonal-stripe-pattern)"
               stroke="var(--color-desktop)"
@@ -156,6 +157,7 @@ export function ChartBarPattern() {
               radius={[4, 4, 4, 4]}
             />
             <Bar
+              animationDuration={300}
               dataKey="mobile"
               fill="var(--color-mobile)"
               stroke="var(--color-mobile)"
@@ -166,5 +168,5 @@ export function ChartBarPattern() {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

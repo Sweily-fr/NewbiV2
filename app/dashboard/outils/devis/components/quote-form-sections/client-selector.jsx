@@ -60,6 +60,7 @@ import {
   SheetFooter,
 } from "@/src/components/ui/sheet";
 import { cn } from "@/src/lib/utils";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { toast } from "@/src/components/ui/sonner";
 
 // Import GraphQL hooks and utilities
@@ -85,6 +86,11 @@ export default function ClientSelector({
   setValidationErrors,
 }) {
   const id = useId();
+  // Création rapide / modification de client : actions « create » et
+  // « edit » des clients (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateClients = !isReady || canDo("clients", "create");
+  const canEditClients = !isReady || canDo("clients", "edit");
   const [activeTab, setActiveTab] = useState("existing");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -674,10 +680,12 @@ export default function ClientSelector({
                 <User className="h-3.5 w-3.5" />
                 Client existant
               </TabsNewTrigger>
-              <TabsNewTrigger value="new">
-                <Plus className="h-3.5 w-3.5" />
-                Nouveau client
-              </TabsNewTrigger>
+              {canCreateClients && (
+                <TabsNewTrigger value="new">
+                  <Plus className="h-3.5 w-3.5" />
+                  Nouveau client
+                </TabsNewTrigger>
+              )}
             </TabsNewList>
           </CardHeader>
 
@@ -745,7 +753,7 @@ export default function ClientSelector({
                             <p className="text-sm text-muted-foreground mb-2">
                               Aucun client trouvé{query && ` pour "${query}"`}
                             </p>
-                            {query && (
+                            {query && canCreateClients && (
                               <Button
                                 type="button"
                                 variant="outline"
@@ -806,7 +814,9 @@ export default function ClientSelector({
                       {/* Client card — fond style "article" */}
                       <div
                         className="flex items-center justify-between w-full rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900 hover:bg-[#EFEFEF] dark:hover:bg-neutral-800 transition-colors duration-[140ms] cursor-pointer py-2 pr-4 pl-2 gap-2.5"
-                        onClick={() => onEditClient?.(selectedClient)}
+                        onClick={() =>
+                          canEditClients && onEditClient?.(selectedClient)
+                        }
                       >
                         {/* Left: icon + text */}
                         <div className="flex items-center gap-2.5 min-w-0">

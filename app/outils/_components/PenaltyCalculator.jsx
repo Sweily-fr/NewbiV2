@@ -5,6 +5,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Check, Copy } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Calcul des pénalités de retard entre professionnels.
 //
@@ -17,7 +18,7 @@ import { Check, Copy } from "lucide-react";
 // par arrêté chaque semestre et le taux directeur de la BCE change, les coder
 // en dur reviendrait à afficher un chiffre faux quelques mois plus tard.
 
-const EUR = new Intl.NumberFormat("fr-FR", {
+const EUR = getNumberFormat("fr-FR", {
   style: "currency",
   currency: "EUR",
 });
@@ -46,13 +47,14 @@ export default function PenaltyCalculator() {
 
     const fin = new Date(`${paiement}T00:00:00`);
     const debut = new Date(`${echeance}T00:00:00`);
-    if (Number.isNaN(fin.getTime()) || Number.isNaN(debut.getTime())) return null;
+    if (Number.isNaN(fin.getTime()) || Number.isNaN(debut.getTime()))
+      return null;
 
     // Les pénalités courent à partir du lendemain de l'échéance : un paiement
     // le jour même de l'échéance n'est pas en retard.
     const jours = Math.max(
       0,
-      Math.round((fin - debut) / (24 * 60 * 60 * 1000))
+      Math.round((fin - debut) / (24 * 60 * 60 * 1000)),
     );
     const penalites = (montantTTC * (tauxAnnuel / 100) * jours) / 365;
     const forfait = indemnite && jours > 0 ? 40 : 0;
@@ -69,9 +71,9 @@ export default function PenaltyCalculator() {
 
   const texteRelance = resultat
     ? `Sauf erreur de notre part, la facture d'un montant de ${EUR.format(
-        resultat.montantTTC
+        resultat.montantTTC,
       )} arrivée à échéance le ${new Date(
-        `${echeance}T00:00:00`
+        `${echeance}T00:00:00`,
       ).toLocaleDateString("fr-FR")} demeure impayée à ce jour, soit ${
         resultat.jours
       } jour${resultat.jours > 1 ? "s" : ""} de retard.
@@ -79,17 +81,17 @@ export default function PenaltyCalculator() {
 Conformément à l'article L441-10 du Code de commerce et à nos conditions générales de vente, des pénalités de retard au taux annuel de ${resultat.tauxAnnuel
         .toString()
         .replace(".", ",")} % sont exigibles de plein droit, soit ${EUR.format(
-        resultat.penalites
+        resultat.penalites,
       )}${
         resultat.forfait
           ? `, ainsi qu'une indemnité forfaitaire pour frais de recouvrement de ${EUR.format(
-              resultat.forfait
+              resultat.forfait,
             )}`
           : ""
       }.
 
 Le montant total dû s'élève donc à ${EUR.format(
-        resultat.total
+        resultat.total,
       )}. Nous vous remercions de bien vouloir procéder à son règlement dans les meilleurs délais.`
     : "";
 
@@ -220,7 +222,9 @@ Le montant total dû s'élève donc à ${EUR.format(
               </div>
               <div className="flex justify-between py-2.5">
                 <dt className="text-gray-600">Indemnité forfaitaire</dt>
-                <dd className="text-gray-900">{EUR.format(resultat.forfait)}</dd>
+                <dd className="text-gray-900">
+                  {EUR.format(resultat.forfait)}
+                </dd>
               </div>
             </dl>
 

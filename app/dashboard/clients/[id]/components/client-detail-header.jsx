@@ -31,6 +31,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export default function ClientDetailHeader({
   client,
@@ -53,6 +54,19 @@ export default function ClientDetailHeader({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditClients = !isReady || canDo("clients", "edit");
+  const canDeleteClients = !isReady || canDo("clients", "delete");
+  const canBlockClients = !isReady || canDo("clients", "block");
+  const canAssignClients = !isReady || canDo("clients", "assign");
+  // Rappel = nouvel événement du calendrier
+  const canCreateReminder = !isReady || canDo("calendar", "create");
+  // Actions d'écriture masquées sans le droit (désactivées seulement en
+  // abonnement lecture seule)
+  const editDisabled = isReadOnly;
+  const editTooltip = readOnlyTooltip;
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
 
   const displayName =
@@ -125,14 +139,16 @@ export default function ClientDetailHeader({
 
       {/* Center: action buttons */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Button
-          variant="outline"
-          className="hidden sm:inline-flex"
-          onClick={onCreateReminder}
-        >
-          <Bell className="h-3.5 w-3.5" />
-          Créer un rappel
-        </Button>
+        {canCreateReminder && (
+          <Button
+            variant="outline"
+            className="hidden sm:inline-flex"
+            onClick={onCreateReminder}
+          >
+            <Bell className="h-3.5 w-3.5" />
+            Créer un rappel
+          </Button>
+        )}
         {client.email && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -151,83 +167,103 @@ export default function ClientDetailHeader({
           </Tooltip>
         )}
 
-        {/* More dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Settings2 className="h-3.5 w-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem
-              onClick={onEdit}
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-              className="cursor-pointer gap-2 text-xs"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Modifier
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={client.isBlocked ? onUnblock : onBlock}
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-              className="cursor-pointer gap-2 text-xs"
-            >
-              <ShieldOff className="w-3.5 h-3.5" />
-              {client.isBlocked ? "Débloquer le contact" : "Bloquer le contact"}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={onAssign}
-              className="cursor-pointer gap-2 text-xs"
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              Assigner
-            </DropdownMenuItem>
-            {client.phone && (
-              <DropdownMenuItem
-                className="cursor-pointer gap-2 text-xs"
-                onClick={() => {
-                  navigator.clipboard.writeText(client.phone);
-                }}
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                Copier le numéro sur WhatsApp
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-              onSelect={(e) => {
-                if (isReadOnly || hasDocuments) {
-                  e.preventDefault();
-                } else {
-                  onDelete();
-                }
-              }}
-              onMouseEnter={(e) => {
-                if (hasDocuments) {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setShowDeleteTooltip({
-                    top: rect.bottom + 6,
-                    left: rect.right,
-                  });
-                }
-              }}
-              onMouseLeave={() => setShowDeleteTooltip(null)}
-              className={
-                isReadOnly || hasDocuments
-                  ? "cursor-not-allowed gap-2 text-xs opacity-50"
-                  : "cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
-              }
-            >
-              <Trash2 className="w-3.5 h-3.5 text-red-600" />
-              Supprimer définitivement
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* More dropdown (rien à proposer en lecture seule sans téléphone) */}
+        {(canEditClients ||
+          canBlockClients ||
+          canAssignClients ||
+          canDeleteClients ||
+          client.phone) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Settings2 className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {canEditClients && (
+                <DropdownMenuItem
+                  onClick={onEdit}
+                  disabled={editDisabled}
+                  title={editTooltip}
+                  className="cursor-pointer gap-2 text-xs"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Modifier
+                </DropdownMenuItem>
+              )}
+              {canEditClients && (canBlockClients || canAssignClients) && (
+                <DropdownMenuSeparator />
+              )}
+              {canBlockClients && (
+                <DropdownMenuItem
+                  onClick={client.isBlocked ? onUnblock : onBlock}
+                  disabled={editDisabled}
+                  title={editTooltip}
+                  className="cursor-pointer gap-2 text-xs"
+                >
+                  <ShieldOff className="w-3.5 h-3.5" />
+                  {client.isBlocked
+                    ? "Débloquer le contact"
+                    : "Bloquer le contact"}
+                </DropdownMenuItem>
+              )}
+              {canAssignClients && (
+                <DropdownMenuItem
+                  onClick={onAssign}
+                  disabled={editDisabled}
+                  title={editTooltip}
+                  className="cursor-pointer gap-2 text-xs"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  Assigner
+                </DropdownMenuItem>
+              )}
+              {client.phone && (
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(client.phone);
+                  }}
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  Copier le numéro sur WhatsApp
+                </DropdownMenuItem>
+              )}
+              {canDeleteClients && <DropdownMenuSeparator />}
+              {canDeleteClients && (
+                <DropdownMenuItem
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                  onSelect={(e) => {
+                    if (isReadOnly || hasDocuments) {
+                      e.preventDefault();
+                    } else {
+                      onDelete();
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    if (hasDocuments) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setShowDeleteTooltip({
+                        top: rect.bottom + 6,
+                        left: rect.right,
+                      });
+                    }
+                  }}
+                  onMouseLeave={() => setShowDeleteTooltip(null)}
+                  className={
+                    isReadOnly || hasDocuments
+                      ? "cursor-not-allowed gap-2 text-xs opacity-50"
+                      : "cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
+                  }
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                  Supprimer définitivement
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {showDeleteTooltip &&

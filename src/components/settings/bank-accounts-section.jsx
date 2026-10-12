@@ -46,6 +46,7 @@ import { Callout } from "@/src/components/ui/callout";
 import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 /**
  * Formate un IBAN pour l'affichage (groupes de 4)
@@ -65,7 +66,7 @@ const formatIban = (iban, showFull = false) => {
  * Formate un montant en devise
  */
 const formatCurrency = (amount, currency = "EUR") => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: currency,
   }).format(amount || 0);
@@ -541,17 +542,20 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           title="Aucun compte connecté"
           description="Connectez votre banque pour synchroniser automatiquement vos transactions."
           action={
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleOpenModal}
-              disabled={isReadOnly || !canManageOrgSettings || !isEmailVerified}
-              title={readOnlyTooltip}
-              className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Connecter une banque
-            </Button>
+            // Connecter une banque : « Gérer les applications »
+            canManageOrgSettings && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleOpenModal}
+                disabled={isReadOnly || !isEmailVerified}
+                title={readOnlyTooltip}
+                className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Connecter une banque
+              </Button>
+            )
           }
         />
       ) : (
@@ -623,18 +627,13 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
-                {canAddBankAccount ? (
+                {!canManageOrgSettings ? null : canAddBankAccount ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={handleOpenModal}
-                    disabled={
-                      isReadOnly ||
-                      !canManageOrgSettings ||
-                      isConnecting ||
-                      !isEmailVerified
-                    }
+                    disabled={isReadOnly || isConnecting || !isEmailVerified}
                     title={readOnlyTooltip}
                     className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 h-7 px-2 cursor-pointer"
                   >

@@ -11,11 +11,14 @@ vi.mock("@/src/lib/auth", () => ({
 
 const mockMongoFindOne = vi.fn();
 const mockMongoUpdateOne = vi.fn();
+// Rôles ajustés ou personnalisés de l'espace (collection organizationRole)
+const mockStoredRoles = vi.fn(async () => []);
 vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: {
     collection: () => ({
       findOne: mockMongoFindOne,
       updateOne: mockMongoUpdateOne,
+      find: () => ({ toArray: mockStoredRoles }),
     }),
   },
 }));
@@ -113,6 +116,45 @@ describe("POST /api/billing/subscribe", () => {
     expect(res.status).toBe(403);
   });
 
+  it("returns 403 for an admin (subscription is view only for this role)", async () => {
+    process.env.ENABLE_APP_TRIAL = "true";
+    mockGetSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr" },
+      session: { activeOrganizationId: orgId },
+    });
+    mockMongoFindOne.mockResolvedValue({
+      userId: new ObjectId(userId),
+      organizationId: new ObjectId(orgId),
+      role: "admin",
+    });
+    const { POST } = await import("@/app/api/billing/subscribe/route");
+    const res = await POST(buildRequest());
+    expect(res.status).toBe(403);
+    expect(mockStripeCreateCheckout).not.toHaveBeenCalled();
+  });
+
+  it("accepts a custom role allowed to manage the subscription", async () => {
+    process.env.ENABLE_APP_TRIAL = "true";
+    mockGetSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr", stripeCustomerId: "cus_1" },
+      session: { activeOrganizationId: orgId },
+    });
+    mockMongoFindOne.mockResolvedValue({
+      userId: new ObjectId(userId),
+      organizationId: new ObjectId(orgId),
+      role: "role_finance",
+    });
+    mockStoredRoles.mockResolvedValueOnce([
+      { role: "role_finance", actions: { billing: ["view", "manage"] } },
+    ]);
+    mockStripeCreateCheckout.mockResolvedValue({
+      url: "https://checkout.stripe.com/c/abc",
+    });
+    const { POST } = await import("@/app/api/billing/subscribe/route");
+    const res = await POST(buildRequest());
+    expect(res.status).toBe(200);
+  });
+
   it("returns 403 when user is a regular member (not owner/admin)", async () => {
     process.env.ENABLE_APP_TRIAL = "true";
     mockGetSession.mockResolvedValue({
@@ -167,7 +209,7 @@ describe("POST /api/billing/subscribe", () => {
     mockMongoFindOne.mockResolvedValue({
       userId: new ObjectId(userId),
       organizationId: new ObjectId(orgId),
-      role: "admin",
+      role: "owner",
     });
     mockStripeCreateCustomer.mockResolvedValue({ id: "cus_new" });
     mockStripeCreateCheckout.mockResolvedValue({

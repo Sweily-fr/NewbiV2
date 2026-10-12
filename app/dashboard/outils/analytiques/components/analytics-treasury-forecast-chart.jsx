@@ -22,9 +22,10 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -236,6 +237,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
             />
             {/* Revenus réels */}
             <Bar
+              animationDuration={300}
               dataKey="actualIncome"
               fill={chartColors.success}
               radius={[4, 4, 0, 0]}
@@ -243,6 +245,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
             />
             {/* Revenus prévus */}
             <Bar
+              animationDuration={300}
               dataKey="forecastIncome"
               fill={chartColors.successLight}
               fillOpacity={0.6}
@@ -253,6 +256,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
             />
             {/* Dépenses réelles */}
             <Bar
+              animationDuration={300}
               dataKey="actualExpense"
               fill={chartColors.danger}
               radius={[4, 4, 0, 0]}
@@ -260,6 +264,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
             />
             {/* Dépenses prévues */}
             <Bar
+              animationDuration={300}
               dataKey="forecastExpense"
               fill={chartColors.dangerLight}
               fillOpacity={0.6}
@@ -270,6 +275,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
             />
             {/* Ligne solde */}
             <Line
+              animationDuration={300}
               type="monotone"
               dataKey="closingBalance"
               stroke={remap("#3b82f6")}

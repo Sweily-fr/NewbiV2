@@ -50,10 +50,13 @@ describe("PLAN_LIMITS structure", () => {
   });
 
   it("availableRoles grows with plan tier", () => {
+    // viewer = Membre (lecture seule), member = Éditeur, accountant = Comptable
     expect(PLAN_LIMITS.freelance.availableRoles).toEqual([
+      "viewer",
       "member",
       "accountant",
     ]);
+    expect(PLAN_LIMITS.freelance.availableRoles).not.toContain("admin");
     expect(PLAN_LIMITS.pme.availableRoles).toContain("admin");
   });
 });

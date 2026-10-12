@@ -36,6 +36,8 @@ import QuoteRowActions from "../components/quote-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Custom filter functions
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -106,14 +108,6 @@ const formatDateForSearch = (dateValue) => {
       `${month}/${year}`,
       // Format mois-année avec tirets (MM-AAAA)
       `${month}-${year}`,
-      // Format texte en français
-      date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }),
-      date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-      date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
     ].filter(
       (value, index, self) =>
         // Supprimer les doublons et valeurs vides
@@ -234,6 +228,12 @@ export function useQuoteTable({
   // Hook pour la suppression de devis
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const { deleteImportedQuotes } = useDeleteImportedQuotes();
+  // Suppression groupée : les devis exigent « Supprimer » des devis, les
+  // devis importés (OCR) celui des devis importés
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canDeleteQuotes = !permissionsReady || canDo("quotes", "delete");
+  const canDeleteImported =
+    !permissionsReady || canDo("importedQuotes", "delete");
 
   // Define columns
   const columns = useMemo(
@@ -667,7 +667,7 @@ export function useQuoteTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -697,7 +697,7 @@ export function useQuoteTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -748,7 +748,7 @@ export function useQuoteTable({
 
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -816,6 +816,22 @@ export function useQuoteTable({
     }
   }, [data]);
 
+  // Filtres de colonnes mémoïsés : un tableau recréé à chaque rendu faisait
+  // recalculer à react-table tout le modèle filtré (recherche comprise) à
+  // chaque rendu, même sans changement de filtre.
+  const columnFilters = useMemo(
+    () => [
+      ...(statusFilter.length > 0
+        ? [{ id: "status", value: statusFilter }]
+        : []),
+      ...(clientFilter.length > 0
+        ? [{ id: "client", value: clientFilter }]
+        : []),
+      ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+    ],
+    [statusFilter, clientFilter, dateFilter],
+  );
+
   // Create table instance with optimized settings
   const table = useReactTable({
     data,
@@ -843,15 +859,7 @@ export function useQuoteTable({
     state: {
       globalFilter,
       columnVisibility,
-      columnFilters: [
-        ...(statusFilter.length > 0
-          ? [{ id: "status", value: statusFilter }]
-          : []),
-        ...(clientFilter.length > 0
-          ? [{ id: "client", value: clientFilter }]
-          : []),
-        ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
-      ],
+      columnFilters,
     },
     // Use the memoized filter function
     filterFns: {
@@ -874,24 +882,30 @@ export function useQuoteTable({
   const handleDeleteSelected = async () => {
     // Lignes de devis importés (OCR, ImportedQuote) : suppression via la
     // mutation dédiée deleteImportedQuotes, quel que soit leur statut.
-    const importedRows = selectedRows.filter((q) => q._type === "imported");
+    const importedRows = canDeleteImported
+      ? selectedRows.filter((q) => q._type === "imported")
+      : [];
 
     // Devis réels supprimables : brouillons, et devis issus d'un import
     // (préfixe vide → logo « importé ») quel que soit leur statut, même une
     // fois acceptés (COMPLETED) ou refusés (CANCELED).
-    const deletableQuotes = selectedRows.filter(
-      (q) =>
-        q._type !== "imported" &&
-        (q.status === "DRAFT" ||
-          q.status === "IMPORTED" ||
-          (!q.prefix && Boolean(q.number))),
-    );
+    const deletableQuotes = canDeleteQuotes
+      ? selectedRows.filter(
+          (q) =>
+            q._type !== "imported" &&
+            (q.status === "DRAFT" ||
+              q.status === "IMPORTED" ||
+              (!q.prefix && Boolean(q.number))),
+        )
+      : [];
 
     const totalDeletable = importedRows.length + deletableQuotes.length;
 
     if (totalDeletable === 0) {
       toast.error(
-        "Seuls les devis en brouillon ou importés peuvent être supprimés",
+        !canDeleteQuotes || !canDeleteImported
+          ? "Votre rôle ne permet pas de supprimer ces devis"
+          : "Seuls les devis en brouillon ou importés peuvent être supprimés",
       );
       return;
     }

@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ProSubscriptionOverlay } from "./pro-subscription-overlay";
+import dynamic from "next/dynamic";
+
+// Overlay (framer-motion, ~40 kB gz) chargé seulement quand l'animation se
+// joue, après un paiement réussi : il était téléchargé à chaque chargement du
+// dashboard.
+const ProSubscriptionOverlay = dynamic(
+  () =>
+    import("./pro-subscription-overlay").then((m) => m.ProSubscriptionOverlay),
+  { ssr: false },
+);
 
 export function ProSubscriptionOverlayHandler() {
   const searchParams = useSearchParams();
@@ -35,10 +44,8 @@ export function ProSubscriptionOverlayHandler() {
     console.log("✅ Animation Pro terminée");
   };
 
+  if (!showAnimation) return null;
   return (
-    <ProSubscriptionOverlay
-      isVisible={showAnimation}
-      onComplete={handleAnimationComplete}
-    />
+    <ProSubscriptionOverlay isVisible onComplete={handleAnimationComplete} />
   );
 }

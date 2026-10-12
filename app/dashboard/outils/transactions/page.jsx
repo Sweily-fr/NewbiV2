@@ -47,12 +47,14 @@ import { cn } from "@/src/lib/utils";
 import { useLazyQuery } from "@apollo/client";
 import { GET_TRANSACTIONS } from "@/src/graphql/queries/banking";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { toast } from "@/src/components/ui/sonner";
 import { mapTransactionToExpense } from "./components/transactions/utils/mapTransactionToExpense";
 import {
   TransactionsPageSkeleton,
   TransactionTableSkeleton,
 } from "./components/transaction-page-skeleton";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function GestionDepensesContent() {
   const searchParams = useSearchParams();
@@ -67,6 +69,10 @@ function GestionDepensesContent() {
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   const { workspaceId } = useRequiredWorkspace();
+  // Action « export » du rôle (tout autorisé tant que la grille n'est pas
+  // chargée) : sans elle, pas de bouton Exporter
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canExport = !permissionsReady || canDo("banking", "export");
 
   // Comptes bancaires + solde (summary backend) : les transactions elles-mêmes
   // sont paginées côté serveur dans TransactionTable (useTransactionsPage).
@@ -231,7 +237,7 @@ function GestionDepensesContent() {
 
   // Formater les montants
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -355,33 +361,35 @@ function GestionDepensesContent() {
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="cursor-pointer">
-                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                  Exporter
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                  Format d'export
-                </DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={exportToExcel}
-                  className="cursor-pointer"
-                >
-                  <FileSpreadsheet size={16} className="text-green-600" />
-                  Excel (.xlsx)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={exportToCSV}
-                  className="cursor-pointer"
-                >
-                  <FileText size={16} className="text-blue-600" />
-                  CSV (.csv)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {canExport && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="cursor-pointer">
+                    <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Format d'export
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={exportToExcel}
+                    className="cursor-pointer"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Excel (.xlsx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={exportToCSV}
+                    className="cursor-pointer"
+                  >
+                    <FileText size={16} className="text-blue-600" />
+                    CSV (.csv)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {/* <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

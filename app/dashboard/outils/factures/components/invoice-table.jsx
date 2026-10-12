@@ -1,10 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { sortByDateDesc } from "@/src/lib/document-dates";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -104,12 +106,14 @@ import { InvoiceTableSkeleton } from "./invoice-page-skeleton";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
 import { AnimatePresence } from "framer-motion";
-import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
 import CreditNotesTable from "./credit-notes-table";
+import RecurringInvoicesTable from "./recurring-invoices-table";
+import InvoiceRecurrenceDialog from "./invoice-recurrence-dialog";
+import { useInvoiceRecurrences } from "@/src/graphql/invoiceRecurrenceQueries";
 import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useCreditNotes } from "@/src/graphql/creditNoteQueries";
@@ -117,6 +121,17 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { DocumentText2Icon } from "@/src/components/icons";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const InvoiceMobileFullscreen = dynamic(
+  () => import("./invoice-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 export default function InvoiceTable({
   handleNewInvoice,
@@ -128,11 +143,24 @@ export default function InvoiceTable({
   onFilteredDataChange,
   onBalancesRefetch,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const router = useRouter();
   const inputRef = useRef(null);
   const { invoices, loading, error, refetch } = useInvoices();
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : la
+  // suppression groupée porte sur les brouillons et les factures importées
+  const { canRead, canDo, canDelete, isReady } = useMyPermissions();
+  const canBulkDelete =
+    !isReady || canDelete("invoices") || canDelete("importedInvoices");
+  // Factures récurrentes : action « recurring » des factures
+  const canManageRecurring = !isReady || canDo("invoices", "recurring");
+  // Factures importées et avoirs : modules distincts, masqués sans lecture
+  const canReadImportedInvoices = !isReady || canRead("importedInvoices");
+  const canReadCreditNotes = !isReady || canRead("creditNotes");
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
   // Vrai si la sidebar a été ouverte automatiquement via ?id= (ex: depuis Transactions)
   const sidebarAutoOpenedRef = useRef(false);
@@ -143,6 +171,8 @@ export default function InvoiceTable({
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailInvoice, setSendEmailInvoice] = useState(null);
   const [templateInvoice, setTemplateInvoice] = useState(null);
+  // Dialog de récurrence : { invoice (si chargée), sourceInvoiceId }
+  const [recurrenceTarget, setRecurrenceTarget] = useState(null);
   // État pour le fullscreen mobile - géré au niveau du tableau
   const [mobileFullscreenInvoice, setMobileFullscreenInvoice] = useState(null);
 
@@ -169,14 +199,34 @@ export default function InvoiceTable({
     importedInvoices,
     loading: importedLoading,
     refetch: refetchImported,
-  } = useImportedInvoices(workspaceId);
+  } = useImportedInvoices(canReadImportedInvoices ? workspaceId : null);
 
   // Hook pour les avoirs (count pour le badge du tab) : seul le total sert,
   // limit 1 évite de rapatrier toute la liste d'avoirs.
-  const { totalCount: creditNotesCount } = useCreditNotes({
-    page: 1,
-    limit: 1,
-  });
+  const { totalCount: creditNotesCount } = useCreditNotes(
+    { page: 1, limit: 1 },
+    { skip: !canReadCreditNotes },
+  );
+
+  // Factures récurrentes : badge dans la liste, onglet dédié, dialog
+  const {
+    recurrences,
+    loading: recurrencesLoading,
+    error: recurrencesError,
+    refetch: refetchRecurrences,
+  } = useInvoiceRecurrences();
+  const recurrencesBySource = useMemo(
+    () => new Map(recurrences.map((r) => [r.sourceInvoiceId, r])),
+    [recurrences],
+  );
+  const liveRecurrencesCount = useMemo(
+    () =>
+      recurrences.filter((r) => ["ACTIVE", "PAUSED"].includes(r.status)).length,
+    [recurrences],
+  );
+  const openRecurrenceForInvoice = useCallback((invoice) => {
+    setRecurrenceTarget({ invoice, sourceInvoiceId: invoice.id });
+  }, []);
 
   // Récupérer les paramètres de relance automatique
   const { data: reminderSettingsData } = useInvoiceReminderSettings();
@@ -200,7 +250,9 @@ export default function InvoiceTable({
       _type: "normal",
     }));
 
-    const imported = (importedInvoices || []).map((inv) => ({
+    const imported = (
+      canReadImportedInvoices ? importedInvoices || [] : []
+    ).map((inv) => ({
       ...inv,
       _type: "imported",
       // Mapper les champs pour compatibilité avec le tableau
@@ -219,7 +271,7 @@ export default function InvoiceTable({
     // Tri par date d'émission (puis création) quel que soit le type : les
     // dates peuvent être des timestamps en chaîne, sortByDateDesc les gère.
     return sortByDateDesc([...normalInvoices, ...imported]);
-  }, [invoices, importedInvoices]);
+  }, [invoices, importedInvoices, canReadImportedInvoices]);
 
   // Facture importée affichée dans la sidebar : l'objet sélectionné au clic
   // (ou l'élément de la file de revue) est un instantané. Après chaque
@@ -287,6 +339,8 @@ export default function InvoiceTable({
     onOpenImportedSidebar: setSelectedImportedInvoice,
     onSendEmail: setSendEmailInvoice,
     onSaveAsTemplate: setTemplateInvoice,
+    recurrencesBySource,
+    onManageRecurrence: openRecurrenceForInvoice,
   });
 
   // Notifier le parent des données filtrées pour les KPIs
@@ -338,12 +392,15 @@ export default function InvoiceTable({
       setStatusFilter([]);
     } else if (value === "completed") {
       setStatusFilter(["COMPLETED"]);
-    } else if (value === "credit-notes") {
+    } else if (value === "credit-notes" || value === "recurring") {
       setStatusFilter([]);
     }
   };
 
-  const isCreditNotesView = activeTab === "credit-notes";
+  const isCreditNotesView = activeTab === "credit-notes" && canReadCreditNotes;
+  const isRecurringView = activeTab === "recurring";
+  // Onglets qui remplacent le tableau des factures par leur propre vue
+  const isSideView = isCreditNotesView || isRecurringView;
 
   // Pré-filtrage depuis l'URL (ex: ?status=overdue depuis le dashboard)
   const searchParams = useSearchParams();
@@ -360,6 +417,7 @@ export default function InvoiceTable({
         "overdue",
         "completed",
         "credit-notes",
+        "recurring",
       ].includes(status)
     ) {
       handleTabChange(status);
@@ -376,6 +434,7 @@ export default function InvoiceTable({
       overdue: 0,
       completed: 0,
       "credit-notes": creditNotesCount,
+      recurring: liveRecurrencesCount,
     };
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -401,7 +460,7 @@ export default function InvoiceTable({
     });
     counts["credit-notes"] = creditNotesCount;
     return counts;
-  }, [combinedInvoices, creditNotesCount]);
+  }, [combinedInvoices, creditNotesCount, liveRecurrencesCount]);
 
   // --- Mobile responsive state ---
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
@@ -418,7 +477,8 @@ export default function InvoiceTable({
     { id: "pending", label: "À encaisser" },
     { id: "overdue", label: "En retard" },
     { id: "completed", label: "Terminées" },
-    { id: "credit-notes", label: "Avoirs" },
+    ...(canReadCreditNotes ? [{ id: "credit-notes", label: "Avoirs" }] : []),
+    { id: "recurring", label: "Récurrentes" },
   ];
 
   // All rows for mobile infinite scroll (bypasses pagination)
@@ -579,7 +639,7 @@ export default function InvoiceTable({
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
             {/* Bulk delete - visible quand des rows sont sélectionnées */}
-            {selectedRows.length > 0 && (
+            {selectedRows.length > 0 && canBulkDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -672,13 +732,24 @@ export default function InvoiceTable({
                   {invoiceCounts.completed}
                 </span>
               </TabsTrigger>
+              {canReadCreditNotes && (
+                <TabsTrigger
+                  value="credit-notes"
+                  className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+                >
+                  <span>Avoirs</span>
+                  <span className="text-xs text-muted-foreground">
+                    {invoiceCounts["credit-notes"]}
+                  </span>
+                </TabsTrigger>
+              )}
               <TabsTrigger
-                value="credit-notes"
+                value="recurring"
                 className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
               >
-                <span>Avoirs</span>
+                <span>Récurrentes</span>
                 <span className="text-xs text-muted-foreground">
-                  {invoiceCounts["credit-notes"]}
+                  {invoiceCounts.recurring}
                 </span>
               </TabsTrigger>
             </TabsList>
@@ -686,12 +757,7 @@ export default function InvoiceTable({
         </div>
 
         {/* Table header - sticky */}
-        <div
-          className={cn(
-            "border-b border-border",
-            isCreditNotesView && "hidden",
-          )}
-        >
+        <div className={cn("border-b border-border", isSideView && "hidden")}>
           <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -721,108 +787,110 @@ export default function InvoiceTable({
       {/* Fin sticky zone */}
 
       {/* Table body - Desktop */}
-      <div
-        className={cn(
-          "hidden md:flex md:flex-col flex-1",
-          isCreditNotesView && "md:hidden",
-        )}
-      >
-        <table className="w-full table-fixed">
-          <tbody>
-            {loading && !invoices?.length ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="border-b">
-                  <td className="p-2 pl-4 sm:pl-6">
-                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                      <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2 pr-4 sm:pr-6">
-                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                  </td>
-                </tr>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                  onClick={(e) => {
-                    // Ignorer les clics provenant de portals React (modals, dropdowns)
-                    if (!e.currentTarget.contains(e.target)) return;
-                    // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
-                    if (
-                      e.target.closest('[role="checkbox"]') ||
-                      e.target.closest("[data-actions-cell]") ||
-                      e.target.closest('button[role="combobox"]') ||
-                      e.target.closest('[role="menu"]') ||
-                      e.target.closest('[role="dialog"]')
-                    ) {
-                      return;
-                    }
-                    const invoice = row.original;
-                    // Ouvrir la sidebar appropriée selon le type
-                    if (invoice._type === "imported") {
-                      setSelectedImportedInvoice(invoice);
-                    } else {
-                      // Déclencher l'ouverture de la sidebar via le bouton d'actions
-                      const actionsButton = e.currentTarget.querySelector(
-                        "[data-view-invoice]",
-                      );
-                      if (actionsButton) {
-                        actionsButton.click();
+      {!isMobileLayout && (
+        <div
+          className={cn(
+            "hidden md:flex md:flex-col flex-1",
+            isSideView && "md:hidden",
+          )}
+        >
+          <table className="w-full table-fixed">
+            <tbody>
+              {loading && !invoices?.length ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="border-b">
+                    <td className="p-2 pl-4 sm:pl-6">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </td>
+                  </tr>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      // Ignorer les clics provenant de portals React (modals, dropdowns)
+                      if (!e.currentTarget.contains(e.target)) return;
+                      // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("[data-actions-cell]") ||
+                        e.target.closest('button[role="combobox"]') ||
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="dialog"]')
+                      ) {
+                        return;
                       }
-                    }
-                  }}
-                >
-                  {row
-                    .getVisibleCells()
-                    .filter((c) => c.column.id !== "_type")
-                    .map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
+                      const invoice = row.original;
+                      // Ouvrir la sidebar appropriée selon le type
+                      if (invoice._type === "imported") {
+                        setSelectedImportedInvoice(invoice);
+                      } else {
+                        // Déclencher l'ouverture de la sidebar via le bouton d'actions
+                        const actionsButton = e.currentTarget.querySelector(
+                          "[data-view-invoice]",
+                        );
+                        if (actionsButton) {
+                          actionsButton.click();
+                        }
+                      }
+                    }}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter((c) => c.column.id !== "_type")
+                      .map((cell, index, arr) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={table.getAllColumns().length} className="p-0">
+                    <TableEmptyState
+                      icon={DocumentText2Icon}
+                      title="Aucune facture trouvée"
+                      description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
+                    />
+                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={table.getAllColumns().length} className="p-0">
-                  <TableEmptyState
-                    icon={DocumentText2Icon}
-                    title="Aucune facture trouvée"
-                    description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Mobile Toolbar */}
       <div
@@ -970,166 +1038,168 @@ export default function InvoiceTable({
       </div>
 
       {/* Mobile Table - Infinite scroll */}
-      <div
-        ref={mobileScrollRef}
-        onScroll={handleMobileScroll}
-        className={cn(
-          "md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20",
-          isCreditNotesView && "hidden",
-        )}
-      >
+      {isMobileLayout && (
         <div
-          className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
+          ref={mobileScrollRef}
+          onScroll={handleMobileScroll}
+          className={cn(
+            "md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20",
+            isSideView && "hidden",
+          )}
         >
-          <Table className="w-full">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="border-b border-gray-100 dark:border-gray-400"
-                >
-                  {headerGroup.headers
-                    .filter(
-                      (header) =>
-                        header.column.id === "select" ||
-                        header.column.id === "client" ||
-                        header.column.id === "finalTotalTTC" ||
-                        header.column.id === "actions",
-                    )
-                    .map((header) => (
-                      <TableHead
-                        key={header.id}
-                        style={{ width: header.getSize() }}
-                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {visibleMobileRows.length > 0 ? (
-                <>
-                  {visibleMobileRows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
-                      onClick={(e) => {
-                        // Ignorer les clics provenant de portals React (modals, dropdowns)
-                        if (!e.currentTarget.contains(e.target)) return;
-                        if (
-                          e.target.closest('[role="checkbox"]') ||
-                          e.target.closest("[data-actions-cell]") ||
-                          e.target.closest('[role="menu"]')
-                        )
-                          return;
-                        const invoice = row.original;
-                        if (invoice._type === "imported") {
-                          setSelectedImportedInvoice(invoice);
-                        } else {
-                          setMobileFullscreenInvoice(invoice);
-                        }
-                      }}
-                    >
-                      {row
-                        .getVisibleCells()
-                        .filter(
-                          (cell) =>
-                            cell.column.id === "select" ||
-                            cell.column.id === "client" ||
-                            cell.column.id === "finalTotalTTC" ||
-                            cell.column.id === "actions",
-                        )
-                        .map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            className="py-3 px-4 text-sm"
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  ))}
-                  {isLoadingMoreMobile &&
-                    Array.from({ length: 3 }).map((_, i) => (
+          <div
+            className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
+          >
+            <Table className="w-full">
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="border-b border-gray-100 dark:border-gray-400"
+                  >
+                    {headerGroup.headers
+                      .filter(
+                        (header) =>
+                          header.column.id === "select" ||
+                          header.column.id === "client" ||
+                          header.column.id === "finalTotalTTC" ||
+                          header.column.id === "actions",
+                      )
+                      .map((header) => (
+                        <TableHead
+                          key={header.id}
+                          style={{ width: header.getSize() }}
+                          className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {visibleMobileRows.length > 0 ? (
+                  <>
+                    {visibleMobileRows.map((row) => (
                       <TableRow
-                        key={`mobile-skeleton-${i}`}
-                        className="border-b border-gray-50 dark:border-gray-800"
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                        onClick={(e) => {
+                          // Ignorer les clics provenant de portals React (modals, dropdowns)
+                          if (!e.currentTarget.contains(e.target)) return;
+                          if (
+                            e.target.closest('[role="checkbox"]') ||
+                            e.target.closest("[data-actions-cell]") ||
+                            e.target.closest('[role="menu"]')
+                          )
+                            return;
+                          const invoice = row.original;
+                          if (invoice._type === "imported") {
+                            setSelectedImportedInvoice(invoice);
+                          } else {
+                            setMobileFullscreenInvoice(invoice);
+                          }
+                        }}
                       >
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-4 w-4" />
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <Skeleton className="h-8 w-8 rounded-full" />
-                            <Skeleton className="h-4 w-[100px]" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-4 w-[60px]" />
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-7 w-7" />
-                        </TableCell>
+                        {row
+                          .getVisibleCells()
+                          .filter(
+                            (cell) =>
+                              cell.column.id === "select" ||
+                              cell.column.id === "client" ||
+                              cell.column.id === "finalTotalTTC" ||
+                              cell.column.id === "actions",
+                          )
+                          .map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className="py-3 px-4 text-sm"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </TableCell>
+                          ))}
                       </TableRow>
                     ))}
-                  {hasMoreMobile && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="p-0">
-                        <div ref={mobileSentinelRef} className="h-1" />
+                    {isLoadingMoreMobile &&
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow
+                          key={`mobile-skeleton-${i}`}
+                          className="border-b border-gray-50 dark:border-gray-800"
+                        >
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-4 w-4" />
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <Skeleton className="h-8 w-8 rounded-full" />
+                              <Skeleton className="h-4 w-[100px]" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-4 w-[60px]" />
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-7 w-7" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    {hasMoreMobile && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="p-0">
+                          <div ref={mobileSentinelRef} className="h-1" />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ) : loading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow
+                      key={`skeleton-${i}`}
+                      className="border-b border-gray-50 dark:border-gray-800"
+                    >
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-4 w-4" />
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <Skeleton className="h-4 w-[100px]" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-4 w-[60px]" />
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-7 w-7" />
                       </TableCell>
                     </TableRow>
-                  )}
-                </>
-              ) : loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow
-                    key={`skeleton-${i}`}
-                    className="border-b border-gray-50 dark:border-gray-800"
-                  >
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-4 w-4" />
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <Skeleton className="h-4 w-[100px]" />
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-4 w-[60px]" />
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-7 w-7" />
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="p-0">
+                      <TableEmptyState
+                        icon={DocumentText2Icon}
+                        title="Aucune facture trouvée"
+                        description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
+                        size="compact"
+                      />
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="p-0">
-                    <TableEmptyState
-                      icon={DocumentText2Icon}
-                      title="Aucune facture trouvée"
-                      description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
-                      size="compact"
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Vue Avoirs - rendue après les onglets mobiles & desktop pour respecter l'ordre visuel */}
       {isCreditNotesView && (
@@ -1142,11 +1212,34 @@ export default function InvoiceTable({
         />
       )}
 
+      {isRecurringView && (
+        <RecurringInvoicesTable
+          recurrences={recurrences}
+          loading={recurrencesLoading}
+          error={recurrencesError}
+          onRetry={refetchRecurrences}
+          globalFilter={globalFilter}
+          // Gestion des récurrences : action « recurring » des factures
+          onManage={
+            canManageRecurring
+              ? (recurrence) =>
+                  setRecurrenceTarget({
+                    invoice:
+                      (invoices || []).find(
+                        (inv) => inv.id === recurrence.sourceInvoiceId,
+                      ) || null,
+                    sourceInvoiceId: recurrence.sourceInvoiceId,
+                  })
+              : undefined
+          }
+        />
+      )}
+
       {/* Pagination - Fixe en bas sur desktop */}
       <div
         className={cn(
           "hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background sticky bottom-0 z-10",
-          isCreditNotesView && "md:hidden",
+          isSideView && "md:hidden",
         )}
       >
         <div className="flex-1 text-xs font-normal text-muted-foreground">
@@ -1283,6 +1376,20 @@ export default function InvoiceTable({
         />
       )}
 
+      {/* Dialog de récurrence - state au niveau du tableau */}
+      {recurrenceTarget && (
+        <InvoiceRecurrenceDialog
+          open={!!recurrenceTarget}
+          onOpenChange={(open) => {
+            if (!open) setRecurrenceTarget(null);
+          }}
+          invoice={recurrenceTarget.invoice}
+          recurrence={
+            recurrencesBySource.get(recurrenceTarget.sourceInvoiceId) || null
+          }
+        />
+      )}
+
       {/* Modal d'import de factures */}
       <ImportInvoiceModal
         open={isImportModalOpen}
@@ -1348,7 +1455,7 @@ export default function InvoiceTable({
           documentNumber={`${sendEmailInvoice.prefix || "F"}-${sendEmailInvoice.number}`}
           clientName={sendEmailInvoice.client?.name}
           clientEmail={sendEmailInvoice.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", {
+          totalAmount={getNumberFormat("fr-FR", {
             style: "currency",
             currency: "EUR",
           }).format(

@@ -22,12 +22,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -38,10 +44,12 @@ const formatMonthHeader = (monthStr) => {
   if (!monthStr) return "";
   const [year, month] = monthStr.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date
-    .toLocaleDateString("fr-FR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase() + ` ${year.slice(2)}`;
+  return (
+    date
+      .toLocaleDateString("fr-FR", { month: "short" })
+      .replace(".", "")
+      .toUpperCase() + ` ${year.slice(2)}`
+  );
 };
 
 function SortableHeader({ column, children }) {
@@ -68,7 +76,8 @@ export function AnalyticsCrossTabTable({
   const [selectedValue, setSelectedValue] = useState(defaultValue);
   const [sorting, setSorting] = useState([]);
 
-  const isCurrencyValue = selectedValue !== "invoiceCount" && selectedValue !== "count";
+  const isCurrencyValue =
+    selectedValue !== "invoiceCount" && selectedValue !== "count";
 
   // Extract unique sorted months
   const months = useMemo(() => {
@@ -79,13 +88,17 @@ export function AnalyticsCrossTabTable({
 
   // Pivot data: rows = entities, columns = months
   const { pivotedRows, totalsRow } = useMemo(() => {
-    if (!data?.length || !months.length) return { pivotedRows: [], totalsRow: null };
+    if (!data?.length || !months.length)
+      return { pivotedRows: [], totalsRow: null };
 
     const rowMap = {};
     for (const item of data) {
       const rowKey = item[rowKeyField];
       if (!rowMap[rowKey]) {
-        rowMap[rowKey] = { _rowLabel: rowLabelMap?.[rowKey] || rowKey, _rowKey: rowKey };
+        rowMap[rowKey] = {
+          _rowLabel: rowLabelMap?.[rowKey] || rowKey,
+          _rowKey: rowKey,
+        };
         for (const m of months) {
           rowMap[rowKey][m] = 0;
         }
@@ -124,7 +137,9 @@ export function AnalyticsCrossTabTable({
           </SortableHeader>
         ),
         cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">{row.getValue("_rowLabel")}</span>
+          <span className="font-medium whitespace-nowrap">
+            {row.getValue("_rowLabel")}
+          </span>
         ),
       },
     ];
@@ -133,7 +148,9 @@ export function AnalyticsCrossTabTable({
       cols.push({
         accessorKey: m,
         header: ({ column }) => (
-          <SortableHeader column={column}>{formatMonthHeader(m)}</SortableHeader>
+          <SortableHeader column={column}>
+            {formatMonthHeader(m)}
+          </SortableHeader>
         ),
         cell: ({ row }) => {
           const val = row.getValue(m);
@@ -242,7 +259,10 @@ export function AnalyticsCrossTabTable({
                       >
                         {header.isPlaceholder
                           ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -262,7 +282,10 @@ export function AnalyticsCrossTabTable({
                               : ""
                         }
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -276,16 +299,25 @@ export function AnalyticsCrossTabTable({
                     {months.map((m, idx) => (
                       <TableCell
                         key={m}
-                        className={idx === months.length - 1 && colCount === months.length + 2 ? "" : ""}
+                        className={
+                          idx === months.length - 1 &&
+                          colCount === months.length + 2
+                            ? ""
+                            : ""
+                        }
                       >
                         <span className="whitespace-nowrap tabular-nums font-semibold">
-                          {isCurrencyValue ? formatCurrency(totalsRow[m]) : totalsRow[m]}
+                          {isCurrencyValue
+                            ? formatCurrency(totalsRow[m])
+                            : totalsRow[m]}
                         </span>
                       </TableCell>
                     ))}
                     <TableCell className="pr-6">
                       <span className="whitespace-nowrap tabular-nums font-bold">
-                        {isCurrencyValue ? formatCurrency(totalsRow._total) : totalsRow._total}
+                        {isCurrencyValue
+                          ? formatCurrency(totalsRow._total)
+                          : totalsRow._total}
                       </span>
                     </TableCell>
                   </TableRow>

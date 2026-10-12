@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const TYPE_LABELS = {
   COMPANY: "Entreprise",
@@ -19,7 +20,7 @@ const TYPE_LABELS = {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -135,6 +136,7 @@ export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <PieChart>
             <Pie
+              animationDuration={300}
               data={chartData}
               dataKey="totalTTC"
               nameKey="name"

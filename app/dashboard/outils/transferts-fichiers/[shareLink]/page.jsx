@@ -23,11 +23,9 @@ import {
   CreditCard,
   LoaderCircle,
 } from "lucide-react";
-import { useQuery, useMutation } from "@apollo/client";
-import {
-  GET_TRANSFER_BY_LINK,
-  GENERATE_FILE_TRANSFER_PAYMENT_LINK,
-} from "../graphql/mutations";
+import { useQuery } from "@apollo/client";
+import { GET_TRANSFER_BY_LINK } from "../graphql/mutations";
+import { useStripePayment } from "@/src/hooks/useStripePayment";
 import { toast } from "sonner";
 
 function TransferPageContent() {
@@ -48,10 +46,8 @@ function TransferPageContent() {
     errorPolicy: "all",
   });
 
-  // Mutation pour générer un lien de paiement
-  const [generatePaymentLink, { loading: paymentLoading }] = useMutation(
-    GENERATE_FILE_TRANSFER_PAYMENT_LINK,
-  );
+  // Paiement : même session Stripe que la page publique /transfer/[shareLink]
+  const { initiatePayment, isProcessing: paymentLoading } = useStripePayment();
 
   const transfer = data?.getFileTransferByLink?.fileTransfer;
 
@@ -101,23 +97,7 @@ function TransferPageContent() {
     !isLimitReached &&
     (!transferData.isPaymentRequired || paymentCompleted);
 
-  const handlePayment = async () => {
-    try {
-      const { data } = await generatePaymentLink({
-        variables: { shareLink, accessKey },
-      });
-
-      if (data?.generatePaymentLink?.success) {
-        // Rediriger vers le lien de paiement
-        window.location.href = data.generatePaymentLink.paymentUrl;
-      } else {
-        toast.error("Erreur lors de la génération du lien de paiement");
-      }
-    } catch (error) {
-      console.error("Erreur paiement:", error);
-      toast.error("Erreur lors de la génération du lien de paiement");
-    }
-  };
+  const handlePayment = () => initiatePayment(transfer?.id, accessKey);
 
   const handleDownload = async (file) => {
     if (!canDownload) return;

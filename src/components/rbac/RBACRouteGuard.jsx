@@ -156,6 +156,11 @@ export function RBACRouteGuard({
  *   <AdminPanel />
  * </RoleRouteGuard>
  */
+// Rôles prédéfinis connus de RoleRouteGuard. Le comptable a désormais par
+// défaut les droits d'un membre : les listes qui l'excluaient ne le
+// concernent plus.
+const LEGACY_ROLES = ["owner", "admin", "member", "viewer"];
+
 export function RoleRouteGuard({
   children,
   roles,
@@ -180,8 +185,12 @@ export function RoleRouteGuard({
         return;
       }
 
+      // Rôle prédéfini de la liste, ou rôle personnalisé / ajusté : la page
+      // est alors autorisée selon la grille du rôle (ModuleRouteGuard du
+      // layout), pas selon cette liste figée
       const rolesArray = Array.isArray(roles) ? roles : [roles];
-      const access = rolesArray.includes(userRole);
+      const access =
+        rolesArray.includes(userRole) || !LEGACY_ROLES.includes(userRole);
 
       setHasAccess(access);
       setIsChecking(false);

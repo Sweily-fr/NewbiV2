@@ -11,6 +11,7 @@ import { Button } from "@/src/components/ui/button";
 import { Callout } from "@/src/components/ui/callout";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 /**
  * Bannière affichée quand une ou plusieurs connexions bancaires nécessitent
@@ -27,6 +28,11 @@ export function BankReconnectAlert() {
   const { workspaceId } = useWorkspace();
   const { itemsNeedingAction, reconnectBank, refreshStatus, isLoading } =
     useBankingConnection(workspaceId);
+  // Reconnecter une banque : droit « Applications et banques » du rôle (tout
+  // autorisé tant que la grille n'est pas chargée). Sans ce droit, la
+  // bannière informe seulement.
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canReconnectBank = !permissionsReady || canDo("integrations", "manage");
   const refreshedAfterCallback = useRef(false);
   const [index, setIndex] = useState(0);
 
@@ -70,7 +76,9 @@ export function BankReconnectAlert() {
             Votre banque demande une revalidation de sécurité tous les 6 mois.
             Vos transactions ne sont plus synchronisées. Vos comptes et votre
             historique seront conservés.
-            {count > 1 && " Reconnectez chaque banque l'une après l'autre."}
+            {count > 1 &&
+              canReconnectBank &&
+              " Reconnectez chaque banque l'une après l'autre."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -97,19 +105,21 @@ export function BankReconnectAlert() {
               </button>
             </div>
           )}
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={isLoading}
-            onClick={() => reconnectBank(current.itemId)}
-          >
-            {isLoading ? (
-              <LoaderCircle className="size-4 animate-spin" />
-            ) : (
-              <RefreshCw className="size-4" />
-            )}
-            {count > 1 ? `Reconnecter ${bankLabel}` : "Reconnecter ma banque"}
-          </Button>
+          {canReconnectBank && (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={isLoading}
+              onClick={() => reconnectBank(current.itemId)}
+            >
+              {isLoading ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <RefreshCw className="size-4" />
+              )}
+              {count > 1 ? `Reconnecter ${bankLabel}` : "Reconnecter ma banque"}
+            </Button>
+          )}
         </div>
       </div>
     </Callout>

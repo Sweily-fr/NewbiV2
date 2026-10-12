@@ -33,7 +33,8 @@ export const DraggableEvent = memo(function DraggableEvent({
   isLastDay = true,
   "aria-hidden": ariaHidden,
 }) {
-  const { activeId } = useCalendarDnd();
+  // Glisser-déposer désactivé pour un rôle en lecture (clic toujours actif)
+  const { activeId, dragDisabled } = useCalendarDnd();
   const elementRef = useRef(null);
   const [dragHandlePosition, setDragHandlePosition] = useState(null);
 
@@ -46,6 +47,7 @@ export const DraggableEvent = memo(function DraggableEvent({
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: `${event.id}-${view}`,
+      disabled: dragDisabled,
       data: {
         event,
         view,
@@ -114,7 +116,7 @@ export const DraggableEvent = memo(function DraggableEvent({
         if (elementRef) elementRef.current = node;
       }}
       style={style}
-      className="touch-none"
+      className={dragDisabled ? undefined : "touch-none"}
     >
       <EventItem
         event={event}

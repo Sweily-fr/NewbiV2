@@ -43,6 +43,7 @@ import {
   useDeleteImportedInvoice,
 } from "@/src/graphql/importedInvoiceQueries";
 import InvoiceRowActions from "../components/invoice-row-actions";
+import { InvoiceRecurrenceBadge } from "../components/invoice-recurrence-badge";
 import {
   EInvoiceStatusBadge,
   EReportingErrorBadge,
@@ -50,6 +51,8 @@ import {
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Custom filter functions
 // Une facture importée VALIDATED est "Terminée" au même titre qu'une facture
@@ -118,14 +121,6 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
         `${month}/${year}`,
         // Format mois-année avec tirets (MM-AAAA)
         `${month}-${year}`,
-        // Format texte en français
-        date.toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        }),
-        date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-        date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
       ].filter(
         (value, index, self) =>
           // Supprimer les doublons
@@ -243,12 +238,20 @@ export function useInvoiceTable({
   onOpenImportedSidebar,
   onSendEmail,
   onSaveAsTemplate,
+  recurrencesBySource,
+  onManageRecurrence,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
   const [typeFilter, setTypeFilter] = useState("");
+  // Suppression groupée : les brouillons exigent « Supprimer » des factures,
+  // les factures importées celui des factures importées
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canDeleteDrafts = !permissionsReady || canDo("invoices", "delete");
+  const canDeleteImported =
+    !permissionsReady || canDo("importedInvoices", "delete");
   const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
     "newbi:column-visibility:invoices",
     { finalTotalHT: false, finalTotalVAT: false },
@@ -440,7 +443,7 @@ export function useInvoiceTable({
             const amount = invoice.totalHT || 0;
             return (
               <div className="font-normal">
-                {new Intl.NumberFormat("fr-FR", {
+                {getNumberFormat("fr-FR", {
                   style: "currency",
                   currency: invoice.currency || "EUR",
                 }).format(amount)}
@@ -452,7 +455,7 @@ export function useInvoiceTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -481,7 +484,7 @@ export function useInvoiceTable({
             const amount = invoice.totalVAT || 0;
             return (
               <div className="font-normal">
-                {new Intl.NumberFormat("fr-FR", {
+                {getNumberFormat("fr-FR", {
                   style: "currency",
                   currency: invoice.currency || "EUR",
                 }).format(amount)}
@@ -493,7 +496,7 @@ export function useInvoiceTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -524,7 +527,7 @@ export function useInvoiceTable({
             const amount = invoice.totalTTC || invoice.total || 0;
             return (
               <div className="font-normal">
-                {new Intl.NumberFormat("fr-FR", {
+                {getNumberFormat("fr-FR", {
                   style: "currency",
                   currency: invoice.currency || "EUR",
                 }).format(amount)}
@@ -565,7 +568,7 @@ export function useInvoiceTable({
 
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -860,6 +863,10 @@ export function useInvoiceTable({
                     paymentStatus={row.original.eReportingPaymentStatus}
                     error={row.original.eReportingError}
                   />
+                  <InvoiceRecurrenceBadge
+                    recurrence={recurrencesBySource?.get(row.original.id)}
+                    recurrenceOrigin={row.original.recurrenceOrigin}
+                  />
                 </>
               )}
             </div>
@@ -981,6 +988,8 @@ export function useInvoiceTable({
               onOpenImportedSidebar={onOpenImportedSidebar}
               onSendEmail={onSendEmail}
               onSaveAsTemplate={onSaveAsTemplate}
+              recurrence={recurrencesBySource?.get(row.original.id)}
+              onManageRecurrence={onManageRecurrence}
             />
           );
         },
@@ -999,7 +1008,26 @@ export function useInvoiceTable({
       onOpenImportedSidebar,
       onSendEmail,
       onSaveAsTemplate,
+      recurrencesBySource,
+      onManageRecurrence,
     ],
+  );
+
+  // Filtres de colonnes mémoïsés : un tableau recréé à chaque rendu faisait
+  // recalculer à react-table tout le modèle filtré (recherche comprise) à
+  // chaque rendu, même sans changement de filtre.
+  const columnFilters = useMemo(
+    () => [
+      ...(statusFilter.length > 0
+        ? [{ id: "status", value: statusFilter }]
+        : []),
+      ...(clientFilter.length > 0
+        ? [{ id: "client", value: clientFilter }]
+        : []),
+      ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+      ...(typeFilter ? [{ id: "_type", value: typeFilter }] : []),
+    ],
+    [statusFilter, clientFilter, dateFilter, typeFilter],
   );
 
   // Create table instance with optimized settings
@@ -1029,16 +1057,7 @@ export function useInvoiceTable({
     state: {
       globalFilter,
       columnVisibility,
-      columnFilters: [
-        ...(statusFilter.length > 0
-          ? [{ id: "status", value: statusFilter }]
-          : []),
-        ...(clientFilter.length > 0
-          ? [{ id: "client", value: clientFilter }]
-          : []),
-        ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
-        ...(typeFilter ? [{ id: "_type", value: typeFilter }] : []),
-      ],
+      columnFilters,
     },
     // Use the memoized filter function
     filterFns: {
@@ -1061,12 +1080,15 @@ export function useInvoiceTable({
   // Handle bulk delete - optimized with batching
   const handleDeleteSelected = async () => {
     // Séparer les factures normales (brouillons) et les factures importées
-    const draftInvoices = selectedRows.filter(
-      (invoice) => invoice._type !== "imported" && invoice.status === "DRAFT",
-    );
-    const importedInvoices = selectedRows.filter(
-      (invoice) => invoice._type === "imported",
-    );
+    const draftInvoices = canDeleteDrafts
+      ? selectedRows.filter(
+          (invoice) =>
+            invoice._type !== "imported" && invoice.status === "DRAFT",
+        )
+      : [];
+    const importedInvoices = canDeleteImported
+      ? selectedRows.filter((invoice) => invoice._type === "imported")
+      : [];
 
     // Factures normales non-brouillon ignorées
     const ignoredNormalInvoices = selectedRows.filter(
@@ -1075,7 +1097,9 @@ export function useInvoiceTable({
 
     if (draftInvoices.length === 0 && importedInvoices.length === 0) {
       toast.error(
-        "Seules les factures en brouillon ou importées peuvent être supprimées",
+        !canDeleteDrafts || !canDeleteImported
+          ? "Votre rôle ne permet pas de supprimer ces factures"
+          : "Seules les factures en brouillon ou importées peuvent être supprimées",
       );
       return;
     }

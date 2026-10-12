@@ -658,6 +658,7 @@ export function SubscriptionSection({
 
                   {/* Button */}
                   <div className="mt-3">
+                    {/* Choisir un plan : « Gérer l'abonnement » */}
                     {isCurrentPlan ? (
                       <Button
                         type="button"
@@ -668,16 +669,14 @@ export function SubscriptionSection({
                       >
                         Plan actuel
                       </Button>
-                    ) : (
+                    ) : !canManageSubscription ? null : (
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         className="w-full cursor-pointer text-xs"
                         onClick={() => openPlanChangeModal(plan.key)}
-                        disabled={
-                          loadingPlan === plan.key || !canManageSubscription
-                        }
+                        disabled={loadingPlan === plan.key}
                       >
                         {loadingPlan === plan.key ? (
                           <LoaderCircle className="h-3 w-3 animate-spin" />
@@ -771,7 +770,8 @@ export function SubscriptionSection({
       </div>
 
       {/* Cancel button — hidden for trial app users (no Stripe subscription to cancel yet) */}
-      {isActive() &&
+      {canManageSubscription &&
+        isActive() &&
         subscription &&
         subscription.stripeSubscriptionId &&
         !subscription.cancelAtPeriodEnd &&
@@ -782,7 +782,7 @@ export function SubscriptionSection({
               variant="ghost"
               size="sm"
               onClick={() => setShowCancelDialog(true)}
-              disabled={!canManageSubscription || isLoading}
+              disabled={isLoading}
               className="text-xs text-muted-foreground hover:text-red-600 cursor-pointer"
             >
               Résilier l'abonnement

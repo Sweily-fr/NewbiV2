@@ -18,7 +18,11 @@ import {
 import { useClient } from "@/src/graphql/clientQueries";
 import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
-import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
+import {
+  formatCalendarDate,
+  formatLocalDate,
+  refreshDraftDates,
+} from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
@@ -26,12 +30,13 @@ import {
   getActiveOrganization,
 } from "@/src/lib/organization-client";
 import { useArchiveInvoicePdf } from "@/src/hooks/useArchiveInvoicePdf";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 import {
   getOrganizationAnnex,
   normalizeAnnex,
   toAnnexInput,
 } from "@/src/utils/document-annex";
+import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1599,7 +1604,7 @@ export function useInvoiceEditor({
       return;
     }
 
-    const latestLocal = formatLocalDate(new Date(latestIssueDate));
+    const latestLocal = formatCalendarDate(new Date(latestIssueDate));
     // Comparaison lexicographique valide pour le format YYYY-MM-DD
     if (latestLocal > today) {
       setValue("issueDate", latestLocal, { shouldDirty: false });
@@ -2124,7 +2129,7 @@ export function useInvoiceEditor({
       // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
       // et ajuster dueDate pour qu'elle reste >= issueDate
       if (latestIssueDate && input.issueDate) {
-        const latestLocal = formatLocalDate(new Date(latestIssueDate));
+        const latestLocal = formatCalendarDate(new Date(latestIssueDate));
         if (input.issueDate < latestLocal) {
           const oldIssue = input.issueDate;
           input = { ...input, issueDate: latestLocal };
@@ -2161,7 +2166,7 @@ export function useInvoiceEditor({
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
         }
         await createInvoice(input);
-        posthog.capture("invoice_created", {
+        capture("invoice_created", {
           client_name: input.client?.name,
           currency: input.currency,
           status: input.status || "DRAFT",
@@ -2549,7 +2554,7 @@ export function useInvoiceEditor({
       // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
       // pour éviter l'erreur backend "date antérieure à la dernière facture"
       if (latestIssueDate && input.issueDate) {
-        const latestLocal = formatLocalDate(new Date(latestIssueDate));
+        const latestLocal = formatCalendarDate(new Date(latestIssueDate));
         if (input.issueDate < latestLocal) {
           input = { ...input, issueDate: latestLocal };
           setValue("issueDate", latestLocal, { shouldDirty: false });
@@ -2567,7 +2572,7 @@ export function useInvoiceEditor({
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
         }
         const result = await createInvoice(input);
-        posthog.capture("invoice_sent", {
+        capture("invoice_sent", {
           client_name: input.client?.name,
           currency: input.currency,
           status: input.status,
@@ -3020,7 +3025,8 @@ function transformInvoiceToFormData(invoice) {
         const timestamp = parseInt(dateValue, 10);
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) {
-          const formatted = formatLocalDate(date);
+          // Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM)
+          const formatted = formatCalendarDate(date);
 
           return formatted;
         }
@@ -3032,7 +3038,7 @@ function transformInvoiceToFormData(invoice) {
         return null;
       }
 
-      const formatted = formatLocalDate(date);
+      const formatted = formatCalendarDate(date);
       return formatted;
     } catch {
       return null;
@@ -3447,7 +3453,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
               }
             : null,
           shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
-          shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+          shippingVatRate: shippingVatRateOf(formData.shipping.shippingVatRate),
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,

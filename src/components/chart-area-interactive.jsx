@@ -353,6 +353,7 @@ export function ChartAreaInteractive({
     if (showMobile && !hideMobileCurve && !singleCurve) {
       children.push(
         <Area
+          animationDuration={300}
           key="mobile"
           dataKey="mobile"
           type="bump"
@@ -368,6 +369,7 @@ export function ChartAreaInteractive({
 
     children.push(
       <Area
+        animationDuration={300}
         key="desktop"
         dataKey="desktop"
         type="bump"

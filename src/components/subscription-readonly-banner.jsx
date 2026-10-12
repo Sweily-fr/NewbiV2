@@ -1,6 +1,7 @@
 "use client";
 
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { usePathname } from "next/navigation";
 import { AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -89,6 +90,10 @@ export function SubscriptionReadOnlyBanner({ onSubscribe }) {
   const { bannerType, bannerMessage, bannerAction, isOwner, loading } =
     useSubscriptionAccess();
   const pathname = usePathname();
+  // Bouton de souscription : « Gérer l'abonnement » (grille non chargée :
+  // propriétaire)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canSubscribe = permissionsReady ? canDo("billing", "manage") : isOwner;
 
   // Don't show while loading
   if (loading || !bannerType) return null;
@@ -120,7 +125,7 @@ export function SubscriptionReadOnlyBanner({ onSubscribe }) {
       bannerType={bannerType}
       bannerMessage={bannerMessage}
       bannerAction={bannerAction}
-      isOwner={isOwner}
+      isOwner={canSubscribe}
       onAction={handleAction}
     />
   );

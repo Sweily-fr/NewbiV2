@@ -13,9 +13,10 @@ import { Button } from "@/src/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount);

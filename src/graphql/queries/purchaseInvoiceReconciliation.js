@@ -105,6 +105,7 @@ export const GET_PURCHASE_INVOICE_DUPLICATES = gql`
       invoiceNumber
       supplierName
       amountTTC
+      currency
       issueDate
       status
     }

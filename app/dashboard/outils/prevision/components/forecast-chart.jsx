@@ -21,9 +21,10 @@ import {
 import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -398,6 +399,7 @@ export function ForecastChart({ months, loading, showForecast }) {
 
             {/* Income bars: actual (solid green) stacked with forecast (hatched green) */}
             <Bar
+              animationDuration={300}
               dataKey="actualIncome"
               stackId="income"
               fill={remap("#5b50ff")}
@@ -406,6 +408,7 @@ export function ForecastChart({ months, loading, showForecast }) {
             />
             {showForecast && (
               <Bar
+                animationDuration={300}
                 dataKey="forecastIncome"
                 stackId="income"
                 fill="url(#hatchIncome)"
@@ -416,6 +419,7 @@ export function ForecastChart({ months, loading, showForecast }) {
 
             {/* Expense bars: actual (solid red) stacked with forecast (hatched red) */}
             <Bar
+              animationDuration={300}
               dataKey="actualExpense"
               stackId="expense"
               fill={remap("#333333")}
@@ -424,6 +428,7 @@ export function ForecastChart({ months, loading, showForecast }) {
             />
             {showForecast && (
               <Bar
+                animationDuration={300}
                 dataKey="forecastExpense"
                 stackId="expense"
                 fill="url(#hatchExpense)"
@@ -434,6 +439,7 @@ export function ForecastChart({ months, loading, showForecast }) {
 
             {/* Balance line with dots */}
             <Line
+              animationDuration={300}
               dataKey="balance"
               type="monotone"
               stroke={remap("#3b82f6")}

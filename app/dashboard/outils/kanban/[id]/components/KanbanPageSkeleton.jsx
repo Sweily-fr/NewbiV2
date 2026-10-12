@@ -1,40 +1,92 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { getViewModeFromStorage } from "../hooks/useViewMode";
 
 /**
- * Skeleton de chargement générique pour la page Kanban
- * Affiche un skeleton unifié qui fonctionne pour toutes les vues
- * Pas de lecture de localStorage pour éviter les problèmes d'hydratation
+ * Id du tableau dans l'URL (/dashboard/outils/kanban/<id>), null ailleurs
+ * (liste des tableaux, création d'un tableau).
  */
-export function KanbanPageSkeleton() {
-  // Skeleton générique qui fonctionne pour toutes les vues
+export function getBoardIdFromPathname(pathname) {
+  const match = pathname?.match(/^\/dashboard\/outils\/kanban\/([^/]+)/);
+  if (!match || match[1] === "new") return null;
+  return match[1];
+}
+
+// La vue enregistrée ne change pas pendant le chargement : rien à écouter.
+const subscribeToNothing = () => () => {};
+
+/**
+ * Skeleton UNIQUE de la page d'un tableau Kanban, rendu par les loading.jsx
+ * (kanban/ et kanban/[id]/) et par l'état de chargement de la page : un seul
+ * placeholder du début à la fin, celui de la vue ouverte par défaut
+ * (Board, List ou Gantt, lue dans localStorage comme useViewMode).
+ *
+ * La vue est lue pendant le rendu via useSyncExternalStore : en navigation
+ * client elle est connue dès le premier affichage (pas de skeleton Board
+ * remplacé ensuite par celui de la vue Liste). Côté serveur elle est
+ * inconnue : seul l'en-tête commun est rendu, sans corps à remplacer.
+ */
+export function KanbanPageSkeleton({ boardId }) {
+  const pathname = usePathname();
+  const id = boardId ?? getBoardIdFromPathname(pathname);
+  const viewMode = useSyncExternalStore(
+    subscribeToNothing,
+    () => getViewModeFromStorage(id) ?? "board",
+    () => null,
+  );
+
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header - Titre du projet */}
-      <div className="flex-shrink-0 bg-background z-10">
-        <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-4 w-4 rounded" />
-        </div>
-        
-        {/* Tabs et boutons d'action */}
-        <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
-          {/* Tabs: Board, List, Gantt */}
-          <div className="flex items-center gap-1">
-            <Skeleton className="h-9 w-20 rounded-md" />
-            <Skeleton className="h-9 w-16 rounded-md" />
-            <Skeleton className="h-9 w-20 rounded-md" />
-          </div>
-          
-          {/* Boutons d'action */}
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-40 rounded-md" />
-          </div>
-        </div>
+    <div
+      className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
+      data-kanban-skeleton-view={viewMode ?? undefined}
+    >
+      <KanbanHeaderSkeleton />
+      {viewMode === "board" && <KanbanBoardBodySkeleton />}
+      {viewMode === "list" && <KanbanListBodySkeleton />}
+      {viewMode === "gantt" && <KanbanGanttBodySkeleton />}
+    </div>
+  );
+}
+
+/**
+ * En-tête commun aux trois vues : titre du projet, onglets et actions
+ */
+function KanbanHeaderSkeleton() {
+  return (
+    <div className="flex-shrink-0 bg-background z-10">
+      <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-4 w-4 rounded" />
       </div>
 
+      {/* Tabs et boutons d'action */}
+      <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
+        {/* Tabs: List, Board, Gantt */}
+        <div className="flex items-center gap-1">
+          <Skeleton className="h-9 w-20 rounded-md" />
+          <Skeleton className="h-9 w-16 rounded-md" />
+          <Skeleton className="h-9 w-20 rounded-md" />
+        </div>
+
+        {/* Boutons d'action */}
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-9 w-40 rounded-md" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Corps de la vue Board : contrôles puis colonnes
+ */
+function KanbanBoardBodySkeleton() {
+  return (
+    <>
       {/* Contrôles: Recherche, Filtres, Zoom */}
       <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
         {/* Barre de recherche + Filtres */}
@@ -42,7 +94,7 @@ export function KanbanPageSkeleton() {
           <Skeleton className="h-9 w-[250px] rounded-l-md rounded-r-none" />
           <Skeleton className="h-9 w-24 rounded-l-none rounded-r-md" />
         </div>
-        
+
         {/* Contrôles de zoom */}
         <div className="flex items-center gap-1 ml-auto">
           <Skeleton className="h-9 w-9 rounded-md" />
@@ -56,9 +108,12 @@ export function KanbanPageSkeleton() {
         <div className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="flex gap-4 sm:gap-6 flex-nowrap items-start h-full">
             {[1, 2, 3, 4].map((i) => (
-              <KanbanColumnSkeleton key={i} taskCount={i === 1 ? 4 : i === 2 ? 3 : 2} />
+              <KanbanColumnSkeleton
+                key={i}
+                taskCount={i === 1 ? 4 : i === 2 ? 3 : 2}
+              />
             ))}
-            
+
             {/* Bouton Ajouter une colonne */}
             <div className="w-72 sm:w-80 h-fit border-2 border-dashed border-border/30 rounded-xl p-3 flex-shrink-0">
               <div className="flex flex-col items-center justify-center gap-1 h-16">
@@ -69,7 +124,7 @@ export function KanbanPageSkeleton() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -87,7 +142,7 @@ function KanbanColumnSkeleton({ taskCount = 3 }) {
         </div>
         <Skeleton className="h-6 w-6 rounded" />
       </div>
-      
+
       {/* Tâches */}
       <div className="space-y-2 sm:space-y-3 p-2">
         {Array.from({ length: taskCount }).map((_, j) => (
@@ -132,32 +187,11 @@ function TaskCardSkeleton() {
 }
 
 /**
- * Skeleton pour la vue Liste du Kanban
+ * Corps de la vue Liste : contrôles, en-tête du tableau puis sections
  */
-export function KanbanListSkeleton() {
+function KanbanListBodySkeleton() {
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header - Titre du projet */}
-      <div className="flex-shrink-0 bg-background z-10">
-        <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-4 w-4 rounded" />
-        </div>
-        
-        {/* Tabs et boutons d'action */}
-        <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
-          <div className="flex items-center gap-1">
-            <Skeleton className="h-9 w-20 rounded-md" />
-            <Skeleton className="h-9 w-16 rounded-md" />
-            <Skeleton className="h-9 w-20 rounded-md" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-40 rounded-md" />
-          </div>
-        </div>
-      </div>
-
+    <>
       {/* Contrôles */}
       <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
         <div className="flex items-center">
@@ -189,10 +223,13 @@ export function KanbanListSkeleton() {
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-6 rounded-full" />
             </div>
-            
+
             {/* Lignes de tâches */}
             {[1, 2, 3].map((row) => (
-              <div key={row} className="flex items-center gap-4 py-3 border-b border-border/40 px-3">
+              <div
+                key={row}
+                className="flex items-center gap-4 py-3 border-b border-border/40 px-3"
+              >
                 <Skeleton className="h-4 w-4 rounded" />
                 <Skeleton className="h-4 w-4 rounded opacity-30" />
                 <Skeleton className="h-4 w-48" />
@@ -208,80 +245,57 @@ export function KanbanListSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
 /**
- * Skeleton pour la vue Gantt du Kanban
+ * Corps de la vue Gantt : frise des dates puis lignes de tâches
  */
-export function KanbanGanttSkeleton() {
+function KanbanGanttBodySkeleton() {
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden">
-      {/* Header - Titre du projet */}
-      <div className="flex-shrink-0 bg-background z-10">
-        <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-4 w-4 rounded" />
+    <div className="flex-1 overflow-hidden">
+      {/* Header du Gantt avec dates */}
+      <div className="flex border-b bg-muted/20">
+        <div className="w-64 flex-shrink-0 p-3 border-r">
+          <Skeleton className="h-4 w-20" />
         </div>
-        
-        {/* Tabs et boutons d'action */}
-        <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
-          <div className="flex items-center gap-1">
-            <Skeleton className="h-9 w-20 rounded-md" />
-            <Skeleton className="h-9 w-16 rounded-md" />
-            <Skeleton className="h-9 w-20 rounded-md" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-40 rounded-md" />
-          </div>
-        </div>
-      </div>
-
-      {/* Gantt Chart Skeleton */}
-      <div className="flex-1 overflow-hidden">
-        {/* Header du Gantt avec dates */}
-        <div className="flex border-b bg-muted/20">
-          <div className="w-64 flex-shrink-0 p-3 border-r">
-            <Skeleton className="h-4 w-20" />
-          </div>
-          <div className="flex-1 flex">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="flex-1 p-2 border-r border-border/30 min-w-[60px]">
-                <Skeleton className="h-3 w-8 mx-auto" />
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Lignes du Gantt */}
-        <div className="overflow-auto">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((row) => (
-            <div key={row} className="flex border-b border-border/30">
-              {/* Nom de la tâche */}
-              <div className="w-64 flex-shrink-0 p-3 border-r flex items-center gap-2">
-                <Skeleton className="h-4 w-4 rounded" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-              {/* Barre de progression */}
-              <div className="flex-1 relative p-2">
-                <div 
-                  className="absolute top-1/2 -translate-y-1/2"
-                  style={{ 
-                    left: `${(row * 7) % 40 + 5}%`, 
-                    width: `${20 + (row * 5) % 30}%` 
-                  }}
-                >
-                  <Skeleton className="h-6 w-full rounded-md" />
-                </div>
-              </div>
+        <div className="flex-1 flex">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex-1 p-2 border-r border-border/30 min-w-[60px]"
+            >
+              <Skeleton className="h-3 w-8 mx-auto" />
             </div>
           ))}
         </div>
       </div>
+
+      {/* Lignes du Gantt */}
+      <div className="overflow-auto">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((row) => (
+          <div key={row} className="flex border-b border-border/30">
+            {/* Nom de la tâche */}
+            <div className="w-64 flex-shrink-0 p-3 border-r flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            {/* Barre de progression */}
+            <div className="flex-1 relative p-2">
+              <div
+                className="absolute top-1/2 -translate-y-1/2"
+                style={{
+                  left: `${((row * 7) % 40) + 5}%`,
+                  width: `${20 + ((row * 5) % 30)}%`,
+                }}
+              >
+                <Skeleton className="h-6 w-full rounded-md" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
-export { KanbanColumnSkeleton, TaskCardSkeleton };

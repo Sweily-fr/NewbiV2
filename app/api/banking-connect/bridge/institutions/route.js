@@ -18,7 +18,7 @@ async function handler(request) {
   ).replace(/\/$/, "");
 
   const response = await fetch(
-    `${backendUrl}/banking-connect/bridge/institutions?country=${country}`,
+    `${backendUrl}/banking-connect/bridge/institutions?country=${encodeURIComponent(country)}`,
     {
       headers: {
         Cookie: cookieHeader,

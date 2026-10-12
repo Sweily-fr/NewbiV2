@@ -32,6 +32,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   LINKED_ROUNDING,
   LINKED_ROUNDING_OPTIONS,
@@ -77,8 +78,14 @@ export default function ProductLinkedProductsForm({
   excludeId,
   mainUnit,
   mainName,
+  // Droit d'enregistrer le produit (création ou modification), fourni par
+  // la fiche ; à défaut, action « edit » du catalogue
+  canEdit,
 }) {
   const { workspaceId } = useRequiredWorkspace();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditProducts = canEdit ?? (!isReady || canDo("products", "edit"));
   const [open, setOpen] = useState(false);
   // Côté d'ouverture choisi à chaque ouverture : celui qui a le plus de place
   const [side, setSide] = useState("bottom");
@@ -154,6 +161,9 @@ export default function ProductLinkedProductsForm({
     }
   };
 
+  // Lecture seule sans produit lié : section inutile
+  if (!canEditProducts && value.length === 0) return null;
+
   return (
     <div className="space-y-3">
       <Label className="flex items-center gap-1.5 font-normal">
@@ -194,16 +204,18 @@ export default function ProductLinkedProductsForm({
                       </div>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemove(link.productId)}
-                    aria-label="Retirer ce produit lié"
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                  {canEditProducts && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemove(link.productId)}
+                      aria-label="Retirer ce produit lié"
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  )}
                 </div>
 
                 {/* Règle rédigée comme une phrase : « Pour 20 m² de Peinture, ajouter 1 unité de Pot » */}
@@ -306,84 +318,88 @@ export default function ProductLinkedProductsForm({
         </div>
       )}
 
-      {/* modal : la fiche produit est une Dialog dont le verrou de défilement
+      {canEditProducts && (
+        <>
+          {/* modal : la fiche produit est une Dialog dont le verrou de défilement
           bloque la molette hors de la fenêtre ; en mode modal le popover porte
           son propre verrou et sa liste peut défiler. */}
-      <Popover open={open} onOpenChange={handleOpenChange} modal>
-        <PopoverTrigger asChild>
-          <Button
-            ref={triggerRef}
-            type="button"
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            <span className="truncate text-muted-foreground">
-              Ajouter un produit lié
-            </span>
-            <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
-          </Button>
-        </PopoverTrigger>
-        {/* Côté choisi dynamiquement (le plus d'espace), marge de 48 px en
+          <Popover open={open} onOpenChange={handleOpenChange} modal>
+            <PopoverTrigger asChild>
+              <Button
+                ref={triggerRef}
+                type="button"
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between"
+              >
+                <span className="truncate text-muted-foreground">
+                  Ajouter un produit lié
+                </span>
+                <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            {/* Côté choisi dynamiquement (le plus d'espace), marge de 48 px en
             haut et en bas : trop collé à un bord, la liste passe de l'autre
             côté. La hauteur se limite à l'espace disponible. */}
-        <PopoverContent
-          className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] flex flex-col max-h-[min(320px,var(--radix-popover-content-available-height))]"
-          align="start"
-          side={side}
-          sideOffset={4}
-          collisionPadding={{ top: 48, bottom: 48 }}
-        >
-          <div className="flex items-center gap-2.5 px-2.5 h-10 shrink-0 border-b border-[#e6e7ea] dark:border-[#232323]">
-            <Search className="size-3.5 text-muted-foreground shrink-0" />
-            <Input
-              variant="ghost"
-              placeholder="Rechercher un produit..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <div className="flex-1 min-h-0 max-h-[260px] overflow-y-auto overscroll-contain p-1">
-            {loading && candidates.length === 0 ? (
-              <div className="flex items-center justify-center gap-2 p-4">
-                <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Recherche...
-                </span>
+            <PopoverContent
+              className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] flex flex-col max-h-[min(320px,var(--radix-popover-content-available-height))]"
+              align="start"
+              side={side}
+              sideOffset={4}
+              collisionPadding={{ top: 48, bottom: 48 }}
+            >
+              <div className="flex items-center gap-2.5 px-2.5 h-10 shrink-0 border-b border-[#e6e7ea] dark:border-[#232323]">
+                <Search className="size-3.5 text-muted-foreground shrink-0" />
+                <Input
+                  variant="ghost"
+                  placeholder="Rechercher un produit..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                />
               </div>
-            ) : candidates.length === 0 ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                {debouncedSearchTerm
-                  ? `Aucun produit trouvé pour "${debouncedSearchTerm}".`
-                  : "Aucun autre produit disponible."}
-              </div>
-            ) : (
-              candidates.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => handleAdd(product)}
-                  className="flex w-full flex-col items-start gap-0.5 rounded-md p-2.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-medium">{product.name}</span>
+              <div className="flex-1 min-h-0 max-h-[260px] overflow-y-auto overscroll-contain p-1">
+                {loading && candidates.length === 0 ? (
+                  <div className="flex items-center justify-center gap-2 p-4">
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      {product.unitPrice ? `${product.unitPrice}€` : ""}
+                      Recherche...
                     </span>
                   </div>
-                  {product.reference && (
-                    <span className="text-xs text-muted-foreground">
-                      Réf: {product.reference}
-                    </span>
-                  )}
-                </button>
-              ))
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
+                ) : candidates.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    {debouncedSearchTerm
+                      ? `Aucun produit trouvé pour "${debouncedSearchTerm}".`
+                      : "Aucun autre produit disponible."}
+                  </div>
+                ) : (
+                  candidates.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => handleAdd(product)}
+                      className="flex w-full flex-col items-start gap-0.5 rounded-md p-2.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-medium">{product.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {product.unitPrice ? `${product.unitPrice}€` : ""}
+                        </span>
+                      </div>
+                      {product.reference && (
+                        <span className="text-xs text-muted-foreground">
+                          Réf: {product.reference}
+                        </span>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </>
+      )}
     </div>
   );
 }

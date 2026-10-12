@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -50,8 +51,17 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
-import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const QuoteMobileFullscreen = dynamic(
+  () => import("./quote-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
@@ -113,6 +123,25 @@ export default function QuoteRowActions({
   const esignatureAccess = planLimits.esignature; // false | "ses" | "qes"
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canDo("quotes", "edit");
+  const canCreateQuotes = !isReady || canDo("quotes", "create");
+  const canDeleteQuotes = !isReady || canDo("quotes", "delete");
+  const canSendQuotes = !isReady || canDo("quotes", "send");
+  // Finaliser un brouillon, accepter, refuser : action « status »
+  const canChangeQuoteStatus = !isReady || canDo("quotes", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizeQuotes =
+    !isReady || canDo("quotes", "create") || canDo("quotes", "edit");
+  const canSignQuotes = !isReady || canDo("quotes", "sign");
+  // Conversions : action « convert » du devis, puis création du document
+  // cible dans son éditeur
+  const canConvertQuotes = !isReady || canDo("quotes", "convert");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
+  const canCreatePurchaseOrders = !isReady || canDo("purchaseOrders", "create");
+  const canCreateDeliveryNotes = !isReady || canDo("deliveryNotes", "create");
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const handleView = () => {
@@ -289,22 +318,32 @@ export default function QuoteRowActions({
   const isLoading = changingStatus || isDeleting || creatingDeliveryNote;
 
   // Logique pour déterminer quelles actions sont disponibles
-  const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
+  // Conversion : action « convert » du devis et création du document cible
+  const canConvertToPO =
+    quote.status === QUOTE_STATUS.COMPLETED &&
+    canConvertQuotes &&
+    canCreatePurchaseOrders;
   // Un bon de livraison se prépare dès que le devis est envoyé ou accepté
+  // (conversion du devis : « Transformer » du devis et « Créer » des BL)
   const canCreateDeliveryNote =
     deliveryNotesAllowed &&
+    canConvertQuotes &&
+    canCreateDeliveryNotes &&
     (quote.status === QUOTE_STATUS.PENDING ||
       quote.status === QUOTE_STATUS.COMPLETED);
   // Un devis déjà facturé via un bon de commande ne peut plus être converti
   // directement en facture (même message que dans la sidebar).
   const canConvertToInvoice =
+    canConvertQuotes &&
+    canCreateInvoices &&
     quote.status === QUOTE_STATUS.COMPLETED &&
     (!quote.linkedInvoices || quote.linkedInvoices.length === 0) &&
     !quote.hasPurchaseOrderInvoices;
   const hasStatusActions =
-    quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
-    quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
-    quote.status === QUOTE_STATUS.IMPORTED || // Accepter/Rejeter (devis importé)
+    (canFinalizeQuotes && quote.status === QUOTE_STATUS.DRAFT) || // Envoyer le devis
+    (canChangeQuoteStatus &&
+      (quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
+        quote.status === QUOTE_STATUS.IMPORTED)) || // Accepter/Rejeter (devis importé)
     canConvertToInvoice ||
     canConvertToPO ||
     canCreateDeliveryNote;
@@ -313,9 +352,10 @@ export default function QuoteRowActions({
   // importé reste supprimable quel que soit son statut, comme l'indique le logo.
   const isImportedOrigin = !quote.prefix && Boolean(quote.number);
   const hasDeleteAction =
-    quote.status === QUOTE_STATUS.DRAFT ||
-    quote.status === QUOTE_STATUS.IMPORTED ||
-    isImportedOrigin;
+    canDeleteQuotes &&
+    (quote.status === QUOTE_STATUS.DRAFT ||
+      quote.status === QUOTE_STATUS.IMPORTED ||
+      isImportedOrigin);
 
   return (
     <>
@@ -330,7 +370,8 @@ export default function QuoteRowActions({
         <ButtonGroup>
           {/* Icône d'envoi par email - visible pour les devis non brouillon (hors importés) */}
           {quote.status !== QUOTE_STATUS.DRAFT &&
-            quote.status !== QUOTE_STATUS.IMPORTED && (
+            quote.status !== QUOTE_STATUS.IMPORTED &&
+            canSendQuotes && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -370,28 +411,31 @@ export default function QuoteRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSaveAsTemplate?.(quote);
-                }}
-                disabled={isReadOnly}
-              >
-                <BookTemplate className="mr-2 h-4 w-4" />
-                Sauv. modèle
-              </DropdownMenuItem>
-              {(quote.status === QUOTE_STATUS.DRAFT ||
-                quote.status === QUOTE_STATUS.PENDING) && (
-                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Éditer
+              {canCreateQuotes && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSaveAsTemplate?.(quote);
+                  }}
+                  disabled={isReadOnly}
+                >
+                  <BookTemplate className="mr-2 h-4 w-4" />
+                  Sauv. modèle
                 </DropdownMenuItem>
               )}
+              {canEditQuotes &&
+                (quote.status === QUOTE_STATUS.DRAFT ||
+                  quote.status === QUOTE_STATUS.PENDING) && (
+                  <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Éditer
+                  </DropdownMenuItem>
+                )}
 
               {/* Séparateur entre les actions de base et les actions de statut */}
               {hasStatusActions && <DropdownMenuSeparator />}
 
-              {quote.status === QUOTE_STATUS.DRAFT && (
+              {canFinalizeQuotes && quote.status === QUOTE_STATUS.DRAFT && (
                 <DropdownMenuItem
                   onClick={handleSendQuote}
                   disabled={isLoading || isReadOnly}
@@ -403,18 +447,19 @@ export default function QuoteRowActions({
 
               {/* Accepter : acceptation manuelle possible, la signature
                   électronique accepte aussi le devis automatiquement. */}
-              {(quote.status === QUOTE_STATUS.PENDING ||
-                quote.status === QUOTE_STATUS.IMPORTED) && (
-                <>
-                  <DropdownMenuItem
-                    onClick={handleAccept}
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Accepter le devis
-                  </DropdownMenuItem>
-                </>
-              )}
+              {canChangeQuoteStatus &&
+                (quote.status === QUOTE_STATUS.PENDING ||
+                  quote.status === QUOTE_STATUS.IMPORTED) && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={handleAccept}
+                      disabled={isLoading || isReadOnly}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Accepter le devis
+                    </DropdownMenuItem>
+                  </>
+                )}
 
               {canConvertToInvoice && (
                 <DropdownMenuItem
@@ -448,7 +493,8 @@ export default function QuoteRowActions({
 
               {/* Faire signer - uniquement les devis en attente (un devis accepté
                   ou refusé ne peut plus être signé), sans signature en cours/terminée */}
-              {quote.status === QUOTE_STATUS.PENDING &&
+              {canSignQuotes &&
+                quote.status === QUOTE_STATUS.PENDING &&
                 (!quote.signatureStatus ||
                   quote.signatureStatus === "ERROR" ||
                   quote.signatureStatus === "CANCELLED") && (
@@ -486,40 +532,42 @@ export default function QuoteRowActions({
                 )}
 
               {/* Annuler la signature - visible quand une demande est en cours */}
-              {[
-                "PENDING",
-                "WAIT_VALIDATION",
-                "WAIT_SIGN",
-                "WAIT_SIGNER",
-              ].includes(quote.signatureStatus) && (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCancelSignature();
-                  }}
-                  disabled={isCancellingSignature || isReadOnly}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Ban className="mr-2 h-4 w-4 text-red-600" />
-                  Annuler la signature
-                </DropdownMenuItem>
-              )}
-
-              {/* Rejeter le devis - en rouge */}
-              {(quote.status === QUOTE_STATUS.PENDING ||
-                quote.status === QUOTE_STATUS.IMPORTED) && (
-                <>
-                  <DropdownMenuSeparator />
+              {canSignQuotes &&
+                [
+                  "PENDING",
+                  "WAIT_VALIDATION",
+                  "WAIT_SIGN",
+                  "WAIT_SIGNER",
+                ].includes(quote.signatureStatus) && (
                   <DropdownMenuItem
-                    onClick={handleReject}
-                    disabled={isLoading || isReadOnly}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelSignature();
+                    }}
+                    disabled={isCancellingSignature || isReadOnly}
                     className="text-red-600 focus:text-red-600"
                   >
-                    <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                    Rejeter le devis
+                    <Ban className="mr-2 h-4 w-4 text-red-600" />
+                    Annuler la signature
                   </DropdownMenuItem>
-                </>
-              )}
+                )}
+
+              {/* Rejeter le devis - en rouge */}
+              {canChangeQuoteStatus &&
+                (quote.status === QUOTE_STATUS.PENDING ||
+                  quote.status === QUOTE_STATUS.IMPORTED) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleReject}
+                      disabled={isLoading || isReadOnly}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                      Rejeter le devis
+                    </DropdownMenuItem>
+                  </>
+                )}
 
               {/* Supprimer - pour les brouillons, en rouge */}
               {hasDeleteAction && (

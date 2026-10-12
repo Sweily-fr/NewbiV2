@@ -368,7 +368,12 @@ export const columns = [
       // Suggestion en attente (ambre pulsant) : affichée tant qu'aucune
       // facture de vente n'est liée, avec le libellé « Match » seulement
       // quand la cellule est vide (place disponible).
-      const showSuggestion = hasSuggestion && salesInvoices.length === 0;
+      // Sans « Rapprocher » (lecture seule), pas de pastille : elle n'ouvre
+      // qu'une action masquée dans le tiroir
+      const showSuggestion =
+        hasSuggestion &&
+        salesInvoices.length === 0 &&
+        table.options.meta?.canReconcile !== false;
       const suggestion = showSuggestion ? (
         <TooltipProvider>
           <Tooltip>
@@ -418,8 +423,11 @@ export const columns = [
       const toConfirm = receipts.filter(
         (f) => f?.proposal && !f.proposal.dismissedAt,
       );
+      // Confirmer crée la facture d'achat : masqué si le rôle n'a pas
+      // l'action « justificatifs » des transactions
+      const canConfirm = table.options.meta?.canManageReceipts !== false;
       const confirmTag =
-        toConfirm.length > 0 ? (
+        canConfirm && toConfirm.length > 0 ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

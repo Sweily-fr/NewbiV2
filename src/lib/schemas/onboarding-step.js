@@ -53,6 +53,13 @@ export const onboardingStepSchema = z
     // terminer l'onboarding : c'est la pièce qui relie explicitement le
     // compte à une entreprise réelle et exclut l'usage personnel.
     honorDeclarationAccepted: z.boolean().optional(),
+    // Espace à configurer (facultatif). Par défaut, l'espace actif de la
+    // session ; la route vérifie dans tous les cas que l'utilisateur en est
+    // le propriétaire.
+    organizationId: z
+      .string()
+      .regex(/^[0-9a-f]{24}$/)
+      .optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

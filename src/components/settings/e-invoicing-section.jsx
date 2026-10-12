@@ -213,6 +213,8 @@ export function EInvoicingSection({
 
   const syncedVatRegimeRef = React.useRef(null);
   useEffect(() => {
+    // Écriture côté SuperPDP : seulement pour qui gère les applications
+    if (!canManageOrgSettings) return;
     if (!verification?.connected || !derivedVatRegime) return;
     if (verification?.company?.vatRegime === derivedVatRegime) return;
     if (syncedVatRegimeRef.current === derivedVatRegime) return;
@@ -222,7 +224,13 @@ export function EInvoicingSection({
     }).catch(() => {
       syncedVatRegimeRef.current = null;
     });
-  }, [verification, derivedVatRegime, workspaceId, updateVatRegime]);
+  }, [
+    canManageOrgSettings,
+    verification,
+    derivedVatRegime,
+    workspaceId,
+    updateVatRegime,
+  ]);
 
   const goToLegalInfo = () => onNavigateToTab?.("informations-legales");
   const readOnlyTooltip = isReadOnly
@@ -355,29 +363,27 @@ export function EInvoicingSection({
               </button>
             )}
           </div>
-          <Button
-            type="button"
-            onClick={handleConnect}
-            disabled={
-              isReadOnly ||
-              !canManageOrgSettings ||
-              superPdpLoading ||
-              !derivedVatRegime
-            }
-            title={
-              !derivedVatRegime
-                ? "Renseignez votre situation de TVA (assujetti ou franchise en base) dans les informations légales"
-                : readOnlyTooltip
-            }
-            variant="primary"
-          >
-            {superPdpLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Link2Icon className="h-4 w-4 mr-2" />
-            )}
-            Activer la facturation électronique
-          </Button>
+          {/* Activer : « Gérer les applications » */}
+          {canManageOrgSettings && (
+            <Button
+              type="button"
+              onClick={handleConnect}
+              disabled={isReadOnly || superPdpLoading || !derivedVatRegime}
+              title={
+                !derivedVatRegime
+                  ? "Renseignez votre situation de TVA (assujetti ou franchise en base) dans les informations légales"
+                  : readOnlyTooltip
+              }
+              variant="primary"
+            >
+              {superPdpLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Link2Icon className="h-4 w-4 mr-2" />
+              )}
+              Activer la facturation électronique
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -391,20 +397,22 @@ export function EInvoicingSection({
                   : "Votre compte est lié à SuperPDP"}
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setDisconnectDialogOpen(true)}
-              disabled={!canManageOrgSettings || superPdpLoading}
-            >
-              {superPdpLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <LogoutIcon className="h-4 w-4 mr-2" />
-              )}
-              Déconnecter
-            </Button>
+            {canManageOrgSettings && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDisconnectDialogOpen(true)}
+                disabled={superPdpLoading}
+              >
+                {superPdpLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <LogoutIcon className="h-4 w-4 mr-2" />
+                )}
+                Déconnecter
+              </Button>
+            )}
             <Dialog
               open={disconnectDialogOpen}
               onOpenChange={setDisconnectDialogOpen}
@@ -587,16 +595,14 @@ export function EInvoicingSection({
                     <RoutingIcon className="w-3 h-3" />
                     En attente
                   </span>
-                ) : (
+                ) : !canManageOrgSettings ? null : (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleRegisterDirectory}
                     disabled={
-                      !canManageOrgSettings ||
-                      registeringDirectory ||
-                      directoryRegistrationPending
+                      registeringDirectory || directoryRegistrationPending
                     }
                   >
                     {registeringDirectory || directoryRegistrationPending ? (
@@ -794,9 +800,7 @@ export function EInvoicingSection({
       {!canManageOrgSettings && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <NotificationIcon className="h-3.5 w-3.5" />
-          <span>
-            Seuls les administrateurs peuvent modifier ces paramètres.
-          </span>
+          <span>Votre rôle ne permet pas de modifier ces paramètres.</span>
         </div>
       )}
     </div>

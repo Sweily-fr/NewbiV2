@@ -28,6 +28,7 @@ import DeliveryNoteRowActions from "../components/delivery-note-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -311,7 +312,10 @@ export function useDeliveryNoteTable({
         meta: { label: "Transporteur" },
         cell: ({ row }) =>
           row.original.carrier ? (
-            <div className="truncate max-w-[140px]" title={row.original.carrier}>
+            <div
+              className="truncate max-w-[140px]"
+              title={row.original.carrier}
+            >
               {row.original.carrier}
             </div>
           ) : (
@@ -367,7 +371,7 @@ export function useDeliveryNoteTable({
               {items.length} ligne{items.length > 1 ? "s" : ""}
               <span className="text-xs text-muted-foreground">
                 {" "}
-                · {new Intl.NumberFormat("fr-FR").format(totalQty)} unité
+                · {getNumberFormat("fr-FR").format(totalQty)} unité
                 {totalQty > 1 ? "s" : ""}
               </span>
             </div>
@@ -425,6 +429,22 @@ export function useDeliveryNoteTable({
     [onRefetch, onSendEmail, onOpenSidebar],
   );
 
+  // Filtres de colonnes mémoïsés : un tableau recréé à chaque rendu faisait
+  // recalculer à react-table tout le modèle filtré (recherche comprise) à
+  // chaque rendu, même sans changement de filtre.
+  const columnFilters = useMemo(
+    () => [
+      ...(statusFilter.length > 0
+        ? [{ id: "status", value: statusFilter }]
+        : []),
+      ...(clientFilter.length > 0
+        ? [{ id: "client", value: clientFilter }]
+        : []),
+      ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+    ],
+    [statusFilter, clientFilter, dateFilter],
+  );
+
   const table = useReactTable({
     data,
     columns,
@@ -440,15 +460,7 @@ export function useDeliveryNoteTable({
     state: {
       globalFilter,
       columnVisibility,
-      columnFilters: [
-        ...(statusFilter.length > 0
-          ? [{ id: "status", value: statusFilter }]
-          : []),
-        ...(clientFilter.length > 0
-          ? [{ id: "client", value: clientFilter }]
-          : []),
-        ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
-      ],
+      columnFilters,
     },
     filterFns: {
       status: statusFilterFn,

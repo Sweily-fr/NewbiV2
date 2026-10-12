@@ -91,10 +91,12 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { useFileTransfer } from "../hooks/useFileTransfer";
 import { useUser } from "@/src/lib/auth/hooks";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TransferDetailDrawer } from "./transfer-detail-drawer";
 import { TransferTableSkeleton } from "./transfer-page-skeleton";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { DocumentTextIcon } from "@/src/components/icons";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -134,9 +136,18 @@ export default function TransferTable({
   onShowDeleteDialog,
   isMobile = false,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const inputRef = useRef(null);
   const { deleteTransfer, renameTransfer, formatFileSize } = useFileTransfer();
   const { session } = useUser();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
+  // Renommer = action « edit »
+  const canEditFileTransfers = !isReady || canDo("fileTransfers", "edit");
+  const canDeleteFileTransfers = !isReady || canDo("fileTransfers", "delete");
 
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
@@ -387,14 +398,18 @@ export default function TransferTable({
                     <Copy className="mr-2 h-4 w-4" />
                     Copier le lien
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => handleDeleteTransfer(transfer.id)}
-                    className="text-destructive cursor-pointer"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                    <span className="text-red-500">Supprimer</span>
-                  </DropdownMenuItem>
+                  {canDeleteFileTransfers && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteTransfer(transfer.id)}
+                        className="text-destructive cursor-pointer"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                        <span className="text-red-500">Supprimer</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -404,13 +419,23 @@ export default function TransferTable({
         enableHiding: false,
       },
     ],
-    [session, formatFileSize],
+    [session, formatFileSize, canDeleteFileTransfers],
+  );
+
+  // Cases à cocher masquées sans droit de suppression : la sélection ne sert
+  // qu'à la suppression groupée
+  const visibleColumns = useMemo(
+    () =>
+      columns.filter(
+        (column) => canDeleteFileTransfers || column.id !== "select",
+      ),
+    [columns, canDeleteFileTransfers],
   );
 
   // Create table instance
   const table = useReactTable({
     data,
-    columns,
+    columns: visibleColumns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -620,7 +645,7 @@ export default function TransferTable({
         {/* Actions à droite */}
         <div className="flex items-center gap-2">
           {/* Bulk delete - visible quand des rows sont sélectionnées */}
-          {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && canDeleteFileTransfers && (
             <Button
               variant="destructive"
               onClick={onShowDeleteDialog}
@@ -679,85 +704,91 @@ export default function TransferTable({
       </div>
 
       {/* Table - Desktop style avec header fixe et body scrollable */}
-      <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Header fixe */}
-        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
-          <table className="w-full table-fixed">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, index, arr) => (
-                    <th
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-          </table>
-        </div>
-        {/* Body scrollable */}
-        <div className="flex-1 overflow-auto">
-          <table className="w-full table-fixed">
-            <tbody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                    onClick={(e) => {
-                      // Ne pas ouvrir le drawer si on clique sur la checkbox ou les actions
-                      if (
-                        e.target.closest('[role="checkbox"]') ||
-                        e.target.closest("[data-actions-cell]") ||
-                        e.target.closest('button[role="combobox"]') ||
-                        e.target.closest('[role="menu"]') ||
-                        e.target.closest("button")
-                      ) {
-                        return;
-                      }
-                      openTransferDetail(row.original);
-                    }}
-                  >
-                    {row.getVisibleCells().map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+      {!isMobileLayout && (
+        <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Header fixe */}
+          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+            <table className="w-full table-fixed">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header, index, arr) => (
+                      <th
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                       >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </th>
                     ))}
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={table.getAllColumns().length} className="p-0">
-                    <TableEmptyState
-                      icon={DocumentTextIcon}
-                      title="Aucun transfert trouvé"
-                      description="Aucun transfert ne correspond à vos critères. Créez-en un nouveau pour commencer."
-                    />
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ))}
+              </thead>
+            </table>
+          </div>
+          {/* Body scrollable */}
+          <div className="flex-1 overflow-auto">
+            <table className="w-full table-fixed">
+              <tbody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      onClick={(e) => {
+                        // Ne pas ouvrir le drawer si on clique sur la checkbox ou les actions
+                        if (
+                          e.target.closest('[role="checkbox"]') ||
+                          e.target.closest("[data-actions-cell]") ||
+                          e.target.closest('button[role="combobox"]') ||
+                          e.target.closest('[role="menu"]') ||
+                          e.target.closest("button")
+                        ) {
+                          return;
+                        }
+                        openTransferDetail(row.original);
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell, index, arr) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={table.getAllColumns().length} className="p-0">
+                      <TableEmptyState
+                        icon={DocumentTextIcon}
+                        title="Aucun transfert trouvé"
+                        description={
+                          canCreateFileTransfers
+                            ? "Aucun transfert ne correspond à vos critères. Créez-en un nouveau pour commencer."
+                            : "Aucun transfert ne correspond à vos critères."
+                        }
+                      />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile Toolbar */}
       <div className="md:hidden px-4 py-3">
@@ -818,7 +849,7 @@ export default function TransferTable({
           </Popover>
 
           {/* Delete button for mobile */}
-          {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && canDeleteFileTransfers && (
             <Button
               variant="destructive"
               size="sm"
@@ -832,94 +863,96 @@ export default function TransferTable({
       </div>
 
       {/* Table - Mobile style */}
-      <div className="md:hidden overflow-x-auto pb-20">
-        <Table className="w-full">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="border-b border-gray-100 dark:border-gray-400"
-              >
-                {headerGroup.headers
-                  .filter(
-                    (header) =>
-                      header.column.id === "select" ||
-                      header.column.id === "files" ||
-                      header.column.id === "status" ||
-                      header.column.id === "actions",
-                  )
-                  .map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+      {isMobileLayout && (
+        <div className="md:hidden overflow-x-auto pb-20">
+          <Table className="w-full">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
-                  onClick={(e) => {
-                    // Ne pas ouvrir le drawer si on clique sur la checkbox ou les actions
-                    if (
-                      e.target.closest('[role="checkbox"]') ||
-                      e.target.closest("[data-actions-cell]") ||
-                      e.target.closest('button[role="combobox"]') ||
-                      e.target.closest('[role="menu"]') ||
-                      e.target.closest("button")
-                    ) {
-                      return;
-                    }
-                    openTransferDetail(row.original);
-                  }}
+                  key={headerGroup.id}
+                  className="border-b border-gray-100 dark:border-gray-400"
                 >
-                  {row
-                    .getVisibleCells()
+                  {headerGroup.headers
                     .filter(
-                      (cell) =>
-                        cell.column.id === "select" ||
-                        cell.column.id === "files" ||
-                        cell.column.id === "status" ||
-                        cell.column.id === "actions",
+                      (header) =>
+                        header.column.id === "select" ||
+                        header.column.id === "files" ||
+                        header.column.id === "status" ||
+                        header.column.id === "actions",
                     )
-                    .map((cell) => (
-                      <TableCell key={cell.id} className="py-3 px-4 text-sm">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
+                    .map((header) => (
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </TableHead>
                     ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="p-0">
-                  <TableEmptyState
-                    icon={DocumentTextIcon}
-                    title="Aucun transfert trouvé"
-                    description="Aucun transfert ne correspond à vos critères."
-                    size="compact"
-                  />
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                    onClick={(e) => {
+                      // Ne pas ouvrir le drawer si on clique sur la checkbox ou les actions
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("[data-actions-cell]") ||
+                        e.target.closest('button[role="combobox"]') ||
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest("button")
+                      ) {
+                        return;
+                      }
+                      openTransferDetail(row.original);
+                    }}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter(
+                        (cell) =>
+                          cell.column.id === "select" ||
+                          cell.column.id === "files" ||
+                          cell.column.id === "status" ||
+                          cell.column.id === "actions",
+                      )
+                      .map((cell) => (
+                        <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="p-0">
+                    <TableEmptyState
+                      icon={DocumentTextIcon}
+                      title="Aucun transfert trouvé"
+                      description="Aucun transfert ne correspond à vos critères."
+                      size="compact"
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Pagination - Fixe en bas sur desktop */}
       <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
@@ -1011,18 +1044,26 @@ export default function TransferTable({
         </div>
       </div>
 
-      {/* Drawer de détail du transfert */}
+      {/* Drawer de détail du transfert (actions masquées si le rôle ne les permet pas) */}
       <TransferDetailDrawer
         transfer={selectedTransfer}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        onDelete={(transferId) => {
-          setDrawerOpen(false);
-          handleDeleteTransfer(transferId);
-        }}
-        onRename={(transfer) => {
-          handleRenameTransfer(transfer);
-        }}
+        onDelete={
+          canDeleteFileTransfers
+            ? (transferId) => {
+                setDrawerOpen(false);
+                handleDeleteTransfer(transferId);
+              }
+            : undefined
+        }
+        onRename={
+          canEditFileTransfers
+            ? (transfer) => {
+                handleRenameTransfer(transfer);
+              }
+            : undefined
+        }
         onRefresh={onRefresh}
       />
 

@@ -93,7 +93,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import Link from "next/link";
-import { InviteMemberModal } from "./invite-member-modal";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import dynamic from "next/dynamic";
 import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
 
@@ -108,7 +108,6 @@ import {
   ProfileAddIcon as UserPlus,
 } from "@/src/components/icons";
 
-import { RenameOrganizationModal } from "./rename-organization-modal";
 import { setOrganizationIdForApollo } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
@@ -134,8 +133,26 @@ import {
   useSidebar,
 } from "@/src/components/ui/sidebar";
 
+// Modales d'invitation et de renommage : chargées et montées seulement à
+// l'ouverture (elles étaient dans le JS de toutes les pages du dashboard).
+const InviteMemberModal = dynamic(
+  () => import("./invite-member-modal").then((m) => m.InviteMemberModal),
+  { ssr: false },
+);
+const RenameOrganizationModal = dynamic(
+  () =>
+    import("./rename-organization-modal").then(
+      (m) => m.RenameOrganizationModal,
+    ),
+  { ssr: false },
+);
+
 export function TeamSwitcher() {
   const { isMobile, state } = useSidebar();
+  // Inviter des membres : « Inviter » de la page Membres
+  const { canDo: canDoTeam, isReady: teamPermissionsReady } =
+    useMyPermissions();
+  const canInviteMembers = !teamPermissionsReady || canDoTeam("team", "invite");
   const isCollapsed = state === "collapsed";
   const { isActive, refreshSubscription: refreshDashboardSubscription } =
     useSubscription();
@@ -447,15 +464,17 @@ export function TeamSwitcher() {
                 </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem
-                onClick={() => setInviteDialogOpen(true)}
-                className="gap-2 p-2 rounded-sm cursor-pointer"
-              >
-                <UserPlus className="size-4 text-sidebar-foreground" />
-                <span className="text-[13px] font-normal">
-                  Inviter des membres
-                </span>
-              </DropdownMenuItem>
+              {canInviteMembers && (
+                <DropdownMenuItem
+                  onClick={() => setInviteDialogOpen(true)}
+                  className="gap-2 p-2 rounded-sm cursor-pointer"
+                >
+                  <UserPlus className="size-4 text-sidebar-foreground" />
+                  <span className="text-[13px] font-normal">
+                    Inviter des membres
+                  </span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => {
                   setSettingsInitialTab("espaces");
@@ -486,14 +505,16 @@ export function TeamSwitcher() {
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>
-      <InviteMemberModal
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        onSuccess={() => {
-          // Rafraîchir les organisations
-          loadOrganizations({ force: true });
-        }}
-      />
+      {inviteDialogOpen && (
+        <InviteMemberModal
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          onSuccess={() => {
+            // Rafraîchir les organisations
+            loadOrganizations({ force: true });
+          }}
+        />
+      )}
       {settingsModalOpen && (
         <SettingsModal
           open={settingsModalOpen}
@@ -501,18 +522,20 @@ export function TeamSwitcher() {
           initialTab={settingsInitialTab}
         />
       )}
-      <RenameOrganizationModal
-        open={renameModalOpen}
-        onOpenChange={setRenameModalOpen}
-        organization={selectedOrganization}
-        onSuccess={() => {
-          // Rafraîchir les organisations
-          loadOrganizations({ force: true });
-          if (refetchActiveOrg) {
-            refetchActiveOrg();
-          }
-        }}
-      />
+      {renameModalOpen && (
+        <RenameOrganizationModal
+          open={renameModalOpen}
+          onOpenChange={setRenameModalOpen}
+          organization={selectedOrganization}
+          onSuccess={() => {
+            // Rafraîchir les organisations
+            loadOrganizations({ force: true });
+            if (refetchActiveOrg) {
+              refetchActiveOrg();
+            }
+          }}
+        />
+      )}
     </>
   );
 }
@@ -583,6 +606,8 @@ function SortableOrganizationItem({
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const buttonRef = React.useRef(null);
   const colorButtonRef = React.useRef(null);
+  const { canDo } = useMyPermissions();
+  const canManageTeam = canDo("team", "invite");
 
   // Récupérer la couleur et l'icône personnalisées
   const customColor = org.customColor || "#5b4fff";
@@ -727,18 +752,21 @@ function SortableOrganizationItem({
             {/* Séparateur */}
             <div className="h-px bg-border my-1" />
 
-            {/* Ajouter des membres */}
-            <div
-              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActionsMenu(false);
-                setInviteDialogOpen(true);
-              }}
-            >
-              <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-normal flex-1">Ajouter des membres</span>
-            </div>
+            {/* Ajouter des membres : la fenêtre invite dans l'espace actif,
+                réservée aux rôles qui gèrent les membres */}
+            {isActive && canManageTeam && (
+              <div
+                className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowActionsMenu(false);
+                  setInviteDialogOpen(true);
+                }}
+              >
+                <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-normal flex-1">Ajouter des membres</span>
+              </div>
+            )}
 
             {/* Quitter l'organisation - Seulement si pas owner */}
             {org.role !== "owner" && (

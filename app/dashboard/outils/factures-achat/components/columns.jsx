@@ -45,6 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getCategoryConfig } from "@/lib/category-icons-config";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "@/app/dashboard/outils/transactions/components/merchant-logo";
@@ -147,6 +148,14 @@ function RowActions({
   categoryLabels = {},
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canDo("purchaseInvoices", "edit");
+  const canMarkPaid = !isReady || canDo("purchaseInvoices", "markPaid");
+  const canDeletePurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "delete");
+  const showMarkPaid = canMarkPaid && invoice.status !== "PAID";
   return (
     <div data-no-row-click>
       <DropdownMenu>
@@ -168,8 +177,10 @@ function RowActions({
               Voir le justificatif
             </DropdownMenuItem>
           )}
-          <DropdownMenuSeparator />
-          {invoice.status !== "PAID" && (
+          {(canEditPurchaseInvoices || showMarkPaid) && (
+            <DropdownMenuSeparator />
+          )}
+          {showMarkPaid && (
             <DropdownMenuItem
               onClick={() => onMarkStatus?.(invoice.id, "PAID")}
             >
@@ -177,39 +188,47 @@ function RowActions({
               Marquer payée
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem
-            onClick={() => onMarkStatus?.(invoice.id, "ARCHIVED")}
-          >
-            <Archive className="h-4 w-4" />
-            Archiver
-          </DropdownMenuItem>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="gap-2">
-              <Tag className="h-4 w-4" />
-              Catégoriser
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-52 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-              {Object.entries(categoryLabels).map(([key, label]) => (
-                <DropdownMenuItem
-                  key={key}
-                  onClick={() => onCategorize?.(invoice.id, key)}
-                >
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={(e) => {
-              e.preventDefault();
-              setConfirmOpen(true);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Supprimer
-          </DropdownMenuItem>
+          {canEditPurchaseInvoices && (
+            <>
+              <DropdownMenuItem
+                onClick={() => onMarkStatus?.(invoice.id, "ARCHIVED")}
+              >
+                <Archive className="h-4 w-4" />
+                Archiver
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                  <Tag className="h-4 w-4" />
+                  Catégoriser
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-52 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                  {Object.entries(categoryLabels).map(([key, label]) => (
+                    <DropdownMenuItem
+                      key={key}
+                      onClick={() => onCategorize?.(invoice.id, key)}
+                    >
+                      {label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </>
+          )}
+          {canDeletePurchaseInvoices && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setConfirmOpen(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                Supprimer
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

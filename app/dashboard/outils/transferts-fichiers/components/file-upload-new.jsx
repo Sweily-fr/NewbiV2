@@ -61,7 +61,7 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { isImageFile, countWatermarkableFiles } from "../utils/watermark";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 
 // Format bytes utility function
 const formatBytes = (bytes, decimals = 2) => {
@@ -451,7 +451,7 @@ export default function FileUploadNew({
       // Rediriger vers l'onglet "Mes transferts" après création réussie
       if (result && result.success) {
         const { shareLink, accessKey } = result;
-        posthog.capture("file_transfer_created", {
+        capture("file_transfer_created", {
           file_count: selectedFiles.length,
           expiry_days: expiryDays,
           is_paid: transferOptions.isPaid,

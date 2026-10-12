@@ -111,7 +111,13 @@ const statusConfig = {
   error: { label: "Erreur", variant: "error", icon: AlertCircle },
 };
 
-export function CalendarConnectionCard({ connection, onRefresh }) {
+// canManage : synchronisation, choix des calendriers et déconnexion (rôle
+// avec écriture sur le calendrier), masqués sinon
+export function CalendarConnectionCard({
+  connection,
+  onRefresh,
+  canManage = true,
+}) {
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   const [showCalendarSelector, setShowCalendarSelector] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -209,69 +215,75 @@ export function CalendarConnectionCard({ connection, onRefresh }) {
                 </p>
               )}
             </div>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <div
-                  className="flex items-center gap-1 shrink-0"
-                  onFocus={(e) => e.preventDefault()}
-                >
-                  <span className="text-[10px] text-muted-foreground">
-                    Auto.
-                  </span>
-                  <Switch
-                    checked={connection.autoSync || false}
-                    onCheckedChange={(checked) =>
-                      updateAutoSync(connection.id, checked)
-                    }
-                    disabled={togglingAutoSync}
-                    className="shrink-0 scale-75 origin-right data-[state=checked]:bg-[#5b50FF]"
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                Les nouveaux événements et tâches Newbi seront automatiquement
-                envoyés vers ce calendrier
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  onClick={handleSync}
-                  disabled={isReadOnly || syncing}
-                  title={readOnlyTooltip}
-                >
-                  <RefreshCw
-                    className={cn(
-                      "h-3.5 w-3.5 mr-2",
-                      syncing && "animate-spin",
-                    )}
-                  />
-                  Synchroniser
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowCalendarSelector(true)}>
-                  <Settings className="h-3.5 w-3.5 mr-2" />
-                  Gérer les calendriers
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setShowDisconnectDialog(true)}
-                  disabled={disconnecting}
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-2 text-red-600" />
-                  Déconnecter
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {canManage && (
+              <>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="flex items-center gap-1 shrink-0"
+                      onFocus={(e) => e.preventDefault()}
+                    >
+                      <span className="text-[10px] text-muted-foreground">
+                        Auto.
+                      </span>
+                      <Switch
+                        checked={connection.autoSync || false}
+                        onCheckedChange={(checked) =>
+                          updateAutoSync(connection.id, checked)
+                        }
+                        disabled={togglingAutoSync}
+                        className="shrink-0 scale-75 origin-right data-[state=checked]:bg-[#5b50FF]"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    Les nouveaux événements et tâches Newbi seront
+                    automatiquement envoyés vers ce calendrier
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem
+                      onClick={handleSync}
+                      disabled={isReadOnly || syncing}
+                      title={readOnlyTooltip}
+                    >
+                      <RefreshCw
+                        className={cn(
+                          "h-3.5 w-3.5 mr-2",
+                          syncing && "animate-spin",
+                        )}
+                      />
+                      Synchroniser
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setShowCalendarSelector(true)}
+                    >
+                      <Settings className="h-3.5 w-3.5 mr-2" />
+                      Gérer les calendriers
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setShowDisconnectDialog(true)}
+                      disabled={disconnecting}
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-2 text-red-600" />
+                      Déconnecter
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
           </div>
 
           {/* Meta info + expand toggle */}
@@ -356,12 +368,14 @@ export function CalendarConnectionCard({ connection, onRefresh }) {
                     {cal.name}
                   </span>
                 </div>
-                <Switch
-                  checked={cal.enabled}
-                  onCheckedChange={() => handleToggleCalendar(cal.calendarId)}
-                  disabled={toggling}
-                  className="shrink-0 scale-75 origin-right data-[state=checked]:bg-[#5b50FF]"
-                />
+                {canManage && (
+                  <Switch
+                    checked={cal.enabled}
+                    onCheckedChange={() => handleToggleCalendar(cal.calendarId)}
+                    disabled={toggling}
+                    className="shrink-0 scale-75 origin-right data-[state=checked]:bg-[#5b50FF]"
+                  />
+                )}
               </div>
             ))}
           </div>

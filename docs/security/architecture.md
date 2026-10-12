@@ -59,7 +59,7 @@ hasInternalSecret: (request: Request) => boolean    — no throw
 ```
 
 - Lit header x-internal-secret
-- Compare avec process.env.INTERNAL_API_SECRET en constant-time
+- Compare avec process.env.INTERNAL_API_SECRET, ou INTERNAL_API_SECRET_ALT si elle est definie (rotation sans coupure, procedure : newbi-api docs/rotation-secret-interne.md), en constant-time
 - requireInternalSecret throw 401 si invalide
 - hasInternalSecret retourne boolean (pour les routes dual-access)
 

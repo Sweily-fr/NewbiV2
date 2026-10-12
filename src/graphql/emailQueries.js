@@ -49,13 +49,15 @@ export const UPDATE_EMAIL_SETTINGS = gql`
 `;
 
 // Hook pour récupérer les paramètres email de l'organisation active
-export function useEmailSettings() {
+// skip : les modales (envoi, relances, récurrence) passent !open pour ne pas
+// lire les réglages e-mail tant qu'elles restent fermées.
+export function useEmailSettings({ skip = false } = {}) {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
   const result = useQuery(GET_EMAIL_SETTINGS, {
     variables: { workspaceId },
     // Attendre que l'organisation active soit confirmée pour éviter
     // que le backend retombe sur l'organisation par défaut
-    skip: !workspaceId,
+    skip: !workspaceId || skip,
   });
   return { ...result, loading: result.loading || workspaceLoading };
 }

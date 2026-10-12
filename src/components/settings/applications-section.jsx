@@ -14,7 +14,7 @@ import { useAbby } from "@/src/hooks/useAbby";
 import { useInstalledApps } from "@/src/hooks/useInstalledApps";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useActiveOrganization } from "@/src/lib/organization-client";
-import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSession } from "@/src/lib/auth-client";
 import { StripeConnectOnboardingModal } from "@/src/components/stripe-connect-onboarding-modal";
@@ -448,6 +448,54 @@ function InstalledAppRow({ app, onClick }) {
   );
 }
 
+// ── Réglages en lecture simple ──
+
+// Sans « Gérer les applications », un réglage est affiché tel quel (texte),
+// jamais sous forme de contrôle grisé.
+function ReadOnlySetting({ enabled }) {
+  return (
+    <span
+      className={`text-[12px] font-medium flex-shrink-0 ${
+        enabled ? "text-green-600 dark:text-green-400" : "text-gray-400"
+      }`}
+    >
+      {enabled ? "Activée" : "Désactivée"}
+    </span>
+  );
+}
+
+// Ligne de synchronisation automatique : case à cocher avec le droit,
+// état en lecture simple sinon.
+function AutoSyncRow({ label, hint, checked, canManage, onChange }) {
+  const text = (
+    <span className="flex flex-col">
+      <span className="text-[13px] text-[#505154] dark:text-gray-400">
+        {label}
+      </span>
+      {hint && <span className="text-[11px] text-gray-400">{hint}</span>}
+    </span>
+  );
+
+  if (!canManage) {
+    return (
+      <div className="flex items-center justify-between gap-3 px-3 py-2">
+        {text}
+        <ReadOnlySetting enabled={!!checked} />
+      </div>
+    );
+  }
+
+  return (
+    <label className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors">
+      {text}
+      <Checkbox
+        checked={checked}
+        onCheckedChange={(value) => onChange(!!value)}
+      />
+    </label>
+  );
+}
+
 // ── Panneau de connexion Pennylane ──
 
 function PennylaneConnectionPanel({
@@ -573,21 +621,15 @@ function PennylaneConnectionPanel({
                   { key: "supplierInvoices", label: "Factures fournisseurs" },
                   { key: "quotes", label: "Devis acceptés" },
                 ].map(({ key, label }) => (
-                  <label
+                  <AutoSyncRow
                     key={key}
-                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
-                  >
-                    <span className="text-[13px] text-[#505154] dark:text-gray-400">
-                      {label}
-                    </span>
-                    <Checkbox
-                      checked={actions.account.autoSync[key]}
-                      onCheckedChange={(checked) =>
-                        actions.onUpdateAutoSync({ [key]: !!checked })
-                      }
-                      disabled={!actions.canManage}
-                    />
-                  </label>
+                    label={label}
+                    checked={actions.account.autoSync[key]}
+                    canManage={actions.canManage}
+                    onChange={(checked) =>
+                      actions.onUpdateAutoSync({ [key]: checked })
+                    }
+                  />
                 ))}
               </div>
             </div>
@@ -614,46 +656,56 @@ function PennylaneConnectionPanel({
           </p>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSyncAll}
-            disabled={
-              actions.isReadOnly ||
-              isSyncing ||
-              actions.syncStatus === "IN_PROGRESS" ||
-              !actions.canManage
-            }
-            title={actions.readOnlyTooltip}
-            className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
-          >
-            {isSyncing ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            {isSyncing ? "Synchronisation..." : "Synchroniser maintenant"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={actions.onDisconnect}
-            disabled={actions.isLoading || !actions.canManage}
-            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-          >
-            {actions.isLoading ? "..." : "Déconnecter"}
-          </Button>
-        </div>
+        {/* Actions : « Gérer les applications » */}
+        {actions.canManage && (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSyncAll}
+              disabled={
+                actions.isReadOnly ||
+                isSyncing ||
+                actions.syncStatus === "IN_PROGRESS"
+              }
+              title={actions.readOnlyTooltip}
+              className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
+            >
+              {isSyncing ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {isSyncing ? "Synchronisation..." : "Synchroniser maintenant"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={actions.onDisconnect}
+              disabled={actions.isLoading}
+              className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+            >
+              {actions.isLoading ? "..." : "Déconnecter"}
+            </Button>
+          </div>
+        )}
 
         {!actions.canManage && (
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Seuls les propriétaires et administrateurs peuvent gérer Pennylane
+            Votre rôle ne permet pas de gérer Pennylane
           </p>
         )}
       </div>
+    );
+  }
+
+  // Non connecté, sans « Gérer les applications » : pas de formulaire
+  if (!actions.canManage) {
+    return (
+      <p className="text-xs text-amber-600 dark:text-amber-400">
+        Votre rôle ne permet pas de connecter Pennylane
+      </p>
     );
   }
 
@@ -677,7 +729,6 @@ function PennylaneConnectionPanel({
                 setApiToken(e.target.value);
                 setTestResult(null);
               }}
-              disabled={!actions.canManage}
               className="pr-10 font-mono text-xs"
             />
             <button
@@ -704,7 +755,7 @@ function PennylaneConnectionPanel({
             className={`text-xs ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
           >
             {testResult.success
-              ? `Connexion réussie${testResult.companyName ? ` — ${testResult.companyName}` : ""}`
+              ? `Connexion réussie${testResult.companyName ? ` : ${testResult.companyName}` : ""}`
               : testResult.message}
           </p>
         </div>
@@ -726,12 +777,7 @@ function PennylaneConnectionPanel({
           variant="outline"
           size="sm"
           onClick={handleTest}
-          disabled={
-            actions.isReadOnly ||
-            !apiToken.trim() ||
-            isTesting ||
-            !actions.canManage
-          }
+          disabled={actions.isReadOnly || !apiToken.trim() || isTesting}
           title={actions.readOnlyTooltip}
           className="cursor-pointer"
         >
@@ -746,12 +792,7 @@ function PennylaneConnectionPanel({
           type="button"
           size="sm"
           onClick={handleConnect}
-          disabled={
-            actions.isReadOnly ||
-            !apiToken.trim() ||
-            actions.isLoading ||
-            !actions.canManage
-          }
+          disabled={actions.isReadOnly || !apiToken.trim() || actions.isLoading}
           title={actions.readOnlyTooltip}
           className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
         >
@@ -763,21 +804,34 @@ function PennylaneConnectionPanel({
           {actions.isLoading ? "Connexion..." : "Connecter"}
         </Button>
       </div>
-
-      {!actions.canManage && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          Seuls les propriétaires et administrateurs peuvent connecter Pennylane
-        </p>
-      )}
     </div>
   );
 }
 
 // ── Panneau de connexion Qonto ──
 
-function QontoBankAccountSelect({ accounts, value, onChange, disabled }) {
+function QontoBankAccountSelect({
+  accounts,
+  value,
+  onChange,
+  disabled,
+  readOnly = false,
+}) {
   const options = (accounts || []).filter((a) => a.status !== "closed");
   if (options.length === 0) return null;
+  // Sans « Gérer les applications » : compte choisi en lecture simple
+  if (readOnly) {
+    const selected = options.find((a) => a.qontoId === value);
+    return (
+      <p className="text-[13px] font-medium text-[#505154] dark:text-gray-300">
+        {selected
+          ? `${selected.name || selected.slug || "Compte"}${
+              selected.main ? " (principal)" : ""
+            }${selected.iban ? ` - ${selected.iban}` : ""}`
+          : "Aucun compte sélectionné"}
+      </p>
+    );
+  }
   return (
     <select
       value={value || ""}
@@ -962,15 +1016,17 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             <h4 className="text-xs font-medium text-gray-500">
               Compte pour l'encaissement des factures
             </h4>
-            <button
-              type="button"
-              onClick={actions.onRefreshBankAccounts}
-              disabled={actions.isLoading || !actions.canManage}
-              className="text-[11px] text-gray-400 hover:text-gray-600 flex items-center gap-1 disabled:opacity-50"
-            >
-              <RefreshCw className="w-3 h-3" />
-              Rafraîchir
-            </button>
+            {actions.canManage && (
+              <button
+                type="button"
+                onClick={actions.onRefreshBankAccounts}
+                disabled={actions.isLoading}
+                className="text-[11px] text-gray-400 hover:text-gray-600 flex items-center gap-1 disabled:opacity-50"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Rafraîchir
+              </button>
+            )}
           </div>
           <p className="text-[11px] text-gray-400">
             L'IBAN de ce compte est affiché comme moyen de paiement sur les
@@ -980,7 +1036,8 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             accounts={actions.account?.bankAccounts}
             value={actions.account?.selectedBankAccountId}
             onChange={actions.onUpdateBankAccount}
-            disabled={!actions.canManage || actions.isReadOnly}
+            disabled={actions.isReadOnly}
+            readOnly={!actions.canManage}
           />
         </div>
 
@@ -1014,24 +1071,16 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                     hint: "Créés dans Qonto avec le PDF Newbi dès l'envoi",
                   },
                 ].map(({ key, label, hint }) => (
-                  <label
+                  <AutoSyncRow
                     key={key}
-                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
-                  >
-                    <span className="flex flex-col">
-                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
-                        {label}
-                      </span>
-                      <span className="text-[11px] text-gray-400">{hint}</span>
-                    </span>
-                    <Checkbox
-                      checked={actions.account.autoSync[key]}
-                      onCheckedChange={(checked) =>
-                        actions.onUpdateAutoSync({ [key]: !!checked })
-                      }
-                      disabled={!actions.canManage}
-                    />
-                  </label>
+                    label={label}
+                    hint={hint}
+                    checked={actions.account.autoSync[key]}
+                    canManage={actions.canManage}
+                    onChange={(checked) =>
+                      actions.onUpdateAutoSync({ [key]: checked })
+                    }
+                  />
                 ))}
               </div>
             </div>
@@ -1066,24 +1115,16 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                     hint: "Ajoutés dans vos devis importés avec le PDF",
                   },
                 ].map(({ key, label, hint }) => (
-                  <label
+                  <AutoSyncRow
                     key={key}
-                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
-                  >
-                    <span className="flex flex-col">
-                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
-                        {label}
-                      </span>
-                      <span className="text-[11px] text-gray-400">{hint}</span>
-                    </span>
-                    <Checkbox
-                      checked={!!actions.account.autoSync[key]}
-                      onCheckedChange={(checked) =>
-                        actions.onUpdateAutoSync({ [key]: !!checked })
-                      }
-                      disabled={!actions.canManage}
-                    />
-                  </label>
+                    label={label}
+                    hint={hint}
+                    checked={!!actions.account.autoSync[key]}
+                    canManage={actions.canManage}
+                    onChange={(checked) =>
+                      actions.onUpdateAutoSync({ [key]: checked })
+                    }
+                  />
                 ))}
               </div>
             </div>
@@ -1131,62 +1172,72 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           </p>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSyncAll}
-            disabled={
-              actions.isReadOnly ||
-              isSyncing ||
-              actions.syncStatus === "IN_PROGRESS" ||
-              !actions.canManage
-            }
-            title={actions.readOnlyTooltip}
-            className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
-          >
-            {isSyncing ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            {isSyncing ? "Synchronisation..." : "Envoyer vers Qonto"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleImport}
-            disabled={actions.isReadOnly || isImporting || !actions.canManage}
-            title={actions.readOnlyTooltip}
-            className="cursor-pointer"
-          >
-            {isImporting ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            {isImporting ? "Import..." : "Importer depuis Qonto"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={actions.onDisconnect}
-            disabled={actions.isLoading || !actions.canManage}
-            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-          >
-            {actions.isLoading ? "..." : "Déconnecter"}
-          </Button>
-        </div>
+        {/* Actions : « Gérer les applications » */}
+        {actions.canManage && (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSyncAll}
+              disabled={
+                actions.isReadOnly ||
+                isSyncing ||
+                actions.syncStatus === "IN_PROGRESS"
+              }
+              title={actions.readOnlyTooltip}
+              className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
+            >
+              {isSyncing ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {isSyncing ? "Synchronisation..." : "Envoyer vers Qonto"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleImport}
+              disabled={actions.isReadOnly || isImporting}
+              title={actions.readOnlyTooltip}
+              className="cursor-pointer"
+            >
+              {isImporting ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {isImporting ? "Import..." : "Importer depuis Qonto"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={actions.onDisconnect}
+              disabled={actions.isLoading}
+              className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+            >
+              {actions.isLoading ? "..." : "Déconnecter"}
+            </Button>
+          </div>
+        )}
 
         {!actions.canManage && (
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Seuls les propriétaires et administrateurs peuvent gérer Qonto
+            Votre rôle ne permet pas de gérer Qonto
           </p>
         )}
       </div>
+    );
+  }
+
+  // Non connecté, sans « Gérer les applications » : pas de formulaire
+  if (!actions.canManage) {
+    return (
+      <p className="text-xs text-amber-600 dark:text-amber-400">
+        Votre rôle ne permet pas de connecter Qonto
+      </p>
     );
   }
 
@@ -1209,7 +1260,6 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             setLogin(e.target.value);
             setTestResult(null);
           }}
-          disabled={!actions.canManage}
           className="font-mono text-xs"
           autoComplete="off"
         />
@@ -1222,7 +1272,6 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
               setSecretKey(e.target.value);
               setTestResult(null);
             }}
-            disabled={!actions.canManage}
             className="pr-10 font-mono text-xs"
             autoComplete="new-password"
           />
@@ -1248,7 +1297,6 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
               setUseSandbox(!!checked);
               setTestResult(null);
             }}
-            disabled={!actions.canManage}
           />
           <span className="text-[12px] text-[#505154] dark:text-gray-400">
             Sandbox Qonto (identifiants du Developer Portal)
@@ -1281,7 +1329,6 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             accounts={testResult.bankAccounts}
             value={bankAccountId}
             onChange={setBankAccountId}
-            disabled={!actions.canManage}
           />
         </div>
       )}
@@ -1302,9 +1349,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           variant="outline"
           size="sm"
           onClick={handleTest}
-          disabled={
-            actions.isReadOnly || !canSubmit || isTesting || !actions.canManage
-          }
+          disabled={actions.isReadOnly || !canSubmit || isTesting}
           title={actions.readOnlyTooltip}
           className="cursor-pointer"
         >
@@ -1319,12 +1364,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           type="button"
           size="sm"
           onClick={handleConnect}
-          disabled={
-            actions.isReadOnly ||
-            !canSubmit ||
-            actions.isLoading ||
-            !actions.canManage
-          }
+          disabled={actions.isReadOnly || !canSubmit || actions.isLoading}
           title={actions.readOnlyTooltip}
           className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
         >
@@ -1336,12 +1376,6 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           {actions.isLoading ? "Connexion..." : "Connecter"}
         </Button>
       </div>
-
-      {!actions.canManage && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          Seuls les propriétaires et administrateurs peuvent connecter Qonto
-        </p>
-      )}
     </div>
   );
 }
@@ -1501,18 +1535,30 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             dans le livre des recettes (il détermine le calcul des cotisations
             dans Abby).
           </p>
-          <select
-            value={actions.account?.incomeProductType || 2}
-            onChange={(e) => actions.onUpdateIncomeProductType(e.target.value)}
-            disabled={!actions.canManage || actions.isReadOnly}
-            className="w-full h-9 rounded-lg border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#141414] px-3 text-[13px] text-[#505154] dark:text-gray-300 disabled:opacity-60"
-          >
-            {ABBY_PRODUCT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+          {actions.canManage ? (
+            <select
+              value={actions.account?.incomeProductType || 2}
+              onChange={(e) =>
+                actions.onUpdateIncomeProductType(e.target.value)
+              }
+              disabled={actions.isReadOnly}
+              className="w-full h-9 rounded-lg border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#141414] px-3 text-[13px] text-[#505154] dark:text-gray-300 disabled:opacity-60"
+            >
+              {ABBY_PRODUCT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            // Sans « Gérer les applications » : type choisi en lecture simple
+            <p className="text-[13px] font-medium text-[#505154] dark:text-gray-300">
+              {ABBY_PRODUCT_TYPES.find(
+                (t) =>
+                  t.value === Number(actions.account?.incomeProductType || 2),
+              )?.label || "Non défini"}
+            </p>
+          )}
         </div>
 
         {/* Sync automatique */}
@@ -1540,24 +1586,16 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                     hint: "Créés comme devis Abby dès l'envoi (numéro Newbi dans le titre), signés dans Abby dès leur acceptation",
                   },
                 ].map(({ key, label, hint }) => (
-                  <label
+                  <AutoSyncRow
                     key={key}
-                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
-                  >
-                    <span className="flex flex-col">
-                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
-                        {label}
-                      </span>
-                      <span className="text-[11px] text-gray-400">{hint}</span>
-                    </span>
-                    <Checkbox
-                      checked={actions.account.autoSync[key]}
-                      onCheckedChange={(checked) =>
-                        actions.onUpdateAutoSync({ [key]: !!checked })
-                      }
-                      disabled={!actions.canManage}
-                    />
-                  </label>
+                    label={label}
+                    hint={hint}
+                    checked={actions.account.autoSync[key]}
+                    canManage={actions.canManage}
+                    onChange={(checked) =>
+                      actions.onUpdateAutoSync({ [key]: checked })
+                    }
+                  />
                 ))}
               </div>
             </div>
@@ -1587,24 +1625,16 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                     hint: "Ajoutés dans vos devis importés avec le PDF, acceptés dès leur signature",
                   },
                 ].map(({ key, label, hint }) => (
-                  <label
+                  <AutoSyncRow
                     key={key}
-                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
-                  >
-                    <span className="flex flex-col">
-                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
-                        {label}
-                      </span>
-                      <span className="text-[11px] text-gray-400">{hint}</span>
-                    </span>
-                    <Checkbox
-                      checked={!!actions.account.autoSync[key]}
-                      onCheckedChange={(checked) =>
-                        actions.onUpdateAutoSync({ [key]: !!checked })
-                      }
-                      disabled={!actions.canManage}
-                    />
-                  </label>
+                    label={label}
+                    hint={hint}
+                    checked={!!actions.account.autoSync[key]}
+                    canManage={actions.canManage}
+                    onChange={(checked) =>
+                      actions.onUpdateAutoSync({ [key]: checked })
+                    }
+                  />
                 ))}
               </div>
             </div>
@@ -1652,62 +1682,72 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           </p>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSyncAll}
-            disabled={
-              actions.isReadOnly ||
-              isSyncing ||
-              actions.syncStatus === "IN_PROGRESS" ||
-              !actions.canManage
-            }
-            title={actions.readOnlyTooltip}
-            className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
-          >
-            {isSyncing ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            {isSyncing ? "Synchronisation..." : "Envoyer vers Abby"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleImport}
-            disabled={actions.isReadOnly || isImporting || !actions.canManage}
-            title={actions.readOnlyTooltip}
-            className="cursor-pointer"
-          >
-            {isImporting ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            {isImporting ? "Import..." : "Importer depuis Abby"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={actions.onDisconnect}
-            disabled={actions.isLoading || !actions.canManage}
-            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-          >
-            {actions.isLoading ? "..." : "Déconnecter"}
-          </Button>
-        </div>
+        {/* Actions : « Gérer les applications » */}
+        {actions.canManage && (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSyncAll}
+              disabled={
+                actions.isReadOnly ||
+                isSyncing ||
+                actions.syncStatus === "IN_PROGRESS"
+              }
+              title={actions.readOnlyTooltip}
+              className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
+            >
+              {isSyncing ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {isSyncing ? "Synchronisation..." : "Envoyer vers Abby"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleImport}
+              disabled={actions.isReadOnly || isImporting}
+              title={actions.readOnlyTooltip}
+              className="cursor-pointer"
+            >
+              {isImporting ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {isImporting ? "Import..." : "Importer depuis Abby"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={actions.onDisconnect}
+              disabled={actions.isLoading}
+              className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+            >
+              {actions.isLoading ? "..." : "Déconnecter"}
+            </Button>
+          </div>
+        )}
 
         {!actions.canManage && (
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Seuls les propriétaires et administrateurs peuvent gérer Abby
+            Votre rôle ne permet pas de gérer Abby
           </p>
         )}
       </div>
+    );
+  }
+
+  // Non connecté, sans « Gérer les applications » : pas de formulaire
+  if (!actions.canManage) {
+    return (
+      <p className="text-xs text-amber-600 dark:text-amber-400">
+        Votre rôle ne permet pas de connecter Abby
+      </p>
     );
   }
 
@@ -1731,7 +1771,6 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
               setApiKey(e.target.value);
               setTestResult(null);
             }}
-            disabled={!actions.canManage}
             className="pr-10 font-mono text-xs"
             autoComplete="new-password"
           />
@@ -1780,9 +1819,7 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           variant="outline"
           size="sm"
           onClick={handleTest}
-          disabled={
-            actions.isReadOnly || !canSubmit || isTesting || !actions.canManage
-          }
+          disabled={actions.isReadOnly || !canSubmit || isTesting}
           title={actions.readOnlyTooltip}
           className="cursor-pointer"
         >
@@ -1797,12 +1834,7 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           type="button"
           size="sm"
           onClick={handleConnect}
-          disabled={
-            actions.isReadOnly ||
-            !canSubmit ||
-            actions.isLoading ||
-            !actions.canManage
-          }
+          disabled={actions.isReadOnly || !canSubmit || actions.isLoading}
           title={actions.readOnlyTooltip}
           className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
         >
@@ -1814,12 +1846,6 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           {actions.isLoading ? "Connexion..." : "Connecter"}
         </Button>
       </div>
-
-      {!actions.canManage && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          Seuls les propriétaires et administrateurs peuvent connecter Abby
-        </p>
-      )}
     </div>
   );
 }
@@ -1905,8 +1931,8 @@ function AppDetailView({
           </div>
         </div>
 
-        {/* Install / Uninstall button */}
-        {!app.comingSoon && (
+        {/* Install / Uninstall button : « Gérer les applications » */}
+        {!app.comingSoon && canManage && (
           <div className="flex-shrink-0">
             {isInstalled ? (
               <Button
@@ -1914,9 +1940,8 @@ function AppDetailView({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsUninstallConfirmOpen(true)}
-                disabled={uninstallLoading || !canManage}
+                disabled={uninstallLoading}
                 className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                title={!canManage ? "Réservé aux owners et admins" : ""}
               >
                 {uninstallLoading ? (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -1930,12 +1955,9 @@ function AppDetailView({
                 type="button"
                 size="sm"
                 onClick={() => onInstall(app.id)}
-                disabled={isReadOnly || installLoading || !canManage}
+                disabled={isReadOnly || installLoading}
                 className="bg-[#5b4eff] hover:bg-[#4a3eee] text-white cursor-pointer"
-                title={
-                  readOnlyTooltip ||
-                  (!canManage ? "Réservé aux owners et admins" : "")
-                }
+                title={readOnlyTooltip}
               >
                 {installLoading ? (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -2020,66 +2042,49 @@ function AppDetailView({
                         </span>
                       </div>
 
-                      {/* Stripe actions */}
-                      <div className="flex items-center gap-2">
-                        {stripeActions.stripeAccount &&
-                        !stripeActions.stripeAccount.isOnboarded ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={stripeActions.onFinishSetup}
-                            disabled={!stripeActions.canManage}
-                            className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
-                            title={
-                              !stripeActions.canManage
-                                ? "Réservé aux owners et admins"
-                                : "Finalisez votre configuration Stripe"
-                            }
-                          >
-                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                            Finaliser la configuration
-                          </Button>
-                        ) : (
+                      {/* Stripe actions : « Gérer les applications » */}
+                      {stripeActions.canManage && (
+                        <div className="flex items-center gap-2">
+                          {stripeActions.stripeAccount &&
+                          !stripeActions.stripeAccount.isOnboarded ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={stripeActions.onFinishSetup}
+                              className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
+                              title="Finalisez votre configuration Stripe"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                              Finaliser la configuration
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={stripeActions.onOpenDashboard}
+                              className="cursor-pointer"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                              Tableau de bord
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={stripeActions.onOpenDashboard}
-                            disabled={!stripeActions.canManage}
-                            className="cursor-pointer"
-                            title={
-                              !stripeActions.canManage
-                                ? "Réservé aux owners et admins"
-                                : ""
-                            }
+                            onClick={stripeActions.onDisconnect}
+                            disabled={stripeActions.isLoading}
+                            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                           >
-                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                            Tableau de bord
+                            {stripeActions.isLoading ? "..." : "Déconnecter"}
                           </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={stripeActions.onDisconnect}
-                          disabled={
-                            stripeActions.isLoading || !stripeActions.canManage
-                          }
-                          className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                          title={
-                            !stripeActions.canManage
-                              ? "Réservé aux owners et admins"
-                              : ""
-                          }
-                        >
-                          {stripeActions.isLoading ? "..." : "Déconnecter"}
-                        </Button>
-                      </div>
+                        </div>
+                      )}
 
                       {!stripeActions.canManage && (
                         <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Seuls les propriétaires et administrateurs peuvent
-                          gérer Stripe Connect
+                          Votre rôle ne permet pas de gérer Stripe Connect
                         </p>
                       )}
                     </div>
@@ -2093,32 +2098,24 @@ function AppDetailView({
                             factures.
                           </p>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={stripeActions.onConnect}
-                          disabled={
-                            isReadOnly ||
-                            stripeActions.isLoading ||
-                            !stripeActions.canManage
-                          }
-                          className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
-                          title={
-                            readOnlyTooltip ||
-                            (!stripeActions.canManage
-                              ? "Réservé aux owners et admins"
-                              : "")
-                          }
-                        >
-                          {stripeActions.isLoading
-                            ? "Connexion..."
-                            : "Connecter"}
-                        </Button>
+                        {stripeActions.canManage && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={stripeActions.onConnect}
+                            disabled={isReadOnly || stripeActions.isLoading}
+                            className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
+                            title={readOnlyTooltip}
+                          >
+                            {stripeActions.isLoading
+                              ? "Connexion..."
+                              : "Connecter"}
+                          </Button>
+                        )}
                       </div>
                       {!stripeActions.canManage && (
                         <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Seuls les propriétaires et administrateurs peuvent
-                          gérer Stripe Connect
+                          Votre rôle ne permet pas de gérer Stripe Connect
                         </p>
                       )}
                     </div>
@@ -2149,16 +2146,18 @@ function AppDetailView({
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={bankingActions.onDisconnect}
-                          disabled={bankingActions.isLoading}
-                          className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          {bankingActions.isLoading ? "..." : "Déconnecter"}
-                        </Button>
+                        {bankingActions.canManage && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={bankingActions.onDisconnect}
+                            disabled={bankingActions.isLoading}
+                            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            {bankingActions.isLoading ? "..." : "Déconnecter"}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -2242,16 +2241,18 @@ function AppDetailView({
                             utilisée.
                           </p>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={isReadOnly}
-                          title={readOnlyTooltip}
-                          className="bg-[#5b4eff] hover:bg-[#4a3eee] dark:text-white cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5 mr-1.5" />
-                          Connecter
-                        </Button>
+                        {canManage && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={isReadOnly}
+                            title={readOnlyTooltip}
+                            className="bg-[#5b4eff] hover:bg-[#4a3eee] dark:text-white cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5 mr-1.5" />
+                            Connecter
+                          </Button>
+                        )}
                       </div>
                     )}
                   </>
@@ -2472,15 +2473,18 @@ export function ApplicationsSection() {
   const { organization } = useActiveOrganization();
   const { activeOrganization, workspaceId } = useWorkspace();
   const organizationId = organization?.id;
-  const { isOwner, isAdmin } = usePermissions();
+  const { canDo, isReady } = useMyPermissions();
   const { isReadOnly, isOwner: isSubOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isSubOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const canManageStripeConnect = isOwner() || isAdmin();
-  const canManageApps = isOwner() || isAdmin();
+  // Module « Applications et banques » du rôle (Paramètres > Membres > Rôles) :
+  // sans « Gérer », les actions sont masquées et les réglages affichés en
+  // lecture simple (tant que la grille n'est pas chargée, on ne masque pas)
+  const canManageApps = !isReady || canDo("integrations", "manage");
+  const canManageStripeConnect = canManageApps;
 
   // Apps installées depuis la BDD
   const {
@@ -2743,6 +2747,8 @@ export function ApplicationsSection() {
 
   // Actions Banking pour la vue détail
   const bankingActions = {
+    // Déconnecter la banque : « Gérer les applications »
+    canManage: canManageApps,
     isLoading: isBankingLoading,
     onDisconnect: () => disconnectBank({ provider: bankingProvider }),
   };

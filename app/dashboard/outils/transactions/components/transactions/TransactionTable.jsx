@@ -40,6 +40,7 @@ import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 import { columns } from "./columns/transactionColumns";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
@@ -471,8 +472,16 @@ export default function TransactionTable({
   const { getAllCollaborators } = useOrganizationInvitations();
   const { organization: activeOrg } = useActiveOrganization();
   const { workspaceId } = useRequiredWorkspace();
+  const { canDo, isReady } = useMyPermissions();
+  // Action « receipts » du rôle : confirmer la facture d'achat proposée par
+  // l'analyse d'un justificatif (tout autorisé tant que la grille n'est pas
+  // chargée)
+  const canManageReceipts = !isReady || canDo("banking", "receipts");
+  // Action « reconcile » : la pastille « Match » ouvre le rapprochement
+  const canReconcile = !isReady || canDo("banking", "reconcile");
   const { data: session } = useSession();
   const [organizationMembers, setOrganizationMembers] = useState([]);
+  const membersFetchedForRef = useRef(null);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
   // Mutation pour upload de justificatif
@@ -535,10 +544,17 @@ export default function TransactionTable({
       }
     };
 
-    if (activeOrg?.id) {
+    // Membres chargés à la première ouverture de l'export (seul à s'en
+    // servir), et non à chaque affichage de la page Transactions.
+    if (
+      activeOrg?.id &&
+      isExportDialogOpen &&
+      membersFetchedForRef.current !== activeOrg.id
+    ) {
+      membersFetchedForRef.current = activeOrg.id;
       fetchMembers();
     }
-  }, [activeOrg?.id]);
+  }, [activeOrg?.id, isExportDialogOpen]);
 
   // Pagination serveur : items de la page courante + total + compteurs
   // d'onglets calculés sur toute la base
@@ -749,11 +765,46 @@ export default function TransactionTable({
             action,
             values: action === "CREATE" ? values : null,
             purchaseInvoiceId: purchaseInvoiceId || null,
+            // Facture ressemblante affichée au moment de créer : une autre,
+            // apparue depuis l'analyse, suspend la création côté API
+            ...(action === "CREATE" && {
+              acknowledgedDuplicateId:
+                item.receiptFile?.proposal?.duplicate?.id || null,
+            }),
           },
         });
         const result = data?.confirmTransactionReceiptInvoice;
+        if (result?.duplicate) {
+          // Une facture ressemblante a été enregistrée depuis l'analyse
+          // (l'autre copie du même document confirmée juste avant…) : rien
+          // n'est créé, la modale reste ouverte et affiche le choix
+          // « Rattacher » / « Créer quand même », corrections conservées.
+          setConfirmationQueue((queue) =>
+            queue.map((q) =>
+              q.receiptFile?.id === item.receiptFile?.id
+                ? {
+                    ...q,
+                    receiptFile: {
+                      ...q.receiptFile,
+                      proposal: {
+                        ...q.receiptFile.proposal,
+                        duplicate: result.duplicate,
+                      },
+                    },
+                  }
+                : q,
+            ),
+          );
+          toast.warning("Une facture d'achat ressemblante existe déjà", {
+            description:
+              "Elle a été enregistrée depuis l'analyse. Rattachez le justificatif à cette facture ou créez-en une quand même.",
+          });
+          return;
+        }
         if (!result?.success) {
-          toast.error(result?.message || "La facture d'achat n'a pas pu être enregistrée");
+          toast.error(
+            result?.message || "La facture d'achat n'a pas pu être enregistrée",
+          );
           return;
         }
         if (action === "CREATE") {
@@ -768,7 +819,9 @@ export default function TransactionTable({
         }
       } catch (error) {
         console.error("❌ [CONFIRM RECEIPT INVOICE]", error);
-        toast.error(error.message || "La facture d'achat n'a pas pu être enregistrée");
+        toast.error(
+          error.message || "La facture d'achat n'a pas pu être enregistrée",
+        );
         return;
       }
       refetch();
@@ -1206,13 +1259,16 @@ export default function TransactionTable({
       onConfirmProposal: (transaction, receiptFile) => {
         setConfirmationQueue([
           {
-            transactionId: transaction.originalTransaction?.id || transaction.id,
+            transactionId:
+              transaction.originalTransaction?.id || transaction.id,
             receiptFile,
             transaction,
           },
         ]);
         setConfirmationIndex(0);
       },
+      canManageReceipts,
+      canReconcile,
       bankAccounts,
     },
   });

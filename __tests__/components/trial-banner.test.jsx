@@ -9,6 +9,16 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
 }));
 
+// Droits du rôle : grille non chargée par défaut (repli sur isOwner)
+const mockPermissions = { isReady: false, actions: {} };
+vi.mock("@/src/hooks/useMyPermissions", () => ({
+  useMyPermissions: () => ({
+    isReady: mockPermissions.isReady,
+    canDo: (page, action) =>
+      (mockPermissions.actions[page] || []).includes(action),
+  }),
+}));
+
 import { TrialBanner } from "@/src/components/trial-banner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
@@ -94,5 +104,17 @@ describe("TrialBanner — decision #6 (J-3 visibility)", () => {
     render(<TrialBanner />);
     expect(screen.queryByRole("button", { name: /souscrire/i })).toBeNull();
     expect(screen.getByText(/Demandez à l'administrateur/)).toBeInTheDocument();
+  });
+  it("suit le droit « Gérer l'abonnement » une fois la grille chargée", () => {
+    setHook({ isTrialApp: true, trialDaysRemaining: 2, isOwner: true });
+    mockPermissions.isReady = true;
+    mockPermissions.actions = { billing: ["view"] };
+    try {
+      render(<TrialBanner />);
+      expect(screen.queryByRole("button", { name: /souscrire/i })).toBeNull();
+    } finally {
+      mockPermissions.isReady = false;
+      mockPermissions.actions = {};
+    }
   });
 });

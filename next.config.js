@@ -156,6 +156,17 @@ const nextConfig = {
 
   ...(turbopackRoot && { turbopack: { root: turbopackRoot } }),
 
+  // Chromium de @sparticuz/chromium (bin/*.br, ~70 Mo) pour les seules routes
+  // qui génèrent un PDF avec Puppeteer. Depuis la v153, le paquet est en ESM
+  // seul : il localise bin/ via import.meta.url, que le traçage des fichiers
+  // de Next ne suit pas (la v143 le trouvait via son build CommonJS). Sans
+  // cette inclusion, la fonction Vercel part sans le navigateur et
+  // chromium.executablePath() échoue.
+  outputFileTracingIncludes: {
+    "/api/*/generate-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/invoices/preview-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
+
   experimental: {
     // Transforme les imports "barrel" en imports directs pour les libs
     // ci-dessous (lucide-react, date-fns et recharts sont déjà couverts par
@@ -172,12 +183,15 @@ const nextConfig = {
       "@ark-ui/react",
       "@internationalized/date",
     ],
-    // Conserve 30 s en cache client (Router Cache) le payload RSC des routes
-    // dynamiques : un retour arrière ou une re-navigation rapide vers une
-    // page déjà visitée ne refait plus l'aller-retour serveur.
+    // Conserve 5 min en cache client (Router Cache) le payload RSC des routes
+    // dynamiques : un retour arrière ou une re-navigation vers une page déjà
+    // visitée ne refait plus l'aller-retour serveur. Sans risque de données
+    // périmées : les pages du dashboard sont des composants client (leur
+    // payload RSC ne contient aucune donnée, Apollo gère la fraîcheur) et le
+    // layout serveur n'est pas ré-exécuté en navigation client de toute façon.
     staleTimes: {
-      dynamic: 30,
-      static: 180,
+      dynamic: 300,
+      static: 300,
     },
   },
 

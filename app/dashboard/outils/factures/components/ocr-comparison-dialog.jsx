@@ -27,6 +27,7 @@ import {
   applyOcrDrafts,
   ocrDraftValue,
 } from "@/src/components/reconciliation/OcrValueInput";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -106,7 +107,7 @@ export function OcrComparisonDialog({
   const formatAmount = (amount) =>
     amount === null || amount === undefined
       ? "—"
-      : new Intl.NumberFormat("fr-FR", {
+      : getNumberFormat("fr-FR", {
           style: "currency",
           currency: currency || "EUR",
         }).format(Number(amount) || 0);

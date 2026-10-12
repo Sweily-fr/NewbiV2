@@ -32,9 +32,10 @@ import {
 import { ChevronRight } from "lucide-react";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -326,18 +327,21 @@ export function AnalyticsTreasuryBalanceChart({
                 }
               />
               <Bar
+                animationDuration={300}
                 dataKey="income"
                 fill="var(--color-income)"
                 radius={[4, 4, 0, 0]}
                 barSize={26}
               />
               <Bar
+                animationDuration={300}
                 dataKey="expenses"
                 fill="var(--color-expenses)"
                 radius={[4, 4, 0, 0]}
                 barSize={26}
               />
               <Area
+                animationDuration={300}
                 dataKey="treasury"
                 type="monotone"
                 fill="url(#fillTreasuryAnalytics)"

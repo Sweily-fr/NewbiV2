@@ -1,32 +1,42 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { auth } from "@/src/lib/auth";
-import { withErrorHandler } from "@/src/lib/security";
+import {
+  requireSession,
+  requireOrgStripeCustomer,
+  resolveBillingOrgId,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia",
 });
 
+/**
+ * GET /api/stripe/customer?customerId=&organizationId=
+ *
+ * Coordonnées de facturation du client Stripe de l'espace actif (ou de
+ * l'espace passé dans `organizationId`), avec le droit « Voir » sur
+ * l'abonnement. Un `customerId` qui n'appartient pas à l'espace est refusé.
+ */
 async function handler(request) {
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session?.user) {
-    return NextResponse.json(
-      { success: false, message: "Non authentifié" },
-      { status: 401 },
-    );
-  }
+  const { user, session } = await requireSession(request);
 
   const url = new URL(request.url);
-  const stripeCustomerId = url.searchParams.get("customerId");
+  const orgId = resolveBillingOrgId(
+    session,
+    url.searchParams.get("organizationId"),
+  );
+  const stripeCustomerId = await requireOrgStripeCustomer({
+    userId: user.id,
+    orgId,
+    action: "view",
+    customerId: url.searchParams.get("customerId"),
+  });
 
+  // Espace sans client Stripe (essai, abonnement jamais souscrit) : pas de
+  // coordonnées de facturation, ce n'est pas une erreur.
   if (!stripeCustomerId) {
-    return NextResponse.json(
-      { success: false, message: "Customer ID manquant" },
-      { status: 400 },
-    );
+    return NextResponse.json({ success: true, customer: null });
   }
 
   try {

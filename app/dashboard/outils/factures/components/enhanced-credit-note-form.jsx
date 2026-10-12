@@ -96,6 +96,7 @@ import ItemsSection from "./invoices-form-sections/ItemsSection";
 import DiscountsAndTotalsSection from "./invoices-form-sections/DiscountsAndTotalsSection";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import { CREDIT_TYPE, REFUND_METHOD } from "@/src/graphql/creditNoteQueries";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Labels for display
 const CREDIT_TYPE_LABELS = {
@@ -345,6 +346,10 @@ export default function EnhancedCreditNoteForm({
   const formData = watch();
   const isReadOnly = mode === "view";
   const canEdit = !isReadOnly && !loading;
+  // Recherche dans le catalogue : seulement si le rôle peut lire les produits
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, isReady } = useMyPermissions();
+  const canReadProducts = !isReady || canRead("products");
 
   // Date handlers
   const handleDateChange = (field, date) => {
@@ -602,7 +607,9 @@ export default function EnhancedCreditNoteForm({
               <ItemsSection
                 mode={mode}
                 canEdit={canEdit}
-                ProductSearchCombobox={ProductSearchCombobox}
+                ProductSearchCombobox={
+                  canReadProducts ? ProductSearchCombobox : null
+                }
                 isCreditNote={true}
               />
             </>
@@ -631,11 +638,13 @@ export default function EnhancedCreditNoteForm({
               Annuler
             </Button>
 
+            {/* En consultation, seules les étapes restent consultables :
+                la création de l'avoir est masquée */}
             <div className="flex gap-3">
               {currentStep === 1 && (
                 <Button
                   onClick={handleNextStep}
-                  disabled={!isStep1Valid() || !canEdit}
+                  disabled={isReadOnly ? loading : !isStep1Valid() || !canEdit}
                   className="px-6 text-sm font-normal"
                 >
                   Suivant
@@ -648,17 +657,19 @@ export default function EnhancedCreditNoteForm({
                     className="text-sm font-normal"
                     variant="outline"
                     onClick={handlePreviousStep}
-                    disabled={!canEdit}
+                    disabled={isReadOnly ? loading : !canEdit}
                   >
                     Précédent
                   </Button>
-                  <Button
-                    onClick={handleCreateCreditNote}
-                    disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6 text-sm font-normal"
-                  >
-                    {saving ? "Création..." : "Créer l'avoir"}
-                  </Button>
+                  {!isReadOnly && (
+                    <Button
+                      onClick={handleCreateCreditNote}
+                      disabled={!isStep2Valid() || !canEdit || saving}
+                      className="px-6 text-sm font-normal"
+                    >
+                      {saving ? "Création..." : "Créer l'avoir"}
+                    </Button>
+                  )}
                 </>
               )}
             </div>

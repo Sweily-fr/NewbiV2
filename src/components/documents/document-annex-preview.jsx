@@ -2,6 +2,7 @@
 
 import { Paperclip } from "lucide-react";
 import { PdfPreview } from "@/src/components/pdf/pdf-preview";
+import { cn } from "@/src/lib/utils";
 import {
   annexProxyUrl,
   formatAnnexSummary,
@@ -17,7 +18,11 @@ import {
  * À placer HORS de l'élément capturé pour les PDF navigateur (pdfRef) : ces
  * replis ajoutent déjà l'annexe au PDF, la capturer en plus la doublerait.
  */
-export default function DocumentAnnexPreview({ annex, tone = "light" }) {
+export default function DocumentAnnexPreview({
+  annex,
+  tone = "light",
+  className,
+}) {
   const normalized = normalizeAnnex(annex);
   const src = annexProxyUrl(normalized);
   if (!src) return null;
@@ -25,7 +30,7 @@ export default function DocumentAnnexPreview({ annex, tone = "light" }) {
   const summary = formatAnnexSummary(normalized);
 
   return (
-    <div className="mt-10" data-annex-preview>
+    <div className={cn("mt-10", className)} data-annex-preview>
       <div
         className={`mb-3 flex min-w-0 items-center gap-2 text-xs ${
           tone === "dark" ? "text-white/70" : "text-muted-foreground"

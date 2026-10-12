@@ -19,6 +19,32 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+
+// Module des documents cités dans l'activité (e-mails envoyés)
+const DOCUMENT_TYPE_MODULES = {
+  invoice: "invoices",
+  quote: "quotes",
+  creditNote: "creditNotes",
+  purchaseOrder: "purchaseOrders",
+  deliveryNote: "deliveryNotes",
+};
+
+// Module dont dépend une entrée d'activité : masquée sans lecture du module
+function activityModule(activity) {
+  const type = activity.type || "";
+  if (type === "credit_note_created") return "creditNotes";
+  if (type.startsWith("invoice")) return "invoices";
+  if (type.startsWith("quote")) return "quotes";
+  if (type === "document_email_sent") {
+    return DOCUMENT_TYPE_MODULES[activity.metadata?.documentType] || null;
+  }
+  if (type === "reminder_created") return "calendar";
+  if (type === "added_to_list" || type === "removed_from_list") {
+    return "clientLists";
+  }
+  return null;
+}
 
 // Action text per activity type
 function getActionText(activity) {
@@ -121,15 +147,21 @@ const isSystemType = (type) =>
 
 const FILTER_TYPES = [
   { label: "Tout", value: null },
-  { label: "Factures", value: "invoice" },
-  { label: "Devis", value: "quote" },
+  { label: "Factures", value: "invoice", module: "invoices" },
+  { label: "Devis", value: "quote", module: "quotes" },
   { label: "Emails", value: "email" },
   { label: "Notes", value: "note" },
-  { label: "Rappels", value: "reminder" },
-  { label: "Listes", value: "list" },
+  { label: "Rappels", value: "reminder", module: "calendar" },
+  { label: "Listes", value: "list", module: "clientLists" },
 ];
 
 export default function ClientActivityTab({ client }) {
+  const { canRead, isReady } = useMyPermissions();
+  // Activité des autres modules (factures, devis, rappels, listes…) masquée
+  // sans lecture du module (tout visible tant que la grille n'est pas chargée)
+  const canReadModule = (moduleKey) =>
+    !moduleKey || !isReady || canRead(moduleKey);
+  const filterTypes = FILTER_TYPES.filter((f) => canReadModule(f.module));
   const [filterType, setFilterType] = useState(null);
   const [collapsedPeriods, setCollapsedPeriods] = useState(new Set());
 
@@ -142,8 +174,12 @@ export default function ClientActivityTab({ client }) {
     return [...(client?.activity || [])]
       .filter((a) => a.type !== "automation_executed")
       .filter((item) => item.createdAt)
+      .filter((item) => {
+        const moduleKey = activityModule(item);
+        return !moduleKey || !isReady || canRead(moduleKey);
+      })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [client?.activity]);
+  }, [client?.activity, isReady, canRead]);
 
   const filtered = useMemo(() => {
     let items = allActivities;
@@ -224,7 +260,7 @@ export default function ClientActivityTab({ client }) {
   };
 
   const activeFilterLabel =
-    FILTER_TYPES.find((f) => f.value === filterType)?.label || "Filtres";
+    filterTypes.find((f) => f.value === filterType)?.label || "Filtres";
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -240,7 +276,7 @@ export default function ClientActivityTab({ client }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            {FILTER_TYPES.map((f) => (
+            {filterTypes.map((f) => (
               <DropdownMenuItem
                 key={f.label}
                 onClick={() => setFilterType(f.value)}

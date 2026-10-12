@@ -26,8 +26,10 @@ export const PLAN_LIMITS = {
     storage: 50,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 5,
-    // Rôles disponibles à l'invitation (member = siège payant, aucun inclus)
-    availableRoles: ["member", "accountant"],
+    // Rôles prédéfinis proposés à l'invitation (viewer = Membre, member =
+    // Éditeur : sièges payants, aucun inclus ; accountant = Comptable gratuit).
+    // Les rôles personnalisés de l'espace s'y ajoutent sur toutes les offres.
+    availableRoles: ["viewer", "member", "accountant"],
     // Exports comptables
     exports: ["csv", "excel"],
     // E-signature (SES avec quota mensuel, appliqué par l'API :
@@ -69,8 +71,8 @@ export const PLAN_LIMITS = {
     storage: 200,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 15,
-    // Rôles disponibles à l'invitation
-    availableRoles: ["member", "accountant", "admin"],
+    // Rôles prédéfinis proposés à l'invitation (+ rôles personnalisés)
+    availableRoles: ["viewer", "member", "admin", "accountant"],
     // Exports comptables
     exports: ["csv", "excel", "fec"],
     // E-signature (SES avec quota mensuel)
@@ -111,8 +113,8 @@ export const PLAN_LIMITS = {
     storage: 500,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 50,
-    // Rôles disponibles à l'invitation (tous les rôles)
-    availableRoles: ["member", "accountant", "admin", "viewer"],
+    // Rôles prédéfinis proposés à l'invitation (+ rôles personnalisés)
+    availableRoles: ["viewer", "member", "admin", "accountant"],
     // Exports comptables (tous les formats)
     exports: ["csv", "excel", "fec", "sage", "cegid"],
     // E-signature (SES + QES, illimité)

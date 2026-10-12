@@ -49,6 +49,11 @@ export async function generatePDFFromElement(element) {
     quality: JPEG_QUALITY,
     backgroundColor: "#ffffff",
     width: 794, // Largeur A4 en pixels
+    // Hauteur de mise en page, insensible aux transform : par défaut
+    // modern-screenshot lit getBoundingClientRect(), qui renvoie la hauteur
+    // réduite quand l'aperçu est mis à l'échelle (A4PreviewFrame, générateurs
+    // publics), et le bas du document était coupé.
+    height: element.offsetHeight,
     scale: CAPTURE_SCALE,
     fetch: {
       requestInit: {

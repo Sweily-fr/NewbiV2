@@ -39,6 +39,7 @@ import {
 } from "@/src/hooks/useClientLists";
 import { useDeleteClient } from "@/src/hooks/useClients";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { toast } from "@/src/components/ui/sonner";
 import {
@@ -66,7 +67,19 @@ export default function ListClientsView({
   const { addClients } = useAddClientsToList();
   const { removeClients } = useRemoveClientsFromList();
   const { deleteClient } = useDeleteClient();
-  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Champs personnalisés : module à part (requête sautée sans lecture)
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const { fields: customFieldDefinitions } = useClientCustomFields(
+    canReadCustomFields ? workspaceId : null,
+  );
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  // Ajouter / retirer / déplacer des contacts : action « edit » des listes
+  const canEditLists = !isReady || canDo("clientLists", "edit");
+  // Suppression définitive des fiches : action « delete » des clients
+  const canDeleteClients = !isReady || canDo("clients", "delete");
+  // « Ajouter des contacts » liste les fiches du module Clients
+  const canAddContacts = canEditLists && (!isReady || canRead("clients"));
 
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -261,7 +274,7 @@ export default function ListClientsView({
             </p>
           </div>
 
-          {selectedCount === 0 && clients.length > 0 && (
+          {selectedCount === 0 && clients.length > 0 && canAddContacts && (
             <Button
               size="sm"
               variant="outline"
@@ -279,92 +292,96 @@ export default function ListClientsView({
                 {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
               </span>
 
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleBulkRemove}
-                disabled={bulkLoading}
-                className="gap-2 cursor-pointer"
-              >
-                <ListMinus className="w-4 h-4" />
-                Retirer de la liste
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              {canEditLists && (
+                <>
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={bulkLoading || otherLists.length === 0}
-                    className="gap-2 cursor-pointer"
-                  >
-                    <ArrowRightLeft className="w-4 h-4" />
-                    Changer de liste
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {otherLists.length === 0 ? (
-                    <DropdownMenuItem disabled>
-                      Aucune autre liste
-                    </DropdownMenuItem>
-                  ) : (
-                    otherLists.map((l) => (
-                      <DropdownMenuItem
-                        key={l.id}
-                        onClick={() => handleBulkMoveTo(l.id)}
-                        disabled={bulkLoading}
-                        className="cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2 w-full">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: l.color }}
-                          />
-                          <span>{l.name}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
+                    onClick={handleBulkRemove}
                     disabled={bulkLoading}
                     className="gap-2 cursor-pointer"
                   >
-                    <ListPlus className="w-4 h-4" />
-                    Ajouter à une liste
+                    <ListMinus className="w-4 h-4" />
+                    Retirer de la liste
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {otherLists.length === 0 ? (
-                    <DropdownMenuItem disabled>
-                      Aucune autre liste
-                    </DropdownMenuItem>
-                  ) : (
-                    otherLists.map((l) => (
-                      <DropdownMenuItem
-                        key={l.id}
-                        onClick={() => handleBulkAddTo(l.id)}
-                        disabled={bulkLoading}
-                        className="cursor-pointer"
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={bulkLoading || otherLists.length === 0}
+                        className="gap-2 cursor-pointer"
                       >
-                        <div className="flex items-center gap-2 w-full">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: l.color }}
-                          />
-                          <span>{l.name}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                        <ArrowRightLeft className="w-4 h-4" />
+                        Changer de liste
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {otherLists.length === 0 ? (
+                        <DropdownMenuItem disabled>
+                          Aucune autre liste
+                        </DropdownMenuItem>
+                      ) : (
+                        otherLists.map((l) => (
+                          <DropdownMenuItem
+                            key={l.id}
+                            onClick={() => handleBulkMoveTo(l.id)}
+                            disabled={bulkLoading}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <div
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: l.color }}
+                              />
+                              <span>{l.name}</span>
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={bulkLoading}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <ListPlus className="w-4 h-4" />
+                        Ajouter à une liste
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {otherLists.length === 0 ? (
+                        <DropdownMenuItem disabled>
+                          Aucune autre liste
+                        </DropdownMenuItem>
+                      ) : (
+                        otherLists.map((l) => (
+                          <DropdownMenuItem
+                            key={l.id}
+                            onClick={() => handleBulkAddTo(l.id)}
+                            disabled={bulkLoading}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <div
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: l.color }}
+                              />
+                              <span>{l.name}</span>
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -385,17 +402,21 @@ export default function ListClientsView({
                   >
                     Désélectionner tout
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      setShowDeleteDialog(true);
-                    }}
-                    className="cursor-pointer text-red-600 focus:text-red-600 gap-2"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                    Supprimer définitivement
-                  </DropdownMenuItem>
+                  {canDeleteClients && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setShowDeleteDialog(true);
+                        }}
+                        className="cursor-pointer text-red-600 focus:text-red-600 gap-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        Supprimer définitivement
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -419,14 +440,16 @@ export default function ListClientsView({
               Ajoutez des contacts existants pour commencer à organiser cette
               liste.
             </p>
-            <Button
-              variant="primary"
-              onClick={() => setShowAddClientsDialog(true)}
-              className="gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              Ajouter des contacts
-            </Button>
+            {canAddContacts && (
+              <Button
+                variant="primary"
+                onClick={() => setShowAddClientsDialog(true)}
+                className="gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                Ajouter des contacts
+              </Button>
+            )}
           </div>
         ) : (
           <ClientsTable
@@ -447,16 +470,19 @@ export default function ListClientsView({
         )}
       </div>
 
-      <AddClientsToListDialog
-        open={showAddClientsDialog}
-        onOpenChange={setShowAddClientsDialog}
-        workspaceId={workspaceId}
-        list={list}
-        onClientsAdded={async () => {
-          await refetch?.();
-          onListUpdated?.();
-        }}
-      />
+      {/* Monté seulement avec le droit : il charge toutes les fiches clients */}
+      {canAddContacts && (
+        <AddClientsToListDialog
+          open={showAddClientsDialog}
+          onOpenChange={setShowAddClientsDialog}
+          workspaceId={workspaceId}
+          list={list}
+          onClientsAdded={async () => {
+            await refetch?.();
+            onListUpdated?.();
+          }}
+        />
+      )}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

@@ -362,7 +362,7 @@ export function useCreditNote(id) {
   };
 }
 
-export function useCreditNotes(filters = {}) {
+export function useCreditNotes(filters = {}, { skip = false } = {}) {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
   const {
@@ -376,7 +376,8 @@ export function useCreditNotes(filters = {}) {
       workspaceId,
       ...filters,
     },
-    skip: !workspaceId,
+    // skip : rôle sans accès aux avoirs
+    skip: !workspaceId || skip,
     fetchPolicy: "cache-and-network",
   });
 

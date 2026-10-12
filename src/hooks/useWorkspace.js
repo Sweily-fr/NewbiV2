@@ -9,6 +9,7 @@ import {
 import {
   getFullOrganizationCached,
   peekFullOrganization,
+  primeFullOrganization,
   invalidateFullOrganizationCache,
 } from "@/src/lib/full-organization-cache";
 
@@ -76,6 +77,7 @@ export const useWorkspace = () => {
     // Si l'organisation a déjà les membres, pas besoin de fetch
     if (activeOrganization?.members) {
       setFullOrganization(activeOrganization);
+      primeFullOrganization(orgId, activeOrganization);
       lastFetchedOrgId.current = orgId;
       return;
     }

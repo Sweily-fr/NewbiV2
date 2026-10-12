@@ -19,11 +19,12 @@ import { Search, ChevronDown, AlertCircle, ExternalLink } from "lucide-react";
 import { Edit2Icon } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // ─── Formatters ───
 
 const formatAmount = (amount) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -31,7 +32,7 @@ const formatAmount = (amount) =>
   }).format(amount || 0);
 
 const formatNumber = (value) =>
-  new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(
+  getNumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(
     Math.round(Math.abs(value || 0)),
   );
 

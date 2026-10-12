@@ -2,16 +2,17 @@
 
 import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Fonction de formatage de l'IBAN avec espaces
 const formatIban = (iban) => {
   if (!iban) return "";
-  
+
   // Supprimer tous les espaces existants et convertir en majuscules
-  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
-  
+  const cleanIban = iban.replace(/\s/g, "").toUpperCase();
+
   // Ajouter un espace tous les 4 caractères
-  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+  return cleanIban.replace(/(.{4})/g, "$1 ").trim();
 };
 
 export default function InvoicePreview({ data = {}, className = "", status }) {
@@ -53,7 +54,7 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
   // Calcul du sous-total HT
   const subtotal = items.reduce(
     (sum, item) => sum + calculateItemTotal(item),
-    0
+    0,
   );
 
   // Application de la remise globale
@@ -83,7 +84,7 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
   const totalAmount = subtotalAfterDiscount + taxAmount;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
       minimumFractionDigits: 2,
@@ -163,7 +164,14 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
               </p>
               {data.operationType && (
                 <p style={{ margin: "2px 0" }}>
-                  Nature: {data.operationType === "LB" ? "Livraison de biens" : data.operationType === "PS" ? "Prestation de services" : data.operationType === "LBPS" ? "Mixte - Biens et services" : data.operationType}
+                  Nature:{" "}
+                  {data.operationType === "LB"
+                    ? "Livraison de biens"
+                    : data.operationType === "PS"
+                      ? "Prestation de services"
+                      : data.operationType === "LBPS"
+                        ? "Mixte - Biens et services"
+                        : data.operationType}
                 </p>
               )}
               {data.purchaseOrderNumber && (
@@ -459,12 +467,16 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
                         textAlign: "center",
                       }}
                     >
-                      {item.unit === "heure" ? (() => {
-                        const qty = item.quantity || 0;
-                        const hrs = Math.floor(qty);
-                        const mins = Math.round((qty - hrs) * 60);
-                        return mins > 0 ? `${hrs}h${String(mins).padStart(2, "0")}min` : `${hrs}h`;
-                      })() : `${item.quantity || 1} ${item.unit || ""}`}
+                      {item.unit === "heure"
+                        ? (() => {
+                            const qty = item.quantity || 0;
+                            const hrs = Math.floor(qty);
+                            const mins = Math.round((qty - hrs) * 60);
+                            return mins > 0
+                              ? `${hrs}h${String(mins).padStart(2, "0")}min`
+                              : `${hrs}h`;
+                          })()
+                        : `${item.quantity || 1} ${item.unit || ""}`}
                     </td>
                     <td
                       style={{
@@ -664,8 +676,10 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
                       <strong>IBAN:</strong>
                       <br />
                       <span style={{ fontFamily: "monospace" }}>
-                        {formatIban(data.bankDetails?.iban ||
-                          data.companyInfo?.bankDetails?.iban)}
+                        {formatIban(
+                          data.bankDetails?.iban ||
+                            data.companyInfo?.bankDetails?.iban,
+                        )}
                       </span>
                     </div>
                   )}

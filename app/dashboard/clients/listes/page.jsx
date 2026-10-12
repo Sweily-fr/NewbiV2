@@ -4,6 +4,7 @@ import { useState, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Input } from "@/src/components/ui/input";
 import { Plus, Search, CircleXIcon, Trash2, LoaderCircle } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -35,6 +36,11 @@ function ListesContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle sur les listes (tout autorisé tant que la grille n'est
+  // pas chargée)
+  const canCreateLists = !isReady || canDo("clientLists", "create");
+  const canDeleteLists = !isReady || canDo("clientLists", "delete");
   const { workspaceId } = useWorkspace();
   const searchParams = useSearchParams();
   const listIdFromUrl = searchParams.get("listId");
@@ -91,16 +97,18 @@ function ListesContent() {
                 Organisez vos contacts par catégories ou segments.
               </p>
             </div>
-            <Button
-              variant="primary"
-              onClick={() => setCreateListDialogOpen(true)}
-              className="self-start"
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouvelle liste
-            </Button>
+            {canCreateLists && (
+              <Button
+                variant="primary"
+                onClick={() => setCreateListDialogOpen(true)}
+                className="self-start"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouvelle liste
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
@@ -136,7 +144,7 @@ function ListesContent() {
               )}
             </div>
 
-            {selectedListIds.length > 0 && (
+            {selectedListIds.length > 0 && canDeleteLists && (
               <AlertDialog
                 open={isDeleteMultipleOpen}
                 onOpenChange={setIsDeleteMultipleOpen}

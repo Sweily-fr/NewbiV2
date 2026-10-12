@@ -79,6 +79,23 @@ export const MonthView = React.memo(function MonthView({
     return result;
   }, [days]);
 
+  // Événements de chaque case calculés une fois par changement de mois ou
+  // d'événements, et non à chaque rendu (survol, glisser-déposer) : trois
+  // filtres de toute la liste par case, soit ~126 parcours par rendu.
+  const eventsByDay = useMemo(() => {
+    const map = new Map();
+    for (const day of days) {
+      if (!day) continue;
+      const dayEvents = getEventsForDay(events, day);
+      const spanningEvents = getSpanningEventsForDay(events, day);
+      map.set(day.toISOString(), {
+        allDayEvents: [...spanningEvents, ...dayEvents],
+        allEvents: getAllEventsForDay(events, day),
+      });
+    }
+    return map;
+  }, [days, events]);
+
   const handleEventClick = (event, e) => {
     e.stopPropagation();
     onEventSelect(event);
@@ -115,12 +132,11 @@ export const MonthView = React.memo(function MonthView({
             {week.map((day, dayIndex) => {
               if (!day) return null; // Skip if day is undefined
 
-              const dayEvents = getEventsForDay(events, day);
-              const spanningEvents = getSpanningEventsForDay(events, day);
               const isCurrentMonth = isSameMonth(day, currentDate);
               const cellId = `month-cell-${day.toISOString()}`;
-              const allDayEvents = [...spanningEvents, ...dayEvents];
-              const allEvents = getAllEventsForDay(events, day);
+              const { allDayEvents, allEvents } = eventsByDay.get(
+                day.toISOString(),
+              );
 
               const isReferenceCell = weekIndex === 0 && dayIndex === 0;
               const visibleCount = isMounted

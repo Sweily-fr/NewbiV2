@@ -78,6 +78,7 @@ import CompanyImport, {
   QuickCompanyImport,
 } from "../../../factures/components/company-import";
 import { toast } from "@/src/components/ui/sonner";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Composant de recherche de produits
 function ProductSearchCombobox({
@@ -300,7 +301,7 @@ export default function QuoteForm({
   );
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);
