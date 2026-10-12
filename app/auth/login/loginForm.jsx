@@ -385,7 +385,7 @@ const LoginForm = () => {
           }
 
           if (await isAccountManager()) {
-            router.push("/gestionnaire");
+            router.push("/dashboard/gestionnaire");
             return;
           }
 
@@ -632,7 +632,7 @@ const LoginForm = () => {
         }
 
         if (await isAccountManager()) {
-          router.push("/gestionnaire");
+          router.push("/dashboard/gestionnaire");
           return true;
         }
 

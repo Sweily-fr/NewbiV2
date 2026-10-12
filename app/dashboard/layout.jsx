@@ -7,6 +7,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import { toObjectId } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 import { isTrialAppActive } from "@/src/lib/trial-app";
+import { findActiveAccountManagerByUserId } from "@/src/lib/managed-clients";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
@@ -418,6 +419,13 @@ export default async function DashboardLayout({ children }) {
       );
       return <DashboardClientLayout>{children}</DashboardClientLayout>;
     }
+  }
+
+  // Compte gestionnaire : il passe par son espace (/dashboard/gestionnaire)
+  // et entre dans les dossiers de ses clients ; l'absence d'abonnement de
+  // l'espace actif ne doit pas le renvoyer vers l'inscription.
+  if (await findActiveAccountManagerByUserId(mongoDb, session.user.id)) {
+    return <DashboardClientLayout>{children}</DashboardClientLayout>;
   }
 
   console.log("[Dashboard Layout] Aucun abonnement, redirection vers signup");

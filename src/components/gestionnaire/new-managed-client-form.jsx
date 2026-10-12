@@ -67,7 +67,7 @@ export default function NewManagedClientForm() {
           ? `${data.client.companyName} est créé. ${data.client.email} a reçu un e-mail pour choisir son mot de passe.`
           : `${data.client.companyName} est créé, mais l'e-mail au dirigeant n'est pas parti.`,
       );
-      router.push("/gestionnaire");
+      router.push("/dashboard/gestionnaire");
       router.refresh();
     } catch {
       setError("Le serveur ne répond pas, réessayez.");
@@ -156,7 +156,7 @@ export default function NewManagedClientForm() {
         <Button
           type="button"
           variant="ghost"
-          onClick={() => router.push("/gestionnaire")}
+          onClick={() => router.push("/dashboard/gestionnaire")}
           disabled={pending}
         >
           Annuler

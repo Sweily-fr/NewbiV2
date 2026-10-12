@@ -24,6 +24,7 @@ import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
 import { TrialBanner } from "@/src/components/trial-banner";
 import { GestionnaireBanner } from "@/src/components/gestionnaire/gestionnaire-banner";
+import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
 // Panneau DEV de test d'abonnement — décommenter aussi son rendu plus bas pour l'activer.
 // import { DevSubscriptionSwitcher } from "@/src/components/dev/dev-subscription-switcher";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
@@ -287,18 +288,24 @@ function DashboardContent({ children }) {
         <SidebarInset>
           <SiteHeader />
           <GestionnaireBanner />
-          <SubscriptionReadOnlyBanner
-            onSubscribe={() => {
-              setSettingsInitialTab("subscription");
-              setSettingsModalOpen(true);
-            }}
-          />
-          <TrialBanner
-            onSubscribe={() => {
-              setSettingsInitialTab("subscription");
-              setSettingsModalOpen(true);
-            }}
-          />
+          {/* Espace gestionnaire : l'abonnement de l'espace actif (souvent
+              le dossier d'un client) n'y a pas de sens */}
+          {!isGestionnairePath(pathname) && (
+            <>
+              <SubscriptionReadOnlyBanner
+                onSubscribe={() => {
+                  setSettingsInitialTab("subscription");
+                  setSettingsModalOpen(true);
+                }}
+              />
+              <TrialBanner
+                onSubscribe={() => {
+                  setSettingsInitialTab("subscription");
+                  setSettingsModalOpen(true);
+                }}
+              />
+            </>
+          )}
           <div className="flex flex-1 flex-col overflow-y-auto">
             <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
               <SessionGateProvider>

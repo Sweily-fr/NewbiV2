@@ -68,6 +68,8 @@ export function NavMain({
   onOpenNotifications,
   notificationCount = 0,
   reconciliationCount = 0,
+  // Espace gestionnaire : pas de section Tâches (kanban du dossier actif)
+  showProjets = true,
 }) {
   const pathname = usePathname();
   const { isActive, loading, subscription } = useSubscription();
@@ -105,10 +107,14 @@ export function NavMain({
   const [kanbanSearchTerm, setKanbanSearchTerm] = useState("");
   const debouncedKanbanSearch = useDebouncedValue(kanbanSearchTerm, 300);
 
-  // Récupérer les tableaux Kanban
+  // Récupérer les tableaux Kanban, seulement si la section est affichée :
+  // sans droit de lecture sur le kanban (ex. Comptable), l'API refusait et
+  // l'erreur s'affichait sur toutes les pages
+  const showKanbanSection =
+    showProjets && permissionsReady && canSee("/dashboard/outils/kanban");
   const { data: kanbanData } = useQuery(GET_BOARDS_NAV, {
     variables: { workspaceId },
-    skip: !workspaceId,
+    skip: !workspaceId || !showKanbanSection,
     fetchPolicy: "cache-and-network",
   });
 
@@ -1301,7 +1307,9 @@ export function NavMain({
 
         <SidebarMenu>
           {/* Menu Projets avec tableaux Kanban */}
-          {canSee("/dashboard/outils/kanban") && renderProjetsMenu()}
+          {showProjets &&
+            canSee("/dashboard/outils/kanban") &&
+            renderProjetsMenu()}
 
           {/* Menu Documents avec sous-menus */}
           {navDocuments.length > 0 &&

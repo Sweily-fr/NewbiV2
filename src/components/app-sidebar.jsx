@@ -47,6 +47,11 @@ import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
 import { NavUser } from "@/src/components/nav-user";
 import { SidebarViewTabs } from "@/src/components/sidebar-view-tabs";
+import { GestionnaireSidebarHeader } from "@/src/components/gestionnaire/gestionnaire-sidebar-header";
+import {
+  GESTIONNAIRE_PATH,
+  isGestionnairePath,
+} from "@/src/lib/gestionnaire-paths";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useOrganizationType } from "@/src/hooks/useOrganizationType";
 import { useAccountingView } from "@/src/contexts/accounting-view-context";
@@ -211,6 +216,14 @@ const data = {
       title: "Recherche",
       url: "#",
       icon: Search,
+    },
+  ],
+  // Espace gestionnaire (cabinet qui gère les comptes de ses clients)
+  navGestionnaire: [
+    {
+      title: "Clients",
+      url: GESTIONNAIRE_PATH,
+      icon: Users,
     },
   ],
   // Navigation pour la vue Comptabilité (cabinets comptables)
@@ -437,6 +450,8 @@ export function AppSidebar({
   ...props
 }) {
   const pathname = usePathname();
+  // Espace gestionnaire : en-tête et menu du cabinet
+  const inGestionnaire = isGestionnairePath(pathname);
   const { session } = useUser();
   // Utilisateur avec repli sur le cache localStorage (user-cache). La nav est
   // statique : elle ne doit pas être remplacée par un squelette pendant les
@@ -606,16 +621,26 @@ export function AppSidebar({
   return (
     <Sidebar collapsible={collapsibleMode} {...props}>
       <SidebarHeader>
-        <TeamSwitcher />
+        {inGestionnaire ? <GestionnaireSidebarHeader /> : <TeamSwitcher />}
       </SidebarHeader>
       <SidebarContent className="mt-1">
         {user ? (
           <>
             {/* Tabs pour les cabinets comptables */}
-            {isAccountingFirm && !orgTypeLoading && <SidebarViewTabs />}
+            {isAccountingFirm && !orgTypeLoading && !inGestionnaire && (
+              <SidebarViewTabs />
+            )}
 
             {/* Navigation conditionnelle selon la vue active */}
-            {activeView === "accounting" && isAccountingFirm ? (
+            {inGestionnaire ? (
+              // Espace gestionnaire : même interface, menu du cabinet
+              <NavMain
+                items={data.navGestionnaire}
+                showProjets={false}
+                onOpenNotifications={onOpenNotifications}
+                notificationCount={notificationCount}
+              />
+            ) : activeView === "accounting" && isAccountingFirm ? (
               // Vue Comptabilité : afficher uniquement les liens comptables
               <NavMain
                 items={data.navAccounting}
