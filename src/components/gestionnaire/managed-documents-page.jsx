@@ -1,7 +1,5 @@
-import { headers } from "next/headers";
-import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { findActiveAccountManagerByUserId } from "@/src/lib/managed-clients";
+import { requireManagerPage } from "@/src/lib/gestionnaire-page";
 import {
   listManagedDocuments,
   MANAGED_DOCUMENT_KINDS,
@@ -22,12 +20,7 @@ const one = (value) => (Array.isArray(value) ? value[0] : value);
  */
 export default async function ManagedDocumentsPage({ kind, searchParams }) {
   const params = await searchParams;
-  // Accès vérifié par le layout de l'espace ; relu ici pour la requête
-  const session = await auth.api.getSession({ headers: await headers() });
-  const manager = await findActiveAccountManagerByUserId(
-    mongoDb,
-    session.user.id,
-  );
+  const { session, manager } = await requireManagerPage();
 
   const current = {
     status: String(one(params?.statut) || "all"),
