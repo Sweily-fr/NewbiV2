@@ -295,6 +295,21 @@ export async function createManagedClient({
     );
   }
 
+  // Un SIRET appartient à un seul espace (même règle qu'à l'inscription) :
+  // une entreprise déjà sur Newbi s'invite, elle ne se recrée pas
+  if (
+    await mongoDb
+      .collection("organization")
+      .findOne({ siret: data.siret }, { projection: { _id: 1 } })
+  ) {
+    throw new ManagedClientError(
+      409,
+      actor?.type === "admin"
+        ? "Cette entreprise a déjà un espace Newbi : le gestionnaire doit l'inviter depuis son espace (Clients > Inviter un client)."
+        : "Cette entreprise a déjà un espace Newbi : invitez plutôt ce client avec « Inviter un client ».",
+    );
+  }
+
   // SIRET vérifié au registre (même contrôle que l'inscription) : il remplit
   // l'adresse et la forme juridique, pour que l'espace puisse émettre ses
   // documents dès le départ

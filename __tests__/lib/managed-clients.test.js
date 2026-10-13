@@ -256,6 +256,17 @@ describe("createManagedClient", () => {
     });
   });
 
+  it("refuse une entreprise qui a déjà un espace Newbi, sans rien créer", async () => {
+    const siret = input().siret.replace(/\s+/g, "");
+    await db.collection("organization").insertOne({ siret });
+    await expect(create()).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringContaining("Inviter un client"),
+    });
+    expect(mocks.orgCalls).toHaveLength(0);
+    expect(db.data.user).toHaveLength(1);
+  });
+
   it("refuse une saisie invalide", async () => {
     for (const over of [
       { companyName: "  " },
@@ -331,6 +342,7 @@ describe("listManagedClients", () => {
     await create({
       email: "b@b.fr",
       companyName: "Garage Leroy",
+      siret: "98765432100019",
       payer: "client",
     });
     const clients = await listManagedClients(db, managerId);
