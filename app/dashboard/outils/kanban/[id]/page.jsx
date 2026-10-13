@@ -240,6 +240,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import { useSession } from "@/src/lib/auth-client";
 import { Lock } from "lucide-react";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 /**
  * Popover "Accès au tableau" sur la page board.
@@ -703,6 +704,7 @@ function ExpandableSearch({ searchQuery, setSearchQuery }) {
 
 function KanbanBoardPageContent({ params }) {
   const router = useRouter();
+  const ensureCompanyInfo = useCompanyInfoGate();
   const searchParams = useSearchParams();
   const { id } = use(params);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
@@ -1250,39 +1252,43 @@ function KanbanBoardPageContent({ params }) {
   // Conversion tâches Kanban → facture
   const handleConvertToInvoice = React.useCallback(
     (selectedTasks) => {
-      const items = selectedTasks.map((task) => {
-        const tt = task.timeTracking;
-        const totalSec = getEffectiveSeconds(tt);
-        const h = Math.floor(totalSec / 3600);
-        const m = Math.floor((totalSec % 3600) / 60);
-        let billableHours = h + m / 60;
-        if (tt.roundingOption === "up")
-          billableHours = Math.ceil(billableHours);
-        else if (tt.roundingOption === "down")
-          billableHours = Math.floor(billableHours);
-        return {
-          description: task.title,
-          details: stripHtml(task.description),
-          quantity: billableHours,
-          unitPrice: tt.hourlyRate,
-          vatRate: 20,
-          unit: "heure",
-          discount: 0,
-          discountType: "PERCENTAGE",
-          progressPercentage: 100,
-        };
-      });
-      sessionStorage.setItem("kanbanInvoiceItems", JSON.stringify(items));
-      if (board?.client) {
-        sessionStorage.setItem(
-          "kanbanInvoiceClient",
-          JSON.stringify(board.client),
-        );
-      }
       setShowConvertModal(false);
-      router.push("/dashboard/outils/factures/new");
+      // Entreprise non configurée : la fenêtre s'ouvre sur le tableau, la
+      // facture se prépare après l'enregistrement (rien n'est stocké avant).
+      ensureCompanyInfo(() => {
+        const items = selectedTasks.map((task) => {
+          const tt = task.timeTracking;
+          const totalSec = getEffectiveSeconds(tt);
+          const h = Math.floor(totalSec / 3600);
+          const m = Math.floor((totalSec % 3600) / 60);
+          let billableHours = h + m / 60;
+          if (tt.roundingOption === "up")
+            billableHours = Math.ceil(billableHours);
+          else if (tt.roundingOption === "down")
+            billableHours = Math.floor(billableHours);
+          return {
+            description: task.title,
+            details: stripHtml(task.description),
+            quantity: billableHours,
+            unitPrice: tt.hourlyRate,
+            vatRate: 20,
+            unit: "heure",
+            discount: 0,
+            discountType: "PERCENTAGE",
+            progressPercentage: 100,
+          };
+        });
+        sessionStorage.setItem("kanbanInvoiceItems", JSON.stringify(items));
+        if (board?.client) {
+          sessionStorage.setItem(
+            "kanbanInvoiceClient",
+            JSON.stringify(board.client),
+          );
+        }
+        router.push("/dashboard/outils/factures/new");
+      });
     },
-    [router, getEffectiveSeconds, board],
+    [router, getEffectiveSeconds, board, ensureCompanyInfo],
   );
 
   const {

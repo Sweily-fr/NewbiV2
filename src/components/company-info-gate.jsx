@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { Check, Circle, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -234,4 +235,44 @@ export function CompanyInfoGateProvider({ children }) {
 export function useCompanyInfoGate() {
   const ensureCompanyInfo = useContext(CompanyInfoGateContext);
   return ensureCompanyInfo || ((action) => action());
+}
+
+/**
+ * Aller vers une page de création (« Nouvelle facture », conversion d'un
+ * devis…) : si l'entreprise n'est pas configurée, la fenêtre s'ouvre sur la
+ * page courante, au lieu d'arriver sur un éditeur bloqué derrière la
+ * fenêtre ; la navigation suit l'enregistrement.
+ */
+export function useGoToCreation() {
+  const ensureCompanyInfo = useCompanyInfoGate();
+  const router = useRouter();
+  return useCallback(
+    (href) => ensureCompanyInfo(() => router.push(href)),
+    [ensureCompanyInfo, router],
+  );
+}
+
+/**
+ * Même chose pour un lien (<Link>, <a>) vers une page de création :
+ * `onClick={creationLinkClick(href)}`. Entreprise configurée : le lien suit
+ * son cours normalement ; sinon le clic est retenu et la fenêtre s'ouvre.
+ */
+export function useCreationLinkClick() {
+  const ensureCompanyInfo = useCompanyInfoGate();
+  const router = useRouter();
+  return useCallback(
+    (href) => (event) => {
+      // ensureCompanyInfo exécute l'action tout de suite si l'entreprise est
+      // configurée, sinon plus tard, après l'enregistrement.
+      let immediate = true;
+      let allowed = false;
+      ensureCompanyInfo(() => {
+        if (immediate) allowed = true;
+        else router.push(href);
+      });
+      immediate = false;
+      if (!allowed) event?.preventDefault();
+    },
+    [ensureCompanyInfo, router],
+  );
 }

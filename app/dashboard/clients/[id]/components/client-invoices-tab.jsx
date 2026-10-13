@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { FileText, Plus } from "lucide-react";
@@ -21,6 +20,7 @@ import {
   EmptyDescription,
 } from "@/src/components/ui/empty";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useGoToCreation } from "@/src/components/company-info-gate";
 
 function safeFormatDate(dateString) {
   if (!dateString) return "-";
@@ -39,7 +39,7 @@ function safeFormatDate(dateString) {
 }
 
 export default function ClientInvoicesTab({ invoices = [], clientId }) {
-  const router = useRouter();
+  const goToCreation = useGoToCreation();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const newDocumentHref = `/dashboard/outils/factures/new?clientId=${clientId}`;
   const { canDo, isReady } = useMyPermissions();
@@ -116,7 +116,7 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
               variant="outline"
               className="mt-4"
               {...prefetchIntent(newDocumentHref)}
-              onClick={() => router.push(newDocumentHref)}
+              onClick={() => goToCreation(newDocumentHref)}
             >
               <Plus className="h-3.5 w-3.5" />
               Nouvelle facture
@@ -137,7 +137,7 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
           <Button
             variant="outline"
             {...prefetchIntent(newDocumentHref)}
-            onClick={() => router.push(newDocumentHref)}
+            onClick={() => goToCreation(newDocumentHref)}
           >
             <Plus className="h-3.5 w-3.5" />
             Nouvelle facture

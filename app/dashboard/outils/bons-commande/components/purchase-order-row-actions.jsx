@@ -42,6 +42,7 @@ import PurchaseOrderSidebar from "./purchase-order-sidebar";
 import { AnimatePresence } from "framer-motion";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
@@ -78,6 +79,7 @@ export default function PurchaseOrderRowActions({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
+  const ensureCompanyInfo = useCompanyInfoGate();
   const purchaseOrder = row.original;
 
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -108,9 +110,12 @@ export default function PurchaseOrderRowActions({
     setIsSidebarOpen(true);
   };
 
-  const handleEdit = () => {
-    router.push(`/dashboard/outils/bons-commande/${purchaseOrder.id}/editer`);
-  };
+  const handleEdit = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/bons-commande/${purchaseOrder.id}/editer`);
+    });
 
   const handleDelete = async () => {
     try {
@@ -179,32 +184,35 @@ export default function PurchaseOrderRowActions({
     }
   };
 
-  const handleConvertToInvoice = () => {
-    try {
-      const po = purchaseOrder;
-      sessionStorage.setItem(
-        "purchaseOrderInvoiceData",
-        JSON.stringify({
-          sourcePurchaseOrderId: po.id,
-          purchaseOrderNumber: `${po.prefix || ""}-${po.number || ""}`,
-          client: po.client,
-          items: po.items,
-          discount: po.discount,
-          discountType: po.discountType,
-          customFields: po.customFields,
-          shipping: po.shipping,
-          isReverseCharge: po.isReverseCharge,
-          isVatExempt: po.isVatExempt,
-          retenueGarantie: po.retenueGarantie,
-          escompte: po.escompte,
-        }),
-      );
-      router.push("/dashboard/outils/factures/new");
-    } catch (error) {
-      console.error("Erreur conversion BC → Facture:", error);
-      toast.error("Erreur lors de la conversion en facture");
-    }
-  };
+  const handleConvertToInvoice = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      try {
+        const po = purchaseOrder;
+        sessionStorage.setItem(
+          "purchaseOrderInvoiceData",
+          JSON.stringify({
+            sourcePurchaseOrderId: po.id,
+            purchaseOrderNumber: `${po.prefix || ""}-${po.number || ""}`,
+            client: po.client,
+            items: po.items,
+            discount: po.discount,
+            discountType: po.discountType,
+            customFields: po.customFields,
+            shipping: po.shipping,
+            isReverseCharge: po.isReverseCharge,
+            isVatExempt: po.isVatExempt,
+            retenueGarantie: po.retenueGarantie,
+            escompte: po.escompte,
+          }),
+        );
+        router.push("/dashboard/outils/factures/new");
+      } catch (error) {
+        console.error("Erreur conversion BC → Facture:", error);
+        toast.error("Erreur lors de la conversion en facture");
+      }
+    });
 
   const isLoading = changingStatus || isDeleting;
 

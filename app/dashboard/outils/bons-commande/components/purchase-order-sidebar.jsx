@@ -193,10 +193,13 @@ export default function PurchaseOrderSidebar({
     return validDate < today;
   };
 
-  const handleEdit = () => {
-    router.push(`/dashboard/outils/bons-commande/${purchaseOrder.id}/editer`);
-    onClose();
-  };
+  const handleEdit = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/bons-commande/${purchaseOrder.id}/editer`);
+      onClose();
+    });
 
   const handleView = () => {
     router.push(`/dashboard/outils/bons-commande/${purchaseOrder.id}`);
@@ -273,28 +276,31 @@ export default function PurchaseOrderSidebar({
     }
   };
 
-  const handleConvertToInvoice = () => {
-    const po = purchaseOrder;
-    sessionStorage.setItem(
-      "purchaseOrderInvoiceData",
-      JSON.stringify({
-        sourcePurchaseOrderId: po.id,
-        purchaseOrderNumber: `${po.prefix || ""}-${po.number || ""}`,
-        client: po.client,
-        items: po.items,
-        discount: po.discount,
-        discountType: po.discountType,
-        customFields: po.customFields,
-        shipping: po.shipping,
-        isReverseCharge: po.isReverseCharge,
-        isVatExempt: po.isVatExempt,
-        retenueGarantie: po.retenueGarantie,
-        escompte: po.escompte,
-      }),
-    );
-    router.push("/dashboard/outils/factures/new");
-    onClose();
-  };
+  const handleConvertToInvoice = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      const po = purchaseOrder;
+      sessionStorage.setItem(
+        "purchaseOrderInvoiceData",
+        JSON.stringify({
+          sourcePurchaseOrderId: po.id,
+          purchaseOrderNumber: `${po.prefix || ""}-${po.number || ""}`,
+          client: po.client,
+          items: po.items,
+          discount: po.discount,
+          discountType: po.discountType,
+          customFields: po.customFields,
+          shipping: po.shipping,
+          isReverseCharge: po.isReverseCharge,
+          isVatExempt: po.isVatExempt,
+          retenueGarantie: po.retenueGarantie,
+          escompte: po.escompte,
+        }),
+      );
+      router.push("/dashboard/outils/factures/new");
+      onClose();
+    });
 
   const handleDelete = async () => {
     try {

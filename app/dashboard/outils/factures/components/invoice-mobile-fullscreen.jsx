@@ -336,10 +336,13 @@ export default function InvoiceMobileFullscreen({
     }
   };
 
-  const handleCreateCreditNote = () => {
-    router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
-    onClose();
-  };
+  const handleCreateCreditNote = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
+      onClose();
+    });
 
   const creditNoteLimitReached = hasReachedCreditNoteLimit(
     invoice,
