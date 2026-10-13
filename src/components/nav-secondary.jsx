@@ -339,21 +339,21 @@ export function NavSecondary({
               </SidebarMenuItem>
             </SidebarMenu>
           ) : (
-            <div className="px-2 mb-3 mt-1">
+            <div className="mb-3 mt-1">
               <button
                 type="button"
                 onClick={handleEInvoicingClick}
                 className="group w-full text-left rounded-xl bg-background dark:bg-white/[0.05] ring-1 ring-black/[0.07] dark:ring-white/[0.1] shadow-xs hover:shadow-sm transition-shadow p-3 cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#5b50FF]/10 text-[#5b50FF]">
-                    <DocumentCloudIcon className="size-4" />
+                <div className="flex items-center gap-2">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#5b50FF]/10 dark:bg-[#5b50FF]/20 text-[#5b50FF]">
+                    <DocumentCloudIcon className="size-3.5" />
                   </span>
                   <p className="text-sm font-medium text-foreground leading-tight">
                     Facturation électronique
                   </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 leading-snug">
+                <p className="text-xs text-muted-foreground mt-2 leading-snug text-balance">
                   Obligatoire depuis le 1er septembre 2026.
                 </p>
                 <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-[#5b50FF]">
