@@ -3,6 +3,8 @@ import React from "react";
 // Grande carte : le texte à gauche, et à droite Newbi au centre de deux
 // anneaux de logos qui tournent lentement en sens inverse. Chaque logo
 // contre-tourne pour rester droit.
+// Sur mobile, l'illustration passe sous le texte : réduite et rognée à sa
+// propre zone, elle ne glisse plus jamais derrière le paragraphe.
 // Seules les connexions réellement disponibles dans l'app sont affichées.
 // `fill` = l'image est déjà une icône carrée avec son fond, elle remplit la
 // pastille ; sinon c'est un glyphe posé sur un fond de marque.
@@ -81,10 +83,10 @@ export default function IntegrationsSection() {
 
           {/* Anneaux */}
           <div
-            className="relative md:col-span-5 min-h-[340px] md:min-h-0"
+            className="relative md:col-span-5 min-h-[400px] md:min-h-0 overflow-hidden md:overflow-visible"
             aria-hidden="true"
           >
-            <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-[38%] md:-translate-x-[34%] size-[620px] md:size-[720px]">
+            <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 md:-translate-x-[34%] scale-[0.55] md:scale-100 size-[620px] md:size-[720px]">
               <Ring size={620} tone={2} />
               <Ring size={440} tone={1} pulse="pulseB 7.3s -3.1s" />
               <Ring size={270} tone={0} pulse="pulseA 4.6s -1.2s" />
