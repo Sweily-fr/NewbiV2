@@ -130,25 +130,28 @@ export default function CookieManager() {
                 <ChevronRight className="size-4" strokeWidth={2} />
               </Link>
 
-              <div className="flex items-center gap-2 sm:gap-3">
+              {/* Sous 640 px les trois actions s'empilent en pleine largeur : sur une
+                  ligne, elles débordaient de la carte et coupaient « Tout
+                  accepter » à droite. */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 <button
                   type="button"
                   onClick={handleDecline}
-                  className="whitespace-nowrap rounded-2xl px-3.5 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-black/[0.04]"
+                  className="w-full sm:w-auto whitespace-nowrap rounded-2xl px-3.5 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-black/[0.04]"
                 >
                   Fermer &amp; refuser
                 </button>
                 <button
                   type="button"
                   onClick={handleCustomize}
-                  className="whitespace-nowrap rounded-2xl px-3.5 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-black/[0.04]"
+                  className="w-full sm:w-auto whitespace-nowrap rounded-2xl px-3.5 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-black/[0.04]"
                 >
                   Personnaliser
                 </button>
                 <button
                   type="button"
                   onClick={handleAccept}
-                  className="whitespace-nowrap rounded-2xl bg-[#e6e6e6] px-6 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-[#dcdcdc]"
+                  className="w-full sm:w-auto whitespace-nowrap rounded-2xl bg-[#e6e6e6] px-6 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-[#dcdcdc]"
                 >
                   Tout accepter
                 </button>
