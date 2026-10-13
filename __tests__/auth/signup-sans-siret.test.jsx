@@ -90,12 +90,14 @@ describe("Inscription sans SIRET", () => {
       screen.getByPlaceholderText("Ex. : Studio Dupont ou Jean Dupont"),
       "Studio Dupont",
     );
-    // La déclaration nomme l'entreprise saisie et reste obligatoire.
-    const declaration = screen.getByRole("checkbox");
-    expect(declaration.closest("label")).toHaveTextContent("Studio Dupont");
-    expect(submit).toBeDisabled();
-
-    await user.click(declaration);
+    // Plus de case à cocher : la déclaration est une phrase sous le bouton,
+    // cliquer sur « Continuer » vaut acceptation.
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(
+      screen.getByText(
+        "En continuant, vous confirmez utiliser Newbi pour une activité professionnelle, existante ou en cours de création.",
+      ),
+    ).toBeInTheDocument();
     await waitFor(() => expect(submit).toBeEnabled());
     await user.click(submit);
 
@@ -193,7 +195,6 @@ describe("Inscription sans SIRET", () => {
       "jean dupont",
     );
     await user.click(await screen.findByText("JEAN DUPONT"));
-    await user.click(await screen.findByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Continuer" }));
 
     await waitFor(() => expect(onboardingCalls(fetchMock)).toHaveLength(1));

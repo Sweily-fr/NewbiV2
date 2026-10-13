@@ -31,6 +31,7 @@ import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
 import { legalFormFromNatureJuridique } from "@/src/lib/company-registry";
+import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
 
 // Compte créé il y a moins de 15 min : suffisant pour distinguer un retour
 // OAuth d'inscription d'un ancien utilisateur qui reprend son onboarding.
@@ -260,13 +261,7 @@ function SignUpPageContent() {
   const isCompanyReady = Boolean(
     selectedCompany || (withoutSiret && companyName.trim()),
   );
-  const declaredCompanyName = selectedCompany
-    ? selectedCompany.nom_complet || selectedCompany.nom_raison_sociale
-    : companyName.trim();
 
-  // Déclaration sur l'honneur d'usage professionnel — obligatoire pour
-  // terminer l'inscription (le serveur la réexige de son côté).
-  const [honorAccepted, setHonorAccepted] = useState(false);
   // Inscription réservée aux entreprises françaises pour l'instant (la
   // recherche ne couvre que le registre français) : plus de choix du pays.
   const billingCountry = "FR";
@@ -374,9 +369,6 @@ function SignUpPageContent() {
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
-    // La déclaration nomme une entreprise précise : changer de société la
-    // rend caduque, elle doit être re-cochée.
-    setHonorAccepted(false);
     const siege = company.siege || {};
     const siret = siege.siret || "";
     if (!siret) {
@@ -423,12 +415,10 @@ function SignUpPageContent() {
     setSearchResults([]);
     setHasSearched(false);
     setSiretError(null);
-    setHonorAccepted(false);
   };
 
   const backToCompanySearch = () => {
     setWithoutSiret(false);
-    setHonorAccepted(false);
   };
 
   const switchView = (nextView) => {
@@ -448,7 +438,6 @@ function SignUpPageContent() {
   const handleWorkspaceSubmit = async (e) => {
     e.preventDefault();
     if (!isCompanyReady || isSavingStep) return;
-    if (appTrialEnabled && !honorAccepted) return;
     const addressCountry = billingCountry === "FR" ? "France" : billingCountry;
     let newCompanyData;
     if (selectedCompany) {
@@ -502,7 +491,9 @@ function SignUpPageContent() {
       const ok = await updateOnboardingStep(
         "completed",
         { ...newCompanyData, billingCountry },
-        { honorDeclarationAccepted: honorAccepted },
+        // Cliquer sur « Continuer » sous la phrase de déclaration vaut
+        // acceptation (cf. professional-use-declaration.js).
+        { honorDeclarationAccepted: true },
       );
       if (ok) {
         try {
@@ -979,40 +970,13 @@ function SignUpPageContent() {
                       className="h-11 rounded-lg text-muted-foreground"
                     />
                   </div>
-
-                  {/* Déclaration sur l'honneur : elle nomme l'entreprise
-                      sélectionnée et exclut explicitement l'usage personnel. */}
-                  {appTrialEnabled && isCompanyReady && (
-                    <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={honorAccepted}
-                        onChange={(e) => setHonorAccepted(e.target.checked)}
-                        className="mt-0.5 size-4 shrink-0 accent-[#5A50FF] cursor-pointer"
-                      />
-                      <span className="text-[13px] leading-5 text-muted-foreground">
-                        Je certifie sur l'honneur être le représentant légal, le
-                        mandataire ou un collaborateur habilité de{" "}
-                        <span className="font-medium text-foreground">
-                          {declaredCompanyName}
-                        </span>
-                        , et utiliser Newbi à des fins strictement
-                        professionnelles dans le cadre de cette activité
-                        déclarée.
-                      </span>
-                    </label>
-                  )}
                 </CardContent>
               </Card>
 
               <div className="flex justify-center mt-6">
                 <Button
                   type="submit"
-                  disabled={
-                    !isCompanyReady ||
-                    isSavingStep ||
-                    (appTrialEnabled && !honorAccepted)
-                  }
+                  disabled={!isCompanyReady || isSavingStep}
                   className="h-9 px-16 bg-[#5A50FF]/90 hover:bg-[#5A50FF] text-white cursor-pointer border-0 [box-shadow:none] rounded-lg disabled:opacity-40"
                 >
                   {isSavingStep ? (
@@ -1022,6 +986,11 @@ function SignUpPageContent() {
                   )}
                 </Button>
               </div>
+              {appTrialEnabled && (
+                <p className="mt-3 text-center text-[12px] leading-5 text-muted-foreground max-w-[380px] mx-auto">
+                  {PROFESSIONAL_USE_STATEMENT}
+                </p>
+              )}
             </form>
           )}
 
