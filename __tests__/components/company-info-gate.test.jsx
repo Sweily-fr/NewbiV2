@@ -20,9 +20,12 @@ vi.mock("@/src/hooks/useMyPermissions", () => ({
         : true,
   }),
 }));
+// Formulaire de la fenêtre (chargé à la demande) : remplacé par un bouton
+// qui simule l'enregistrement, testé à part (company-info-form.test.jsx).
 vi.mock("next/dynamic", () => ({
-  default: () => (props) =>
-    props.open ? <div>Paramètres : {props.initialTab}</div> : null,
+  default: () => (props) => (
+    <button onClick={props.onSaved}>Enregistrer et continuer</button>
+  ),
 }));
 
 const { CompanyInfoGateProvider, useCompanyInfoGate } =
@@ -37,6 +40,9 @@ const COMPLETE = {
   addressCountry: "France",
   siret: "12345678900012",
   legalForm: "SARL",
+  // Mentions exigées par l'API sur les documents d'une société
+  rcs: "RCS Lyon 123 456 789",
+  capitalSocial: "1000",
 };
 
 function CreateButton({ onCreate }) {
@@ -89,11 +95,24 @@ describe("useCompanyInfoGate", () => {
     expect(
       screen.getByText("Configuration de votre entreprise"),
     ).toBeInTheDocument();
-    expect(screen.getByText("7/8")).toBeInTheDocument();
+    expect(screen.getByText("9/10")).toBeInTheDocument();
 
-    // « Compléter » ouvre les paramètres sur l'onglet du champ manquant
-    fireEvent.click(screen.getByText("Compléter"));
-    expect(screen.getByText("Paramètres : generale")).toBeInTheDocument();
+    // Informations enregistrées dans la fenêtre : la création repart seule
+    fireEvent.click(screen.getByText("Enregistrer et continuer"));
+    expect(onCreate).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByText("Configuration de votre entreprise"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("société sans RCS ni capital : la fenêtre les demande (exigés par l'API)", () => {
+    state.organization = { ...COMPLETE, rcs: "", capitalSocial: "" };
+    const onCreate = vi.fn();
+    renderGate(onCreate);
+
+    fireEvent.click(screen.getByText("Créer la facture"));
+    expect(onCreate).not.toHaveBeenCalled();
+    expect(screen.getByText("8/10")).toBeInTheDocument();
   });
 
   it("sans droit de modifier l'espace : invitation à contacter l'administrateur, « Retour » ferme sans quitter la liste", () => {
@@ -104,7 +123,9 @@ describe("useCompanyInfoGate", () => {
     expect(
       screen.getByText("Contactez l'administrateur de l'espace"),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Compléter")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Enregistrer et continuer"),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Retour"));
     expect(

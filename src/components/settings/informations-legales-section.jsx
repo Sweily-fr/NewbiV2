@@ -39,75 +39,11 @@ import {
 import { useFormContext } from "react-hook-form";
 import { Callout } from "@/src/components/ui/callout";
 import { CompanyRegistrySearch } from "./company-registry-search";
-import { companyFieldsFromRegistry } from "@/src/lib/company-registry";
-
-const LEGAL_FORM_GROUPS = [
-  {
-    label: "Sociétés commerciales",
-    forms: [
-      { value: "SARL", label: "SARL - Société à responsabilité limitée" },
-      {
-        value: "EURL",
-        label: "EURL - Entreprise unipersonnelle à responsabilité limitée",
-      },
-      { value: "SAS", label: "SAS - Société par actions simplifiée" },
-      {
-        value: "SASU",
-        label: "SASU - Société par actions simplifiée unipersonnelle",
-      },
-      { value: "SA", label: "SA - Société anonyme" },
-      { value: "SCA", label: "SCA - Société en commandite par actions" },
-      { value: "SNC", label: "SNC - Société en nom collectif" },
-      { value: "SCS", label: "SCS - Société en commandite simple" },
-    ],
-  },
-  {
-    label: "Sociétés d'exercice libéral",
-    forms: [
-      {
-        value: "SELARL",
-        label: "SELARL - Société d'exercice libéral à responsabilité limitée",
-      },
-      {
-        value: "SELAS",
-        label: "SELAS - Société d'exercice libéral par actions simplifiée",
-      },
-      {
-        value: "SELAFA",
-        label: "SELAFA - Société d'exercice libéral à forme anonyme",
-      },
-      {
-        value: "SELCA",
-        label: "SELCA - Société d'exercice libéral en commandite par actions",
-      },
-    ],
-  },
-  {
-    label: "Sociétés civiles",
-    forms: [
-      { value: "SCI", label: "SCI - Société civile immobilière" },
-      { value: "SCM", label: "SCM - Société civile de moyens" },
-      { value: "SCP", label: "SCP - Société civile professionnelle" },
-    ],
-  },
-  {
-    label: "Entreprise individuelle",
-    forms: [
-      {
-        value: "EI",
-        label: "EI - Entreprise individuelle (auto-entrepreneur)",
-      },
-    ],
-  },
-  {
-    label: "Indivision",
-    forms: [{ value: "Indivision", label: "Indivision (Situation juridique)" }],
-  },
-  {
-    label: "Associations",
-    forms: [{ value: "Association", label: "Association déclarée" }],
-  },
-];
+import {
+  companyFieldsFromRegistry,
+  describeRegistryFill,
+} from "@/src/lib/company-registry";
+import { LEGAL_FORM_GROUPS } from "@/src/lib/legal-forms";
 
 const ALL_TAX_REGIMES = [
   { value: "reel-normal", label: "Régime réel normal" },
@@ -320,26 +256,9 @@ export function InformationsLegalesSection({
     }
     setValue("address.country", "France", options);
 
-    // Le message ne cite que ce qui a vraiment été repris : une entreprise
-    // non diffusible n'a ni rue ni code postal publics.
-    const filled = [
-      "SIRET",
-      fields.legalForm && "forme juridique",
-      fields.companyName && "raison sociale",
-      fields.addressStreet && fields.addressZipCode && "adresse",
-    ].filter(Boolean);
-    const filledText =
-      filled.length > 1
-        ? `${filled.slice(0, -1).join(", ")} et ${filled[filled.length - 1]}`
-        : filled[0];
-    const addressHidden = !fields.addressStreet || !fields.addressZipCode;
     setRegistryNotice({
       type: "success",
-      text: `Repris du registre : ${filledText}.${
-        addressHidden
-          ? " L'adresse de cette entreprise n'est pas publique : renseignez-la dans l'onglet Générale."
-          : ""
-      } Vérifiez puis enregistrez.`,
+      text: describeRegistryFill(fields, "dans l'onglet Générale"),
     });
   };
 
