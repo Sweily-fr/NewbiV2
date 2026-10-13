@@ -16,6 +16,7 @@ import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/se
 import { DeliveryNotesAccessGuard } from "./components/delivery-notes-access-guard";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useGoToCreation } from "@/src/components/company-info-gate";
 
 function DeliveryNotesContent() {
   // Une seule des deux mises en page (bureau ou mobile) est montée : les
@@ -23,6 +24,7 @@ function DeliveryNotesContent() {
   // jeux de requêtes et de hooks par ligne sur chaque page de liste.
   const isMobile = useIsMobile();
   const router = useRouter();
+  const goToCreation = useGoToCreation();
   const searchParams = useSearchParams();
   const [dnIdToOpen, setDnIdToOpen] = useState(null);
 
@@ -75,9 +77,10 @@ function DeliveryNotesContent() {
     }
   }, [searchParams, router]);
 
-  const handleNewDeliveryNote = () => {
-    router.push("/dashboard/outils/bons-de-livraison/new");
-  };
+  // Fenêtre « Configuration de votre entreprise » ouverte sur la liste si
+  // besoin, avant d'arriver sur l'éditeur.
+  const handleNewDeliveryNote = () =>
+    goToCreation("/dashboard/outils/bons-de-livraison/new");
 
   const { stats, loading: statsLoading } = useDeliveryNoteStats();
   const pendingCount = stats?.pendingCount ?? 0;

@@ -237,10 +237,13 @@ export default function QuoteSidebar({
     return validDate < today;
   };
 
-  const handleEdit = () => {
-    router.push(`/dashboard/outils/devis/${quote.id}/editer`);
-    onClose();
-  };
+  const handleEdit = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/devis/${quote.id}/editer`);
+      onClose();
+    });
 
   const handleView = () => {
     router.push(`/dashboard/outils/devis/${quote.id}`);
@@ -280,31 +283,34 @@ export default function QuoteSidebar({
     }
   };
 
-  const handleConvertToPurchaseOrder = () => {
-    try {
-      sessionStorage.setItem(
-        "quotePurchaseOrderData",
-        JSON.stringify({
-          sourceQuoteId: quote.id,
-          purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
-          client: quote.client,
-          items: quote.items,
-          discount: quote.discount,
-          discountType: quote.discountType,
-          customFields: quote.customFields,
-          shipping: quote.shipping,
-          isReverseCharge: quote.isReverseCharge,
-          isVatExempt: quote.isVatExempt,
-          retenueGarantie: quote.retenueGarantie,
-          escompte: quote.escompte,
-        }),
-      );
-      router.push("/dashboard/outils/bons-commande/new");
-      onClose();
-    } catch (error) {
-      toast.error("Erreur lors de la conversion en bon de commande");
-    }
-  };
+  const handleConvertToPurchaseOrder = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      try {
+        sessionStorage.setItem(
+          "quotePurchaseOrderData",
+          JSON.stringify({
+            sourceQuoteId: quote.id,
+            purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
+            client: quote.client,
+            items: quote.items,
+            discount: quote.discount,
+            discountType: quote.discountType,
+            customFields: quote.customFields,
+            shipping: quote.shipping,
+            isReverseCharge: quote.isReverseCharge,
+            isVatExempt: quote.isVatExempt,
+            retenueGarantie: quote.retenueGarantie,
+            escompte: quote.escompte,
+          }),
+        );
+        router.push("/dashboard/outils/bons-commande/new");
+        onClose();
+      } catch (error) {
+        toast.error("Erreur lors de la conversion en bon de commande");
+      }
+    });
 
   const handleReject = async () => {
     try {
@@ -326,90 +332,96 @@ export default function QuoteSidebar({
     }
   };
 
-  const handleConvertToInvoice = async () => {
-    let freshClient = quote.client;
-    if (quote.client?.id && workspaceId) {
-      try {
-        const { data } = await fetchClient({
-          variables: { workspaceId, id: quote.client.id },
-        });
-        if (data?.client) freshClient = data.client;
-      } catch {
-        // fallback sur le snapshot du devis si le refetch échoue
+  const handleConvertToInvoice = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(async () => {
+      let freshClient = quote.client;
+      if (quote.client?.id && workspaceId) {
+        try {
+          const { data } = await fetchClient({
+            variables: { workspaceId, id: quote.client.id },
+          });
+          if (data?.client) freshClient = data.client;
+        } catch {
+          // fallback sur le snapshot du devis si le refetch échoue
+        }
       }
-    }
-    sessionStorage.setItem(
-      "quoteInvoiceData",
-      JSON.stringify({
-        sourceQuoteId: quote.id,
-        purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
-        client: freshClient,
-        items: quote.items,
-        discount: quote.discount,
-        discountType: quote.discountType,
-        customFields: quote.customFields,
-        shipping: quote.shipping,
-        isReverseCharge: quote.isReverseCharge,
-        isVatExempt: quote.isVatExempt,
-        retenueGarantie: quote.retenueGarantie,
-        escompte: quote.escompte,
-      }),
-    );
-    router.push("/dashboard/outils/factures/new");
-    onClose();
-  };
-
-  const handleCreateLinkedInvoice = async ({ quoteId, amount, isDeposit }) => {
-    const remainingAmount = calculateRemainingAmount();
-    const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
-
-    const hasOtherInvoices = quote.linkedInvoices?.length > 0;
-
-    let description;
-    if (isDeposit) {
-      description = `Acompte sur devis ${quoteRef}`;
-    } else if (amount >= remainingAmount - 0.01) {
-      description = hasOtherInvoices
-        ? `Facture de solde du devis ${quoteRef}`
-        : `Facture sur devis ${quoteRef}`;
-    } else {
-      const percentage = quote.finalTotalTTC
-        ? Math.round((amount / quote.finalTotalTTC) * 10000) / 100
-        : 0;
-      description = `Facture partielle de ${String(percentage).replace(".", ",")}% du devis ${quoteRef}`;
-    }
-
-    let freshClient = quote.client;
-    if (quote.client?.id && workspaceId) {
-      try {
-        const { data } = await fetchClient({
-          variables: { workspaceId, id: quote.client.id },
-        });
-        if (data?.client) freshClient = data.client;
-      } catch {
-        // fallback sur le snapshot du devis si le refetch échoue
-      }
-    }
-
-    sessionStorage.setItem(
-      "quoteLinkedInvoiceData",
-      JSON.stringify({
-        sourceQuoteId: quoteId,
-        purchaseOrderNumber: quoteRef,
-        client: freshClient,
-        isDeposit,
-        // Taux de TVA repris du devis (une ligne par taux s'il en mélange
-        // plusieurs) : facturer au taux en dur faussait la ventilation HT / TVA.
-        items: buildLinkedInvoiceItems({
-          quote,
-          amountTTC: amount,
-          description,
+      sessionStorage.setItem(
+        "quoteInvoiceData",
+        JSON.stringify({
+          sourceQuoteId: quote.id,
+          purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
+          client: freshClient,
+          items: quote.items,
+          discount: quote.discount,
+          discountType: quote.discountType,
+          customFields: quote.customFields,
+          shipping: quote.shipping,
+          isReverseCharge: quote.isReverseCharge,
+          isVatExempt: quote.isVatExempt,
+          retenueGarantie: quote.retenueGarantie,
+          escompte: quote.escompte,
         }),
-      }),
-    );
-    router.push("/dashboard/outils/factures/new");
-    onClose();
-  };
+      );
+      router.push("/dashboard/outils/factures/new");
+      onClose();
+    });
+
+  const handleCreateLinkedInvoice = ({ quoteId, amount, isDeposit }) =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(async () => {
+      const remainingAmount = calculateRemainingAmount();
+      const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
+
+      const hasOtherInvoices = quote.linkedInvoices?.length > 0;
+
+      let description;
+      if (isDeposit) {
+        description = `Acompte sur devis ${quoteRef}`;
+      } else if (amount >= remainingAmount - 0.01) {
+        description = hasOtherInvoices
+          ? `Facture de solde du devis ${quoteRef}`
+          : `Facture sur devis ${quoteRef}`;
+      } else {
+        const percentage = quote.finalTotalTTC
+          ? Math.round((amount / quote.finalTotalTTC) * 10000) / 100
+          : 0;
+        description = `Facture partielle de ${String(percentage).replace(".", ",")}% du devis ${quoteRef}`;
+      }
+
+      let freshClient = quote.client;
+      if (quote.client?.id && workspaceId) {
+        try {
+          const { data } = await fetchClient({
+            variables: { workspaceId, id: quote.client.id },
+          });
+          if (data?.client) freshClient = data.client;
+        } catch {
+          // fallback sur le snapshot du devis si le refetch échoue
+        }
+      }
+
+      sessionStorage.setItem(
+        "quoteLinkedInvoiceData",
+        JSON.stringify({
+          sourceQuoteId: quoteId,
+          purchaseOrderNumber: quoteRef,
+          client: freshClient,
+          isDeposit,
+          // Taux de TVA repris du devis (une ligne par taux s'il en mélange
+          // plusieurs) : facturer au taux en dur faussait la ventilation HT / TVA.
+          items: buildLinkedInvoiceItems({
+            quote,
+            amountTTC: amount,
+            description,
+          }),
+        }),
+      );
+      router.push("/dashboard/outils/factures/new");
+      onClose();
+    });
 
   const isLoading = changingStatus;
 

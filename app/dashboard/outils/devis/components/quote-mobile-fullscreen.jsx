@@ -137,32 +137,12 @@ export default function QuoteMobileFullscreen({
     }
   };
 
-  const handleConvertToInvoice = () => {
-    sessionStorage.setItem(
-      "quoteInvoiceData",
-      JSON.stringify({
-        sourceQuoteId: quote.id,
-        purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
-        client: quote.client,
-        items: quote.items,
-        discount: quote.discount,
-        discountType: quote.discountType,
-        customFields: quote.customFields,
-        shipping: quote.shipping,
-        isReverseCharge: quote.isReverseCharge,
-        isVatExempt: quote.isVatExempt,
-        retenueGarantie: quote.retenueGarantie,
-        escompte: quote.escompte,
-      }),
-    );
-    router.push("/dashboard/outils/factures/new");
-    onClose();
-  };
-
-  const handleConvertToPurchaseOrder = () => {
-    try {
+  const handleConvertToInvoice = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
       sessionStorage.setItem(
-        "quotePurchaseOrderData",
+        "quoteInvoiceData",
         JSON.stringify({
           sourceQuoteId: quote.id,
           purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
@@ -178,12 +158,38 @@ export default function QuoteMobileFullscreen({
           escompte: quote.escompte,
         }),
       );
-      router.push("/dashboard/outils/bons-commande/new");
+      router.push("/dashboard/outils/factures/new");
       onClose();
-    } catch (error) {
-      toast.error("Erreur lors de la conversion en bon de commande");
-    }
-  };
+    });
+
+  const handleConvertToPurchaseOrder = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      try {
+        sessionStorage.setItem(
+          "quotePurchaseOrderData",
+          JSON.stringify({
+            sourceQuoteId: quote.id,
+            purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
+            client: quote.client,
+            items: quote.items,
+            discount: quote.discount,
+            discountType: quote.discountType,
+            customFields: quote.customFields,
+            shipping: quote.shipping,
+            isReverseCharge: quote.isReverseCharge,
+            isVatExempt: quote.isVatExempt,
+            retenueGarantie: quote.retenueGarantie,
+            escompte: quote.escompte,
+          }),
+        );
+        router.push("/dashboard/outils/bons-commande/new");
+        onClose();
+      } catch (error) {
+        toast.error("Erreur lors de la conversion en bon de commande");
+      }
+    });
 
   const calculateRemainingAmount = () => {
     if (!quote.linkedInvoices || quote.linkedInvoices.length === 0) {
@@ -195,45 +201,48 @@ export default function QuoteMobileFullscreen({
     return quote.finalTotalTTC - totalInvoiced;
   };
 
-  const handleCreateLinkedInvoice = ({ quoteId, amount, isDeposit }) => {
-    const remainingAmount = calculateRemainingAmount();
-    const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
+  const handleCreateLinkedInvoice = ({ quoteId, amount, isDeposit }) =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      const remainingAmount = calculateRemainingAmount();
+      const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
 
-    const hasOtherInvoices = quote.linkedInvoices?.length > 0;
+      const hasOtherInvoices = quote.linkedInvoices?.length > 0;
 
-    let description;
-    if (isDeposit) {
-      description = `Acompte sur devis ${quoteRef}`;
-    } else if (amount >= remainingAmount - 0.01) {
-      description = hasOtherInvoices
-        ? `Facture de solde du devis ${quoteRef}`
-        : `Facture sur devis ${quoteRef}`;
-    } else {
-      const percentage = quote.finalTotalTTC
-        ? Math.round((amount / quote.finalTotalTTC) * 10000) / 100
-        : 0;
-      description = `Facture partielle de ${String(percentage).replace(".", ",")}% du devis ${quoteRef}`;
-    }
+      let description;
+      if (isDeposit) {
+        description = `Acompte sur devis ${quoteRef}`;
+      } else if (amount >= remainingAmount - 0.01) {
+        description = hasOtherInvoices
+          ? `Facture de solde du devis ${quoteRef}`
+          : `Facture sur devis ${quoteRef}`;
+      } else {
+        const percentage = quote.finalTotalTTC
+          ? Math.round((amount / quote.finalTotalTTC) * 10000) / 100
+          : 0;
+        description = `Facture partielle de ${String(percentage).replace(".", ",")}% du devis ${quoteRef}`;
+      }
 
-    sessionStorage.setItem(
-      "quoteLinkedInvoiceData",
-      JSON.stringify({
-        sourceQuoteId: quoteId,
-        purchaseOrderNumber: quoteRef,
-        client: quote.client,
-        isDeposit,
-        // Taux de TVA repris du devis (une ligne par taux s'il en mélange
-        // plusieurs) : facturer au taux en dur faussait la ventilation HT / TVA.
-        items: buildLinkedInvoiceItems({
-          quote,
-          amountTTC: amount,
-          description,
+      sessionStorage.setItem(
+        "quoteLinkedInvoiceData",
+        JSON.stringify({
+          sourceQuoteId: quoteId,
+          purchaseOrderNumber: quoteRef,
+          client: quote.client,
+          isDeposit,
+          // Taux de TVA repris du devis (une ligne par taux s'il en mélange
+          // plusieurs) : facturer au taux en dur faussait la ventilation HT / TVA.
+          items: buildLinkedInvoiceItems({
+            quote,
+            amountTTC: amount,
+            description,
+          }),
         }),
-      }),
-    );
-    router.push("/dashboard/outils/factures/new");
-    onClose();
-  };
+      );
+      router.push("/dashboard/outils/factures/new");
+      onClose();
+    });
 
   const isLoading = changingStatus || loadingFullQuote;
 
@@ -665,10 +674,12 @@ export default function QuoteMobileFullscreen({
               canEditQuotes && (
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    router.push(`/dashboard/outils/devis/${quote.id}/editer`);
-                    onClose();
-                  }}
+                  onClick={() =>
+                    ensureCompanyInfo(() => {
+                      router.push(`/dashboard/outils/devis/${quote.id}/editer`);
+                      onClose();
+                    })
+                  }
                   size="sm"
                   className="w-full font-normal"
                 >

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   useAddClientToLists,
   useClientListsByClient,
@@ -24,6 +23,7 @@ import { Plus, Loader2, X, FileText, Download } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import TableUser from "./table";
 import ClientsModal from "./clients-modal";
+import { useGoToCreation } from "@/src/components/company-info-gate";
 
 // Composant pour afficher les listes communes
 function CommonListsDisplay({
@@ -129,7 +129,7 @@ export default function ClientsTable({
   onClientRemovedFromList,
   onClientsLoaded,
 }) {
-  const router = useRouter();
+  const goToCreation = useGoToCreation();
   const [internalSelectedClients, setInternalSelectedClients] = useState(
     new Set(),
   );
@@ -179,8 +179,8 @@ export default function ClientsTable({
   const handleCreateInvoice = useCallback(() => {
     if (selectedClients.size !== 1) return;
     const clientId = Array.from(selectedClients)[0];
-    router.push(`/dashboard/outils/factures/new?clientId=${clientId}`);
-  }, [selectedClients, router]);
+    goToCreation(`/dashboard/outils/factures/new?clientId=${clientId}`);
+  }, [selectedClients, goToCreation]);
 
   const handleExportCSV = useCallback(() => {
     if (selectedClients.size === 0 || !clientsProp) return;

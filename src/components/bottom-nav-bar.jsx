@@ -30,6 +30,7 @@ import { isDeliveryNotesAllowed } from "@/src/hooks/useDeliveryNotesAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { moduleForPath } from "@/src/lib/route-modules";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
+import { useCreationLinkClick } from "@/src/components/company-info-gate";
 
 // ─── Tab definitions ─────────────────────────────────────────────
 const tabs = [
@@ -261,6 +262,7 @@ const hiddenPaths = [
 ];
 
 export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
+  const creationLinkClick = useCreationLinkClick();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
   // pages des ventes visibles avec « Voir », créations avec « Créer »
   const { canDo, isReady: permissionsReady } = useMyPermissions();
@@ -459,7 +461,12 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                   <Button asChild size="lg" className="w-full rounded-xl h-11">
                     <Link
                       href="/dashboard/outils/factures/new"
-                      onClick={() => setBillingOpen(false)}
+                      onClick={(event) => {
+                        setBillingOpen(false);
+                        creationLinkClick("/dashboard/outils/factures/new")(
+                          event,
+                        );
+                      }}
                     >
                       Nouvelle facture
                     </Link>
@@ -474,7 +481,10 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                   >
                     <Link
                       href="/dashboard/outils/devis/new"
-                      onClick={() => setBillingOpen(false)}
+                      onClick={(event) => {
+                        setBillingOpen(false);
+                        creationLinkClick("/dashboard/outils/devis/new")(event);
+                      }}
                     >
                       Nouveau devis
                     </Link>

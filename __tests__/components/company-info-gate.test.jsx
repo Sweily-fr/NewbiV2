@@ -6,6 +6,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 const state = vi.hoisted(() => ({
   organization: null,
   canEditSettings: true,
+  push: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: state.push }),
 }));
 
 vi.mock("@/src/contexts/dashboard-layout-context", () => ({
@@ -28,8 +33,12 @@ vi.mock("next/dynamic", () => ({
   ),
 }));
 
-const { CompanyInfoGateProvider, useCompanyInfoGate } =
-  await import("@/src/components/company-info-gate");
+const {
+  CompanyInfoGateProvider,
+  useCompanyInfoGate,
+  useCreationLinkClick,
+  useGoToCreation,
+} = await import("@/src/components/company-info-gate");
 
 const COMPLETE = {
   companyName: "Boulangerie Martin",
@@ -65,6 +74,7 @@ const renderGate = (onCreate) =>
 beforeEach(() => {
   state.organization = { ...COMPLETE };
   state.canEditSettings = true;
+  state.push.mockClear();
 });
 
 describe("useCompanyInfoGate", () => {
@@ -144,5 +154,83 @@ describe("useCompanyInfoGate", () => {
     render(<CreateButton onCreate={onCreate} />);
     fireEvent.click(screen.getByText("Créer la facture"));
     expect(onCreate).toHaveBeenCalledOnce();
+  });
+});
+
+// La fenêtre s'ouvre sur la page courante AVANT de partir vers la page de
+// création : sinon l'éditeur restait en chargement derrière la fenêtre.
+describe("aller vers une page de création", () => {
+  function NewInvoiceLink({ onClick }) {
+    const creationLinkClick = useCreationLinkClick();
+    return (
+      <a
+        href="/dashboard/outils/factures/new"
+        onClick={(event) => {
+          creationLinkClick("/dashboard/outils/factures/new")(event);
+          onClick(event.defaultPrevented);
+        }}
+      >
+        Nouvelle facture
+      </a>
+    );
+  }
+
+  function NewQuoteButton() {
+    const goToCreation = useGoToCreation();
+    return (
+      <button onClick={() => goToCreation("/dashboard/outils/devis/new")}>
+        Nouveau devis
+      </button>
+    );
+  }
+
+  const renderEntries = (onLinkClick = vi.fn()) =>
+    render(
+      <CompanyInfoGateProvider>
+        <p>Liste des factures</p>
+        <NewInvoiceLink onClick={onLinkClick} />
+        <NewQuoteButton />
+      </CompanyInfoGateProvider>,
+    );
+
+  it("entreprise configurée : le lien et le bouton partent normalement", () => {
+    const onLinkClick = vi.fn();
+    renderEntries(onLinkClick);
+
+    fireEvent.click(screen.getByText("Nouvelle facture"));
+    expect(onLinkClick).toHaveBeenCalledWith(false); // navigation du lien
+    fireEvent.click(screen.getByText("Nouveau devis"));
+    expect(state.push).toHaveBeenCalledWith("/dashboard/outils/devis/new");
+    expect(
+      screen.queryByText("Configuration de votre entreprise"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("entreprise incomplète : fenêtre sur la liste, puis la page de création après l'enregistrement", () => {
+    state.organization = { ...COMPLETE, siret: "" };
+    const onLinkClick = vi.fn();
+    renderEntries(onLinkClick);
+
+    fireEvent.click(screen.getByText("Nouvelle facture"));
+    // Le lien est retenu : on reste sur la liste, la fenêtre s'ouvre
+    expect(onLinkClick).toHaveBeenCalledWith(true);
+    expect(screen.getByText("Liste des factures")).toBeInTheDocument();
+    expect(
+      screen.getByText("Configuration de votre entreprise"),
+    ).toBeInTheDocument();
+    expect(state.push).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText("Enregistrer et continuer"));
+    expect(state.push).toHaveBeenCalledWith("/dashboard/outils/factures/new");
+  });
+
+  it("entreprise incomplète : même chose pour un bouton", () => {
+    state.organization = { ...COMPLETE, siret: "" };
+    renderEntries();
+
+    fireEvent.click(screen.getByText("Nouveau devis"));
+    expect(state.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Enregistrer et continuer"));
+    expect(state.push).toHaveBeenCalledWith("/dashboard/outils/devis/new");
   });
 });

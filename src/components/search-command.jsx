@@ -75,6 +75,7 @@ import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useGoToCreation } from "@/src/components/company-info-gate";
 
 // --- Helpers ---
 
@@ -275,6 +276,7 @@ export function SearchCommand() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [recents, setRecents] = React.useState([]);
   const router = useRouter();
+  const goToCreation = useGoToCreation();
   const { workspaceId } = useWorkspace();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
@@ -870,9 +872,7 @@ export function SearchCommand() {
                         <CommandItem
                           onSelect={() =>
                             runCommand(() =>
-                              router.push(
-                                "/dashboard/outils/factures?new=true",
-                              ),
+                              goToCreation("/dashboard/outils/factures/new"),
                             )
                           }
                         >
@@ -886,7 +886,7 @@ export function SearchCommand() {
                         <CommandItem
                           onSelect={() =>
                             runCommand(() =>
-                              router.push("/dashboard/outils/devis?new=true"),
+                              goToCreation("/dashboard/outils/devis/new"),
                             )
                           }
                         >
@@ -900,8 +900,8 @@ export function SearchCommand() {
                         <CommandItem
                           onSelect={() =>
                             runCommand(() =>
-                              router.push(
-                                "/dashboard/outils/bons-commande?new=true",
+                              goToCreation(
+                                "/dashboard/outils/bons-commande/new",
                               ),
                             )
                           }
@@ -916,7 +916,7 @@ export function SearchCommand() {
                         <CommandItem
                           onSelect={() =>
                             runCommand(() =>
-                              router.push(
+                              goToCreation(
                                 "/dashboard/outils/bons-de-livraison/new",
                               ),
                             )

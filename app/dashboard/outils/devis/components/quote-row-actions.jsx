@@ -157,9 +157,12 @@ export default function QuoteRowActions({
     }
   };
 
-  const handleEdit = () => {
-    router.push(`/dashboard/outils/devis/${quote.id}/editer`);
-  };
+  const handleEdit = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/devis/${quote.id}/editer`);
+    });
 
   const handleDelete = async () => {
     try {
@@ -270,36 +273,42 @@ export default function QuoteRowActions({
     escompte: source.escompte,
   });
 
-  const handleConvertToInvoice = async () => {
-    try {
-      const fullQuote = (await fetchFullQuote()) || quote;
-      sessionStorage.setItem(
-        "quoteInvoiceData",
-        JSON.stringify(buildConversionPayload(fullQuote)),
-      );
-      router.push("/dashboard/outils/factures/new");
-    } catch (error) {
-      console.error("[quote-row-actions] convert to invoice failed:", error);
-      toast.error("Erreur lors de la conversion en facture");
-    }
-  };
+  const handleConvertToInvoice = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(async () => {
+      try {
+        const fullQuote = (await fetchFullQuote()) || quote;
+        sessionStorage.setItem(
+          "quoteInvoiceData",
+          JSON.stringify(buildConversionPayload(fullQuote)),
+        );
+        router.push("/dashboard/outils/factures/new");
+      } catch (error) {
+        console.error("[quote-row-actions] convert to invoice failed:", error);
+        toast.error("Erreur lors de la conversion en facture");
+      }
+    });
 
-  const handleConvertToPurchaseOrder = async () => {
-    try {
-      const fullQuote = (await fetchFullQuote()) || quote;
-      sessionStorage.setItem(
-        "quotePurchaseOrderData",
-        JSON.stringify(buildConversionPayload(fullQuote)),
-      );
-      router.push("/dashboard/outils/bons-commande/new");
-    } catch (error) {
-      console.error(
-        "[quote-row-actions] convert to purchase order failed:",
-        error,
-      );
-      toast.error("Erreur lors de la conversion en bon de commande");
-    }
-  };
+  const handleConvertToPurchaseOrder = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(async () => {
+      try {
+        const fullQuote = (await fetchFullQuote()) || quote;
+        sessionStorage.setItem(
+          "quotePurchaseOrderData",
+          JSON.stringify(buildConversionPayload(fullQuote)),
+        );
+        router.push("/dashboard/outils/bons-commande/new");
+      } catch (error) {
+        console.error(
+          "[quote-row-actions] convert to purchase order failed:",
+          error,
+        );
+        toast.error("Erreur lors de la conversion en bon de commande");
+      }
+    });
 
   const { createFromQuote, loading: creatingDeliveryNote } =
     useCreateDeliveryNoteFromQuote();

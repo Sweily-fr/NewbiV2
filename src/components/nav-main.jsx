@@ -55,6 +55,7 @@ import {
   DocumentTextIcon as FileText,
   SmsIcon as MessageSquare,
 } from "@/src/components/icons";
+import { useCreationLinkClick } from "@/src/components/company-info-gate";
 
 export function NavMain({
   items,
@@ -71,6 +72,7 @@ export function NavMain({
   // Espace gestionnaire : pas de section Tâches (kanban du dossier actif)
   showProjets = true,
 }) {
+  const creationLinkClick = useCreationLinkClick();
   const pathname = usePathname();
   const { isActive, loading, subscription } = useSubscription();
   const { setOpenMobile, isMobile, state } = useSidebar();
@@ -277,7 +279,12 @@ export function NavMain({
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard/outils/factures/new"
-                        onClick={handleLinkClick}
+                        onClick={(event) => {
+                          handleLinkClick();
+                          creationLinkClick("/dashboard/outils/factures/new")(
+                            event,
+                          );
+                        }}
                         className="cursor-pointer flex justify-between w-full"
                       >
                         <span>Nouvelle facture</span>
@@ -289,7 +296,12 @@ export function NavMain({
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard/outils/devis/new"
-                        onClick={handleLinkClick}
+                        onClick={(event) => {
+                          handleLinkClick();
+                          creationLinkClick("/dashboard/outils/devis/new")(
+                            event,
+                          );
+                        }}
                         className="cursor-pointer flex justify-between w-full"
                       >
                         <span>Nouveau devis</span>
@@ -301,7 +313,12 @@ export function NavMain({
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard/outils/bons-commande/new"
-                        onClick={handleLinkClick}
+                        onClick={(event) => {
+                          handleLinkClick();
+                          creationLinkClick(
+                            "/dashboard/outils/bons-commande/new",
+                          )(event);
+                        }}
                         className="cursor-pointer flex justify-between w-full"
                       >
                         <span>Nouveau bon de commande</span>
@@ -313,7 +330,12 @@ export function NavMain({
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard/outils/bons-de-livraison/new"
-                        onClick={handleLinkClick}
+                        onClick={(event) => {
+                          handleLinkClick();
+                          creationLinkClick(
+                            "/dashboard/outils/bons-de-livraison/new",
+                          )(event);
+                        }}
                         className="cursor-pointer flex justify-between w-full"
                       >
                         <span>Nouveau bon de livraison</span>
