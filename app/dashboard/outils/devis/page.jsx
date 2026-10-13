@@ -23,6 +23,7 @@ import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/se
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useGoToCreation } from "@/src/components/company-info-gate";
 
 function QuotesContent() {
   // Une seule des deux mises en page (bureau ou mobile) est montée : les
@@ -30,6 +31,7 @@ function QuotesContent() {
   // jeux de requêtes et de hooks par ligne sur chaque page de liste.
   const isMobile = useIsMobile();
   const router = useRouter();
+  const goToCreation = useGoToCreation();
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [quoteIdToOpen, setQuoteIdToOpen] = useState(null);
@@ -95,9 +97,9 @@ function QuotesContent() {
     }
   }, [searchParams, router]);
 
-  const handleNewQuote = () => {
-    router.push("/dashboard/outils/devis/new");
-  };
+  // Fenêtre « Configuration de votre entreprise » ouverte sur la liste si
+  // besoin, avant d'arriver sur l'éditeur.
+  const handleNewQuote = () => goToCreation("/dashboard/outils/devis/new");
 
   // Récupérer les devis pour l'export
   const { quotes } = useQuotes();

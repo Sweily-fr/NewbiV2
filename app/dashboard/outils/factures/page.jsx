@@ -32,6 +32,7 @@ import { SendDocumentModal } from "./components/send-document-modal";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useGoToCreation } from "@/src/components/company-info-gate";
 
 function InvoicesContent() {
   // Une seule des deux mises en page (bureau ou mobile) est montée : les
@@ -39,6 +40,7 @@ function InvoicesContent() {
   // jeux de requêtes et de hooks par ligne sur chaque page de liste.
   const isMobile = useIsMobile();
   const router = useRouter();
+  const goToCreation = useGoToCreation();
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAutoReminderOpen, setIsAutoReminderOpen] = useState(false);
@@ -148,9 +150,9 @@ function InvoicesContent() {
     }
   }, [sidebarReturnTo, router]);
 
-  const handleNewInvoice = () => {
-    router.push("/dashboard/outils/factures/new");
-  };
+  // Fenêtre « Configuration de votre entreprise » ouverte sur la liste si
+  // besoin, avant d'arriver sur l'éditeur.
+  const handleNewInvoice = () => goToCreation("/dashboard/outils/factures/new");
 
   // Données filtrées remontées depuis InvoiceTable
   const [filteredData, setFilteredData] = useState(null);

@@ -11,7 +11,15 @@ import React from "react";
 
 const router = { back: vi.fn(), push: vi.fn(), replace: vi.fn() };
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
-vi.mock("next/dynamic", () => ({ default: () => () => null }));
+// Formulaire de la fenêtre (chargé à la demande) : son bouton « Retour »
+// suffit ici, le formulaire est testé à part (company-info-form.test.jsx).
+vi.mock("next/dynamic", () => ({
+  default: () => (props) => (
+    <button type="button" onClick={props.onCancel}>
+      Retour
+    </button>
+  ),
+}));
 
 let organization;
 vi.mock("@/src/contexts/dashboard-layout-context", () => ({
@@ -32,6 +40,8 @@ const COMPLETE = {
   addressCountry: "France",
   siret: "12345678900011",
   legalForm: "SASU",
+  rcs: "RCS Paris 123 456 789",
+  capitalSocial: "1000",
 };
 
 const renderGuard = () =>

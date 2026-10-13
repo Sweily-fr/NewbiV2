@@ -140,3 +140,27 @@ export function companyFieldsFromRegistry(company) {
     addressZipCode: diffusible(siege.code_postal),
   };
 }
+
+/**
+ * Message affiché après une recherche au registre : ne cite que ce qui a
+ * vraiment été repris, et signale une adresse non publique (entreprise non
+ * diffusible). `whereToFillAddress` : où la personne doit saisir l'adresse.
+ */
+export function describeRegistryFill(fields, whereToFillAddress) {
+  const filled = [
+    "SIRET",
+    fields.legalForm && "forme juridique",
+    fields.companyName && "raison sociale",
+    fields.addressStreet && fields.addressZipCode && "adresse",
+  ].filter(Boolean);
+  const filledText =
+    filled.length > 1
+      ? `${filled.slice(0, -1).join(", ")} et ${filled[filled.length - 1]}`
+      : filled[0];
+  const addressHidden = !fields.addressStreet || !fields.addressZipCode;
+  return `Repris du registre : ${filledText}.${
+    addressHidden
+      ? ` L'adresse de cette entreprise n'est pas publique : renseignez-la ${whereToFillAddress}.`
+      : ""
+  } Vérifiez puis enregistrez.`;
+}

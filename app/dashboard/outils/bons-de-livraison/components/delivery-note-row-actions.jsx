@@ -85,11 +85,14 @@ export default function DeliveryNoteRowActions({
     onOpenSidebar?.(deliveryNote);
   };
 
-  const handleEdit = () => {
-    router.push(
-      `/dashboard/outils/bons-de-livraison/${deliveryNote.id}/editer`,
-    );
-  };
+  const handleEdit = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(
+        `/dashboard/outils/bons-de-livraison/${deliveryNote.id}/editer`,
+      );
+    });
 
   const handleDelete = async () => {
     try {

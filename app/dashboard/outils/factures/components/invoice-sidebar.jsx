@@ -593,10 +593,13 @@ export default function InvoiceSidebar({
   // Calculer les totaux avec prise en compte de l'avancement
   const calculatedTotals = calculateTotals(invoice);
 
-  const handleEdit = () => {
-    router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
-    onClose();
-  };
+  const handleEdit = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
+      onClose();
+    });
 
   const handleView = () => {
     router.push(`/dashboard/outils/factures/${invoice.id}`);
@@ -646,10 +649,13 @@ export default function InvoiceSidebar({
     }
   };
 
-  const handleCreateCreditNote = () => {
-    router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
-    onClose();
-  };
+  const handleCreateCreditNote = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
+      onClose();
+    });
 
   const handleViewCreditNote = (creditNote) => {
     setSelectedCreditNote(creditNote);

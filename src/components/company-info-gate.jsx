@@ -2,27 +2,40 @@
 
 import { createContext, useCallback, useContext, useState } from "react";
 import dynamic from "next/dynamic";
-import { Check, Circle, CornerDownLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Circle, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
-import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
+import {
+  documentLegalRequirements,
+  isCompanyInfoComplete,
+} from "@/src/hooks/useCompanyInfoGuard";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { cn } from "@/src/lib/utils";
 
-// Chunk chargé à la première ouverture seulement
-const SettingsModal = dynamic(
-  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
-  { ssr: false },
+// Formulaire chargé à la première ouverture seulement : la fenêtre est
+// montée dans tout le tableau de bord (CompanyInfoGateProvider).
+const CompanyInfoForm = dynamic(
+  () =>
+    import("@/src/components/company-info-form").then((m) => m.CompanyInfoForm),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center py-10">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  },
 );
 
 /** Champs requis pour générer un document, avec leur état. */
 export function getCompanyInfoFields(organization) {
+  const required = documentLegalRequirements(organization?.legalForm);
   return {
     generalFields: [
       { name: "Nom de l'entreprise", completed: !!organization?.companyName },
@@ -35,15 +48,14 @@ export function getCompanyInfoFields(organization) {
     legalFields: [
       { name: "SIRET", completed: !!organization?.siret },
       { name: "Forme juridique", completed: !!organization?.legalForm },
+      ...(required.rcs
+        ? [{ name: "Numéro RCS", completed: !!organization?.rcs }]
+        : []),
+      ...(required.capital
+        ? [{ name: "Capital social", completed: !!organization?.capitalSocial }]
+        : []),
     ],
   };
-}
-
-/** Onglet des paramètres où compléter le premier champ manquant. */
-export function companyInfoSettingsTab(fieldsInfo) {
-  return fieldsInfo.generalFields.some((f) => !f.completed)
-    ? "generale"
-    : "informations-legales";
 }
 
 function FieldList({ title, fields, keyPrefix }) {
@@ -86,89 +98,79 @@ function FieldList({ title, fields, keyPrefix }) {
 }
 
 /**
- * Fenêtre « Configuration de votre entreprise » : champs manquants pour
- * générer un document, « Compléter » (paramètres) ou, sans le droit de
- * modifier l'espace, « Contactez l'administrateur de l'espace ».
+ * Fenêtre « Configuration de votre entreprise ». Avec le droit de modifier
+ * l'espace : tous les champs exigés pour générer un document, avec la
+ * recherche au registre (CompanyInfoForm), enregistrés sans passer par les
+ * paramètres. Sinon : les champs manquants et « Contactez l'administrateur
+ * de l'espace ».
  */
 export function CompanyInfoDialog({
   open,
   onOpenChange,
-  fieldsInfo,
+  organization,
   canEditOrgSettings,
   onCancel,
-  onComplete,
+  onSaved,
 }) {
+  const fieldsInfo = getCompanyInfoFields(organization);
   const allFields = [...fieldsInfo.generalFields, ...fieldsInfo.legalFields];
   const completedCount = allFields.filter((f) => f.completed).length;
   const totalCount = allFields.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+      <DialogContent className="sm:max-w-[600px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
         <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          {/* Rien à droite du titre : la croix de fermeture y est placée. */}
           <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
             <DialogTitle className="text-sm font-medium">
               Configuration de votre entreprise
             </DialogTitle>
           </DialogHeader>
 
-          <div className="px-5 pt-4 pb-0">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[13px] text-muted-foreground">
-                Complétez ces informations pour générer vos documents.
-              </p>
-              <span className="text-xs text-muted-foreground tabular-nums shrink-0 ml-3">
-                {completedCount}/{totalCount}
-              </span>
-            </div>
-
-            <div className="h-1 bg-muted rounded-full overflow-hidden mb-5">
-              <div
-                className="h-full bg-foreground rounded-full transition-all duration-500"
-                style={{
-                  width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%`,
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <FieldList
-                title="Général"
-                fields={fieldsInfo.generalFields}
-                keyPrefix="general"
-              />
-              <FieldList
-                title="Légal"
-                fields={fieldsInfo.legalFields}
-                keyPrefix="legal"
-              />
-            </div>
-
-            <div className="flex items-center justify-between border-t border-border/40 -mx-5 px-5 py-3">
-              <button
-                onClick={onCancel}
-                className="text-[13px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                Retour
-              </button>
-              {canEditOrgSettings ? (
-                <Button
-                  variant="primary"
-                  onClick={onComplete}
-                  className="gap-2 cursor-pointer"
+          {canEditOrgSettings ? (
+            <CompanyInfoForm
+              organization={organization}
+              onCancel={onCancel}
+              onSaved={onSaved}
+            />
+          ) : (
+            <div className="px-5 pt-4 pb-0">
+              {/* Compteur réservé à la liste : dans le formulaire, les champs
+                  obligatoires sont marqués d'un astérisque. */}
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[13px] text-muted-foreground">
+                  Ces informations sont nécessaires pour générer vos documents.
+                </p>
+                <span className="text-xs text-muted-foreground tabular-nums shrink-0 ml-3">
+                  {completedCount}/{totalCount}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <FieldList
+                  title="Général"
+                  fields={fieldsInfo.generalFields}
+                  keyPrefix="general"
+                />
+                <FieldList
+                  title="Légal"
+                  fields={fieldsInfo.legalFields}
+                  keyPrefix="legal"
+                />
+              </div>
+              <div className="flex items-center justify-between border-t border-border/40 -mx-5 px-5 py-3">
+                <button
+                  onClick={onCancel}
+                  className="text-[13px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
-                  Compléter
-                  <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
-                    <CornerDownLeft className="size-3" />
-                  </kbd>
-                </Button>
-              ) : (
+                  Retour
+                </button>
                 <span className="text-[13px] text-muted-foreground">
                   Contactez l&apos;administrateur de l&apos;espace
                 </span>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -187,18 +189,18 @@ export function CompanyInfoGateProvider({ children }) {
   const { organization } = useDashboardLayoutContext();
   const { canDo, isReady: permissionsReady } = useMyPermissions();
   const canEditOrgSettings = !permissionsReady || canDo("orgSettings", "edit");
-  const [fieldsInfo, setFieldsInfo] = useState(null);
-  const [settingsTab, setSettingsTab] = useState(null);
+  // Action de création en attente des informations d'entreprise.
+  const [pendingAction, setPendingAction] = useState(null);
 
   // Lance l'action si l'espace peut générer des documents, sinon ouvre la
-  // fenêtre (l'utilisateur relance l'action une fois les informations
-  // complétées). Espace pas encore chargé : on laisse passer.
+  // fenêtre ; l'action repart d'elle-même une fois les informations
+  // enregistrées. Espace pas encore chargé : on laisse passer.
   const ensureCompanyInfo = useCallback(
     (action) => {
       if (!organization || isCompanyInfoComplete(organization)) {
         return action();
       }
-      setFieldsInfo(getCompanyInfoFields(organization));
+      setPendingAction(() => action);
       return undefined;
     },
     [organization],
@@ -207,24 +209,18 @@ export function CompanyInfoGateProvider({ children }) {
   return (
     <CompanyInfoGateContext.Provider value={ensureCompanyInfo}>
       {children}
-      {fieldsInfo && (
+      {pendingAction && organization && (
         <CompanyInfoDialog
           open
-          onOpenChange={(open) => !open && setFieldsInfo(null)}
-          fieldsInfo={fieldsInfo}
+          onOpenChange={(open) => !open && setPendingAction(null)}
+          organization={organization}
           canEditOrgSettings={canEditOrgSettings}
-          onCancel={() => setFieldsInfo(null)}
-          onComplete={() => {
-            setSettingsTab(companyInfoSettingsTab(fieldsInfo));
-            setFieldsInfo(null);
+          onCancel={() => setPendingAction(null)}
+          onSaved={() => {
+            const action = pendingAction;
+            setPendingAction(null);
+            action();
           }}
-        />
-      )}
-      {settingsTab && (
-        <SettingsModal
-          open
-          onOpenChange={(open) => !open && setSettingsTab(null)}
-          initialTab={settingsTab}
         />
       )}
     </CompanyInfoGateContext.Provider>
@@ -239,4 +235,44 @@ export function CompanyInfoGateProvider({ children }) {
 export function useCompanyInfoGate() {
   const ensureCompanyInfo = useContext(CompanyInfoGateContext);
   return ensureCompanyInfo || ((action) => action());
+}
+
+/**
+ * Aller vers une page de création (« Nouvelle facture », conversion d'un
+ * devis…) : si l'entreprise n'est pas configurée, la fenêtre s'ouvre sur la
+ * page courante, au lieu d'arriver sur un éditeur bloqué derrière la
+ * fenêtre ; la navigation suit l'enregistrement.
+ */
+export function useGoToCreation() {
+  const ensureCompanyInfo = useCompanyInfoGate();
+  const router = useRouter();
+  return useCallback(
+    (href) => ensureCompanyInfo(() => router.push(href)),
+    [ensureCompanyInfo, router],
+  );
+}
+
+/**
+ * Même chose pour un lien (<Link>, <a>) vers une page de création :
+ * `onClick={creationLinkClick(href)}`. Entreprise configurée : le lien suit
+ * son cours normalement ; sinon le clic est retenu et la fenêtre s'ouvre.
+ */
+export function useCreationLinkClick() {
+  const ensureCompanyInfo = useCompanyInfoGate();
+  const router = useRouter();
+  return useCallback(
+    (href) => (event) => {
+      // ensureCompanyInfo exécute l'action tout de suite si l'entreprise est
+      // configurée, sinon plus tard, après l'enregistrement.
+      let immediate = true;
+      let allowed = false;
+      ensureCompanyInfo(() => {
+        if (immediate) allowed = true;
+        else router.push(href);
+      });
+      immediate = false;
+      if (!allowed) event?.preventDefault();
+    },
+    [ensureCompanyInfo, router],
+  );
 }

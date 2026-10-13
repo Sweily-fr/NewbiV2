@@ -94,6 +94,10 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { isHiddenForRole } from "@/src/lib/route-modules";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
+import {
+  useCreationLinkClick,
+  useGoToCreation,
+} from "@/src/components/company-info-gate";
 
 // Animation d'abonnement Pro (framer-motion) chargée seulement quand elle se
 // joue.
@@ -108,6 +112,8 @@ const ProSubscriptionOverlay = dynamic(
 function DashboardContent() {
   const { session } = useUser();
   const router = useRouter();
+  const goToCreation = useGoToCreation();
+  const creationLinkClick = useCreationLinkClick();
   // Éditeurs et outils préchargés au survol des actions rapides.
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -623,7 +629,7 @@ function DashboardContent() {
                   ? prefetchIntent("/dashboard/outils/devis/new")
                   : {})}
                 onClick={() =>
-                  !isReadOnly && router.push("/dashboard/outils/devis/new")
+                  !isReadOnly && goToCreation("/dashboard/outils/devis/new")
                 }
               >
                 <ClipboardTickIcon className="w-4 h-4" />
@@ -641,7 +647,7 @@ function DashboardContent() {
                   ? prefetchIntent("/dashboard/outils/factures/new")
                   : {})}
                 onClick={() =>
-                  !isReadOnly && router.push("/dashboard/outils/factures/new")
+                  !isReadOnly && goToCreation("/dashboard/outils/factures/new")
                 }
               >
                 <DocumentText2Icon className="w-4 h-4" />
@@ -725,6 +731,7 @@ function DashboardContent() {
               >
                 <a
                   href="/dashboard/outils/factures/new"
+                  onClick={creationLinkClick("/dashboard/outils/factures/new")}
                   className="flex items-center gap-1 lg:gap-2 justify-center"
                 >
                   <FileCheck2 className="w-4 h-4" />
@@ -753,6 +760,7 @@ function DashboardContent() {
               >
                 <a
                   href="/dashboard/outils/devis/new"
+                  onClick={creationLinkClick("/dashboard/outils/devis/new")}
                   className="flex items-center gap-1 lg:gap-2 justify-center"
                 >
                   <FileClock className="w-4 h-4" />
@@ -980,7 +988,12 @@ function DashboardContent() {
                                 asChild
                                 className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
                               >
-                                <a href="/dashboard/outils/factures/new">
+                                <a
+                                  href="/dashboard/outils/factures/new"
+                                  onClick={creationLinkClick(
+                                    "/dashboard/outils/factures/new",
+                                  )}
+                                >
                                   <DocumentText2Icon className="h-4 w-4 mr-2" />
                                   Créer une facture
                                 </a>
@@ -1191,7 +1204,12 @@ function DashboardContent() {
                         className="h-7 text-xs text-[#5b50FF] hover:text-[#5b50FF] font-normal"
                         asChild
                       >
-                        <a href="/dashboard/outils/factures/new">
+                        <a
+                          href="/dashboard/outils/factures/new"
+                          onClick={creationLinkClick(
+                            "/dashboard/outils/factures/new",
+                          )}
+                        >
                           Créer une facture
                         </a>
                       </Button>

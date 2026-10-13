@@ -141,9 +141,12 @@ export default function InvoiceRowActions({
     }
   };
 
-  const handleEdit = () => {
-    router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
-  };
+  const handleEdit = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
+    });
 
   const handleCopyPaymentLink = async () => {
     try {
@@ -191,9 +194,12 @@ export default function InvoiceRowActions({
     }
   };
 
-  const handleCreateCreditNote = () => {
-    router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
-  };
+  const handleCreateCreditNote = () =>
+    // Entreprise non configurée : la fenêtre s'ouvre ici, l'action
+    // repart après l'enregistrement (rien n'est préparé avant).
+    ensureCompanyInfo(() => {
+      router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
+    });
 
   const { createFromInvoice, loading: creatingDeliveryNote } =
     useCreateDeliveryNoteFromInvoice();
