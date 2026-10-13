@@ -17,10 +17,22 @@ process.env.RESEND_API_KEY ||= "re_dummy";
 
 // Mock MongoDB (même approche que require-org-membership.test.js).
 const mockFindOne = vi.fn();
+// Abonnements vivants de l'espace (prise en charge par un cabinet)
+const mockFindSubscriptions = vi.fn(async () => []);
 vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: {
-    collection: () => ({ findOne: mockFindOne }),
+    collection: () => ({
+      findOne: mockFindOne,
+      find: () => ({ toArray: mockFindSubscriptions }),
+    }),
   },
+}));
+
+// Droits de la page Facturation (rôle prédéfini ou personnalisé)
+const mockGetModuleActions = vi.fn();
+vi.mock("@/src/lib/organization-roles", async (importOriginal) => ({
+  ...(await importOriginal()),
+  getModuleActions: (...args) => mockGetModuleActions(...args),
 }));
 
 const { authorizeSubscriptionReference } =
@@ -31,6 +43,7 @@ const userId = new ObjectId().toString();
 
 afterEach(() => {
   mockFindOne.mockReset();
+  mockGetModuleActions.mockReset();
 });
 
 describe("authorizeSubscriptionReference", () => {
@@ -102,13 +115,109 @@ describe("authorizeSubscriptionReference", () => {
     expect(ok).toBe(true);
   });
 
-  it("renvoie true (passthrough) pour une action non gérée, sans toucher la DB", async () => {
+  // Régression sécurité : « billing-portal » et « list-subscription »
+  // passaient sans contrôle. N'importe quel compte connecté ouvrait le portail
+  // Stripe (factures, carte, résiliation) ou lisait l'abonnement d'un autre
+  // espace en passant son id en referenceId.
+  it("refuse la liste des abonnements à un non-membre", async () => {
+    mockFindOne.mockResolvedValue(null);
+    const ok = await authorizeSubscriptionReference({
+      user: { id: userId },
+      referenceId: orgId,
+      action: "list-subscription",
+    });
+    expect(ok).toBe(false);
+  });
+
+  it("autorise la liste des abonnements à tout membre", async () => {
+    mockFindOne.mockResolvedValue({ role: "viewer" });
     const ok = await authorizeSubscriptionReference({
       user: { id: userId },
       referenceId: orgId,
       action: "list-subscription",
     });
     expect(ok).toBe(true);
+  });
+
+  it("refuse le portail de facturation à un non-membre", async () => {
+    mockFindOne.mockResolvedValue(null);
+    const ok = await authorizeSubscriptionReference({
+      user: { id: userId },
+      referenceId: orgId,
+      action: "billing-portal",
+    });
+    expect(ok).toBe(false);
+    expect(mockGetModuleActions).not.toHaveBeenCalled();
+  });
+
+  it("refuse le portail de facturation sans le droit « Gérer » la facturation", async () => {
+    mockFindOne.mockResolvedValue({ role: "accountant" });
+    mockGetModuleActions.mockResolvedValue({
+      role: "accountant",
+      actions: ["view"],
+    });
+    const ok = await authorizeSubscriptionReference({
+      user: { id: userId },
+      referenceId: orgId,
+      action: "billing-portal",
+    });
+    expect(ok).toBe(false);
+  });
+
+  it("autorise le portail de facturation avec le droit « Gérer »", async () => {
+    mockFindOne.mockResolvedValue({ role: "owner" });
+    mockGetModuleActions.mockResolvedValue({
+      role: "owner",
+      actions: ["view", "manage"],
+    });
+    const ok = await authorizeSubscriptionReference({
+      user: { id: userId },
+      referenceId: orgId,
+      action: "billing-portal",
+    });
+    expect(ok).toBe(true);
+  });
+
+  it("refuse au client d'agir sur l'abonnement payé par son cabinet", async () => {
+    for (const action of [
+      "cancel-subscription",
+      "upgrade-subscription",
+      "restore-subscription",
+      "billing-portal",
+    ]) {
+      mockFindOne
+        .mockResolvedValueOnce({ role: "owner" }) // member
+        .mockResolvedValueOnce({ name: "Compta Dupont" }); // accountmanagers
+      mockFindSubscriptions.mockResolvedValueOnce([
+        { stripeCustomerId: "cus_cabinet", status: "active" },
+      ]);
+      mockGetModuleActions.mockResolvedValue({ actions: ["view", "manage"] });
+      const ok = await authorizeSubscriptionReference({
+        user: { id: userId },
+        referenceId: orgId,
+        action,
+      });
+      expect(ok).toBe(false);
+    }
+  });
+
+  it("refuse une action inconnue, même à un owner", async () => {
+    mockFindOne.mockResolvedValue({ role: "owner" });
+    const ok = await authorizeSubscriptionReference({
+      user: { id: userId },
+      referenceId: orgId,
+      action: "action-future",
+    });
+    expect(ok).toBe(false);
+  });
+
+  it("refuse un referenceId objet (opérateur Mongo)", async () => {
+    const ok = await authorizeSubscriptionReference({
+      user: { id: userId },
+      referenceId: { $ne: null },
+      action: "list-subscription",
+    });
+    expect(ok).toBe(false);
     expect(mockFindOne).not.toHaveBeenCalled();
   });
 

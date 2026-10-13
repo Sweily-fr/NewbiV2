@@ -2,40 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  LoaderCircle,
-  Building2,
-  Check,
-  Circle,
-  CornerDownLeft,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
+import { LoaderCircle } from "lucide-react";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import dynamic from "next/dynamic";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import {
+  CompanyInfoDialog,
+  companyInfoSettingsTab,
+  getCompanyInfoFields,
+} from "@/src/components/company-info-gate";
 
 // Chunk chargé à la première ouverture seulement
 const SettingsModal = dynamic(
   () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
   { ssr: false },
 );
-import { cn } from "@/src/lib/utils";
-import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 /**
- * Composant Guard pour protéger les pages nécessitant des informations d'entreprise complètes
+ * Composant Guard des pages qui CRÉENT ou modifient un document (nouvelle
+ * facture, nouveau devis, nouveau bon de commande ou de livraison, nouvel
+ * avoir, édition) : il faut des informations d'entreprise complètes pour le
+ * générer. La fenêtre n'apparaît jamais à la consultation des listes ou d'un
+ * document ; les actions de création lancées depuis une liste passent par
+ * useCompanyInfoGate (company-info-gate.jsx).
  * Affiche un dialog détaillé avec les champs manquants puis ouvre la modal de paramètres
- *
- * Réservé aux pages de CRÉATION de documents (nouvelle facture, nouveau devis,
- * nouveau bon de commande ou de livraison, nouvel avoir) : la fenêtre
- * apparaît au moment où l'on lance une création, jamais à la consultation
- * des listes ou d'un document.
  */
 // fallback : skeleton de la page à afficher pendant les états d'attente,
 // pour rester visuellement aligné avec le loading.jsx de la route au lieu
@@ -70,22 +61,7 @@ export function CompanyInfoGuard({ children, fallback = null }) {
     const isComplete = isCompanyInfoComplete(organization);
 
     if (!isComplete) {
-      // Analyser tous les champs avec leur statut
-      const general = [
-        { name: "Nom de l'entreprise", completed: !!organization.companyName },
-        { name: "Email de contact", completed: !!organization.companyEmail },
-        { name: "Rue", completed: !!organization.addressStreet },
-        { name: "Ville", completed: !!organization.addressCity },
-        { name: "Code postal", completed: !!organization.addressZipCode },
-        { name: "Pays", completed: !!organization.addressCountry },
-      ];
-
-      const legal = [
-        { name: "SIRET", completed: !!organization.siret },
-        { name: "Forme juridique", completed: !!organization.legalForm },
-      ];
-
-      setFieldsInfo({ generalFields: general, legalFields: legal });
+      setFieldsInfo(getCompanyInfoFields(organization));
       setShowDialog(true);
     } else {
       setShowDialog(false);
@@ -93,11 +69,7 @@ export function CompanyInfoGuard({ children, fallback = null }) {
   }, [organization, isLoading, isSettingsModalOpen]);
 
   const handleGoToSettings = () => {
-    const hasGeneralMissing = fieldsInfo.generalFields.some(
-      (f) => !f.completed,
-    );
-    const tab = hasGeneralMissing ? "generale" : "informations-legales";
-    setSettingsInitialTab(tab);
+    setSettingsInitialTab(companyInfoSettingsTab(fieldsInfo));
     setShowDialog(false);
     setIsSettingsModalOpen(true);
   };
@@ -109,11 +81,6 @@ export function CompanyInfoGuard({ children, fallback = null }) {
     if (window.history.length > 1) router.back();
     else router.push("/dashboard");
   };
-
-  // Calcul de la progression
-  const allFields = [...fieldsInfo.generalFields, ...fieldsInfo.legalFields];
-  const completedCount = allFields.filter((f) => f.completed).length;
-  const totalCount = allFields.length;
 
   // Ne bloquer que le chargement initial : lors d'un refetch en arrière-plan
   // (ex: mise à jour de l'organisation), garder la page montée pour ne pas
@@ -139,160 +106,16 @@ export function CompanyInfoGuard({ children, fallback = null }) {
       <>
         {/* Fermer la fenêtre (Échap, clic à côté) revient au même que
             « Retour » : sinon on restait bloqué sur le squelette de l'éditeur */}
-        <Dialog
+        <CompanyInfoDialog
           open={showDialog}
           onOpenChange={(open) => {
             if (!open) handleCancel();
           }}
-        >
-          <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
-            <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
-              {/* Header */}
-              <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
-                <DialogTitle className="text-sm font-medium">
-                  Configuration de votre entreprise
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="px-5 pt-4 pb-0">
-                {/* Description + progression */}
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-[13px] text-muted-foreground">
-                    Complétez ces informations pour générer vos documents.
-                  </p>
-                  <span className="text-xs text-muted-foreground tabular-nums shrink-0 ml-3">
-                    {completedCount}/{totalCount}
-                  </span>
-                </div>
-
-                {/* Barre de progression */}
-                <div className="h-1 bg-muted rounded-full overflow-hidden mb-5">
-                  <div
-                    className="h-full bg-foreground rounded-full transition-all duration-500"
-                    style={{
-                      width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-
-                {/* Sections côte à côte */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  {/* Informations générales */}
-                  <div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                      Général
-                    </p>
-                    <div className="rounded-lg border border-border/50 overflow-hidden">
-                      {fieldsInfo.generalFields?.map((field, index) => (
-                        <div
-                          key={`general-${index}`}
-                          className={cn(
-                            "flex items-center gap-2.5 px-3 py-2",
-                            index !== fieldsInfo.generalFields.length - 1 &&
-                              "border-b border-border/40",
-                          )}
-                        >
-                          {field.completed ? (
-                            <div className="flex items-center justify-center size-4 rounded-full bg-foreground shrink-0">
-                              <Check
-                                className="size-2.5 text-background"
-                                strokeWidth={3}
-                              />
-                            </div>
-                          ) : (
-                            <Circle
-                              className="size-4 text-border shrink-0"
-                              strokeWidth={2}
-                            />
-                          )}
-                          <span
-                            className={cn(
-                              "text-[13px]",
-                              field.completed
-                                ? "text-muted-foreground line-through"
-                                : "text-foreground",
-                            )}
-                          >
-                            {field.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Informations légales */}
-                  <div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                      Légal
-                    </p>
-                    <div className="rounded-lg border border-border/50 overflow-hidden">
-                      {fieldsInfo.legalFields?.map((field, index) => (
-                        <div
-                          key={`legal-${index}`}
-                          className={cn(
-                            "flex items-center gap-2.5 px-3 py-2",
-                            index !== fieldsInfo.legalFields.length - 1 &&
-                              "border-b border-border/40",
-                          )}
-                        >
-                          {field.completed ? (
-                            <div className="flex items-center justify-center size-4 rounded-full bg-foreground shrink-0">
-                              <Check
-                                className="size-2.5 text-background"
-                                strokeWidth={3}
-                              />
-                            </div>
-                          ) : (
-                            <Circle
-                              className="size-4 text-border shrink-0"
-                              strokeWidth={2}
-                            />
-                          )}
-                          <span
-                            className={cn(
-                              "text-[13px]",
-                              field.completed
-                                ? "text-muted-foreground line-through"
-                                : "text-foreground",
-                            )}
-                          >
-                            {field.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between border-t border-border/40 -mx-5 px-5 py-3">
-                  <button
-                    onClick={handleCancel}
-                    className="text-[13px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                  >
-                    Retour
-                  </button>
-                  {canEditOrgSettings ? (
-                    <Button
-                      variant="primary"
-                      onClick={handleGoToSettings}
-                      className="gap-2 cursor-pointer"
-                    >
-                      Compléter
-                      <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
-                        <CornerDownLeft className="size-3" />
-                      </kbd>
-                    </Button>
-                  ) : (
-                    <span className="text-[13px] text-muted-foreground">
-                      Contactez l&apos;administrateur de l&apos;espace
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+          fieldsInfo={fieldsInfo}
+          canEditOrgSettings={canEditOrgSettings}
+          onCancel={handleCancel}
+          onComplete={handleGoToSettings}
+        />
 
         {/* Modal de paramètres */}
         {isSettingsModalOpen && (

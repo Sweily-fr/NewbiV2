@@ -44,6 +44,7 @@ import {
 import InvoiceRecurrenceSection from "./invoice-recurrence-section";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -52,6 +53,8 @@ export default function InvoiceMobileFullscreen({
   onRefetch,
 }) {
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
@@ -306,18 +309,21 @@ export default function InvoiceMobileFullscreen({
   // La mutation changeInvoiceStatus recale côté serveur les dates d'un
   // brouillon repris plus tard (émission ramenée à aujourd'hui, échéance
   // décalée d'autant).
-  const handleCreateInvoice = async () => {
-    try {
-      await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      toast.success("Facture créée avec succès");
-      if (onRefetch) onRefetch();
-      onClose();
-    } catch (error) {
-      // errorLink ne toaste pas les mutations : afficher l'erreur ici
-      console.error("Erreur lors du changement de statut:", error);
-      toast.error(error?.message || "Erreur lors de la création de la facture");
-    }
-  };
+  const handleCreateInvoice = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
+        toast.success("Facture créée avec succès");
+        if (onRefetch) onRefetch();
+        onClose();
+      } catch (error) {
+        // errorLink ne toaste pas les mutations : afficher l'erreur ici
+        console.error("Erreur lors du changement de statut:", error);
+        toast.error(
+          error?.message || "Erreur lors de la création de la facture",
+        );
+      }
+    });
 
   const handleCancel = async () => {
     try {

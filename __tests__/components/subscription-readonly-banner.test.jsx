@@ -3,8 +3,19 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 // usePathname est mutable pour tester le masquage sur /parametres.
 let mockPathname = "/dashboard";
+const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
+  useRouter: () => ({ push: mockPush }),
+}));
+
+// Espace actif et prise en charge par un cabinet (aucun par défaut)
+const mockCabinet = { value: null };
+vi.mock("@/src/contexts/dashboard-layout-context", () => ({
+  useDashboardLayoutContext: () => ({ organization: { id: "org1" } }),
+}));
+vi.mock("@/src/hooks/useOrgPaidByManager", () => ({
+  useOrgPaidByManager: () => mockCabinet.value,
 }));
 
 vi.mock("@/src/hooks/useSubscriptionAccess", () => ({
@@ -48,6 +59,7 @@ let fetchMock;
 describe("SubscriptionReadOnlyBanner — bug 'Renouvellement' (toast d'erreur)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCabinet.value = null;
     mockPathname = "/dashboard";
     // Si le composant tentait encore d'appeler l'API billing-portal, ce spy
     // le révélerait — l'ancien comportement (bug) faisait un fetch ici.
@@ -60,6 +72,33 @@ describe("SubscriptionReadOnlyBanner — bug 'Renouvellement' (toast d'erreur)",
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it("espace payé par un cabinet : le client n'a pas de bouton de souscription", () => {
+    setHook();
+    mockCabinet.value = {
+      managerName: "Compta Dupont",
+      subscriptionStatus: null,
+      viewerIsManager: false,
+    };
+    render(<SubscriptionReadOnlyBanner />);
+    expect(
+      screen.getByText(/votre cabinet Compta Dupont doit choisir l'offre/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("espace payé par un cabinet : le cabinet va choisir l'offre", () => {
+    setHook();
+    mockCabinet.value = {
+      managerName: "Compta Dupont",
+      subscriptionStatus: null,
+      viewerIsManager: true,
+      linkId: "abc",
+    };
+    render(<SubscriptionReadOnlyBanner />);
+    fireEvent.click(screen.getByText("Choisir l'offre"));
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/gestionnaire?offre=abc");
   });
 
   it("ne s'affiche pas pendant le chargement", () => {

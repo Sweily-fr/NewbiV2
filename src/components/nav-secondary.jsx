@@ -16,6 +16,7 @@ import {
   GraduationCap,
   UsersRound,
   HelpCircle,
+  Wallet,
 } from "lucide-react";
 import {
   DirectNormalIcon as Bell,
@@ -28,6 +29,8 @@ import {
   BookIcon,
 } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
+import { usePathname } from "next/navigation";
+import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
 import { useUser } from "@/src/lib/auth/hooks";
 import dynamic from "next/dynamic";
 
@@ -179,6 +182,8 @@ function HelpDropdownMenu({ onCommunityClick }) {
 // Composant pour le menu Paramètres avec dropdown
 function SettingsDropdownMenu() {
   const { isActive } = useSubscription();
+  // Espace gestionnaire : les paramètres utiles au cabinet sont ses dépenses
+  const inGestionnaire = isGestionnairePath(usePathname());
   const { isMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [open, setOpen] = useState(false);
@@ -204,6 +209,18 @@ function SettingsDropdownMenu() {
           align="start"
           sideOffset={8}
         >
+          {inGestionnaire && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                setSettingsInitialTab("depenses-clients");
+                setSettingsModalOpen(true);
+              }}
+            >
+              <Wallet className="size-4 text-sidebar-foreground" />
+              <span className="text-[13px]">Dépenses clients</span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => {
@@ -212,7 +229,11 @@ function SettingsDropdownMenu() {
             }}
           >
             <Setting5Icon className="size-4 text-sidebar-foreground" />
-            <span className="text-[13px]">Paramètres entreprise</span>
+            <span className="text-[13px]">
+              {inGestionnaire
+                ? "Paramètres de l'espace actif"
+                : "Paramètres entreprise"}
+            </span>
           </DropdownMenuItem>
 
           <DropdownMenuItem

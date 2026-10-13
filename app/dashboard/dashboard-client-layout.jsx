@@ -11,6 +11,7 @@ import {
   useOnboarding,
   useDashboardLayoutContext,
 } from "@/src/contexts/dashboard-layout-context";
+import { CompanyInfoGateProvider } from "@/src/components/company-info-gate";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
 import { ReconciliationToastProvider } from "@/src/components/reconciliation/ReconciliationToast";
@@ -23,6 +24,9 @@ import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
 import { TrialBanner } from "@/src/components/trial-banner";
+import { GestionnaireBanner } from "@/src/components/gestionnaire/gestionnaire-banner";
+import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
+import { GestionnaireBottomNav } from "@/src/components/gestionnaire/gestionnaire-bottom-nav";
 // Panneau DEV de test d'abonnement — décommenter aussi son rendu plus bas pour l'activer.
 // import { DevSubscriptionSwitcher } from "@/src/components/dev/dev-subscription-switcher";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
@@ -285,18 +289,25 @@ function DashboardContent({ children }) {
         />
         <SidebarInset>
           <SiteHeader />
-          <SubscriptionReadOnlyBanner
-            onSubscribe={() => {
-              setSettingsInitialTab("subscription");
-              setSettingsModalOpen(true);
-            }}
-          />
-          <TrialBanner
-            onSubscribe={() => {
-              setSettingsInitialTab("subscription");
-              setSettingsModalOpen(true);
-            }}
-          />
+          <GestionnaireBanner />
+          {/* Espace gestionnaire : l'abonnement de l'espace actif (souvent
+              le dossier d'un client) n'y a pas de sens */}
+          {!isGestionnairePath(pathname) && (
+            <>
+              <SubscriptionReadOnlyBanner
+                onSubscribe={() => {
+                  setSettingsInitialTab("subscription");
+                  setSettingsModalOpen(true);
+                }}
+              />
+              <TrialBanner
+                onSubscribe={() => {
+                  setSettingsInitialTab("subscription");
+                  setSettingsModalOpen(true);
+                }}
+              />
+            </>
+          )}
           <div className="flex flex-1 flex-col overflow-y-auto">
             <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
               <SessionGateProvider>
@@ -389,7 +400,10 @@ function DashboardContent({ children }) {
         {isMobile && <PwaInstallBanner />}
 
         {/* Bottom Navigation Bar — mobile uniquement */}
-        {isMobile && !settingsModalOpen && (
+        {isMobile && !settingsModalOpen && isGestionnairePath(pathname) && (
+          <GestionnaireBottomNav />
+        )}
+        {isMobile && !settingsModalOpen && !isGestionnairePath(pathname) && (
           <BottomNavBar
             onOpenSettings={() => {
               setSettingsInitialTab("preferences");
@@ -409,18 +423,20 @@ function DashboardContent({ children }) {
 export default function DashboardClientLayout({ children }) {
   return (
     <DashboardLayoutProvider>
-      <AccountingViewProvider>
-        <TutorialProvider>
-          <ToastProvider>
-            <ToastManagerInitializer />
-            <ReconciliationToastProvider>
-              <PurchaseInvoiceReconciliationToastProvider>
-                <DashboardContent>{children}</DashboardContent>
-              </PurchaseInvoiceReconciliationToastProvider>
-            </ReconciliationToastProvider>
-          </ToastProvider>
-        </TutorialProvider>
-      </AccountingViewProvider>
+      <CompanyInfoGateProvider>
+        <AccountingViewProvider>
+          <TutorialProvider>
+            <ToastProvider>
+              <ToastManagerInitializer />
+              <ReconciliationToastProvider>
+                <PurchaseInvoiceReconciliationToastProvider>
+                  <DashboardContent>{children}</DashboardContent>
+                </PurchaseInvoiceReconciliationToastProvider>
+              </ReconciliationToastProvider>
+            </ToastProvider>
+          </TutorialProvider>
+        </AccountingViewProvider>
+      </CompanyInfoGateProvider>
     </DashboardLayoutProvider>
   );
 }

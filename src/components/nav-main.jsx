@@ -68,6 +68,8 @@ export function NavMain({
   onOpenNotifications,
   notificationCount = 0,
   reconciliationCount = 0,
+  // Espace gestionnaire : pas de section Tâches (kanban du dossier actif)
+  showProjets = true,
 }) {
   const pathname = usePathname();
   const { isActive, loading, subscription } = useSubscription();
@@ -105,10 +107,14 @@ export function NavMain({
   const [kanbanSearchTerm, setKanbanSearchTerm] = useState("");
   const debouncedKanbanSearch = useDebouncedValue(kanbanSearchTerm, 300);
 
-  // Récupérer les tableaux Kanban
+  // Récupérer les tableaux Kanban, seulement si la section est affichée :
+  // sans droit de lecture sur le kanban (ex. Comptable), l'API refusait et
+  // l'erreur s'affichait sur toutes les pages
+  const showKanbanSection =
+    showProjets && permissionsReady && canSee("/dashboard/outils/kanban");
   const { data: kanbanData } = useQuery(GET_BOARDS_NAV, {
     variables: { workspaceId },
-    skip: !workspaceId,
+    skip: !workspaceId || !showKanbanSection,
     fetchPolicy: "cache-and-network",
   });
 
@@ -1168,9 +1174,15 @@ export function NavMain({
 
     const isProTab = proTabs.includes(item.title);
     const hasAccess = !isProTab || hasProAccess;
-    const isItemActive =
-      pathname === item.url ||
-      (item.url !== "/dashboard" && pathname?.startsWith(item.url + "/"));
+    // activePaths : sous-pages propres à l'entrée quand son adresse est le
+    // préfixe d'autres entrées (espace gestionnaire)
+    const isItemActive = item.activePaths
+      ? pathname === item.url ||
+        item.activePaths.some(
+          (path) => pathname === path || pathname?.startsWith(path + "/"),
+        )
+      : pathname === item.url ||
+        (item.url !== "/dashboard" && pathname?.startsWith(item.url + "/"));
 
     // Gérer l'action spéciale pour ouvrir les notifications
     if (item.action === "openNotifications") {
@@ -1301,7 +1313,9 @@ export function NavMain({
 
         <SidebarMenu>
           {/* Menu Projets avec tableaux Kanban */}
-          {canSee("/dashboard/outils/kanban") && renderProjetsMenu()}
+          {showProjets &&
+            canSee("/dashboard/outils/kanban") &&
+            renderProjetsMenu()}
 
           {/* Menu Documents avec sous-menus */}
           {navDocuments.length > 0 &&

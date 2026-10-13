@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import ModernPurchaseOrderEditor from "../../components/modern-purchase-order-editor";
 import { PurchaseOrderEditorSkeleton } from "../../components/purchase-order-editor-skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function EditPurchaseOrderContent() {
   const params = useParams();
@@ -20,7 +21,9 @@ export default function EditPurchaseOrderPage() {
       pageName="Modifier bon de commande"
       fallback={<PurchaseOrderEditorSkeleton />}
     >
-      <EditPurchaseOrderContent />
+      <CompanyInfoGuard fallback={<PurchaseOrderEditorSkeleton />}>
+        <EditPurchaseOrderContent />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }

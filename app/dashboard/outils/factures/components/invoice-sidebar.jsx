@@ -103,6 +103,7 @@ import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -134,6 +135,8 @@ export default function InvoiceSidebar({
   );
 
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   const { workspaceId } = useRequiredWorkspace();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canRead, canDo, isReady } = useMyPermissions();
@@ -603,16 +606,19 @@ export default function InvoiceSidebar({
   // La mutation changeInvoiceStatus recale côté serveur les dates d'un
   // brouillon repris plus tard (émission ramenée à aujourd'hui, échéance
   // décalée d'autant) — cohérent avec les dates affichées dans le panel.
-  const handleCreateInvoice = async () => {
-    try {
-      await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      if (onRefetch) onRefetch();
-    } catch (error) {
-      // errorLink ne toaste pas les mutations : afficher l'erreur ici
-      console.error("Erreur lors du changement de statut:", error);
-      toast.error(error?.message || "Erreur lors de la création de la facture");
-    }
-  };
+  const handleCreateInvoice = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
+        if (onRefetch) onRefetch();
+      } catch (error) {
+        // errorLink ne toaste pas les mutations : afficher l'erreur ici
+        console.error("Erreur lors du changement de statut:", error);
+        toast.error(
+          error?.message || "Erreur lors de la création de la facture",
+        );
+      }
+    });
 
   const handleMarkAsPaid = async () => {
     try {

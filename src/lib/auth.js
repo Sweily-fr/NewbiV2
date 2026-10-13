@@ -393,6 +393,30 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail(user, url);
     },
+    // Client créé par son cabinet (compte gestionnaire) : il choisit son
+    // mot de passe avec le lien reçu par e-mail, ce qui prouve l'adresse.
+    // Sans ça, son e-mail restait non vérifié et « Continuer avec Google »
+    // échouait (account_not_linked).
+    onPasswordReset: async ({ user }) => {
+      try {
+        const { mongoDb } = await import("./mongodb.js");
+        const { ObjectId } = await import("mongodb");
+        if (!ObjectId.isValid(user?.id)) return;
+        await mongoDb.collection("user").updateOne(
+          {
+            _id: new ObjectId(user.id),
+            managedByAccountManagerId: { $exists: true },
+            emailVerified: { $ne: true },
+          },
+          { $set: { emailVerified: true, isEmailVerified: true } },
+        );
+      } catch (error) {
+        console.error(
+          "[AUTH] Vérification de l'e-mail après mot de passe :",
+          error?.message,
+        );
+      }
+    },
   },
 
   emailVerification: {
@@ -587,6 +611,10 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         input: false, // Set by user.create hook only — Principle 5
+        // Jamais renvoyé par get-session : l'inscription ne vérifie pas
+        // l'e-mail, et cet id suffisait à accepter l'invitation d'un autre
+        // (le site lit l'invitation depuis le lien reçu par e-mail)
+        returned: false,
         defaultValue: "",
       },
       stripeCustomerId: {

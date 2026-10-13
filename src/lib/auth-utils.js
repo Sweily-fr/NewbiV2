@@ -148,7 +148,9 @@ export async function sendEmail({
   from = "Newbi <noreply@newbi.sweily.fr>",
 }) {
   try {
-    await resend.emails.send({
+    // Resend ne lève pas d'exception en cas de refus : il renvoie
+    // { data, error }. Le résultat est rendu à l'appelant qui veut le savoir.
+    return await resend.emails.send({
       to,
       subject,
       html,

@@ -18,6 +18,7 @@ import ModernInvoiceEditor from "../components/modern-invoice-editor";
 import { useRouter, useParams } from "next/navigation";
 import { useInvoice } from "@/src/graphql/invoiceQueries";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -126,14 +127,27 @@ function InvoiceDetailsContent() {
         </div>
       </div>
 
-      {/* Editor */}
-      <Suspense fallback={<InvoiceEditorSkeleton />}>
-        <ModernInvoiceEditor
-          mode={canEdit ? "edit" : "view"}
-          invoiceId={invoiceId}
-          initialData={invoice}
-        />
-      </Suspense>
+      {/* Editor : consulter ne demande rien, modifier un brouillon demande
+          des informations d'entreprise complètes (il sera généré) */}
+      {canEdit ? (
+        <CompanyInfoGuard fallback={<InvoiceEditorSkeleton />}>
+          <Suspense fallback={<InvoiceEditorSkeleton />}>
+            <ModernInvoiceEditor
+              mode="edit"
+              invoiceId={invoiceId}
+              initialData={invoice}
+            />
+          </Suspense>
+        </CompanyInfoGuard>
+      ) : (
+        <Suspense fallback={<InvoiceEditorSkeleton />}>
+          <ModernInvoiceEditor
+            mode="view"
+            invoiceId={invoiceId}
+            initialData={invoice}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

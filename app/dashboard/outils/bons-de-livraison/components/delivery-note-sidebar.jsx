@@ -41,6 +41,7 @@ import DeliveryNotePdfButton from "./delivery-note-pdf-button";
 import DeliveryReceptionDialog from "./delivery-reception-dialog";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 // Rendu canvas (pdfjs) du PDF archivé, chargé à l'ouverture seulement
 const PdfPreview = dynamic(
@@ -80,6 +81,8 @@ export default function DeliveryNoteSidebar({
   onSendEmail,
 }) {
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canRead, canDo, isReady } = useMyPermissions();
   const canEditDeliveryNotes = !isReady || canDo("deliveryNotes", "edit");
@@ -159,7 +162,7 @@ export default function DeliveryNoteSidebar({
     onClose();
   };
 
-  const changeTo = async (status, successMessage) => {
+  const applyStatus = async (status, successMessage) => {
     try {
       const updated = await changeStatus(deliveryNote.id, status);
       toast.success(successMessage);
@@ -173,17 +176,26 @@ export default function DeliveryNoteSidebar({
     }
   };
 
-  const handleInvoice = async () => {
-    try {
-      const invoice = await createInvoice(deliveryNote.id);
-      if (!invoice?.id) throw new Error("Facture non créée");
-      toast.success("Facture brouillon créée à partir du bon de livraison");
-      onClose();
-      router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
-    } catch (error) {
-      toast.error(error?.message || "Erreur lors de la création de la facture");
-    }
-  };
+  // Émettre génère le document : informations d'entreprise requises
+  const changeTo = (status, successMessage) =>
+    status === DELIVERY_NOTE_STATUS.PENDING
+      ? ensureCompanyInfo(() => applyStatus(status, successMessage))
+      : applyStatus(status, successMessage);
+
+  const handleInvoice = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        const invoice = await createInvoice(deliveryNote.id);
+        if (!invoice?.id) throw new Error("Facture non créée");
+        toast.success("Facture brouillon créée à partir du bon de livraison");
+        onClose();
+        router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
+      } catch (error) {
+        toast.error(
+          error?.message || "Erreur lors de la création de la facture",
+        );
+      }
+    });
 
   const isLoading = changingStatus || creatingInvoice;
 

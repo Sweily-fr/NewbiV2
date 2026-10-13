@@ -161,50 +161,75 @@ export async function authorizeSubscriptionReference({
     referenceId,
   );
 
-  // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
-  if (
-    action === "upgrade-subscription" ||
-    action === "cancel-subscription" ||
-    action === "restore-subscription"
-  ) {
-    try {
-      const { mongoDb } = await import("./mongodb.js");
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { ObjectId } = require("mongodb");
+  // Refus par défaut : toute action exige d'être membre de l'espace visé.
+  // Avant, « billing-portal » et « list-subscription » passaient sans aucun
+  // contrôle : n'importe quel compte connecté ouvrait le portail Stripe
+  // (factures, carte, résiliation) ou lisait l'abonnement d'un autre espace
+  // en passant son id en referenceId.
+  try {
+    const { mongoDb } = await import("./mongodb.js");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ObjectId } = require("mongodb");
 
-      const isObjectIdHex = (v) =>
-        typeof v === "string" && /^[0-9a-f]{24}$/.test(v);
-
-      // La collection `member` stocke userId/organizationId en ObjectId.
-      // On accepte aussi la forme string par robustesse (anciens enregistrements).
-      const orgIdValues = isObjectIdHex(referenceId)
-        ? [new ObjectId(referenceId), referenceId]
-        : [referenceId];
-      const userIdValues = isObjectIdHex(user.id)
-        ? [new ObjectId(user.id), user.id]
-        : [user.id];
-
-      const member = await mongoDb.collection("member").findOne({
-        organizationId: { $in: orgIdValues },
-        userId: { $in: userIdValues },
-      });
-
-      const isOwner = (member?.role || "").toLowerCase() === "owner";
-      console.log(
-        "🔐 [AUTHORIZE] Member found:",
-        member ? { id: member.id, role: member.role } : null,
-        "isOwner:",
-        isOwner,
-      );
-
-      return isOwner;
-    } catch (error) {
-      console.error("🔐 [AUTHORIZE] Error:", error);
+    const isObjectIdHex = (v) =>
+      typeof v === "string" && /^[0-9a-f]{24}$/.test(v);
+    // Un referenceId venu du corps ou de la query peut être un objet
+    // (opérateur Mongo) : seules les chaînes sont acceptées.
+    if (typeof referenceId !== "string" || typeof user?.id !== "string") {
       return false;
     }
-  }
 
-  return true;
+    // La collection `member` stocke userId/organizationId en ObjectId.
+    // On accepte aussi la forme string par robustesse (anciens enregistrements).
+    const orgIdValues = isObjectIdHex(referenceId)
+      ? [new ObjectId(referenceId), referenceId]
+      : [referenceId];
+    const userIdValues = isObjectIdHex(user.id)
+      ? [new ObjectId(user.id), user.id]
+      : [user.id];
+
+    const member = await mongoDb.collection("member").findOne({
+      organizationId: { $in: orgIdValues },
+      userId: { $in: userIdValues },
+    });
+    if (!member) return false;
+
+    const { getModuleActions, isOwnerRole } =
+      await import("./organization-roles.js");
+
+    // Abonnement payé par le cabinet du client : c'est le cabinet qui le
+    // gère, depuis son espace gestionnaire
+    if (action !== "list-subscription") {
+      const { findManagerPaidSubscription } =
+        await import("./manager-billing.js");
+      if (await findManagerPaidSubscription(mongoDb, referenceId)) {
+        return false;
+      }
+    }
+
+    switch (action) {
+      case "upgrade-subscription":
+      case "cancel-subscription":
+      case "restore-subscription":
+        return isOwnerRole(member.role);
+      case "list-subscription":
+        return true;
+      case "billing-portal": {
+        // Même droit que la route maison /api/stripe/billing-portal
+        const { actions } = await getModuleActions(mongoDb, {
+          userId: user.id,
+          organizationId: referenceId,
+          moduleKey: "billing",
+        });
+        return actions.includes("manage");
+      }
+      default:
+        return false;
+    }
+  } catch (error) {
+    console.error("🔐 [AUTHORIZE] Error:", error);
+    return false;
+  }
 }
 
 export const stripePlugin = stripe({
@@ -1955,24 +1980,27 @@ export const organizationPlugin = organization({
           required: false,
         },
         // Trial system fields (ISO date strings)
+        // input: false — posés côté serveur seulement (org-creation.js). En
+        // écriture libre, /organization/create avec isTrialActive et une
+        // trialEndDate lointaine donnait un essai sans fin.
         trialStartDate: {
           type: "string",
-          input: true,
+          input: false,
           required: false,
         },
         trialEndDate: {
           type: "string",
-          input: true,
+          input: false,
           required: false,
         },
         isTrialActive: {
           type: "boolean",
-          input: true,
+          input: false,
           required: false,
         },
         hasUsedTrial: {
           type: "boolean",
-          input: true,
+          input: false,
           required: false,
         },
         // Décision #11 (Lot 5) — formalised. Discriminates the source of a
@@ -1981,7 +2009,7 @@ export const organizationPlugin = organization({
         // gating layer rely on this to leave Stripe-origin trials untouched.
         stripeTrialActive: {
           type: "boolean",
-          input: true,
+          input: false,
           required: false,
         },
         // Anti-doublon markers used by the trial cleanup cron (Lot 4) to
@@ -2030,8 +2058,27 @@ export const organizationPlugin = organization({
     afterAddMember: async ({ organization }) => {
       await syncOrgSeatsSafe(organization?.id, "afterAddMember");
     },
-    afterRemoveMember: async ({ organization }) => {
+    afterRemoveMember: async ({ member, organization }) => {
       await syncOrgSeatsSafe(organization?.id, "afterRemoveMember");
+      // Cabinet (compte gestionnaire) retiré de l'espace d'un client : fin
+      // du lien, et de l'abonnement qu'il payait à la fin de la période
+      try {
+        const { mongoDb } = await import("./mongodb.js");
+        const { endManagedClientLink } = await import("./manager-billing.js");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+        await endManagedClientLink({
+          mongoDb,
+          stripe,
+          organizationId: organization?.id,
+          userId: member?.userId,
+        });
+      } catch (error) {
+        console.error(
+          "[MANAGED-CLIENT] Fin du lien après retrait du membre:",
+          error?.message,
+        );
+      }
     },
     afterAcceptInvitation: async ({ organization }) => {
       await syncOrgSeatsSafe(organization?.id, "afterAcceptInvitation");

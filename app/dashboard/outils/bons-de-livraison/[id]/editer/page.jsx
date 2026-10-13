@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import ModernDeliveryNoteEditor from "../../components/modern-delivery-note-editor";
 import { DeliveryNoteEditorSkeleton } from "../../components/delivery-note-editor-skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { DeliveryNotesAccessGuard } from "../../components/delivery-notes-access-guard";
 
 function EditDeliveryNoteContent() {
@@ -18,7 +19,9 @@ export default function EditDeliveryNotePage() {
       fallback={<DeliveryNoteEditorSkeleton />}
     >
       <DeliveryNotesAccessGuard fallback={<DeliveryNoteEditorSkeleton />}>
-        <EditDeliveryNoteContent />
+        <CompanyInfoGuard fallback={<DeliveryNoteEditorSkeleton />}>
+          <EditDeliveryNoteContent />
+        </CompanyInfoGuard>
       </DeliveryNotesAccessGuard>
     </ProRouteGuard>
   );

@@ -53,6 +53,7 @@ import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -105,6 +106,8 @@ export default function QuoteRowActions({
   const [isMobile, setIsMobile] = useState(false);
   const [isCancellingSignature, setIsCancellingSignature] = useState(false);
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   const quote = row.original;
 
   // Détecter si on est sur mobile
@@ -301,19 +304,23 @@ export default function QuoteRowActions({
   const { createFromQuote, loading: creatingDeliveryNote } =
     useCreateDeliveryNoteFromQuote();
 
-  const handleCreateDeliveryNote = async () => {
-    try {
-      const dn = await createFromQuote(quote.id);
-      if (!dn?.id) throw new Error("Bon de livraison non créé");
-      toast.success("Bon de livraison créé à partir du devis");
-      router.push(`/dashboard/outils/bons-de-livraison/${dn.id}/editer`);
-    } catch (error) {
-      console.error("[quote-row-actions] create delivery note failed:", error);
-      toast.error(
-        error?.message || "Erreur lors de la création du bon de livraison",
-      );
-    }
-  };
+  const handleCreateDeliveryNote = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        const dn = await createFromQuote(quote.id);
+        if (!dn?.id) throw new Error("Bon de livraison non créé");
+        toast.success("Bon de livraison créé à partir du devis");
+        router.push(`/dashboard/outils/bons-de-livraison/${dn.id}/editer`);
+      } catch (error) {
+        console.error(
+          "[quote-row-actions] create delivery note failed:",
+          error,
+        );
+        toast.error(
+          error?.message || "Erreur lors de la création du bon de livraison",
+        );
+      }
+    });
 
   const isLoading = changingStatus || isDeleting || creatingDeliveryNote;
 

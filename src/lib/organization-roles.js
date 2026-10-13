@@ -283,6 +283,70 @@ export async function getModuleActions(
 /** Ancien nom, pour les pages du compte. */
 export const getAccountActions = getModuleActions;
 
+/**
+ * Droits d'un utilisateur sur un module dans plusieurs espaces, à partir de
+ * ses adhésions déjà lues : une seule requête pour les rôles stockés, au lieu
+ * de deux par espace avec getModuleActions (listes de l'espace gestionnaire).
+ * @param {import("mongodb").Db} db
+ * @param {{ memberships: Array<{ organizationId: any, role: string }>, moduleKey: string }} params
+ * @returns {Promise<Map<string, string[]>>} id d'espace → actions
+ */
+export async function getModuleActionsForMemberships(
+  db,
+  { memberships, moduleKey },
+) {
+  if (!MODULE_CATALOG[moduleKey]) {
+    throw new Error(`Page inconnue pour les droits : ${moduleKey}`);
+  }
+  const parsed = memberships.map((m) => ({
+    organizationId: m.organizationId,
+    roles: String(m.role || "")
+      .toLowerCase()
+      .split(",")
+      .map((r) => r.trim())
+      .filter(Boolean),
+  }));
+  const customRoles = [
+    ...new Set(
+      parsed.filter((m) => !m.roles.includes("owner")).flatMap((m) => m.roles),
+    ),
+  ];
+  const stored = customRoles.length
+    ? await db
+        .collection("organizationRole")
+        .find({
+          organizationId: { $in: parsed.map((m) => m.organizationId) },
+          role: { $in: customRoles },
+        })
+        .toArray()
+    : [];
+  const byOrgRole = new Map(
+    stored.map((d) => [
+      `${String(d.organizationId)}:${String(d.role).toLowerCase()}`,
+      d,
+    ]),
+  );
+
+  const result = new Map();
+  for (const m of parsed) {
+    const key = String(m.organizationId);
+    if (m.roles.includes("owner")) {
+      result.set(key, moduleActionKeys(moduleKey));
+      continue;
+    }
+    const granted = new Set();
+    for (const role of m.roles) {
+      const doc = byOrgRole.get(`${key}:${role}`);
+      for (const a of roleModuleActions(role, doc, moduleKey)) granted.add(a);
+    }
+    result.set(
+      key,
+      moduleActionKeys(moduleKey).filter((a) => granted.has(a)),
+    );
+  }
+  return result;
+}
+
 export function isOwnerRole(role) {
   return String(role || "")
     .toLowerCase()

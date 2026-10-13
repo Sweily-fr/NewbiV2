@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { mongoDb } from "@/src/lib/mongodb";
 import { apiError } from "./api-error";
 import { requireOrgAction } from "./require-org-action";
+import { withoutManagerCustomers } from "@/src/lib/manager-billing";
 
 /**
  * Espace visé par une route de facturation : celui passé explicitement par
@@ -25,6 +26,8 @@ export function resolveBillingOrgId(session, requestedOrgId) {
  * Clients Stripe rattachés à un espace, du plus récent au plus ancien : ceux
  * des documents `subscription` de l'espace (référencés par `referenceId` en
  * chaîne ou `organizationId` en ObjectId selon l'origine du document).
+ * Le client Stripe d'un cabinet qui paie l'abonnement de l'espace en est
+ * exclu : son portail et ses factures couvrent tous les espaces qu'il paie.
  *
  * @param {string} orgId
  * @returns {Promise<string[]>}
@@ -41,7 +44,9 @@ export async function getOrgStripeCustomerIds(orgId) {
       { projection: { stripeCustomerId: 1 }, sort: { updatedAt: -1 } },
     )
     .toArray();
-  return [...new Set(docs.map((d) => d.stripeCustomerId).filter(Boolean))];
+  return withoutManagerCustomers(mongoDb, [
+    ...new Set(docs.map((d) => d.stripeCustomerId).filter(Boolean)),
+  ]);
 }
 
 /**
