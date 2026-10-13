@@ -403,5 +403,12 @@
     "articles": [
       "modele-mail-envoi-facture-client"
     ]
+  },
+  {
+    "date": "2026-10-13",
+    "articles": [
+      "facturer-en-sous-traitance-regles",
+      "debours-refacturation-frais-clients"
+    ]
   }
 ]
