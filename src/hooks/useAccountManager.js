@@ -19,7 +19,8 @@ function loadAccountManager() {
 
 /**
  * Compte gestionnaire de l'utilisateur connecté :
- * { isManager, name, managedOrganizationIds } ou null pendant le chargement.
+ * { isManager, readOnly, name, managedOrganizationIds } ou null pendant le
+ * chargement. readOnly : cabinet suspendu par Newbi (consultation seulement).
  */
 export function useAccountManager() {
   const [manager, setManager] = useState(null);

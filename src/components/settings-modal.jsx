@@ -85,11 +85,8 @@ export function SettingsModal({
   const { getUserRole } = usePermissions();
   const { can, isReady: permissionsReady } = useMyPermissions();
   // Comptes gestionnaires : ce que le cabinet paie pour ses clients
-  const accountManager = useAccountManager();
-  // Cabinet suspendu : ses dépenses restent consultables
-  const isAccountManager =
-    accountManager?.isManager === true ||
-    accountManager?.isSuspendedManager === true;
+  // Comptes gestionnaires (suspendus compris) : leurs dépenses
+  const isAccountManager = useAccountManager()?.isManager === true;
   const apolloClient = useApolloClient();
   const {
     organization,

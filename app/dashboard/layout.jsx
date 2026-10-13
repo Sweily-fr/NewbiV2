@@ -7,7 +7,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import { toObjectId } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 import { isTrialAppActive } from "@/src/lib/trial-app";
-import { findActiveAccountManagerByUserId } from "@/src/lib/managed-clients";
+import { findAccountManagerByUserId } from "@/src/lib/managed-clients";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
@@ -19,12 +19,10 @@ async function isManagedClientOfUser(userObjectId, organizationId) {
     ? new ObjectId(organizationId)
     : null;
   if (!orgOid) return false;
+  // Cabinet suspendu compris : il consulte ses clients en lecture seule
   const manager = await mongoDb
     .collection("accountmanagers")
-    .findOne(
-      { userId: userObjectId, status: "active" },
-      { projection: { _id: 1 } },
-    );
+    .findOne({ userId: userObjectId }, { projection: { _id: 1 } });
   if (!manager) return false;
   const link = await mongoDb
     .collection("managedclients")
@@ -464,7 +462,7 @@ export default async function DashboardLayout({ children }) {
   // Compte gestionnaire : il passe par son espace (/dashboard/gestionnaire)
   // et entre dans les dossiers de ses clients ; l'absence d'abonnement de
   // l'espace actif ne doit pas le renvoyer vers l'inscription.
-  if (await findActiveAccountManagerByUserId(mongoDb, session.user.id)) {
+  if (await findAccountManagerByUserId(mongoDb, session.user.id)) {
     return <DashboardClientLayout>{children}</DashboardClientLayout>;
   }
 

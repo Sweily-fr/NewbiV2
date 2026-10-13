@@ -124,6 +124,8 @@ export default function ManagedClientsView({
   managerName,
   discountPercent = 0,
   clients,
+  // Cabinet suspendu par Newbi : consultation seulement
+  readOnly = false,
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -148,7 +150,7 @@ export default function ManagedClientsView({
 
     if (offre) {
       const client = clients.find((c) => c.id === offre);
-      if (client && canChoosePlan(client)) setPlanFor(client);
+      if (client && canChoosePlan(client) && !readOnly) setPlanFor(client);
       else if (client) {
         toast.info(
           `L'offre de ${client.name || "ce client"} est déjà choisie.`,
@@ -278,7 +280,12 @@ export default function ManagedClientsView({
             par {managerName}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 self-start">
+        <div
+          className={cn(
+            "flex flex-wrap gap-2 self-start",
+            readOnly && "hidden",
+          )}
+        >
           <Link
             href={`${GESTIONNAIRE_PATH}/clients/inviter`}
             className={buttonVariants({ variant: "outline" })}
@@ -405,7 +412,7 @@ export default function ManagedClientsView({
                   </td>
                   <td className="p-2 pr-4 sm:pr-6 align-middle">
                     <div className="flex items-center justify-end gap-2">
-                      {canChoosePlan(client) && (
+                      {canChoosePlan(client) && !readOnly && (
                         <Button
                           variant="primary"
                           size="sm"
@@ -417,7 +424,7 @@ export default function ManagedClientsView({
                           Choisir l&apos;offre
                         </Button>
                       )}
-                      {isOpenInvitation && (
+                      {isOpenInvitation && !readOnly && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -431,7 +438,7 @@ export default function ManagedClientsView({
                           Annuler l&apos;invitation
                         </Button>
                       )}
-                      {isClosedInvitation && (
+                      {isClosedInvitation && !readOnly && (
                         <>
                           <Button
                             variant="outline"
@@ -472,7 +479,7 @@ export default function ManagedClientsView({
                           Ouvrir
                         </Button>
                       )}
-                      {client.canResendWelcome && (
+                      {client.canResendWelcome && !readOnly && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button

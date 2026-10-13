@@ -46,6 +46,11 @@ function makeDb() {
         Object.assign(row, update.$set);
         return { matchedCount: 1, modifiedCount: 1 };
       },
+      async deleteOne(filter) {
+        const i = rows.findIndex((d) => matches(d, filter));
+        if (i >= 0) rows.splice(i, 1);
+        return { deletedCount: i >= 0 ? 1 : 0 };
+      },
       async findOneAndUpdate(filter, update) {
         const row = rows.find((d) => matches(d, filter));
         if (!row) return null;
@@ -421,6 +426,24 @@ describe("endManagedClientLink", () => {
       cancel_at_period_end: true,
     });
     expect(db.data.subscription[0].cancelAtPeriodEnd).toBe(true);
+  });
+
+  it("cabinet suspendu retiré : son rôle temporaire de lecture seule disparaît", async () => {
+    db.data.managedclients[0].suspension = {
+      previousRole: "accountant",
+      roleKey: "role_lecture",
+    };
+    await db.collection("organizationRole").insertOne({
+      organizationId: orgId,
+      role: "role_lecture",
+    });
+    await endManagedClientLink({
+      mongoDb: db,
+      stripe: makeStripe(),
+      organizationId: String(orgId),
+      userId: String(managerUserId),
+    });
+    expect(db.data.organizationRole).toHaveLength(0);
   });
 
   it("ne fait rien pour un membre qui n'est pas un cabinet", async () => {

@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireManagerPage } from "@/src/lib/gestionnaire-page";
 import { ArrowLeft } from "lucide-react";
 import InviteManagedClientForm from "@/src/components/gestionnaire/invite-managed-client-form";
 import { GESTIONNAIRE_PATH } from "@/src/lib/gestionnaire-paths";
 
 export default async function InviteManagedClientPage({ searchParams }) {
+  // Cabinet suspendu (lecture seule) : pas d'invitation
+  const { readOnly } = await requireManagerPage();
+  if (readOnly) redirect(GESTIONNAIRE_PATH);
   const params = await searchParams;
   const email = typeof params?.email === "string" ? params.email : "";
   return (

@@ -20,7 +20,22 @@ export function GestionnaireBanner() {
   const { organization } = useActiveOrganization();
   const manager = useAccountManager();
 
-  if (!manager?.isManager || isGestionnairePath(pathname)) return null;
+  if (!manager?.isManager) return null;
+
+  // Cabinet suspendu par Newbi : tout est en lecture seule
+  if (isGestionnairePath(pathname)) {
+    if (!manager.readOnly) return null;
+    return (
+      <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[13px] text-amber-900 lg:px-6 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+        <Briefcase className="size-4 shrink-0" />
+        <span>
+          Votre compte gestionnaire est suspendu par Newbi : vous consultez
+          votre espace et ceux de vos clients en lecture seule. Contactez-nous
+          pour le réactiver.
+        </span>
+      </div>
+    );
+  }
   if (
     !organization?.id ||
     !manager.managedOrganizationIds?.includes(organization.id)
@@ -34,7 +49,10 @@ export function GestionnaireBanner() {
       <span className="min-w-0 flex-1">
         Vous êtes dans l&apos;espace de{" "}
         <span className="font-medium">{organization.name}</span>, en tant que{" "}
-        <span className="font-medium">{manager.name}</span> (droits Comptable).
+        <span className="font-medium">{manager.name}</span>
+        {manager.readOnly
+          ? " (lecture seule : votre compte gestionnaire est suspendu)."
+          : " (droits Comptable)."}
       </span>
       <Link
         href={GESTIONNAIRE_PATH}

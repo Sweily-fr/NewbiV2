@@ -171,8 +171,8 @@ export default function ManagerSpendingSection() {
       {data.suspended && (
         <Callout type="warning" noMargin>
           <p>
-            Votre compte gestionnaire est suspendu par Newbi : vous ne pouvez
-            plus créer, inviter ni payer de nouveaux clients. Les abonnements
+            Votre compte gestionnaire est suspendu par Newbi : vous êtes en
+            lecture seule, chez vos clients comme ici. Les abonnements
             ci-dessous restent prélevés : vous pouvez gérer votre carte depuis
             le portail de paiement, et nous écrire pour les arrêter.
           </p>

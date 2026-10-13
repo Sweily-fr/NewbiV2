@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { mongoDb } from "@/src/lib/mongodb";
 import { requireSession, withErrorHandler } from "@/src/lib/security";
-import {
-  findAccountManagerByUserId,
-  findActiveAccountManagerByUserId,
-} from "@/src/lib/managed-clients";
+import { findAccountManagerByUserId } from "@/src/lib/managed-clients";
 
 /**
  * GET /api/gestionnaire/me
@@ -16,16 +13,10 @@ import {
  */
 async function handler(request) {
   const { user } = await requireSession(request);
-  const manager = await findActiveAccountManagerByUserId(mongoDb, user.id);
+  // Cabinet suspendu par Newbi : il garde son espace, en lecture seule
+  const manager = await findAccountManagerByUserId(mongoDb, user.id);
   if (!manager) {
-    // Cabinet suspendu : plus d'espace gestionnaire, mais ses dépenses
-    // restent consultables (Paramètres > Dépenses clients)
-    const suspended = await findAccountManagerByUserId(mongoDb, user.id);
-    return NextResponse.json(
-      suspended
-        ? { isManager: false, isSuspendedManager: true, name: suspended.name }
-        : { isManager: false },
-    );
+    return NextResponse.json({ isManager: false });
   }
 
   const links = await mongoDb
@@ -38,6 +29,7 @@ async function handler(request) {
 
   return NextResponse.json({
     isManager: true,
+    readOnly: manager.status !== "active",
     name: manager.name,
     discountPercent: manager.discountPercent ?? 0,
     managedOrganizationIds: links.map((l) => String(l.organizationId)),

@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireManagerPage } from "@/src/lib/gestionnaire-page";
 import { ArrowLeft } from "lucide-react";
 import NewManagedClientForm from "@/src/components/gestionnaire/new-managed-client-form";
 import { GESTIONNAIRE_PATH } from "@/src/lib/gestionnaire-paths";
 
-export default function NewManagedClientPage() {
+export default async function NewManagedClientPage() {
+  // Cabinet suspendu (lecture seule) : pas de création
+  const { readOnly } = await requireManagerPage();
+  if (readOnly) redirect(GESTIONNAIRE_PATH);
   return (
     <div className="flex flex-col gap-6 px-4 sm:px-6 pt-4 sm:pt-6 pb-10">
       <div>

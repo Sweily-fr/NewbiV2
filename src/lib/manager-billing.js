@@ -658,6 +658,14 @@ export async function endManagedClientLink({
   const ended = link?.value ?? link;
   if (!ended?._id) return false;
 
+  // Cabinet suspendu : son rôle temporaire « lecture seule » part avec lui
+  if (ended.suspension?.roleKey) {
+    await mongoDb
+      .collection("organizationRole")
+      .deleteOne({ organizationId: orgOid, role: ended.suspension.roleKey })
+      .catch(() => {});
+  }
+
   if (ended.payer === "manager" && manager.stripeCustomerId) {
     const subscriptions = await mongoDb
       .collection("subscription")

@@ -6,13 +6,14 @@ import ManagedClientsView from "@/src/components/gestionnaire/managed-clients-vi
 export const dynamic = "force-dynamic";
 
 export default async function GestionnaireClientsPage() {
-  const { manager } = await requireManagerPage();
+  const { manager, readOnly } = await requireManagerPage();
   const clients = await listManagedClients(mongoDb, manager._id);
 
   return (
     <ManagedClientsView
       managerName={manager.name}
       discountPercent={manager.discountPercent ?? 0}
+      readOnly={readOnly}
       clients={JSON.parse(JSON.stringify(clients))}
     />
   );

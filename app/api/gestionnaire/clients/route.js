@@ -16,7 +16,8 @@ import {
  * POST /api/gestionnaire/clients → crée un client (voir managed-clients.js)
  */
 async function getHandler(request) {
-  const { manager } = await requireManager(request);
+  // Lecture : admise pour un cabinet suspendu (lecture seule)
+  const { manager } = await requireManager(request, { allowSuspended: true });
   const clients = await listManagedClients(mongoDb, manager._id);
   return NextResponse.json({
     manager: {
