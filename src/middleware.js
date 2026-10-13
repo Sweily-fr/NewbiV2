@@ -28,7 +28,13 @@ export function middleware(request) {
     }
   }
 
-  return NextResponse.next();
+  // Page demandée, pour app/dashboard/layout.jsx (un layout ne la reçoit
+  // pas) : il renvoie un cabinet vers son espace gestionnaire quand l'espace
+  // ouvert n'a pas d'abonnement, sauf s'il y est déjà
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  requestHeaders.set("x-search", request.nextUrl.search);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 // Les préchargements (survol des liens, depuis le lot perf du 09/10/2026)

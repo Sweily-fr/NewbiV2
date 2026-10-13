@@ -37,6 +37,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { GESTIONNAIRE_PATH } from "@/src/lib/gestionnaire-paths";
 import ManagedPlanDialog from "./managed-plan-dialog";
+import NoSubscriptionNotice from "./no-subscription-notice";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "2-digit",
@@ -301,6 +302,11 @@ export default function ManagedClientsView({
             Nouveau client
           </Link>
         </div>
+      </div>
+
+      {/* Renvoyé ici depuis un espace sans abonnement */}
+      <div className="px-4 sm:px-6 pt-4 empty:hidden">
+        <NoSubscriptionNotice />
       </div>
 
       {/* Recherche */}

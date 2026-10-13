@@ -8,6 +8,7 @@ import { toObjectId } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 import { isTrialAppActive } from "@/src/lib/trial-app";
 import { findAccountManagerByUserId } from "@/src/lib/managed-clients";
+import { managerLandingRedirect } from "@/src/lib/gestionnaire-paths";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
@@ -205,6 +206,24 @@ async function checkSubscription(userId, activeOrgId) {
             ? "subscription_expired"
             : "no_subscription",
         organizationId,
+        isManager: true,
+        managedClient: true,
+      };
+    }
+
+    // Cabinet dans un espace sans abonnement (le sien en général) : pas de
+    // bascule vers un autre espace abonné, qui serait souvent le dossier
+    // d'un client choisi à sa place. Le layout le renvoie vers son espace
+    // gestionnaire.
+    if (await findAccountManagerByUserId(mongoDb, userObjectId)) {
+      return {
+        access: activeState === "readonly" ? "readonly" : "none",
+        reason:
+          activeState === "readonly"
+            ? "subscription_expired"
+            : "no_subscription",
+        organizationId,
+        isManager: true,
       };
     }
 
@@ -430,9 +449,30 @@ export default async function DashboardLayout({ children }) {
       setCachedAccess(cacheKey, subscriptionResult);
     }
   }
-  const { access, reason, organizationId } = subscriptionResult;
+  const { access, reason, organizationId, managedClient } = subscriptionResult;
 
   console.log(`[Dashboard Layout] access: ${access}, reason: ${reason}`);
+
+  // Compte gestionnaire (cabinet) sans abonnement utilisable dans l'espace
+  // ouvert : renvoyé vers son espace gestionnaire, qui n'en a pas besoin.
+  // Le dossier d'un client qu'il suit reste ouvert (en lecture seule).
+  const isManager =
+    access !== "full" &&
+    (subscriptionResult.isManager ??
+      Boolean(await findAccountManagerByUserId(mongoDb, session.user.id)));
+  const managerHome = managerLandingRedirect({
+    isManager,
+    access,
+    managedClient,
+    pathname: headersList.get("x-pathname"),
+    search: headersList.get("x-search"),
+  });
+  if (
+    managerHome &&
+    !(organizationId && (await checkRecentStripePayment(organizationId)))
+  ) {
+    redirect(managerHome);
+  }
 
   // Accès complet OU lecture seule → on rend le dashboard. En lecture seule,
   // le client (SubscriptionReadOnlyBanner + useSubscriptionAccess) affiche la
@@ -462,7 +502,7 @@ export default async function DashboardLayout({ children }) {
   // Compte gestionnaire : il passe par son espace (/dashboard/gestionnaire)
   // et entre dans les dossiers de ses clients ; l'absence d'abonnement de
   // l'espace actif ne doit pas le renvoyer vers l'inscription.
-  if (await findAccountManagerByUserId(mongoDb, session.user.id)) {
+  if (isManager) {
     return <DashboardClientLayout>{children}</DashboardClientLayout>;
   }
 

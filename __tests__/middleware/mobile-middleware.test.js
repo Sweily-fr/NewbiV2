@@ -112,3 +112,19 @@ describe("mobile middleware — config matcher", () => {
     }
   });
 });
+
+describe("middleware : page demandée transmise au layout du tableau de bord", () => {
+  it("ajoute x-pathname et x-search à la requête", () => {
+    const req = makeReq("/dashboard/outils/factures?id=42");
+    req.headers = new Headers({ cookie: "a=b" });
+
+    middleware(req);
+
+    const init = NextResponseMock.next.mock.calls[0][0];
+    const headers = init.request.headers;
+    expect(headers.get("x-pathname")).toBe("/dashboard/outils/factures");
+    expect(headers.get("x-search")).toBe("?id=42");
+    // Les en-têtes d'origine sont conservés (cookie de session)
+    expect(headers.get("cookie")).toBe("a=b");
+  });
+});
