@@ -6,13 +6,6 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Card, CardContent } from "@/src/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
 import { signIn } from "../../../src/lib/auth-client";
 import RegisterForm from "./registerForm";
 import Link from "next/link";
@@ -37,6 +30,8 @@ import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
+import { legalFormFromNatureJuridique } from "@/src/lib/company-registry";
+import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
 
 // Compte créé il y a moins de 15 min : suffisant pour distinguer un retour
 // OAuth d'inscription d'un ancien utilisateur qui reprend son onboarding.
@@ -257,10 +252,19 @@ function SignUpPageContent() {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [isCheckingSiret, setIsCheckingSiret] = useState(false);
   const [siretError, setSiretError] = useState(null);
-  // Déclaration sur l'honneur d'usage professionnel — obligatoire pour
-  // terminer l'inscription (le serveur la réexige de son côté).
-  const [honorAccepted, setHonorAccepted] = useState(false);
-  const [billingCountry, setBillingCountry] = useState("FR");
+  // Inscription sans SIRET (entreprise en cours d'immatriculation, hors de
+  // France, ou absente du registre) : le nom est saisi librement et le SIRET
+  // sera demandé plus tard, avant le premier document.
+  const [withoutSiret, setWithoutSiret] = useState(false);
+
+  // Entreprise choisie dans le registre, ou nom saisi en mode sans SIRET.
+  const isCompanyReady = Boolean(
+    selectedCompany || (withoutSiret && companyName.trim()),
+  );
+
+  // Inscription réservée aux entreprises françaises pour l'instant (la
+  // recherche ne couvre que le registre français) : plus de choix du pays.
+  const billingCountry = "FR";
   const contentRef = useRef(null);
 
   // Persist onboarding step + data to DB via API, then refetch session
@@ -319,7 +323,6 @@ function SignUpPageContent() {
         addressCountry: saved.addressCountry || "France",
       });
       setCompanyName(saved.companyName);
-      if (saved.billingCountry) setBillingCountry(saved.billingCountry);
     }
 
     // Restore plan selection (plan step)
@@ -335,7 +338,7 @@ function SignUpPageContent() {
 
   // Company search debounce
   useEffect(() => {
-    if (view !== "workspace" || selectedCompany) return;
+    if (view !== "workspace" || selectedCompany || withoutSiret) return;
     if (!companyName || companyName.length < 3) {
       setSearchResults([]);
       setHasSearched(false);
@@ -362,13 +365,10 @@ function SignUpPageContent() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [companyName, selectedCompany, view]);
+  }, [companyName, selectedCompany, withoutSiret, view]);
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
-    // La déclaration nomme une entreprise précise : changer de société la
-    // rend caduque, elle doit être re-cochée.
-    setHonorAccepted(false);
     const siege = company.siege || {};
     const siret = siege.siret || "";
     if (!siret) {
@@ -402,6 +402,25 @@ function SignUpPageContent() {
     }
   };
 
+  const continueWithoutSiret = () => {
+    // Sans nom d'entreprise tapé dans la recherche, on part des prénom et nom
+    // de la personne quand on les connaît (Google, Apple au premier
+    // consentement) : c'est la raison sociale d'une entreprise individuelle.
+    // Inscription par e-mail : nom inconnu, le champ reste vide.
+    if (!companyName.trim() && session?.user?.name?.trim()) {
+      setCompanyName(session.user.name.trim());
+    }
+    setWithoutSiret(true);
+    setSelectedCompany(null);
+    setSearchResults([]);
+    setHasSearched(false);
+    setSiretError(null);
+  };
+
+  const backToCompanySearch = () => {
+    setWithoutSiret(false);
+  };
+
   const switchView = (nextView) => {
     setIsAnimating(true);
     setTimeout(() => {
@@ -416,42 +435,44 @@ function SignUpPageContent() {
     switchView("workspace");
   };
 
-  const FORME_JURIDIQUE_MAP = {
-    1000: "Entrepreneur individuel",
-    5410: "SARL unipersonnelle",
-    5420: "SARL",
-    5498: "SARL à associé unique",
-    5499: "SARL",
-    5510: "SA à conseil d'administration",
-    5610: "SAS",
-    5699: "SAS",
-    5710: "SAS unipersonnelle (SASU)",
-    5720: "SASU",
-    6521: "SCI",
-    9220: "Association déclarée",
-  };
-
   const handleWorkspaceSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedCompany || isSavingStep) return;
-    if (appTrialEnabled && !honorAccepted) return;
-    const siege = selectedCompany.siege || {};
-    // L'API recherche-entreprises renvoie la chaîne littérale "[NON-DIFFUSIBLE]"
-    // (et non null) pour les champs masqués des entreprises non-diffusibles.
-    // On la neutralise : sinon addressZipCode = "[NON-DIFFUSIBLE]" (16 car.)
-    // dépasse la limite max(10) du schéma → 400 "Données invalides" et le toast
-    // générique "Erreur lors de la sauvegarde" à la création de l'espace.
-    const diffusible = (v) => (v && v !== "[NON-DIFFUSIBLE]" ? v : "");
-    const newCompanyData = {
-      companyName,
-      siret: diffusible(siege.siret),
-      siren: diffusible(selectedCompany.siren),
-      legalForm: FORME_JURIDIQUE_MAP[selectedCompany.nature_juridique] || "",
-      addressStreet: diffusible(siege.adresse),
-      addressCity: diffusible(siege.libelle_commune),
-      addressZipCode: diffusible(siege.code_postal),
-      addressCountry: billingCountry === "FR" ? "France" : billingCountry,
-    };
+    if (!isCompanyReady || isSavingStep) return;
+    const addressCountry = billingCountry === "FR" ? "France" : billingCountry;
+    let newCompanyData;
+    if (selectedCompany) {
+      const siege = selectedCompany.siege || {};
+      // L'API recherche-entreprises renvoie la chaîne littérale "[NON-DIFFUSIBLE]"
+      // (et non null) pour les champs masqués des entreprises non-diffusibles.
+      // On la neutralise : sinon addressZipCode = "[NON-DIFFUSIBLE]" (16 car.)
+      // dépasse la limite max(10) du schéma → 400 "Données invalides" et le toast
+      // générique "Erreur lors de la sauvegarde" à la création de l'espace.
+      const diffusible = (v) => (v && v !== "[NON-DIFFUSIBLE]" ? v : "");
+      newCompanyData = {
+        companyName,
+        siret: diffusible(siege.siret),
+        siren: diffusible(selectedCompany.siren),
+        // Valeur de la liste des paramètres : l'ancienne correspondance
+        // écrivait des libellés (« Entrepreneur individuel » faisait sauter la
+        // mention « EI » des documents, une SAS devenait « SASU »).
+        legalForm: legalFormFromNatureJuridique(
+          selectedCompany.nature_juridique,
+        ),
+        addressStreet: diffusible(siege.adresse),
+        addressCity: diffusible(siege.libelle_commune),
+        addressZipCode: diffusible(siege.code_postal),
+        addressCountry,
+      };
+    } else {
+      // Sans SIRET : seul le nom saisi est envoyé, le reste se complète
+      // ensuite dans les paramètres de l'entreprise.
+      newCompanyData = {
+        companyName: companyName.trim(),
+        siret: "",
+        siren: "",
+        addressCountry,
+      };
+    }
     setCompanyData(newCompanyData);
 
     // App-managed trial flow (flag ON): workspace is the last data-collection
@@ -470,7 +491,9 @@ function SignUpPageContent() {
       const ok = await updateOnboardingStep(
         "completed",
         { ...newCompanyData, billingCountry },
-        { honorDeclarationAccepted: honorAccepted },
+        // Cliquer sur « Continuer » sous la phrase de déclaration vaut
+        // acceptation (cf. professional-use-declaration.js).
+        { honorDeclarationAccepted: true },
       );
       if (ok) {
         try {
@@ -780,14 +803,25 @@ function SignUpPageContent() {
                   {/* Company search */}
                   <div className="relative space-y-1.5">
                     <Label className="text-[13px] text-muted-foreground">
-                      Recherchez votre entreprise
+                      {withoutSiret
+                        ? "Nom de votre entreprise ou vos prénom et nom"
+                        : "Recherchez votre entreprise"}
                     </Label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      {withoutSiret ? (
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      ) : (
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      )}
                       <Input
                         value={companyName}
                         onChange={handleCompanyInputChange}
-                        placeholder="Nom de l'entreprise, SIRET ou SIREN..."
+                        placeholder={
+                          withoutSiret
+                            ? "Ex. : Studio Dupont ou Jean Dupont"
+                            : "Nom de l'entreprise, SIRET ou SIREN..."
+                        }
+                        maxLength={200}
                         className="h-11 rounded-lg pl-10"
                         autoFocus
                       />
@@ -822,6 +856,34 @@ function SignUpPageContent() {
                       <p className="text-xs mt-1" style={{ color: "#e1243a" }}>
                         {siretError}
                       </p>
+                    )}
+
+                    {withoutSiret ? (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Vous pourrez renseigner votre SIRET plus tard, dans les
+                        paramètres de l'entreprise.{" "}
+                        <button
+                          type="button"
+                          onClick={backToCompanySearch}
+                          className="text-[#5A50FF] hover:underline cursor-pointer"
+                        >
+                          Rechercher mon entreprise
+                        </button>
+                      </p>
+                    ) : (
+                      !selectedCompany &&
+                      !isCheckingSiret && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Pas encore de numéro SIRET ?{" "}
+                          <button
+                            type="button"
+                            onClick={continueWithoutSiret}
+                            className="text-[#5A50FF] hover:underline cursor-pointer"
+                          >
+                            Continuer sans SIRET
+                          </button>
+                        </p>
+                      )
                     )}
 
                     {isCheckingSiret && (
@@ -874,6 +936,18 @@ function SignUpPageContent() {
                                 </div>
                               )}
                         </div>
+                        {!isSearching && (
+                          <button
+                            type="button"
+                            onClick={continueWithoutSiret}
+                            className="flex w-full items-center justify-center gap-1 border-t border-border px-3 py-2.5 text-[12px] text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors"
+                          >
+                            Votre entreprise n'apparaît pas ?
+                            <span className="text-[#5A50FF]">
+                              Continuer sans SIRET
+                            </span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -896,63 +970,13 @@ function SignUpPageContent() {
                       className="h-11 rounded-lg text-muted-foreground"
                     />
                   </div>
-
-                  {/* Billing country — inline like Linear */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-[13px] text-muted-foreground">
-                      Pays de facturation
-                    </span>
-                    <Select
-                      value={billingCountry}
-                      onValueChange={setBillingCountry}
-                    >
-                      <SelectTrigger className="h-8 w-auto rounded-lg border-border px-3 text-[13px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="FR">France</SelectItem>
-                        <SelectItem value="BE">Belgique</SelectItem>
-                        <SelectItem value="CH">Suisse</SelectItem>
-                        <SelectItem value="CA">Canada</SelectItem>
-                        <SelectItem value="LU">Luxembourg</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Déclaration sur l'honneur : elle nomme l'entreprise
-                      sélectionnée et exclut explicitement l'usage personnel. */}
-                  {appTrialEnabled && selectedCompany && (
-                    <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={honorAccepted}
-                        onChange={(e) => setHonorAccepted(e.target.checked)}
-                        className="mt-0.5 size-4 shrink-0 accent-[#5A50FF] cursor-pointer"
-                      />
-                      <span className="text-[13px] leading-5 text-muted-foreground">
-                        Je certifie sur l'honneur être le représentant légal, le
-                        mandataire ou un collaborateur habilité de{" "}
-                        <span className="font-medium text-foreground">
-                          {selectedCompany.nom_complet ||
-                            selectedCompany.nom_raison_sociale}
-                        </span>
-                        , et utiliser Newbi à des fins strictement
-                        professionnelles dans le cadre de cette activité
-                        déclarée.
-                      </span>
-                    </label>
-                  )}
                 </CardContent>
               </Card>
 
               <div className="flex justify-center mt-6">
                 <Button
                   type="submit"
-                  disabled={
-                    !selectedCompany ||
-                    isSavingStep ||
-                    (appTrialEnabled && !honorAccepted)
-                  }
+                  disabled={!isCompanyReady || isSavingStep}
                   className="h-9 px-16 bg-[#5A50FF]/90 hover:bg-[#5A50FF] text-white cursor-pointer border-0 [box-shadow:none] rounded-lg disabled:opacity-40"
                 >
                   {isSavingStep ? (
@@ -962,6 +986,11 @@ function SignUpPageContent() {
                   )}
                 </Button>
               </div>
+              {appTrialEnabled && (
+                <p className="mt-3 text-center text-[12px] leading-5 text-muted-foreground max-w-[380px] mx-auto">
+                  {PROFESSIONAL_USE_STATEMENT}
+                </p>
+              )}
             </form>
           )}
 

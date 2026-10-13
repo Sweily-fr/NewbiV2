@@ -1944,6 +1944,35 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Preuve de vérification du SIRET au registre. Écrite par le serveur
+        // seulement (`input: false` : ignorée si un client l'envoie), à la fin
+        // de l'onboarding ou par `beforeUpdateOrganization` ci-dessous. La
+        // déclarer ici est nécessaire pour que Better Auth l'enregistre.
+        siretVerifiedAt: {
+          type: "date",
+          input: false,
+          required: false,
+        },
+        siretVerificationSource: {
+          type: "string",
+          input: false,
+          required: false,
+        },
+        denominationUniteLegale: {
+          type: "string",
+          input: false,
+          required: false,
+        },
+        activitePrincipale: {
+          type: "string",
+          input: false,
+          required: false,
+        },
+        dateCreationUniteLegale: {
+          type: "string",
+          input: false,
+          required: false,
+        },
         // Activity sector
         activitySector: {
           type: "string",
@@ -2005,6 +2034,27 @@ export const organizationPlugin = organization({
   // Garantit que l'ajout/suppression de membre met à jour la facturation
   // quel que soit le client (web ET mobile). Idempotent (cf. syncOrgSeatsSafe).
   organizationHooks: {
+    // SIRET modifié dans les paramètres (web et mobile) : vérifié au registre
+    // et refusé s'il appartient à un autre espace, cf. organization-siret-guard.
+    beforeUpdateOrganization: async ({ organization: data, user, member }) => {
+      const [{ mongoDb }, { checkOrganizationSiretUpdate }] = await Promise.all(
+        [import("./mongodb.js"), import("./organization-siret-guard.js")],
+      );
+      const result = await checkOrganizationSiretUpdate({
+        mongoDb,
+        organizationId: member.organizationId,
+        userId: user.id,
+        siret: data?.siret,
+      });
+      if (!result.ok) {
+        const { APIError } = await import("better-auth/api");
+        throw new APIError("BAD_REQUEST", {
+          message: result.message,
+          code: "SIRET_REJECTED",
+        });
+      }
+      if (result.data) return { data: result.data };
+    },
     afterAddMember: async ({ organization }) => {
       await syncOrgSeatsSafe(organization?.id, "afterAddMember");
     },

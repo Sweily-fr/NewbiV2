@@ -228,6 +228,9 @@ const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
         <Controller
           name="password"
           control={control}
+          // Valeur initiale vide : sans elle, le champ passe de non contrôlé
+          // à contrôlé à la première frappe (avertissement React).
+          defaultValue=""
           rules={{
             required: "Mot de passe est requis",
             minLength: {
