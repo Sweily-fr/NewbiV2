@@ -12,7 +12,7 @@ import {
   Settings2,
   Trash,
   Users,
-  Sparkles,
+  ArrowRight,
   GraduationCap,
   UsersRound,
   HelpCircle,
@@ -27,6 +27,7 @@ import {
   LampOnIcon,
   TeacherIcon,
   BookIcon,
+  DocumentCloudIcon,
 } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
@@ -319,8 +320,8 @@ export function NavSecondary({
         {/* Facturation électronique - visible tant qu'elle n'est pas activée
             sur le workspace. Avec un plan actif (essai inclus), le clic ouvre
             la modal d'activation ; sans plan, il renvoie vers l'abonnement.
-            Sidebar expanded : card outline avec titre + sous-titre.
-            Sidebar collapsed : icône Sparkles avec tooltip. */}
+            Sidebar expanded : carte blanche (icône, titre, texte, lien).
+            Sidebar collapsed : icône seule avec tooltip. */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
           canManageIntegrations &&
@@ -328,11 +329,11 @@ export function NavSecondary({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  className="mb-3 cursor-pointer border border-[#5b50FF]/40 bg-[#5b50FF]/5 shadow-sm text-[#5b50FF] [&>svg]:text-[#5b50FF] hover:bg-[#5b50FF]/5 hover:text-[#5b50FF] active:bg-[#5b50FF]/5 active:text-[#5b50FF] data-[hovered]:bg-[#5b50FF]/5! data-[hovered]:text-[#5b50FF]!"
+                  className="mb-3 cursor-pointer bg-background dark:bg-white/[0.05] ring-1 ring-black/[0.07] dark:ring-white/[0.1] shadow-xs [&>svg]:text-[#5b50FF]"
                   tooltip="Facturation électronique"
                   onClick={handleEInvoicingClick}
                 >
-                  <Sparkles />
+                  <DocumentCloudIcon />
                   <span>Facturation électronique</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -342,15 +343,23 @@ export function NavSecondary({
               <button
                 type="button"
                 onClick={handleEInvoicingClick}
-                className="w-full text-left border border-[#5b50FF]/40 bg-[#5b50FF]/5 rounded-lg px-3 py-2.5 shadow-sm cursor-pointer"
+                className="group w-full text-left rounded-xl bg-background dark:bg-white/[0.05] ring-1 ring-black/[0.07] dark:ring-white/[0.1] shadow-xs hover:shadow-sm transition-shadow p-3 cursor-pointer"
               >
-                <p className="text-sm font-medium text-foreground leading-tight">
-                  Facturation électronique
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#5b50FF]/10 text-[#5b50FF]">
+                    <DocumentCloudIcon className="size-4" />
+                  </span>
+                  <p className="text-sm font-medium text-foreground leading-tight">
+                    Facturation électronique
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 leading-snug">
+                  Obligatoire depuis le 1er septembre 2026.
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                  Activez Factur-X et préparez-vous à l'obligation de septembre
-                  2026.
-                </p>
+                <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-[#5b50FF]">
+                  Activer en un clic
+                  <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </button>
             </div>
           ))}
