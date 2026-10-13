@@ -95,7 +95,8 @@ describe("useCompanyInfoGate", () => {
     expect(
       screen.getByText("Configuration de votre entreprise"),
     ).toBeInTheDocument();
-    expect(screen.getByText("9/10")).toBeInTheDocument();
+    // Formulaire : pas de compteur (il passait sous la croix de fermeture)
+    expect(screen.queryByText("9/10")).not.toBeInTheDocument();
 
     // Informations enregistrées dans la fenêtre : la création repart seule
     fireEvent.click(screen.getByText("Enregistrer et continuer"));
@@ -107,12 +108,16 @@ describe("useCompanyInfoGate", () => {
 
   it("société sans RCS ni capital : la fenêtre les demande (exigés par l'API)", () => {
     state.organization = { ...COMPLETE, rcs: "", capitalSocial: "" };
+    state.canEditSettings = false;
     const onCreate = vi.fn();
     renderGate(onCreate);
 
     fireEvent.click(screen.getByText("Créer la facture"));
     expect(onCreate).not.toHaveBeenCalled();
+    // Vue « liste » (sans droit de modifier) : compteur et champs manquants
     expect(screen.getByText("8/10")).toBeInTheDocument();
+    expect(screen.getByText("Numéro RCS")).toBeInTheDocument();
+    expect(screen.getByText("Capital social")).toBeInTheDocument();
   });
 
   it("sans droit de modifier l'espace : invitation à contacter l'administrateur, « Retour » ferme sans quitter la liste", () => {

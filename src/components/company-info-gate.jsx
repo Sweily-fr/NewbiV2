@@ -120,15 +120,11 @@ export function CompanyInfoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
         <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          {/* Rien à droite du titre : la croix de fermeture y est placée. */}
           <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-sm font-medium">
-                Configuration de votre entreprise
-              </DialogTitle>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {completedCount}/{totalCount}
-              </span>
-            </div>
+            <DialogTitle className="text-sm font-medium">
+              Configuration de votre entreprise
+            </DialogTitle>
           </DialogHeader>
 
           {canEditOrgSettings ? (
@@ -139,9 +135,16 @@ export function CompanyInfoDialog({
             />
           ) : (
             <div className="px-5 pt-4 pb-0">
-              <p className="text-[13px] text-muted-foreground mb-4">
-                Ces informations sont nécessaires pour générer vos documents.
-              </p>
+              {/* Compteur réservé à la liste : dans le formulaire, les champs
+                  obligatoires sont marqués d'un astérisque. */}
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[13px] text-muted-foreground">
+                  Ces informations sont nécessaires pour générer vos documents.
+                </p>
+                <span className="text-xs text-muted-foreground tabular-nums shrink-0 ml-3">
+                  {completedCount}/{totalCount}
+                </span>
+              </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <FieldList
                   title="Général"
