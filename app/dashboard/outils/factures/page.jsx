@@ -502,7 +502,8 @@ function InvoicesContent() {
 }
 
 export default function InvoicesPage() {
-  // Page liste des factures - accessible en Pro avec informations d'entreprise complètes
+  // Page liste des factures - accessible en Pro. Les informations d'entreprise
+  // ne sont exigées qu'à la création (CompanyInfoGuard sur /new).
   return (
     <ProRouteGuard pageName="Factures" fallback={<InvoicePageSkeleton />}>
       <InvoicesContent />

@@ -20,10 +20,11 @@ const SettingsModal = dynamic(
 );
 
 /**
- * Composant Guard pour protéger les pages qui CRÉENT ou modifient un
- * document (création, édition, avoir) : il faut des informations
- * d'entreprise complètes pour le générer. Les listes ne sont pas protégées :
- * les consulter ne demande rien, et leurs actions de création passent par
+ * Composant Guard des pages qui CRÉENT ou modifient un document (nouvelle
+ * facture, nouveau devis, nouveau bon de commande ou de livraison, nouvel
+ * avoir, édition) : il faut des informations d'entreprise complètes pour le
+ * générer. La fenêtre n'apparaît jamais à la consultation des listes ou d'un
+ * document ; les actions de création lancées depuis une liste passent par
  * useCompanyInfoGate (company-info-gate.jsx).
  * Affiche un dialog détaillé avec les champs manquants puis ouvre la modal de paramètres
  */
@@ -73,9 +74,12 @@ export function CompanyInfoGuard({ children, fallback = null }) {
     setIsSettingsModalOpen(true);
   };
 
+  // Retour là d'où l'on vient (en général la liste qui a lancé la création),
+  // l'accueil seulement si la page a été ouverte directement.
   const handleCancel = () => {
     setShowDialog(false);
-    router.push("/dashboard");
+    if (window.history.length > 1) router.back();
+    else router.push("/dashboard");
   };
 
   // Ne bloquer que le chargement initial : lors d'un refetch en arrière-plan
@@ -100,9 +104,13 @@ export function CompanyInfoGuard({ children, fallback = null }) {
   if (organization && !isCompanyInfoComplete(organization)) {
     return (
       <>
+        {/* Fermer la fenêtre (Échap, clic à côté) revient au même que
+            « Retour » : sinon on restait bloqué sur le squelette de l'éditeur */}
         <CompanyInfoDialog
           open={showDialog}
-          onOpenChange={setShowDialog}
+          onOpenChange={(open) => {
+            if (!open) handleCancel();
+          }}
           fieldsInfo={fieldsInfo}
           canEditOrgSettings={canEditOrgSettings}
           onCancel={handleCancel}
