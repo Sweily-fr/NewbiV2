@@ -24,6 +24,7 @@ import {
   normalizeLegalForm,
 } from "@/src/lib/company-registry";
 import { isOwnerRole } from "@/src/lib/organization-roles";
+import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
 
 /**
  * Espace que la fin d'onboarding va renseigner (raison sociale, SIRET,
@@ -338,6 +339,8 @@ async function handler(request) {
         ip: clientIp,
         userAgent: request.headers.get("user-agent") || "unknown",
         withSiret: Boolean(verifiedCompany),
+        // Texte exact accepté, la formulation pouvant évoluer.
+        statement: PROFESSIONAL_USE_STATEMENT,
       },
 
       onboardingCompleted: true,

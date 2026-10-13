@@ -230,6 +230,10 @@ describe("PATCH /api/onboarding/step : inscription sans SIRET", () => {
     expect(update.$set).not.toHaveProperty("siret");
     expect(update.$set).not.toHaveProperty("siretVerifiedAt");
     expect(update.$set.professionalUseDeclaration.withSiret).toBe(false);
+    // Le texte exact accepté est conservé avec la preuve.
+    expect(update.$set.professionalUseDeclaration.statement).toMatch(
+      /^En continuant, vous confirmez utiliser Newbi/,
+    );
     expect(update.$set.onboardingCompleted).toBe(true);
 
     expect(m.grantTrial).toHaveBeenCalledTimes(1);
