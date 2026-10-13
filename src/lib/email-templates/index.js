@@ -10,6 +10,8 @@ import { organizationInvitation } from "./organization/invitation.js";
 import { memberJoinedNotificationOwner } from "./organization/member-joined-owner.js";
 import { memberJoinedConfirmation } from "./organization/member-joined-confirmation.js";
 import { memberJoinedNotificationInviter } from "./organization/member-joined-inviter.js";
+import { managedClientWelcome } from "./organization/managed-client-welcome.js";
+import { managedClientInvitation } from "./organization/managed-client-invitation.js";
 
 // Subscription templates
 import { subscriptionChanged } from "./subscription/changed.js";
@@ -50,6 +52,8 @@ export const emailTemplates = {
   memberJoinedNotificationOwner,
   memberJoinedConfirmation,
   memberJoinedNotificationInviter,
+  managedClientWelcome,
+  managedClientInvitation,
 
   // Subscription
   subscriptionChanged,

@@ -118,24 +118,34 @@ export const auth = betterAuth({
                 `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`,
               );
 
-              // L'invitation dispense de l'étape SIRET, mais seulement parce
-              // que l'organisation qui invite est, elle, déjà qualifiée : le
-              // rattachement professionnel est alors transitif. Si elle ne
-              // l'est pas, la dispense créerait un chemin d'accès sans la
-              // moindre donnée d'entreprise — le contournement le plus simple
-              // de tout le dispositif.
+              // L'invitation dispense de l'étape entreprise, mais seulement
+              // parce que l'organisation qui invite est, elle, déjà qualifiée
+              // (SIRET ou déclaration d'usage professionnel signée à la fin
+              // de son onboarding) : le rattachement professionnel est alors
+              // transitif. Si elle ne l'est pas, la dispense créerait un
+              // chemin d'accès sans la moindre donnée d'entreprise — le
+              // contournement le plus simple de tout le dispositif.
               const invitingOrg = await mongoDb
                 .collection("organization")
                 .findOne(
                   { _id: pendingInvitation.organizationId },
-                  { projection: { siret: 1, siretVerifiedAt: 1 } },
+                  {
+                    projection: {
+                      siret: 1,
+                      siretVerifiedAt: 1,
+                      "professionalUseDeclaration.acceptedAt": 1,
+                    },
+                  },
                 );
 
-              const invitingOrgQualified = Boolean(invitingOrg?.siret);
+              const invitingOrgQualified = Boolean(
+                invitingOrg?.siret ||
+                invitingOrg?.professionalUseDeclaration?.acceptedAt,
+              );
 
               if (!invitingOrgQualified) {
                 console.warn(
-                  `⚠️ [USER CREATE] ${user.email} invité par une org sans SIRET (${pendingInvitation.organizationId}) — onboarding requis`,
+                  `⚠️ [USER CREATE] ${user.email} invité par une org non qualifiée (${pendingInvitation.organizationId}) — onboarding requis`,
                 );
                 await mongoDb.collection("user").updateOne(
                   { _id: new ObjectId(user.id) },
@@ -151,7 +161,7 @@ export const auth = betterAuth({
                 return user;
               }
 
-              if (!invitingOrg.siretVerifiedAt) {
+              if (invitingOrg.siret && !invitingOrg.siretVerifiedAt) {
                 // Organisation antérieure à la vérification au registre : on
                 // laisse passer (son SIRET a été saisi avant la mise en place
                 // du contrôle) mais on le trace pour le rattrapage.
@@ -175,7 +185,7 @@ export const auth = betterAuth({
                     professionalUseBasis: {
                       type: "invitation",
                       organizationId: pendingInvitation.organizationId,
-                      organizationSiret: invitingOrg.siret,
+                      organizationSiret: invitingOrg.siret || null,
                       recordedAt: new Date(),
                     },
                   },
@@ -183,7 +193,7 @@ export const auth = betterAuth({
               );
 
               console.log(
-                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed, org SIRET ${invitingOrg.siret})`,
+                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed, org SIRET ${invitingOrg.siret || "non renseigné"})`,
               );
               return user;
             }
@@ -207,8 +217,8 @@ export const auth = betterAuth({
 
             // ──────────────────────────────────────────────────────────────
             // ENABLE_APP_TRIAL : créer immédiatement une org placeholder + member
-            // + trial 30 jours app-managed. L'utilisateur remplira la SIRET à
-            // l'étape "workspace" qui mettra à jour l'org et basculera
+            // + trial 30 jours app-managed. L'utilisateur renseignera son
+            // entreprise à l'étape "workspace" qui mettra à jour l'org et basculera
             // onboardingStep vers "completed".
             //
             // Quand le flag est OFF, ce bloc est totalement ignoré et le flow
@@ -230,15 +240,15 @@ export const auth = betterAuth({
                     orgType: "business",
                   },
                   // Pas d'essai ici : il est accordé par
-                  // PATCH /api/onboarding/step une fois le SIRET vérifié au
-                  // registre et la déclaration d'usage professionnel signée.
+                  // PATCH /api/onboarding/step une fois la déclaration d'usage
+                  // professionnel signée (et le SIRET vérifié s'il est fourni).
                   // Le démarrer au signup donnait 30 jours d'accès à un compte
                   // dont rien n'établissait le caractère professionnel.
                   appTrialDays: null,
                   markOnboardingComplete: false, // workspace step still pending
                 });
                 console.log(
-                  `✅ [USER CREATE] Org placeholder créée pour ${user.email} (essai accordé après vérification SIRET)`,
+                  `✅ [USER CREATE] Org placeholder créée pour ${user.email} (essai accordé en fin d'onboarding)`,
                 );
               } catch (trialError) {
                 // Non-fatal: better-auth ne bloque pas le signup si la création
@@ -382,6 +392,30 @@ export const auth = betterAuth({
     },
     sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail(user, url);
+    },
+    // Client créé par son cabinet (compte gestionnaire) : il choisit son
+    // mot de passe avec le lien reçu par e-mail, ce qui prouve l'adresse.
+    // Sans ça, son e-mail restait non vérifié et « Continuer avec Google »
+    // échouait (account_not_linked).
+    onPasswordReset: async ({ user }) => {
+      try {
+        const { mongoDb } = await import("./mongodb.js");
+        const { ObjectId } = await import("mongodb");
+        if (!ObjectId.isValid(user?.id)) return;
+        await mongoDb.collection("user").updateOne(
+          {
+            _id: new ObjectId(user.id),
+            managedByAccountManagerId: { $exists: true },
+            emailVerified: { $ne: true },
+          },
+          { $set: { emailVerified: true, isEmailVerified: true } },
+        );
+      } catch (error) {
+        console.error(
+          "[AUTH] Vérification de l'e-mail après mot de passe :",
+          error?.message,
+        );
+      }
     },
   },
 
@@ -577,6 +611,10 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         input: false, // Set by user.create hook only — Principle 5
+        // Jamais renvoyé par get-session : l'inscription ne vérifie pas
+        // l'e-mail, et cet id suffisait à accepter l'invitation d'un autre
+        // (le site lit l'invitation depuis le lien reçu par e-mail)
+        returned: false,
         defaultValue: "",
       },
       stripeCustomerId: {

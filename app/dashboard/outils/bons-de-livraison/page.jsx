@@ -10,7 +10,6 @@ import {
 } from "./components/delivery-note-page-skeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useDeliveryNoteStats } from "@/src/graphql/deliveryNoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
@@ -228,9 +227,7 @@ export default function DeliveryNotesPage() {
       fallback={<DeliveryNotePageSkeleton />}
     >
       <DeliveryNotesAccessGuard fallback={<DeliveryNotePageSkeleton />}>
-        <CompanyInfoGuard fallback={<DeliveryNotePageSkeleton />}>
-          <DeliveryNotesContent />
-        </CompanyInfoGuard>
+        <DeliveryNotesContent />
       </DeliveryNotesAccessGuard>
     </ProRouteGuard>
   );

@@ -23,6 +23,12 @@ vi.mock("@/src/lib/mongodb", () => ({
   },
 }));
 
+// Espace payé (ou à payer) par un cabinet : refusé au client
+const mockPaidByManager = vi.fn(async () => false);
+vi.mock("@/src/lib/manager-billing", () => ({
+  isOrgPaidByManager: (...args) => mockPaidByManager(...args),
+}));
+
 const mockStripeCreateCustomer = vi.fn();
 const mockStripeCreateCheckout = vi.fn();
 vi.mock("stripe", () => {
@@ -169,6 +175,24 @@ describe("POST /api/billing/subscribe", () => {
     const { POST } = await import("@/app/api/billing/subscribe/route");
     const res = await POST(buildRequest());
     expect(res.status).toBe(403);
+  });
+
+  it("refuse au client un espace que son cabinet paie (ou paiera)", async () => {
+    process.env.ENABLE_APP_TRIAL = "true";
+    mockPaidByManager.mockResolvedValueOnce(true);
+    mockGetSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr", stripeCustomerId: "cus_xxx" },
+      session: { activeOrganizationId: orgId },
+    });
+    mockMongoFindOne.mockResolvedValue({
+      userId: new ObjectId(userId),
+      organizationId: new ObjectId(orgId),
+      role: "owner",
+    });
+    const { POST } = await import("@/app/api/billing/subscribe/route");
+    const res = await POST(buildRequest());
+    expect(res.status).toBe(409);
+    expect(mockStripeCreateCheckout).not.toHaveBeenCalled();
   });
 
   it("returns 200 with checkout URL for owner — no Stripe trial, no pending_org_data", async () => {

@@ -26,6 +26,10 @@ vi.mock("@/src/lib/mongodb", () => ({
       if (name === "subscription") {
         return { find: () => ({ toArray: m.subscriptionDocs }) };
       }
+      // Aucun client Stripe de cabinet (comptes gestionnaires)
+      if (name === "accountmanagers") {
+        return { find: () => ({ toArray: async () => [] }) };
+      }
       throw new Error(`Collection inattendue : ${name}`);
     },
   },

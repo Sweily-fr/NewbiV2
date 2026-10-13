@@ -70,6 +70,7 @@ import { LinkedDocumentRow } from "@/src/components/documents/linked-document-ro
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 export default function PurchaseOrderSidebar({
   isOpen,
@@ -79,6 +80,8 @@ export default function PurchaseOrderSidebar({
   isViewMode = false,
 }) {
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canRead, canDo, isReady } = useMyPermissions();
   const canEditPurchaseOrders = !isReady || canDo("purchaseOrders", "edit");
@@ -203,17 +206,18 @@ export default function PurchaseOrderSidebar({
   // La mutation changePurchaseOrderStatus recale côté serveur les dates d'un
   // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
   // décalée d'autant) — cohérent avec les dates affichées dans le panel.
-  const handleConfirm = async () => {
-    try {
-      await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
-      toast.success("Bon de commande mis en attente");
-      if (onRefetch) onRefetch();
-    } catch (error) {
-      toast.error(
-        error?.message || "Erreur lors de la confirmation du bon de commande",
-      );
-    }
-  };
+  const handleConfirm = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
+        toast.success("Bon de commande mis en attente");
+        if (onRefetch) onRefetch();
+      } catch (error) {
+        toast.error(
+          error?.message || "Erreur lors de la confirmation du bon de commande",
+        );
+      }
+    });
 
   const handleValidate = async () => {
     try {

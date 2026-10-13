@@ -7,7 +7,31 @@ import { mongoDb } from "@/src/lib/mongodb";
 import { toObjectId } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 import { isTrialAppActive } from "@/src/lib/trial-app";
+import { findAccountManagerByUserId } from "@/src/lib/managed-clients";
 import DashboardClientLayout from "./dashboard-client-layout";
+
+/**
+ * L'utilisateur est-il le cabinet (compte gestionnaire actif) qui suit cet
+ * espace (fiche managedclients active) ?
+ */
+async function isManagedClientOfUser(userObjectId, organizationId) {
+  const orgOid = ObjectId.isValid(organizationId)
+    ? new ObjectId(organizationId)
+    : null;
+  if (!orgOid) return false;
+  // Cabinet suspendu compris : il consulte ses clients en lecture seule
+  const manager = await mongoDb
+    .collection("accountmanagers")
+    .findOne({ userId: userObjectId }, { projection: { _id: 1 } });
+  if (!manager) return false;
+  const link = await mongoDb
+    .collection("managedclients")
+    .findOne(
+      { managerId: manager._id, organizationId: orgOid, status: "active" },
+      { projection: { _id: 1 } },
+    );
+  return Boolean(link);
+}
 
 /**
  * Détermine le niveau d'accès d'une organisation à partir de son abonnement.
@@ -168,6 +192,21 @@ async function checkSubscription(userId, activeOrgId) {
     console.log(
       `[Dashboard Layout] Pas d'abonnement plein pour org active: ${organizationId} (état: ${activeState})`,
     );
+
+    // Cabinet (compte gestionnaire) dans l'espace d'un client qu'il suit :
+    // il reste dans cet espace, en lecture seule s'il n'est pas abonné, au
+    // lieu d'être basculé dans un autre (« Ouvrir » un client expiré
+    // l'envoyait chez un autre client ou chez lui)
+    if (await isManagedClientOfUser(userObjectId, organizationId)) {
+      return {
+        access: activeState === "readonly" ? "readonly" : "none",
+        reason:
+          activeState === "readonly"
+            ? "subscription_expired"
+            : "no_subscription",
+        organizationId,
+      };
+    }
 
     // 3. Fallback: Chercher une autre organisation avec un abonnement valide
     const allMembers = await mongoDb
@@ -418,6 +457,13 @@ export default async function DashboardLayout({ children }) {
       );
       return <DashboardClientLayout>{children}</DashboardClientLayout>;
     }
+  }
+
+  // Compte gestionnaire : il passe par son espace (/dashboard/gestionnaire)
+  // et entre dans les dossiers de ses clients ; l'absence d'abonnement de
+  // l'espace actif ne doit pas le renvoyer vers l'inscription.
+  if (await findAccountManagerByUserId(mongoDb, session.user.id)) {
+    return <DashboardClientLayout>{children}</DashboardClientLayout>;
   }
 
   console.log("[Dashboard Layout] Aucun abonnement, redirection vers signup");

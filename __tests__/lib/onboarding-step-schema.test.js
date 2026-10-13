@@ -3,8 +3,9 @@ import { onboardingStepSchema } from "@/src/lib/schemas/onboarding-step";
 
 /**
  * Le passage à "completed" est le moment où un compte devient utilisable.
- * C'est donc là que doivent se trouver les deux exigences non contournables :
- * un SIRET plein, et la déclaration d'usage professionnel.
+ * C'est donc là que doivent se trouver les exigences non contournables : une
+ * entreprise identifiée (SIRET, ou à défaut un nom) et la déclaration d'usage
+ * professionnel.
  */
 
 const VALID_SIRET = "12345678901234";
@@ -23,20 +24,35 @@ describe("onboardingStepSchema — transition vers completed", () => {
     expect(onboardingStepSchema.safeParse(completedBody()).success).toBe(true);
   });
 
-  it("refuse l'absence de SIRET", () => {
+  it("accepte l'absence de SIRET quand le nom de l'entreprise est fourni", () => {
+    // Entreprise en cours d'immatriculation ou hors de France : le SIRET
+    // sera demandé plus tard, avant le premier document.
+    expect(
+      onboardingStepSchema.safeParse(
+        completedBody({ data: { companyName: "ACME" } }),
+      ).success,
+    ).toBe(true);
+    expect(
+      onboardingStepSchema.safeParse(
+        completedBody({ data: { companyName: "ACME", siret: "" } }),
+      ).success,
+    ).toBe(true);
+  });
+
+  it("refuse l'absence de SIRET sans nom d'entreprise", () => {
     const result = onboardingStepSchema.safeParse(
-      completedBody({ data: { companyName: "ACME" } }),
+      completedBody({ data: { companyName: "   ", siret: "" } }),
     );
 
     expect(result.success).toBe(false);
     expect(
-      result.error.issues.some((i) => i.path.join(".") === "data.siret"),
+      result.error.issues.some((i) => i.path.join(".") === "data.companyName"),
     ).toBe(true);
   });
 
-  it("refuse un SIRET vide", () => {
+  it("refuse un SIRET mal formé", () => {
     const result = onboardingStepSchema.safeParse(
-      completedBody({ data: { companyName: "ACME", siret: "" } }),
+      completedBody({ data: { companyName: "ACME", siret: "1234" } }),
     );
 
     expect(result.success).toBe(false);

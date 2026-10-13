@@ -127,14 +127,27 @@ function InvoiceDetailsContent() {
         </div>
       </div>
 
-      {/* Editor */}
-      <Suspense fallback={<InvoiceEditorSkeleton />}>
-        <ModernInvoiceEditor
-          mode={canEdit ? "edit" : "view"}
-          invoiceId={invoiceId}
-          initialData={invoice}
-        />
-      </Suspense>
+      {/* Editor : consulter ne demande rien, modifier un brouillon demande
+          des informations d'entreprise complètes (il sera généré) */}
+      {canEdit ? (
+        <CompanyInfoGuard fallback={<InvoiceEditorSkeleton />}>
+          <Suspense fallback={<InvoiceEditorSkeleton />}>
+            <ModernInvoiceEditor
+              mode="edit"
+              invoiceId={invoiceId}
+              initialData={invoice}
+            />
+          </Suspense>
+        </CompanyInfoGuard>
+      ) : (
+        <Suspense fallback={<InvoiceEditorSkeleton />}>
+          <ModernInvoiceEditor
+            mode="view"
+            invoiceId={invoiceId}
+            initialData={invoice}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -145,9 +158,7 @@ export default function InvoiceDetailsPage() {
       pageName="Détails facture"
       fallback={<InvoiceDetailsSkeleton />}
     >
-      <CompanyInfoGuard fallback={<InvoiceDetailsSkeleton />}>
-        <InvoiceDetailsContent />
-      </CompanyInfoGuard>
+      <InvoiceDetailsContent />
     </ProRouteGuard>
   );
 }

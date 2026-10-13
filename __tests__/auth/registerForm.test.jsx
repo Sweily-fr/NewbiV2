@@ -58,6 +58,23 @@ describe("RegisterForm", () => {
     ).toBeInTheDocument();
   });
 
+  it("le mot de passe reste un champ contrôlé quand on tape (pas d'avertissement React)", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const user = userEvent.setup();
+    const { container } = render(<RegisterForm />);
+
+    await user.type(getPasswordInput(container), "Test1234");
+
+    expect(
+      consoleError.mock.calls.some((args) =>
+        String(args[0]).includes("uncontrolled input to be controlled"),
+      ),
+    ).toBe(false);
+    consoleError.mockRestore();
+  });
+
   it("affiche une erreur si on submit avec des champs vides", async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);

@@ -17,7 +17,6 @@ import { QuoteSettingsModal } from "./components/quote-settings-modal";
 import QuoteExportButton from "./components/quote-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useQuotes, useQuoteBalances } from "@/src/graphql/quoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
@@ -328,9 +327,7 @@ export default function QuotesPage() {
   // Page liste des devis - accessible en Pro avec informations d'entreprise complètes
   return (
     <ProRouteGuard pageName="Devis" fallback={<QuotePageSkeleton />}>
-      <CompanyInfoGuard fallback={<QuotePageSkeleton />}>
-        <QuotesContent />
-      </CompanyInfoGuard>
+      <QuotesContent />
     </ProRouteGuard>
   );
 }

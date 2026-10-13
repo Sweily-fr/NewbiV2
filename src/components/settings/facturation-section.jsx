@@ -32,6 +32,8 @@ import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Progress } from "@/src/components/ui/progress";
 import { Callout } from "@/src/components/ui/callout";
+import { useOrgPaidByManager } from "@/src/hooks/useOrgPaidByManager";
+import PaidByCabinetNotice from "@/src/components/gestionnaire/paid-by-cabinet-notice";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,7 +68,7 @@ const PLANS_CONFIG = PLANS_DISPLAY.reduce((acc, p) => {
 export default function FacturationSection({
   organization,
   session,
-  canManageSubscription,
+  canManageSubscription: canManageSubscriptionProp,
   onTabChange,
 }) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -80,23 +82,30 @@ export default function FacturationSection({
   const [billingPortalLoadingTarget, setBillingPortalLoadingTarget] =
     useState(null);
 
+  const orgId = session?.user?.organization?.id || organization?.id;
+  // Abonnement payé par le cabinet du client : le cabinet a sa propre
+  // facturation (Paramètres > Dépenses clients), rien à gérer ici ; ses
+  // factures ne sont pas demandées (elles ne sont pas celles de l'espace)
+  const paidByManager = useOrgPaidByManager(orgId);
+  // Rien n'est permis tant que la prise en charge n'est pas vérifiée
+  const canManageSubscription =
+    canManageSubscriptionProp && paidByManager === null;
+
   const {
     invoices,
     loading: invoicesLoading,
     error: invoicesError,
     refetch: refetchInvoices,
     downloadInvoice,
-  } = useStripeInvoices();
+  } = useStripeInvoices({ enabled: paidByManager === null });
   const { subscription, isActive, loading: subLoading } = useSubscription();
   const { customer: stripeCustomer, loading: stripeCustomerLoading } =
-    useStripeCustomer();
+    useStripeCustomer({ enabled: paidByManager === null });
   const { workspaceId } = useWorkspace();
   const { quota: ocrQuota, loading: ocrLoading } = useUserOcrQuota(workspaceId);
   const { quota: esignQuota, loading: esignLoading } = useEsignatureQuota({
     skip: !workspaceId,
   });
-
-  const orgId = session?.user?.organization?.id || organization?.id;
 
   // TODO: réactiver la gestion des sièges plus tard
   // Fetch seats info
@@ -265,13 +274,33 @@ export default function FacturationSection({
     subscription?.isTrialActive === true &&
     !subscription?.stripeCustomerId;
 
+  // Espace payé par le cabinet du client : rien à souscrire ni à gérer ici,
+  // même pendant l'essai (pas encore de client Stripe)
+  if (paidByManager) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-lg font-medium mb-1 hidden md:block">
+            Facturation
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4 hidden md:block">
+            Gérez votre abonnement, vos moyens de paiement et consultez vos
+            factures.
+          </p>
+          <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
+        </div>
+        <PaidByCabinetNotice cabinet={paidByManager} />
+      </div>
+    );
+  }
+
   // No subscription state OR trial app without Stripe yet
   if ((!isActive() || isTrialAppWithoutStripe) && !subLoading) {
     const trialCopy = isTrialAppWithoutStripe
       ? "Vous êtes en période d'essai gratuit. Souscrivez à un abonnement pour ne pas être interrompu à la fin de l'essai."
       : "Vous devez avoir un abonnement pour accéder à la facturation.";
     const trialTitle = isTrialAppWithoutStripe
-      ? "Aucun abonnement actif — essai gratuit en cours"
+      ? "Aucun abonnement actif, essai gratuit en cours"
       : "Aucun abonnement actif";
     return (
       <div className="space-y-8">
@@ -322,7 +351,7 @@ export default function FacturationSection({
       </div>
 
       {/* Permission warning */}
-      {!canManageSubscription && (
+      {!canManageSubscription && paidByManager === null && (
         <Callout type="warning" noMargin>
           <p>
             Seul le <strong>propriétaire</strong> de l'organisation peut gérer
@@ -332,7 +361,7 @@ export default function FacturationSection({
       )}
 
       {/* Trial Banner */}
-      {subscription?.status === "trialing" && (
+      {subscription?.status === "trialing" && !paidByManager && (
         <div className="rounded-xl border border-[#5b50fe]/20 bg-[#5b50fe]/5 dark:bg-[#5b50fe]/10 p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -709,131 +738,139 @@ export default function FacturationSection({
         </div>
       </div>
 
-      {/* Billing Details */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">Détails de facturation</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Address Card */}
-          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Adresse de facturation</p>
-                <p className="text-xs text-muted-foreground">
-                  Gérer via le portail Stripe
-                </p>
-              </div>
-              {canManageSubscription && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 cursor-pointer"
-                  onClick={() => handleOpenBillingPortal("address")}
-                  disabled={billingPortalLoading}
-                >
-                  {billingPortalLoadingTarget === "address" ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Pencil className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-            </div>
-            <div className="text-sm divide-y divide-gray-100 dark:divide-[#2c2c2c]">
-              <div className="flex justify-between py-3">
-                <span className="text-muted-foreground">Email</span>
-                <span className="text-right truncate ml-2">
-                  {stripeCustomerLoading ? "..." : stripeCustomer?.email || "–"}
-                </span>
-              </div>
-              <div className="flex justify-between py-3">
-                <span className="text-muted-foreground">Entreprise</span>
-                <span className="text-right truncate ml-2">
-                  {stripeCustomerLoading ? "..." : stripeCustomer?.name || "–"}
-                </span>
-              </div>
-              <div className="flex justify-between py-3">
-                <span className="text-muted-foreground">Téléphone</span>
-                <span className="text-right truncate ml-2">
-                  {stripeCustomerLoading ? "..." : stripeCustomer?.phone || "–"}
-                </span>
-              </div>
-              <div className="flex justify-between py-3">
-                <span className="text-muted-foreground">Adresse</span>
-                <span className="text-right truncate ml-2">
-                  {stripeCustomerLoading
-                    ? "..."
-                    : [
-                        stripeCustomer?.address?.line1,
-                        stripeCustomer?.address?.line2,
-                        stripeCustomer?.address?.postal_code,
-                        stripeCustomer?.address?.city,
-                        stripeCustomer?.address?.country,
-                      ]
-                        .filter(Boolean)
-                        .join(", ") || "–"}
-                </span>
-              </div>
-              <div className="flex justify-between py-3">
-                <span className="text-muted-foreground">N° TVA</span>
-                <span className="text-right truncate ml-2">
-                  {stripeCustomerLoading
-                    ? "..."
-                    : stripeCustomer?.vatNumber || "–"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Card */}
-          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Moyen de paiement</p>
-                <p className="text-xs text-muted-foreground">
-                  Gérer via le portail Stripe
-                </p>
-              </div>
-              {canManageSubscription && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 cursor-pointer"
-                  onClick={() => handleOpenBillingPortal("payment")}
-                  disabled={billingPortalLoading}
-                >
-                  {billingPortalLoadingTarget === "payment" ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-            </div>
-            <TableEmptyState
-              icon={BankCardIcon}
-              title="Aucun moyen de paiement"
-              description="Vos moyens de paiement sont gérés directement par Stripe."
-              size="xs"
-              action={
-                canManageSubscription && (
+      {/* Billing Details : ceux du cabinet quand il paie */}
+      {!paidByManager && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium">Détails de facturation</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Address Card */}
+            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Adresse de facturation</p>
+                  <p className="text-xs text-muted-foreground">
+                    Gérer via le portail Stripe
+                  </p>
+                </div>
+                {canManageSubscription && (
                   <Button
                     type="button"
-                    variant="link"
-                    size="sm"
-                    className="text-[#5b50fe] cursor-pointer h-auto p-0 text-xs"
-                    onClick={handleOpenBillingPortal}
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 cursor-pointer"
+                    onClick={() => handleOpenBillingPortal("address")}
                     disabled={billingPortalLoading}
                   >
-                    Ouvrir le portail de paiement
+                    {billingPortalLoadingTarget === "address" ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Pencil className="h-4 w-4" />
+                    )}
                   </Button>
-                )
-              }
-            />
+                )}
+              </div>
+              <div className="text-sm divide-y divide-gray-100 dark:divide-[#2c2c2c]">
+                <div className="flex justify-between py-3">
+                  <span className="text-muted-foreground">Email</span>
+                  <span className="text-right truncate ml-2">
+                    {stripeCustomerLoading
+                      ? "..."
+                      : stripeCustomer?.email || "–"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-3">
+                  <span className="text-muted-foreground">Entreprise</span>
+                  <span className="text-right truncate ml-2">
+                    {stripeCustomerLoading
+                      ? "..."
+                      : stripeCustomer?.name || "–"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-3">
+                  <span className="text-muted-foreground">Téléphone</span>
+                  <span className="text-right truncate ml-2">
+                    {stripeCustomerLoading
+                      ? "..."
+                      : stripeCustomer?.phone || "–"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-3">
+                  <span className="text-muted-foreground">Adresse</span>
+                  <span className="text-right truncate ml-2">
+                    {stripeCustomerLoading
+                      ? "..."
+                      : [
+                          stripeCustomer?.address?.line1,
+                          stripeCustomer?.address?.line2,
+                          stripeCustomer?.address?.postal_code,
+                          stripeCustomer?.address?.city,
+                          stripeCustomer?.address?.country,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "–"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-3">
+                  <span className="text-muted-foreground">N° TVA</span>
+                  <span className="text-right truncate ml-2">
+                    {stripeCustomerLoading
+                      ? "..."
+                      : stripeCustomer?.vatNumber || "–"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Card */}
+            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Moyen de paiement</p>
+                  <p className="text-xs text-muted-foreground">
+                    Gérer via le portail Stripe
+                  </p>
+                </div>
+                {canManageSubscription && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 cursor-pointer"
+                    onClick={() => handleOpenBillingPortal("payment")}
+                    disabled={billingPortalLoading}
+                  >
+                    {billingPortalLoadingTarget === "payment" ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              <TableEmptyState
+                icon={BankCardIcon}
+                title="Aucun moyen de paiement"
+                description="Vos moyens de paiement sont gérés directement par Stripe."
+                size="xs"
+                action={
+                  canManageSubscription && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      className="text-[#5b50fe] cursor-pointer h-auto p-0 text-xs"
+                      onClick={handleOpenBillingPortal}
+                      disabled={billingPortalLoading}
+                    >
+                      Ouvrir le portail de paiement
+                    </Button>
+                  )
+                }
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Invoice History — réservé aux membres autorisés à gérer la sub */}
       {canManageSubscription && (
@@ -1012,7 +1049,8 @@ export default function FacturationSection({
       )}
 
       {/* Cancel Subscription */}
-      {isActive() &&
+      {!paidByManager &&
+        isActive() &&
         subscription &&
         !subscription.cancelAtPeriodEnd &&
         subscription.status !== "canceled" && (

@@ -110,6 +110,15 @@ async function handler(request) {
   if (!actions.includes("manage")) {
     return apiError(403, "Votre rôle ne permet pas de gérer l'abonnement");
   }
+  // Espace dont le cabinet paie (ou paiera) l'abonnement : pas de second
+  // abonnement au nom du client
+  const { isOrgPaidByManager } = await import("@/src/lib/manager-billing");
+  if (await isOrgPaidByManager(mongoDb, organizationId)) {
+    return apiError(
+      409,
+      "L'abonnement de cet espace est pris en charge par votre cabinet.",
+    );
+  }
 
   // Resolve or create the Stripe customer.
   let customerId = session.user.stripeCustomerId;

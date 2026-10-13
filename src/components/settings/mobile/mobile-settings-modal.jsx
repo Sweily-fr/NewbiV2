@@ -17,6 +17,7 @@ import { SecuritySection } from "../security-section";
 import PersonnesSection from "../personnes-section";
 import UserInfoSection from "../user-info-section";
 import { NotificationsSection } from "../notifications-section";
+import ManagerSpendingSection from "../manager-spending-section";
 
 export function MobileSettingsModal({
   open,
@@ -32,6 +33,7 @@ export function MobileSettingsModal({
   canManageOrgSettings = true,
   canManageSubscription = true,
   showBilling = true,
+  isAccountManager = false,
 }) {
   const [activeTab, setActiveTab] = useState("generale");
   const [showNavigation, setShowNavigation] = useState(true);
@@ -59,9 +61,13 @@ export function MobileSettingsModal({
     { id: "notifications", label: "Notifications", icon: "Bell" },
     { id: "security", label: "Sécurité", icon: "Shield" },
     { id: "subscription", label: "Abonnement", icon: "Crown" },
+    { id: "depenses-clients", label: "Dépenses clients", icon: "Wallet" },
   ].filter(
-    // Abonnement et facturation Newbi : masqués sans « Voir l'abonnement »
-    (tab) => showBilling || !["facturation", "subscription"].includes(tab.id),
+    // Abonnement et facturation Newbi : masqués sans « Voir l'abonnement » ;
+    // dépenses clients : comptes gestionnaires seulement
+    (tab) =>
+      (showBilling || !["facturation", "subscription"].includes(tab.id)) &&
+      (isAccountManager || tab.id !== "depenses-clients"),
   );
 
   const currentTab = tabs.find((tab) => tab.id === activeTab);
@@ -148,6 +154,8 @@ export function MobileSettingsModal({
             canManageSubscription={canManageSubscription}
           />
         );
+      case "depenses-clients":
+        return isAccountManager ? <ManagerSpendingSection /> : null;
       case "subscription":
         return (
           <SubscriptionSection

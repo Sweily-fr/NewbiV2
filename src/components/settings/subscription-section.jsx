@@ -10,6 +10,8 @@ import { useSession } from "@/src/lib/auth-client";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useOrgPaidByManager } from "@/src/hooks/useOrgPaidByManager";
+import PaidByCabinetNotice from "@/src/components/gestionnaire/paid-by-cabinet-notice";
 import { Callout } from "@/src/components/ui/callout";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -66,10 +68,18 @@ export function SubscriptionSection({
   const { data: session } = useSession();
   const { isOwner } = usePermissions();
 
+  // Abonnement pris en charge par le cabinet du client (compte
+  // gestionnaire) : c'est lui qui choisit et gère l'offre
+  const paidByManager = useOrgPaidByManager(
+    session?.session?.activeOrganizationId || session?.user?.organization?.id,
+  );
+
+  // Rien n'est permis tant que la prise en charge n'est pas vérifiée
   const canManageSubscription =
-    canManageSubscriptionProp !== undefined
+    paidByManager === null &&
+    (canManageSubscriptionProp !== undefined
       ? canManageSubscriptionProp
-      : isOwner();
+      : isOwner());
 
   // Récupérer les informations sur les sièges
   useEffect(() => {
@@ -323,8 +333,10 @@ export function SubscriptionSection({
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
+      <PaidByCabinetNotice cabinet={paidByManager} />
+
       {/* Permission warning */}
-      {!canManageSubscription && (
+      {!canManageSubscription && paidByManager === null && (
         <Callout type="warning" noMargin>
           <p>
             Seul le <strong>propriétaire</strong> de l'organisation peut gérer
@@ -535,7 +547,7 @@ export function SubscriptionSection({
                     ? ", facturé annuellement"
                     : ", facturé mensuellement"}
                 </span>
-                {!isAnnual && (
+                {!isAnnual && !paidByManager && (
                   <>
                     <span className="mx-1">·</span>
                     <button

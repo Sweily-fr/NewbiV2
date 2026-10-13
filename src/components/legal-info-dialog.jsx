@@ -24,6 +24,7 @@ import {
 import { LoaderCircle, Scale, CornerDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import { updateOrganization } from "@/src/lib/organization-client";
+import { normalizeLegalForm } from "@/src/lib/company-registry";
 import {
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
@@ -121,7 +122,7 @@ const valuesFromOrganization = (organization) => ({
   legalForm:
     organization?.legalForm === "Auto-entrepreneur"
       ? "EI"
-      : organization?.legalForm || "",
+      : normalizeLegalForm(organization?.legalForm),
   capitalSocial: organization?.capitalSocial || "",
   siret: organization?.siret || "",
   rcs: organization?.rcs || "",
@@ -188,6 +189,9 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
   }, [open, reset]);
 
   const onSubmit = async (formData) => {
+    // `onError` affiche l'erreur puis l'appel lève quand même : pas de second
+    // toast dans le `catch`.
+    let errorToastShown = false;
     try {
       setIsLoading(true);
 
@@ -233,12 +237,18 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
         },
         onError: (error) => {
           console.error("Erreur lors de la mise à jour:", error);
-          toast.error("Erreur lors de la mise à jour des informations légales");
+          errorToastShown = true;
+          // SIRET refusé par le serveur : le message dit quoi corriger.
+          toast.error(
+            error?.code === "SIRET_REJECTED"
+              ? error.message
+              : "Erreur lors de la mise à jour des informations légales",
+          );
         },
       });
     } catch (error) {
       console.error("Erreur:", error);
-      toast.error("Une erreur s'est produite");
+      if (!errorToastShown) toast.error("Une erreur s'est produite");
     } finally {
       setIsLoading(false);
     }

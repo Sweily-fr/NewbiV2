@@ -63,6 +63,11 @@ import { setOrganizationIdForApollo } from "@/src/lib/apolloClient";
 import { CreateWorkspaceModal } from "./create-workspace-modal";
 import dynamic from "next/dynamic";
 import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
+import { useAccountManager } from "@/src/hooks/useAccountManager";
+import {
+  GESTIONNAIRE_PATH,
+  isGestionnairePath,
+} from "@/src/lib/gestionnaire-paths";
 
 // Chunk chargé à la première ouverture seulement (~11 000 lignes de sections)
 const SettingsModal = dynamic(
@@ -139,6 +144,10 @@ export function OrganizationSwitcherHeader() {
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
+  // Compte gestionnaire : accès à son espace, et choisir un espace depuis
+  // celui-ci ouvre le tableau de bord du dossier
+  const accountManager = useAccountManager();
+  const inGestionnaire = isGestionnairePath(pathname);
 
   // Récupérer l'organisation active avec Better Auth
   const {
@@ -208,6 +217,8 @@ export function OrganizationSwitcherHeader() {
     if (isChangingOrg) return;
     if (activeOrganization?.id === organizationId) {
       setIsOpen(false);
+      // Depuis l'espace gestionnaire : ouvrir ce dossier
+      if (inGestionnaire) router.push("/dashboard");
       return;
     }
 
@@ -265,7 +276,7 @@ export function OrganizationSwitcherHeader() {
         (org) => org.id === organizationId,
       );
       setIsOpen(false);
-      reloadIntoWorkspace(pathname, {
+      reloadIntoWorkspace(inGestionnaire ? "/dashboard" : pathname, {
         type: "success",
         message: `Vous êtes sur l'espace ${newOrg?.name || "l'organisation"}`,
       });
@@ -319,16 +330,31 @@ export function OrganizationSwitcherHeader() {
         >
           <button
             type="button"
-            aria-label={`Changer d'espace de travail (actuel : ${currentOrganization.name})`}
+            aria-label={
+              inGestionnaire
+                ? "Changer d'espace de travail (actuel : espace gestionnaire)"
+                : `Changer d'espace de travail (actuel : ${currentOrganization.name})`
+            }
             className="flex items-center gap-2 bg-transparent border-0 p-0 cursor-pointer outline-none"
           >
-            {/* Nom de l'organisation */}
-            <Boxes className="size-3 text-[#707070]" />
-            <span className="text-xs font-normal truncate max-w-[150px]">
-              {currentOrganization.name}
-            </span>
+            {inGestionnaire ? (
+              <>
+                <Briefcase className="size-3 text-[#707070]" />
+                <span className="text-xs font-normal truncate max-w-[200px]">
+                  Espace gestionnaire
+                </span>
+              </>
+            ) : (
+              <>
+                {/* Nom de l'organisation */}
+                <Boxes className="size-3 text-[#707070]" />
+                <span className="text-xs font-normal truncate max-w-[150px]">
+                  {currentOrganization.name}
+                </span>
+              </>
+            )}
             {/* Badge statut abonnement — 3 états : PRO / Essai / Expiré */}
-            {currentSubStatus === "active" ? (
+            {inGestionnaire ? null : currentSubStatus === "active" ? (
               <Badge
                 variant="outline"
                 className="text-[8px] px-2.5 py-0 h-4 bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
@@ -375,6 +401,28 @@ export function OrganizationSwitcherHeader() {
             />
           </div>
 
+          {/* Espace gestionnaire (comptes gestionnaires seulement) */}
+          {accountManager?.isManager && (
+            <>
+              <DropdownMenuItem
+                onClick={() => {
+                  setIsOpen(false);
+                  router.push(GESTIONNAIRE_PATH);
+                }}
+                className={`flex items-center gap-2 px-2 py-2 cursor-pointer rounded-sm ${inGestionnaire ? "bg-accent" : ""}`}
+              >
+                <Briefcase className="size-4 text-muted-foreground" />
+                <span className="flex-1 text-[13px] font-normal truncate">
+                  Espace gestionnaire
+                </span>
+                <span className="text-[11px] text-muted-foreground truncate max-w-[120px]">
+                  {accountManager.name}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="my-1" />
+            </>
+          )}
+
           {/* Liste des organisations */}
           <div className="max-h-[200px] overflow-y-auto">
             {filteredOrganizations.length === 0 && (
@@ -391,7 +439,8 @@ export function OrganizationSwitcherHeader() {
               const OrgIcon = orgIconName
                 ? getIconComponent(orgIconName)
                 : null;
-              const isCurrentOrg = activeOrganization?.id === org.id;
+              const isCurrentOrg =
+                !inGestionnaire && activeOrganization?.id === org.id;
 
               const hasActiveSub = org.subscriptionStatus === "active";
               const isAppTrial = org.subscriptionStatus === "trialing";

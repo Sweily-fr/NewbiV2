@@ -19,7 +19,12 @@ import {
   SIRET_VERIFICATION_ERRORS,
 } from "@/src/lib/siret-verification";
 import { grantAppTrialIfEligible } from "@/src/lib/org-creation";
+import {
+  legalFormFromNatureJuridique,
+  normalizeLegalForm,
+} from "@/src/lib/company-registry";
 import { isOwnerRole } from "@/src/lib/organization-roles";
+import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
 
 /**
  * Espace que la fin d'onboarding va renseigner (raison sociale, SIRET,
@@ -216,77 +221,126 @@ async function handler(request) {
       );
     }
 
-    // Vérification du SIRET auprès du registre public, à la complétion et
-    // côté serveur. Le client fait déjà une recherche pour l'autocomplétion,
-    // mais elle est contournable : c'est ce contrôle-ci qui garantit qu'un
-    // compte terminé correspond à une entreprise réellement immatriculée et
-    // en activité.
-    const verification = await verifySiret(mergedData?.siret);
-
-    if (!verification.ok) {
-      const status =
-        verification.reason === SIRET_VERIFICATION_ERRORS.SERVICE_UNAVAILABLE
-          ? 503
-          : 400;
-
-      console.warn(
-        `⚠️ [ONBOARDING STEP] ${sessionUser.email}: SIRET ${mergedData?.siret} refusé (${verification.reason})`,
-      );
-
-      // Pas de `details` public ici : le client mobile (lib/web-api.js) lit
-      // `data.details` AVANT `data.error`, donc un objet de détails écraserait
-      // le message lisible par un « [object Object] ». La cause précise est
-      // déjà portée par le message lui-même.
-      return apiError(status, siretVerificationMessage(verification.reason), {
-        siret: mergedData?.siret,
-        reason: verification.reason,
-      });
-    }
-
-    const verifiedCompany = verification.company;
     const now = new Date();
     const clientIp =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       "unknown";
 
+    // Le SIRET est facultatif : une entreprise en cours d'immatriculation ou
+    // hors de France n'en a pas, et l'exiger bloquait l'inscription. Quand il
+    // est fourni, il est vérifié au registre ; sinon l'espace prend le nom
+    // déclaré et le SIRET sera demandé plus tard, avant le premier document
+    // (cf. company-info-guard).
+    const siret = mergedData?.siret || "";
+    let identityPatch;
+    let verifiedCompany = null;
+
+    if (siret) {
+      // Vérification du SIRET auprès du registre public, à la complétion et
+      // côté serveur. Le client fait déjà une recherche pour
+      // l'autocomplétion, mais elle est contournable : c'est ce contrôle-ci
+      // qui garantit qu'un SIRET enregistré correspond à une entreprise
+      // réellement immatriculée et en activité.
+      const verification = await verifySiret(siret);
+
+      if (!verification.ok) {
+        const status =
+          verification.reason === SIRET_VERIFICATION_ERRORS.SERVICE_UNAVAILABLE
+            ? 503
+            : 400;
+
+        console.warn(
+          `⚠️ [ONBOARDING STEP] ${sessionUser.email}: SIRET ${siret} refusé (${verification.reason})`,
+        );
+
+        // Pas de `details` public ici : le client mobile (lib/web-api.js) lit
+        // `data.details` AVANT `data.error`, donc un objet de détails
+        // écraserait le message lisible par un « [object Object] ». La cause
+        // précise est déjà portée par le message lui-même.
+        return apiError(status, siretVerificationMessage(verification.reason), {
+          siret,
+          reason: verification.reason,
+        });
+      }
+
+      verifiedCompany = verification.company;
+      const companyName =
+        mergedData?.companyName ||
+        verifiedCompany.denominationUniteLegale ||
+        "Mon entreprise";
+
+      identityPatch = {
+        // `name` is the Better Auth native field that the org switcher reads.
+        // The Lot 3 placeholder ("Mon entreprise") is set at user.create.after
+        // and must be overwritten here once the user picks their company.
+        name: companyName,
+        companyName,
+        // Les champs d'identité viennent du registre, pas du client : c'est
+        // la source vérifiée qui fait foi.
+        siret: verifiedCompany.siret,
+        siren: verifiedCompany.siren,
+        legalForm:
+          normalizeLegalForm(mergedData?.legalForm) ||
+          legalFormFromNatureJuridique(verifiedCompany.natureJuridique),
+        addressStreet:
+          mergedData?.addressStreet || verifiedCompany.addressStreet || "",
+        addressCity:
+          mergedData?.addressCity || verifiedCompany.addressCity || "",
+        addressZipCode:
+          mergedData?.addressZipCode || verifiedCompany.addressZipCode || "",
+        addressCountry: mergedData?.addressCountry || "France",
+
+        // Preuve de vérification, conservée pour pouvoir démontrer a
+        // posteriori que le compte a été rattaché à une entreprise
+        // immatriculée.
+        siretVerifiedAt: now,
+        siretVerificationSource: "recherche-entreprises.api.gouv.fr",
+        denominationUniteLegale: verifiedCompany.denominationUniteLegale,
+        activitePrincipale: verifiedCompany.activitePrincipale,
+        dateCreationUniteLegale: verifiedCompany.dateCreation,
+      };
+    } else {
+      // Le schéma l'exige déjà ; revérifié sur les données fusionnées avec
+      // le brouillon enregistré, comme la déclaration plus haut.
+      const companyName = mergedData?.companyName?.trim();
+      if (!companyName) {
+        return apiError(
+          400,
+          "Le nom de votre entreprise est requis pour terminer l'inscription.",
+        );
+      }
+
+      // Rien n'est vérifié ici : seuls les champs saisis sont écrits, sans
+      // toucher au SIRET de l'espace.
+      identityPatch = {
+        name: companyName,
+        companyName,
+        addressCountry: mergedData?.addressCountry || "France",
+      };
+      for (const field of [
+        "legalForm",
+        "addressStreet",
+        "addressCity",
+        "addressZipCode",
+      ]) {
+        if (mergedData?.[field]) identityPatch[field] = mergedData[field];
+      }
+    }
+
     const orgPatch = {
-      // `name` is the Better Auth native field that the org switcher reads.
-      // The Lot 3 placeholder ("Mon entreprise") is set at user.create.after
-      // and must be overwritten here once the user picks their company.
-      name:
-        mergedData?.companyName ||
-        verifiedCompany.denominationUniteLegale ||
-        "Mon entreprise",
-      companyName:
-        mergedData?.companyName ||
-        verifiedCompany.denominationUniteLegale ||
-        "Mon entreprise",
-      // Les champs d'identité viennent du registre, pas du client : c'est la
-      // source vérifiée qui fait foi.
-      siret: verifiedCompany.siret,
-      siren: verifiedCompany.siren,
-      legalForm: mergedData?.legalForm || verifiedCompany.natureJuridique || "",
-      addressStreet:
-        mergedData?.addressStreet || verifiedCompany.addressStreet || "",
-      addressCity: mergedData?.addressCity || verifiedCompany.addressCity || "",
-      addressZipCode:
-        mergedData?.addressZipCode || verifiedCompany.addressZipCode || "",
-      addressCountry: mergedData?.addressCountry || "France",
+      ...identityPatch,
 
-      // Preuve de vérification, conservée pour pouvoir démontrer a posteriori
-      // que le compte a été rattaché à une entreprise immatriculée.
-      siretVerifiedAt: now,
-      siretVerificationSource: "recherche-entreprises.api.gouv.fr",
-      denominationUniteLegale: verifiedCompany.denominationUniteLegale,
-      activitePrincipale: verifiedCompany.activitePrincipale,
-      dateCreationUniteLegale: verifiedCompany.dateCreation,
-
-      // Déclaration sur l'honneur d'usage professionnel, horodatée.
+      // Déclaration sur l'honneur d'usage professionnel, horodatée. Sans
+      // SIRET, c'est elle seule qui rattache le compte à une activité
+      // professionnelle.
       professionalUseDeclaration: {
         acceptedAt: now,
         acceptedByUserId: sessionUser.id,
         ip: clientIp,
         userAgent: request.headers.get("user-agent") || "unknown",
+        withSiret: Boolean(verifiedCompany),
+        // Texte exact accepté, la formulation pouvant évoluer.
+        statement: PROFESSIONAL_USE_STATEMENT,
       },
 
       onboardingCompleted: true,
@@ -297,9 +351,8 @@ async function handler(request) {
       .collection("organization")
       .updateOne({ _id: targetOrganizationId }, { $set: orgPatch });
 
-    // L'essai de 30 jours ne démarre qu'ici, une fois le SIRET vérifié et la
-    // déclaration signée — plus au moment du signup. Un compte non qualifié
-    // n'obtient donc jamais d'accès, même temporaire.
+    // L'essai de 30 jours ne démarre qu'ici, une fois la déclaration signée
+    // (et le SIRET vérifié s'il a été fourni) — plus au moment du signup.
     await grantAppTrialIfEligible({
       mongoDb,
       userId: sessionUser.id,
@@ -319,7 +372,7 @@ async function handler(request) {
     );
 
     console.log(
-      `✅ [ONBOARDING STEP] ${sessionUser.email}: workspace → completed (SIRET ${verifiedCompany.siret} vérifié, déclaration acceptée)`,
+      `✅ [ONBOARDING STEP] ${sessionUser.email}: workspace → completed (${verifiedCompany ? `SIRET ${verifiedCompany.siret} vérifié` : "sans SIRET"}, déclaration acceptée)`,
     );
 
     return NextResponse.json({
@@ -328,8 +381,9 @@ async function handler(request) {
       changed: true,
       organizationId: targetOrganizationId.toString(),
       company: {
-        siret: verifiedCompany.siret,
-        denomination: verifiedCompany.denominationUniteLegale,
+        siret: verifiedCompany?.siret || null,
+        denomination:
+          verifiedCompany?.denominationUniteLegale || orgPatch.companyName,
       },
     });
   }

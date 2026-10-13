@@ -1,0 +1,436 @@
+// @vitest-environment node
+//
+// Création des clients d'un compte gestionnaire (cabinet comptable).
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ObjectId } from "mongodb";
+
+const mocks = vi.hoisted(() => ({
+  sendEmail: vi.fn(async () => {}),
+  orgCalls: [],
+  failOn: null,
+}));
+
+vi.mock("@/src/lib/auth-utils", () => ({ sendEmail: mocks.sendEmail }));
+
+// Registre des entreprises simulé
+const registry = vi.hoisted(() => ({ result: null }));
+vi.mock("@/src/lib/siret-verification", async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, verifySiret: async () => registry.result };
+});
+const VERIFIED = {
+  ok: true,
+  company: {
+    siret: "12345678900012",
+    siren: "123456789",
+    denominationUniteLegale: "BOULANGERIE MARTIN",
+    activitePrincipale: "10.71C",
+    natureJuridique: "5499",
+    dateCreation: "2015-03-01",
+    addressStreet: "12 rue du Four",
+    addressCity: "Lyon",
+    addressZipCode: "69002",
+    addressCountry: "France",
+  },
+};
+
+// Base Mongo simulée : égalité (ObjectId comparés en chaîne), $in, $ne,
+// $exists, tri ignoré
+function makeDb() {
+  const data = {};
+  const same = (a, b) => String(a) === String(b);
+  const matches = (doc, filter = {}) =>
+    Object.entries(filter).every(([key, cond]) => {
+      const value = doc[key];
+      if (cond && typeof cond === "object" && "$exists" in cond) {
+        return (value !== undefined) === cond.$exists;
+      }
+      if (cond && typeof cond === "object" && "$in" in cond) {
+        return cond.$in.some((c) => same(c, value));
+      }
+      if (cond && typeof cond === "object" && "$ne" in cond) {
+        return !same(value, cond.$ne);
+      }
+      return same(value, cond);
+    });
+  const collection = (name) => {
+    data[name] ||= [];
+    const rows = data[name];
+    return {
+      async createIndex() {},
+      async findOne(filter) {
+        return rows.find((d) => matches(d, filter)) || null;
+      },
+      async insertOne(doc) {
+        if (mocks.failOn === name) throw new Error(`échec ${name}`);
+        const row = { _id: doc._id || new ObjectId(), ...doc };
+        rows.push(row);
+        return { insertedId: row._id };
+      },
+      async updateOne(filter, update) {
+        const row = rows.find((d) => matches(d, filter));
+        if (row && update.$set) Object.assign(row, update.$set);
+      },
+      async deleteOne(filter) {
+        const i = rows.findIndex((d) => matches(d, filter));
+        if (i >= 0) rows.splice(i, 1);
+      },
+      async deleteMany(filter) {
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (matches(rows[i], filter)) rows.splice(i, 1);
+        }
+      },
+      find(filter) {
+        const result = rows.filter((d) => matches(d, filter));
+        return {
+          sort: () => ({ toArray: async () => result }),
+          toArray: async () => result,
+        };
+      },
+    };
+  };
+  return { collection, data };
+}
+
+let db;
+vi.mock("@/src/lib/org-creation", () => ({
+  createOrganizationWithSubscription: async (args) => {
+    mocks.orgCalls.push(args);
+    const orgId = new ObjectId();
+    await db.collection("organization").insertOne({
+      _id: orgId,
+      name: args.orgData.companyName,
+      companyName: args.orgData.companyName,
+      siret: args.orgData.siret,
+      // Essai accordé comme le fait grantAppTrialIfEligible (flag actif)
+      ...(args.appTrialDays && {
+        isTrialActive: true,
+        trialEndDate: new Date(Date.now() + args.appTrialDays * 86400000),
+      }),
+    });
+    await db.collection("member").insertOne({
+      userId: new ObjectId(args.userId),
+      organizationId: orgId,
+      role: "owner",
+    });
+    return { organizationId: orgId.toString() };
+  },
+}));
+
+const {
+  createManagedClient,
+  listManagedClients,
+  resendWelcomeEmail,
+  ManagedClientError,
+} = await import("@/src/lib/managed-clients");
+
+const managerUserId = new ObjectId();
+const managerId = new ObjectId();
+const input = (over = {}) => ({
+  companyName: "Boulangerie <Martin>",
+  siret: "123 456 789 00012",
+  firstName: "Jean",
+  lastName: "Martin",
+  email: "Jean.Martin@Boulangerie.fr",
+  payer: "manager",
+  ...over,
+});
+const create = (over, managerOverride) =>
+  createManagedClient({
+    mongoDb: db,
+    managerId: managerOverride || managerId,
+    input: input(over),
+    actor: { type: "admin", email: "admin@newbi.fr" },
+    baseUrl: "https://www.newbi.fr/",
+  });
+
+beforeEach(async () => {
+  db = makeDb();
+  mocks.orgCalls = [];
+  mocks.failOn = null;
+  registry.result = VERIFIED;
+  mocks.sendEmail.mockReset();
+  mocks.sendEmail.mockResolvedValue(undefined);
+  await db
+    .collection("user")
+    .insertOne({ _id: managerUserId, email: "sophie@dupont.fr" });
+  await db.collection("accountmanagers").insertOne({
+    _id: managerId,
+    userId: managerUserId,
+    name: "Compta Dupont",
+    status: "active",
+  });
+});
+
+describe("createManagedClient", () => {
+  it("gestionnaire payeur : compte, espace en essai, Comptable, lien et e-mail", async () => {
+    const result = await create();
+
+    const user = db.data.user.find(
+      (u) => u.email === "jean.martin@boulangerie.fr",
+    );
+    expect(user).toMatchObject({
+      name: "Jean Martin",
+      onboardingStep: "completed",
+      hasSeenOnboarding: true,
+      emailVerified: false,
+    });
+    expect(user.password).toBeUndefined();
+
+    expect(mocks.orgCalls[0]).toMatchObject({
+      userId: user._id.toString(),
+      orgData: {
+        companyName: "Boulangerie <Martin>",
+        siret: "12345678900012",
+        siren: "123456789",
+        legalForm: "5499",
+        addressStreet: "12 rue du Four",
+        addressCity: "Lyon",
+        addressZipCode: "69002",
+      },
+      appTrialDays: 30,
+    });
+    expect(db.data.organization[0]).toMatchObject({
+      companyEmail: "jean.martin@boulangerie.fr",
+      siretVerificationSource: "recherche-entreprises.api.gouv.fr",
+      denominationUniteLegale: "BOULANGERIE MARTIN",
+    });
+
+    const orgId = result.organizationId;
+    const members = db.data.member.filter(
+      (m) => String(m.organizationId) === orgId,
+    );
+    expect(members.map((m) => [String(m.userId), m.role])).toEqual(
+      expect.arrayContaining([
+        [String(user._id), "owner"],
+        [String(managerUserId), "accountant"],
+      ]),
+    );
+
+    // Pas d'abonnement à la création : l'offre se paie à la fin de l'essai
+    expect(db.data.subscription || []).toHaveLength(0);
+
+    expect(db.data.managedclients[0]).toMatchObject({
+      payer: "manager",
+      status: "active",
+    });
+    expect(db.data.managedclients[0].plan).toBeUndefined();
+
+    const verification = db.data.verification[0];
+    expect(verification.identifier).toMatch(/^reset-password:[0-9a-f]{64}$/);
+    expect(verification.value).toBe(String(user._id));
+    const days = (verification.expiresAt - verification.createdAt) / 86400000;
+    expect(days).toBe(7);
+
+    const mail = mocks.sendEmail.mock.calls[0][0];
+    expect(mail.to).toBe("jean.martin@boulangerie.fr");
+    expect(mail.subject).toBe("Compta Dupont a créé votre espace Newbi");
+    const token = verification.identifier.split(":")[1];
+    expect(mail.html).toContain(
+      `https://www.newbi.fr/auth/reset-password?token=${token}`,
+    );
+    expect(mail.html).toContain("Boulangerie &lt;Martin&gt;");
+    expect(mail.html).not.toContain("<Martin>");
+    expect(result.emailSent).toBe(true);
+  });
+
+  it("client payeur : même essai, aucun abonnement créé", async () => {
+    await create({ payer: "client" });
+    expect(mocks.orgCalls[0].appTrialDays).toBe(30);
+    expect(db.data.subscription || []).toHaveLength(0);
+    expect(db.data.managedclients[0].payer).toBe("client");
+  });
+
+  it("refuse un gestionnaire suspendu ou inconnu, sans rien créer", async () => {
+    db.data.accountmanagers[0].status = "suspended";
+    await expect(create()).rejects.toMatchObject({ status: 403 });
+    await expect(create({}, new ObjectId())).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(db.data.user).toHaveLength(1);
+  });
+
+  it("refuse une adresse qui a déjà un compte Newbi", async () => {
+    await expect(create({ email: "SOPHIE@dupont.fr" })).rejects.toMatchObject({
+      status: 409,
+    });
+  });
+
+  it("refuse une entreprise qui a déjà un espace Newbi, sans rien créer", async () => {
+    const siret = input().siret.replace(/\s+/g, "");
+    await db.collection("organization").insertOne({ siret });
+    await expect(create()).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringContaining("Inviter un client"),
+    });
+    expect(mocks.orgCalls).toHaveLength(0);
+    expect(db.data.user).toHaveLength(1);
+  });
+
+  it("refuse une saisie invalide", async () => {
+    for (const over of [
+      { companyName: "  " },
+      { siret: "123" },
+      { siret: "" },
+      { email: "pas-un-email" },
+      { email: { $ne: null } },
+    ]) {
+      await expect(create(over)).rejects.toBeInstanceOf(ManagedClientError);
+    }
+    expect(db.data.user).toHaveLength(1);
+  });
+
+  it("refuse un SIRET introuvable ou radié, sans rien créer", async () => {
+    registry.result = { ok: false, reason: "not_found" };
+    await expect(create()).rejects.toMatchObject({
+      status: 400,
+      message: "Ce numéro SIRET est introuvable au registre des entreprises.",
+    });
+    registry.result = { ok: false, reason: "inactive" };
+    await expect(create()).rejects.toMatchObject({ status: 400 });
+    expect(db.data.user).toHaveLength(1);
+  });
+
+  it("répond 503 si le registre est indisponible", async () => {
+    registry.result = { ok: false, reason: "service_unavailable" };
+    await expect(create()).rejects.toMatchObject({ status: 503 });
+    expect(db.data.user).toHaveLength(1);
+  });
+
+  it("défait tout si une étape échoue en cours de route", async () => {
+    mocks.failOn = "managedclients";
+    await expect(create()).rejects.toThrow("échec managedclients");
+    expect(db.data.user).toHaveLength(1);
+    expect(db.data.organization).toHaveLength(0);
+    expect(db.data.member).toHaveLength(0);
+    expect(db.data.subscription || []).toHaveLength(0);
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("garde l'espace si seul l'e-mail échoue", async () => {
+    mocks.sendEmail.mockRejectedValue(new Error("Resend indisponible"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await create();
+    console.error.mockRestore();
+    expect(result.emailSent).toBe(false);
+    expect(db.data.managedclients).toHaveLength(1);
+  });
+
+  it("signale l'e-mail refusé par Resend (renvoyé, pas levé)", async () => {
+    mocks.sendEmail.mockResolvedValue({
+      data: null,
+      error: { message: "Adresse invalide" },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await create();
+    console.error.mockRestore();
+    expect(result.emailSent).toBe(false);
+    expect(db.data.managedclients).toHaveLength(1);
+  });
+
+  it("ignore une formule envoyée : elle se choisit à la fin de l'essai", async () => {
+    const result = await create({ plan: "entreprise" });
+    expect(result.plan).toBeUndefined();
+    expect(db.data.managedclients[0].plan).toBeUndefined();
+    expect(db.data.subscription || []).toHaveLength(0);
+  });
+});
+
+describe("listManagedClients", () => {
+  it("liste les clients avec le dirigeant et l'état de l'accès", async () => {
+    await create();
+    await create({
+      email: "b@b.fr",
+      companyName: "Garage Leroy",
+      siret: "98765432100019",
+      payer: "client",
+    });
+    const clients = await listManagedClients(db, managerId);
+    expect(clients).toHaveLength(2);
+    const boulangerie = clients.find((c) => c.name === "Boulangerie <Martin>");
+    expect(boulangerie).toMatchObject({
+      ownerEmail: "jean.martin@boulangerie.fr",
+      payer: "manager",
+      access: { type: "trial" },
+    });
+    const garage = clients.find((c) => c.name === "Garage Leroy");
+    expect(garage).toMatchObject({
+      payer: "client",
+      access: { type: "trial" },
+    });
+
+    // Essai terminé sans abonnement : expiré ; abonnement Stripe ensuite : PRO
+    const garageOrg = db.data.organization.find(
+      (o) => o.name === "Garage Leroy",
+    );
+    garageOrg.trialEndDate = new Date(Date.now() - 1000);
+    let after = await listManagedClients(db, managerId);
+    expect(after.find((c) => c.name === "Garage Leroy").access.type).toBe(
+      "none",
+    );
+    await db.collection("subscription").insertOne({
+      referenceId: String(garageOrg._id),
+      status: "active",
+    });
+    after = await listManagedClients(db, managerId);
+    expect(after.find((c) => c.name === "Garage Leroy").access).toEqual({
+      type: "subscription",
+      status: "active",
+    });
+  });
+});
+
+describe("resendWelcomeEmail", () => {
+  const manager = () => db.data.accountmanagers[0];
+
+  it("renvoie un nouveau lien au client créé qui n'a pas encore son mot de passe", async () => {
+    await create();
+    const [link] = db.data.managedclients;
+    const clients = await listManagedClients(db, managerId);
+    expect(clients[0].canResendWelcome).toBe(true);
+
+    mocks.sendEmail.mockClear();
+    const result = await resendWelcomeEmail({
+      mongoDb: db,
+      manager: manager(),
+      linkId: String(link._id),
+      baseUrl: "https://www.newbi.fr",
+    });
+    expect(result).toEqual({
+      email: "jean.martin@boulangerie.fr",
+      emailSent: true,
+    });
+    expect(db.data.verification).toHaveLength(2);
+    const mail = mocks.sendEmail.mock.calls[0][0];
+    expect(mail.html).toContain("bienvenue=1");
+    // Le cabinet paie : l'e-mail le dit
+    expect(mail.html).toContain("pris en charge par Compta Dupont");
+  });
+
+  it("refuse si le mot de passe est déjà choisi, ou pour le client d'un autre cabinet", async () => {
+    await create();
+    const [link] = db.data.managedclients;
+    const user = db.data.user.find(
+      (u) => u.email === "jean.martin@boulangerie.fr",
+    );
+    await db.collection("account").insertOne({
+      userId: user._id,
+      providerId: "credential",
+      password: "hash",
+    });
+    await expect(
+      resendWelcomeEmail({
+        mongoDb: db,
+        manager: manager(),
+        linkId: String(link._id),
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      resendWelcomeEmail({
+        mongoDb: db,
+        manager: { ...manager(), _id: new ObjectId() },
+        linkId: String(link._id),
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+});

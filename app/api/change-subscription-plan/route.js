@@ -4,6 +4,7 @@ import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
 import { SeatSyncService } from "@/src/services/seatSyncService";
 import { withErrorHandler } from "@/src/lib/security";
+import { findManagerPaidSubscription } from "@/src/lib/manager-billing";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 import { getPlanDisplay } from "@/src/lib/plans-display";
@@ -150,6 +151,18 @@ async function handler(request) {
       {
         error:
           "Seul le propriétaire de l'organisation peut changer le plan d'abonnement",
+      },
+      { status: 403 },
+    );
+  }
+
+  // Abonnement payé par le cabinet du client : géré depuis son espace
+  // gestionnaire
+  if (await findManagerPaidSubscription(mongoDb, organizationId)) {
+    return NextResponse.json(
+      {
+        error:
+          "L'abonnement de cet espace est pris en charge par votre cabinet : c'est lui qui le gère.",
       },
       { status: 403 },
     );

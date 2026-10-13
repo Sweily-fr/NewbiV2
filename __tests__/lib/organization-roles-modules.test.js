@@ -171,3 +171,32 @@ describe("getModuleActions : rôles personnalisés et ajustés", () => {
     expect(actions).toEqual(["view", "export"]);
   });
 });
+
+describe("getModuleActionsForMemberships (listes de l'espace gestionnaire)", () => {
+  it("donne les mêmes droits que getModuleActions, espace par espace", async () => {
+    const { getModuleActionsForMemberships } =
+      await import("@/src/lib/organization-roles");
+    const custom = {
+      organizationId: new ObjectId(orgId),
+      role: "role_finance",
+      actions: { invoices: ["view"] },
+    };
+    for (const [role, roles] of [
+      ["owner", []],
+      ["accountant", []],
+      ["member", []],
+      ["viewer", []],
+      ["role_finance", [custom]],
+    ]) {
+      for (const moduleKey of ["invoices", "quotes", "creditNotes"]) {
+        const single = await actionsOf(role, moduleKey, roles);
+        storedRoles = roles;
+        const batch = await getModuleActionsForMemberships(db, {
+          memberships: [{ organizationId: new ObjectId(orgId), role }],
+          moduleKey,
+        });
+        expect(batch.get(orgId)).toEqual(single.actions);
+      }
+    }
+  });
+});

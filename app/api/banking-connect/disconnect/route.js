@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   requireActiveSubscription,
   apiError,
   withErrorHandler,
@@ -11,7 +11,7 @@ import {
  * POST /api/banking-connect/disconnect
  *
  * Proxy to backend to disconnect banking provider.
- * Auth: session + org membership + active subscription.
+ * Auth: session + droit integrations.manage + active subscription.
  */
 async function handler(request) {
   const { user, cookieHeader } = await requireSession(request);
@@ -22,7 +22,9 @@ async function handler(request) {
     return apiError(400, "Header x-workspace-id manquant");
   }
 
-  await requireOrgMembership(user.id, workspaceId);
+  // Même droit que les boutons de l'interface : un Membre ou un Comptable
+  // ne connecte ni ne coupe la banque de l'espace
+  await requireOrgAction(user.id, workspaceId, "integrations", "manage");
   await requireActiveSubscription(user.id, workspaceId);
 
   // Transmettre le body envoyé par le client (accountId / itemId / provider).

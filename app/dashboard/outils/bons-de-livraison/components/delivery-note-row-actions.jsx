@@ -40,6 +40,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import DeliveryReceptionDialog from "./delivery-reception-dialog";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 export default function DeliveryNoteRowActions({
   row,
@@ -48,6 +49,8 @@ export default function DeliveryNoteRowActions({
   onOpenSidebar,
 }) {
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   const deliveryNote = row.original;
   const [showReception, setShowReception] = useState(false);
 
@@ -108,16 +111,19 @@ export default function DeliveryNoteRowActions({
     }
   };
 
-  const handleInvoice = async () => {
-    try {
-      const invoice = await createInvoice(deliveryNote.id);
-      if (!invoice?.id) throw new Error("Facture non créée");
-      toast.success("Facture brouillon créée à partir du bon de livraison");
-      router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
-    } catch (error) {
-      toast.error(error?.message || "Erreur lors de la création de la facture");
-    }
-  };
+  const handleInvoice = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        const invoice = await createInvoice(deliveryNote.id);
+        if (!invoice?.id) throw new Error("Facture non créée");
+        toast.success("Facture brouillon créée à partir du bon de livraison");
+        router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
+      } catch (error) {
+        toast.error(
+          error?.message || "Erreur lors de la création de la facture",
+        );
+      }
+    });
 
   const isLoading = changingStatus || isDeleting || creatingInvoice;
 

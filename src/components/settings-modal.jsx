@@ -20,6 +20,7 @@ import {
   Zap,
   LayoutGrid,
   DollarSign,
+  Wallet,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -58,6 +59,8 @@ import { SecuritySection } from "./settings/security-section";
 import RolesSection from "./settings/roles-section";
 import UserInfoSection from "./settings/user-info-section";
 import { NotificationsSection } from "./settings/notifications-section";
+import ManagerSpendingSection from "./settings/manager-spending-section";
+import { useAccountManager } from "@/src/hooks/useAccountManager";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -67,6 +70,7 @@ import { EInvoicingSection } from "./settings/e-invoicing-section";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import { UPDATE_EINVOICING_VAT_REGIME } from "@/src/graphql/eInvoicingQueries";
 import { deriveVatRegime } from "@/src/utils/vatRegime";
+import { normalizeLegalForm } from "@/src/lib/company-registry";
 
 export function SettingsModal({
   open,
@@ -81,6 +85,9 @@ export function SettingsModal({
   const { isActive } = useSubscription();
   const { getUserRole } = usePermissions();
   const { can, isReady: permissionsReady } = useMyPermissions();
+  // Comptes gestionnaires : ce que le cabinet paie pour ses clients
+  // Comptes gestionnaires (suspendus compris) : leurs dépenses
+  const isAccountManager = useAccountManager()?.isManager === true;
   const apolloClient = useApolloClient();
   const {
     organization,
@@ -198,9 +205,13 @@ export function SettingsModal({
       vatNumber: org.vatNumber || "",
       rcs: org.rcs || "",
       // "Auto-entrepreneur" est l'ancien nom de l'EI (même forme juridique,
-      // seul le régime micro les distingue) — normalisé vers "EI" à l'affichage
+      // seul le régime micro les distingue) — normalisé vers "EI" à l'affichage.
+      // Les libellés des anciennes inscriptions (« Entrepreneur individuel »,
+      // codes INSEE…) sont ramenés à une valeur de la liste.
       legalForm:
-        org.legalForm === "Auto-entrepreneur" ? "EI" : org.legalForm || "",
+        org.legalForm === "Auto-entrepreneur"
+          ? "EI"
+          : normalizeLegalForm(org.legalForm),
       capital: org.capitalSocial || "",
       regime: org.fiscalRegime || "",
       category: org.activityCategory || "",
@@ -259,6 +270,7 @@ export function SettingsModal({
 
   // Fonction de sauvegarde
   const handleSaveAll = async (formData) => {
+    let errorToastShown = false;
     try {
       // Vérifier les permissions avant de sauvegarder
       if (!canManageOrgSettings) {
@@ -363,6 +375,8 @@ export function SettingsModal({
       };
 
       // Sauvegarder via Better Auth
+      // `onError` affiche l'erreur puis l'appel lève quand même : le `catch`
+      // ci-dessous ne doit pas afficher un second toast.
       await updateOrganization(transformedData, {
         onSuccess: async () => {
           // Forcer un refetch pour s'assurer que les données sont bien en BDD
@@ -431,11 +445,18 @@ export function SettingsModal({
         },
         onError: (error) => {
           console.error("❌ Erreur sauvegarde:", error);
-          toast.error("Erreur lors de la sauvegarde");
+          errorToastShown = true;
+          // SIRET refusé par le serveur (introuvable, fermé, déjà utilisé) :
+          // le message dit quoi corriger.
+          toast.error(
+            error?.code === "SIRET_REJECTED"
+              ? error.message
+              : "Erreur lors de la sauvegarde",
+          );
         },
       });
     } catch (error) {
-      toast.error("Erreur lors de la sauvegarde");
+      if (!errorToastShown) toast.error("Erreur lors de la sauvegarde");
     }
   };
 
@@ -585,6 +606,8 @@ export function SettingsModal({
         );
       case "applications":
         return <ApplicationsSection />;
+      case "depenses-clients":
+        return isAccountManager ? <ManagerSpendingSection /> : null;
       case "user-info":
         return <UserInfoSection onTabChange={handleTabChange} />;
       default:
@@ -658,6 +681,12 @@ export function SettingsModal({
         { id: "facturation", label: "Facturation", icon: DollarSign },
       ],
     },
+    isAccountManager && {
+      title: "Cabinet",
+      items: [
+        { id: "depenses-clients", label: "Dépenses clients", icon: Wallet },
+      ],
+    },
   ].filter(Boolean);
 
   // Déterminer si on est sur mobile
@@ -691,6 +720,7 @@ export function SettingsModal({
           canManageOrgSettings={canManageOrgSettings}
           canManageSubscription={canManageSubscription}
           showBilling={showBilling}
+          isAccountManager={isAccountManager}
         />
       </FormProvider>
     );
