@@ -52,7 +52,12 @@ const signInWithProvider = async (provider) => {
     // qui renvoie à l'accueil sans rien afficher. On revient ici avec
     // `?error=<code>`, lu par LoginPageContent.
     await signIn.social(
-      { provider, callbackURL: "/dashboard", errorCallbackURL: "/auth/login" },
+      {
+        provider,
+        // Un cabinet y est renvoyé vers son espace gestionnaire
+        callbackURL: "/auth/apres-connexion",
+        errorCallbackURL: "/auth/login",
+      },
       {
         onSuccess: () => {},
         onError: (error) => {
@@ -83,7 +88,8 @@ const OAUTH_ERROR_MESSAGES = {
   access_denied: "Connexion refusée par le fournisseur.",
   state_mismatch: "La session de connexion a expiré. Réessayez.",
   state_security_mismatch: "La session de connexion a expiré. Réessayez.",
-  unable_to_link_account: "Ce compte ne peut pas être associé à votre compte Newbi.",
+  unable_to_link_account:
+    "Ce compte ne peut pas être associé à votre compte Newbi.",
 };
 
 function LoginPageContent() {
@@ -102,7 +108,9 @@ function LoginPageContent() {
     if (oauthError === "account_not_linked") {
       setShowNotLinkedDialog(true);
     } else {
-      toast.error(OAUTH_ERROR_MESSAGES[oauthError] || "Erreur lors de la connexion");
+      toast.error(
+        OAUTH_ERROR_MESSAGES[oauthError] || "Erreur lors de la connexion",
+      );
     }
     // Nettoie l'URL sans perdre les autres paramètres (source=mobile...).
     const params = new URLSearchParams(searchParams.toString());
