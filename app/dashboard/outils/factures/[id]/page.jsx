@@ -18,7 +18,6 @@ import ModernInvoiceEditor from "../components/modern-invoice-editor";
 import { useRouter, useParams } from "next/navigation";
 import { useInvoice } from "@/src/graphql/invoiceQueries";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -145,9 +144,7 @@ export default function InvoiceDetailsPage() {
       pageName="Détails facture"
       fallback={<InvoiceDetailsSkeleton />}
     >
-      <CompanyInfoGuard fallback={<InvoiceDetailsSkeleton />}>
-        <InvoiceDetailsContent />
-      </CompanyInfoGuard>
+      <InvoiceDetailsContent />
     </ProRouteGuard>
   );
 }

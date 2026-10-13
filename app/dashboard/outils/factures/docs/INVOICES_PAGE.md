@@ -75,7 +75,7 @@ La "page Factures" n'est pas une seule page mais **un module complet** :
 Toutes les routes UI sont protégées par trois gardes successifs côté frontend :
 
 1. `ProRouteGuard` — abonnement actif requis
-2. `CompanyInfoGuard` — infos entreprise renseignées (sinon redirect setup)
+2. `CompanyInfoGuard` — infos entreprise renseignées, sur les pages de création seulement (`/new`, nouvel avoir) : la liste et la consultation restent accessibles
 3. `RBACRouteGuard` — permission `invoices:create/read/update/delete` selon la route
 
 Côté backend, chaque resolver utilise `requireRead("invoices")`, `requireWrite("invoices")` ou `requireDelete("invoices")` — middleware RBAC qui valide rôle + permissions explicites.

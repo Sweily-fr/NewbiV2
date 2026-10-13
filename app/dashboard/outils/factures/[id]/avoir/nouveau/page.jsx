@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import ModernCreditNoteEditor from "../../../components/modern-credit-note-editor";
 import { InvoiceEditorSkeleton } from "../../../components/invoice-editor-skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { AlertCircle, ArrowLeft } from "lucide-react";
@@ -102,7 +103,9 @@ function NewCreditNoteContent() {
 export default function NewCreditNotePage() {
   return (
     <ProRouteGuard pageName="Nouvel avoir" fallback={<InvoiceEditorSkeleton />}>
-      <NewCreditNoteContent />
+      <CompanyInfoGuard fallback={<InvoiceEditorSkeleton />}>
+        <NewCreditNoteContent />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }

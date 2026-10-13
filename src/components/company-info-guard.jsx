@@ -31,6 +31,11 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 /**
  * Composant Guard pour protéger les pages nécessitant des informations d'entreprise complètes
  * Affiche un dialog détaillé avec les champs manquants puis ouvre la modal de paramètres
+ *
+ * Réservé aux pages de CRÉATION de documents (nouvelle facture, nouveau devis,
+ * nouveau bon de commande ou de livraison, nouvel avoir) : la fenêtre
+ * apparaît au moment où l'on lance une création, jamais à la consultation
+ * des listes ou d'un document.
  */
 // fallback : skeleton de la page à afficher pendant les états d'attente,
 // pour rester visuellement aligné avec le loading.jsx de la route au lieu
@@ -97,9 +102,12 @@ export function CompanyInfoGuard({ children, fallback = null }) {
     setIsSettingsModalOpen(true);
   };
 
+  // Retour là d'où l'on vient (en général la liste qui a lancé la création),
+  // l'accueil seulement si la page a été ouverte directement.
   const handleCancel = () => {
     setShowDialog(false);
-    router.push("/dashboard");
+    if (window.history.length > 1) router.back();
+    else router.push("/dashboard");
   };
 
   // Calcul de la progression
@@ -129,7 +137,14 @@ export function CompanyInfoGuard({ children, fallback = null }) {
   if (organization && !isCompanyInfoComplete(organization)) {
     return (
       <>
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        {/* Fermer la fenêtre (Échap, clic à côté) revient au même que
+            « Retour » : sinon on restait bloqué sur le squelette de l'éditeur */}
+        <Dialog
+          open={showDialog}
+          onOpenChange={(open) => {
+            if (!open) handleCancel();
+          }}
+        >
           <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
             <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
               {/* Header */}
