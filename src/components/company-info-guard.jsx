@@ -5,19 +5,8 @@ import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
-import dynamic from "next/dynamic";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import {
-  CompanyInfoDialog,
-  companyInfoSettingsTab,
-  getCompanyInfoFields,
-} from "@/src/components/company-info-gate";
-
-// Chunk chargé à la première ouverture seulement
-const SettingsModal = dynamic(
-  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
-  { ssr: false },
-);
+import { CompanyInfoDialog } from "@/src/components/company-info-gate";
 
 /**
  * Composant Guard des pages qui CRÉENT ou modifient un document (nouvelle
@@ -26,7 +15,8 @@ const SettingsModal = dynamic(
  * générer. La fenêtre n'apparaît jamais à la consultation des listes ou d'un
  * document ; les actions de création lancées depuis une liste passent par
  * useCompanyInfoGate (company-info-gate.jsx).
- * Affiche un dialog détaillé avec les champs manquants puis ouvre la modal de paramètres
+ * La fenêtre contient tout le formulaire (CompanyInfoForm) : une fois les
+ * informations enregistrées, l'espace se met à jour et la page s'affiche.
  */
 // fallback : skeleton de la page à afficher pendant les états d'attente,
 // pour rester visuellement aligné avec le loading.jsx de la route au lieu
@@ -39,12 +29,6 @@ export function CompanyInfoGuard({ children, fallback = null }) {
   const canEditOrgSettings = !permissionsReady || canDo("orgSettings", "edit");
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = useState("generale");
-  const [fieldsInfo, setFieldsInfo] = useState({
-    generalFields: [],
-    legalFields: [],
-  });
 
   useEffect(() => {
     if (isLoading) return;
@@ -53,26 +37,8 @@ export function CompanyInfoGuard({ children, fallback = null }) {
       return;
     }
 
-    // Ne pas vérifier si le modal de paramètres est déjà ouvert
-    if (isSettingsModalOpen) {
-      return;
-    }
-
-    const isComplete = isCompanyInfoComplete(organization);
-
-    if (!isComplete) {
-      setFieldsInfo(getCompanyInfoFields(organization));
-      setShowDialog(true);
-    } else {
-      setShowDialog(false);
-    }
-  }, [organization, isLoading, isSettingsModalOpen]);
-
-  const handleGoToSettings = () => {
-    setSettingsInitialTab(companyInfoSettingsTab(fieldsInfo));
-    setShowDialog(false);
-    setIsSettingsModalOpen(true);
-  };
+    setShowDialog(!isCompanyInfoComplete(organization));
+  }, [organization, isLoading]);
 
   // Retour là d'où l'on vient (en général la liste qui a lancé la création),
   // l'accueil seulement si la page a été ouverte directement.
@@ -111,32 +77,12 @@ export function CompanyInfoGuard({ children, fallback = null }) {
           onOpenChange={(open) => {
             if (!open) handleCancel();
           }}
-          fieldsInfo={fieldsInfo}
+          organization={organization}
           canEditOrgSettings={canEditOrgSettings}
           onCancel={handleCancel}
-          onComplete={handleGoToSettings}
+          // Une fois enregistré, l'espace se met à jour et la page s'affiche
+          // d'elle-même (informations complètes).
         />
-
-        {/* Modal de paramètres */}
-        {isSettingsModalOpen && (
-          <SettingsModal
-            open={isSettingsModalOpen}
-            onOpenChange={(open) => {
-              setIsSettingsModalOpen(open);
-              // Quand le modal se ferme, revérifier les informations
-              if (!open) {
-                // Petit délai pour laisser le temps à l'organisation de se mettre à jour
-                setTimeout(() => {
-                  const isComplete = isCompanyInfoComplete(organization);
-                  if (!isComplete) {
-                    setShowDialog(true);
-                  }
-                }, 500);
-              }
-            }}
-            initialTab={settingsInitialTab}
-          />
-        )}
 
         {/* Arrière-plan pendant que le dialog est ouvert : le skeleton de la
             page si fourni, sinon le loader historique */}
