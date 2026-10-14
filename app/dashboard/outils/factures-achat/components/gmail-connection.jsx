@@ -48,7 +48,9 @@ import {
   Zap,
 } from "lucide-react";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/+$/, "");
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+).replace(/\/+$/, "");
 
 const SCAN_PERIOD_OPTIONS = [
   { value: "1", label: "1 mois" },
@@ -59,11 +61,28 @@ const SCAN_PERIOD_OPTIONS = [
 
 function GoogleIcon({ className }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
     </svg>
   );
 }
@@ -77,15 +96,18 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const { canDo, isReady } = useMyPermissions();
-  // Connexion, synchronisation et déconnexion importent des factures d'achat :
-  // action « create », consultation seule sinon (tout autorisé tant que la
-  // grille n'est pas chargée)
+  // Connexion et synchronisation importent des factures d'achat : action
+  // « create », consultation seule sinon (tout autorisé tant que la grille
+  // n'est pas chargée). La déconnexion reste ouverte à chacun pour sa propre
+  // boîte, comme côté API.
   const canManageGmail = !isReady || canDo("purchaseInvoices", "create");
 
   const handleConnect = async () => {
     try {
       setConnecting(true);
-      const tokenRes = await fetch("/api/auth/token", { credentials: "include" });
+      const tokenRes = await fetch("/api/auth/token", {
+        credentials: "include",
+      });
       const tokenData = await tokenRes.json();
       if (!tokenData.token) throw new Error("Non authentifié");
 
@@ -96,7 +118,7 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
             Authorization: `Bearer ${tokenData.token}`,
             "x-organization-id": workspaceId,
           },
-        }
+        },
       );
 
       const data = await res.json();
@@ -124,7 +146,8 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
   };
 
   const isConnected = connection && connection.status !== "disconnected";
-  const isError = connection?.status === "error" || connection?.status === "expired";
+  const isError =
+    connection?.status === "error" || connection?.status === "expired";
 
   const statusConfig = {
     active: { label: "Actif", variant: "success" },
@@ -146,7 +169,8 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                 Automatisation Gmail
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground sr-only">
-                Connectez votre compte Gmail pour importer automatiquement vos factures fournisseurs.
+                Connectez votre compte Gmail pour importer automatiquement vos
+                factures fournisseurs.
               </DialogDescription>
             </DialogHeader>
 
@@ -164,13 +188,20 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                       <GoogleIcon className="size-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{connection.accountEmail}</p>
+                      <p className="text-sm font-medium truncate">
+                        {connection.accountEmail}
+                      </p>
                       {connection.accountName && (
-                        <p className="text-xs text-muted-foreground truncate">{connection.accountName}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {connection.accountName}
+                        </p>
                       )}
                     </div>
                   </div>
-                  <Badge variant={currentStatus.variant} className="text-[10px] shrink-0 ml-3">
+                  <Badge
+                    variant={currentStatus.variant}
+                    className="text-[10px] shrink-0 ml-3"
+                  >
                     {currentStatus.label}
                   </Badge>
                 </div>
@@ -179,23 +210,37 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                 {isError && connection.lastSyncError && (
                   <div className="flex items-start gap-2.5 mt-3 px-3.5 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40">
                     <AlertTriangle className="size-3.5 text-red-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-red-600 dark:text-red-400">{connection.lastSyncError}</p>
+                    <p className="text-xs text-red-600 dark:text-red-400">
+                      {connection.lastSyncError}
+                    </p>
                   </div>
                 )}
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-2 mt-4">
                   <div className="px-3 py-3 rounded-lg border border-border/50 bg-muted/30 text-center">
-                    <p className="text-xl font-semibold tabular-nums">{stats.totalEmailsScanned}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Emails scannés</p>
+                    <p className="text-xl font-semibold tabular-nums">
+                      {stats.totalEmailsScanned}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Emails scannés
+                    </p>
                   </div>
                   <div className="px-3 py-3 rounded-lg border border-border/50 bg-muted/30 text-center">
-                    <p className="text-xl font-semibold tabular-nums">{stats.totalInvoicesFound}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Factures trouvées</p>
+                    <p className="text-xl font-semibold tabular-nums">
+                      {stats.totalInvoicesFound}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Factures trouvées
+                    </p>
                   </div>
                   <div className="px-3 py-3 rounded-lg border border-border/50 bg-muted/30 text-center">
-                    <p className="text-xl font-semibold tabular-nums text-amber-600 dark:text-amber-500">{stats.pendingReview}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">En attente</p>
+                    <p className="text-xl font-semibold tabular-nums text-amber-600 dark:text-amber-500">
+                      {stats.pendingReview}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      En attente
+                    </p>
                   </div>
                 </div>
 
@@ -206,29 +251,33 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                     <p className="text-xs text-muted-foreground">
                       Dernière synchronisation{" "}
                       <span className="font-medium text-foreground">
-                        {new Date(stats.lastSyncAt).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {new Date(stats.lastSyncAt).toLocaleDateString(
+                          "fr-FR",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
                       </span>
                     </p>
                   </div>
                 )}
 
-                {/* Footer (marge seule en consultation) */}
-                {canManageGmail ? (
-                  <div className="flex items-center justify-between border-t border-border/40 mt-4 -mx-5 px-5 py-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 gap-1.5"
-                      onClick={() => setShowDisconnectConfirm(true)}
-                    >
-                      <Unplug className="size-3.5" />
-                      Déconnecter
-                    </Button>
+                {/* Footer : « Déconnecter » pour tous, « Synchroniser » sous
+                    « create » */}
+                <div className="flex items-center justify-between border-t border-border/40 mt-4 -mx-5 px-5 py-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 gap-1.5"
+                    onClick={() => setShowDisconnectConfirm(true)}
+                  >
+                    <Unplug className="size-3.5" />
+                    Déconnecter
+                  </Button>
+                  {canManageGmail && (
                     <Button
                       variant="primary"
                       size="sm"
@@ -248,10 +297,8 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                         </>
                       )}
                     </Button>
-                  </div>
-                ) : (
-                  <div className="h-4" />
-                )}
+                  )}
+                </div>
               </div>
             ) : (
               /* ─── Not connected state ─── */
@@ -262,26 +309,36 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                     {
                       icon: Mail,
                       title: "Détection automatique",
-                      description: "Scanne vos emails à la recherche de factures PDF en pièce jointe.",
+                      description:
+                        "Scanne vos emails à la recherche de factures PDF en pièce jointe.",
                     },
                     {
                       icon: FileSearch,
                       title: "Extraction intelligente",
-                      description: "Les montants, dates, fournisseurs et TVA sont extraits automatiquement via OCR.",
+                      description:
+                        "Les montants, dates, fournisseurs et TVA sont extraits automatiquement via OCR.",
                     },
                     {
                       icon: Zap,
                       title: "Synchronisation continue",
-                      description: "Vos nouvelles factures sont importées automatiquement toutes les 4 heures.",
+                      description:
+                        "Vos nouvelles factures sont importées automatiquement toutes les 4 heures.",
                     },
                   ].map((step, i) => (
-                    <div key={i} className="flex items-start gap-3 px-3.5 py-3 rounded-lg border border-border/50 bg-muted/30">
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 px-3.5 py-3 rounded-lg border border-border/50 bg-muted/30"
+                    >
                       <div className="size-7 rounded-md bg-background flex items-center justify-center shrink-0 ring-1 ring-border/50">
                         <step.icon className="size-3.5 text-muted-foreground" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium leading-none mb-1">{step.title}</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{step.description}</p>
+                        <p className="text-sm font-medium leading-none mb-1">
+                          {step.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {step.description}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -312,7 +369,11 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                 <div className="flex items-center gap-2.5 mt-3 px-3.5 py-2.5 rounded-lg border border-border/50 bg-muted/30">
                   <ShieldCheck className="size-3.5 text-green-600 dark:text-green-500 shrink-0" />
                   <p className="text-xs text-muted-foreground">
-                    Accès en <span className="font-medium text-foreground">lecture seule</span>. Aucun email n&apos;est modifié ou supprimé.
+                    Accès en{" "}
+                    <span className="font-medium text-foreground">
+                      lecture seule
+                    </span>
+                    . Aucun email n&apos;est modifié ou supprimé.
                   </p>
                 </div>
 
@@ -351,7 +412,10 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
       </Dialog>
 
       {/* Disconnect confirmation */}
-      <AlertDialog open={showDisconnectConfirm} onOpenChange={setShowDisconnectConfirm}>
+      <AlertDialog
+        open={showDisconnectConfirm}
+        onOpenChange={setShowDisconnectConfirm}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -359,7 +423,8 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
               Déconnecter Gmail ?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              Les factures déjà importées seront conservées. La synchronisation automatique sera arrêtée.
+              Les factures déjà importées seront conservées. La synchronisation
+              automatique sera arrêtée.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

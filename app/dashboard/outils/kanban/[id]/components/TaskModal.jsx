@@ -304,6 +304,9 @@ export function TaskModal({
   const { canDo, isReady } = useMyPermissions();
   const canEditKanban =
     !isReady || canDo("kanban", isEditing ? "edit" : "create");
+  // Pièces jointes choisies à la création : envoyées après createTask par
+  // uploadTaskImage, qui exige « edit » → bloc masqué sans ce droit
+  const canAttachKanban = isEditing || !isReady || canDo("kanban", "edit");
   // Ajout, modification et suppression des commentaires
   const canCommentKanban = !isReady || canDo("kanban", "comment");
   // Sélecteurs (status, dates, priorité, tags, membres) fermés en lecture seule
@@ -1860,33 +1863,37 @@ export function TaskModal({
                   </div>
 
                   {/* Pièces jointes */}
-                  <div className="space-y-2 mt-6">
-                    <Label className="text-sm font-normal flex items-center gap-2">
-                      <Paperclip className="h-4 w-4 text-muted-foreground" />
-                      Pièces jointes
-                    </Label>
-                    {isEditing && taskId ? (
-                      <TaskImageUpload
-                        images={taskForm.images || []}
-                        onUpload={handleDescriptionImageUpload}
-                        onDelete={canEditKanban ? handleDeleteImage : undefined}
-                        disabled={!canEditKanban}
-                        isUploading={isUploadingImage}
-                        uploadProgress={uploadProgress}
-                        maxImages={10}
-                        placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
-                      />
-                    ) : (
-                      <TaskImageUpload
-                        localMode
-                        pendingFiles={taskForm.pendingFiles || []}
-                        onAddFiles={handleAddPendingFiles}
-                        onRemoveFile={handleRemovePendingFile}
-                        maxImages={10}
-                        placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
-                      />
-                    )}
-                  </div>
+                  {canAttachKanban && (
+                    <div className="space-y-2 mt-6">
+                      <Label className="text-sm font-normal flex items-center gap-2">
+                        <Paperclip className="h-4 w-4 text-muted-foreground" />
+                        Pièces jointes
+                      </Label>
+                      {isEditing && taskId ? (
+                        <TaskImageUpload
+                          images={taskForm.images || []}
+                          onUpload={handleDescriptionImageUpload}
+                          onDelete={
+                            canEditKanban ? handleDeleteImage : undefined
+                          }
+                          disabled={!canEditKanban}
+                          isUploading={isUploadingImage}
+                          uploadProgress={uploadProgress}
+                          maxImages={10}
+                          placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
+                        />
+                      ) : (
+                        <TaskImageUpload
+                          localMode
+                          pendingFiles={taskForm.pendingFiles || []}
+                          onAddFiles={handleAddPendingFiles}
+                          onRemoveFile={handleRemovePendingFile}
+                          maxImages={10}
+                          placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer fixe — uniquement en mode création */}
@@ -2778,33 +2785,37 @@ export function TaskModal({
                   </div>
 
                   {/* Pièces jointes */}
-                  <div className="space-y-2 mt-6">
-                    <Label className="text-sm font-normal flex items-center gap-2">
-                      <Paperclip className="h-4 w-4 text-muted-foreground" />
-                      Pièces jointes
-                    </Label>
-                    {isEditing && (taskForm.id || taskForm._id) ? (
-                      <TaskImageUpload
-                        images={taskForm.images || []}
-                        onUpload={handleDescriptionImageUpload}
-                        onDelete={canEditKanban ? handleDeleteImage : undefined}
-                        disabled={!canEditKanban}
-                        isUploading={isUploadingImage}
-                        uploadProgress={uploadProgress}
-                        maxImages={10}
-                        placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
-                      />
-                    ) : (
-                      <TaskImageUpload
-                        localMode
-                        pendingFiles={taskForm.pendingFiles || []}
-                        onAddFiles={handleAddPendingFiles}
-                        onRemoveFile={handleRemovePendingFile}
-                        maxImages={10}
-                        placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
-                      />
-                    )}
-                  </div>
+                  {canAttachKanban && (
+                    <div className="space-y-2 mt-6">
+                      <Label className="text-sm font-normal flex items-center gap-2">
+                        <Paperclip className="h-4 w-4 text-muted-foreground" />
+                        Pièces jointes
+                      </Label>
+                      {isEditing && (taskForm.id || taskForm._id) ? (
+                        <TaskImageUpload
+                          images={taskForm.images || []}
+                          onUpload={handleDescriptionImageUpload}
+                          onDelete={
+                            canEditKanban ? handleDeleteImage : undefined
+                          }
+                          disabled={!canEditKanban}
+                          isUploading={isUploadingImage}
+                          uploadProgress={uploadProgress}
+                          maxImages={10}
+                          placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
+                        />
+                      ) : (
+                        <TaskImageUpload
+                          localMode
+                          pendingFiles={taskForm.pendingFiles || []}
+                          onAddFiles={handleAddPendingFiles}
+                          onRemoveFile={handleRemovePendingFile}
+                          maxImages={10}
+                          placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer fixe mobile — uniquement en mode création */}

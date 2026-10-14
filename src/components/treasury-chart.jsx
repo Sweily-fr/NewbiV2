@@ -37,6 +37,7 @@ import { I18nProvider } from "react-aria-components";
 import { Calendar as RangeCalendar } from "@/src/components/ui/calendar";
 import { fr } from "date-fns/locale";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const toYMD = (d) =>
@@ -58,6 +59,9 @@ export function TreasuryChart({
 }) {
   const router = useRouter();
   const { remap } = useChartColors();
+  // Lien vers les prévisions masqué pour un rôle qui ne peut pas les lire
+  const { canRead, isReady } = useMyPermissions();
+  const canReadForecast = !isReady || canRead("forecast");
   const chartConfig = {
     treasury: { label: "Trésorerie", color: remap("#93c5fd") },
     income: { label: "Entrées", color: remap("#5b50ff") },
@@ -355,15 +359,17 @@ export function TreasuryChart({
           </div>
           <div className="flex items-center gap-1">
             {timeRangeDropdown}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => router.push("/dashboard/outils/prevision")}
-            >
-              Prévisions
-              <ExternalLink className="ml-1 h-3 w-3" />
-            </Button>
+            {canReadForecast && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => router.push("/dashboard/outils/prevision")}
+              >
+                Prévisions
+                <ExternalLink className="ml-1 h-3 w-3" />
+              </Button>
+            )}
           </div>
         </CardHeader>
       )}

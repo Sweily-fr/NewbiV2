@@ -319,9 +319,11 @@ function ReconciliationDeck({
 export function ReconciliationToastProvider({ children }) {
   // Rattacher ou masquer une suggestion : droit « Rapprocher » des
   // transactions (aucune carte pour un rôle qui n'a que « Voir »)
-  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const { canDo, canRead, isReady: permissionsReady } = useMyPermissions();
   const canReconcile = permissionsReady && canDo("banking", "reconcile");
   const router = useRouter();
+  // Toast monté sur toutes les pages : sans lecture des transactions, l'API
+  // refuserait reconciliationSuggestions (FORBIDDEN) à chaque polling
   const {
     suggestions,
     linkTransaction,
@@ -329,7 +331,9 @@ export function ReconciliationToastProvider({ children }) {
     refetch: fetchSuggestions,
     loading,
     error,
-  } = useReconciliation();
+  } = useReconciliation({
+    skip: permissionsReady && !canRead("banking"),
+  });
 
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
   const [exitingIds, setExitingIds] = useState(new Set());

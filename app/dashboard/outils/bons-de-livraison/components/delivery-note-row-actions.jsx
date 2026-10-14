@@ -241,19 +241,22 @@ export default function DeliveryNoteRowActions({
                     <PackageCheck className="mr-2 h-4 w-4" />
                     Marquer comme livré
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      changeTo(
-                        DELIVERY_NOTE_STATUS.DRAFT,
-                        "Bon de livraison repassé en brouillon",
-                      )
-                    }
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Repasser en brouillon
-                  </DropdownMenuItem>
                 </>
+              )}
+              {/* Retour en brouillon : « edit » côté API (statut DRAFT) */}
+              {canEditDeliveryNotes && isPending && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    changeTo(
+                      DELIVERY_NOTE_STATUS.DRAFT,
+                      "Bon de livraison repassé en brouillon",
+                    )
+                  }
+                  disabled={isLoading || isReadOnly}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Repasser en brouillon
+                </DropdownMenuItem>
               )}
 
               {canChangeDeliveryNoteStatus && isShipped && (

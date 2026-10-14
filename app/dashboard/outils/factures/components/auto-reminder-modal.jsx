@@ -54,8 +54,10 @@ export function AutoReminderModal({ open, onOpenChange }) {
   const [updateEmailSettings] = useUpdateEmailSettings();
   // Expéditeur : réglage de l'entreprise (« Modifier » les informations de
   // l'entreprise, exigé par l'API)
-  const { canDo, isReady } = useMyPermissions();
+  const { canDo, canRead, isReady } = useMyPermissions();
   const canEditSender = !isReady || canDo("orgSettings", "edit");
+  // Onglet « Clients concernés » : liste des clients, masqué sans lecture
+  const canReadClients = !isReady || canRead("clients");
 
   const methods = useForm({
     defaultValues: {
@@ -193,7 +195,9 @@ Cordialement,
                   className="flex-1 flex flex-col min-h-0"
                 >
                   <div className="px-5 py-3 border-b border-border/40 shrink-0">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList
+                      className={`grid w-full ${canReadClients ? "grid-cols-2" : "grid-cols-1"}`}
+                    >
                       <TabsTrigger
                         value="settings"
                         className="gap-2 text-xs md:text-sm"
@@ -202,16 +206,18 @@ Cordialement,
                         <span className="hidden sm:inline">Paramètres</span>
                         <span className="sm:hidden">Config</span>
                       </TabsTrigger>
-                      <TabsTrigger
-                        value="clients"
-                        className="gap-2 text-xs md:text-sm"
-                      >
-                        <Users className="h-4 w-4" />
-                        <span className="hidden sm:inline">
-                          Clients concernés
-                        </span>
-                        <span className="sm:hidden">Clients</span>
-                      </TabsTrigger>
+                      {canReadClients && (
+                        <TabsTrigger
+                          value="clients"
+                          className="gap-2 text-xs md:text-sm"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span className="hidden sm:inline">
+                            Clients concernés
+                          </span>
+                          <span className="sm:hidden">Clients</span>
+                        </TabsTrigger>
+                      )}
                     </TabsList>
                   </div>
 
@@ -225,12 +231,14 @@ Cordialement,
                     />
                   </TabsContent>
 
-                  <TabsContent
-                    value="clients"
-                    className="flex-1 overflow-y-auto p-5 mt-0"
-                  >
-                    <AutoReminderClients />
-                  </TabsContent>
+                  {canReadClients && (
+                    <TabsContent
+                      value="clients"
+                      className="flex-1 overflow-y-auto p-5 mt-0"
+                    >
+                      <AutoReminderClients />
+                    </TabsContent>
+                  )}
                 </Tabs>
               </div>
 

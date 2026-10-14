@@ -20,6 +20,7 @@ import {
   usePurchaseOrder,
 } from "@/src/graphql/purchaseOrderQueries";
 import { useClient } from "@/src/graphql/clientQueries";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { usePurchaseOrderNumber } from "./use-purchase-order-number";
 import {
   formatCalendarDate,
@@ -76,7 +77,12 @@ export function usePurchaseOrderEditor({
     mode !== "create" && existingPurchaseOrder?.client?.id
       ? existingPurchaseOrder.client.id
       : null;
-  const { client: freshClient } = useClient(clientIdForFresh);
+  // Sans lecture des clients (FORBIDDEN sinon), le document garde le client
+  // figé qu'il contient
+  const { canRead, isReady: permissionsReady } = useMyPermissions();
+  const { client: freshClient } = useClient(clientIdForFresh, undefined, {
+    skip: permissionsReady && !canRead("clients"),
+  });
 
   // Prefix state pour le filtrage du numéro par préfixe
   // refreshPrefixDate : recale le mois/année du préfixe stocké sur la date du

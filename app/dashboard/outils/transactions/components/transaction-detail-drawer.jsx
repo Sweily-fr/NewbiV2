@@ -204,7 +204,7 @@ export function TransactionDetailDrawer({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canDo, isReady } = useMyPermissions();
+  const { canDo, canRead, isReady } = useMyPermissions();
   // Droits du rôle, action par action (tout autorisé tant que la grille
   // n'est pas chargée). En lecture seule, aucune action n'est affichée :
   //   - edit : catégorie, description, transaction manuelle ;
@@ -218,6 +218,11 @@ export function TransactionDetailDrawer({
   const canReconcile = !isReady || canDo("banking", "reconcile");
   const canLinkPurchaseInvoices =
     canReconcile && (!isReady || canDo("purchaseInvoices", "reconcile"));
+  // Ouvrir le document lié (aperçu PDF, page de la facture) : lecture du
+  // module du document, refusée sinon par l'API et le proxy d'aperçu. Le
+  // résumé (numéro, montant) reste affiché.
+  const canOpenInvoices = !isReady || canRead("invoices");
+  const canOpenPurchaseInvoices = !isReady || canRead("purchaseInvoices");
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -1828,11 +1833,19 @@ export function TransactionDetailDrawer({
                     {transaction.linkedInvoices.map((inv) => (
                       <div
                         key={`linked-${inv.id}`}
-                        onClick={() => handleViewInvoicePdf(inv)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                        onClick={
+                          canOpenInvoices
+                            ? () => handleViewInvoicePdf(inv)
+                            : undefined
+                        }
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-[120ms] ${
+                          canOpenInvoices ? "cursor-pointer" : ""
+                        } ${
                           isLinkedPreviewed(`invoice-${inv.id}`)
                             ? "bg-muted/70 ring-1 ring-border"
-                            : "bg-muted/40 hover:bg-muted/60"
+                            : canOpenInvoices
+                              ? "bg-muted/40 hover:bg-muted/60"
+                              : "bg-muted/40"
                         }`}
                       >
                         <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
@@ -1855,23 +1868,27 @@ export function TransactionDetailDrawer({
                             documentId={inv.id}
                           />
                         </div>
-                        <EyeButton
-                          active={isLinkedPreviewed(`invoice-${inv.id}`)}
-                          onClick={() => handleViewInvoicePdf(inv)}
-                          label="Voir la facture"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            goToInvoicePage(inv.id);
-                          }}
-                          title="Ouvrir la facture"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
+                        {canOpenInvoices && (
+                          <>
+                            <EyeButton
+                              active={isLinkedPreviewed(`invoice-${inv.id}`)}
+                              onClick={() => handleViewInvoicePdf(inv)}
+                              label="Voir la facture"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                goToInvoicePage(inv.id);
+                              }}
+                              title="Ouvrir la facture"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                         {canReconcile && (
                           <Button
                             variant="ghost"
@@ -2052,15 +2069,22 @@ export function TransactionDetailDrawer({
                   {linkedPurchaseInvoices.map((pi) => (
                     <div
                       key={pi.id}
-                      onClick={() =>
-                        pi.files?.some((f) => f?.url)
-                          ? handleViewPurchaseInvoiceReceipt(pi)
-                          : handleViewPurchaseInvoice(pi)
+                      onClick={
+                        canOpenPurchaseInvoices
+                          ? () =>
+                              pi.files?.some((f) => f?.url)
+                                ? handleViewPurchaseInvoiceReceipt(pi)
+                                : handleViewPurchaseInvoice(pi)
+                          : undefined
                       }
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                      className={`p-3 border rounded-lg transition-colors duration-[120ms] ${
+                        canOpenPurchaseInvoices ? "cursor-pointer" : ""
+                      } ${
                         isLinkedPreviewed(`pi-${pi.id}`)
                           ? "bg-muted/70 ring-1 ring-border"
-                          : "bg-muted/30 hover:bg-muted/50"
+                          : canOpenPurchaseInvoices
+                            ? "bg-muted/30 hover:bg-muted/50"
+                            : "bg-muted/30"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -2090,24 +2114,30 @@ export function TransactionDetailDrawer({
                           />
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <EyeButton
-                            active={isLinkedPreviewed(`pi-${pi.id}`)}
-                            disabled={!pi.files?.some((f) => f?.url)}
-                            onClick={() => handleViewPurchaseInvoiceReceipt(pi)}
-                            label="Voir le justificatif"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewPurchaseInvoice(pi);
-                            }}
-                            title="Ouvrir la facture d'achat"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
+                          {canOpenPurchaseInvoices && (
+                            <>
+                              <EyeButton
+                                active={isLinkedPreviewed(`pi-${pi.id}`)}
+                                disabled={!pi.files?.some((f) => f?.url)}
+                                onClick={() =>
+                                  handleViewPurchaseInvoiceReceipt(pi)
+                                }
+                                label="Voir le justificatif"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewPurchaseInvoice(pi);
+                                }}
+                                title="Ouvrir la facture d'achat"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                           {canLinkPurchaseInvoices && (
                             <Button
                               variant="ghost"

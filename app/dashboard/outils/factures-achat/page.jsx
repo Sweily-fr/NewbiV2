@@ -129,7 +129,7 @@ function PurchaseInvoicesContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canDo, isReady } = useMyPermissions();
+  const { canDo, canRead, isReady } = useMyPermissions();
   // Droits du rôle, action par action (tout autorisé tant que la grille
   // n'est pas chargée) : saisie, import OCR et Gmail = « create »
   const canCreatePurchaseInvoices =
@@ -137,12 +137,16 @@ function PurchaseInvoicesContent() {
   const canExportPurchaseInvoices =
     !isReady || canDo("purchaseInvoices", "export");
   const { workspaceId } = useWorkspace();
+  // Factures importées en attente : module à part (« importedInvoices »),
+  // requête coupée pour un rôle qui ne peut pas le lire (FORBIDDEN sinon)
+  const skipImported = isReady && !canRead("importedInvoices");
   const {
     importedInvoices,
     loading: importedLoading,
     refetch: refetchImported,
   } = useImportedInvoices(workspaceId, {
     filters: { status: "PENDING_REVIEW" },
+    skip: skipImported,
   });
 
   const refetchAll = () => {
@@ -152,7 +156,8 @@ function PurchaseInvoicesContent() {
 
   const handleImportedConverted = () => {
     refetch?.();
-    refetchImported?.();
+    // refetch() d'une requête skippée partirait quand même vers l'API
+    if (!skipImported) refetchImported?.();
   };
 
   // Drawer state — managed here so only ONE set of drawers is rendered
