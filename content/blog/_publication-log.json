@@ -410,5 +410,12 @@
       "facturer-en-sous-traitance-regles",
       "debours-refacturation-frais-clients"
     ]
+  },
+  {
+    "date": "2026-10-14",
+    "articles": [
+      "facture-architecte-honoraires-guide",
+      "abby-vs-freebe-comparatif"
+    ]
   }
 ]
