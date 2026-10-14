@@ -82,11 +82,11 @@ export function EInvoicingPromoModal({ open, onOpenChange }) {
                 {/* Contenu explicatif */}
                 <div className="flex-1 space-y-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    À partir de{" "}
+                    Depuis{" "}
                     <span className="font-medium text-foreground">
                       septembre 2026
                     </span>
-                    , toutes les entreprises françaises devront être en mesure
+                    , toutes les entreprises françaises doivent être en mesure
                     de recevoir des factures électroniques. L'émission
                     obligatoire pour les TPE/PME suivra en{" "}
                     <span className="font-medium text-foreground">
