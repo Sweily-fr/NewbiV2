@@ -13,6 +13,7 @@ import {
   Trash,
   Users,
   ArrowRight,
+  FileCheck2,
   GraduationCap,
   UsersRound,
   HelpCircle,
@@ -27,7 +28,6 @@ import {
   LampOnIcon,
   TeacherIcon,
   BookIcon,
-  ReceiptItemIcon,
 } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
@@ -359,7 +359,7 @@ export function NavSecondary({
                   tooltip="Facturation électronique"
                   onClick={handleEInvoicingClick}
                 >
-                  <ReceiptItemIcon />
+                  <FileCheck2 strokeWidth={1.5} />
                   <span>Facturation électronique</span>
                 </SidebarMenuButton>
                 {!eInvoicingBadgeSeen && (
