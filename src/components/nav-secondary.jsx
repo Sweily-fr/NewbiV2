@@ -321,7 +321,7 @@ export function NavSecondary({
             sur le workspace. Avec un plan actif (essai inclus), le clic ouvre
             la modal d'activation ; sans plan, il renvoie vers l'abonnement.
             Sidebar expanded : carte blanche (titre, texte, lien).
-            Sidebar collapsed : icône seule avec tooltip. */}
+            Sidebar collapsed : entrée de menu ordinaire (icône grise + tooltip). */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
           canManageIntegrations &&
@@ -329,7 +329,7 @@ export function NavSecondary({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  className="mb-3 cursor-pointer bg-background dark:bg-white/[0.05] ring-1 ring-black/[0.07] dark:ring-white/[0.1] shadow-xs [&>svg]:text-[#5b50FF]"
+                  className="mb-1 cursor-pointer"
                   tooltip="Facturation électronique"
                   onClick={handleEInvoicingClick}
                 >
