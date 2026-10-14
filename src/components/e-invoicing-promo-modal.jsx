@@ -18,12 +18,7 @@ import {
 } from "lucide-react";
 import { useSuperPdp } from "@/src/hooks/useSuperPdp";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
-
-// Clé localStorage : l'utilisateur a demandé de ne plus voir la modal automatiquement (permanent)
-export const E_INVOICING_PROMO_DISMISSED_KEY = "e_invoicing_promo_dismissed";
-// Clé sessionStorage : la modal a déjà été ouverte automatiquement durant cette session
-// (évite la réouverture à chaque rechargement de page ; remise à zéro à la prochaine connexion)
-export const E_INVOICING_PROMO_SESSION_KEY = "e_invoicing_promo_session_shown";
+import { E_INVOICING_PROMO_DISMISSED_KEY } from "@/src/lib/e-invoicing-promo-storage";
 
 export function EInvoicingPromoModal({ open, onOpenChange }) {
   const { connect, loading: superPdpLoading } = useSuperPdp();
@@ -87,11 +82,11 @@ export function EInvoicingPromoModal({ open, onOpenChange }) {
                 {/* Contenu explicatif */}
                 <div className="flex-1 space-y-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    À partir de{" "}
+                    Depuis{" "}
                     <span className="font-medium text-foreground">
                       septembre 2026
                     </span>
-                    , toutes les entreprises françaises devront être en mesure
+                    , toutes les entreprises françaises doivent être en mesure
                     de recevoir des factures électroniques. L'émission
                     obligatoire pour les TPE/PME suivra en{" "}
                     <span className="font-medium text-foreground">

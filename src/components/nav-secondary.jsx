@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // Liens préchargés à l'intention de clic (voir nav-link.jsx).
 import Link from "@/src/components/nav-link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -12,7 +12,8 @@ import {
   Settings2,
   Trash,
   Users,
-  Sparkles,
+  ArrowRight,
+  FileCheck2,
   GraduationCap,
   UsersRound,
   HelpCircle,
@@ -33,6 +34,7 @@ import { usePathname } from "next/navigation";
 import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
 import { useUser } from "@/src/lib/auth/hooks";
 import dynamic from "next/dynamic";
+import { isEInvoicingPromoDismissed } from "@/src/lib/e-invoicing-promo-storage";
 
 // Chunk chargé à la première ouverture seulement
 const SettingsModal = dynamic(
@@ -291,6 +293,21 @@ export function NavSecondary({
   // Vérifier si la facturation électronique est activée
   const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
+  // Pastille « ! » (barre repliée) : affichée jusqu'à « Ne plus voir ce
+  // message » dans la modal. Masquée au rendu serveur, lue au montage (pas de
+  // flash ni d'écart d'hydratation)
+  const [eInvoicingPromoDismissed, setEInvoicingPromoDismissed] =
+    useState(true);
+  useEffect(() => {
+    setEInvoicingPromoDismissed(isEInvoicingPromoDismissed());
+  }, []);
+
+  // La modal écrit le choix à sa fermeture : on le relit à ce moment-là
+  const handleEInvoicingPromoOpenChange = (nextOpen) => {
+    setEInvoicingPromoOpen(nextOpen);
+    if (!nextOpen) setEInvoicingPromoDismissed(isEInvoicingPromoDismissed());
+  };
+
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
     if (isMobile) {
@@ -319,38 +336,47 @@ export function NavSecondary({
         {/* Facturation électronique - visible tant qu'elle n'est pas activée
             sur le workspace. Avec un plan actif (essai inclus), le clic ouvre
             la modal d'activation ; sans plan, il renvoie vers l'abonnement.
-            Sidebar expanded : card outline avec titre + sous-titre.
-            Sidebar collapsed : icône Sparkles avec tooltip. */}
+            Sidebar expanded : carte blanche (titre, texte, lien).
+            Sidebar collapsed : entrée de menu ordinaire (icône grise + tooltip)
+            et pastille « ! » jusqu'à « Ne plus voir ce message ». */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
           canManageIntegrations &&
           (isCollapsed ? (
             <SidebarMenu>
-              <SidebarMenuItem>
+              <SidebarMenuItem className="relative">
                 <SidebarMenuButton
-                  className="mb-3 cursor-pointer border border-[#5b50FF]/40 bg-[#5b50FF]/5 shadow-sm text-[#5b50FF] [&>svg]:text-[#5b50FF] hover:bg-[#5b50FF]/5 hover:text-[#5b50FF] active:bg-[#5b50FF]/5 active:text-[#5b50FF] data-[hovered]:bg-[#5b50FF]/5! data-[hovered]:text-[#5b50FF]!"
+                  className="mb-1 cursor-pointer"
                   tooltip="Facturation électronique"
                   onClick={handleEInvoicingClick}
                 >
-                  <Sparkles />
+                  <FileCheck2 strokeWidth={1.5} />
                   <span>Facturation électronique</span>
                 </SidebarMenuButton>
+                {!eInvoicingPromoDismissed && (
+                  <kbd className="absolute top-0 right-0 inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
+                    !
+                  </kbd>
+                )}
               </SidebarMenuItem>
             </SidebarMenu>
           ) : (
-            <div className="px-2 mb-3 mt-1">
+            <div className="mb-3 mt-1">
               <button
                 type="button"
                 onClick={handleEInvoicingClick}
-                className="w-full text-left border border-[#5b50FF]/40 bg-[#5b50FF]/5 rounded-lg px-3 py-2.5 shadow-sm cursor-pointer"
+                className="group w-full text-left rounded-xl bg-background dark:bg-white/[0.05] ring-1 ring-black/[0.07] dark:ring-white/[0.1] shadow-xs hover:shadow-sm transition-shadow p-3 cursor-pointer"
               >
                 <p className="text-sm font-medium text-foreground leading-tight">
                   Facturation électronique
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                  Activez Factur-X et préparez-vous à l'obligation de septembre
-                  2026.
+                <p className="text-xs text-muted-foreground mt-1 leading-snug text-balance">
+                  Obligatoire depuis le 1er septembre 2026.
                 </p>
+                <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-[#5b50FF]">
+                  Activer en un clic
+                  <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </button>
             </div>
           ))}
@@ -452,7 +478,7 @@ export function NavSecondary({
         {eInvoicingPromoOpen && (
           <EInvoicingPromoModal
             open={eInvoicingPromoOpen}
-            onOpenChange={setEInvoicingPromoOpen}
+            onOpenChange={handleEInvoicingPromoOpenChange}
           />
         )}
 
