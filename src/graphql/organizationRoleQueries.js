@@ -34,6 +34,7 @@ export const GET_ROLE_CATALOG = gql`
         parent
         label
         description
+        alwaysVisible
         actions {
           key
           label

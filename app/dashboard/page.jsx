@@ -135,6 +135,7 @@ function DashboardContent() {
   // visible tant que la grille n'est pas chargée (pas de clignotement).
   // Requêtes : elles attendent la grille, sauf si son chargement échoue.
   const {
+    actions: permissionActions,
     canDo,
     canRead,
     isReady: permissionsReady,
@@ -173,6 +174,17 @@ function DashboardContent() {
   const canTransferFiles =
     canCreateModule("fileTransfers") && !fileTransfersHidden;
   const canSeeKanban = canReadModule("kanban");
+  // Cadres de l'accueil (Paramètres > Rôles > Accueil) : chacun masquable
+  // par le rôle, en plus des droits des pages d'où viennent ses données.
+  // Grille sans la page Accueil (API plus ancienne) : tout reste affiché.
+  const homeShows = (block) =>
+    !permissionsReady || !permissionActions?.home || canDo("home", block);
+  const showBankBalance = canReadBanking && homeShows("bankBalance");
+  const showBillingMonth = canReadBillingMonth && homeShows("billingMonth");
+  const showToProcess = homeShows("toProcess");
+  const showRecentTransactions =
+    canReadBanking && homeShows("recentTransactions");
+  const showRecentInvoices = canReadInvoices && homeShows("recentInvoices");
   const hasQuickActions =
     canCreateQuotes ||
     canCreateInvoices ||
@@ -182,7 +194,11 @@ function DashboardContent() {
   // Données achats pour les KPIs (compteur "Achats à payer")
   const { data: purchaseStatsData } = useQuery(GET_PURCHASE_INVOICE_STATS, {
     variables: { workspaceId },
-    skip: !workspaceId || permissionsPending || !canReadPurchaseInvoices,
+    skip:
+      !workspaceId ||
+      permissionsPending ||
+      !canReadPurchaseInvoices ||
+      !showToProcess,
   });
   const purchaseStats = purchaseStatsData?.purchaseInvoiceStats || {
     totalToPayCount: 0,
@@ -190,7 +206,8 @@ function DashboardContent() {
   const { data: quoteBalancesData } = useQuery(GET_QUOTE_BALANCES, {
     variables: { workspaceId },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId || permissionsPending || !canReadQuotes,
+    skip:
+      !workspaceId || permissionsPending || !canReadQuotes || !showToProcess,
   });
   const quoteBalances = quoteBalancesData?.quoteBalances || {
     pendingAmount: 0,
@@ -202,7 +219,8 @@ function DashboardContent() {
   const { data: reconData } = useQuery(GET_RECONCILIATION_SUGGESTIONS, {
     variables: { workspaceId },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId || permissionsPending || !canReadBanking,
+    skip:
+      !workspaceId || permissionsPending || !canReadBanking || !showToProcess,
   });
 
   // État pour le filtre de compte bancaire
@@ -227,7 +245,11 @@ function DashboardContent() {
     cacheInfo,
   } = useDashboardData({
     skipTransactions: true,
-    skipInvoices: permissionsPending || !canReadInvoices,
+    // Factures : compteurs « À traiter » et dernières factures
+    skipInvoices:
+      permissionsPending ||
+      !canReadInvoices ||
+      (!showToProcess && !showRecentInvoices),
     skipBanking: permissionsPending || !canReadBanking,
     accountId: selectedAccountId,
   });
@@ -238,7 +260,7 @@ function DashboardContent() {
   const { data: billingMonthData } = useQuery(GET_DASHBOARD_BILLING_MONTH, {
     variables: { workspaceId },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId || permissionsPending || !canReadBillingMonth,
+    skip: !workspaceId || permissionsPending || !showBillingMonth,
   });
   const billingMonth = billingMonthData?.dashboardBillingMonth;
   const billingMonthLabel = useMemo(() => {
@@ -496,110 +518,114 @@ function DashboardContent() {
               {cacheInfo.isFromCache && " (cache)"}
             </p>
           )}
-          {/* Filtre de compte bancaire ou bouton connecter */}
+          {/* Filtre de compte bancaire (cadres Solde et Dernières
+              transactions) ou bouton connecter */}
           {(bankAccounts || []).length > 0 ? (
-            <Popover
-              open={accountPopoverOpen}
-              onOpenChange={setAccountPopoverOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 font-medium"
-                >
-                  <Landmark className="size-3.5" />
-                  <span className="truncate max-w-[150px]">
-                    {selectedAccountLabel}
-                  </span>
-                  <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-80 rounded-xl border shadow-md p-1"
-                align="end"
-                sideOffset={8}
+            (showBankBalance || showRecentTransactions) && (
+              <Popover
+                open={accountPopoverOpen}
+                onOpenChange={setAccountPopoverOpen}
               >
-                <Command>
-                  <CommandList>
-                    <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
-                    <CommandGroup className="space-y-0.5">
-                      <CommandItem
-                        value="all"
-                        onSelect={() => {
-                          setSelectedAccountId("all");
-                          setAccountPopoverOpen(false);
-                        }}
-                        className={cn(
-                          "gap-2 p-2 rounded-lg cursor-pointer",
-                          selectedAccountId === "all" && "bg-accent",
-                        )}
-                      >
-                        <Landmark className="size-4 text-muted-foreground flex-shrink-0" />
-                        <span className="flex-1 text-[13px] font-normal truncate">
-                          Tous les comptes
-                        </span>
-                      </CommandItem>
-                      {(bankAccounts || []).map((account) => {
-                        const accountName =
-                          account.name ||
-                          account.institutionName ||
-                          account.bankName ||
-                          "Compte";
-                        const lastIban = account.iban
-                          ? ` ···${account.iban.slice(-4)}`
-                          : "";
-                        const isSelected =
-                          selectedAccountId === account.id ||
-                          selectedAccountId === account.externalId;
-                        return (
-                          <CommandItem
-                            key={account.id}
-                            value={account.id}
-                            onSelect={() => {
-                              setSelectedAccountId(account.id);
-                              setAccountPopoverOpen(false);
-                            }}
-                            className={cn(
-                              "gap-2 p-2 rounded-lg cursor-pointer",
-                              isSelected && "bg-accent",
-                            )}
-                          >
-                            {account.institutionLogo ? (
-                              <Avatar className="h-7 w-7 ring-1 ring-border bg-white flex-shrink-0">
-                                <AvatarImage
-                                  src={account.institutionLogo}
-                                  alt={accountName}
-                                  className="object-contain p-0.5"
-                                />
-                                <AvatarFallback className="text-xs bg-white">
-                                  <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
-                                </AvatarFallback>
-                              </Avatar>
-                            ) : (
-                              <div className="h-7 w-7 rounded-full border border-border flex items-center justify-center flex-shrink-0">
-                                <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="truncate text-[13px] font-normal">
-                                {accountName}
-                                {lastIban}
-                              </span>
-                              {account.balance?.current != null && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  {formatCurrency(account.balance.current)}
-                                </span>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 font-medium"
+                  >
+                    <Landmark className="size-3.5" />
+                    <span className="truncate max-w-[150px]">
+                      {selectedAccountLabel}
+                    </span>
+                    <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-80 rounded-xl border shadow-md p-1"
+                  align="end"
+                  sideOffset={8}
+                >
+                  <Command>
+                    <CommandList>
+                      <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
+                      <CommandGroup className="space-y-0.5">
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSelectedAccountId("all");
+                            setAccountPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "gap-2 p-2 rounded-lg cursor-pointer",
+                            selectedAccountId === "all" && "bg-accent",
+                          )}
+                        >
+                          <Landmark className="size-4 text-muted-foreground flex-shrink-0" />
+                          <span className="flex-1 text-[13px] font-normal truncate">
+                            Tous les comptes
+                          </span>
+                        </CommandItem>
+                        {(bankAccounts || []).map((account) => {
+                          const accountName =
+                            account.name ||
+                            account.institutionName ||
+                            account.bankName ||
+                            "Compte";
+                          const lastIban = account.iban
+                            ? ` ···${account.iban.slice(-4)}`
+                            : "";
+                          const isSelected =
+                            selectedAccountId === account.id ||
+                            selectedAccountId === account.externalId;
+                          return (
+                            <CommandItem
+                              key={account.id}
+                              value={account.id}
+                              onSelect={() => {
+                                setSelectedAccountId(account.id);
+                                setAccountPopoverOpen(false);
+                              }}
+                              className={cn(
+                                "gap-2 p-2 rounded-lg cursor-pointer",
+                                isSelected && "bg-accent",
                               )}
-                            </div>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                            >
+                              {account.institutionLogo ? (
+                                <Avatar className="h-7 w-7 ring-1 ring-border bg-white flex-shrink-0">
+                                  <AvatarImage
+                                    src={account.institutionLogo}
+                                    alt={accountName}
+                                    className="object-contain p-0.5"
+                                  />
+                                  <AvatarFallback className="text-xs bg-white">
+                                    <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </AvatarFallback>
+                                </Avatar>
+                              ) : (
+                                <div className="h-7 w-7 rounded-full border border-border flex items-center justify-center flex-shrink-0">
+                                  <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="truncate text-[13px] font-normal">
+                                  {accountName}
+                                  {lastIban}
+                                </span>
+                                {showBankBalance &&
+                                  account.balance?.current != null && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {formatCurrency(account.balance.current)}
+                                    </span>
+                                  )}
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )
           ) : canReadBanking && canConnectBank ? (
             <Button
               variant="outline"
@@ -806,11 +832,11 @@ function DashboardContent() {
             </Button>
           )}
         </div>
-        {(canReadBanking || canReadBillingMonth) && (
+        {(showBankBalance || showBillingMonth) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
             {kpiLoading ? (
               <>
-                {canReadBanking && (
+                {showBankBalance && (
                   <Card className="shadow-xs">
                     <CardHeader>
                       <Skeleton className="h-4 w-24 mb-2" />
@@ -822,7 +848,7 @@ function DashboardContent() {
                     </CardHeader>
                   </Card>
                 )}
-                {canReadBillingMonth && (
+                {showBillingMonth && (
                   <Card className="shadow-xs">
                     <CardHeader>
                       <Skeleton className="h-4 w-20 mb-2" />
@@ -844,8 +870,8 @@ function DashboardContent() {
               </>
             ) : (
               <>
-                {/* Solde : transactions (lecture) */}
-                {canReadBanking && (
+                {/* Solde : transactions (lecture) et case du rôle */}
+                {showBankBalance && (
                   <Card className="shadow-xs">
                     {(filteredBankAccounts || []).length === 0 ? (
                       <CardContent className="p-0">
@@ -969,10 +995,10 @@ function DashboardContent() {
                     )}
                   </Card>
                 )}
-                {/* Facturation du mois : factures ou Vue d'ensemble (lecture).
-                  Sans accès aux transactions, les montants s'affichent sans
-                  attendre de compte bancaire. */}
-                {canReadBillingMonth && (
+                {/* Facturation du mois : factures ou Vue d'ensemble (lecture)
+                  et case du rôle. Sans accès aux transactions, les montants
+                  s'affichent sans attendre de compte bancaire. */}
+                {showBillingMonth && (
                   <Card className="shadow-xs">
                     {canReadBanking &&
                     (filteredBankAccounts || []).length === 0 ? (
@@ -1093,9 +1119,13 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Section : À traiter */}
-        <h2 className="text-sm font-medium text-foreground mt-4">À traiter</h2>
-        {invoicesSectionLoading ? (
+        {/* Section : À traiter (case du rôle) */}
+        {showToProcess && (
+          <h2 className="text-sm font-medium text-foreground mt-4">
+            À traiter
+          </h2>
+        )}
+        {!showToProcess ? null : invoicesSectionLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="shadow-xs">
@@ -1385,14 +1415,14 @@ function DashboardContent() {
         )}
 
         {/* Section : Suivi en temps réel (transactions et factures, selon
-            les droits de lecture du rôle) */}
-        {(canReadBanking || canReadInvoices) && (
+            les droits de lecture et les cases de l'accueil du rôle) */}
+        {(showRecentTransactions || showRecentInvoices) && (
           <>
             <h2 className="text-sm font-medium text-foreground mt-4">
               Suivi en temps réel
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
-              {canReadBanking && (
+              {showRecentTransactions && (
                 <RecentTransactionsCard
                   className="shadow-xs w-full"
                   workspaceId={workspaceId}
@@ -1402,7 +1432,7 @@ function DashboardContent() {
                   skip={permissionsPending}
                 />
               )}
-              {canReadInvoices && (
+              {showRecentInvoices && (
                 <Card className="shadow-xs flex flex-col">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-normal">

@@ -13,7 +13,9 @@ import { cn } from "@/src/lib/utils";
  *   - cocher une action coche « Voir » (et « Voir » de la page parente pour
  *     une partie de page, ex. Avoirs dans Factures clients) ;
  *   - décocher « Voir » retire tout l'accès à la page et à ses parties :
- *     la page n'apparaît plus du tout.
+ *     la page n'apparaît plus du tout ;
+ *   - page `alwaysVisible` (l'accueil) : « Voir » reste coché, ses autres
+ *     cases choisissent seulement les cadres affichés.
  */
 
 const CHECKBOX_CLASS =
@@ -21,6 +23,11 @@ const CHECKBOX_CLASS =
 
 function moduleByKey(catalog, key) {
   return catalog.modules.find((m) => m.key === key);
+}
+
+/** Actions imposées : « Voir » d'une page vue par tout membre. */
+function lockedActions(module) {
+  return module?.alwaysVisible ? ["view"] : [];
 }
 
 /** Modules couverts par une page : elle-même et ses parties. */
@@ -34,7 +41,11 @@ export function pageModules(catalog, pageKey) {
 export function toggleAction(catalog, grid, moduleKey, actionKey, checked) {
   const next = { ...grid };
   const module = moduleByKey(catalog, moduleKey);
-  const current = new Set(next[moduleKey] || []);
+  if (!checked && lockedActions(module).includes(actionKey)) return grid;
+  const current = new Set([
+    ...(next[moduleKey] || []),
+    ...lockedActions(module),
+  ]);
   if (checked) {
     current.add(actionKey);
     current.add("view");
@@ -64,18 +75,25 @@ export function setModulesAll(catalog, grid, moduleKeys, checked) {
   const next = { ...grid };
   for (const key of moduleKeys) {
     const module = moduleByKey(catalog, key);
-    next[key] = checked ? (module?.actions || []).map((a) => a.key) : [];
+    next[key] = checked
+      ? (module?.actions || []).map((a) => a.key)
+      : lockedActions(module);
   }
   return next;
 }
 
-/** État d'une case regroupant plusieurs modules : true, false ou partiel. */
+/**
+ * État d'une case regroupant plusieurs modules : true, false ou partiel.
+ * Les actions imposées ne comptent pas (l'accueil décoché reste « vide »).
+ */
 export function groupCheckState(catalog, grid, moduleKeys) {
   let total = 0;
   let checked = 0;
   for (const key of moduleKeys) {
-    total += moduleByKey(catalog, key)?.actions.length || 0;
-    checked += (grid[key] || []).length;
+    const module = moduleByKey(catalog, key);
+    const locked = lockedActions(module);
+    total += (module?.actions.length || 0) - locked.length;
+    checked += (grid[key] || []).filter((a) => !locked.includes(a)).length;
   }
   if (checked === 0) return false;
   return checked >= total ? true : "indeterminate";
@@ -83,6 +101,15 @@ export function groupCheckState(catalog, grid, moduleKeys) {
 
 /** Résumé d'une page pour sa ligne repliée. */
 export function pageSummary(catalog, grid, pageKey) {
+  const page = moduleByKey(catalog, pageKey);
+  if (page?.alwaysVisible) {
+    // Accueil : cadres affichés
+    const total = page.actions.length - 1;
+    const shown = (grid[pageKey] || []).filter((a) => a !== "view").length;
+    if (shown >= total) return "Tout est affiché";
+    if (shown === 0) return "Aucun cadre affiché";
+    return `${shown} cadre${shown > 1 ? "s" : ""} affiché${shown > 1 ? "s" : ""} sur ${total}`;
+  }
   if (!(grid[pageKey] || []).includes("view")) return "Aucun accès";
   const modules = pageModules(catalog, pageKey);
   const total = modules.reduce((n, m) => n + m.actions.length, 0);
@@ -108,19 +135,21 @@ function ActionGrid({ module, grid, disabled, onToggle }) {
     <div className="grid gap-0.5 sm:grid-cols-2">
       {module.actions.map((action) => {
         const id = `perm-${module.key}-${action.key}`;
+        // « Voir » de l'accueil : toujours coché
+        const locked = lockedActions(module).includes(action.key);
         return (
           <label
             key={action.key}
             htmlFor={id}
             className={cn(
               "flex items-start gap-2.5 rounded-md px-2 py-1.5 text-sm",
-              !disabled && "cursor-pointer hover:bg-muted/50",
+              !disabled && !locked && "cursor-pointer hover:bg-muted/50",
             )}
           >
             <Checkbox
               id={id}
-              checked={(grid[module.key] || []).includes(action.key)}
-              disabled={disabled}
+              checked={locked || (grid[module.key] || []).includes(action.key)}
+              disabled={disabled || locked}
               onCheckedChange={(value) =>
                 onToggle(module.key, action.key, value === true)
               }

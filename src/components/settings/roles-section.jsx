@@ -46,9 +46,11 @@ import {
   UPDATE_ORGANIZATION_ROLE,
 } from "@/src/graphql/organizationRoleQueries";
 
-// Grille vide : aucune action sur aucune page
+// Grille vide : aucune action sur aucune page, sauf « Voir » de l'accueil
 function emptyActions(catalog) {
-  return Object.fromEntries(catalog.modules.map((m) => [m.key, []]));
+  return Object.fromEntries(
+    catalog.modules.map((m) => [m.key, m.alwaysVisible ? ["view"] : []]),
+  );
 }
 
 function RoleEditorDialog({
@@ -180,7 +182,9 @@ function RoleEditorDialog({
             <DialogDescription className="text-xs">
               Dépliez une section puis une page pour cocher ses actions une à
               une. Sans « Voir », la page n'apparaît pas du tout ; cocher une
-              autre action ajoute « Voir ».
+              autre action ajoute « Voir ». L'accueil reste toujours visible :
+              ses cases choisissent les cadres affichés (solde, chiffre
+              d'affaires…).
             </DialogDescription>
           </DialogHeader>
 

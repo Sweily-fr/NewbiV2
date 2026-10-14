@@ -21,6 +21,12 @@ const catalog = {
       parent: "invoices",
       actions: ["view", "create"].map(action),
     },
+    {
+      key: "home",
+      group: "pilotage",
+      alwaysVisible: true,
+      actions: ["view", "bankBalance", "billingMonth"].map(action),
+    },
   ],
 };
 
@@ -74,5 +80,38 @@ describe("cases indépendantes de l'éditeur de rôle", () => {
     expect(
       pageSummary(catalog, { invoices: ["view", "create"] }, "invoices"),
     ).toBe("2 droits sur 7");
+  });
+
+  it("accueil : « Voir » reste coché, les cases ne choisissent que les cadres", () => {
+    const all = ["view", "bankBalance", "billingMonth"];
+    expect(toggleAction(catalog, { home: all }, "home", "view", false)).toEqual(
+      { home: all },
+    );
+    const noRevenue = toggleAction(
+      catalog,
+      { home: all },
+      "home",
+      "billingMonth",
+      false,
+    );
+    expect(noRevenue.home).toEqual(["view", "bankBalance"]);
+    // Grille sans l'accueil (rôle vierge) : « Voir » ajouté avec la case
+    expect(toggleAction(catalog, {}, "home", "bankBalance", true).home).toEqual(
+      ["view", "bankBalance"],
+    );
+
+    const none = setModulesAll(catalog, { home: all }, ["home"], false);
+    expect(none.home).toEqual(["view"]);
+    expect(groupCheckState(catalog, none, ["home"])).toBe(false);
+    expect(groupCheckState(catalog, noRevenue, ["home"])).toBe("indeterminate");
+    expect(groupCheckState(catalog, { home: all }, ["home"])).toBe(true);
+
+    expect(pageSummary(catalog, { home: all }, "home")).toBe(
+      "Tout est affiché",
+    );
+    expect(pageSummary(catalog, none, "home")).toBe("Aucun cadre affiché");
+    expect(pageSummary(catalog, noRevenue, "home")).toBe(
+      "1 cadre affiché sur 2",
+    );
   });
 });
