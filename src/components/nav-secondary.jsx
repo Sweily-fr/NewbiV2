@@ -320,7 +320,7 @@ export function NavSecondary({
         {/* Facturation électronique - visible tant qu'elle n'est pas activée
             sur le workspace. Avec un plan actif (essai inclus), le clic ouvre
             la modal d'activation ; sans plan, il renvoie vers l'abonnement.
-            Sidebar expanded : carte blanche (icône, titre, texte, lien).
+            Sidebar expanded : carte blanche (titre, texte, lien).
             Sidebar collapsed : icône seule avec tooltip. */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
@@ -339,21 +339,16 @@ export function NavSecondary({
               </SidebarMenuItem>
             </SidebarMenu>
           ) : (
-            <div className="px-2 mb-3 mt-1">
+            <div className="mb-3 mt-1">
               <button
                 type="button"
                 onClick={handleEInvoicingClick}
                 className="group w-full text-left rounded-xl bg-background dark:bg-white/[0.05] ring-1 ring-black/[0.07] dark:ring-white/[0.1] shadow-xs hover:shadow-sm transition-shadow p-3 cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#5b50FF]/10 text-[#5b50FF]">
-                    <DocumentCloudIcon className="size-4" />
-                  </span>
-                  <p className="text-sm font-medium text-foreground leading-tight">
-                    Facturation électronique
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 leading-snug">
+                <p className="text-sm font-medium text-foreground leading-tight">
+                  Facturation électronique
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug text-balance">
                   Obligatoire depuis le 1er septembre 2026.
                 </p>
                 <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-[#5b50FF]">
