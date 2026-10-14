@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // Liens préchargés à l'intention de clic (voir nav-link.jsx).
 import Link from "@/src/components/nav-link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -36,6 +36,10 @@ import { useUser } from "@/src/lib/auth/hooks";
 import dynamic from "next/dynamic";
 
 // Chunk chargé à la première ouverture seulement
+// Pastille « ! » de l'entrée Facturation électronique (barre repliée) :
+// affichée jusqu'au premier clic sur l'encart, mémorisé dans le navigateur
+const E_INVOICING_BADGE_SEEN_KEY = "e_invoicing_sidebar_badge_seen";
+
 const SettingsModal = dynamic(
   () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
   { ssr: false },
@@ -292,6 +296,19 @@ export function NavSecondary({
   // Vérifier si la facturation électronique est activée
   const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
+  // Masquée au rendu serveur, lue au montage (pas de flash ni d'écart
+  // d'hydratation)
+  const [eInvoicingBadgeSeen, setEInvoicingBadgeSeen] = useState(true);
+  useEffect(() => {
+    try {
+      setEInvoicingBadgeSeen(
+        localStorage.getItem(E_INVOICING_BADGE_SEEN_KEY) === "true",
+      );
+    } catch {
+      setEInvoicingBadgeSeen(false);
+    }
+  }, []);
+
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
     if (isMobile) {
@@ -302,6 +319,14 @@ export function NavSecondary({
   // Avec un plan actif (essai inclus) : ouvre la modal d'activation.
   // Sans plan actif : redirige vers l'onglet Abonnement des paramètres.
   const handleEInvoicingClick = () => {
+    if (!eInvoicingBadgeSeen) {
+      setEInvoicingBadgeSeen(true);
+      try {
+        localStorage.setItem(E_INVOICING_BADGE_SEEN_KEY, "true");
+      } catch {
+        // Stockage indisponible : la pastille reviendra au prochain chargement
+      }
+    }
     if (isActive()) {
       if (onOpenEInvoicingPromo) {
         onOpenEInvoicingPromo();
@@ -321,13 +346,14 @@ export function NavSecondary({
             sur le workspace. Avec un plan actif (essai inclus), le clic ouvre
             la modal d'activation ; sans plan, il renvoie vers l'abonnement.
             Sidebar expanded : carte blanche (titre, texte, lien).
-            Sidebar collapsed : entrée de menu ordinaire (icône grise + tooltip). */}
+            Sidebar collapsed : entrée de menu ordinaire (icône grise + tooltip)
+            et pastille « ! » jusqu'au premier clic. */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
           canManageIntegrations &&
           (isCollapsed ? (
             <SidebarMenu>
-              <SidebarMenuItem>
+              <SidebarMenuItem className="relative">
                 <SidebarMenuButton
                   className="mb-1 cursor-pointer"
                   tooltip="Facturation électronique"
@@ -336,6 +362,11 @@ export function NavSecondary({
                   <ReceiptItemIcon />
                   <span>Facturation électronique</span>
                 </SidebarMenuButton>
+                {!eInvoicingBadgeSeen && (
+                  <kbd className="absolute top-0 right-0 inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
+                    !
+                  </kbd>
+                )}
               </SidebarMenuItem>
             </SidebarMenu>
           ) : (
