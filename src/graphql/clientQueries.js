@@ -361,13 +361,14 @@ export const useClients = (options = {}) => {
 };
 
 // Hook pour récupérer un client spécifique
-export const useClient = (id, providedWorkspaceId) => {
+// (skip : rôle sans accès aux clients, pas de requête)
+export const useClient = (id, providedWorkspaceId, { skip = false } = {}) => {
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const workspaceId = providedWorkspaceId || contextWorkspaceId;
 
   const { data, loading, error } = useQuery(GET_CLIENT, {
     variables: { workspaceId, id },
-    skip: !id || !workspaceId,
+    skip: skip || !id || !workspaceId,
     errorPolicy: "all",
   });
 

@@ -6,12 +6,18 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
 import { Search, LoaderCircle } from "lucide-react";
 import { useClients } from "@/src/graphql/clientQueries";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export default function AutoReminderClients() {
   const { watch, setValue } = useFormContext();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { clients, loading } = useClients();
+  // Liste coupée pour un rôle qui ne peut pas lire les clients (FORBIDDEN
+  // sinon) ; l'onglet est d'ailleurs masqué dans ce cas
+  const { canRead, isReady } = useMyPermissions();
+  const { clients, loading } = useClients({
+    skip: isReady && !canRead("clients"),
+  });
 
   const excludedClientIds = watch("excludedClientIds") || [];
 

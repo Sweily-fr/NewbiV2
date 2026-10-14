@@ -67,6 +67,7 @@ import {
   SEARCH_QUOTES_FOR_REFERENCE,
 } from "@/src/graphql/quoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Fonction utilitaire pour formater les montants
@@ -102,6 +103,10 @@ export default function InvoiceInfoSection({
   } = useFormContext();
   const data = watch();
   const { workspaceId } = useRequiredWorkspace();
+  // Devis de référence (recherche, devis d'une facture de situation) : lecture
+  // des devis, refusée sinon par l'API (FORBIDDEN)
+  const { canRead, isReady } = useMyPermissions();
+  const canReadQuotes = !isReady || canRead("quotes");
 
   // Get the last invoice prefix
   const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } =
@@ -142,7 +147,7 @@ export default function InvoiceInfoSection({
         search: debouncedSearchTerm || undefined,
         limit: 10,
       },
-      skip: !referenceSearchOpen || !workspaceId,
+      skip: !referenceSearchOpen || !workspaceId || !canReadQuotes,
       fetchPolicy: "cache-and-network",
     },
   );
@@ -202,7 +207,7 @@ export default function InvoiceInfoSection({
       }
 
       // Récupérer aussi le devis si purchaseOrderNumber est fourni
-      if (data.purchaseOrderNumber) {
+      if (data.purchaseOrderNumber && canReadQuotes) {
         fetchQuoteByNumber({
           variables: {
             workspaceId,
@@ -218,6 +223,7 @@ export default function InvoiceInfoSection({
     workspaceId,
     fetchSituationInvoices,
     fetchQuoteByNumber,
+    canReadQuotes,
   ]);
 
   // Copier les articles du devis quand il est récupéré (si pas de factures de situation existantes)

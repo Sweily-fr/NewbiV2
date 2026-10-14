@@ -661,49 +661,57 @@ export default function DeliveryNoteSidebar({
               </div>
             )}
 
-            {isPending && canChangeDeliveryNoteStatus && (
-              <>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      changeTo(
-                        DELIVERY_NOTE_STATUS.DRAFT,
-                        "Bon de livraison repassé en brouillon",
-                      )
-                    }
-                    disabled={isLoading}
-                    className="flex-1 font-normal"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Repasser brouillon
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={() =>
-                      changeTo(
-                        DELIVERY_NOTE_STATUS.SHIPPED,
-                        "Bon de livraison marqué comme expédié",
-                      )
-                    }
-                    disabled={isLoading}
-                    className="flex-1 font-normal"
-                  >
-                    <Truck className="h-4 w-4 mr-2" />
-                    Marquer expédié
-                  </Button>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowReception(true)}
-                  disabled={isLoading}
-                  className="w-full font-normal"
-                >
-                  <PackageCheck className="h-4 w-4 mr-2" />
-                  Marquer comme livré
-                </Button>
-              </>
-            )}
+            {/* Retour en brouillon = « edit » côté API, le reste = « status » */}
+            {isPending &&
+              (canEditDeliveryNotes || canChangeDeliveryNoteStatus) && (
+                <>
+                  <div className="flex gap-2">
+                    {canEditDeliveryNotes && (
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          changeTo(
+                            DELIVERY_NOTE_STATUS.DRAFT,
+                            "Bon de livraison repassé en brouillon",
+                          )
+                        }
+                        disabled={isLoading}
+                        className="flex-1 font-normal"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Repasser brouillon
+                      </Button>
+                    )}
+                    {canChangeDeliveryNoteStatus && (
+                      <Button
+                        variant="primary"
+                        onClick={() =>
+                          changeTo(
+                            DELIVERY_NOTE_STATUS.SHIPPED,
+                            "Bon de livraison marqué comme expédié",
+                          )
+                        }
+                        disabled={isLoading}
+                        className="flex-1 font-normal"
+                      >
+                        <Truck className="h-4 w-4 mr-2" />
+                        Marquer expédié
+                      </Button>
+                    )}
+                  </div>
+                  {canChangeDeliveryNoteStatus && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowReception(true)}
+                      disabled={isLoading}
+                      className="w-full font-normal"
+                    >
+                      <PackageCheck className="h-4 w-4 mr-2" />
+                      Marquer comme livré
+                    </Button>
+                  )}
+                </>
+              )}
 
             {isShipped && canChangeDeliveryNoteStatus && (
               <Button

@@ -446,6 +446,8 @@ export default function EspacesSection() {
         // Pour les invitations, annuler et re-inviter avec le nouveau rôle
         result = await resendInvitation(member.email, newRole, member.id, {
           silent: true,
+          // Espace affiché (pas forcément l'espace actif)
+          organizationId: selectedOrg?.id,
         });
       } else {
         // Pour les membres actifs, utiliser updateMemberRole de Better Auth
@@ -841,22 +843,26 @@ export default function EspacesSection() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  {canChangeRoles && (
-                                    <DropdownMenuItem
-                                      className="cursor-pointer"
-                                      disabled={isReadOnly}
-                                      title={readOnlyTooltip}
-                                      onClick={() => {
-                                        if (isReadOnly) return;
-                                        setMemberToChangeRole(member);
-                                        setSelectedNewRole(member.role);
-                                        setRoleChangeDialogOpen(true);
-                                      }}
-                                    >
-                                      <KeyRound className="h-4 w-4 mr-2" />
-                                      Changer le rôle
-                                    </DropdownMenuItem>
-                                  )}
+                                  {/* Invitation en attente : changer son
+                                      rôle la ré-envoie (annuler + inviter) */}
+                                  {canChangeRoles &&
+                                    (member.type !== "invitation" ||
+                                      canInviteMembers) && (
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        disabled={isReadOnly}
+                                        title={readOnlyTooltip}
+                                        onClick={() => {
+                                          if (isReadOnly) return;
+                                          setMemberToChangeRole(member);
+                                          setSelectedNewRole(member.role);
+                                          setRoleChangeDialogOpen(true);
+                                        }}
+                                      >
+                                        <KeyRound className="h-4 w-4 mr-2" />
+                                        Changer le rôle
+                                      </DropdownMenuItem>
+                                    )}
                                   {iAmOwner &&
                                     isSelectedOrgActive &&
                                     member.type === "member" && (

@@ -378,12 +378,13 @@ export const PAYMENT_METHOD_LABELS = {
 
 // Hooks
 export function useImportedInvoices(workspaceId, options = {}) {
-  // Limite élevée pour charger toutes les factures (pagination côté client)
-  const { page = 1, limit = 1000, filters = {} } = options;
+  // Limite élevée pour charger toutes les factures (pagination côté client).
+  // `skip` : rôle sans lecture des factures importées (FORBIDDEN sinon)
+  const { page = 1, limit = 1000, filters = {}, skip = false } = options;
 
   const { data, loading, error, refetch } = useQuery(GET_IMPORTED_INVOICES, {
     variables: { workspaceId, page, limit, filters },
-    skip: !workspaceId,
+    skip: skip || !workspaceId,
     fetchPolicy: "cache-and-network",
   });
 

@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { toast } from "@/src/components/ui/sonner";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { roleRefusal } from "../roles";
 import {
   DELETE_SIGNATURE_TEMPLATE_V2,
@@ -272,6 +273,10 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [toDelete, setToDelete] = useState(null);
+  // Enregistrer un modèle d'équipe = « create » des signatures (bouton
+  // masqué sans ce droit, affiché tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canSaveTemplate = !isReady || canDo("signatures", "create");
 
   const {
     data: savedData,
@@ -321,7 +326,6 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   // Modèle enregistré : tout son style, couleurs comprises, tel quel (ses
   // largeurs vont avec ses places) ; la signature le suit désormais
   const applySaved = (t) => {
-    // eslint-disable-next-line no-unused-vars
     const { __typename, ...style } = t.style;
     update(
       {
@@ -485,7 +489,11 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
       >
         <IdentityZoneControl st={sig.style} setStyle={setStyle} />
         {hasPhoto ? (
-          <PhotoLayoutControls st={sig.style} setStyle={setStyle} shown={shown} />
+          <PhotoLayoutControls
+            st={sig.style}
+            setStyle={setStyle}
+            shown={shown}
+          />
         ) : (
           <TextAlignControl st={sig.style} setStyle={setStyle} shown={shown} />
         )}
@@ -495,15 +503,17 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
         title="Vos modèles"
         description="Votre mise en forme, couleurs comprises, à réutiliser pour d'autres signatures. Proposés à toute votre équipe."
       >
-        <Button
-          type="button"
-          variant="outline"
-          className={cn("w-full cursor-pointer", FOCUS_RING)}
-          onClick={openSave}
-        >
-          <BookmarkPlus className="h-4 w-4" aria-hidden="true" />
-          Enregistrer cette signature comme modèle
-        </Button>
+        {canSaveTemplate && (
+          <Button
+            type="button"
+            variant="outline"
+            className={cn("w-full cursor-pointer", FOCUS_RING)}
+            onClick={openSave}
+          >
+            <BookmarkPlus className="h-4 w-4" aria-hidden="true" />
+            Enregistrer cette signature comme modèle
+          </Button>
+        )}
         {saved.length > 0 && (
           <div className="grid grid-cols-1 gap-4">
             {saved.map((t) => (
@@ -592,8 +602,8 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               <DialogTitle>Enregistrer comme modèle</DialogTitle>
               <DialogDescription>
                 La disposition, la typographie et les couleurs de cette
-                signature, sans ses textes ni ses images. Le modèle est
-                proposé à toute votre équipe.
+                signature, sans ses textes ni ses images. Le modèle est proposé
+                à toute votre équipe.
               </DialogDescription>
             </DialogHeader>
             <Row

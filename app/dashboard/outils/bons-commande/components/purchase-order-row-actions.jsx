@@ -224,9 +224,11 @@ export default function PurchaseOrderRowActions({
     purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
 
-  // Actions de statut : action « status » des bons de commande
+  // Actions de statut : action « status » des bons de commande, sauf le
+  // retour en brouillon qui demande « edit » (comme l'API)
   const hasStatusActions =
     (canFinalizePurchaseOrders && isDraft) ||
+    (canEditPurchaseOrders && isConfirmed) ||
     (canChangePurchaseOrderStatus &&
       (isConfirmed || isValidated || isInProgress));
   const hasLinkedInvoices =
@@ -328,31 +330,32 @@ export default function PurchaseOrderRowActions({
               )}
 
               {canChangePurchaseOrderStatus && isConfirmed && (
-                <>
-                  <DropdownMenuItem
-                    onClick={handleValidate}
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Marquer comme validé
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleRevertToDraft}
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Repasser en brouillon
-                  </DropdownMenuItem>
-                  {canCancel && (
-                    <DropdownMenuItem
-                      onClick={handleCancel}
-                      disabled={isLoading || isReadOnly}
-                    >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Annuler
-                    </DropdownMenuItem>
-                  )}
-                </>
+                <DropdownMenuItem
+                  onClick={handleValidate}
+                  disabled={isLoading || isReadOnly}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Marquer comme validé
+                </DropdownMenuItem>
+              )}
+              {/* Retour en brouillon : « edit » côté API (statut DRAFT) */}
+              {canEditPurchaseOrders && isConfirmed && (
+                <DropdownMenuItem
+                  onClick={handleRevertToDraft}
+                  disabled={isLoading || isReadOnly}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Repasser en brouillon
+                </DropdownMenuItem>
+              )}
+              {canChangePurchaseOrderStatus && isConfirmed && canCancel && (
+                <DropdownMenuItem
+                  onClick={handleCancel}
+                  disabled={isLoading || isReadOnly}
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Annuler
+                </DropdownMenuItem>
               )}
 
               {canChangePurchaseOrderStatus && isValidated && (

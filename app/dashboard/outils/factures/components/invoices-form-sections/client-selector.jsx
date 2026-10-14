@@ -88,7 +88,7 @@ export default function ClientSelector({
   const id = useId();
   // Création rapide / modification de client : actions « create » et
   // « edit » des clients (tout autorisé tant que la grille n'est pas chargée)
-  const { canDo, isReady } = useMyPermissions();
+  const { canDo, canRead, isReady } = useMyPermissions();
   const canCreateClients = !isReady || canDo("clients", "create");
   const canEditClients = !isReady || canDo("clients", "edit");
   const [activeTab, setActiveTab] = useState("existing");
@@ -181,10 +181,12 @@ export default function ClientSelector({
     searchApiGouv();
   }, [debouncedCompanyQuery]);
 
-  // Use GraphQL hooks
+  // Use GraphQL hooks. Liste coupée pour un rôle qui ne peut pas lire les
+  // clients (FORBIDDEN sinon) : le client du document reste affiché (prop)
   const { clients, loading } = useClients({
     search: debouncedQuery,
     limit: 50,
+    skip: isReady && !canRead("clients"),
   });
   const { createClient, loading: createLoading } = useCreateClient();
 

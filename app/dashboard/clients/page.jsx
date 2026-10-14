@@ -138,12 +138,14 @@ function ClientsContent() {
   // Ouvrir automatiquement le modal si ?new=true dans l'URL
   useEffect(() => {
     if (searchParams.get("new") === "true") {
-      // Ouverture réservée à la création de contacts
+      // Ouverture réservée à la création de contacts : on attend la grille
+      // des droits (sans elle, canCreateClients vaut vrai par défaut)
+      if (!isReady) return;
       if (canCreateClients) setDialogOpen(true);
       // Nettoyage de l'URL sans aller-retour serveur (history intégré au routeur).
       window.history.replaceState(null, "", "/dashboard/clients");
     }
-  }, [searchParams, router, canCreateClients]);
+  }, [searchParams, router, canCreateClients, isReady]);
 
   // Colonne « Factures » proposée seulement avec la lecture des factures
   const canReadInvoices = !isReady || canRead("invoices");

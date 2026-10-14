@@ -46,9 +46,11 @@ import {
   UPDATE_ORGANIZATION_ROLE,
 } from "@/src/graphql/organizationRoleQueries";
 
-// Grille vide : aucune action sur aucune page
+// Grille vide : aucune action sur aucune page, sauf « Voir » de l'accueil
 function emptyActions(catalog) {
-  return Object.fromEntries(catalog.modules.map((m) => [m.key, []]));
+  return Object.fromEntries(
+    catalog.modules.map((m) => [m.key, m.alwaysVisible ? ["view"] : []]),
+  );
 }
 
 function RoleEditorDialog({
@@ -180,7 +182,9 @@ function RoleEditorDialog({
             <DialogDescription className="text-xs">
               Dépliez une section puis une page pour cocher ses actions une à
               une. Sans « Voir », la page n'apparaît pas du tout ; cocher une
-              autre action ajoute « Voir ».
+              autre action ajoute « Voir ». L'accueil reste toujours visible :
+              ses cases choisissent les cadres affichés (solde, chiffre
+              d'affaires…).
             </DialogDescription>
           </DialogHeader>
 
@@ -253,8 +257,21 @@ function RoleEditorDialog({
 
             {isPredefined && role.description && (
               <p className="text-sm text-muted-foreground">
-                {role.description}
+                {role.customized
+                  ? `Par défaut : ${role.description}`
+                  : role.description}
               </p>
+            )}
+
+            {role?.key === "accountant" && (
+              <Callout type="info" noMargin>
+                <p>
+                  Bons de commande, bons de livraison, catalogue et transferts
+                  de fichiers restent hors de son menu tant qu&apos;il n&apos;a
+                  rien de plus que ses droits par défaut sur ces pages. Cochez
+                  une action en plus pour les faire apparaître.
+                </p>
+              </Callout>
             )}
 
             <RolePermissionsTable
@@ -325,7 +342,7 @@ function RoleEditorDialog({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {affected > 0
-                ? `${affected} personne${affected > 1 ? "s ont" : " a"} ce rôle (membres et invitations en attente). ${affected > 1 ? "Elles passeront" : "Elle passera"} en Membre, avec un accès en lecture seule.`
+                ? `${affected} personne${affected > 1 ? "s ont" : " a"} ce rôle (membres et invitations en attente). ${affected > 1 ? "Elles passeront" : "Elle passera"} au rôle Membre.`
                 : "Aucun membre n'a ce rôle."}
             </AlertDialogDescription>
           </AlertDialogHeader>

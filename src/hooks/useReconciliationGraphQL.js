@@ -22,15 +22,17 @@ import { reproposeReconciliation } from "@/src/lib/reconciliationIgnored";
 /**
  * Hook pour récupérer les suggestions de rapprochement
  * Remplace useReconciliation.fetchSuggestions (REST)
+ * `skip` : rôle sans lecture des transactions (l'API répondrait FORBIDDEN) ;
+ * la requête skippée ne déclenche ni appel ni polling.
  */
-export const useReconciliationSuggestions = () => {
+export const useReconciliationSuggestions = ({ skip = false } = {}) => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
   const { data, loading, error, refetch } = useQuery(
     GET_RECONCILIATION_SUGGESTIONS,
     {
       variables: { workspaceId },
-      skip: !workspaceId || workspaceLoading,
+      skip: skip || !workspaceId || workspaceLoading,
       // Toutes les 3 min (au lieu de 60 s) : le calcul est fait par l'API pour
       // chaque onglet ouvert, et les nouvelles transactions n'arrivent qu'aux
       // synchros bancaires. Les liaisons depuis le toast rafraîchissent tout de suite.
@@ -377,8 +379,9 @@ export const useUnignoreTransaction = () => {
 /**
  * Hook combiné pour toutes les opérations de rapprochement
  * Remplace useReconciliation (REST)
+ * `skip` : ne pas charger les suggestions (voir useReconciliationSuggestions)
  */
-export const useReconciliationGraphQL = () => {
+export const useReconciliationGraphQL = ({ skip = false } = {}) => {
   const client = useApolloClient();
 
   const {
@@ -388,7 +391,7 @@ export const useReconciliationGraphQL = () => {
     loading: suggestionsLoading,
     error: suggestionsError,
     refetch: refetchSuggestions,
-  } = useReconciliationSuggestions();
+  } = useReconciliationSuggestions({ skip });
 
   const { linkTransaction, loading: linkLoading } =
     useLinkTransactionToInvoice();

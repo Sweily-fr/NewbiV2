@@ -8,15 +8,19 @@ import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking"
 /**
  * Suggestions de rapprochement facture d'achat ↔ transaction (débit).
  * Miroir de useReconciliationSuggestions (factures client), polling 3 min.
+ * `skip` : rôle sans lecture des factures d'achat (l'API répondrait
+ * FORBIDDEN) ; la requête skippée ne déclenche ni appel ni polling.
  */
-export const usePurchaseInvoiceReconciliationSuggestions = () => {
+export const usePurchaseInvoiceReconciliationSuggestions = ({
+  skip = false,
+} = {}) => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
   const { data, loading, error, refetch } = useQuery(
     GET_PURCHASE_INVOICE_RECONCILIATION_SUGGESTIONS,
     {
       variables: { workspaceId },
-      skip: !workspaceId || workspaceLoading,
+      skip: skip || !workspaceId || workspaceLoading,
       // Toutes les 3 min (au lieu de 60 s) : le calcul est fait par l'API pour
       // chaque onglet ouvert, et les nouvelles transactions n'arrivent qu'aux
       // synchros bancaires. Les liaisons depuis le toast rafraîchissent tout de suite.
@@ -95,8 +99,9 @@ export const useLinkPurchaseInvoiceToTransaction = () => {
 
 /**
  * Hook combiné pour le toast de rapprochement facture d'achat.
+ * `skip` : ne pas charger les suggestions (voir le hook ci-dessus)
  */
-export const usePurchaseInvoiceReconciliation = () => {
+export const usePurchaseInvoiceReconciliation = ({ skip = false } = {}) => {
   const {
     suggestions,
     unmatchedCount,
@@ -104,7 +109,7 @@ export const usePurchaseInvoiceReconciliation = () => {
     loading,
     error,
     refetch,
-  } = usePurchaseInvoiceReconciliationSuggestions();
+  } = usePurchaseInvoiceReconciliationSuggestions({ skip });
 
   const { linkTransaction, loading: linkLoading } =
     useLinkPurchaseInvoiceToTransaction();

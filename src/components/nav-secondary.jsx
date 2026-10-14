@@ -280,15 +280,20 @@ export function NavSecondary({
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
   const { isActive } = useSubscription();
-  const { settings: eInvoicingSettings, loading: eInvoicingLoading } =
-    useEInvoicingSettings();
-  const { isMobile, setOpenMobile, state } = useSidebar();
-  const isCollapsed = state === "collapsed";
   // Activer la facturation électronique : « Gérer les applications » (la
   // carte n'apparaît qu'une fois la grille des droits chargée)
-  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const { canDo, canRead, isReady: permissionsReady } = useMyPermissions();
   const canManageIntegrations =
     permissionsReady && canDo("integrations", "manage");
+  // Réglages e-invoicing lisibles avec les factures ou les applications :
+  // requête coupée sinon (barre latérale montée sur toutes les pages)
+  const { settings: eInvoicingSettings, loading: eInvoicingLoading } =
+    useEInvoicingSettings({
+      skip:
+        permissionsReady && !canRead("invoices") && !canRead("integrations"),
+    });
+  const { isMobile, setOpenMobile, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   // Vérifier si la facturation électronique est activée
   const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;

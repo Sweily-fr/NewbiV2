@@ -16,6 +16,7 @@ import {
   useLatestInvoiceIssueDate,
 } from "@/src/graphql/invoiceQueries";
 import { useClient } from "@/src/graphql/clientQueries";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
 import {
@@ -84,7 +85,12 @@ export function useInvoiceEditor({
     mode !== "create" && existingInvoice?.client?.id
       ? existingInvoice.client.id
       : kanbanClientId;
-  const { client: freshClient } = useClient(clientIdForFresh);
+  // Sans lecture des clients (FORBIDDEN sinon), le document garde le client
+  // figé qu'il contient
+  const { canRead, isReady: permissionsReady } = useMyPermissions();
+  const { client: freshClient } = useClient(clientIdForFresh, undefined, {
+    skip: permissionsReady && !canRead("clients"),
+  });
 
   // Prefix state pour le filtrage du numéro par préfixe
   // refreshPrefixDate : recale le mois/année du préfixe stocké sur la date du

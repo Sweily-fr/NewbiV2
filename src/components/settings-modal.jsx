@@ -108,7 +108,13 @@ export function SettingsModal({
 
   // La facturation électronique transmet le régime de TVA dérivé à SuperPDP :
   // toute modification TVA sauvegardée ici doit y être répercutée (cf. onSuccess).
-  const { settings: eInvoicingSettings } = useEInvoicingSettings();
+  // Réglages lisibles avec les factures ou les applications (FORBIDDEN sinon)
+  const { settings: eInvoicingSettings } = useEInvoicingSettings({
+    skip:
+      permissionsReady &&
+      !can("invoices", "read") &&
+      !can("integrations", "read"),
+  });
 
   const formMethods = useForm({
     mode: "onChange", // Validation en temps réel

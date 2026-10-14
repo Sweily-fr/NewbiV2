@@ -13,15 +13,20 @@ import {
   CHECK_RECIPIENT_EINVOICING,
 } from "@/src/graphql/eInvoicingQueries";
 
+// refetch() d'une requête skippée partirait quand même vers l'API : sans
+// droit, on renvoie un refetch sans effet
+const skippedRefetch = () => Promise.resolve(undefined);
+
 /**
  * Hook pour gérer les paramètres de facturation électronique
+ * `skip` : rôle qui ne lit ni les factures ni les applications (FORBIDDEN)
  */
-export function useEInvoicingSettings() {
+export function useEInvoicingSettings({ skip = false } = {}) {
   const { workspaceId } = useRequiredWorkspace();
 
   const { data, loading, error, refetch } = useQuery(GET_EINVOICING_SETTINGS, {
     variables: { workspaceId },
-    skip: !workspaceId,
+    skip: skip || !workspaceId,
   });
 
   return {
@@ -35,19 +40,20 @@ export function useEInvoicingSettings() {
     },
     loading,
     error,
-    refetch,
+    refetch: skip ? skippedRefetch : refetch,
   };
 }
 
 /**
  * Hook pour récupérer les statistiques e-invoicing
+ * `skip` : même règle que useEInvoicingSettings
  */
-export function useEInvoicingStats() {
+export function useEInvoicingStats({ skip = false } = {}) {
   const { workspaceId } = useRequiredWorkspace();
 
   const { data, loading, error, refetch } = useQuery(GET_EINVOICING_STATS, {
     variables: { workspaceId },
-    skip: !workspaceId,
+    skip: skip || !workspaceId,
   });
 
   return {
@@ -66,7 +72,7 @@ export function useEInvoicingStats() {
     },
     loading,
     error,
-    refetch,
+    refetch: skip ? skippedRefetch : refetch,
   };
 }
 
