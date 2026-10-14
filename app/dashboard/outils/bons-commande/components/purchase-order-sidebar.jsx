@@ -860,42 +860,48 @@ export default function PurchaseOrderSidebar({
                 </div>
               )}
 
-            {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full) */}
-            {isConfirmed && canChangePurchaseOrderStatus && (
-              <>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleRevertToDraft}
-                    disabled={isLoading}
-                    className="flex-1 font-normal"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Repasser brouillon
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={handleValidate}
-                    disabled={isLoading}
-                    className="flex-1 font-normal"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Valider
-                  </Button>
-                </div>
-                {canCancel && (
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={isLoading}
-                    className="w-full font-normal"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Annuler le bon de commande
-                  </Button>
-                )}
-              </>
-            )}
+            {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full).
+                Retour en brouillon = « edit » côté API, le reste = « status » */}
+            {isConfirmed &&
+              (canEditPurchaseOrders || canChangePurchaseOrderStatus) && (
+                <>
+                  <div className="flex gap-2">
+                    {canEditPurchaseOrders && (
+                      <Button
+                        variant="outline"
+                        onClick={handleRevertToDraft}
+                        disabled={isLoading}
+                        className="flex-1 font-normal"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Repasser brouillon
+                      </Button>
+                    )}
+                    {canChangePurchaseOrderStatus && (
+                      <Button
+                        variant="primary"
+                        onClick={handleValidate}
+                        disabled={isLoading}
+                        className="flex-1 font-normal"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Valider
+                      </Button>
+                    )}
+                  </div>
+                  {canChangePurchaseOrderStatus && canCancel && (
+                    <Button
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={isLoading}
+                      className="w-full font-normal"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Annuler le bon de commande
+                    </Button>
+                  )}
+                </>
+              )}
 
             {/* VALIDATED: Démarrer le traitement (single) */}
             {isValidated && canChangePurchaseOrderStatus && (

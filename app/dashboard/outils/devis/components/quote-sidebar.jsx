@@ -108,6 +108,9 @@ export default function QuoteSidebar({
   const canReadInvoices = !isReady || canRead("invoices");
   const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
   const canReadDeliveryNotes = !isReady || canRead("deliveryNotes");
+  // Client relu à la conversion seulement si le rôle lit les clients
+  // (FORBIDDEN sinon) : à défaut, le client figé du devis est repris
+  const canReadClients = !isReady || canRead("clients");
   // Conversions : action « convert » du devis et création du document cible
   const canConvertQuotes = !isReady || canDo("quotes", "convert");
   const canConvertToInvoice =
@@ -337,7 +340,7 @@ export default function QuoteSidebar({
     // repart après l'enregistrement (rien n'est préparé avant).
     ensureCompanyInfo(async () => {
       let freshClient = quote.client;
-      if (quote.client?.id && workspaceId) {
+      if (quote.client?.id && workspaceId && canReadClients) {
         try {
           const { data } = await fetchClient({
             variables: { workspaceId, id: quote.client.id },
@@ -392,7 +395,7 @@ export default function QuoteSidebar({
       }
 
       let freshClient = quote.client;
-      if (quote.client?.id && workspaceId) {
+      if (quote.client?.id && workspaceId && canReadClients) {
         try {
           const { data } = await fetchClient({
             variables: { workspaceId, id: quote.client.id },

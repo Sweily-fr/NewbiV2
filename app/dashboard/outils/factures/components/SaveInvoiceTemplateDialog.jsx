@@ -8,6 +8,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { GET_QUOTE_TEMPLATES } from "@/src/graphql/quoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
@@ -51,9 +52,13 @@ export function SaveInvoiceTemplateDialog({
     variables: { workspaceId },
     skip: !workspaceId || templateLimit === -1,
   });
+  // Modèles de devis (quota commun) : seulement si le rôle lit les devis,
+  // sinon l'API refuse (FORBIDDEN) et le compte se limite aux factures
+  const { canRead, isReady } = useMyPermissions();
   const { data: quoteTemplatesData } = useQuery(GET_QUOTE_TEMPLATES, {
     variables: { workspaceId },
-    skip: !workspaceId || templateLimit === -1,
+    skip:
+      !workspaceId || templateLimit === -1 || (isReady && !canRead("quotes")),
   });
 
   const currentCount =

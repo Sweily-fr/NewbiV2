@@ -290,7 +290,7 @@ export function SearchCommand() {
     canDo,
     isReady: permissionsReady,
     role: permissionsRole,
-    levels: permissionLevels,
+    actions: permissionActions,
   } = useMyPermissions();
   const canReadModule = (moduleKey) =>
     !permissionsReady || can(moduleKey, "read");
@@ -301,7 +301,7 @@ export function SearchCommand() {
     if (!permissionsReady || !moduleKey) return true;
     return (
       can(moduleKey, "read") &&
-      !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+      !isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
   };
   const canSearchClients = canReadModule("clients");

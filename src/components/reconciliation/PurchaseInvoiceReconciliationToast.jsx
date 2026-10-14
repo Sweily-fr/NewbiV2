@@ -282,11 +282,15 @@ function PurchaseInvoiceReconciliationDeck({
 export function PurchaseInvoiceReconciliationToastProvider({ children }) {
   // Rattacher ou masquer une suggestion : droit « Rapprocher » des factures
   // d'achat (aucune carte pour un rôle qui n'a que « Voir »)
-  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const { canDo, canRead, isReady: permissionsReady } = useMyPermissions();
   const canReconcile =
     permissionsReady && canDo("purchaseInvoices", "reconcile");
   const router = useRouter();
-  const { suggestions, linkTransaction } = usePurchaseInvoiceReconciliation();
+  // Toast monté sur toutes les pages : sans lecture des factures d'achat,
+  // l'API refuserait les suggestions (FORBIDDEN) à chaque polling
+  const { suggestions, linkTransaction } = usePurchaseInvoiceReconciliation({
+    skip: permissionsReady && !canRead("purchaseInvoices"),
+  });
 
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
   const [exitingIds, setExitingIds] = useState(new Set());

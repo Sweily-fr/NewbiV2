@@ -61,6 +61,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useLastPurchaseOrderPrefix } from "@/src/graphql/purchaseOrderQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getNumberFormat } from "@/src/lib/intl-cache";
@@ -123,7 +124,9 @@ export default function QuoteInfoSection({
     return () => clearTimeout(timer);
   }, [referenceSearchTerm]);
 
-  // Query pour rechercher les devis acceptés (uniquement pour les bons de commande)
+  // Query pour rechercher les devis acceptés (uniquement pour les bons de
+  // commande), coupée sans lecture des devis (FORBIDDEN sinon)
+  const { canRead, isReady } = useMyPermissions();
   const { data: quotesData, loading: loadingQuotes } = useQuery(
     SEARCH_QUOTES_FOR_REFERENCE,
     {
@@ -132,7 +135,11 @@ export default function QuoteInfoSection({
         search: debouncedSearchTerm || undefined,
         limit: 10,
       },
-      skip: !isPurchaseOrder || !referenceSearchOpen || !workspaceId,
+      skip:
+        !isPurchaseOrder ||
+        !referenceSearchOpen ||
+        !workspaceId ||
+        (isReady && !canRead("quotes")),
       fetchPolicy: "cache-and-network",
     },
   );

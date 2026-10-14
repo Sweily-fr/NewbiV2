@@ -33,6 +33,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   EINVOICING_VERIFICATION,
   EINVOICING_DIRECTORY_ENTRIES,
@@ -134,12 +135,19 @@ export function EInvoicingSection({
   organization,
   onNavigateToTab,
 }) {
+  // Réglages et statistiques lisibles avec les factures ou les applications
+  // (FORBIDDEN sinon)
+  const { canRead, isReady: permissionsReady } = useMyPermissions();
+  const skipEInvoicingSettings =
+    permissionsReady && !canRead("invoices") && !canRead("integrations");
   const {
     settings,
     loading: settingsLoading,
     refetch,
-  } = useEInvoicingSettings();
-  const { stats, loading: statsLoading } = useEInvoicingStats();
+  } = useEInvoicingSettings({ skip: skipEInvoicingSettings });
+  const { stats, loading: statsLoading } = useEInvoicingStats({
+    skip: skipEInvoicingSettings,
+  });
   const {
     connect,
     disconnect,

@@ -71,9 +71,13 @@ export function canAction(actions, resource, action) {
   const legacy = LEGACY_FEATURES[resource];
   if (legacy) return (actions[legacy.module] || []).includes(legacy.action);
   const moduleKey = resolveModule(resource);
+  const granted = actions[moduleKey] || [];
+  // L'action du catalogue prime sur un ancien nom (« remove » des membres
+  // n'est pas « delete »)
+  if (granted.includes(action)) return true;
   const wanted =
     action === "manage"
       ? writeActionOf(moduleKey)
       : ACTION_ALIASES[action] || action;
-  return (actions[moduleKey] || []).includes(wanted);
+  return granted.includes(wanted);
 }

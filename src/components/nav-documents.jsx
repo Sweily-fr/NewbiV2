@@ -49,7 +49,7 @@ export function NavDocuments({ items }) {
     can,
     isReady: permissionsReady,
     role: permissionsRole,
-    levels: permissionLevels,
+    actions: permissionActions,
   } = useMyPermissions();
   const canSee = useCallback(
     (url) => {
@@ -57,10 +57,10 @@ export function NavDocuments({ items }) {
       if (!permissionsReady || !moduleKey) return true;
       return (
         can(moduleKey, "read") &&
-        !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+        !isHiddenForRole(permissionsRole, permissionActions, moduleKey)
       );
     },
-    [permissionsReady, can, permissionsRole, permissionLevels],
+    [permissionsReady, can, permissionsRole, permissionActions],
   );
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
@@ -206,7 +206,7 @@ export function NavDocuments({ items }) {
 
   // Filter out already pinned apps
   const availableToPin = availableTools.filter(
-    (tool) => !pinnedApps.some((app) => app.url === tool.url)
+    (tool) => !pinnedApps.some((app) => app.url === tool.url),
   );
 
   const handlePinApp = (tool) => {
@@ -241,7 +241,7 @@ export function NavDocuments({ items }) {
                   !hasAccess && "opacity-60 cursor-not-allowed",
                   isActiveLink &&
                     hasAccess &&
-                    "bg-[#F0F0F0] dark:bg-sidebar-accent hover:bg-[#F0F0F0]/90 dark:hover:bg-sidebar-accent/90 active:bg-[#F0F0F0] dark:active:bg-sidebar-accent text-sidebar-foreground min-w-8 duration-200 ease-linear"
+                    "bg-[#F0F0F0] dark:bg-sidebar-accent hover:bg-[#F0F0F0]/90 dark:hover:bg-sidebar-accent/90 active:bg-[#F0F0F0] dark:active:bg-sidebar-accent text-sidebar-foreground min-w-8 duration-200 ease-linear",
                 )}
                 disabled={!hasAccess}
               >
@@ -317,7 +317,7 @@ export function NavDocuments({ items }) {
                       onClick={hasAccess ? () => handlePinApp(tool) : undefined}
                       className={cn(
                         "cursor-pointer",
-                        !hasAccess && "opacity-60 cursor-not-allowed"
+                        !hasAccess && "opacity-60 cursor-not-allowed",
                       )}
                     >
                       <tool.icon className="size-4" />
