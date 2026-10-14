@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // Liens préchargés à l'intention de clic (voir nav-link.jsx).
 import Link from "@/src/components/nav-link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -13,6 +13,7 @@ import {
   Trash,
   Users,
   ArrowRight,
+  FileCheck2,
   GraduationCap,
   UsersRound,
   HelpCircle,
@@ -27,13 +28,13 @@ import {
   LampOnIcon,
   TeacherIcon,
   BookIcon,
-  DocumentCloudIcon,
 } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
 import { useUser } from "@/src/lib/auth/hooks";
 import dynamic from "next/dynamic";
+import { isEInvoicingPromoDismissed } from "@/src/lib/e-invoicing-promo-storage";
 
 // Chunk chargé à la première ouverture seulement
 const SettingsModal = dynamic(
@@ -292,6 +293,21 @@ export function NavSecondary({
   // Vérifier si la facturation électronique est activée
   const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
+  // Pastille « ! » (barre repliée) : affichée jusqu'à « Ne plus voir ce
+  // message » dans la modal. Masquée au rendu serveur, lue au montage (pas de
+  // flash ni d'écart d'hydratation)
+  const [eInvoicingPromoDismissed, setEInvoicingPromoDismissed] =
+    useState(true);
+  useEffect(() => {
+    setEInvoicingPromoDismissed(isEInvoicingPromoDismissed());
+  }, []);
+
+  // La modal écrit le choix à sa fermeture : on le relit à ce moment-là
+  const handleEInvoicingPromoOpenChange = (nextOpen) => {
+    setEInvoicingPromoOpen(nextOpen);
+    if (!nextOpen) setEInvoicingPromoDismissed(isEInvoicingPromoDismissed());
+  };
+
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
     if (isMobile) {
@@ -321,21 +337,27 @@ export function NavSecondary({
             sur le workspace. Avec un plan actif (essai inclus), le clic ouvre
             la modal d'activation ; sans plan, il renvoie vers l'abonnement.
             Sidebar expanded : carte blanche (titre, texte, lien).
-            Sidebar collapsed : icône seule avec tooltip. */}
+            Sidebar collapsed : entrée de menu ordinaire (icône grise + tooltip)
+            et pastille « ! » jusqu'à « Ne plus voir ce message ». */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
           canManageIntegrations &&
           (isCollapsed ? (
             <SidebarMenu>
-              <SidebarMenuItem>
+              <SidebarMenuItem className="relative">
                 <SidebarMenuButton
-                  className="mb-3 cursor-pointer bg-background dark:bg-white/[0.05] ring-1 ring-black/[0.07] dark:ring-white/[0.1] shadow-xs [&>svg]:text-[#5b50FF]"
+                  className="mb-1 cursor-pointer"
                   tooltip="Facturation électronique"
                   onClick={handleEInvoicingClick}
                 >
-                  <DocumentCloudIcon />
+                  <FileCheck2 strokeWidth={1.5} />
                   <span>Facturation électronique</span>
                 </SidebarMenuButton>
+                {!eInvoicingPromoDismissed && (
+                  <kbd className="absolute top-0 right-0 inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
+                    !
+                  </kbd>
+                )}
               </SidebarMenuItem>
             </SidebarMenu>
           ) : (
@@ -456,7 +478,7 @@ export function NavSecondary({
         {eInvoicingPromoOpen && (
           <EInvoicingPromoModal
             open={eInvoicingPromoOpen}
-            onOpenChange={setEInvoicingPromoOpen}
+            onOpenChange={handleEInvoicingPromoOpenChange}
           />
         )}
 
