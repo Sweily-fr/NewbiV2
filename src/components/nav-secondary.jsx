@@ -34,12 +34,9 @@ import { usePathname } from "next/navigation";
 import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
 import { useUser } from "@/src/lib/auth/hooks";
 import dynamic from "next/dynamic";
+import { isEInvoicingPromoDismissed } from "@/src/lib/e-invoicing-promo-storage";
 
 // Chunk chargé à la première ouverture seulement
-// Pastille « ! » de l'entrée Facturation électronique (barre repliée) :
-// affichée jusqu'au premier clic sur l'encart, mémorisé dans le navigateur
-const E_INVOICING_BADGE_SEEN_KEY = "e_invoicing_sidebar_badge_seen";
-
 const SettingsModal = dynamic(
   () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
   { ssr: false },
@@ -296,18 +293,20 @@ export function NavSecondary({
   // Vérifier si la facturation électronique est activée
   const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
-  // Masquée au rendu serveur, lue au montage (pas de flash ni d'écart
-  // d'hydratation)
-  const [eInvoicingBadgeSeen, setEInvoicingBadgeSeen] = useState(true);
+  // Pastille « ! » (barre repliée) : affichée jusqu'à « Ne plus voir ce
+  // message » dans la modal. Masquée au rendu serveur, lue au montage (pas de
+  // flash ni d'écart d'hydratation)
+  const [eInvoicingPromoDismissed, setEInvoicingPromoDismissed] =
+    useState(true);
   useEffect(() => {
-    try {
-      setEInvoicingBadgeSeen(
-        localStorage.getItem(E_INVOICING_BADGE_SEEN_KEY) === "true",
-      );
-    } catch {
-      setEInvoicingBadgeSeen(false);
-    }
+    setEInvoicingPromoDismissed(isEInvoicingPromoDismissed());
   }, []);
+
+  // La modal écrit le choix à sa fermeture : on le relit à ce moment-là
+  const handleEInvoicingPromoOpenChange = (nextOpen) => {
+    setEInvoicingPromoOpen(nextOpen);
+    if (!nextOpen) setEInvoicingPromoDismissed(isEInvoicingPromoDismissed());
+  };
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -319,14 +318,6 @@ export function NavSecondary({
   // Avec un plan actif (essai inclus) : ouvre la modal d'activation.
   // Sans plan actif : redirige vers l'onglet Abonnement des paramètres.
   const handleEInvoicingClick = () => {
-    if (!eInvoicingBadgeSeen) {
-      setEInvoicingBadgeSeen(true);
-      try {
-        localStorage.setItem(E_INVOICING_BADGE_SEEN_KEY, "true");
-      } catch {
-        // Stockage indisponible : la pastille reviendra au prochain chargement
-      }
-    }
     if (isActive()) {
       if (onOpenEInvoicingPromo) {
         onOpenEInvoicingPromo();
@@ -347,7 +338,7 @@ export function NavSecondary({
             la modal d'activation ; sans plan, il renvoie vers l'abonnement.
             Sidebar expanded : carte blanche (titre, texte, lien).
             Sidebar collapsed : entrée de menu ordinaire (icône grise + tooltip)
-            et pastille « ! » jusqu'au premier clic. */}
+            et pastille « ! » jusqu'à « Ne plus voir ce message ». */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
           canManageIntegrations &&
@@ -362,7 +353,7 @@ export function NavSecondary({
                   <FileCheck2 strokeWidth={1.5} />
                   <span>Facturation électronique</span>
                 </SidebarMenuButton>
-                {!eInvoicingBadgeSeen && (
+                {!eInvoicingPromoDismissed && (
                   <kbd className="absolute top-0 right-0 inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
                     !
                   </kbd>
@@ -487,7 +478,7 @@ export function NavSecondary({
         {eInvoicingPromoOpen && (
           <EInvoicingPromoModal
             open={eInvoicingPromoOpen}
-            onOpenChange={setEInvoicingPromoOpen}
+            onOpenChange={handleEInvoicingPromoOpenChange}
           />
         )}
 

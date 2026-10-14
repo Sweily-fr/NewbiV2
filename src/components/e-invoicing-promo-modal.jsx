@@ -18,12 +18,7 @@ import {
 } from "lucide-react";
 import { useSuperPdp } from "@/src/hooks/useSuperPdp";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
-
-// Clé localStorage : l'utilisateur a demandé de ne plus voir la modal automatiquement (permanent)
-export const E_INVOICING_PROMO_DISMISSED_KEY = "e_invoicing_promo_dismissed";
-// Clé sessionStorage : la modal a déjà été ouverte automatiquement durant cette session
-// (évite la réouverture à chaque rechargement de page ; remise à zéro à la prochaine connexion)
-export const E_INVOICING_PROMO_SESSION_KEY = "e_invoicing_promo_session_shown";
+import { E_INVOICING_PROMO_DISMISSED_KEY } from "@/src/lib/e-invoicing-promo-storage";
 
 export function EInvoicingPromoModal({ open, onOpenChange }) {
   const { connect, loading: superPdpLoading } = useSuperPdp();
