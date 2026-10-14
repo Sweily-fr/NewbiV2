@@ -27,7 +27,7 @@ import {
   LampOnIcon,
   TeacherIcon,
   BookIcon,
-  DocumentCloudIcon,
+  ReceiptItemIcon,
 } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
@@ -333,7 +333,7 @@ export function NavSecondary({
                   tooltip="Facturation électronique"
                   onClick={handleEInvoicingClick}
                 >
-                  <DocumentCloudIcon />
+                  <ReceiptItemIcon />
                   <span>Facturation électronique</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
