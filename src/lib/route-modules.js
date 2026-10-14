@@ -57,29 +57,32 @@ export function actionForPath(pathname) {
  * Comptable : pages absentes de son menu avant les rôles personnalisés, alors
  * que leurs données restaient accessibles ailleurs (recherche, documents
  * liés, transfert depuis les documents partagés). Elles restent masquées tant
- * que le Comptable garde ce niveau par défaut ; un niveau plus haut donné par
- * le super admin les fait apparaître. `page: false` : la page elle-même
- * restait fermée (transferts de fichiers).
+ * que le super admin ne lui accorde rien de plus que ses droits par défaut
+ * sur la page (`actions`, ceux du catalogue de l'API) ; une action en plus
+ * les fait apparaître, en retirer une ne les ouvre pas. `page: false` : la
+ * page elle-même restait fermée (transferts de fichiers).
  */
-const ACCOUNTANT_HIDDEN_BY_DEFAULT = {
-  purchaseOrders: { level: "read", page: true },
-  deliveryNotes: { level: "read", page: true },
-  products: { level: "read", page: true },
-  fileTransfers: { level: "write", page: false },
+export const ACCOUNTANT_HIDDEN_BY_DEFAULT = {
+  purchaseOrders: { actions: ["view", "export"], page: true },
+  deliveryNotes: { actions: ["view", "export"], page: true },
+  products: { actions: ["view", "export"], page: true },
+  fileTransfers: { actions: ["view", "create", "edit"], page: false },
 };
 
 /**
  * Le module est-il masqué pour ce rôle (menu, ou page si `page`) alors que
- * sa grille le permet ?
+ * sa grille (page → actions, `myPermissions.actions`) le permet ?
  */
 export function isHiddenForRole(
   role,
-  levels,
+  actions,
   moduleKey,
   { page = false } = {},
 ) {
-  if (role !== "accountant" || !levels) return false;
+  if (role !== "accountant" || !actions) return false;
   const rule = ACCOUNTANT_HIDDEN_BY_DEFAULT[moduleKey];
-  if (!rule || levels[moduleKey] !== rule.level) return false;
+  if (!rule) return false;
+  const granted = actions[moduleKey] || [];
+  if (granted.some((a) => !rule.actions.includes(a))) return false;
   return page ? !rule.page : true;
 }

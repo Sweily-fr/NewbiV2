@@ -112,10 +112,14 @@ export function pageSummary(catalog, grid, pageKey) {
   }
   if (!(grid[pageKey] || []).includes("view")) return "Aucun accès";
   const modules = pageModules(catalog, pageKey);
+  // « Voir » seul, sur la page comme sur ses parties
+  const readOnly = modules.every((m) =>
+    (grid[m.key] || []).every((a) => a === "view"),
+  );
+  if (readOnly) return "Lecture seule";
   const total = modules.reduce((n, m) => n + m.actions.length, 0);
   const count = modules.reduce((n, m) => n + (grid[m.key] || []).length, 0);
   if (count === total) return "Tous les droits";
-  if (count === 1) return "Lecture seule";
   return `${count} droits sur ${total}`;
 }
 

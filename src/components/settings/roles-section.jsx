@@ -257,8 +257,21 @@ function RoleEditorDialog({
 
             {isPredefined && role.description && (
               <p className="text-sm text-muted-foreground">
-                {role.description}
+                {role.customized
+                  ? `Par défaut : ${role.description}`
+                  : role.description}
               </p>
+            )}
+
+            {role?.key === "accountant" && (
+              <Callout type="info" noMargin>
+                <p>
+                  Bons de commande, bons de livraison, catalogue et transferts
+                  de fichiers restent hors de son menu tant qu&apos;il n&apos;a
+                  rien de plus que ses droits par défaut sur ces pages. Cochez
+                  une action en plus pour les faire apparaître.
+                </p>
+              </Callout>
             )}
 
             <RolePermissionsTable
@@ -329,7 +342,7 @@ function RoleEditorDialog({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {affected > 0
-                ? `${affected} personne${affected > 1 ? "s ont" : " a"} ce rôle (membres et invitations en attente). ${affected > 1 ? "Elles passeront" : "Elle passera"} en Membre, avec un accès en lecture seule.`
+                ? `${affected} personne${affected > 1 ? "s ont" : " a"} ce rôle (membres et invitations en attente). ${affected > 1 ? "Elles passeront" : "Elle passera"} au rôle Membre.`
                 : "Aucun membre n'a ce rôle."}
             </AlertDialogDescription>
           </AlertDialogHeader>

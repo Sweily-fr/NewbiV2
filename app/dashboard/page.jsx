@@ -141,7 +141,6 @@ function DashboardContent() {
     isReady: permissionsReady,
     error: permissionsError,
     role: permissionsRole,
-    levels: permissionLevels,
   } = useMyPermissions();
   const permissionsPending = !permissionsReady && !permissionsError;
   const canReadModule = (moduleKey) => !permissionsReady || canRead(moduleKey);
@@ -166,7 +165,7 @@ function DashboardContent() {
   // par défaut (comme dans le menu)
   const fileTransfersHidden = isHiddenForRole(
     permissionsRole,
-    permissionLevels,
+    permissionActions,
     "fileTransfers",
   );
   const canSeeFileTransfers =

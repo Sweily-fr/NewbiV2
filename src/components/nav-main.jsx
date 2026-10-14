@@ -84,14 +84,14 @@ export function NavMain({
     canDo,
     isReady: permissionsReady,
     role: permissionsRole,
-    levels: permissionLevels,
+    actions: permissionActions,
   } = useMyPermissions();
   const canSee = (url) => {
     const moduleKey = moduleForPath(url);
     if (!permissionsReady || !moduleKey) return true;
     return (
       can(moduleKey, "read") &&
-      !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+      !isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
   };
   // Raccourcis « Nouveau … » : action « create » du module
@@ -517,7 +517,7 @@ export function NavMain({
                 </>
               )}
               {/* Sous-menus */}
-              {navClients.map((subItem) => {
+              {visibleItems(navClients).map((subItem) => {
                 const allUrls = navClients.map((i) => i.url);
                 const isSubItemActive = isNavItemActive(subItem.url, allUrls);
                 const hasSubAccess = !subItem.isPro || hasProAccess;
@@ -599,7 +599,7 @@ export function NavMain({
           </div>
           <CollapsibleContent>
             <SidebarMenuSub>
-              {navClients.map((subItem) => {
+              {visibleItems(navClients).map((subItem) => {
                 const allUrls = navClients.map((i) => i.url);
                 const isSubItemActive = isNavItemActive(subItem.url, allUrls);
                 const hasSubAccess = !subItem.isPro || hasProAccess;

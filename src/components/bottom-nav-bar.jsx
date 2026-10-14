@@ -28,7 +28,7 @@ import {
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { isDeliveryNotesAllowed } from "@/src/hooks/useDeliveryNotesAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { moduleForPath } from "@/src/lib/route-modules";
+import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import { useCreationLinkClick } from "@/src/components/company-info-gate";
 
@@ -265,10 +265,21 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
   const creationLinkClick = useCreationLinkClick();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
   // pages des ventes visibles avec « Voir », créations avec « Créer »
-  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const {
+    canDo,
+    isReady: permissionsReady,
+    role: permissionsRole,
+    actions: permissionActions,
+  } = useMyPermissions();
+  // Pages masquées au rôle exclues comme dans le menu (Comptable par défaut)
   const canViewPage = (href) => {
     const moduleKey = moduleForPath(href);
-    return !permissionsReady || !moduleKey || canDo(moduleKey, "view");
+    return (
+      !permissionsReady ||
+      !moduleKey ||
+      (canDo(moduleKey, "view") &&
+        !isHiddenForRole(permissionsRole, permissionActions, moduleKey))
+    );
   };
   const canCreateInvoices = !permissionsReady || canDo("invoices", "create");
   const canCreateQuotes = !permissionsReady || canDo("quotes", "create");

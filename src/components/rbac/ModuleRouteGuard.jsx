@@ -18,13 +18,13 @@ import {
  */
 export function ModuleRouteGuard({ children }) {
   const pathname = usePathname();
-  const { canDo, isReady, role, levels } = useMyPermissions();
+  const { canDo, isReady, role, actions } = useMyPermissions();
   const moduleKey = moduleForPath(pathname);
 
   if (!moduleKey || !isReady) return children;
 
   const action = actionForPath(pathname);
-  const hidden = isHiddenForRole(role, levels, moduleKey, { page: true });
+  const hidden = isHiddenForRole(role, actions, moduleKey, { page: true });
   if (canDo(moduleKey, action) && !hidden) return children;
 
   const canView = !hidden && canDo(moduleKey, "view");
