@@ -85,7 +85,11 @@ const cspValue = [
   // analytics.tiktok.com : polices de l'overlay « Test Events » du pixel TikTok
   // (violations font-src constatées en prod le 01/09/2026).
   `font-src 'self' data: https://analytics.tiktok.com${isVercelToolbar ? " https://vercel.live https://assets.vercel.com" : ""}`,
-  // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
+  // GA4 (G-R3FDVJ3M0D, injecté par le conteneur GTM) : *.google-analytics.com
+  // ne suffit plus, les hits partent vers region1.analytics.google.com et
+  // stats.g.doubleclick.net (Google Signals). Sans *.analytics.google.com et
+  // *.g.doubleclick.net, la CSP bloquait toutes les mesures GA4 (constaté le
+  // 14/10/2026). ad.doubleclick.net : ping ccm de Google Ads relayé par GTM.
   // Google Ads (tag AW-18448267727 dans app/layout.jsx) : www.google.com,
   // googleadservices.com, googleads.g.doubleclick.net, *.googlesyndication.com
   // (pings de conversion / remarketing), td.doubleclick.net en frame-src
@@ -95,7 +99,7 @@ const cspValue = [
   // TikTok : *.tiktok.com + wss (mode « Test Events » d'Events Manager, overlay +
   // websocket de debug), *.tiktokw.us / *.tiktokv.us (endpoints régionaux US,
   // enrich_ipv6…). En CSP, https:// ne couvre pas wss://, d'où l'entrée dédiée.
-  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
+  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net https://ad.doubleclick.net https://*.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
   // Vidéos : couvertures et pièces jointes des tâches kanban servies par le
   // bucket R2 public (KANBAN_URL, *.r2.dev), aperçus vidéo des transferts de
   // fichiers via l'API (/api/files/preview) et blob: pour les entrées de ZIP
