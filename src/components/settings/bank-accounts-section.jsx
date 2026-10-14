@@ -38,6 +38,7 @@ import {
   MailWarning,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -83,6 +84,14 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
     : undefined;
 
   const apolloClient = useApolloClient();
+
+  // Soldes et IBAN : avec une page qui affiche les comptes (Transactions,
+  // Pilotage). « Applications et banques » seul gère les connexions sans
+  // voir ces montants.
+  const { canRead, isReady: permissionsReady } = useMyPermissions();
+  const canSeeBalances =
+    !permissionsReady ||
+    ["banking", "overview", "forecast", "analytics"].some((m) => canRead(m));
 
   // Invalide les caches Apollo dépendant des données bancaires pour que tout
   // (dashboard : solde, encaissement/décaissement, transactions, réconciliation)
@@ -720,37 +729,43 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                               account.bankName ||
                               "Compte courant"}
                           </p>
-                          <span className="text-[10px] text-gray-300 dark:text-gray-600">
-                            •
-                          </span>
-                          <span className="text-xs text-gray-400 font-mono">
-                            {formatIban(
-                              account.iban || account.raw?.iban,
-                              isIbanVisible,
-                            )}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => toggleIbanVisibility(accountId)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                          >
-                            {isIbanVisible ? (
-                              <EyeOff className="h-3 w-3" />
-                            ) : (
-                              <Eye className="h-3 w-3" />
-                            )}
-                          </button>
+                          {canSeeBalances && (
+                            <>
+                              <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                                •
+                              </span>
+                              <span className="text-xs text-gray-400 font-mono">
+                                {formatIban(
+                                  account.iban || account.raw?.iban,
+                                  isIbanVisible,
+                                )}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => toggleIbanVisibility(accountId)}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                              >
+                                {isIbanVisible ? (
+                                  <EyeOff className="h-3 w-3" />
+                                ) : (
+                                  <Eye className="h-3 w-3" />
+                                )}
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Droite : solde + delete */}
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold">
-                          {formatCurrency(balance, account.currency || "EUR")}
-                        </p>
-                      </div>
+                      {canSeeBalances && (
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">
+                            {formatCurrency(balance, account.currency || "EUR")}
+                          </p>
+                        </div>
+                      )}
 
                       {canManageOrgSettings && (
                         <AlertDialog>

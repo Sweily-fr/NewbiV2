@@ -281,16 +281,33 @@ export const useOrganizationInvitations = () => {
 
   // Renvoyer une invitation (annule l'ancienne et en crée une nouvelle)
   const resendInvitation = useCallback(
-    async (email, role, invitationId, { silent = false } = {}) => {
+    async (
+      email,
+      role,
+      invitationId,
+      { silent = false, organizationId = null } = {},
+    ) => {
       try {
-        // 1. Annuler l'ancienne invitation silencieusement
+        // 1. Annuler l'ancienne invitation ; si l'annulation est refusée,
+        // ne pas en créer une seconde
         if (invitationId) {
-          await organization.cancelInvitation({ invitationId });
+          const { error: cancelError } = await organization.cancelInvitation({
+            invitationId,
+          });
+          if (cancelError) {
+            const errorMessage =
+              cancelError.message ||
+              cancelError.error ||
+              "Erreur lors du renvoi de l'invitation";
+            if (!silent) toast.error(errorMessage);
+            return { success: false, error: cancelError };
+          }
         }
 
-        // 2. Créer une nouvelle invitation
-        const userOrg = getUserOrganization();
-        if (!userOrg) {
+        // 2. Créer une nouvelle invitation dans le même espace
+        const targetOrganizationId =
+          organizationId || getUserOrganization()?.id;
+        if (!targetOrganizationId) {
           toast.error("Aucune organisation trouvée");
           return { success: false, error: "Aucune organisation trouvée" };
         }
@@ -298,7 +315,7 @@ export const useOrganizationInvitations = () => {
         const { data, error } = await organization.inviteMember({
           email,
           role,
-          organizationId: userOrg.id,
+          organizationId: targetOrganizationId,
         });
 
         if (error) {

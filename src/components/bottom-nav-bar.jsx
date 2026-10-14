@@ -692,56 +692,59 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
       >
         <div className="bg-white dark:bg-zinc-900 shadow-[0_-1px_3px_rgba(0,0,0,0.06)]">
           <div className="flex items-center justify-around h-16 px-1">
-            {tabs.map((tab) => {
-              const active =
-                tab.key === "billing"
-                  ? isBillingActive
-                  : tab.key === "more"
-                    ? isMoreActive
-                    : isTabActive(tab);
+            {/* Onglet d'une page sans « Voir » masqué (Transactions) */}
+            {tabs
+              .filter((tab) => !tab.href || canViewPage(tab.href))
+              .map((tab) => {
+                const active =
+                  tab.key === "billing"
+                    ? isBillingActive
+                    : tab.key === "more"
+                      ? isMoreActive
+                      : isTabActive(tab);
 
-              const TabWrapper = tab.href ? Link : "button";
-              const tabProps = tab.href
-                ? { href: tab.href, onClick: () => handleTabClick(tab) }
-                : { onClick: () => handleTabClick(tab) };
+                const TabWrapper = tab.href ? Link : "button";
+                const tabProps = tab.href
+                  ? { href: tab.href, onClick: () => handleTabClick(tab) }
+                  : { onClick: () => handleTabClick(tab) };
 
-              return (
-                <TabWrapper
-                  key={tab.key}
-                  {...tabProps}
-                  className="flex flex-col items-center justify-center gap-2 min-w-0 flex-1 pt-1.5 pb-1 transition-all duration-200 focus:outline-none relative"
-                  aria-label={tab.label}
-                  aria-current={active && tab.href ? "page" : undefined}
-                  aria-expanded={
-                    tab.key === "billing"
-                      ? billingOpen
-                      : tab.key === "more"
-                        ? moreOpen
-                        : undefined
-                  }
-                >
-                  <tab.icon
-                    className={cn(
-                      "w-6 h-6 transition-all duration-200",
-                      active
-                        ? "text-[#5b4fff]"
-                        : "text-[#3D3E42] dark:text-white",
-                    )}
-                    strokeWidth={active ? 1.6 : 1.3}
-                  />
-                  <span
-                    className={cn(
-                      "text-[10px] font-normal leading-tight transition-colors duration-200",
-                      active
-                        ? "text-[#5b4fff]"
-                        : "text-[#3D3E42] dark:text-white",
-                    )}
+                return (
+                  <TabWrapper
+                    key={tab.key}
+                    {...tabProps}
+                    className="flex flex-col items-center justify-center gap-2 min-w-0 flex-1 pt-1.5 pb-1 transition-all duration-200 focus:outline-none relative"
+                    aria-label={tab.label}
+                    aria-current={active && tab.href ? "page" : undefined}
+                    aria-expanded={
+                      tab.key === "billing"
+                        ? billingOpen
+                        : tab.key === "more"
+                          ? moreOpen
+                          : undefined
+                    }
                   >
-                    {tab.label}
-                  </span>
-                </TabWrapper>
-              );
-            })}
+                    <tab.icon
+                      className={cn(
+                        "w-6 h-6 transition-all duration-200",
+                        active
+                          ? "text-[#5b4fff]"
+                          : "text-[#3D3E42] dark:text-white",
+                      )}
+                      strokeWidth={active ? 1.6 : 1.3}
+                    />
+                    <span
+                      className={cn(
+                        "text-[10px] font-normal leading-tight transition-colors duration-200",
+                        active
+                          ? "text-[#5b4fff]"
+                          : "text-[#3D3E42] dark:text-white",
+                      )}
+                    >
+                      {tab.label}
+                    </span>
+                  </TabWrapper>
+                );
+              })}
           </div>
           {/* Safe area fill */}
           <div
