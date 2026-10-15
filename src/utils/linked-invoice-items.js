@@ -42,7 +42,7 @@ const FALLBACK_VAT_RATE = 20;
  */
 export const REVERSE_CHARGE_MENTION =
   "Autoliquidation - TVA due par le preneur (art. 283-2 du CGI)";
-export const VAT_EXEMPT_MENTION = "TVA non applicable, art. L. 223-3 du CIBS";
+export const VAT_EXEMPT_MENTION = "TVA non applicable, art. 293 B du CGI";
 
 const toNumber = (value) => {
   const n = Number(value);

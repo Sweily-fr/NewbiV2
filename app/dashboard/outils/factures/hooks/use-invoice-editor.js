@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { pickLinkFields } from "@/src/utils/linked-products";
 import { pickItemImage } from "@/src/utils/item-image";
+import { normalizeVatExemptionText } from "@/src/utils/vat-exemption";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -3388,7 +3389,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
           vatRate === 0
             ? formData.isReverseCharge
               ? "Auto-liquidation"
-              : item.vatExemptionText || ""
+              : normalizeVatExemptionText(item.vatExemptionText) || ""
             : "";
 
         return {

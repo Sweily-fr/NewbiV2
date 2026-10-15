@@ -18,6 +18,7 @@ import { useCreditNoteNumber } from "./use-credit-note-number";
 import { formatLocalDate, toCalendarDate } from "@/src/utils/dateFormatter";
 import { mapOrganizationToCompanyInfo } from "@/src/utils/organizationCompanyInfo";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+import { normalizeVatExemptionText } from "@/src/utils/vat-exemption";
 
 // Vrai si le champ porte une valeur numérique, zéro compris. Une ligne à 0 €
 // (article offert repris de la facture) est un avoir valide.
@@ -628,6 +629,13 @@ function transformFormDataToInput(formData, originalInvoiceId) {
       );
     }
     cleanedItem.vatRate = vatRate;
+
+    // Mention reprise de la facture d'origine : référence en vigueur.
+    if (cleanedItem.vatExemptionText) {
+      cleanedItem.vatExemptionText = normalizeVatExemptionText(
+        cleanedItem.vatExemptionText,
+      );
+    }
 
     return cleanedItem;
   });
