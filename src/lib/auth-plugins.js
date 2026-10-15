@@ -232,6 +232,31 @@ export async function authorizeSubscriptionReference({
   }
 }
 
+/**
+ * Abonnement Stripe payé par un cabinet (webhook) : relu avec la version
+ * d'API de manager-billing, puis enregistré ou, pour la reprise de
+ * l'abonnement d'un client, terminé.
+ */
+async function handleCabinetWebhook(object) {
+  const subscriptionId =
+    object?.object === "checkout.session" ? object.subscription : object?.id;
+  if (!subscriptionId) return;
+  const { mongoDb } = await import("./mongodb.js");
+  const { handleCabinetSubscriptionEvent } = await import("./payer-switch.js");
+  const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const subscription = await stripeClient.subscriptions.retrieve(
+    typeof subscriptionId === "string" ? subscriptionId : subscriptionId.id,
+  );
+  if (!subscription.metadata?.referenceId && object?.metadata) {
+    subscription.metadata = { ...object.metadata, ...subscription.metadata };
+  }
+  await handleCabinetSubscriptionEvent({
+    mongoDb,
+    stripe: stripeClient,
+    subscription,
+  });
+}
+
 export const stripePlugin = stripe({
   stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-02-24.acacia",
@@ -332,6 +357,21 @@ export const stripePlugin = stripe({
         case "checkout.session.completed":
           // ✅ Déduplication atomique avec MongoDB
           if (await isEventAlreadyProcessed(event.id, event.type)) {
+            break;
+          }
+
+          // Abonnement payé par un cabinet (compte gestionnaire) : enregistré
+          // comme au retour de Checkout, et la reprise de l'abonnement d'un
+          // client se termine quand le paiement du cabinet est passé
+          if (event.data.object?.metadata?.paidByAccountManagerId) {
+            try {
+              await handleCabinetWebhook(event.data.object);
+            } catch (cabinetError) {
+              console.error(
+                `❌ [STRIPE WEBHOOK] Abonnement de cabinet non traité:`,
+                cabinetError,
+              );
+            }
             break;
           }
 
@@ -483,19 +523,24 @@ export const stripePlugin = stripe({
             // Utiliser MongoDB directement au lieu de l'adapter
             const { mongoDb } = await import("./mongodb.js");
 
-            // Vérifier si l'abonnement existe déjà POUR CETTE ORGANISATION
-            const existingSubForOrg = await mongoDb
-              .collection("subscription")
-              .findOne({
-                referenceId: referenceId,
-              });
-
             // Vérifier aussi si le stripeSubscriptionId existe (pour une autre org)
             const existingSubByStripeId = await mongoDb
               .collection("subscription")
               .findOne({
                 stripeSubscriptionId: subscription.id,
               });
+
+            // Document de l'espace : celui de cet abonnement s'il existe (un
+            // espace peut avoir gardé un ancien document), sinon le plus récent
+            const existingSubForOrg =
+              existingSubByStripeId?.referenceId === referenceId
+                ? existingSubByStripeId
+                : await mongoDb
+                    .collection("subscription")
+                    .findOne(
+                      { referenceId: referenceId },
+                      { sort: { updatedAt: -1 } },
+                    );
 
             console.log(`🔍 [STRIPE WEBHOOK] Recherche abonnement:`);
             console.log(`   - referenceId: ${referenceId}`);
@@ -516,10 +561,7 @@ export const stripePlugin = stripe({
                 `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org, mise à jour`,
               );
               await mongoDb.collection("subscription").updateOne(
-                {
-                  referenceId: referenceId,
-                  stripeSubscriptionId: subscription.id,
-                },
+                { _id: existingSubForOrg._id },
                 {
                   $set: {
                     status: subscription.status,
@@ -573,13 +615,25 @@ export const stripePlugin = stripe({
               console.log(
                 `🔄 [STRIPE WEBHOOK] L'org a un ancien abonnement, remplacement par le nouveau`,
               );
+              // Abonnement pris par le client pendant la dernière période
+              // payée par son cabinet : premier prélèvement à sa fin
+              const deferredByCabinet =
+                subscription.metadata?.payerHandover === "from_manager" &&
+                subscription.status === "trialing" &&
+                subscription.trial_end;
               await mongoDb.collection("subscription").updateOne(
-                { referenceId: referenceId },
+                { _id: existingSubForOrg._id },
                 {
                   $set: {
                     stripeSubscriptionId: subscription.id,
                     stripeCustomerId: subscription.customer,
                     status: subscription.status,
+                    cancelAtPeriodEnd:
+                      subscription.cancel_at_period_end || false,
+                    paidByAccountManagerId: null,
+                    billingStartsAt: deferredByCabinet
+                      ? new Date(subscription.trial_end * 1000)
+                      : null,
                     plan:
                       subscription.metadata?.planName || existingSubForOrg.plan,
                     currentPeriodStart: new Date(
@@ -907,6 +961,19 @@ export const stripePlugin = stripe({
                 { $set: updateData },
               );
 
+            // Reprise d'un client par son cabinet en attente du paiement
+            if (
+              updatedSub.metadata?.payerHandover === "from_client" &&
+              ["active", "trialing"].includes(updatedSub.status)
+            ) {
+              await handleCabinetWebhook(updatedSub).catch((cabinetError) =>
+                console.error(
+                  `❌ [STRIPE WEBHOOK] Reprise par le cabinet non terminée:`,
+                  cabinetError,
+                ),
+              );
+            }
+
             // ✅ Gérer la fin du trial Stripe - Quand le statut passe de "trialing" à "active"
             // Récupérer l'abonnement existant pour voir l'ancien statut
             const existingSub = await mongoDb
@@ -1047,6 +1114,21 @@ export const stripePlugin = stripe({
             );
             console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
 
+            // Abonnement arrêté parce que le payeur a changé (cabinet ou
+            // client) : l'autre payeur a pris le relais, le client a reçu
+            // l'e-mail du changement. Ni essai rouvert, ni e-mail de
+            // résiliation.
+            if (
+              ["to_manager", "to_client"].includes(
+                deletedSub.metadata?.payerHandover,
+              )
+            ) {
+              console.log(
+                `ℹ️ [STRIPE WEBHOOK] Abonnement remplacé (changement de payeur), pas d'e-mail de résiliation`,
+              );
+              break;
+            }
+
             // PATTERN A — Safety net : si l'utilisateur annule une sub qui
             // était une conversion du trial maison ET avant la fin du trial
             // d'origine, on restaure le trial maison pour qu'il puisse
@@ -1150,6 +1232,12 @@ export const stripePlugin = stripe({
           console.log(
             `⏰ [STRIPE WEBHOOK] Fin d'essai imminente pour abonnement: ${trialEndingSub.id}`,
           );
+
+          // Premier prélèvement reporté par un changement de payeur : ce
+          // n'est pas un essai, l'e-mail de fin d'essai serait trompeur
+          if (trialEndingSub.metadata?.payerHandover) {
+            break;
+          }
 
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -1275,6 +1363,13 @@ export const stripePlugin = stripe({
             const isTrialStart =
               paidInvoice.billing_reason === "subscription_create" &&
               subscription?.status === "trialing";
+
+            // Premier prélèvement reporté par un changement de payeur : pas
+            // d'e-mail « essai commencé » (le client a reçu celui du
+            // changement, le cabinet l'a vu dans son espace)
+            if (isTrialStart && subscription?.metadata?.payerHandover) {
+              break;
+            }
 
             if (isTrialStart) {
               // Formater la date de fin d'essai

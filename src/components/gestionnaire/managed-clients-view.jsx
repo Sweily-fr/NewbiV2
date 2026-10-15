@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   CircleXIcon,
+  HandCoins,
   Inbox,
   LoaderCircle,
   MailPlus,
   MoreHorizontal,
   Plus,
   Search,
+  Undo2,
   WalletCards,
 } from "lucide-react";
 import { authClient } from "@/src/lib/auth-client";
@@ -37,7 +39,10 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { GESTIONNAIRE_PATH } from "@/src/lib/gestionnaire-paths";
 import ManagedPlanDialog from "./managed-plan-dialog";
+import ManagedTakeoverDialog from "./managed-takeover-dialog";
+import ManagedHandBackDialog from "./managed-handback-dialog";
 import NoSubscriptionNotice from "./no-subscription-notice";
+import { payerChangeMessage } from "./payer-change-messages";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "2-digit",
@@ -114,6 +119,27 @@ const canChoosePlan = (client) =>
   client.payer === "manager" &&
   client.access?.type !== "subscription";
 
+// Qui paie, avec le changement à venir ou la reprise en attente de paiement
+function PayerCell({ client }) {
+  const label = client.payer === "manager" ? "Vous" : "Le client";
+  const note = client.takeoverPending
+    ? { text: "Reprise : paiement à valider", tone: "text-amber-600" }
+    : client.payerChange
+      ? {
+          text: `à partir du ${formatDate(client.payerChange.effectiveAt)}`,
+          tone: "text-muted-foreground",
+        }
+      : null;
+  return (
+    <div className="min-w-0">
+      <div className="truncate">{label}</div>
+      {note && (
+        <div className={cn("truncate text-xs", note.tone)}>{note.text}</div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Espace gestionnaire, page « Clients » : même mise en page que les listes
  * du tableau de bord (titre, recherche, tableau pleine largeur). « Ouvrir »
@@ -135,6 +161,8 @@ export default function ManagedClientsView({
   const [planFor, setPlanFor] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [cancelFor, setCancelFor] = useState(null);
+  const [takeoverFor, setTakeoverFor] = useState(null);
+  const [handBackFor, setHandBackFor] = useState(null);
   const inputRef = useRef(null);
 
   // Retour de Stripe Checkout (?abonnement=) : l'abonnement est enregistré
@@ -170,6 +198,14 @@ export default function ManagedClientsView({
       .then(({ response, data }) => {
         if (!response.ok) {
           toast.error(data.error || "Le paiement n'a pas pu être vérifié.");
+        } else if (data.status === "active" && data.takeover) {
+          // Reprise de l'abonnement d'un client, payée sur Stripe
+          const client = clients.find(
+            (c) => c.organizationId === data.organizationId,
+          );
+          const message = payerChangeMessage(client?.name, data.takeover);
+          toast[message.tone](message.text);
+          router.refresh();
         } else if (data.status === "active") {
           toast.success("Abonnement enregistré, votre carte est conservée.");
           router.refresh();
@@ -378,6 +414,12 @@ export default function ManagedClientsView({
               const isOpenInvitation = client.status === "pending";
               const isClosedInvitation =
                 isInvitation && ["expired", "declined"].includes(client.status);
+              // Prendre en charge l'abonnement, ou ne plus le payer (encore
+              // possible pour un cabinet suspendu)
+              const canSwitchPayer =
+                client.status === "active" &&
+                Boolean(client.name) &&
+                (!readOnly || client.payer === "manager");
               return (
                 <tr
                   key={client.id}
@@ -408,7 +450,7 @@ export default function ManagedClientsView({
                     </div>
                   </td>
                   <td className="p-2 align-middle text-sm">
-                    {client.payer === "manager" ? "Vous" : "Le client"}
+                    <PayerCell client={client} />
                   </td>
                   <td className="p-2 align-middle text-sm">
                     <AccessBadge client={client} />
@@ -485,7 +527,8 @@ export default function ManagedClientsView({
                           Ouvrir
                         </Button>
                       )}
-                      {client.canResendWelcome && !readOnly && (
+                      {(canSwitchPayer ||
+                        (client.canResendWelcome && !readOnly)) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -503,12 +546,30 @@ export default function ManagedClientsView({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => resendWelcome(client)}
-                            >
-                              <MailPlus className="size-4" />
-                              Renvoyer l&apos;e-mail de bienvenue
-                            </DropdownMenuItem>
+                            {canSwitchPayer && client.payer !== "manager" && (
+                              <DropdownMenuItem
+                                onClick={() => setTakeoverFor(client)}
+                              >
+                                <HandCoins className="size-4" />
+                                Prendre en charge l&apos;abonnement
+                              </DropdownMenuItem>
+                            )}
+                            {canSwitchPayer && client.payer === "manager" && (
+                              <DropdownMenuItem
+                                onClick={() => setHandBackFor(client)}
+                              >
+                                <Undo2 className="size-4" />
+                                Ne plus payer l&apos;abonnement
+                              </DropdownMenuItem>
+                            )}
+                            {client.canResendWelcome && !readOnly && (
+                              <DropdownMenuItem
+                                onClick={() => resendWelcome(client)}
+                              >
+                                <MailPlus className="size-4" />
+                                Renvoyer l&apos;e-mail de bienvenue
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -527,6 +588,21 @@ export default function ManagedClientsView({
         discountPercent={discountPercent}
         open={Boolean(planFor)}
         onOpenChange={(value) => !value && setPlanFor(null)}
+      />
+
+      <ManagedTakeoverDialog
+        key={`reprise-${takeoverFor?.id || "none"}`}
+        client={takeoverFor}
+        discountPercent={discountPercent}
+        open={Boolean(takeoverFor)}
+        onOpenChange={(value) => !value && setTakeoverFor(null)}
+      />
+
+      <ManagedHandBackDialog
+        key={`rendu-${handBackFor?.id || "none"}`}
+        client={handBackFor}
+        open={Boolean(handBackFor)}
+        onOpenChange={(value) => !value && setHandBackFor(null)}
       />
 
       <AlertDialog

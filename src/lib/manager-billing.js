@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { ManagedClientError } from "./managed-client-error.js";
 import { isAppTrialEnabled } from "./feature-flags.js";
+import { countAdditionalSeats } from "./cabinet-members.js";
 
 /**
  * Abonnements payés par un gestionnaire (cabinet) pour les espaces de ses
@@ -26,7 +27,7 @@ import { isAppTrialEnabled } from "./feature-flags.js";
 export const MANAGED_PLANS = ["freelance", "pme", "entreprise"];
 
 // Abonnement Stripe en cours (pas encore terminé ou abandonné)
-const LIVE_STATUSES = [
+export const LIVE_STATUSES = [
   "active",
   "trialing",
   "past_due",
@@ -34,7 +35,17 @@ const LIVE_STATUSES = [
   "unpaid",
 ];
 
-function priceIdFor(plan, isAnnual) {
+/** Offre d'un abonnement Stripe d'après son prix (métadonnées absentes). */
+export function planFromPriceId(priceId) {
+  if (!priceId) return null;
+  return (
+    MANAGED_PLANS.find((plan) =>
+      [priceIdFor(plan, false), priceIdFor(plan, true)].includes(priceId),
+    ) || null
+  );
+}
+
+export function priceIdFor(plan, isAnnual) {
   const prices = {
     freelance: [
       process.env.STRIPE_FREELANCE_MONTHLY_PRICE_ID,
@@ -63,7 +74,7 @@ const toDate = (unix) => (unix ? new Date(unix * 1000) : null);
 
 // Période en cours : sur l'abonnement (API Stripe < 2025-03) ou sur sa
 // première ligne (versions récentes)
-function currentPeriod(stripeSubscription) {
+export function currentPeriod(stripeSubscription) {
   const item = stripeSubscription.items?.data?.[0];
   return {
     start: toDate(
@@ -103,7 +114,17 @@ export async function findManagerPaidSubscription(mongoDb, organizationId) {
     .collection("subscription")
     .find(
       { referenceId: organizationId, status: { $in: LIVE_STATUSES } },
-      { projection: { stripeCustomerId: 1, status: 1, plan: 1 } },
+      {
+        projection: {
+          stripeCustomerId: 1,
+          stripeSubscriptionId: 1,
+          status: 1,
+          plan: 1,
+          cancelAtPeriodEnd: 1,
+          currentPeriodEnd: 1,
+          periodEnd: 1,
+        },
+      },
     )
     .toArray();
   for (const subscription of subscriptions) {
@@ -253,7 +274,7 @@ async function listAll(list) {
 }
 
 /** Carte enregistrée du cabinet, ou null. */
-async function savedCard(stripe, customerId) {
+export async function savedCard(stripe, customerId) {
   const customer = await stripe.customers.retrieve(customerId);
   const defaultMethod = customer?.invoice_settings?.default_payment_method;
   if (defaultMethod) {
@@ -272,8 +293,18 @@ async function savedCard(stripe, customerId) {
  * l'abonnement Stripe, comme le fait le webhook : la souscription est
  * visible tout de suite, sans attendre le webhook (qui retrouvera ce
  * document par stripeSubscriptionId et le mettra à jour).
+ *
+ * Un espace n'a qu'un document `subscription` (toutes les lectures le
+ * prennent sans tri) : quand le payeur change, le document passe d'un
+ * abonnement Stripe à l'autre. `replaceSubscriptionId` est l'abonnement
+ * encore vivant que celui-ci remplace (sinon, un abonnement vivant n'est
+ * jamais écrasé).
  */
-export async function syncManagedSubscription(mongoDb, stripeSubscription) {
+export async function syncManagedSubscription(
+  mongoDb,
+  stripeSubscription,
+  { replaceSubscriptionId = null } = {},
+) {
   const referenceId =
     stripeSubscription.metadata?.referenceId ||
     stripeSubscription.metadata?.organizationId;
@@ -284,7 +315,10 @@ export async function syncManagedSubscription(mongoDb, stripeSubscription) {
   const period = currentPeriod(stripeSubscription);
   const price = stripeSubscription.items?.data?.[0]?.price;
   const fields = {
-    plan: stripeSubscription.metadata?.planName || "freelance",
+    plan:
+      stripeSubscription.metadata?.planName ||
+      planFromPriceId(price?.id) ||
+      "freelance",
     referenceId,
     stripeCustomerId:
       typeof stripeSubscription.customer === "string"
@@ -313,13 +347,21 @@ export async function syncManagedSubscription(mongoDb, stripeSubscription) {
     { stripeSubscriptionId: stripeSubscription.id },
     { projection: { _id: 1 } },
   );
-  const other = same
-    ? null
-    : await subscriptions.findOne(
-        { referenceId },
-        { projection: { _id: 1, status: 1 }, sort: { updatedAt: -1 } },
-      );
-  if (other && LIVE_STATUSES.includes(other.status)) {
+  const replaced =
+    same || !replaceSubscriptionId
+      ? null
+      : await subscriptions.findOne(
+          { referenceId, stripeSubscriptionId: replaceSubscriptionId },
+          { projection: { _id: 1, status: 1 } },
+        );
+  const other =
+    same || replaced
+      ? replaced
+      : await subscriptions.findOne(
+          { referenceId },
+          { projection: { _id: 1, status: 1 }, sort: { updatedAt: -1 } },
+        );
+  if (other && !replaced && LIVE_STATUSES.includes(other.status)) {
     console.error(
       `[MANAGER-BILLING] Espace ${referenceId} déjà abonné : abonnement ${stripeSubscription.id} non enregistré (double paiement à vérifier)`,
     );
@@ -328,6 +370,14 @@ export async function syncManagedSubscription(mongoDb, stripeSubscription) {
   const existing = same || other;
   if (existing) {
     await subscriptions.updateOne({ _id: existing._id }, { $set: fields });
+    // Abonnement remplacé encore enregistré à part : un seul document
+    if (same && replaceSubscriptionId) {
+      await subscriptions.deleteMany({
+        referenceId,
+        stripeSubscriptionId: replaceSubscriptionId,
+        _id: { $ne: same._id },
+      });
+    }
   } else {
     const _id = new ObjectId();
     await subscriptions.insertOne({
@@ -362,6 +412,174 @@ export async function syncManagedSubscription(mongoDb, stripeSubscription) {
   return referenceId;
 }
 
+const frenchDate = (date) =>
+  date.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" });
+
+/**
+ * Crée l'abonnement Stripe d'un espace au nom du cabinet : son client
+ * Stripe, sa remise (coupon « pour toujours ») et les utilisateurs
+ * supplémentaires de l'espace. Avec la carte enregistrée du cabinet,
+ * l'abonnement est créé directement ; sinon, le cabinet passe par Stripe
+ * Checkout (sa carte y est enregistrée pour les fois suivantes).
+ *
+ * `billingStartsAt` reporte le premier prélèvement (fin de l'essai de
+ * l'espace, fin de la période que le client a déjà payée) : l'abonnement
+ * reste « trialing » jusque-là, l'accès est complet tout de suite.
+ *
+ * N'écrit rien en base : l'appelant enregistre l'abonnement (choix d'une
+ * offre) ou termine la reprise (changement de payeur).
+ * @returns {Promise<
+ *   { status: "active" | "incomplete", subscription: object } |
+ *   { status: "redirect", url: string, subscription?: object }
+ * >} « redirect » : Stripe Checkout, ou page de facture Stripe quand la
+ *   banque demande une validation (l'abonnement est alors « incomplete »).
+ */
+export async function createCabinetSubscription({
+  mongoDb,
+  stripe,
+  manager,
+  link,
+  org,
+  plan,
+  isAnnual,
+  baseUrl,
+  billingStartsAt = null,
+  convertedFromAppTrial = false,
+  metadata: extraMetadata = {},
+  describeFirstCharge = null,
+}) {
+  const priceId = priceIdFor(plan, Boolean(isAnnual));
+  if (!priceId) {
+    throw new ManagedClientError(500, "Cette offre n'est pas configurée.");
+  }
+  const organizationId = String(link.organizationId);
+  const trialEndUnix =
+    billingStartsAt && billingStartsAt.getTime() > Date.now() + 60_000
+      ? Math.floor(billingStartsAt.getTime() / 1000)
+      : null;
+
+  const seatPriceId = process.env.STRIPE_SEAT_PRICE_ID;
+  const [customerId, coupon, seats] = await Promise.all([
+    getOrCreateManagerCustomer({ mongoDb, stripe, manager }),
+    getManagerCoupon({ stripe, percent: manager.discountPercent }),
+    // Utilisateurs au-delà de l'offre, au même prix mensuel que pour un
+    // client (une offre annuelle ne peut pas porter un prix mensuel : ils
+    // sont alors ajoutés par la synchronisation des sièges, comme ailleurs)
+    !isAnnual && seatPriceId
+      ? countAdditionalSeats(mongoDb, organizationId, plan).catch((error) => {
+          console.error(
+            "[MANAGER-BILLING] Utilisateurs supplémentaires non comptés:",
+            error?.message,
+          );
+          return 0;
+        })
+      : 0,
+  ]);
+  const seatItems = seats > 0 ? [{ price: seatPriceId, quantity: seats }] : [];
+
+  const metadata = {
+    referenceId: organizationId,
+    organizationId: organizationId,
+    planName: plan,
+    isAnnual: isAnnual ? "true" : "false",
+    isNewOrganization: "false",
+    paidByAccountManagerId: String(manager._id),
+    managedClientId: String(link._id),
+    discountPercent: String(Number(manager.discountPercent) || 0),
+    convertedFromAppTrial:
+      trialEndUnix && convertedFromAppTrial ? "true" : "false",
+    appTrialEndDate:
+      trialEndUnix && convertedFromAppTrial
+        ? billingStartsAt.toISOString()
+        : "",
+    ...extraMetadata,
+  };
+  const discounts = coupon ? [{ coupon }] : undefined;
+  const orgName = org?.companyName || org?.name || "Espace";
+
+  // Un seul paiement Stripe ouvert par client : celui d'un autre onglet est
+  // fermé, il ne pourra plus aboutir à un second abonnement
+  await expireOpenCheckouts(stripe, customerId, String(link._id));
+
+  const paymentMethod = await savedCard(stripe, customerId);
+  if (paymentMethod) {
+    const subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items: [{ price: priceId }, ...seatItems],
+        default_payment_method: paymentMethod,
+        discounts,
+        description: `Newbi ${orgName}`,
+        metadata,
+        ...(trialEndUnix ? { trial_end: trialEndUnix } : {}),
+        expand: ["latest_invoice"],
+      },
+      {
+        idempotencyKey: `managed-sub-${link._id}-${plan}-${metadata.isAnnual}${extraMetadata.payerHandover ? `-${extraMetadata.payerHandover}` : ""}-${Math.floor(Date.now() / 60_000)}`,
+      },
+    );
+    if (subscription.status === "incomplete") {
+      // La banque demande une validation : le cabinet la fait sur la page
+      // de facture Stripe
+      const url = subscription.latest_invoice?.hosted_invoice_url;
+      if (url) return { status: "redirect", url, subscription };
+      return { status: "incomplete", subscription };
+    }
+    return { status: "active", subscription };
+  }
+
+  // Stripe Checkout refuse une fin d'essai à moins de 48 h : le premier
+  // prélèvement a alors lieu dès la validation
+  const checkoutTrialEnd =
+    trialEndUnix && trialEndUnix * 1000 > Date.now() + 49 * 3600_000
+      ? trialEndUnix
+      : null;
+  const checkoutMetadata = {
+    ...metadata,
+    convertedFromAppTrial:
+      checkoutTrialEnd && convertedFromAppTrial ? "true" : "false",
+    appTrialEndDate:
+      checkoutTrialEnd && convertedFromAppTrial ? metadata.appTrialEndDate : "",
+  };
+  const firstChargeAt = checkoutTrialEnd
+    ? new Date(checkoutTrialEnd * 1000)
+    : null;
+
+  const root = String(baseUrl || "").replace(/\/+$/, "");
+  const checkout = await stripe.checkout.sessions.create({
+    customer: customerId,
+    mode: "subscription",
+    payment_method_types: ["card"],
+    payment_method_collection: "always",
+    line_items: [
+      { price: priceId, quantity: 1 },
+      ...seatItems.map((item) => ({ ...item })),
+    ],
+    discounts,
+    billing_address_collection: "required",
+    tax_id_collection: { enabled: true },
+    customer_update: { name: "auto", address: "auto" },
+    success_url: `${root}/dashboard/gestionnaire?abonnement={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${root}/dashboard/gestionnaire`,
+    metadata: checkoutMetadata,
+    subscription_data: {
+      description: `Newbi ${orgName}`,
+      metadata: checkoutMetadata,
+      ...(checkoutTrialEnd ? { trial_end: checkoutTrialEnd } : {}),
+    },
+    custom_text: {
+      submit: {
+        message: describeFirstCharge
+          ? describeFirstCharge({ orgName, firstChargeAt })
+          : firstChargeAt
+            ? `Abonnement de ${orgName}. Aucun prélèvement avant la fin de son essai (${frenchDate(firstChargeAt)}).`
+            : `Abonnement de ${orgName}.`,
+      },
+    },
+  });
+  return { status: "redirect", url: checkout.url };
+}
+
 /**
  * Le cabinet choisit l'offre d'un espace qu'il paie.
  * @returns {Promise<{ status: "active" } | { status: "redirect", url: string }>}
@@ -380,8 +598,7 @@ export async function startManagedSubscription({
   if (!MANAGED_PLANS.includes(plan)) {
     throw new ManagedClientError(400, "Offre inconnue.");
   }
-  const priceId = priceIdFor(plan, Boolean(isAnnual));
-  if (!priceId) {
+  if (!priceIdFor(plan, Boolean(isAnnual))) {
     throw new ManagedClientError(500, "Cette offre n'est pas configurée.");
   }
 
@@ -470,107 +687,32 @@ export async function startManagedSubscription({
 
   // Essai en cours : premier prélèvement à la fin de l'essai
   const trialEnd = org.trialEndDate ? new Date(org.trialEndDate) : null;
-  const trialEndUnix =
+  const billingStartsAt =
     isAppTrialEnabled() &&
     org.isTrialActive === true &&
     trialEnd &&
     trialEnd.getTime() > Date.now() + 60_000
-      ? Math.floor(trialEnd.getTime() / 1000)
+      ? trialEnd
       : null;
 
-  const [customerId, coupon] = await Promise.all([
-    getOrCreateManagerCustomer({ mongoDb, stripe, manager }),
-    getManagerCoupon({ stripe, percent: manager.discountPercent }),
-  ]);
-
-  const metadata = {
-    referenceId: organizationId,
-    organizationId: organizationId,
-    planName: plan,
-    isAnnual: isAnnual ? "true" : "false",
-    isNewOrganization: "false",
-    paidByAccountManagerId: String(manager._id),
-    managedClientId: String(link._id),
-    discountPercent: String(Number(manager.discountPercent) || 0),
-    convertedFromAppTrial: trialEndUnix ? "true" : "false",
-    appTrialEndDate: trialEndUnix ? trialEnd.toISOString() : "",
-  };
-  const discounts = coupon ? [{ coupon }] : undefined;
-  const orgName = org.companyName || org.name || "Espace";
-
-  // Un seul paiement Stripe ouvert par client : celui d'un autre onglet est
-  // fermé, il ne pourra plus aboutir à un second abonnement
-  await expireOpenCheckouts(stripe, customerId, String(link._id));
-
-  const paymentMethod = await savedCard(stripe, customerId);
-  if (paymentMethod) {
-    const subscription = await stripe.subscriptions.create(
-      {
-        customer: customerId,
-        items: [{ price: priceId }],
-        default_payment_method: paymentMethod,
-        discounts,
-        description: `Newbi ${orgName}`,
-        metadata,
-        ...(trialEndUnix ? { trial_end: trialEndUnix } : {}),
-        expand: ["latest_invoice"],
-      },
-      {
-        idempotencyKey: `managed-sub-${link._id}-${plan}-${metadata.isAnnual}-${Math.floor(Date.now() / 60_000)}`,
-      },
-    );
-    await syncManagedSubscription(mongoDb, subscription);
-    if (subscription.status === "incomplete") {
-      // La banque demande une validation : le cabinet la fait sur la page
-      // de facture Stripe
-      const url = subscription.latest_invoice?.hosted_invoice_url;
-      if (url) return { status: "redirect", url };
-    }
-    return {
-      status: subscription.status === "incomplete" ? "incomplete" : "active",
-    };
-  }
-
-  // Stripe Checkout refuse une fin d'essai à moins de 48 h : l'essai qui se
-  // termine avant est alors facturé dès la validation
-  const checkoutTrialEnd =
-    trialEndUnix && trialEndUnix * 1000 > Date.now() + 49 * 3600_000
-      ? trialEndUnix
-      : null;
-  const checkoutMetadata = {
-    ...metadata,
-    convertedFromAppTrial: checkoutTrialEnd ? "true" : "false",
-    appTrialEndDate: checkoutTrialEnd ? metadata.appTrialEndDate : "",
-  };
-
-  const root = String(baseUrl || "").replace(/\/+$/, "");
-  const checkout = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    payment_method_types: ["card"],
-    payment_method_collection: "always",
-    line_items: [{ price: priceId, quantity: 1 }],
-    discounts,
-    billing_address_collection: "required",
-    tax_id_collection: { enabled: true },
-    customer_update: { name: "auto", address: "auto" },
-    success_url: `${root}/dashboard/gestionnaire?abonnement={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${root}/dashboard/gestionnaire`,
-    metadata: checkoutMetadata,
-    subscription_data: {
-      description: `Newbi ${orgName}`,
-      metadata: checkoutMetadata,
-      ...(checkoutTrialEnd ? { trial_end: checkoutTrialEnd } : {}),
-    },
-    custom_text: {
-      submit: {
-        message: checkoutTrialEnd
-          ? `Abonnement de ${orgName}. Aucun prélèvement avant la fin de son essai (${trialEnd.toLocaleDateString("fr-FR")}).`
-          : `Abonnement de ${orgName}.`,
-      },
-    },
+  const result = await createCabinetSubscription({
+    mongoDb,
+    stripe,
+    manager,
+    link,
+    org,
+    plan,
+    isAnnual,
+    baseUrl,
+    billingStartsAt,
+    convertedFromAppTrial: true,
   });
-  return { status: "redirect", url: checkout.url };
+  if (result.subscription) {
+    await syncManagedSubscription(mongoDb, result.subscription);
+  }
+  return result.url
+    ? { status: "redirect", url: result.url }
+    : { status: result.status };
 }
 
 /**
@@ -605,6 +747,22 @@ export async function confirmManagedCheckout({
       : session.subscription;
   if (!subscription.metadata?.referenceId) {
     subscription.metadata = { ...session.metadata, ...subscription.metadata };
+  }
+  // Reprise de l'abonnement d'un client : son abonnement est remplacé
+  if (subscription.metadata?.payerHandover === "from_client") {
+    const { finalizeTakeover } = await import("./payer-switch.js");
+    const result = await finalizeTakeover({
+      mongoDb,
+      stripe,
+      stripeSubscription: subscription,
+    });
+    return result.status === "done"
+      ? {
+          status: "active",
+          organizationId: subscription.metadata.referenceId,
+          takeover: result,
+        }
+      : { status: "pending" };
   }
   const organizationId = await syncManagedSubscription(mongoDb, subscription);
   if (!organizationId) {

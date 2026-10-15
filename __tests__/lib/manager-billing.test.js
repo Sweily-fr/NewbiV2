@@ -157,6 +157,7 @@ const {
   withoutManagerCustomers,
   isOrgPaidByManager,
   endManagedClientLink,
+  syncManagedSubscription,
 } = await import("@/src/lib/manager-billing");
 
 let db;
@@ -648,5 +649,76 @@ describe("protections côté client", () => {
     db.data.managedclients[0].payer = "client";
     expect(await isOrgPaidByManager(db, String(orgId))).toBe(false);
     expect(await isOrgPaidByManager(db, { $ne: null })).toBe(false);
+  });
+});
+
+describe("changement de payeur", () => {
+  const cabinetSubscription = (metadata = {}) => ({
+    id: "sub_cab",
+    customer: "cus_cabinet",
+    status: "trialing",
+    trial_end: 1_802_600_000,
+    cancel_at_period_end: false,
+    metadata: {
+      referenceId: String(orgId),
+      paidByAccountManagerId: String(managerId),
+      ...metadata,
+    },
+    items: {
+      data: [
+        {
+          price: { id: "price_pme_m", recurring: { interval: "month" } },
+          current_period_start: 1_800_000_000,
+          current_period_end: 1_802_600_000,
+        },
+      ],
+    },
+  });
+
+  it("le document de l'espace remplace l'abonnement du client nommé, jamais un autre abonnement vivant", async () => {
+    await db.collection("subscription").insertOne({
+      referenceId: String(orgId),
+      stripeSubscriptionId: "sub_client",
+      stripeCustomerId: "cus_client",
+      status: "active",
+      plan: "pme",
+    });
+    expect(await syncManagedSubscription(db, cabinetSubscription())).toBeNull();
+    expect(db.data.subscription[0].stripeSubscriptionId).toBe("sub_client");
+
+    expect(
+      await syncManagedSubscription(db, cabinetSubscription(), {
+        replaceSubscriptionId: "sub_client",
+      }),
+    ).toBe(String(orgId));
+    expect(db.data.subscription).toHaveLength(1);
+    expect(db.data.subscription[0]).toMatchObject({
+      stripeSubscriptionId: "sub_cab",
+      stripeCustomerId: "cus_cabinet",
+      status: "trialing",
+      // Offre retrouvée d'après le prix, sans métadonnée planName
+      plan: "pme",
+    });
+  });
+
+  it("utilisateurs au-delà de l'offre : ajoutés à l'abonnement du cabinet", async () => {
+    process.env.STRIPE_SEAT_PRICE_ID = "price_seat";
+    process.env.STRIPE_FREELANCE_MONTHLY_PRICE_ID = "price_free_m";
+    for (let i = 0; i < 2; i += 1) {
+      await db.collection("member").insertOne({
+        userId: new ObjectId(),
+        organizationId: orgId,
+        role: "member",
+      });
+    }
+    const stripe = makeStripe();
+    await start(stripe, { plan: "freelance" });
+    expect(stripe.checkout.sessions.create.mock.calls[0][0].line_items).toEqual(
+      [
+        { price: "price_free_m", quantity: 1 },
+        { price: "price_seat", quantity: 2 },
+      ],
+    );
+    delete process.env.STRIPE_SEAT_PRICE_ID;
   });
 });

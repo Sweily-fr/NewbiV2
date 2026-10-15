@@ -74,9 +74,15 @@ export function SubscriptionSection({
     session?.session?.activeOrganizationId || session?.user?.organization?.id,
   );
 
+  // Le cabinet a arrêté sa prise en charge : le client choisit déjà son
+  // offre, premier prélèvement à la fin de la dernière période du cabinet
+  const cabinetHandBack = Boolean(
+    paidByManager?.handBack && !paidByManager.viewerIsManager,
+  );
+
   // Rien n'est permis tant que la prise en charge n'est pas vérifiée
   const canManageSubscription =
-    paidByManager === null &&
+    (paidByManager === null || cabinetHandBack) &&
     (canManageSubscriptionProp !== undefined
       ? canManageSubscriptionProp
       : isOwner());
@@ -122,7 +128,12 @@ export function SubscriptionSection({
 
   // Ouvrir la preview de changement de plan
   const openPlanChangeModal = async (planKey) => {
-    if (!subscription || !subscription.stripeSubscriptionId) {
+    // L'abonnement en cours est celui du cabinet : le client en prend un
+    if (
+      !subscription ||
+      !subscription.stripeSubscriptionId ||
+      cabinetHandBack
+    ) {
       handleDirectUpgrade(planKey);
       return;
     }
@@ -345,9 +356,10 @@ export function SubscriptionSection({
         </Callout>
       )}
 
-      {/* Cancelled info */}
+      {/* Cancelled info (abonnement du cabinet : son encart l'explique) */}
       {isActive() &&
         subscription &&
+        !paidByManager &&
         (subscription.cancelAtPeriodEnd ||
           subscription.status === "canceled") && (
           <Callout type="warning" noMargin>
@@ -368,11 +380,18 @@ export function SubscriptionSection({
             >
               Actuel
             </Badge>
-            {subscription.status === "trialing" && (
-              <span className="text-xs text-muted-foreground">
-                Il reste {getDaysRemaining()} jours à l'essai
-              </span>
-            )}
+            {subscription.status === "trialing" &&
+              !paidByManager &&
+              (subscription.billingStartsAt ? (
+                <span className="text-xs text-muted-foreground">
+                  Premier prélèvement le{" "}
+                  {formatDate(subscription.billingStartsAt)}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  Il reste {getDaysRemaining()} jours à l'essai
+                </span>
+              ))}
           </div>
           <div className="flex items-center gap-3">
             {/* Cube icon */}
@@ -529,11 +548,13 @@ export function SubscriptionSection({
                 <span className="text-sm font-semibold">
                   {currentPlanConfig.name}
                 </span>
-                {subscription.status === "trialing" && (
-                  <Badge className="bg-[#5b50fe]/10 text-[#5b50fe] text-[10px] font-medium border border-[#5b50fe]/20 px-1.5 py-0">
-                    Essai
-                  </Badge>
-                )}
+                {subscription.status === "trialing" &&
+                  !paidByManager &&
+                  !subscription.billingStartsAt && (
+                    <Badge className="bg-[#5b50fe]/10 text-[#5b50fe] text-[10px] font-medium border border-[#5b50fe]/20 px-1.5 py-0">
+                      Essai
+                    </Badge>
+                  )}
               </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <span>
@@ -625,7 +646,9 @@ export function SubscriptionSection({
 
             {/* Plan columns header */}
             {PLANS_CONFIG.map((plan) => {
-              const isCurrentPlan = subscription?.plan === plan.key;
+              // Offre du cabinet qui s'arrête : toutes se choisissent
+              const isCurrentPlan =
+                !cabinetHandBack && subscription?.plan === plan.key;
               const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
 
               return (
@@ -692,7 +715,7 @@ export function SubscriptionSection({
                       >
                         {loadingPlan === plan.key ? (
                           <LoaderCircle className="h-3 w-3 animate-spin" />
-                        ) : subscription?.plan ? (
+                        ) : subscription?.plan && !cabinetHandBack ? (
                           PLANS_CONFIG.findIndex(
                             (p) => p.key === subscription.plan,
                           ) >
