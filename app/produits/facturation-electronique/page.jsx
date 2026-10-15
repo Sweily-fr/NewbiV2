@@ -58,10 +58,12 @@ export const metadata = {
     "Facturation électronique 2026-2027 : e-invoicing et e-reporting conformes, formats Factur-X, UBL et CII, archivage légal 10 ans.",
   keywords:
     "facturation électronique, e-invoicing, e-reporting, réforme 2026, Factur-X, facture électronique, PPF, portail public facturation, conformité fiscale, archivage factures",
+  alternates: { canonical: "/produits/facturation-electronique" },
   openGraph: {
     title: "Facturation Électronique 2026 | newbi",
     description:
       "Anticipez l'obligation de facturation électronique. Solution conforme e-invoicing et e-reporting avec archivage légal.",
+    url: "/produits/facturation-electronique",
     type: "website",
     locale: "fr_FR",
   },

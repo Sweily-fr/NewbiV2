@@ -65,14 +65,13 @@ export const metadata = {
     telephone: false,
   },
   metadataBase: new URL(SITE_URL),
-  alternates: {
-    canonical: "/",
-  },
+  // Pas de canonique ni d'og:url ici : une page qui exporte ses metadata sans
+  // `alternates` en hériterait et se déclarerait copie de l'accueil (servi
+  // jusqu'en octobre 2026 sur six pages). Chaque page déclare la sienne.
   openGraph: {
     title: "Newbi - Devis, factures et gestion pour indépendants",
     description:
       "Tes devis, tes factures, tes clients et tes reçus au même endroit. Tu peux fermer ton Excel. 30 jours gratuits, sans carte bancaire.",
-    url: "/",
     siteName: "Newbi",
     locale: "fr_FR",
     type: "website",
