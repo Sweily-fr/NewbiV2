@@ -35,7 +35,11 @@ function DateField({ value, onChange, className = "", align = "start" }) {
       </PopoverTrigger>
       {/* collisionPadding : garde une marge avec le bord de la fenêtre au
           lieu de coller le calendrier contre le bord. */}
-      <PopoverContent className="w-auto p-0" align={align} collisionPadding={16}>
+      <PopoverContent
+        className="w-auto p-0"
+        align={align}
+        collisionPadding={16}
+      >
         <Calendar
           mode="single"
           selected={valid ? date : undefined}
@@ -123,19 +127,25 @@ export function OcrValueInput({
 }
 
 /**
+ * Nombre saisi en texte : virgule décimale, espaces des milliers (insécables
+ * compris, « 1 234,56 ») et symbole € acceptés. null si vide ou illisible.
+ */
+export function parseOcrNumber(raw) {
+  if (raw === "" || raw === null || raw === undefined) return null;
+  const n = Number(String(raw).replace(/[\s€]/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
  * Applique des brouillons (chaînes saisies) sur une proposition OCR :
- * nombres convertis (virgule acceptée), vide = non lu.
+ * nombres convertis (cf. parseOcrNumber), vide = non lu.
  */
 export function applyOcrDrafts(proposal, drafts, numberKeys) {
   if (!proposal) return proposal;
   const out = { ...proposal };
   for (const [key, raw] of Object.entries(drafts || {})) {
     if (numberKeys.has(key)) {
-      const n =
-        raw === "" || raw === null || raw === undefined
-          ? null
-          : Number(String(raw).replace(",", "."));
-      out[key] = Number.isFinite(n) ? n : null;
+      out[key] = parseOcrNumber(raw);
     } else {
       out[key] = raw === "" || raw === undefined ? null : raw;
     }

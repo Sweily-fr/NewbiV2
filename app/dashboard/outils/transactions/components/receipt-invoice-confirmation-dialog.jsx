@@ -23,6 +23,7 @@ import {
   OcrValueInput,
   applyOcrDrafts,
   ocrDraftValue,
+  parseOcrNumber,
 } from "@/src/components/reconciliation/OcrValueInput";
 import {
   AddVatRateButton,
@@ -95,11 +96,11 @@ const NUMBER_KEYS = new Set(["amountHT", "amountTVA", "vatRate", "amountTTC"]);
 // Montants affichés avec les centimes (11,4 € se lit mal sur une facture)
 const MONEY_KEYS = new Set(["amountHT", "amountTVA", "amountTTC"]);
 
-const toNumber = (v) => {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(String(v).replace(",", "."));
-  return Number.isFinite(n) ? n : null;
-};
+const toNumber = parseOcrNumber;
+// HT / TVA laissés vides : 0, comme à l'enregistrement d'une facture d'achat
+// (vatInputFromForm). Envoyés à null, ils étaient enregistrés tels quels et
+// faisaient tomber la liste des factures d'achat (incident du 15/10/2026).
+const ZERO_WHEN_EMPTY_KEYS = new Set(["amountHT", "amountTVA"]);
 
 const OPTIONS_BY_KEY = {
   paymentMethod: PAYMENT_METHOD_OPTIONS,
@@ -132,6 +133,7 @@ const toMutationValues = (values) => {
     // Les montants sont saisis en texte (centimes affichés, virgule admise) :
     // reconvertis en nombres pour l'API.
     out[key] = NUMBER_KEYS.has(key) ? toNumber(values[key]) : values[key];
+    if (out[key] === null && ZERO_WHEN_EMPTY_KEYS.has(key)) out[key] = 0;
   }
   if (values.category) out.subcategory = values.category;
   return out;
