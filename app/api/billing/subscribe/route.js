@@ -113,11 +113,25 @@ async function handler(request) {
   // Espace dont le cabinet paie (ou paiera) l'abonnement : pas de second
   // abonnement au nom du client
   const { isOrgPaidByManager } = await import("@/src/lib/manager-billing");
+  let deferredBillingStart = null;
+  let handoverMetadata = {};
   if (await isOrgPaidByManager(mongoDb, organizationId)) {
-    return apiError(
-      409,
-      "L'abonnement de cet espace est pris en charge par votre cabinet.",
-    );
+    // Le cabinet a arrêté sa prise en charge et sa dernière période court
+    // encore : le client souscrit, premier prélèvement à sa fin
+    const { getCabinetHandBack, deferredClientBilling } =
+      await import("@/src/lib/payer-switch");
+    const handBack = await getCabinetHandBack(mongoDb, organizationId);
+    if (!handBack) {
+      return apiError(
+        409,
+        "L'abonnement de cet espace est pris en charge par votre cabinet.",
+      );
+    }
+    deferredBillingStart = deferredClientBilling(handBack);
+    handoverMetadata = {
+      payerHandover: "from_manager",
+      replacesCabinetSubscription: handBack.subscriptionId || "",
+    };
   }
 
   // Resolve or create the Stripe customer.
@@ -161,8 +175,12 @@ async function handler(request) {
       organizationId,
       planName: plan,
       isAnnual: isAnnual ? "true" : "false",
+      ...handoverMetadata,
     },
     subscription_data: {
+      ...(deferredBillingStart
+        ? { trial_end: Math.floor(deferredBillingStart.getTime() / 1000) }
+        : {}),
       // No Stripe trial — app trial handled separately.
       // Stripe rejects `trial_period_days: 0` (minimum is 1) so we omit the
       // field entirely to mean "no trial, charge immediately".
@@ -175,11 +193,14 @@ async function handler(request) {
         isAnnual: isAnnual ? "true" : "false",
         hasTrial: "false",
         trialDays: "0",
+        ...handoverMetadata,
       },
     },
     custom_text: {
       submit: {
-        message: `Souscription au plan ${plan.toUpperCase()} — paiement immédiat, sans essai supplémentaire`,
+        message: deferredBillingStart
+          ? `Aucun prélèvement avant le ${deferredBillingStart.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })} : votre cabinet paie votre abonnement jusqu'à cette date.`
+          : `Souscription au plan ${plan.toUpperCase()} — paiement immédiat, sans essai supplémentaire`,
       },
     },
   });

@@ -110,6 +110,10 @@ async function handler(request) {
   const planName = organizationData.planName;
   const isAnnual = organizationData.isAnnual;
 
+  // Le cabinet du client a arrêté sa prise en charge et sa dernière période
+  // court encore : le client souscrit, premier prélèvement à sa fin
+  let cabinetHandBack = null;
+
   // Abonnement d'un espace existant (l'espace actif) : droit « Gérer
   // l'abonnement » ; un nouvel espace est créé au paiement par son créateur
   if (organizationData.type === "existing") {
@@ -131,12 +135,30 @@ async function handler(request) {
     // l'abonnement : pas de second abonnement au nom du client
     const { isOrgPaidByManager } = await import("@/src/lib/manager-billing");
     if (await isOrgPaidByManager(mongoDb, orgId)) {
-      return apiError(
-        409,
-        "L'abonnement de cet espace est pris en charge par votre cabinet.",
-      );
+      const { getCabinetHandBack } = await import("@/src/lib/payer-switch");
+      cabinetHandBack = await getCabinetHandBack(mongoDb, orgId);
+      if (!cabinetHandBack) {
+        return apiError(
+          409,
+          "L'abonnement de cet espace est pris en charge par votre cabinet.",
+        );
+      }
     }
   }
+  let deferredBillingUnix = null;
+  if (cabinetHandBack) {
+    const { deferredClientBilling } = await import("@/src/lib/payer-switch");
+    const start = deferredClientBilling(cabinetHandBack);
+    if (start) deferredBillingUnix = Math.floor(start.getTime() / 1000);
+  }
+  // Marqueur du changement de payeur (webhook : pas d'e-mail d'essai,
+  // premier prélèvement affiché au client)
+  const handoverMetadata = cabinetHandBack
+    ? {
+        payerHandover: "from_manager",
+        replacesCabinetSubscription: cabinetHandBack.subscriptionId || "",
+      }
+    : {};
 
   // When ENABLE_APP_TRIAL is ON, the trial is fully managed by the app
   // (Lot 3 cron + Lot 1 gating). Stripe is then ONLY used for paid plans,
@@ -370,6 +392,7 @@ async function handler(request) {
         planName: planName,
         isAnnual: isAnnual ? "true" : "false",
         organizationId: session.session?.activeOrganizationId || "",
+        ...handoverMetadata,
         // Données entreprise
         employeeCount: organizationData.employeeCount || "",
         companyName: organizationData.companyName || "",
@@ -398,9 +421,11 @@ async function handler(request) {
         // `trialing` jusqu'à cette date, puis facture automatiquement.
         ...(convertedTrialEndUnix
           ? { trial_end: convertedTrialEndUnix }
-          : trialDays > 0
-            ? { trial_period_days: trialDays }
-            : {}),
+          : deferredBillingUnix
+            ? { trial_end: deferredBillingUnix }
+            : trialDays > 0
+              ? { trial_period_days: trialDays }
+              : {}),
         metadata: {
           userId: session.user.id,
           isNewOrganization: isNewOrganization ? "true" : "false",
@@ -418,6 +443,7 @@ async function handler(request) {
           // immédiatement, facturation différée).
           convertedFromAppTrial: convertedTrialEndUnix ? "true" : "false",
           appTrialEndDate: originalAppTrialEndDate || "",
+          ...handoverMetadata,
         },
       },
       // Message personnalisé — adapté au trial period choisi
@@ -425,11 +451,13 @@ async function handler(request) {
         submit: {
           message: convertedTrialEndUnix
             ? `Aucun prélèvement avant la fin de votre essai (${new Date(convertedTrialEndUnix * 1000).toLocaleDateString("fr-FR")}). Toutes les fonctionnalités du plan ${planName.toUpperCase()} sont accessibles immédiatement.`
-            : trialDays > 0
-              ? isOnboarding
-                ? `Essai gratuit ${trialDays} jours - Aucun prélèvement avant la fin de l'essai`
-                : `Souscription au plan ${planName.toUpperCase()} - ${trialDays} jours d'essai gratuit`
-              : `Souscription au plan ${planName.toUpperCase()} - Paiement immédiat`,
+            : deferredBillingUnix
+              ? `Aucun prélèvement avant le ${new Date(deferredBillingUnix * 1000).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })} : votre cabinet paie votre abonnement jusqu'à cette date.`
+              : trialDays > 0
+                ? isOnboarding
+                  ? `Essai gratuit ${trialDays} jours - Aucun prélèvement avant la fin de l'essai`
+                  : `Souscription au plan ${planName.toUpperCase()} - ${trialDays} jours d'essai gratuit`
+                : `Souscription au plan ${planName.toUpperCase()} - Paiement immédiat`,
         },
       },
     });

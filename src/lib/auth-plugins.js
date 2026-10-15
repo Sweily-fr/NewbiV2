@@ -232,6 +232,31 @@ export async function authorizeSubscriptionReference({
   }
 }
 
+/**
+ * Abonnement Stripe payé par un cabinet (webhook) : relu avec la version
+ * d'API de manager-billing, puis enregistré ou, pour la reprise de
+ * l'abonnement d'un client, terminé.
+ */
+async function handleCabinetWebhook(object) {
+  const subscriptionId =
+    object?.object === "checkout.session" ? object.subscription : object?.id;
+  if (!subscriptionId) return;
+  const { mongoDb } = await import("./mongodb.js");
+  const { handleCabinetSubscriptionEvent } = await import("./payer-switch.js");
+  const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const subscription = await stripeClient.subscriptions.retrieve(
+    typeof subscriptionId === "string" ? subscriptionId : subscriptionId.id,
+  );
+  if (!subscription.metadata?.referenceId && object?.metadata) {
+    subscription.metadata = { ...object.metadata, ...subscription.metadata };
+  }
+  await handleCabinetSubscriptionEvent({
+    mongoDb,
+    stripe: stripeClient,
+    subscription,
+  });
+}
+
 export const stripePlugin = stripe({
   stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-02-24.acacia",
@@ -335,6 +360,21 @@ export const stripePlugin = stripe({
             break;
           }
 
+          // Abonnement payé par un cabinet (compte gestionnaire) : enregistré
+          // comme au retour de Checkout, et la reprise de l'abonnement d'un
+          // client se termine quand le paiement du cabinet est passé
+          if (event.data.object?.metadata?.paidByAccountManagerId) {
+            try {
+              await handleCabinetWebhook(event.data.object);
+            } catch (cabinetError) {
+              console.error(
+                `❌ [STRIPE WEBHOOK] Abonnement de cabinet non traité:`,
+                cabinetError,
+              );
+            }
+            break;
+          }
+
           let subscription;
           let referenceId;
           let userId;
@@ -375,6 +415,27 @@ export const stripePlugin = stripe({
             }
 
             userId = session.metadata?.userId || subscription.metadata?.userId;
+
+            // Le webhook natif de Better Auth (customer.subscription.created,
+            // souvent reçu avant) enregistre l'abonnement d'un client Stripe
+            // rattaché à un utilisateur au nom de cet utilisateur
+            // (referenceId = son id). Newbi n'a que des abonnements d'espace :
+            // ce document empêchait d'enregistrer l'abonnement sur l'espace
+            // (identifiant Stripe unique) ou captait ses mises à jour.
+            if (userId) {
+              const { mongoDb: mongoDbUser } = await import("./mongodb.js");
+              const removed = await mongoDbUser
+                .collection("subscription")
+                .deleteMany({
+                  stripeSubscriptionId: subscription.id,
+                  referenceId: String(userId),
+                });
+              if (removed.deletedCount > 0) {
+                console.log(
+                  `🧹 [STRIPE WEBHOOK] Abonnement ${subscription.id} enregistré au nom de l'utilisateur ${userId} : remplacé par celui de l'espace`,
+                );
+              }
+            }
 
             // Vérifier si c'est une nouvelle organisation
             const isNewOrg = session.metadata?.isNewOrganization === "true";
@@ -483,19 +544,34 @@ export const stripePlugin = stripe({
             // Utiliser MongoDB directement au lieu de l'adapter
             const { mongoDb } = await import("./mongodb.js");
 
-            // Vérifier si l'abonnement existe déjà POUR CETTE ORGANISATION
-            const existingSubForOrg = await mongoDb
-              .collection("subscription")
-              .findOne({
-                referenceId: referenceId,
-              });
-
             // Vérifier aussi si le stripeSubscriptionId existe (pour une autre org)
             const existingSubByStripeId = await mongoDb
               .collection("subscription")
               .findOne({
                 stripeSubscriptionId: subscription.id,
               });
+
+            // Abonnement remplacé lors d'un changement de payeur (cabinet ou
+            // client) : un événement en retard ne doit pas reprendre la place
+            // de celui qui l'a remplacé
+            if (existingSubByStripeId?.replacedOrganizationId) {
+              console.log(
+                `ℹ️ [STRIPE WEBHOOK] Abonnement ${subscription.id} remplacé (changement de payeur) : événement ignoré`,
+              );
+              break;
+            }
+
+            // Document de l'espace : celui de cet abonnement s'il existe (un
+            // espace peut avoir gardé un ancien document), sinon le plus récent
+            const existingSubForOrg =
+              existingSubByStripeId?.referenceId === referenceId
+                ? existingSubByStripeId
+                : await mongoDb
+                    .collection("subscription")
+                    .findOne(
+                      { referenceId: referenceId },
+                      { sort: { updatedAt: -1 } },
+                    );
 
             console.log(`🔍 [STRIPE WEBHOOK] Recherche abonnement:`);
             console.log(`   - referenceId: ${referenceId}`);
@@ -507,6 +583,21 @@ export const stripePlugin = stripe({
               `   - Abonnement existant avec ce stripeId: ${existingSubByStripeId ? "OUI (org: " + existingSubByStripeId.referenceId + ")" : "NON"}`,
             );
 
+            // Période en cours : sur l'abonnement (API Stripe < 2025-03) ou
+            // sur sa première ligne (abonnement relu avec une version récente)
+            const periodItem = subscription.items?.data?.[0];
+            const periodStartUnix =
+              subscription.current_period_start ??
+              periodItem?.current_period_start;
+            const periodEndUnix =
+              subscription.current_period_end ?? periodItem?.current_period_end;
+            const subscriptionPeriod = {
+              start: periodStartUnix
+                ? new Date(periodStartUnix * 1000)
+                : new Date(),
+              end: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
+            };
+
             if (
               existingSubForOrg &&
               existingSubForOrg.stripeSubscriptionId === subscription.id
@@ -516,25 +607,16 @@ export const stripePlugin = stripe({
                 `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org, mise à jour`,
               );
               await mongoDb.collection("subscription").updateOne(
-                {
-                  referenceId: referenceId,
-                  stripeSubscriptionId: subscription.id,
-                },
+                { _id: existingSubForOrg._id },
                 {
                   $set: {
                     status: subscription.status,
                     plan:
                       subscription.metadata?.planName || existingSubForOrg.plan,
-                    currentPeriodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    currentPeriodEnd: new Date(
-                      subscription.current_period_end * 1000,
-                    ),
-                    periodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    periodEnd: new Date(subscription.current_period_end * 1000),
+                    currentPeriodStart: subscriptionPeriod.start,
+                    currentPeriodEnd: subscriptionPeriod.end,
+                    periodStart: subscriptionPeriod.start,
+                    periodEnd: subscriptionPeriod.end,
                     updatedAt: new Date(),
                   },
                 },
@@ -573,29 +655,52 @@ export const stripePlugin = stripe({
               console.log(
                 `🔄 [STRIPE WEBHOOK] L'org a un ancien abonnement, remplacement par le nouveau`,
               );
+              // Abonnement pris par le client pendant la dernière période
+              // payée par son cabinet : premier prélèvement à sa fin
+              const deferredByCabinet =
+                subscription.metadata?.payerHandover === "from_manager" &&
+                subscription.status === "trialing" &&
+                subscription.trial_end;
               await mongoDb.collection("subscription").updateOne(
-                { referenceId: referenceId },
+                { _id: existingSubForOrg._id },
                 {
                   $set: {
                     stripeSubscriptionId: subscription.id,
                     stripeCustomerId: subscription.customer,
                     status: subscription.status,
+                    cancelAtPeriodEnd:
+                      subscription.cancel_at_period_end || false,
+                    paidByAccountManagerId: null,
+                    billingStartsAt: deferredByCabinet
+                      ? new Date(subscription.trial_end * 1000)
+                      : null,
                     plan:
                       subscription.metadata?.planName || existingSubForOrg.plan,
-                    currentPeriodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    currentPeriodEnd: new Date(
-                      subscription.current_period_end * 1000,
-                    ),
-                    periodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    periodEnd: new Date(subscription.current_period_end * 1000),
+                    currentPeriodStart: subscriptionPeriod.start,
+                    currentPeriodEnd: subscriptionPeriod.end,
+                    periodStart: subscriptionPeriod.start,
+                    periodEnd: subscriptionPeriod.end,
                     updatedAt: new Date(),
                   },
                 },
               );
+
+              // L'abonnement remplacé court encore (dernière période payée
+              // par le cabinet) : ses événements doivent retrouver un document
+              if (
+                existingSubForOrg.stripeSubscriptionId &&
+                ["active", "trialing", "past_due", "unpaid"].includes(
+                  existingSubForOrg.status,
+                )
+              ) {
+                const { archiveReplacedSubscription } =
+                  await import("./manager-billing.js");
+                await archiveReplacedSubscription(
+                  mongoDb,
+                  existingSubForOrg,
+                  subscription.id,
+                );
+              }
             } else {
               console.log(`✅ [STRIPE WEBHOOK] Création nouvel abonnement`);
 
@@ -907,13 +1012,30 @@ export const stripePlugin = stripe({
                 { $set: updateData },
               );
 
+            // Reprise d'un client par son cabinet en attente du paiement
+            if (
+              updatedSub.metadata?.payerHandover === "from_client" &&
+              ["active", "trialing"].includes(updatedSub.status)
+            ) {
+              await handleCabinetWebhook(updatedSub).catch((cabinetError) =>
+                console.error(
+                  `❌ [STRIPE WEBHOOK] Reprise par le cabinet non terminée:`,
+                  cabinetError,
+                ),
+              );
+            }
+
             // ✅ Gérer la fin du trial Stripe - Quand le statut passe de "trialing" à "active"
             // Récupérer l'abonnement existant pour voir l'ancien statut
             const existingSub = await mongoDb
               .collection("subscription")
               .findOne({ stripeSubscriptionId: updatedSub.id });
 
-            if (existingSub?.referenceId && updatedSub.status === "active") {
+            if (
+              existingSub?.referenceId &&
+              !existingSub.replacedOrganizationId &&
+              updatedSub.status === "active"
+            ) {
               try {
                 // Vérifier si l'organisation était en trial Stripe
                 const org = await mongoDb
@@ -1047,6 +1169,21 @@ export const stripePlugin = stripe({
             );
             console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
 
+            // Abonnement arrêté parce que le payeur a changé (cabinet ou
+            // client) : l'autre payeur a pris le relais, le client a reçu
+            // l'e-mail du changement. Ni essai rouvert, ni e-mail de
+            // résiliation.
+            if (
+              ["to_manager", "to_client"].includes(
+                deletedSub.metadata?.payerHandover,
+              )
+            ) {
+              console.log(
+                `ℹ️ [STRIPE WEBHOOK] Abonnement remplacé (changement de payeur), pas d'e-mail de résiliation`,
+              );
+              break;
+            }
+
             // PATTERN A — Safety net : si l'utilisateur annule une sub qui
             // était une conversion du trial maison ET avant la fin du trial
             // d'origine, on restaure le trial maison pour qu'il puisse
@@ -1150,6 +1287,12 @@ export const stripePlugin = stripe({
           console.log(
             `⏰ [STRIPE WEBHOOK] Fin d'essai imminente pour abonnement: ${trialEndingSub.id}`,
           );
+
+          // Premier prélèvement reporté par un changement de payeur : ce
+          // n'est pas un essai, l'e-mail de fin d'essai serait trompeur
+          if (trialEndingSub.metadata?.payerHandover) {
+            break;
+          }
 
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -1275,6 +1418,13 @@ export const stripePlugin = stripe({
             const isTrialStart =
               paidInvoice.billing_reason === "subscription_create" &&
               subscription?.status === "trialing";
+
+            // Premier prélèvement reporté par un changement de payeur : pas
+            // d'e-mail « essai commencé » (le client a reçu celui du
+            // changement, le cabinet l'a vu dans son espace)
+            if (isTrialStart && subscription?.metadata?.payerHandover) {
+              break;
+            }
 
             if (isTrialStart) {
               // Formater la date de fin d'essai

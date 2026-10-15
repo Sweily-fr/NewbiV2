@@ -5,67 +5,7 @@
 // cabinet, avec sa remise, sans prélèvement avant la fin de l'essai.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ObjectId } from "mongodb";
-
-// Base simulée : égalité, $in, $ne ; updateOne avec $set
-function makeDb() {
-  const data = {};
-  const same = (a, b) => String(a) === String(b);
-  const test = (value, cond) => {
-    if (
-      cond &&
-      typeof cond === "object" &&
-      !(cond instanceof ObjectId) &&
-      !(cond instanceof Date)
-    ) {
-      if ("$in" in cond) {
-        return cond.$in.some((c) =>
-          c === null ? value === null || value === undefined : same(c, value),
-        );
-      }
-      if ("$ne" in cond) return !same(value, cond.$ne);
-    }
-    return same(value, cond);
-  };
-  const matches = (doc, filter = {}) =>
-    Object.entries(filter).every(([key, cond]) => test(doc[key], cond));
-  const collection = (name) => {
-    data[name] ||= [];
-    const rows = data[name];
-    return {
-      async findOne(filter) {
-        return rows.find((d) => matches(d, filter)) || null;
-      },
-      async insertOne(doc) {
-        const row = { _id: doc._id || new ObjectId(), ...doc };
-        rows.push(row);
-        return { insertedId: row._id };
-      },
-      async updateOne(filter, update) {
-        const row = rows.find((d) => matches(d, filter));
-        if (!row) return { matchedCount: 0, modifiedCount: 0 };
-        Object.assign(row, update.$set);
-        return { matchedCount: 1, modifiedCount: 1 };
-      },
-      async deleteOne(filter) {
-        const i = rows.findIndex((d) => matches(d, filter));
-        if (i >= 0) rows.splice(i, 1);
-        return { deletedCount: i >= 0 ? 1 : 0 };
-      },
-      async findOneAndUpdate(filter, update) {
-        const row = rows.find((d) => matches(d, filter));
-        if (!row) return null;
-        const before = { ...row };
-        Object.assign(row, update.$set);
-        return before;
-      },
-      find(filter) {
-        const result = rows.filter((d) => matches(d, filter));
-        return { toArray: async () => result };
-      },
-    };
-  };
-  return { collection, data };
-}
+import { createMemoryMongo } from "../helpers/memory-mongo";
 
 // Stripe simulé : enregistre les appels, renvoie des objets plausibles
 function makeStripe({
@@ -157,6 +97,7 @@ const {
   withoutManagerCustomers,
   isOrgPaidByManager,
   endManagedClientLink,
+  syncManagedSubscription,
 } = await import("@/src/lib/manager-billing");
 
 let db;
@@ -183,7 +124,9 @@ beforeEach(async () => {
   process.env.ENABLE_APP_TRIAL = "true";
   process.env.STRIPE_PME_MONTHLY_PRICE_ID = "price_pme_m";
   process.env.STRIPE_PME_YEARLY_PRICE_ID = "price_pme_y";
-  db = makeDb();
+  db = createMemoryMongo({
+    unique: { subscription: ["referenceId", "stripeSubscriptionId"] },
+  });
   manager = {
     _id: managerId,
     userId: managerUserId,
@@ -648,5 +591,87 @@ describe("protections côté client", () => {
     db.data.managedclients[0].payer = "client";
     expect(await isOrgPaidByManager(db, String(orgId))).toBe(false);
     expect(await isOrgPaidByManager(db, { $ne: null })).toBe(false);
+  });
+});
+
+describe("changement de payeur", () => {
+  const cabinetSubscription = (metadata = {}) => ({
+    id: "sub_cab",
+    customer: "cus_cabinet",
+    status: "trialing",
+    trial_end: 1_802_600_000,
+    cancel_at_period_end: false,
+    metadata: {
+      referenceId: String(orgId),
+      paidByAccountManagerId: String(managerId),
+      ...metadata,
+    },
+    items: {
+      data: [
+        {
+          price: { id: "price_pme_m", recurring: { interval: "month" } },
+          current_period_start: 1_800_000_000,
+          current_period_end: 1_802_600_000,
+        },
+      ],
+    },
+  });
+
+  it("le document de l'espace remplace l'abonnement du client nommé, jamais un autre abonnement vivant", async () => {
+    await db.collection("subscription").insertOne({
+      referenceId: String(orgId),
+      stripeSubscriptionId: "sub_client",
+      stripeCustomerId: "cus_client",
+      status: "active",
+      plan: "pme",
+    });
+    expect(await syncManagedSubscription(db, cabinetSubscription())).toBeNull();
+    expect(db.data.subscription[0].stripeSubscriptionId).toBe("sub_client");
+
+    expect(
+      await syncManagedSubscription(db, cabinetSubscription(), {
+        replaceSubscriptionId: "sub_client",
+      }),
+    ).toBe(String(orgId));
+    const [orgDoc, trace] = db.data.subscription;
+    expect(orgDoc).toMatchObject({
+      referenceId: String(orgId),
+      stripeSubscriptionId: "sub_cab",
+      stripeCustomerId: "cus_cabinet",
+      status: "trialing",
+      // Offre retrouvée d'après le prix, sans métadonnée planName
+      plan: "pme",
+    });
+    // L'abonnement du client court encore : une trace hors de l'espace
+    // (index uniques respectés) reçoit ses derniers événements Stripe
+    expect(trace).toMatchObject({
+      referenceId: `replaced:${orgId}:sub_client`,
+      replacedOrganizationId: String(orgId),
+      stripeSubscriptionId: "sub_client",
+      stripeCustomerId: "cus_client",
+      replacedBy: "sub_cab",
+    });
+    expect(db.data.subscription).toHaveLength(2);
+  });
+
+  it("utilisateurs au-delà de l'offre : ajoutés à l'abonnement du cabinet", async () => {
+    process.env.STRIPE_SEAT_PRICE_ID = "price_seat";
+    process.env.STRIPE_FREELANCE_MONTHLY_PRICE_ID = "price_free_m";
+    for (let i = 0; i < 2; i += 1) {
+      await db.collection("member").insertOne({
+        userId: new ObjectId(),
+        organizationId: orgId,
+        role: "member",
+      });
+    }
+    const stripe = makeStripe();
+    await start(stripe, { plan: "freelance" });
+    expect(stripe.checkout.sessions.create.mock.calls[0][0].line_items).toEqual(
+      [
+        { price: "price_free_m", quantity: 1 },
+        { price: "price_seat", quantity: 2 },
+      ],
+    );
+    delete process.env.STRIPE_SEAT_PRICE_ID;
   });
 });

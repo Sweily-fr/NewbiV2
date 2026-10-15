@@ -7,6 +7,7 @@ import {
   withErrorHandler,
 } from "@/src/lib/security";
 import { findManagerPaidSubscription } from "@/src/lib/manager-billing";
+import { getCabinetHandBack } from "@/src/lib/payer-switch";
 
 /**
  * GET /api/organizations/[organizationId]/cabinet
@@ -18,8 +19,12 @@ import { findManagerPaidSubscription } from "@/src/lib/manager-billing";
  *
  * → { paidByManager: false }
  *   ou { paidByManager: true, managerName, subscriptionStatus,
- *        viewerIsManager, linkId? } (linkId : seulement pour le cabinet,
- *   pour ouvrir le choix de l'offre depuis son espace)
+ *        viewerIsManager, linkId?, handBack, endsAt, startsAt } (linkId :
+ *   seulement pour le cabinet, pour ouvrir le choix de l'offre depuis son
+ *   espace ; handBack : le cabinet a arrêté sa prise en charge, sa dernière
+ *   période court jusqu'à endsAt et le client peut déjà choisir son offre ;
+ *   startsAt : le cabinet a repris l'abonnement du client et paie à partir
+ *   de cette date, fin de la période déjà payée par le client)
  * Auth : membre de l'espace.
  */
 async function handler(request, { params }) {
@@ -28,14 +33,15 @@ async function handler(request, { params }) {
   const orgObjectId = toObjectId(organizationId);
   await requireOrgMembership(user.id, orgObjectId);
 
-  const [link, paid] = await Promise.all([
+  const [link, paid, handBack] = await Promise.all([
     mongoDb
       .collection("managedclients")
       .findOne(
         { organizationId: orgObjectId, status: "active", payer: "manager" },
-        { projection: { managerId: 1 } },
+        { projection: { managerId: 1, payerChange: 1 } },
       ),
     findManagerPaidSubscription(mongoDb, String(orgObjectId)),
+    getCabinetHandBack(mongoDb, String(orgObjectId)),
   ]);
   const manager =
     paid?.manager ||
@@ -50,11 +56,19 @@ async function handler(request, { params }) {
   if (!manager) return NextResponse.json({ paidByManager: false });
 
   const viewerIsManager = String(manager.userId) === String(user.id);
+  const startsAt =
+    link?.payerChange?.to === "manager" &&
+    new Date(link.payerChange.effectiveAt) > new Date()
+      ? link.payerChange.effectiveAt
+      : null;
   return NextResponse.json({
     paidByManager: true,
     managerName: manager.name,
     subscriptionStatus: paid?.subscription?.status || null,
     viewerIsManager,
+    handBack: Boolean(handBack),
+    endsAt: handBack?.endsAt || null,
+    startsAt,
     ...(viewerIsManager && link ? { linkId: String(link._id) } : {}),
   });
 }

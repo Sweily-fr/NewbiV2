@@ -7,8 +7,11 @@ import { useEffect, useState } from "react";
  * gestionnaire) :
  * - undefined tant que ce n'est pas vérifié (ne rien autoriser) ;
  * - null si l'espace paie lui-même ;
- * - { managerName, subscriptionStatus, viewerIsManager, linkId? } sinon.
- * Le client n'y choisit ni ne résilie l'offre : c'est son cabinet.
+ * - { managerName, subscriptionStatus, viewerIsManager, linkId?, handBack,
+ *   endsAt, startsAt } sinon.
+ * Le client n'y choisit ni ne résilie l'offre : c'est son cabinet, sauf
+ * quand le cabinet a arrêté sa prise en charge (handBack) : le client
+ * choisit alors son offre, premier prélèvement à endsAt.
  */
 export function useOrgPaidByManager(organizationId) {
   const [cabinet, setCabinet] = useState(undefined);
@@ -30,6 +33,9 @@ export function useOrgPaidByManager(organizationId) {
                 subscriptionStatus: data.subscriptionStatus || null,
                 viewerIsManager: Boolean(data.viewerIsManager),
                 linkId: data.linkId || null,
+                handBack: Boolean(data.handBack),
+                endsAt: data.endsAt || null,
+                startsAt: data.startsAt || null,
               }
             : null,
         );
