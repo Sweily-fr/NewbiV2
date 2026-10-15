@@ -557,6 +557,21 @@ export async function listManagedClients(mongoDb, managerId) {
       ownerEmail: owner?.email || null,
       ownerName: owner?.name || null,
       payer: link.payer,
+      // Changement de payeur à venir (reprise à l'échéance, fin de prise en
+      // charge en fin de période)
+      payerChange:
+        link.payerChange?.effectiveAt &&
+        new Date(link.payerChange.effectiveAt) > new Date()
+          ? {
+              to: link.payerChange.to,
+              effectiveAt: link.payerChange.effectiveAt,
+            }
+          : null,
+      // Reprise en attente d'une validation bancaire du cabinet
+      takeoverPending:
+        link.handover?.status === "awaiting_payment" &&
+        Boolean(link.handover.toSubscriptionId) &&
+        new Date(link.handover.expiresAt) > new Date(),
       status: invitationExpired ? "expired" : link.status,
       canResendWelcome:
         link.status === "active" &&
