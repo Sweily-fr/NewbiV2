@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 
-const MENTION = "TVA non applicable, art. L. 223-3 du CIBS";
+const MENTION = "TVA non applicable, art. 293 B du CGI";
 
 // Carte « Ce que la loi te demande » (version auto-entrepreneur) : une
 // mini-facture dont le pied de page s'écrit tout seul avec la mention de

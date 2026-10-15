@@ -123,7 +123,7 @@ function modeleDocument(rendu) {
           .filter(Boolean)
           .join(" • "),
   ];
-  if (franchise) pied.push("TVA non applicable, art. L. 223-3 du CIBS");
+  if (franchise) pied.push("TVA non applicable, art. 293 B du CGI");
 
   return {
     slug: rendu.slug,

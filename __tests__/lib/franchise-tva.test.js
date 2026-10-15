@@ -11,10 +11,10 @@ const base = {
   address: { street: "1 rue A", city: "Paris", postalCode: "75001" },
 };
 
-describe("franchise en base de TVA — mention franchise en base (CIBS)", () => {
+describe("franchise en base de TVA — mention art. 293 B du CGI", () => {
   it("affiche la mention quand vatFranchise est vrai (adresse structurée)", () => {
     expect(generateDynamicFooter({ ...base, vatFranchise: true })).toContain(
-      "TVA non applicable, art. L. 223-3 du CIBS",
+      "TVA non applicable, art. 293 B du CGI",
     );
   });
 
@@ -37,7 +37,7 @@ describe("franchise en base de TVA — mention franchise en base (CIBS)", () => 
   it("repli sur le régime micro pour les documents antérieurs", () => {
     expect(
       generateDynamicFooter({ ...base, fiscalRegime: "micro-bic" }),
-    ).toContain("TVA non applicable, art. L. 223-3 du CIBS");
+    ).toContain("TVA non applicable, art. 293 B du CGI");
   });
 });
 

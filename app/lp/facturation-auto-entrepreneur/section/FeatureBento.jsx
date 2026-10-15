@@ -151,7 +151,7 @@ function InvoiceVisual() {
           <div>
             <p className="text-[11px] text-gray-500 mb-1">TVA</p>
             <div className="flex items-center justify-between h-8 rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-[12px] text-gray-900">
-              Non applicable, art. L. 223-3 du CIBS
+              Non applicable, art. 293 B du CGI
               <span className="flex size-4 items-center justify-center rounded-full bg-[#22C55E] text-white">
                 <svg
                   width="9"
