@@ -241,6 +241,11 @@ const actor = { type: "manager", userId: String(managerUserId) };
 
 const subscriptionDoc = () =>
   db.data.subscription.filter((d) => d.referenceId === String(orgId));
+// Traces des abonnements remplacés encore en cours
+const archived = (id) =>
+  (db.data.subscription || []).find(
+    (d) => d.stripeSubscriptionId === id && d.replacedOrganizationId,
+  );
 const link = () =>
   db.data.managedclients.find((l) => String(l._id) === String(linkId));
 const org = () =>
@@ -252,7 +257,10 @@ async function seed({
   clientDoc = null,
   stripeCustomerId = "cus_cabinet",
 } = {}) {
-  db = createMemoryMongo();
+  // Mêmes index uniques que src/lib/mongodb.js
+  db = createMemoryMongo({
+    unique: { subscription: ["referenceId", "stripeSubscriptionId"] },
+  });
   manager = {
     _id: managerId,
     userId: managerUserId,
@@ -408,6 +416,12 @@ describe("reprise par le cabinet", () => {
     expect(mockSendEmail.mock.calls[0][0].html).toContain(
       "ne sera pas renouvelé",
     );
+    // L'abonnement du client court encore : une trace le suit, hors de l'espace
+    expect(archived("sub_client")).toMatchObject({
+      referenceId: `replaced:${orgId}:sub_client`,
+      replacedOrganizationId: String(orgId),
+      stripeCustomerId: "cus_client",
+    });
   });
 
   it("tout de suite : le client est remboursé de la période non utilisée par un avoir Stripe", async () => {
@@ -757,6 +771,11 @@ describe("retour au client", () => {
     });
 
     expect(result).toMatchObject({ mode: "restored" });
+    // La trace du client s'efface, celle du cabinet prend le relais
+    expect(archived("sub_client")).toBeUndefined();
+    expect(archived(cabinetId)).toMatchObject({
+      stripeCustomerId: "cus_cabinet",
+    });
     expect(stripe.subs.get("sub_client")).toMatchObject({
       status: "active",
       cancel_at_period_end: false,

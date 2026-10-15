@@ -289,6 +289,49 @@ export async function savedCard(stripe, customerId) {
 }
 
 /**
+ * Garde la trace d'un abonnement Stripe encore en cours que le document de
+ * l'espace ne suit plus (le payeur a changé) : ses derniers événements
+ * Stripe (fin de période, résiliation) retrouvent ce document. Sans lui, le
+ * webhook natif de Better Auth, qui ne trouve pas l'abonnement, prend le
+ * document d'un autre espace du même client Stripe (un cabinet en paie
+ * plusieurs) et l'écrase. Invisible pour l'espace : referenceId propre
+ * (index unique), sans organizationId.
+ */
+export async function archiveReplacedSubscription(mongoDb, doc, replacedBy) {
+  if (!doc?.stripeSubscriptionId || !doc.referenceId) return;
+  const subscriptions = mongoDb.collection("subscription");
+  const exists = await subscriptions.findOne(
+    { stripeSubscriptionId: doc.stripeSubscriptionId },
+    { projection: { _id: 1 } },
+  );
+  if (exists) return;
+  const now = new Date();
+  const _id = new ObjectId();
+  try {
+    await subscriptions.insertOne({
+      _id,
+      id: _id.toString(),
+      referenceId: `replaced:${doc.referenceId}:${doc.stripeSubscriptionId}`,
+      replacedOrganizationId: String(doc.referenceId),
+      replacedBy: replacedBy || null,
+      plan: doc.plan || null,
+      stripeCustomerId: doc.stripeCustomerId || null,
+      stripeSubscriptionId: doc.stripeSubscriptionId,
+      status: doc.status,
+      seats: doc.seats || 1,
+      cancelAtPeriodEnd: Boolean(doc.cancelAtPeriodEnd),
+      periodStart: doc.periodStart || null,
+      periodEnd: doc.periodEnd || null,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } catch (error) {
+    // Course avec un autre appel : la trace existe déjà
+    if (error?.code !== 11000) throw error;
+  }
+}
+
+/**
  * Écrit (ou met à jour) le document `subscription` de l'espace à partir de
  * l'abonnement Stripe, comme le fait le webhook : la souscription est
  * visible tout de suite, sans attendre le webhook (qui retrouvera ce
@@ -340,43 +383,57 @@ export async function syncManagedSubscription(
   };
 
   const subscriptions = mongoDb.collection("subscription");
-  // Même abonnement Stripe : mise à jour. Sinon, on ne remplace qu'un
-  // document terminé : un autre abonnement encore vivant sur l'espace (celui
-  // du client, ou un second paiement du cabinet) n'est jamais écrasé.
-  const same = await subscriptions.findOne(
-    { stripeSubscriptionId: stripeSubscription.id },
-    { projection: { _id: 1 } },
+  // Un document par espace (index unique sur referenceId). Même abonnement
+  // Stripe : mise à jour. Sinon, on ne remplace qu'un document terminé, ou
+  // l'abonnement nommé par replaceSubscriptionId : un autre abonnement
+  // encore vivant (celui du client, un second paiement du cabinet) n'est
+  // jamais écrasé.
+  const elsewhere = await subscriptions.findOne(
+    {
+      stripeSubscriptionId: stripeSubscription.id,
+      referenceId: { $ne: referenceId },
+      replacedOrganizationId: { $exists: false },
+    },
+    { projection: { referenceId: 1 } },
   );
-  const replaced =
-    same || !replaceSubscriptionId
-      ? null
-      : await subscriptions.findOne(
-          { referenceId, stripeSubscriptionId: replaceSubscriptionId },
-          { projection: { _id: 1, status: 1 } },
-        );
-  const other =
-    same || replaced
-      ? replaced
-      : await subscriptions.findOne(
-          { referenceId },
-          { projection: { _id: 1, status: 1 }, sort: { updatedAt: -1 } },
-        );
-  if (other && !replaced && LIVE_STATUSES.includes(other.status)) {
+  if (elsewhere) {
+    console.error(
+      `[MANAGER-BILLING] Abonnement ${stripeSubscription.id} déjà enregistré pour l'espace ${elsewhere.referenceId}, pas pour ${referenceId}`,
+    );
+    return null;
+  }
+  const current = await subscriptions.findOne(
+    { referenceId },
+    { sort: { updatedAt: -1 } },
+  );
+  const replacing =
+    current &&
+    current.stripeSubscriptionId &&
+    current.stripeSubscriptionId !== stripeSubscription.id;
+  if (
+    replacing &&
+    LIVE_STATUSES.includes(current.status) &&
+    current.stripeSubscriptionId !== replaceSubscriptionId
+  ) {
     console.error(
       `[MANAGER-BILLING] Espace ${referenceId} déjà abonné : abonnement ${stripeSubscription.id} non enregistré (double paiement à vérifier)`,
     );
     return null;
   }
-  const existing = same || other;
-  if (existing) {
-    await subscriptions.updateOne({ _id: existing._id }, { $set: fields });
-    // Abonnement remplacé encore enregistré à part : un seul document
-    if (same && replaceSubscriptionId) {
-      await subscriptions.deleteMany({
-        referenceId,
-        stripeSubscriptionId: replaceSubscriptionId,
-        _id: { $ne: same._id },
-      });
+  // Abonnement repris (retour au client) : sa trace d'abonnement remplacé
+  // s'efface, l'identifiant Stripe est unique
+  await subscriptions.deleteMany({
+    stripeSubscriptionId: stripeSubscription.id,
+    replacedOrganizationId: { $exists: true },
+  });
+  if (current) {
+    await subscriptions.updateOne({ _id: current._id }, { $set: fields });
+    if (replacing && LIVE_STATUSES.includes(current.status)) {
+      await archiveReplacedSubscription(
+        mongoDb,
+        current,
+        stripeSubscription.id,
+      );
     }
   } else {
     const _id = new ObjectId();

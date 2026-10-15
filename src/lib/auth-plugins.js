@@ -552,6 +552,21 @@ export const stripePlugin = stripe({
               `   - Abonnement existant avec ce stripeId: ${existingSubByStripeId ? "OUI (org: " + existingSubByStripeId.referenceId + ")" : "NON"}`,
             );
 
+            // Période en cours : sur l'abonnement (API Stripe < 2025-03) ou
+            // sur sa première ligne (abonnement relu avec une version récente)
+            const periodItem = subscription.items?.data?.[0];
+            const periodStartUnix =
+              subscription.current_period_start ??
+              periodItem?.current_period_start;
+            const periodEndUnix =
+              subscription.current_period_end ?? periodItem?.current_period_end;
+            const subscriptionPeriod = {
+              start: periodStartUnix
+                ? new Date(periodStartUnix * 1000)
+                : new Date(),
+              end: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
+            };
+
             if (
               existingSubForOrg &&
               existingSubForOrg.stripeSubscriptionId === subscription.id
@@ -567,16 +582,10 @@ export const stripePlugin = stripe({
                     status: subscription.status,
                     plan:
                       subscription.metadata?.planName || existingSubForOrg.plan,
-                    currentPeriodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    currentPeriodEnd: new Date(
-                      subscription.current_period_end * 1000,
-                    ),
-                    periodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    periodEnd: new Date(subscription.current_period_end * 1000),
+                    currentPeriodStart: subscriptionPeriod.start,
+                    currentPeriodEnd: subscriptionPeriod.end,
+                    periodStart: subscriptionPeriod.start,
+                    periodEnd: subscriptionPeriod.end,
                     updatedAt: new Date(),
                   },
                 },
@@ -636,20 +645,31 @@ export const stripePlugin = stripe({
                       : null,
                     plan:
                       subscription.metadata?.planName || existingSubForOrg.plan,
-                    currentPeriodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    currentPeriodEnd: new Date(
-                      subscription.current_period_end * 1000,
-                    ),
-                    periodStart: new Date(
-                      subscription.current_period_start * 1000,
-                    ),
-                    periodEnd: new Date(subscription.current_period_end * 1000),
+                    currentPeriodStart: subscriptionPeriod.start,
+                    currentPeriodEnd: subscriptionPeriod.end,
+                    periodStart: subscriptionPeriod.start,
+                    periodEnd: subscriptionPeriod.end,
                     updatedAt: new Date(),
                   },
                 },
               );
+
+              // L'abonnement remplacé court encore (dernière période payée
+              // par le cabinet) : ses événements doivent retrouver un document
+              if (
+                existingSubForOrg.stripeSubscriptionId &&
+                ["active", "trialing", "past_due", "unpaid"].includes(
+                  existingSubForOrg.status,
+                )
+              ) {
+                const { archiveReplacedSubscription } =
+                  await import("./manager-billing.js");
+                await archiveReplacedSubscription(
+                  mongoDb,
+                  existingSubForOrg,
+                  subscription.id,
+                );
+              }
             } else {
               console.log(`✅ [STRIPE WEBHOOK] Création nouvel abonnement`);
 
@@ -980,7 +1000,11 @@ export const stripePlugin = stripe({
               .collection("subscription")
               .findOne({ stripeSubscriptionId: updatedSub.id });
 
-            if (existingSub?.referenceId && updatedSub.status === "active") {
+            if (
+              existingSub?.referenceId &&
+              !existingSub.replacedOrganizationId &&
+              updatedSub.status === "active"
+            ) {
               try {
                 // Vérifier si l'organisation était en trial Stripe
                 const org = await mongoDb

@@ -1,7 +1,8 @@
 // Base MongoDB simulée en mémoire pour les tests de services : égalité
 // (ObjectId, dates, chaînes comparées comme chaînes), chemins pointés,
 // $in, $ne, $lt, $lte, $gt, $gte, $exists, $or ; mises à jour $set, $unset,
-// $push ; tri simple ; findOneAndUpdate avec returnDocument.
+// $push ; tri simple ; findOneAndUpdate avec returnDocument ; index uniques
+// (clés absentes ignorées) qui lèvent une erreur E11000 comme MongoDB.
 import { ObjectId } from "mongodb";
 
 const isPlainObject = (value) =>
@@ -10,6 +11,20 @@ const isPlainObject = (value) =>
   !(value instanceof ObjectId) &&
   !(value instanceof Date) &&
   !Array.isArray(value);
+
+// Copie profonde qui garde les ObjectId et les dates : comme le vrai
+// pilote, les lectures renvoient des copies, jamais les documents stockés
+export const clone = (value) => {
+  if (value instanceof ObjectId) return new ObjectId(value.toHexString());
+  if (value instanceof Date) return new Date(value.getTime());
+  if (Array.isArray(value)) return value.map(clone);
+  if (isPlainObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, clone(item)]),
+    );
+  }
+  return value;
+};
 
 const getPath = (doc, path) =>
   path
@@ -113,19 +128,47 @@ function sortRows(rows, sort) {
   });
 }
 
-export function createMemoryMongo() {
+export function createMemoryMongo({ unique = {} } = {}) {
   const data = {};
+  // Index uniques par collection : { subscription: ["referenceId", …] }
+  const checkUnique = (name, rows, row) => {
+    for (const key of unique[name] || []) {
+      const value = getPath(row, key);
+      if (value === undefined || value === null) continue;
+      const clash = rows.find(
+        (other) => other !== row && same(getPath(other, key), value),
+      );
+      if (clash) {
+        throw Object.assign(
+          new Error(`E11000 duplicate key ${name}.${key}: ${value}`),
+          {
+            code: 11000,
+          },
+        );
+      }
+    }
+  };
   const collection = (name) => {
     data[name] ||= [];
     const rows = data[name];
+    const updateRow = (row, update) => {
+      const before = clone(row);
+      applyUpdate(row, update);
+      try {
+        checkUnique(name, rows, row);
+      } catch (error) {
+        for (const key of Object.keys(row)) delete row[key];
+        Object.assign(row, before);
+        throw error;
+      }
+    };
     return {
       async findOne(filter, options = {}) {
-        return (
-          sortRows(
-            rows.filter((d) => matches(d, filter)),
-            options.sort,
-          )[0] || null
-        );
+        const row = sortRows(
+          rows.filter((d) => matches(d, filter)),
+          options.sort,
+        )[0];
+        return row ? clone(row) : null;
       },
       find(filter, options = {}) {
         let result = sortRows(
@@ -141,32 +184,33 @@ export function createMemoryMongo() {
             result = result.slice(0, n);
             return cursor;
           },
-          toArray: async () => result,
+          toArray: async () => result.map(clone),
         };
         return cursor;
       },
       async insertOne(doc) {
         const row = { _id: doc._id || new ObjectId(), ...doc };
+        checkUnique(name, [...rows, row], row);
         rows.push(row);
         return { insertedId: row._id };
       },
       async updateOne(filter, update) {
         const row = rows.find((d) => matches(d, filter));
         if (!row) return { matchedCount: 0, modifiedCount: 0 };
-        applyUpdate(row, update);
+        updateRow(row, update);
         return { matchedCount: 1, modifiedCount: 1 };
       },
       async updateMany(filter, update) {
         const found = rows.filter((d) => matches(d, filter));
-        found.forEach((row) => applyUpdate(row, update));
+        found.forEach((row) => updateRow(row, update));
         return { matchedCount: found.length, modifiedCount: found.length };
       },
       async findOneAndUpdate(filter, update, options = {}) {
         const row = rows.find((d) => matches(d, filter));
         if (!row) return null;
-        const before = structuredClone(row);
-        applyUpdate(row, update);
-        return options.returnDocument === "after" ? row : before;
+        const before = clone(row);
+        updateRow(row, update);
+        return options.returnDocument === "after" ? clone(row) : before;
       },
       async deleteOne(filter) {
         const i = rows.findIndex((d) => matches(d, filter));
