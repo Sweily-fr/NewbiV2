@@ -41,7 +41,11 @@ export function cabinetActionFor(cabinet) {
  * l'abonnement : au client, que son cabinet s'en occupe ; au cabinet, où
  * agir.
  */
-export default function PaidByCabinetNotice({ cabinet }) {
+export default function PaidByCabinetNotice({
+  cabinet,
+  // Affiché au-dessus des offres (Paramètres > Abonnement)
+  aboveOffers = false,
+}) {
   if (!cabinet) return null;
   const unpaid = UNPAID.includes(cabinet.subscriptionStatus);
   const endsAt = longDate(cabinet.endsAt);
@@ -54,7 +58,7 @@ export default function PaidByCabinetNotice({ cabinet }) {
         <p>
           {cabinet.viewerIsManager
             ? `Vous ne payez plus l'abonnement de cet espace ${endsAt ? `après le ${endsAt}` : "après sa période en cours"}. Votre client choisit son offre d'ici là.`
-            : `${cabinet.managerName} ne prend plus en charge votre abonnement ${endsAt ? `après le ${endsAt}` : "après sa période en cours"}. Choisissez votre offre dès maintenant dans l'onglet Abonnement : le premier prélèvement aura lieu ${endsAt ? `le ${endsAt}` : "à cette date"}, sans interruption.`}
+            : `${cabinet.managerName} ne prend plus en charge votre abonnement ${endsAt ? `après le ${endsAt}` : "après sa période en cours"}. Choisissez votre offre dès maintenant ${aboveOffers ? "ci-dessous" : "dans l'onglet Abonnement"} : le premier prélèvement aura lieu ${endsAt ? `le ${endsAt}` : "à cette date"}, sans interruption.`}
         </p>
       </Callout>
     );

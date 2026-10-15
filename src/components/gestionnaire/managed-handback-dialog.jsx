@@ -70,7 +70,7 @@ export default function ManagedHandBackDialog({ client, open, onOpenChange }) {
   if (preview) {
     switch (preview.outcome) {
       case "scheduled":
-        description = `Votre abonnement pour ${name} s'arrête le ${longDate(preview.cabinet?.periodEnd)}, à la fin de la période déjà payée. ${name} est prévenu par e-mail et peut choisir son offre dès maintenant, premier prélèvement à cette date. Sans offre choisie, son espace passera en lecture seule.`;
+        description = `Votre abonnement pour ${name} s'arrête le ${longDate(preview.cabinet?.periodEnd)}, à la fin de la période déjà payée. Votre client est prévenu par e-mail et peut choisir son offre dès maintenant, premier prélèvement à cette date. Sans offre choisie, son espace passera en lecture seule.`;
         break;
       case "restored":
         description = `Votre prise en charge n'a pas encore commencé : ${name} retrouve son propre abonnement (${planName(preview.clientRestore?.plan)}), prochain prélèvement le ${longDate(preview.clientRestore?.periodEnd)}. Rien ne vous est prélevé.`;
@@ -82,8 +82,8 @@ export default function ManagedHandBackDialog({ client, open, onOpenChange }) {
         break;
       default:
         description = preview.cabinet
-          ? `Votre abonnement pour ${name} s'arrête tout de suite. ${name} est prévenu par e-mail et choisit son offre pour garder l'accès complet à son espace.`
-          : `${name} choisira et paiera lui-même son offre. Il est prévenu par e-mail.`;
+          ? `Votre abonnement pour ${name} s'arrête tout de suite. Votre client est prévenu par e-mail et choisit son offre pour garder l'accès complet à son espace.`
+          : `${name} choisira et paiera son offre. Votre client est prévenu par e-mail.`;
     }
   }
 

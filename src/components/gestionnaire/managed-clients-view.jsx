@@ -107,7 +107,7 @@ function AccessBadge({ client }) {
 const COLUMNS = [
   { key: "name", label: "Client", width: 260 },
   { key: "owner", label: "Dirigeant", width: 240 },
-  { key: "payer", label: "Qui paie", width: 110 },
+  { key: "payer", label: "Qui paie", width: 170 },
   { key: "access", label: "Abonnement", width: 150 },
   { key: "startedAt", label: "Depuis le", width: 110 },
   { key: "actions", label: "", width: 260 },

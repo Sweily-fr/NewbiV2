@@ -416,6 +416,27 @@ export const stripePlugin = stripe({
 
             userId = session.metadata?.userId || subscription.metadata?.userId;
 
+            // Le webhook natif de Better Auth (customer.subscription.created,
+            // souvent reçu avant) enregistre l'abonnement d'un client Stripe
+            // rattaché à un utilisateur au nom de cet utilisateur
+            // (referenceId = son id). Newbi n'a que des abonnements d'espace :
+            // ce document empêchait d'enregistrer l'abonnement sur l'espace
+            // (identifiant Stripe unique) ou captait ses mises à jour.
+            if (userId) {
+              const { mongoDb: mongoDbUser } = await import("./mongodb.js");
+              const removed = await mongoDbUser
+                .collection("subscription")
+                .deleteMany({
+                  stripeSubscriptionId: subscription.id,
+                  referenceId: String(userId),
+                });
+              if (removed.deletedCount > 0) {
+                console.log(
+                  `🧹 [STRIPE WEBHOOK] Abonnement ${subscription.id} enregistré au nom de l'utilisateur ${userId} : remplacé par celui de l'espace`,
+                );
+              }
+            }
+
             // Vérifier si c'est une nouvelle organisation
             const isNewOrg = session.metadata?.isNewOrganization === "true";
 
@@ -529,6 +550,16 @@ export const stripePlugin = stripe({
               .findOne({
                 stripeSubscriptionId: subscription.id,
               });
+
+            // Abonnement remplacé lors d'un changement de payeur (cabinet ou
+            // client) : un événement en retard ne doit pas reprendre la place
+            // de celui qui l'a remplacé
+            if (existingSubByStripeId?.replacedOrganizationId) {
+              console.log(
+                `ℹ️ [STRIPE WEBHOOK] Abonnement ${subscription.id} remplacé (changement de payeur) : événement ignoré`,
+              );
+              break;
+            }
 
             // Document de l'espace : celui de cet abonnement s'il existe (un
             // espace peut avoir gardé un ancien document), sinon le plus récent

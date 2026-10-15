@@ -35,13 +35,13 @@ export function payerChangeMessage(name, result = {}) {
         tone: "success",
         text:
           result.refund?.amount > 0
-            ? `Vous payez l'abonnement de ${client} dès aujourd'hui. ${client} est remboursé de ${euros(result.refund.amount)}.`
+            ? `Vous payez l'abonnement de ${client} dès aujourd'hui. Votre client est remboursé de ${euros(result.refund.amount)}.`
             : `Vous payez l'abonnement de ${client} dès aujourd'hui.`,
       };
     case "renewal":
       return {
         tone: "success",
-        text: `Vous paierez l'abonnement de ${client} à partir du ${date}, à la fin de la période qu'il a déjà payée.`,
+        text: `Vous paierez l'abonnement de ${client} à partir du ${date}, à la fin de la période déjà payée par votre client.`,
       };
     case "unpaid":
       return {
@@ -56,7 +56,7 @@ export function payerChangeMessage(name, result = {}) {
     case "scheduled":
       return {
         tone: "success",
-        text: `Vous ne paierez plus l'abonnement de ${client} après le ${date}. ${client} est prévenu par e-mail.`,
+        text: `Vous ne paierez plus l'abonnement de ${client} après le ${date}. Votre client est prévenu par e-mail.`,
       };
     case "restored":
       return {
@@ -71,7 +71,7 @@ export function payerChangeMessage(name, result = {}) {
     case "ended":
       return {
         tone: "success",
-        text: `Vous ne payez plus l'abonnement de ${client}. ${client} est prévenu par e-mail.`,
+        text: `Vous ne payez plus l'abonnement de ${client}. Votre client est prévenu par e-mail.`,
       };
     default:
       return {

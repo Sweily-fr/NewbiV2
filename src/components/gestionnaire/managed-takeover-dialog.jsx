@@ -218,8 +218,8 @@ export default function ManagedTakeoverDialog({
             >
               Vous payez dès aujourd&apos;hui.{" "}
               {current.refundNow > 0
-                ? `${name} est remboursé de ${euros(current.refundNow)} pour la période non utilisée.`
-                : `Rien à rembourser à ${name}.`}
+                ? `Votre client est remboursé de ${euros(current.refundNow)} pour la période non utilisée.`
+                : "Rien à rembourser à votre client."}
             </TimingOption>
             <TimingOption
               value="renewal"
@@ -228,8 +228,8 @@ export default function ManagedTakeoverDialog({
               title={`À son échéance, le ${longDate(current.periodEnd)}`}
             >
               {current.renewalChargesNow
-                ? `L'échéance est dans moins de 2 jours : sans carte déjà enregistrée, vous payez dès la validation et ${name} est remboursé du reste.`
-                : `${name} a déjà payé jusque-là : votre premier prélèvement aura lieu à cette date.`}
+                ? "L'échéance est dans moins de 2 jours : sans carte déjà enregistrée, vous payez dès la validation et votre client est remboursé du reste."
+                : "Votre client a déjà payé jusque-là : votre premier prélèvement aura lieu à cette date."}
             </TimingOption>
           </div>
         )}
@@ -248,8 +248,8 @@ export default function ManagedTakeoverDialog({
         {preview && !blocked && (
           <p className="text-xs text-muted-foreground">
             {resume
-              ? `${name} est prévenu par e-mail.`
-              : `L'abonnement est facturé à votre cabinet${discount > 0 ? `, avec votre remise de ${discount} %` : ""}. ${name} est prévenu par e-mail, il n'a rien à faire.`}{" "}
+              ? "Votre client est prévenu par e-mail."
+              : `L'abonnement est facturé à votre cabinet${discount > 0 ? `, avec votre remise de ${discount} %` : ""}. Votre client est prévenu par e-mail, il n'a rien à faire.`}{" "}
             {!resume &&
               (preview.hasSavedCard
                 ? "Votre carte enregistrée est utilisée."

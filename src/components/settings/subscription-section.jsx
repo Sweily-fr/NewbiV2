@@ -344,7 +344,7 @@ export function SubscriptionSection({
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
-      <PaidByCabinetNotice cabinet={paidByManager} />
+      <PaidByCabinetNotice cabinet={paidByManager} aboveOffers />
 
       {/* Permission warning */}
       {!canManageSubscription && paidByManager === null && (
