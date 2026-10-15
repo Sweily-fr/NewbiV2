@@ -38,10 +38,12 @@ export const metadata = {
     "Pilotez votre trésorerie en temps réel : synchronisation bancaire, prévisions de cash flow et alertes. Pour TPE, PME et indépendants.",
   keywords:
     "gestion trésorerie, logiciel trésorerie, cash flow, suivi trésorerie, prévision trésorerie, trésorerie PME, gestion financière, synchronisation bancaire, tableau de bord financier",
+  alternates: { canonical: "/produits/tresorerie" },
   openGraph: {
     title: "Logiciel de Gestion de Trésorerie | newbi",
     description:
       "Anticipez vos besoins de trésorerie et prenez les bonnes décisions financières. Synchronisation bancaire, prévisions et alertes en temps réel.",
+    url: "/produits/tresorerie",
     type: "website",
     locale: "fr_FR",
   },

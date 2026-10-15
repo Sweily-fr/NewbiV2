@@ -158,7 +158,7 @@ const Footer7 = ({
             >
               <div className="absolute inset-x-0 top-0 border-t border-black/5"></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 sm:gap-y-8 md:gap-y-10 pt-4 md:pt-6 pb-4 md:pb-6 lg:grid-cols-6 lg:gap-8 px-4 md:px-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 sm:gap-y-8 md:gap-y-10 pt-4 md:pt-6 pb-4 md:pb-6 lg:grid-cols-7 lg:gap-8 px-4 md:px-0">
               <div className="col-span-1 sm:col-span-2 md:col-span-2 flex flex-col items-center md:items-start mb-6 sm:mb-4 md:mb-0">
                 <div className="lg:pb-6 group/item relative">
                   <img
@@ -366,6 +366,96 @@ const Footer7 = ({
               </div>
               <div className="col-span-1">
                 <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
+                  Pour qui
+                </h3>
+                {/* Mêmes pages que le menu « Pour qui » du haut : ce menu ne
+                    s'affiche qu'au clic, Google ne voyait donc aucun lien vers
+                    elles (jamais explorées au 15/10/2026). */}
+                <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/auto-entrepreneur"
+                    >
+                      Auto-entrepreneur
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/sasu-eurl"
+                    >
+                      SASU et EURL
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/sas-sarl"
+                    >
+                      SAS et SARL
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/sci"
+                    >
+                      SCI
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/entreprise-individuelle"
+                    >
+                      Entreprise individuelle
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/association"
+                    >
+                      Association
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/btp-artisans"
+                    >
+                      BTP et artisans
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/professions-medicales"
+                    >
+                      Professions médicales
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/avocats"
+                    >
+                      Avocats
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/photographes-creatifs"
+                    >
+                      Photographes et créatifs
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div className="col-span-1">
+                <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
                   Ressources
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
@@ -395,6 +485,30 @@ const Footer7 = ({
                       href="/blog"
                     >
                       Blog
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/outils"
+                    >
+                      Outils gratuits
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/modeles"
+                    >
+                      Modèles à télécharger
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/qui-sommes-nous"
+                    >
+                      Qui sommes-nous
                     </a>
                   </li>
                   <li>
@@ -503,6 +617,14 @@ const Footer7 = ({
                       href="/blog/modele-facture-gratuit-word-excel-pdf"
                     >
                       Modèle de facture gratuit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/blog/modele-devis-gratuit-word-excel-pdf"
+                    >
+                      Modèle de devis gratuit
                     </a>
                   </li>
                   <li>

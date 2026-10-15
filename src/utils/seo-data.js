@@ -85,15 +85,15 @@ export const seoData = {
         availableLanguage: ["French", "fr"],
       },
       sameAs: [
-      // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
-      // Google la reconnaît (panneau de marque). Repris du footer, seule source
-      // de vérité des liens sociaux.
-      "https://www.instagram.com/newbi_fr",
-      "https://fr.linkedin.com/company/newbi-france",
-      "https://www.tiktok.com/@newbi.fr",
-      "https://www.youtube.com/@Newbi_fr",
-      "https://fr.trustpilot.com/review/newbi.fr",
-    ],
+        // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
+        // Google la reconnaît (panneau de marque). Repris du footer, seule source
+        // de vérité des liens sociaux.
+        "https://www.instagram.com/newbi_fr",
+        "https://fr.linkedin.com/company/newbi-france",
+        "https://www.tiktok.com/@newbi.fr",
+        "https://www.youtube.com/@Newbi_fr",
+        "https://fr.trustpilot.com/review/newbi.fr",
+      ],
       offers: {
         "@type": "Offer",
         description: "Essai gratuit de 30 jours",
@@ -291,7 +291,8 @@ export const seoData = {
   },
 
   kanban: {
-    title: "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
+    title:
+      "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
     description:
       "Organisez vos projets sur des tableaux kanban partagés, reliés à vos clients et à vos factures. Inclus dans Newbi, 30 jours gratuits.",
     keywords:
@@ -443,6 +444,7 @@ export const seoData = {
     keywords:
       "mentions légales, éditeur, hébergement, conditions utilisation, RGPD, données personnelles",
     robots: "index,nofollow",
+    canonical: `${baseUrl}/mentions-legales`,
     openGraph: {
       title: "Mentions Légales - Newbi",
       description:
@@ -473,6 +475,19 @@ export const seoData = {
       description:
         "Politique de confidentialité et protection des données personnelles de Newbi",
       url: `${baseUrl}/politique-confidentialite`,
+    },
+  },
+
+  // Page Désactivation et suppression du compte (exigée par Google Play)
+  supprimerCompte: {
+    title: "Désactivation et suppression de votre compte Newbi",
+    description:
+      "Comment désactiver ou supprimer définitivement votre compte Newbi : procédure, données supprimées et données conservées selon nos obligations légales.",
+    canonical: `${baseUrl}/supprimer-compte`,
+    openGraph: {
+      title: "Désactivation et suppression de votre compte Newbi",
+      type: "website",
+      locale: "fr_FR",
     },
   },
 

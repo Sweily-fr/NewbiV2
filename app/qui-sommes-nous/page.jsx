@@ -16,13 +16,19 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "Qui sommes-nous | newbi - Solution de gestion financière",
+  // `absolute` : le titre porte déjà la marque, sinon le layout racine
+  // ajoute un second « | Newbi ».
+  title: {
+    absolute: "Qui sommes-nous | newbi - Solution de gestion financière",
+  },
   description:
     "Découvrez l'équipe newbi et notre mission : simplifier la gestion financière des entrepreneurs et PME avec des outils intuitifs et performants.",
+  alternates: { canonical: "/qui-sommes-nous" },
   openGraph: {
     title: "Qui sommes-nous | newbi",
     description:
       "Découvrez l'équipe newbi et notre mission de simplifier la gestion financière.",
+    url: "/qui-sommes-nous",
     type: "website",
     locale: "fr_FR",
   },

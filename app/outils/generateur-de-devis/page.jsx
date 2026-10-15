@@ -54,13 +54,34 @@ const FAQ = [
 ];
 
 const MENTIONS = [
-  ["Identité de l'émetteur", "Dénomination ou nom et prénom, adresse, SIREN, forme juridique et capital pour une société, et l'assurance décennale pour un artisan du bâtiment."],
-  ["Identité du client", "Nom ou dénomination et adresse, ainsi que l'adresse du chantier ou du lieu d'exécution si elle diffère."],
-  ["Date et durée de validité", "Date d'établissement et durée pendant laquelle votre prix reste ferme. Sans elle, vous restez engagé sans limite de temps."],
-  ["Décompte détaillé", "Chaque prestation ou produit avec sa quantité, son unité et son prix unitaire hors taxes. Un devis vague se retourne contre celui qui l'a rédigé."],
-  ["Totaux", "Total hors taxes, TVA par taux, total toutes taxes comprises, et montant de l'acompte demandé le cas échéant."],
-  ["Modalités de règlement", "Échéancier, acompte à la commande, moyens de paiement acceptés et conditions d'annulation."],
-  ["Mention d'acceptation", "L'emplacement où le client date, signe et porte la mention « Bon pour accord », qui transforme l'offre en contrat."],
+  [
+    "Identité de l'émetteur",
+    "Dénomination ou nom et prénom, adresse, SIREN, forme juridique et capital pour une société, et l'assurance décennale pour un artisan du bâtiment.",
+  ],
+  [
+    "Identité du client",
+    "Nom ou dénomination et adresse, ainsi que l'adresse du chantier ou du lieu d'exécution si elle diffère.",
+  ],
+  [
+    "Date et durée de validité",
+    "Date d'établissement et durée pendant laquelle votre prix reste ferme. Sans elle, vous restez engagé sans limite de temps.",
+  ],
+  [
+    "Décompte détaillé",
+    "Chaque prestation ou produit avec sa quantité, son unité et son prix unitaire hors taxes. Un devis vague se retourne contre celui qui l'a rédigé.",
+  ],
+  [
+    "Totaux",
+    "Total hors taxes, TVA par taux, total toutes taxes comprises, et montant de l'acompte demandé le cas échéant.",
+  ],
+  [
+    "Modalités de règlement",
+    "Échéancier, acompte à la commande, moyens de paiement acceptés et conditions d'annulation.",
+  ],
+  [
+    "Mention d'acceptation",
+    "L'emplacement où le client date, signe et porte la mention « Bon pour accord », qui transforme l'offre en contrat.",
+  ],
 ];
 
 const jsonLd = [
@@ -96,7 +117,12 @@ const jsonLd = [
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Accueil", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Outils", item: `${SITE_URL}/outils` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Outils",
+        item: `${SITE_URL}/outils`,
+      },
       {
         "@type": "ListItem",
         position: 3,
@@ -147,10 +173,10 @@ export default function GenerateurDeDevisPage() {
               Ce que doit contenir un devis
             </h2>
             <p className="text-gray-600 mb-6">
-              Un devis imprécis se retourne toujours contre celui qui l'a
-              rédigé : ce qui n'y figure pas est réputé inclus dans le prix.
-              Voici ce que votre document doit contenir, et ce que le
-              générateur remplit à partir de votre saisie.
+              Un devis imprécis se retourne toujours contre celui qui l'a rédigé
+              : ce qui n'y figure pas est réputé inclus dans le prix. Voici ce
+              que votre document doit contenir, et ce que le générateur remplit
+              à partir de votre saisie.
             </p>
             <dl className="space-y-4">
               {MENTIONS.map(([titre, texte]) => (
@@ -170,13 +196,20 @@ export default function GenerateurDeDevisPage() {
                 className="text-[#5a50ff] underline underline-offset-4"
               >
                 rédiger un devis professionnel
-              </Link>{" "}
-              et nos conseils sur{" "}
+              </Link>
+              , nos conseils sur{" "}
               <Link
                 href="/blog/duree-validite-devis-regles"
                 className="text-[#5a50ff] underline underline-offset-4"
               >
                 la durée de validité d'un devis
+              </Link>{" "}
+              et notre{" "}
+              <Link
+                href="/blog/modele-devis-gratuit-word-excel-pdf"
+                className="text-[#5a50ff] underline underline-offset-4"
+              >
+                modèle de devis à télécharger
               </Link>
               .
             </p>
@@ -204,10 +237,26 @@ export default function GenerateurDeDevisPage() {
             </h2>
             <ul className="grid sm:grid-cols-2 gap-4">
               {[
-                ["/outils/generateur-de-facture", "Générateur de facture", "Le devis est accepté ? Créez la facture correspondante."],
-                ["/modeles/modele-devis.xlsx", "Modèle de devis Excel", "Le même document à remplir hors ligne, avec calcul automatique."],
-                ["/blog/erreurs-devis-perdre-clients", "Les erreurs qui font perdre des devis", "Huit maladresses courantes et comment les éviter."],
-                ["/blog/conseils-convertir-devis-facture", "Convertir un devis en facture", "Sept conseils pour signer plus de devis."],
+                [
+                  "/outils/generateur-de-facture",
+                  "Générateur de facture",
+                  "Le devis est accepté ? Créez la facture correspondante.",
+                ],
+                [
+                  "/modeles/modele-devis.xlsx",
+                  "Modèle de devis Excel",
+                  "Le même document à remplir hors ligne, avec calcul automatique.",
+                ],
+                [
+                  "/blog/erreurs-devis-perdre-clients",
+                  "Les erreurs qui font perdre des devis",
+                  "Huit maladresses courantes et comment les éviter.",
+                ],
+                [
+                  "/blog/conseils-convertir-devis-facture",
+                  "Convertir un devis en facture",
+                  "Sept conseils pour signer plus de devis.",
+                ],
               ].map(([href, titre, desc]) => (
                 <li key={href}>
                   <Link
