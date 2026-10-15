@@ -31,8 +31,4 @@ export { requireAdminServiceToken } from "./require-admin-service-token";
 export { withErrorHandler } from "./with-error-handler";
 export { toObjectId } from "./to-object-id";
 export { assertModified } from "./assert-modified";
-export {
-  isBackofficeAdmin,
-  requireBackofficeAdmin,
-} from "./require-backoffice-admin";
 export { ROLE_PERMISSIONS, VALID_ROLES } from "./role-permissions";
