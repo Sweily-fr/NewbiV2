@@ -32,6 +32,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { normalizeVatExemptionText } from "@/src/utils/vat-exemption";
 import { toast } from "@/src/components/ui/sonner";
 import {
   buildLinkedItems,
@@ -294,7 +295,9 @@ export default function ItemsSection({
 
     if (linked.length > 0) {
       linked.forEach((linkedItem) => appendItem(linkedItem));
-      toast.success(linkedItemsAddedMessage(linked.length, itemData.description));
+      toast.success(
+        linkedItemsAddedMessage(linked.length, itemData.description),
+      );
     }
   };
 
@@ -608,7 +611,9 @@ export default function ItemsSection({
                                       <ProductThumbnail
                                         src={currentItem.imageUrl}
                                         className={`size-9 rounded-lg ${
-                                          currentItem.showImage === false ? "opacity-40 grayscale" : ""
+                                          currentItem.showImage === false
+                                            ? "opacity-40 grayscale"
+                                            : ""
                                         }`}
                                       />
                                     )}
@@ -620,8 +625,12 @@ export default function ItemsSection({
                                         variant="secondary"
                                         className="font-normal whitespace-normal max-w-full"
                                       >
-                                        <Link2 size={12} className="!size-3 shrink-0 mr-1" />
-                                        Produit lié à « {linkedParentName(index)} »
+                                        <Link2
+                                          size={12}
+                                          className="!size-3 shrink-0 mr-1"
+                                        />
+                                        Produit lié à «{" "}
+                                        {linkedParentName(index)} »
                                       </Badge>
                                     )}
                                   </div>
@@ -673,9 +682,13 @@ export default function ItemsSection({
                                 showImage={currentItem.showImage}
                                 disabled={!canEdit}
                                 onShowImageChange={(checked) =>
-                                  setValue(`items.${index}.showImage`, checked, {
-                                    shouldDirty: true,
-                                  })
+                                  setValue(
+                                    `items.${index}.showImage`,
+                                    checked,
+                                    {
+                                      shouldDirty: true,
+                                    },
+                                  )
                                 }
                               />
                               {/* Description */}
@@ -1064,7 +1077,11 @@ export default function ItemsSection({
                                       render={({ field }) => (
                                         <div className="space-y-1">
                                           <Select
-                                            value={field.value || "none"}
+                                            value={
+                                              normalizeVatExemptionText(
+                                                field.value,
+                                              ) || "none"
+                                            }
                                             onValueChange={field.onChange}
                                             disabled={!canEdit}
                                           >
@@ -1123,8 +1140,8 @@ export default function ItemsSection({
                                               <SelectItem value="Article 283-2 du CGI">
                                                 Article 283-2 du CGI
                                               </SelectItem>
-                                              <SelectItem value="Article L. 223-3 du CIBS">
-                                                Article L. 223-3 du CIBS
+                                              <SelectItem value="Article 293 B du CGI">
+                                                Article 293 B du CGI
                                               </SelectItem>
                                               <SelectItem value="Article 298 sexies du CGI">
                                                 Article 298 sexies du CGI

@@ -192,7 +192,7 @@ export const contenu = {
         title:
           "La mention « TVA non applicable » est-elle ajoutée automatiquement ?",
         content:
-          "Oui. En franchise en base de TVA, la mention « TVA non applicable, art. L. 223-3 du CIBS » (ex-art. 293 B du CGI) figure en pied de page de chaque facture et vos montants s'affichent sans TVA. Le jour où vous devenez redevable, vous l'activez dans vos réglages : les factures suivantes l'incluent, les précédentes restent inchangées.",
+          "Oui. En franchise en base de TVA, la mention « TVA non applicable, art. 293 B du CGI » figure en pied de page de chaque facture et vos montants s'affichent sans TVA. Le jour où vous devenez redevable, vous l'activez dans vos réglages : les factures suivantes l'incluent, les précédentes restent inchangées.",
       },
       {
         title:

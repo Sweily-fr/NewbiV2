@@ -802,7 +802,7 @@ export function InformationsLegalesSection({
                       Êtes-vous en franchise en base de TVA ?
                     </h3>
                     <p className="text-xs text-gray-400">
-                      TVA non applicable, art. L. 223-3 du CIBS.
+                      TVA non applicable, art. 293 B du CGI.
                     </p>
                   </div>
                   <Switch
