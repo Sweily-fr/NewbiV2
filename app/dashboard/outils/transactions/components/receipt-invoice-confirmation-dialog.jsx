@@ -31,6 +31,7 @@ import {
 } from "@/app/dashboard/outils/factures-achat/components/vat-breakdown";
 import {
   applyVatLinesToForm,
+  completeVatAmounts,
   invoiceVatLines,
   parseVatLines,
   splitVatIntoLines,
@@ -136,6 +137,43 @@ const toMutationValues = (values) => {
     if (out[key] === null && ZERO_WHEN_EMPTY_KEYS.has(key)) out[key] = 0;
   }
   if (values.category) out.subcategory = values.category;
+  return out;
+};
+
+// Taux unique : montant gardé avec le TTC selon le champ saisi (le TTC
+// modifié garde la TVA), les autres étant recalculés
+const VAT_KEPT_BY_KEY = {
+  amountHT: "amountHT",
+  amountTVA: "amountTVA",
+  vatRate: "vatRate",
+  amountTTC: "amountTVA",
+};
+
+/**
+ * Champs recalculés après la saisie de `key`, au format affiché (centimes) :
+ * TVA ou TTC saisi, HT = TTC - TVA ; HT, TVA = TTC - HT ; taux, HT = TTC /
+ * (1 + taux) et TVA = TTC - HT ; le taux suit les montants (completeVatAmounts).
+ * Rien quand la saisie ne s'y prête pas : vide, illisible, TTC inconnu ou
+ * nul, TVA ou HT plus grand que le TTC.
+ */
+const recalculatedVat = (form, key) => {
+  const kept = VAT_KEPT_BY_KEY[key];
+  if (!kept) return {};
+  const known = {
+    amountHT: null,
+    amountTVA: null,
+    vatRate: null,
+    amountTTC: toNumber(form.amountTTC),
+    [kept]: toNumber(form[kept]),
+  };
+  if (known.amountTTC === null || known[kept] === null) return {};
+  const done = completeVatAmounts(known);
+  const out = {};
+  for (const k of ["amountHT", "amountTVA", "vatRate"]) {
+    if (k === kept) continue;
+    if (!Number.isFinite(done[k])) return {};
+    out[k] = MONEY_KEYS.has(k) ? done[k].toFixed(2) : String(done[k]);
+  }
   return out;
 };
 
@@ -282,6 +320,17 @@ export function ReceiptInvoiceConfirmationDialog({
   }
   const creationBlocked = Object.keys(fieldErrors).length > 0;
 
+  // Taux unique : la dernière valeur saisie commande les autres montants,
+  // recalculés dans leurs champs (ce qui est affiché est ce qui part), au
+  // lieu d'une « TVA 20,08 € à 0 % » dont HT + TVA ne fait pas le TTC. Avec
+  // le détail par taux, HT / TVA / taux restent le résumé des lignes.
+  const handleFieldChange = (key, value) =>
+    setDrafts((d) => {
+      const next = { ...d, [key]: value };
+      if (vatLines.length >= 2) return next;
+      return { ...next, ...recalculatedVat({ ...initial, ...next }, key) };
+    });
+
   // Plusieurs taux : HT / TVA / taux affichés sont le résumé des lignes. Le
   // TTC ne bouge pas, c'est la dépense bancaire.
   const handleVatLinesChange = (lines) => {
@@ -369,7 +418,7 @@ export function ReceiptInvoiceConfirmationDialog({
         <OcrValueInput
           kind={kind}
           value={ocrDraftValue({ ...initial, ...drafts }, key, kind)}
-          onChange={(v) => setDrafts((d) => ({ ...d, [key]: v }))}
+          onChange={(v) => handleFieldChange(key, v)}
           options={OPTIONS_BY_KEY[key] || []}
           // Le calendrier s'ouvre vers la gauche : aligné à droite sur un
           // champ en fin de ligne, il collerait au bord.

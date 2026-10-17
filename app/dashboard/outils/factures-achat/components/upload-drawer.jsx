@@ -42,6 +42,7 @@ import { VatRateSelect } from "@/src/components/vat-rate-select";
 import { AddVatRateButton, VatBreakdownEditor } from "./vat-breakdown";
 import {
   applyVatLinesToForm,
+  completeVatAmounts,
   splitVatIntoLines,
   summarizeVatLines,
   toVatLinesForm,
@@ -122,6 +123,19 @@ const PAYMENT_METHOD_OPTIONS = [
   { value: "CASH", label: "Espèces" },
   { value: "OTHER", label: "Autre" },
 ];
+
+// Première valeur lue par l'OCR parmi ses champs, null si aucune (non lue).
+// Les moteurs mettent 0 pour un montant absent : un montant n'est lu que
+// positif, un taux dès 0 (même lecture que l'API, ocrMetadataFromOcrData).
+const ocrNumber = (value) => {
+  const n = typeof value === "string" ? parseFloat(value) : value;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+};
+const firstOcrAmount = (...values) =>
+  values.map(ocrNumber).find((n) => n !== null && n > 0) ?? null;
+const firstOcrRate = (...values) =>
+  values.map(ocrNumber).find((n) => n !== null && n >= 0) ?? null;
+const toFormValue = (n) => (n === null ? "" : String(n));
 
 export function PurchaseInvoiceUploadDrawer({
   open,
@@ -258,6 +272,35 @@ export function PurchaseInvoiceUploadDrawer({
       td.tax_amount ?? totals.total_tax ?? null,
     );
     const vatTotals = summarizeVatLines(vatLines);
+    // Montants lus (null = non lu) complétés comme le justificatif côté API :
+    // TTC seul, sans TVA et 0 % (plus de « TVA 0 € à 20 % ») ; un taux
+    // fabriqué par l'OCR (arrondi, 0 par défaut) cède à celui des montants
+    const readHT = firstOcrAmount(
+      td.amount_ht,
+      totals.total_ht,
+      f.amount_ht,
+      f.total_ht,
+    );
+    const amounts = completeVatAmounts(
+      {
+        amountHT: readHT,
+        amountTVA: firstOcrAmount(
+          td.tax_amount,
+          totals.total_tax,
+          f.tax_amount,
+          f.total_vat,
+        ),
+        amountTTC: firstOcrAmount(
+          td.amount,
+          totals.total_ttc,
+          f.total_ttc,
+          f.amount_ttc,
+        ),
+        vatRate: firstOcrRate(td.tax_rate, f.tax_rate),
+      },
+      { fillMissingVat: true },
+    );
+    const vat = vatTotals || amounts;
 
     setEditableData({
       supplierName:
@@ -281,33 +324,11 @@ export function PurchaseInvoiceUploadDrawer({
       ),
       dueDate: toDateInput(td.due_date || f.due_date || ""),
       paymentDate: toDateInput(td.payment_date || f.payment_date || ""),
-      amountHT:
-        td.amount_ht?.toString() ||
-        totals.total_ht?.toString() ||
-        f.amount_ht?.toString() ||
-        f.total_ht?.toString() ||
-        "",
-      amountTVA:
-        td.tax_amount?.toString() ||
-        totals.total_tax?.toString() ||
-        f.tax_amount?.toString() ||
-        f.total_vat?.toString() ||
-        "",
-      vatRate: td.tax_rate?.toString() || f.tax_rate?.toString() || "20",
-      ...(vatTotals
-        ? {
-            amountHT: vatTotals.amountHT.toString(),
-            amountTVA: vatTotals.amountTVA.toString(),
-            vatRate: vatTotals.vatRate.toString(),
-          }
-        : {}),
+      amountHT: toFormValue(vat.amountHT),
+      amountTVA: toFormValue(vat.amountTVA),
+      vatRate: toFormValue(vat.vatRate),
       vatLines: toVatLinesForm(vatLines),
-      amountTTC:
-        td.amount?.toString() ||
-        totals.total_ttc?.toString() ||
-        f.total_ttc?.toString() ||
-        f.amount_ttc?.toString() ||
-        "",
+      amountTTC: toFormValue(amounts.amountTTC),
       category: VALID_CATEGORIES.has(td.category)
         ? td.category
         : VALID_CATEGORIES.has(f.category)
@@ -316,6 +337,9 @@ export function PurchaseInvoiceUploadDrawer({
       status: "TO_PROCESS",
       paymentMethod: "",
     });
+    // HT tiré du TTC lu (non lu ou incohérent) : un taux choisi ensuite part
+    // aussi de ce TTC au lieu de le changer
+    setAmountSource(!vatTotals && amounts.amountHT !== readHT ? "ttc" : "ht");
   }, []);
 
   const handleProcessOCR = async () => {
@@ -577,6 +601,15 @@ export function PurchaseInvoiceUploadDrawer({
   const handleEditChange = (field, value) => {
     if (field === "amountHT") setAmountSource("ht");
     if (field === "amountTTC") setAmountSource("ttc");
+    // Taux choisi sans HT (vide ou 0) mais avec un TTC : HT et TVA en sont
+    // tirés au lieu de remettre le TTC à 0, et il reste la base des taux
+    // choisis ensuite
+    const rateFromTTC =
+      field === "vatRate" &&
+      (amountSource === "ttc" ||
+        (!(parseFloat(editableData.amountHT) || 0) &&
+          !!(parseFloat(editableData.amountTTC) || 0)));
+    if (rateFromTTC) setAmountSource("ttc");
 
     setEditableData((prev) => {
       const next = { ...prev, [field]: value };
@@ -603,7 +636,7 @@ export function PurchaseInvoiceUploadDrawer({
         next.amountHT = ht.toFixed(2);
         next.amountTVA = (ttc - ht).toFixed(2);
       } else if (field === "vatRate") {
-        if (amountSource === "ttc") {
+        if (rateFromTTC) {
           const ttc = parseFloat(next.amountTTC) || 0;
           const ht = ttc / (1 + rate / 100);
           next.amountHT = ht.toFixed(2);

@@ -124,6 +124,7 @@ import {
 } from "./vat-breakdown";
 import {
   applyVatLinesToForm,
+  deriveVatRate,
   formatVatRate,
   invoiceVatLines,
   parseVatLines,
@@ -542,10 +543,12 @@ export function PurchaseInvoiceDetailDrawer({
       const multiRate = nextForm.vatLines.length >= 2;
       const ht = parseFloat(nextForm.amountHT);
       const ttc = parseFloat(nextForm.amountTTC);
+      // HT à 0 (non lu sur une ancienne facture) : la TVA n'est pas le TTC
       if (
         !multiRate &&
         !("amountTVA" in patch) &&
         !isNaN(ht) &&
+        ht > 0 &&
         !isNaN(ttc) &&
         ttc >= ht
       ) {
@@ -559,7 +562,11 @@ export function PurchaseInvoiceDetailDrawer({
         ht > 0 &&
         !isNaN(tva)
       ) {
-        nextForm.vatRate = (Math.round((tva / ht) * 10000) / 100).toString();
+        // Même règle que l'API : le taux légal qui redonne la TVA plutôt que
+        // le quotient brut (1,67 / 8,33 donne 20 %, pas 20,05 %)
+        nextForm.vatRate = String(
+          deriveVatRate({ amountHT: ht, amountTVA: tva, amountTTC: ttc }),
+        );
       }
       // Échéance avant l'émission une fois les dates relues appliquées :
       // vidée, comme à la saisie (handleChange)
@@ -738,6 +745,15 @@ export function PurchaseInvoiceDetailDrawer({
   const handleChange = (field, value) => {
     if (field === "amountHT") setAmountSource("ht");
     if (field === "amountTTC") setAmountSource("ttc");
+    // Taux choisi sans HT (vide ou 0) mais avec un TTC, comme une ancienne
+    // facture « TVA 0 € à 20 % » : HT et TVA en sont tirés au lieu de remettre
+    // le TTC à 0, et il reste la base des taux choisis ensuite
+    const rateFromTTC =
+      field === "vatRate" &&
+      (amountSource === "ttc" ||
+        (!(parseFloat(form.amountHT) || 0) &&
+          !!(parseFloat(form.amountTTC) || 0)));
+    if (rateFromTTC) setAmountSource("ttc");
 
     setForm((prev) => {
       const next = { ...prev, [field]: value };
@@ -780,7 +796,7 @@ export function PurchaseInvoiceDetailDrawer({
         next.amountHT = ht.toFixed(2);
         next.amountTVA = (ttc - ht).toFixed(2);
       } else if (field === "vatRate") {
-        if (amountSource === "ttc") {
+        if (rateFromTTC) {
           const ttc = parseFloat(next.amountTTC) || 0;
           const ht = ttc / (1 + rate / 100);
           next.amountHT = ht.toFixed(2);
