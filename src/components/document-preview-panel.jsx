@@ -28,6 +28,47 @@ export function isDocumentPreviewTarget(target) {
   return Boolean(target?.closest?.(`[${DOCUMENT_PREVIEW_ATTR}]`));
 }
 
+// Tiroirs et dialogues Radix (vaul, Sheet, Dialog, AlertDialog) : la fenêtre
+// modale qui héberge un volet, ou qui s'ouvre par-dessus.
+const MODAL_SELECTOR = '[role="dialog"],[role="alertdialog"]';
+const OPEN_MODAL_SELECTOR =
+  '[role="dialog"][data-state="open"],[role="alertdialog"][data-state="open"]';
+
+// Volets ouverts, du plus ancien au plus récent. Un seul écouteur Échap pour
+// tous : avec un écouteur par volet, un Échap fermait tous les volets
+// (stopPropagation n'arrête pas les autres écouteurs de window).
+const openPanels = new Set();
+
+// Une fenêtre modale ouverte après l'hôte du volet (portail plus loin dans
+// <body>, hors de l'hôte) le recouvre : confirmation, dialogue de relance...
+function isCoveredByModal(host) {
+  return Array.from(document.querySelectorAll(OPEN_MODAL_SELECTOR)).some(
+    (el) =>
+      !host.contains(el) &&
+      Boolean(
+        host.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+  );
+}
+
+function handleEscapeKey(e) {
+  if (e.key !== "Escape") return;
+  // Une liste ou un calendrier ouvert par-dessus (contenu Radix en
+  // portail) se ferme d'abord : le volet reste ouvert.
+  if (e.target?.closest?.("[data-radix-popper-content-wrapper]")) return;
+  // Seul le plus récent des volets non recouverts se ferme ; s'il n'y en a
+  // pas, Échap revient à la fenêtre du dessus (confirmation, dialogue). Un
+  // volet sans hôte (hors tiroir ou dialogue) se ferme toujours.
+  const panels = [...openPanels];
+  for (let i = panels.length - 1; i >= 0; i -= 1) {
+    const host = panels[i].anchorRef.current?.closest(MODAL_SELECTOR);
+    if (host && isCoveredByModal(host)) continue;
+    e.stopPropagation();
+    panels[i].onCloseRef.current?.();
+    return;
+  }
+}
+
 export function inferDocumentKind(doc) {
   if (!doc) return { isPdf: false, isImage: false };
   const mime = (doc.mimeType || doc.mimetype || "").toLowerCase();
@@ -123,20 +164,26 @@ export function DocumentPreviewPanel({
   const doc = items.length > 0 ? items[safeIndex] : null;
   const open = Boolean(doc && (doc.url || doc.pdfSrc));
 
-  // Échap ferme le volet avant le tiroir.
+  // Échap ferme le volet avant le tiroir (cf. handleEscapeKey).
+  const anchorRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (e) => {
-      if (e.key !== "Escape") return;
-      // Une liste ou un calendrier ouvert par-dessus (contenu Radix en
-      // portail) se ferme d'abord : le volet reste ouvert.
-      if (e.target?.closest?.("[data-radix-popper-content-wrapper]")) return;
-      e.stopPropagation();
-      onClose?.();
+    const panel = { anchorRef, onCloseRef };
+    openPanels.add(panel);
+    if (openPanels.size === 1) {
+      window.addEventListener("keydown", handleEscapeKey, true);
+    }
+    return () => {
+      openPanels.delete(panel);
+      if (openPanels.size === 0) {
+        window.removeEventListener("keydown", handleEscapeKey, true);
+      }
     };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [open, onClose]);
+  }, [open]);
 
   // Les tiroirs Radix/vaul (react-remove-scroll) annulent la molette hors du
   // tiroir : on fait défiler le volet à la main, en capture et non passif
@@ -167,7 +214,7 @@ export function DocumentPreviewPanel({
   const title = doc?.filename || "Document";
   const rightStyle = { "--dpp-sidebar": `${sidebarWidth}px` };
 
-  return createPortal(
+  const preview = createPortal(
     <AnimatePresence>
       {open && (
         <div
@@ -214,9 +261,15 @@ export function DocumentPreviewPanel({
               </span>
             </div>
 
+            {/* Au doigt aussi, le verrou des tiroirs et dialogues annule le
+                défilement hors de leur contenu : touchmove arrêté ici (React
+                écoute le portail sur <body>, avant leur écouteur sur
+                document). En butée, le geste n'entraîne pas la page
+                derrière (overscroll-contain). */}
             <div
               ref={scrollRef}
-              className="absolute inset-0 flex items-start justify-center overflow-y-auto py-16 px-2 md:px-24"
+              className="absolute inset-0 flex items-start justify-center overflow-y-auto overscroll-contain py-16 px-2 md:px-24"
+              onTouchMove={(e) => e.stopPropagation()}
             >
               <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto overflow-hidden shadow-2xl">
                 {isPdf && pdfSrc ? (
@@ -282,5 +335,14 @@ export function DocumentPreviewPanel({
       )}
     </AnimatePresence>,
     document.body,
+  );
+
+  // Témoin rendu sur place, hors portail : situe le tiroir ou le dialogue
+  // qui héberge le volet (cf. handleEscapeKey).
+  return (
+    <>
+      <span ref={anchorRef} hidden />
+      {preview}
+    </>
   );
 }

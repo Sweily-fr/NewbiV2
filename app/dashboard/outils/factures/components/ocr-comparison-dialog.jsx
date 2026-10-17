@@ -62,7 +62,7 @@ export function OcrComparisonDialog({
   onApply,
   applying = false,
   // Aperçu du fichier de la facture à gauche (proxy same-origin) : ouvert
-  // d'office pour vérifier les valeurs relues sur la pièce.
+  // d'office pour vérifier les valeurs relues sur la pièce (écran large).
   invoiceId = null,
   file = null,
 }) {
@@ -78,9 +78,14 @@ export function OcrComparisonDialog({
         : null,
     [invoiceId, file],
   );
+  // Sur écran étroit, l'aperçu recouvrirait le dialogue : il ne s'ouvre qu'à
+  // la main (bouton œil), comme dans le tiroir des factures d'achat.
   const [previewOpen, setPreviewOpen] = useState(false);
   useEffect(() => {
-    setPreviewOpen(open && !!previewItem);
+    const wide =
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches;
+    setPreviewOpen(open && wide && !!previewItem);
   }, [open, previewItem]);
   // Largeur du dialogue (md:max-w-2xl = 42rem) + marge droite 2rem
   const DIALOG_RIGHT_OFFSET = 42 * 16 + 32;
@@ -214,28 +219,36 @@ export function OcrComparisonDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveProposal, current, currency]);
 
-  // Lignes cochées : par défaut celles qui changent et que l'OCR a lues.
-  // Pendant la saisie, une valeur corrigée coche sa ligne sans recalculer
-  // les autres.
-  const [selected, setSelected] = useState({});
+  // Lignes cochées : par défaut celles qui changent et que l'OCR a lues. Un
+  // choix manuel (case cliquée, valeur saisie qui coche sa ligne) prime sur
+  // ce défaut jusqu'à la prochaine analyse, « Terminer la saisie » compris.
+  const [picked, setPicked] = useState({});
   useEffect(() => {
-    if (!open || editing) return;
+    setPicked({});
+  }, [open, proposal]);
+  const selected = useMemo(() => {
     const next = {};
-    for (const row of rows) next[row.key] = !row.same && !row.missing;
-    setSelected(next);
-  }, [open, rows, editing]);
+    for (const row of rows)
+      next[row.key] =
+        row.key in picked ? picked[row.key] : !row.same && !row.missing;
+    return next;
+  }, [rows, picked]);
   const setDraft = (key, value) => {
     setDrafts((prev) => ({ ...prev, [key]: value }));
-    setSelected((prev) => ({ ...prev, [key]: true }));
+    setPicked((prev) => ({ ...prev, [key]: true }));
   };
 
-  const selectedCount = Object.values(selected).filter(Boolean).length;
+  // Ligne enregistrée : cochée, lue et différente (une valeur vidée ou
+  // ramenée à l'actuelle en mode « Modifier » ne part pas). Cases, compteur
+  // et patch suivent cette même règle.
+  const willSave = (row) => !row.missing && !row.same && !!selected[row.key];
+  const selectedCount = rows.filter((row) => willSave(row)).length;
   const differences = rows.filter((r) => !r.same && !r.missing).length;
 
   const handleApply = () => {
     let patch = {};
     for (const row of rows) {
-      if (selected[row.key] && !row.missing) patch = { ...patch, ...row.patch };
+      if (willSave(row)) patch = { ...patch, ...row.patch };
     }
     onApply(patch);
   };
@@ -315,10 +328,10 @@ export function OcrComparisonDialog({
                   >
                     <td className="py-2 align-middle">
                       <Checkbox
-                        checked={!!selected[row.key]}
+                        checked={willSave(row)}
                         disabled={row.missing || row.same}
                         onCheckedChange={(checked) =>
-                          setSelected((prev) => ({
+                          setPicked((prev) => ({
                             ...prev,
                             [row.key]: !!checked,
                           }))

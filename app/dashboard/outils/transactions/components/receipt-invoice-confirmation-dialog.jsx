@@ -257,6 +257,31 @@ export function ReceiptInvoiceConfirmationDialog({
   const incomplete =
     !analyzing && ["partial", "none"].includes(proposal.extractionQuality);
 
+  // Saisies qui partiraient autrement qu'affichées : la création attend
+  // qu'elles soient corrigées.
+  //  - nom du fournisseur vidé : l'API enregistrerait « Fournisseur inconnu »,
+  //    ou le nom de la fiche retrouvée par le SIRET lu (requis, comme dans le
+  //    formulaire d'une facture d'achat) ;
+  //  - nombre illisible pour parseOcrNumber : il partirait vide (HT / TVA à
+  //    0, taux à 20 %, TTC refusé) alors qu'une valeur est affichée.
+  const fieldErrors = {};
+  if (!analyzing) {
+    if (!String(values.supplierName ?? "").trim()) {
+      fieldErrors.supplierName =
+        "Nom du fournisseur requis pour créer la facture.";
+    }
+    for (const { key, label } of FIELD_GROUPS.flatMap((g) => g.fields)) {
+      const raw = drafts[key];
+      if (!NUMBER_KEYS.has(key) || typeof raw !== "string") continue;
+      if (raw.trim() && toNumber(raw) === null) {
+        const example = key === "vatRate" ? "5,5" : "1234,56";
+        fieldErrors[key] =
+          `${label} : saisissez un nombre, par exemple ${example}.`;
+      }
+    }
+  }
+  const creationBlocked = Object.keys(fieldErrors).length > 0;
+
   // Plusieurs taux : HT / TVA / taux affichés sont le résumé des lignes. Le
   // TTC ne bouge pas, c'est la dépense bancaire.
   const handleVatLinesChange = (lines) => {
@@ -332,7 +357,12 @@ export function ReceiptInvoiceConfirmationDialog({
         // référentiel Transactions) plutôt qu'une liste déroulante
         <CategorySearchSelect
           value={ocrDraftValue({ ...initial, ...drafts }, key, kind)}
-          onValueChange={(v) => setDrafts((d) => ({ ...d, [key]: v }))}
+          // Recliquer la catégorie choisie la viderait à l'écran, alors que
+          // la facture partirait avec celle de l'OCR (catégorie vide non
+          // envoyée) : on la garde, comme OcrValueInput.
+          onValueChange={(v) => {
+            if (v) setDrafts((d) => ({ ...d, [key]: v }));
+          }}
           triggerClassName={`${FIELD_WIDTH} h-8 text-sm`}
         />
       ) : (
@@ -509,6 +539,16 @@ export function ReceiptInvoiceConfirmationDialog({
                   {group.title === "Montants"
                     ? renderAmounts(group.fields)
                     : group.fields.map(renderField)}
+                  {group.fields.map(({ key }) =>
+                    fieldErrors[key] ? (
+                      <p
+                        key={`${key}-erreur`}
+                        className="text-xs text-destructive"
+                      >
+                        {fieldErrors[key]}
+                      </p>
+                    ) : null,
+                  )}
                 </section>
               ))}
             </div>
@@ -528,7 +568,7 @@ export function ReceiptInvoiceConfirmationDialog({
               </Button>
               <Button
                 type="button"
-                disabled={Boolean(pending) || analyzing}
+                disabled={Boolean(pending) || analyzing || creationBlocked}
                 onClick={() => submit("CREATE")}
               >
                 {pending === "CREATE" ? (

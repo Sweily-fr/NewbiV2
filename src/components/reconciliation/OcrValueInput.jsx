@@ -99,7 +99,7 @@ export function OcrValueInput({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={EMPTY_OPTION}>—</SelectItem>
+          <SelectItem value={EMPTY_OPTION}>-</SelectItem>
           {options.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}
@@ -159,11 +159,27 @@ export function OcrValueInput({
 
 /**
  * Nombre saisi en texte : virgule décimale, espaces des milliers (insécables
- * compris, « 1 234,56 ») et symbole € acceptés. null si vide ou illisible.
+ * compris, « 1 234,56 »), points ou virgules des milliers (« 1.234,56 »,
+ * « 1,234.56 ») et symboles € et % acceptés. null si vide ou illisible (une
+ * saisie sans chiffre, faite d'espaces ou de « € », n'est pas 0).
  */
 export function parseOcrNumber(raw) {
   if (raw === "" || raw === null || raw === undefined) return null;
-  const n = Number(String(raw).replace(/[\s€]/g, "").replace(",", "."));
+  let s = String(raw).replace(/[\s€%]/g, "");
+  if (!/\d/.test(s)) return null;
+  // Le dernier séparateur est décimal, les autres séparent les milliers ;
+  // un même séparateur répété seul (« 1.234.567 ») ne sépare que des milliers
+  const last = Math.max(s.lastIndexOf(","), s.lastIndexOf("."));
+  if (last >= 0) {
+    const sep = s[last];
+    const other = sep === "," ? "." : ",";
+    if (s.indexOf(sep) !== last && !s.includes(other)) {
+      s = s.split(sep).join("");
+    } else {
+      s = `${s.slice(0, last).replace(/[.,]/g, "")}.${s.slice(last + 1)}`;
+    }
+  }
+  const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
 
