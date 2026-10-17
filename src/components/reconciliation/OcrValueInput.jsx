@@ -11,6 +11,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import CategorySearchSelect from "@/src/components/category-search-select";
+
+// Radix refuse une option de valeur "" : la valeur vide passe par ce code.
+const EMPTY_OPTION = "__none__";
 
 // Sélecteur de date identique aux autres calendriers de la plateforme
 // (Popover + Calendar, format dd/MM/yyyy). value = "YYYY-MM-DD" ou "".
@@ -57,7 +68,7 @@ function DateField({ value, onChange, className = "", align = "start" }) {
 
 /**
  * Champ de saisie d'une valeur proposée par l'OCR dans les dialogues de
- * comparaison (mode « Modifier ») : texte, date, nombre ou liste.
+ * comparaison (mode « Modifier ») : texte, date, nombre, liste ou catégorie.
  * `value` est toujours une chaîne (les dialogues convertissent au patch).
  */
 export function OcrValueInput({
@@ -77,19 +88,35 @@ export function OcrValueInput({
   const base = `h-8 text-sm ${className}`;
   const width = (fallback) => widthClassName || fallback;
   if (kind === "select") {
+    // Liste de la plateforme (même rendu que les tiroirs) plutôt que la
+    // liste déroulante du navigateur
     return (
-      <select
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${base} ${width("w-full")} rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-2 focus:ring-ring`}
+      <Select
+        value={value || EMPTY_OPTION}
+        onValueChange={(v) => onChange(v === EMPTY_OPTION ? "" : v)}
       >
-        <option value="">—</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className={`${base} ${width("w-full")}`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={EMPTY_OPTION}>—</SelectItem>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+  if (kind === "category") {
+    // Même sélecteur de catégorie que les tiroirs (recherche, groupes)
+    return (
+      <CategorySearchSelect
+        value={value ?? ""}
+        onValueChange={onChange}
+        triggerClassName={`${base} ${width("w-full")}`}
+      />
     );
   }
   if (kind === "number") {
