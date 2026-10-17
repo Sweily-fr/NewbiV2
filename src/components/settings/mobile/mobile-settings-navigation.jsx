@@ -14,6 +14,7 @@ import {
   User,
   Wallet,
   ChevronRight,
+  Lock,
 } from "lucide-react";
 
 const iconMap = {
@@ -62,6 +63,12 @@ export default function MobileSettingsNavigation({
                 />
               )}
               <span className="text-sm font-normal">{tab.label}</span>
+              {tab.locked && (
+                <Lock
+                  className="w-3.5 h-3.5 text-[#3D3E42]/40"
+                  aria-label="Accès à demander"
+                />
+              )}
               {tab.disabled && (
                 <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
                   à venir

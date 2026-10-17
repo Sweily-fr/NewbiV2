@@ -18,6 +18,7 @@ import PersonnesSection from "../personnes-section";
 import UserInfoSection from "../user-info-section";
 import { NotificationsSection } from "../notifications-section";
 import ManagerSpendingSection from "../manager-spending-section";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
 export function MobileSettingsModal({
   open,
@@ -62,13 +63,16 @@ export function MobileSettingsModal({
     { id: "security", label: "Sécurité", icon: "Shield" },
     { id: "subscription", label: "Abonnement", icon: "Crown" },
     { id: "depenses-clients", label: "Dépenses clients", icon: "Wallet" },
-  ].filter(
-    // Abonnement et facturation Newbi : masqués sans « Voir l'abonnement » ;
-    // dépenses clients : comptes gestionnaires seulement
-    (tab) =>
-      (showBilling || !["facturation", "subscription"].includes(tab.id)) &&
-      (isAccountManager || tab.id !== "depenses-clients"),
-  );
+  ]
+    // Dépenses clients : comptes gestionnaires seulement
+    .filter((tab) => isAccountManager || tab.id !== "depenses-clients")
+    // Abonnement et facturation Newbi sans « Voir l'abonnement » : cadenas,
+    // le contenu propose de demander l'accès
+    .map((tab) =>
+      !showBilling && ["facturation", "subscription"].includes(tab.id)
+        ? { ...tab, locked: true }
+        : tab,
+    );
 
   const currentTab = tabs.find((tab) => tab.id === activeTab);
 
@@ -85,6 +89,16 @@ export function MobileSettingsModal({
   };
 
   const renderContent = () => {
+    if (!showBilling && ["facturation", "subscription"].includes(activeTab)) {
+      return (
+        <AccessDeniedPage
+          moduleKey="billing"
+          action="view"
+          canView={false}
+          embedded
+        />
+      );
+    }
     switch (activeTab) {
       case "user-info":
         return (

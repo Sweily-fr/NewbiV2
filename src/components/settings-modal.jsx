@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   DollarSign,
   Wallet,
+  Lock,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -71,6 +72,7 @@ import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import { UPDATE_EINVOICING_VAT_REGIME } from "@/src/graphql/eInvoicingQueries";
 import { deriveVatRegime } from "@/src/utils/vatRegime";
 import { normalizeLegalForm } from "@/src/lib/company-registry";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
 export function SettingsModal({
   open,
@@ -520,21 +522,26 @@ export function SettingsModal({
   };
 
   const renderContent = () => {
-    // Onglet ouvert directement (palette, menus, bannières) sans le droit
-    // de le voir : rien n'est affiché
-    const deniedTab =
-      (["facturation", "subscription"].includes(activeTab) && !showBilling) ||
-      ([
-        "comptes-bancaires",
-        "facturation-electronique",
-        "applications",
-      ].includes(activeTab) &&
-        !showIntegrations);
-    if (deniedTab) {
+    // Onglet sans le droit de le voir (cadenas dans la liste) : on propose
+    // de demander l'accès au super admin
+    const deniedModule =
+      ["facturation", "subscription"].includes(activeTab) && !showBilling
+        ? "billing"
+        : [
+              "comptes-bancaires",
+              "facturation-electronique",
+              "applications",
+            ].includes(activeTab) && !showIntegrations
+          ? "integrations"
+          : null;
+    if (deniedModule) {
       return (
-        <p className="text-sm text-muted-foreground">
-          Votre rôle ne permet pas d&apos;accéder à cette section.
-        </p>
+        <AccessDeniedPage
+          moduleKey={deniedModule}
+          action="view"
+          canView={false}
+          embedded
+        />
       );
     }
     // Les composants vont maintenant utiliser useFormContext()
@@ -664,27 +671,46 @@ export function SettingsModal({
         { id: "roles", label: "Rôles", icon: KeyRound },
       ],
     },
-    showIntegrations && {
+    // Sans « Voir » : onglets affichés avec un cadenas, leur contenu propose
+    // de demander l'accès
+    {
       title: "Intégrations",
       items: [
-        { id: "applications", label: "Applications", icon: LayoutGrid },
+        {
+          id: "applications",
+          label: "Applications",
+          icon: LayoutGrid,
+          locked: !showIntegrations,
+        },
         {
           id: "comptes-bancaires",
           label: "Comptes bancaires",
           icon: Landmark,
+          locked: !showIntegrations,
         },
         {
           id: "facturation-electronique",
           label: "Facturation électronique",
           icon: Zap,
+          locked: !showIntegrations,
         },
       ],
     },
-    showBilling && {
+    {
       title: "Facturation",
       items: [
-        { id: "subscription", label: "Abonnement", icon: Crown },
-        { id: "facturation", label: "Facturation", icon: DollarSign },
+        {
+          id: "subscription",
+          label: "Abonnement",
+          icon: Crown,
+          locked: !showBilling,
+        },
+        {
+          id: "facturation",
+          label: "Facturation",
+          icon: DollarSign,
+          locked: !showBilling,
+        },
       ],
     },
     isAccountManager && {
@@ -823,6 +849,12 @@ export function SettingsModal({
                                 <Icon className="h-4 w-4" />
                                 <span className="flex font-normal items-center gap-2">
                                   {item.label}
+                                  {item.locked && (
+                                    <Lock
+                                      className="size-3 text-muted-foreground/70"
+                                      aria-label="Accès à demander"
+                                    />
+                                  )}
                                   {item.isNew && (
                                     <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 rounded-md">
                                       nouveau

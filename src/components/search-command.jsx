@@ -53,6 +53,7 @@ import {
   Truck,
   RotateCcw,
   History,
+  Lock,
 } from "lucide-react";
 import { GET_CLIENTS } from "@/src/graphql/clientQueries";
 import {
@@ -268,6 +269,17 @@ const Kbd = ({ children, className = "" }) => (
 
 // --- Main component ---
 
+// Page sans « Voir » pour le rôle (navigation) : cadenas
+function LockHint({ locked }) {
+  if (!locked) return null;
+  return (
+    <Lock
+      className="ml-auto size-3 shrink-0 text-muted-foreground/70"
+      aria-label="Accès à demander"
+    />
+  );
+}
+
 export function SearchCommand() {
   const [open, setOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
@@ -303,6 +315,18 @@ export function SearchCommand() {
       can(moduleKey, "read") &&
       !isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
+  };
+  // Navigation vers les pages : comme dans le menu, toutes listées sauf
+  // celles masquées au Comptable par défaut ; sans « Voir », un cadenas et
+  // la page refusée propose de demander l'accès
+  const canList = (url) => {
+    const moduleKey = moduleForPath(url);
+    if (!permissionsReady || !moduleKey) return true;
+    return !isHiddenForRole(permissionsRole, permissionActions, moduleKey);
+  };
+  const isLocked = (url) => {
+    const moduleKey = moduleForPath(url);
+    return permissionsReady && Boolean(moduleKey) && !can(moduleKey, "read");
   };
   const canSearchClients = canReadModule("clients");
   const canSearchInvoices = canReadModule("invoices");
@@ -957,7 +981,7 @@ export function SearchCommand() {
                     </IconWrapper>
                     <span>Tableau de bord</span>
                   </CommandItem>
-                  {canSee("/dashboard/clients") && (
+                  {canList("/dashboard/clients") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/clients"))
@@ -967,9 +991,10 @@ export function SearchCommand() {
                         <Users className="size-3.5" />
                       </IconWrapper>
                       <span>Clients</span>
+                      <LockHint locked={isLocked("/dashboard/clients")} />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/catalogues") && (
+                  {canList("/dashboard/catalogues") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/catalogues"))
@@ -979,6 +1004,7 @@ export function SearchCommand() {
                         <Package className="size-3.5" />
                       </IconWrapper>
                       <span>Catalogues</span>
+                      <LockHint locked={isLocked("/dashboard/catalogues")} />
                     </CommandItem>
                   )}
                   {canReadModule("team") && (
@@ -991,7 +1017,7 @@ export function SearchCommand() {
                       <span>Collaborateurs</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/calendar") && (
+                  {canList("/dashboard/calendar") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/calendar"))
@@ -1001,9 +1027,10 @@ export function SearchCommand() {
                         <Calendar className="size-3.5" />
                       </IconWrapper>
                       <span>Calendrier</span>
+                      <LockHint locked={isLocked("/dashboard/calendar")} />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/analytiques") && (
+                  {canList("/dashboard/outils/analytiques") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1015,6 +1042,9 @@ export function SearchCommand() {
                         <BarChart3 className="size-3.5" />
                       </IconWrapper>
                       <span>Analytics</span>
+                      <LockHint
+                        locked={isLocked("/dashboard/outils/analytiques")}
+                      />
                     </CommandItem>
                   )}
                   {canReadModule("integrations") && (
@@ -1040,7 +1070,7 @@ export function SearchCommand() {
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Outils">
-                  {canSee("/dashboard/outils/factures") && (
+                  {canList("/dashboard/outils/factures") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1052,9 +1082,12 @@ export function SearchCommand() {
                         <Receipt className="size-3.5" />
                       </IconWrapper>
                       <span>Factures</span>
+                      <LockHint
+                        locked={isLocked("/dashboard/outils/factures")}
+                      />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/devis") && (
+                  {canList("/dashboard/outils/devis") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/outils/devis"))
@@ -1064,9 +1097,10 @@ export function SearchCommand() {
                         <FileText className="size-3.5" />
                       </IconWrapper>
                       <span>Devis</span>
+                      <LockHint locked={isLocked("/dashboard/outils/devis")} />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/bons-commande") && (
+                  {canList("/dashboard/outils/bons-commande") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1078,10 +1112,13 @@ export function SearchCommand() {
                         <ShoppingCart className="size-3.5" />
                       </IconWrapper>
                       <span>Bons de commande</span>
+                      <LockHint
+                        locked={isLocked("/dashboard/outils/bons-commande")}
+                      />
                     </CommandItem>
                   )}
                   {deliveryNotesAllowed &&
-                    canSee("/dashboard/outils/bons-de-livraison") && (
+                    canList("/dashboard/outils/bons-de-livraison") && (
                       <CommandItem
                         onSelect={() =>
                           runCommand(() =>
@@ -1093,9 +1130,14 @@ export function SearchCommand() {
                           <Truck className="size-3.5" />
                         </IconWrapper>
                         <span>Bons de livraison</span>
+                        <LockHint
+                          locked={isLocked(
+                            "/dashboard/outils/bons-de-livraison",
+                          )}
+                        />
                       </CommandItem>
                     )}
-                  {canSee("/dashboard/outils/transactions") && (
+                  {canList("/dashboard/outils/transactions") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1107,9 +1149,12 @@ export function SearchCommand() {
                         <CreditCard className="size-3.5" />
                       </IconWrapper>
                       <span>Transactions</span>
+                      <LockHint
+                        locked={isLocked("/dashboard/outils/transactions")}
+                      />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/kanban") && (
+                  {canList("/dashboard/outils/kanban") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1121,9 +1166,10 @@ export function SearchCommand() {
                         <Kanban className="size-3.5" />
                       </IconWrapper>
                       <span>Kanban</span>
+                      <LockHint locked={isLocked("/dashboard/outils/kanban")} />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/signatures-mail") && (
+                  {canList("/dashboard/outils/signatures-mail") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1135,9 +1181,12 @@ export function SearchCommand() {
                         <Mail className="size-3.5" />
                       </IconWrapper>
                       <span>Signatures de mail</span>
+                      <LockHint
+                        locked={isLocked("/dashboard/outils/signatures-mail")}
+                      />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/documents-partages") && (
+                  {canList("/dashboard/outils/documents-partages") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1149,9 +1198,14 @@ export function SearchCommand() {
                         <Share2 className="size-3.5" />
                       </IconWrapper>
                       <span>Documents partagés</span>
+                      <LockHint
+                        locked={isLocked(
+                          "/dashboard/outils/documents-partages",
+                        )}
+                      />
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/transferts-fichiers") && (
+                  {canList("/dashboard/outils/transferts-fichiers") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1163,6 +1217,11 @@ export function SearchCommand() {
                         <Upload className="size-3.5" />
                       </IconWrapper>
                       <span>Transferts de fichiers</span>
+                      <LockHint
+                        locked={isLocked(
+                          "/dashboard/outils/transferts-fichiers",
+                        )}
+                      />
                     </CommandItem>
                   )}
                 </CommandGroup>
