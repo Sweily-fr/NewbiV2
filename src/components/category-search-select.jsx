@@ -48,10 +48,10 @@ const normalize = (text) =>
     .trim();
 
 /**
- * Filtre cmdk : correspondance par sous-chaîne contiguë uniquement (le filtre
- * fuzzy par défaut faisait remonter des dizaines de catégories sans rapport,
- * ex. « tel » → Hôtel, Électricité, Transport...). Un libellé qui commence par
- * la saisie passe devant un libellé qui la contient seulement.
+ * Score de recherche : correspondance par sous-chaîne contiguë uniquement (le
+ * filtre fuzzy par défaut de cmdk faisait remonter des dizaines de catégories
+ * sans rapport, ex. « tel » → Hôtel, Électricité, Transport...). Un libellé qui
+ * commence par la saisie passe devant un libellé qui la contient seulement.
  */
 export const filterCategory = (value, search, keywords = []) => {
   const query = normalize(search);
@@ -60,6 +60,35 @@ export const filterCategory = (value, search, keywords = []) => {
   if (candidates.some((c) => c.startsWith(query))) return 1;
   if (candidates.some((c) => c.includes(query))) return 0.5;
   return 0;
+};
+
+/**
+ * Groupes affichés pour une saisie : catégories triées par score, groupes
+ * triés par leur meilleur score (à score égal, l'ordre du référentiel). Fait
+ * ici et non par cmdk, qui trie dans chaque groupe mais jamais les groupes
+ * entre eux (il les cherche par leur id interne dans data-value, qui porte le
+ * titre) : le premier élément, surligné et choisi par Entrée, restait celui du
+ * premier groupe (« tel » → Hôtel au lieu de Téléphone).
+ */
+export const searchCategoryGroups = (groups, search) => {
+  if (!normalize(search)) return groups;
+  return groups
+    .map((group) => {
+      const scored = group.options
+        .map((option) => ({
+          option,
+          score: filterCategory(option.value, search, [option.label]),
+        }))
+        .filter((entry) => entry.score > 0)
+        .sort((a, b) => b.score - a.score);
+      return {
+        ...group,
+        options: scored.map((entry) => entry.option),
+        score: scored[0]?.score ?? 0,
+      };
+    })
+    .filter((group) => group.score > 0)
+    .sort((a, b) => b.score - a.score);
 };
 
 export default function CategorySearchSelect({
@@ -75,6 +104,7 @@ export default function CategorySearchSelect({
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const groups = useMemo(() => {
     const base =
@@ -95,6 +125,10 @@ export default function CategorySearchSelect({
       },
     ];
   }, [type, includeBroadCategories]);
+  const visibleGroups = useMemo(
+    () => searchCategoryGroups(groups, search),
+    [groups, search],
+  );
   const otherGroups =
     type === "INCOME" ? EXPENSE_CATEGORY_GROUPS : INCOME_CATEGORY_GROUPS;
 
@@ -116,7 +150,15 @@ export default function CategorySearchSelect({
           {label}
         </Label>
       )}
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          // Recherche vide à chaque ouverture (pas à la fermeture : la liste se
+          // redéplierait pendant l'animation de sortie)
+          if (next) setSearch("");
+          setOpen(next);
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             id={id}
@@ -147,8 +189,14 @@ export default function CategorySearchSelect({
           sideOffset={4}
           style={{ maxHeight: "var(--radix-popper-available-height, 300px)" }}
         >
-          <Command filter={filterCategory}>
-            <CommandInput placeholder="Rechercher une catégorie..." />
+          {/* Filtre et tri par searchCategoryGroups : cmdk garde l'ordre rendu
+              et surligne le premier élément à chaque saisie */}
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Rechercher une catégorie..."
+              value={search}
+              onValueChange={setSearch}
+            />
             {/* Molette et doigt : la liste défile même sous le verrou de
                 défilement d'un Dialog ou d'un tiroir parent */}
             <CommandList
@@ -157,13 +205,12 @@ export default function CategorySearchSelect({
               onTouchMove={(e) => e.stopPropagation()}
             >
               <CommandEmpty>Aucune catégorie trouvée.</CommandEmpty>
-              {groups.map((group) => (
+              {visibleGroups.map((group) => (
                 <CommandGroup key={group.heading} heading={group.heading}>
                   {group.options.map((category) => (
                     <CommandItem
                       key={category.value}
                       value={category.value}
-                      keywords={[category.label]}
                       onSelect={(currentValue) => {
                         onValueChange(
                           currentValue === value ? "" : currentValue,
