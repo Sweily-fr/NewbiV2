@@ -106,6 +106,9 @@ export function SettingsModal({
   // on les laisse visibles pour ne pas les faire clignoter)
   const showIntegrations = !permissionsReady || can("integrations", "read");
   const showBilling = !permissionsReady || can("billing", "read");
+  // Informations de l'entreprise (Générale, coordonnées bancaires, légales,
+  // sécurité de l'espace) : « Voir les informations »
+  const showOrgSettings = !permissionsReady || can("orgSettings", "read");
 
   // La facturation électronique transmet le régime de TVA dérivé à SuperPDP :
   // toute modification TVA sauvegardée ici doit y être répercutée (cf. onSuccess).
@@ -524,15 +527,22 @@ export function SettingsModal({
     // Onglet sans le droit de le voir : on indique qu'il est inaccessible et
     // on propose de demander l'accès au super admin
     const deniedModule =
-      ["facturation", "subscription"].includes(activeTab) && !showBilling
-        ? "billing"
-        : [
-              "comptes-bancaires",
-              "facturation-electronique",
-              "applications",
-            ].includes(activeTab) && !showIntegrations
-          ? "integrations"
-          : null;
+      [
+        "generale",
+        "coordonnees-bancaires",
+        "informations-legales",
+        "securite",
+      ].includes(activeTab) && !showOrgSettings
+        ? "orgSettings"
+        : ["facturation", "subscription"].includes(activeTab) && !showBilling
+          ? "billing"
+          : [
+                "comptes-bancaires",
+                "facturation-electronique",
+                "applications",
+              ].includes(activeTab) && !showIntegrations
+            ? "integrations"
+            : null;
     if (deniedModule) {
       return (
         <AccessDeniedPage
@@ -746,6 +756,7 @@ export function SettingsModal({
           canManageOrgSettings={canManageOrgSettings}
           canManageSubscription={canManageSubscription}
           showBilling={showBilling}
+          showOrgSettings={showOrgSettings}
           isAccountManager={isAccountManager}
         />
       </FormProvider>

@@ -320,22 +320,21 @@ function ClientsContent() {
             <div className="flex gap-2">
               <AutomationsPopover />
               {/* Champs personnalisés : consultables en lecture, le panneau
-                  masque lui-même la création / modification */}
-              {canReadCustomFields && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setImportDialogView("fields");
-                    setImportDialogOpen(true);
-                  }}
-                  className="self-start gap-1.5 cursor-pointer"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
-                  Champs
-                </Button>
-              )}
+                  masque lui-même la création / modification ; sans « Voir »,
+                  il propose de demander l'accès */}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setImportDialogView("fields");
+                  setImportDialogOpen(true);
+                }}
+                className="self-start gap-1.5 cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
+                Champs
+              </Button>
               {canImportClients && (
                 <Button
                   variant="outline"
@@ -647,21 +646,19 @@ function ClientsContent() {
                 <h1 className="text-2xl font-medium mb-1">Contacts</h1>
               </div>
               <div className="flex gap-2">
-                {canReadCustomFields && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      setImportDialogView("fields");
-                      setImportDialogOpen(true);
-                    }}
-                    className="cursor-pointer"
-                    disabled={isReadOnly}
-                    title={readOnlyTooltip}
-                  >
-                    <Settings2 className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setImportDialogView("fields");
+                    setImportDialogOpen(true);
+                  }}
+                  className="cursor-pointer"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
+                  <Settings2 className="h-4 w-4" />
+                </Button>
                 {canImportClients && (
                   <Button
                     variant="outline"
