@@ -13,10 +13,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
-import {
-  EXPENSE_CATEGORY_OPTIONS,
-  getCategoryLabel,
-} from "@/lib/category-icons-config";
+import { getCategoryLabel } from "@/lib/category-icons-config";
 import {
   DocumentEyeButton,
   DocumentPreviewPanel,
@@ -47,7 +44,8 @@ const FIELD_KINDS = {
   vatRate: "number",
   amountTVA: "number",
   amountTTC: "number",
-  category: "select",
+  // Sélecteur de catégorie des tiroirs (recherche, groupes)
+  category: "category",
   paymentMethod: "select",
 };
 const NUMBER_KEYS = new Set(["amountHT", "vatRate", "amountTVA", "amountTTC"]);
@@ -208,14 +206,12 @@ export function PurchaseOcrComparisonDialog({
     [proposal, drafts],
   );
   const optionsFor = (key) =>
-    key === "category"
-      ? EXPENSE_CATEGORY_OPTIONS
-      : key === "paymentMethod"
-        ? Object.entries(paymentMethodLabels).map(([value, label]) => ({
-            value,
-            label,
-          }))
-        : [];
+    key === "paymentMethod"
+      ? Object.entries(paymentMethodLabels).map(([value, label]) => ({
+          value,
+          label,
+        }))
+      : [];
   const formatMoney = (amount, cur) =>
     amount === null || amount === undefined
       ? "—"
