@@ -561,6 +561,15 @@ export function PurchaseInvoiceDetailDrawer({
       ) {
         nextForm.vatRate = (Math.round((tva / ht) * 10000) / 100).toString();
       }
+      // Échéance avant l'émission une fois les dates relues appliquées :
+      // vidée, comme à la saisie (handleChange)
+      const dueBeforeIssue =
+        ("issueDate" in patch || "dueDate" in patch) &&
+        nextForm.issueDate &&
+        nextForm.dueDate &&
+        new Date(nextForm.dueDate + "T00:00:00") <
+          new Date(nextForm.issueDate + "T00:00:00");
+      if (dueBeforeIssue) nextForm.dueDate = "";
       // API : mêmes champs que handleSave, category = sous-catégorie.
       const input = {};
       if ("supplierName" in patch && patch.supplierName)
@@ -569,6 +578,7 @@ export function PurchaseInvoiceDetailDrawer({
       if ("issueDate" in patch && patch.issueDate)
         input.issueDate = patch.issueDate;
       if ("dueDate" in patch) input.dueDate = patch.dueDate;
+      if (dueBeforeIssue) input.dueDate = null;
       if ("category" in patch && patch.category)
         input.subcategory = patch.category;
       if ("paymentMethod" in patch && patch.paymentMethod)
@@ -2468,12 +2478,45 @@ export function PurchaseInvoiceDetailDrawer({
     />
   );
 
+  // Comparaison valeurs actuelles / nouvelle analyse OCR : montée aussi en
+  // mode embedded (dialogue en portail, comme les deux précédents), sinon
+  // une relance visible y consommerait un import OCR sans rien afficher.
+  const ocrComparisonDialog = (
+    <PurchaseOcrComparisonDialog
+      open={!!ocrProposal}
+      onOpenChange={(o) => {
+        if (!o && !applyingOcr) {
+          setOcrProposal(null);
+          setOcrMulti(null);
+        }
+      }}
+      current={form}
+      proposal={ocrProposal}
+      multi={ocrMulti}
+      invoiceId={invoice?.id}
+      files={invoice?.files || []}
+      sourceFileId={ocrSourceFileId}
+      currency={form.currency}
+      paymentMethodLabels={paymentMethodLabels}
+      onApply={applyOcrPatch}
+      reconciled={!!invoice?.isReconciled}
+      // Délier d'abord : droit de rapprocher requis
+      onUnlinkAndApply={
+        canLinkTransactions
+          ? (patch) => applyOcrPatch(patch, { unlinkFirst: true })
+          : null
+      }
+      applying={applyingOcr}
+    />
+  );
+
   if (embedded) {
     return (
       <div className="flex flex-col h-full">
         {body}
         {duplicateDialog}
         {reconcileCandidateDialog}
+        {ocrComparisonDialog}
       </div>
     );
   }
@@ -2504,33 +2547,7 @@ export function PurchaseInvoiceDetailDrawer({
           onIndexChange={setPreviewIndex}
           onClose={() => setPreviewIndex(null)}
         />
-        {/* Comparaison valeurs actuelles / nouvelle analyse OCR */}
-        <PurchaseOcrComparisonDialog
-          open={!!ocrProposal}
-          onOpenChange={(o) => {
-            if (!o && !applyingOcr) {
-              setOcrProposal(null);
-              setOcrMulti(null);
-            }
-          }}
-          current={form}
-          proposal={ocrProposal}
-          multi={ocrMulti}
-          invoiceId={invoice?.id}
-          files={invoice?.files || []}
-          sourceFileId={ocrSourceFileId}
-          currency={form.currency}
-          paymentMethodLabels={paymentMethodLabels}
-          onApply={applyOcrPatch}
-          reconciled={!!invoice?.isReconciled}
-          // Délier d'abord : droit de rapprocher requis
-          onUnlinkAndApply={
-            canLinkTransactions
-              ? (patch) => applyOcrPatch(patch, { unlinkFirst: true })
-              : null
-          }
-          applying={applyingOcr}
-        />
+        {ocrComparisonDialog}
       </DrawerContent>
     </Drawer>
   );

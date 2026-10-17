@@ -49,6 +49,15 @@ const FIELD_KINDS = {
   paymentMethod: "select",
 };
 const NUMBER_KEYS = new Set(["amountHT", "vatRate", "amountTVA", "amountTTC"]);
+// L'API renvoie la date d'émission sous invoiceDate (relance d'un fichier
+// comme de tous) : le dialogue et le patch du tiroir la lisent en issueDate.
+const withIssueDate = (p) =>
+  p ? { ...p, issueDate: p.issueDate ?? p.invoiceDate ?? null } : p;
+// Sous 768 px, l'aperçu passe en plein écran et recouvrirait le dialogue :
+// il ne s'ouvre alors qu'à la main (bouton œil), comme dans le tiroir.
+const isWideScreen = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(min-width: 768px)").matches;
 
 /**
  * Compare les valeurs actuelles d'une facture d'achat (gauche) avec celles
@@ -92,10 +101,11 @@ export function PurchaseOcrComparisonDialog({
     Boolean(fileId && previewableFiles.some((f) => f.id === fileId));
   // Fichier affiché à gauche, ouvert d'office à l'ouverture (justificatif
   // relu, sinon premier fichier lu en mode multi) : on vérifie les valeurs
-  // sur la pièce. Le dialogue se cale à droite pendant ce temps.
+  // sur la pièce. Le dialogue se cale à droite pendant ce temps (écran large
+  // seulement, cf. isWideScreen).
   const [previewFileId, setPreviewFileId] = useState(null);
   useEffect(() => {
-    if (!open) {
+    if (!open || !isWideScreen()) {
       setPreviewFileId(null);
       return;
     }
@@ -133,20 +143,20 @@ export function PurchaseOcrComparisonDialog({
   const DIALOG_RIGHT_OFFSET = (multi ? 48 : 42) * 16 + 32;
 
   // Source des valeurs proposées : combinée ou un fichier précis. Choisir un
-  // fichier l'affiche aussi à gauche.
+  // fichier l'affiche aussi à gauche, sur écran large.
   const [source, setSource] = useState("combined");
   useEffect(() => {
     if (open) setSource("combined");
   }, [open, multi]);
   const selectSource = (value) => {
     setSource(value);
-    if (value !== "combined") showFile(value);
+    if (value !== "combined" && isWideScreen()) showFile(value);
   };
   const proposal = useMemo(() => {
-    if (!multi) return singleProposal;
-    if (source === "combined") return multi.combined;
+    if (!multi) return withIssueDate(singleProposal);
+    if (source === "combined") return withIssueDate(multi.combined);
     const f = multi.files.find((x) => x.fileId === source);
-    if (!f?.proposal) return multi.combined;
+    if (!f?.proposal) return withIssueDate(multi.combined);
     const converted =
       f.convertedAmountTTC !== null && f.convertedAmountTTC !== undefined;
     const foreign =
@@ -155,7 +165,7 @@ export function PurchaseOcrComparisonDialog({
       f.proposal.currency !== (currency || "EUR");
     const lines = invoiceVatLines(f.proposal);
     return {
-      ...f.proposal,
+      ...withIssueDate(f.proposal),
       // Détail par taux lu dans la devise du document : converti au même
       // taux que les montants
       vatBreakdown:
@@ -345,20 +355,25 @@ export function PurchaseOcrComparisonDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveProposal, current, currency, reconciled, originalCurrency]);
 
-  // Lignes cochées : par défaut celles qui changent et que l'OCR a lues.
-  // Pendant la saisie, une valeur corrigée coche sa ligne sans recalculer
-  // les autres.
-  const [selected, setSelected] = useState({});
+  // Lignes cochées : par défaut celles qui changent et que l'OCR a lues. Un
+  // choix manuel (case cliquée, valeur saisie qui coche sa ligne) prime sur
+  // ce défaut jusqu'à la prochaine analyse, « Terminer la saisie » compris.
+  const [picked, setPicked] = useState({});
   useEffect(() => {
-    if (!open || editing) return;
+    setPicked({});
+  }, [open, proposal]);
+  const selected = useMemo(() => {
     const next = {};
     for (const row of rows)
-      next[row.key] = !row.same && !row.missing && !row.locked;
-    setSelected(next);
-  }, [open, rows, editing]);
+      next[row.key] =
+        row.key in picked
+          ? picked[row.key]
+          : !row.same && !row.missing && !row.locked;
+    return next;
+  }, [rows, picked]);
   const setDraft = (key, value) => {
     setDrafts((prev) => ({ ...prev, [key]: value }));
-    setSelected((prev) => ({
+    setPicked((prev) => ({
       ...prev,
       [key]: true,
       // HT / TVA corrigés à la main : le détail par taux lu ne les
@@ -369,7 +384,6 @@ export function PurchaseOcrComparisonDialog({
     }));
   };
 
-  const selectedCount = Object.values(selected).filter(Boolean).length;
   const differences = rows.filter((r) => !r.same && !r.missing).length;
   const lockedRow = rows.find((r) => r.locked);
   const canUnlinkAndApply = Boolean(lockedRow && onUnlinkAndApply);
@@ -382,13 +396,20 @@ export function PurchaseOcrComparisonDialog({
     setUnlinkForTtc(false);
   }, [open, proposal]);
   const includeTtc = canUnlinkAndApply && unlinkForTtc;
-  const totalToSave = selectedCount + (includeTtc ? 1 : 0);
+  // Ligne enregistrée : cochée, lue et différente (une valeur vidée ou
+  // ramenée à l'actuelle en mode « Modifier » ne part pas), le TTC bloqué
+  // seulement avec le détachement. Cases, compteur et patch suivent cette
+  // même règle.
+  const willSave = (row, includeLocked = includeTtc) =>
+    !row.missing &&
+    !row.same &&
+    (row.locked ? includeLocked : !!selected[row.key]);
+  const totalToSave = rows.filter((row) => willSave(row)).length;
 
   const buildPatch = ({ includeLocked = false } = {}) => {
     let patch = {};
     for (const row of rows) {
-      if (row.missing) continue;
-      if (row.locked ? includeLocked : selected[row.key]) {
+      if (willSave(row, includeLocked)) {
         patch = { ...patch, ...row.patch };
       }
     }
@@ -613,10 +634,10 @@ export function PurchaseOcrComparisonDialog({
                       >
                         <td className="py-2 align-middle">
                           <Checkbox
-                            checked={!!selected[row.key]}
+                            checked={willSave(row)}
                             disabled={row.missing || row.same || row.locked}
                             onCheckedChange={(checked) =>
-                              setSelected((prev) => ({
+                              setPicked((prev) => ({
                                 ...prev,
                                 [row.key]: !!checked,
                               }))

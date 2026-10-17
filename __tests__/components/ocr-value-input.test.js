@@ -19,6 +19,26 @@ describe("parseOcrNumber", () => {
     expect(parseOcrNumber(null)).toBeNull();
     expect(parseOcrNumber(undefined)).toBeNull();
     expect(parseOcrNumber("abc")).toBeNull();
+    expect(parseOcrNumber("12abc")).toBeNull();
+  });
+
+  it("sans chiffre (espaces seuls, « € », « % ») : null, pas 0", () => {
+    expect(parseOcrNumber("   ")).toBeNull();
+    expect(parseOcrNumber("€")).toBeNull();
+    expect(parseOcrNumber(" % ")).toBeNull();
+  });
+
+  it("lit le symbole % et les séparateurs de milliers", () => {
+    expect(parseOcrNumber("5,5 %")).toBe(5.5);
+    expect(parseOcrNumber("20%")).toBe(20);
+    expect(parseOcrNumber("1.234,56")).toBe(1234.56);
+    expect(parseOcrNumber("1,234.56")).toBe(1234.56);
+    expect(parseOcrNumber("1.234.567,89 €")).toBe(1234567.89);
+    expect(parseOcrNumber("1.234.567")).toBe(1234567);
+    expect(parseOcrNumber("-12,50")).toBe(-12.5);
+    // Un seul séparateur reste décimal, comme avant
+    expect(parseOcrNumber("1.000")).toBe(1);
+    expect(parseOcrNumber("0,5")).toBe(0.5);
   });
 });
 

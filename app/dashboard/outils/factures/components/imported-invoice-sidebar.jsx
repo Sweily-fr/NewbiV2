@@ -63,7 +63,7 @@ import {
   Calendar as CalendarIcon,
 } from "lucide-react";
 import { ClipboardTickIcon, TrashIcon } from "@/src/components/icons";
-import { formatDateToFrench, formatLocalDate } from "@/src/utils/dateFormatter";
+import { formatDateToFrench, toCalendarDate } from "@/src/utils/dateFormatter";
 import {
   IMPORTED_INVOICE_STATUS_LABELS,
   IMPORTED_INVOICE_STATUS_COLORS,
@@ -85,18 +85,9 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
-const formatDateForInput = (dateValue) => {
-  if (!dateValue) return "";
-  try {
-    const d = /^\d+$/.test(dateValue)
-      ? new Date(parseInt(dateValue, 10))
-      : new Date(dateValue);
-    if (isNaN(d.getTime())) return "";
-    return formatLocalDate(d);
-  } catch {
-    return "";
-  }
-};
+// Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM), comme le
+// tiroir des factures d'achat : en heure locale, la date reculait d'un jour
+const formatDateForInput = (dateValue) => toCalendarDate(dateValue) || "";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
