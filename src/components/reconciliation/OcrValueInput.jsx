@@ -110,11 +110,15 @@ export function OcrValueInput({
     );
   }
   if (kind === "category") {
-    // Même sélecteur de catégorie que les tiroirs (recherche, groupes)
+    // Même sélecteur de catégorie que les tiroirs (recherche, groupes).
+    // Recliquer la catégorie choisie la viderait : on la garde, comme
+    // l'ancienne liste.
     return (
       <CategorySearchSelect
         value={value ?? ""}
-        onValueChange={onChange}
+        onValueChange={(v) => {
+          if (v) onChange(v);
+        }}
         triggerClassName={`${base} ${width("w-full")}`}
       />
     );
