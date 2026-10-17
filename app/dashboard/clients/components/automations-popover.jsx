@@ -68,6 +68,7 @@ import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { Lock } from "lucide-react";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
 const TRIGGER_TYPES = [
   {
@@ -838,9 +839,6 @@ export default function AutomationsPopover({ trigger }) {
   const activeEmailCount = emailAutomations.filter((a) => a.isActive).length;
   const activeCount = activeListCount + activeEmailCount;
 
-  // Sans lecture des automatisations, le bouton n'apparaît pas
-  if (!canReadAutomations) return null;
-
   return (
     <>
       <Popover
@@ -867,7 +865,15 @@ export default function AutomationsPopover({ trigger }) {
           )}
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[720px] p-0">
-          {!canUseClientAutomations ? (
+          {!canReadAutomations ? (
+            /* Sans « Voir » : demande d'accès au super admin */
+            <AccessDeniedPage
+              moduleKey="automations"
+              action="view"
+              canView={false}
+              embedded
+            />
+          ) : !canUseClientAutomations ? (
             /* Freelance: no automations at all */
             <div className="p-6 text-center space-y-3">
               <div className="flex items-center justify-center gap-2 mb-1">

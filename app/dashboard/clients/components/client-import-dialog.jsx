@@ -46,6 +46,7 @@ import {
 
 import ImportStepUpload from "./import-steps/import-step-upload";
 import ImportStepMapping from "./import-steps/import-step-mapping";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
 const STEPS = [
   { key: "upload", label: "Fichier", number: 1 },
@@ -353,18 +354,29 @@ export default function ClientImportDialog({
                 </DialogHeader>
               </div>
 
-              {/* Custom Fields Content */}
+              {/* Custom Fields Content (sans « Voir » : demande d'accès) */}
               <div className="flex-1 overflow-auto px-5 py-4">
-                <CustomFieldsPanel
-                  workspaceId={workspaceId}
-                  fields={customFields}
-                  planLimits={planLimits}
-                  onCreateField={(data) => createField(workspaceId, data)}
-                  onUpdateField={(fieldId, data) =>
-                    updateField(workspaceId, fieldId, data)
-                  }
-                  onDeleteField={(fieldId) => deleteField(workspaceId, fieldId)}
-                />
+                {!canReadCustomFields ? (
+                  <AccessDeniedPage
+                    moduleKey="clientCustomFields"
+                    action="view"
+                    canView={false}
+                    embedded
+                  />
+                ) : (
+                  <CustomFieldsPanel
+                    workspaceId={workspaceId}
+                    fields={customFields}
+                    planLimits={planLimits}
+                    onCreateField={(data) => createField(workspaceId, data)}
+                    onUpdateField={(fieldId, data) =>
+                      updateField(workspaceId, fieldId, data)
+                    }
+                    onDeleteField={(fieldId) =>
+                      deleteField(workspaceId, fieldId)
+                    }
+                  />
+                )}
               </div>
             </>
           ) : (

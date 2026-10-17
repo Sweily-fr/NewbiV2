@@ -34,6 +34,7 @@ export function MobileSettingsModal({
   canManageOrgSettings = true,
   canManageSubscription = true,
   showBilling = true,
+  showOrgSettings = true,
   isAccountManager = false,
 }) {
   const [activeTab, setActiveTab] = useState("generale");
@@ -84,6 +85,25 @@ export function MobileSettingsModal({
   };
 
   const renderContent = () => {
+    // Sans « Voir » : la section propose de demander l'accès
+    if (
+      !showOrgSettings &&
+      [
+        "generale",
+        "coordonnees-bancaires",
+        "informations-legales",
+        "security",
+      ].includes(activeTab)
+    ) {
+      return (
+        <AccessDeniedPage
+          moduleKey="orgSettings"
+          action="view"
+          canView={false}
+          embedded
+        />
+      );
+    }
     if (!showBilling && ["facturation", "subscription"].includes(activeTab)) {
       return (
         <AccessDeniedPage

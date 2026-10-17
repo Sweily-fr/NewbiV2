@@ -85,6 +85,7 @@ import {
 import { TRANSFER_ORGANIZATION_OWNERSHIP } from "@/src/graphql/organizationRoleQueries";
 import { invalidateFullOrganizationCache } from "@/src/lib/full-organization-cache";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
 export default function EspacesSection() {
   const [organizations, setOrganizations] = useState([]);
@@ -113,7 +114,11 @@ export default function EspacesSection() {
   const { data: session } = useSession();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { workspaceId } = useWorkspace();
-  const { canDo, refetch: refetchMyPermissions } = useMyPermissions();
+  const {
+    canDo,
+    isReady: permissionsReady,
+    refetch: refetchMyPermissions,
+  } = useMyPermissions();
   const {
     roles: organizationRoles,
     getRoleLabel,
@@ -389,6 +394,10 @@ export default function EspacesSection() {
   // retirer (annuler une invitation = inviter)
   const canTeam = (action) =>
     isSelectedOrgActive ? canDo("team", action) : iAmOwner;
+  // Liste des membres de l'espace actif : « Voir les membres », sinon la
+  // section propose de demander l'accès
+  const canViewMembers =
+    !isSelectedOrgActive || !permissionsReady || canDo("team", "view");
   const canInviteMembers = canTeam("invite");
   const canChangeRoles = canTeam("changeRole");
   const canRemoveMembers = canTeam("remove");
@@ -732,178 +741,190 @@ export default function EspacesSection() {
             )}
           </div>
 
-          {/* Members Table */}
-          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[280px]">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Utilisateur
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-2">
-                      <KeyRound className="h-4 w-4" />
-                      Rôle
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Équipes
-                    </div>
-                  </TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {membersLoading ? (
+          {/* Members Table (sans « Voir les membres » : demande d'accès) */}
+          {!canViewMembers ? (
+            <AccessDeniedPage
+              moduleKey="team"
+              action="view"
+              canView={false}
+              embedded
+            />
+          ) : (
+            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c]">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8">
-                      Chargement...
-                    </TableCell>
+                    <TableHead className="min-w-[280px]">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Utilisateur
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="h-4 w-4" />
+                        Rôle
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Équipes
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
-                ) : filteredMembers.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center py-8 text-sm text-muted-foreground"
-                    >
-                      {searchTerm ? "Aucun membre trouvé" : "Aucun membre"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredMembers.map((member) => {
-                    const isCurrentUser = member.email === session?.user?.email;
-                    return (
-                      <TableRow key={member.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage
-                                src={member.avatar}
-                                alt={member.name || member.email}
-                                className="object-cover"
-                              />
-                              <AvatarFallback className="bg-[#D1D5DB] text-[#364153] text-xs">
-                                {member.name
-                                  ?.split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase() || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">
-                                {member.name || "Sans nom"}
-                                {isCurrentUser && (
-                                  <span className="text-muted-foreground font-normal">
-                                    {" "}
-                                    (Vous)
-                                  </span>
+                </TableHeader>
+                <TableBody>
+                  {membersLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        Chargement...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredMembers.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="text-center py-8 text-sm text-muted-foreground"
+                      >
+                        {searchTerm ? "Aucun membre trouvé" : "Aucun membre"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredMembers.map((member) => {
+                      const isCurrentUser =
+                        member.email === session?.user?.email;
+                      return (
+                        <TableRow key={member.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage
+                                  src={member.avatar}
+                                  alt={member.name || member.email}
+                                  className="object-cover"
+                                />
+                                <AvatarFallback className="bg-[#D1D5DB] text-[#364153] text-xs">
+                                  {member.name
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase() || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">
+                                  {member.name || "Sans nom"}
+                                  {isCurrentUser && (
+                                    <span className="text-muted-foreground font-normal">
+                                      {" "}
+                                      (Vous)
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-sm text-muted-foreground truncate max-w-[160px]">
+                                  {member.email}
+                                </span>
+                                {member.status === "pending" && (
+                                  <Badge className="bg-orange-100 border-orange-300 text-orange-800 font-normal text-[10px] px-1.5 py-0">
+                                    En attente
+                                  </Badge>
                                 )}
-                              </span>
-                              <span className="text-sm text-muted-foreground truncate max-w-[160px]">
-                                {member.email}
-                              </span>
-                              {member.status === "pending" && (
-                                <Badge className="bg-orange-100 border-orange-300 text-orange-800 font-normal text-[10px] px-1.5 py-0">
-                                  En attente
-                                </Badge>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={roleBadgeStyle(member.role)}
-                          >
-                            {updatingRoleForMember === member.id
-                              ? "..."
-                              : getRoleLabel(member.role)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {canManageOrgSettings &&
-                            member.role !== "owner" &&
-                            !isCurrentUser && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 cursor-pointer"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {/* Invitation en attente : changer son
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={roleBadgeStyle(member.role)}
+                            >
+                              {updatingRoleForMember === member.id
+                                ? "..."
+                                : getRoleLabel(member.role)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground">
+                              —
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {canManageOrgSettings &&
+                              member.role !== "owner" &&
+                              !isCurrentUser && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 cursor-pointer"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {/* Invitation en attente : changer son
                                       rôle la ré-envoie (annuler + inviter) */}
-                                  {canChangeRoles &&
-                                    (member.type !== "invitation" ||
-                                      canInviteMembers) && (
+                                    {canChangeRoles &&
+                                      (member.type !== "invitation" ||
+                                        canInviteMembers) && (
+                                        <DropdownMenuItem
+                                          className="cursor-pointer"
+                                          disabled={isReadOnly}
+                                          title={readOnlyTooltip}
+                                          onClick={() => {
+                                            if (isReadOnly) return;
+                                            setMemberToChangeRole(member);
+                                            setSelectedNewRole(member.role);
+                                            setRoleChangeDialogOpen(true);
+                                          }}
+                                        >
+                                          <KeyRound className="h-4 w-4 mr-2" />
+                                          Changer le rôle
+                                        </DropdownMenuItem>
+                                      )}
+                                    {iAmOwner &&
+                                      isSelectedOrgActive &&
+                                      member.type === "member" && (
+                                        <DropdownMenuItem
+                                          className="cursor-pointer"
+                                          onClick={() =>
+                                            setMemberToPromote(member)
+                                          }
+                                        >
+                                          <Crown className="h-4 w-4 mr-2" />
+                                          Transférer le rôle de super admin
+                                        </DropdownMenuItem>
+                                      )}
+                                    {(member.type === "invitation"
+                                      ? canInviteMembers
+                                      : canRemoveMembers) && (
                                       <DropdownMenuItem
-                                        className="cursor-pointer"
-                                        disabled={isReadOnly}
-                                        title={readOnlyTooltip}
-                                        onClick={() => {
-                                          if (isReadOnly) return;
-                                          setMemberToChangeRole(member);
-                                          setSelectedNewRole(member.role);
-                                          setRoleChangeDialogOpen(true);
-                                        }}
-                                      >
-                                        <KeyRound className="h-4 w-4 mr-2" />
-                                        Changer le rôle
-                                      </DropdownMenuItem>
-                                    )}
-                                  {iAmOwner &&
-                                    isSelectedOrgActive &&
-                                    member.type === "member" && (
-                                      <DropdownMenuItem
-                                        className="cursor-pointer"
+                                        className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
                                         onClick={() =>
-                                          setMemberToPromote(member)
+                                          handleDeleteMember(member)
                                         }
                                       >
-                                        <Crown className="h-4 w-4 mr-2" />
-                                        Transférer le rôle de super admin
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        {member.type === "invitation"
+                                          ? "Annuler l'invitation"
+                                          : "Retirer de l'espace"}
                                       </DropdownMenuItem>
                                     )}
-                                  {(member.type === "invitation"
-                                    ? canInviteMembers
-                                    : canRemoveMembers) && (
-                                    <DropdownMenuItem
-                                      className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
-                                      onClick={() => handleDeleteMember(member)}
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      {member.type === "invitation"
-                                        ? "Annuler l'invitation"
-                                        : "Retirer de l'espace"}
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       </div>
 
