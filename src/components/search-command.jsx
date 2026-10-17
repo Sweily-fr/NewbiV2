@@ -304,6 +304,14 @@ export function SearchCommand() {
       !isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
   };
+  // Navigation vers les pages : comme dans le menu, toutes listées sauf
+  // celles masquées au Comptable par défaut (sans « Voir », la page propose
+  // de demander l'accès)
+  const canList = (url) => {
+    const moduleKey = moduleForPath(url);
+    if (!permissionsReady || !moduleKey) return true;
+    return !isHiddenForRole(permissionsRole, permissionActions, moduleKey);
+  };
   const canSearchClients = canReadModule("clients");
   const canSearchInvoices = canReadModule("invoices");
   const canSearchQuotes = canReadModule("quotes");
@@ -957,7 +965,7 @@ export function SearchCommand() {
                     </IconWrapper>
                     <span>Tableau de bord</span>
                   </CommandItem>
-                  {canSee("/dashboard/clients") && (
+                  {canList("/dashboard/clients") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/clients"))
@@ -969,7 +977,7 @@ export function SearchCommand() {
                       <span>Clients</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/catalogues") && (
+                  {canList("/dashboard/catalogues") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/catalogues"))
@@ -991,7 +999,7 @@ export function SearchCommand() {
                       <span>Collaborateurs</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/calendar") && (
+                  {canList("/dashboard/calendar") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/calendar"))
@@ -1003,7 +1011,7 @@ export function SearchCommand() {
                       <span>Calendrier</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/analytiques") && (
+                  {canList("/dashboard/outils/analytiques") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1040,7 +1048,7 @@ export function SearchCommand() {
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Outils">
-                  {canSee("/dashboard/outils/factures") && (
+                  {canList("/dashboard/outils/factures") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1054,7 +1062,7 @@ export function SearchCommand() {
                       <span>Factures</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/devis") && (
+                  {canList("/dashboard/outils/devis") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() => router.push("/dashboard/outils/devis"))
@@ -1066,7 +1074,7 @@ export function SearchCommand() {
                       <span>Devis</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/bons-commande") && (
+                  {canList("/dashboard/outils/bons-commande") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1081,7 +1089,7 @@ export function SearchCommand() {
                     </CommandItem>
                   )}
                   {deliveryNotesAllowed &&
-                    canSee("/dashboard/outils/bons-de-livraison") && (
+                    canList("/dashboard/outils/bons-de-livraison") && (
                       <CommandItem
                         onSelect={() =>
                           runCommand(() =>
@@ -1095,7 +1103,7 @@ export function SearchCommand() {
                         <span>Bons de livraison</span>
                       </CommandItem>
                     )}
-                  {canSee("/dashboard/outils/transactions") && (
+                  {canList("/dashboard/outils/transactions") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1109,7 +1117,7 @@ export function SearchCommand() {
                       <span>Transactions</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/kanban") && (
+                  {canList("/dashboard/outils/kanban") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1123,7 +1131,7 @@ export function SearchCommand() {
                       <span>Kanban</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/signatures-mail") && (
+                  {canList("/dashboard/outils/signatures-mail") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1137,7 +1145,7 @@ export function SearchCommand() {
                       <span>Signatures de mail</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/documents-partages") && (
+                  {canList("/dashboard/outils/documents-partages") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
@@ -1151,7 +1159,7 @@ export function SearchCommand() {
                       <span>Documents partagés</span>
                     </CommandItem>
                   )}
-                  {canSee("/dashboard/outils/transferts-fichiers") && (
+                  {canList("/dashboard/outils/transferts-fichiers") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>

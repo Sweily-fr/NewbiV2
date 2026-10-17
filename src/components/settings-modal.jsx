@@ -71,6 +71,7 @@ import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import { UPDATE_EINVOICING_VAT_REGIME } from "@/src/graphql/eInvoicingQueries";
 import { deriveVatRegime } from "@/src/utils/vatRegime";
 import { normalizeLegalForm } from "@/src/lib/company-registry";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
 export function SettingsModal({
   open,
@@ -520,21 +521,26 @@ export function SettingsModal({
   };
 
   const renderContent = () => {
-    // Onglet ouvert directement (palette, menus, bannières) sans le droit
-    // de le voir : rien n'est affiché
-    const deniedTab =
-      (["facturation", "subscription"].includes(activeTab) && !showBilling) ||
-      ([
-        "comptes-bancaires",
-        "facturation-electronique",
-        "applications",
-      ].includes(activeTab) &&
-        !showIntegrations);
-    if (deniedTab) {
+    // Onglet sans le droit de le voir : on indique qu'il est inaccessible et
+    // on propose de demander l'accès au super admin
+    const deniedModule =
+      ["facturation", "subscription"].includes(activeTab) && !showBilling
+        ? "billing"
+        : [
+              "comptes-bancaires",
+              "facturation-electronique",
+              "applications",
+            ].includes(activeTab) && !showIntegrations
+          ? "integrations"
+          : null;
+    if (deniedModule) {
       return (
-        <p className="text-sm text-muted-foreground">
-          Votre rôle ne permet pas d&apos;accéder à cette section.
-        </p>
+        <AccessDeniedPage
+          moduleKey={deniedModule}
+          action="view"
+          canView={false}
+          embedded
+        />
       );
     }
     // Les composants vont maintenant utiliser useFormContext()
@@ -664,10 +670,16 @@ export function SettingsModal({
         { id: "roles", label: "Rôles", icon: KeyRound },
       ],
     },
-    showIntegrations && {
+    // Sans « Voir » : onglets affichés, leur contenu indique que la section
+    // est inaccessible et propose de demander l'accès
+    {
       title: "Intégrations",
       items: [
-        { id: "applications", label: "Applications", icon: LayoutGrid },
+        {
+          id: "applications",
+          label: "Applications",
+          icon: LayoutGrid,
+        },
         {
           id: "comptes-bancaires",
           label: "Comptes bancaires",
@@ -680,11 +692,19 @@ export function SettingsModal({
         },
       ],
     },
-    showBilling && {
+    {
       title: "Facturation",
       items: [
-        { id: "subscription", label: "Abonnement", icon: Crown },
-        { id: "facturation", label: "Facturation", icon: DollarSign },
+        {
+          id: "subscription",
+          label: "Abonnement",
+          icon: Crown,
+        },
+        {
+          id: "facturation",
+          label: "Facturation",
+          icon: DollarSign,
+        },
       ],
     },
     isAccountManager && {
