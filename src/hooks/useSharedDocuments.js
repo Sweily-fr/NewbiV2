@@ -483,6 +483,8 @@ export function useSharedDocuments(filter = {}) {
   // Extraire les valeurs pour que Apollo détecte les changements
   const folderId = filter.folderId;
   const search = filter.search;
+  // Bouton « Aa » : par défaut le serveur ignore majuscules et accents
+  const searchExact = search && filter.searchExact ? true : undefined;
   const status = filter.status;
   const tags = filter.tags;
   const sortBy = filter.sortBy || "createdAt";
@@ -505,6 +507,7 @@ export function useSharedDocuments(filter = {}) {
         filter: {
           folderId,
           search,
+          searchExact,
           status,
           tags,
           fileType,

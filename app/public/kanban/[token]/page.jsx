@@ -118,6 +118,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TimerDisplay } from "@/app/dashboard/outils/kanban/[id]/components/TimerDisplay";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 const scrollbarStyles = `
   .kanban-column-scroll::-webkit-scrollbar { width: 6px; }
@@ -4092,13 +4093,12 @@ export default function PublicKanbanPage({ params }) {
   // Filter tasks by search
   const filteredTasksByColumn = useMemo(() => {
     if (!searchQuery.trim()) return tasksByColumn;
-    const query = searchQuery.toLowerCase();
+    // Sans accents ni majuscules
+    const match = createSearchMatcher(searchQuery);
     const result = {};
     Object.keys(tasksByColumn).forEach((colId) => {
-      result[colId] = tasksByColumn[colId].filter(
-        (task) =>
-          task.title.toLowerCase().includes(query) ||
-          task.description?.toLowerCase().includes(query),
+      result[colId] = tasksByColumn[colId].filter((task) =>
+        match(task.title, task.description),
       );
     });
     return result;

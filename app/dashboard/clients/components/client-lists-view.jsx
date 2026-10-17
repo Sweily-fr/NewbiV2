@@ -57,6 +57,15 @@ import {
   getSortedRowModel,
   flexRender,
 } from "@tanstack/react-table";
+import { createSearchMatcher } from "@/src/utils/search-text";
+
+// Recherche nom / description, sans accents ni majuscules sauf si le bouton
+// « Aa » est coché. Le filtre global vaut { query, exact } ;
+// resolveFilterValue prépare la comparaison une seule fois par saisie.
+const listsGlobalFilterFn = (row, columnId, match) =>
+  match(row.original.name, row.original.description);
+listsGlobalFilterFn.resolveFilterValue = (value) =>
+  createSearchMatcher(value?.query, { exact: value?.exact });
 
 export default function ClientListsView({
   workspaceId,
@@ -65,6 +74,7 @@ export default function ClientListsView({
   selectedList: initialSelectedList,
   onSelectListChange,
   globalFilter = "",
+  searchExact = false,
   onCreateList,
   onViewingListChange,
   rowSelection: externalRowSelection,
@@ -268,6 +278,12 @@ export default function ClientListsView({
     [canEditLists, canDeleteLists, canReadClients],
   );
 
+  // { query, exact } : le filtre est rejoué quand le bouton « Aa » change
+  const tableGlobalFilter = useMemo(
+    () => (globalFilter ? { query: globalFilter, exact: searchExact } : ""),
+    [globalFilter, searchExact],
+  );
+
   // Créer la table avec React Table
   const table = useReactTable({
     data: lists,
@@ -278,18 +294,11 @@ export default function ClientListsView({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
-      globalFilter,
+      globalFilter: tableGlobalFilter,
       rowSelection,
     },
     onRowSelectionChange: setRowSelection,
-    globalFilterFn: (row, columnId, filterValue) => {
-      const name = row.original.name?.toLowerCase() || "";
-      const description = row.original.description?.toLowerCase() || "";
-      return (
-        name.includes(filterValue.toLowerCase()) ||
-        description.includes(filterValue.toLowerCase())
-      );
-    },
+    globalFilterFn: listsGlobalFilterFn,
   });
 
   if (selectedList) {

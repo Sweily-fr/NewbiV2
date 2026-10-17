@@ -52,7 +52,7 @@ export const useClients = (
   page = 1,
   limit = 10,
   search = "",
-  { skip = false } = {},
+  { skip = false, searchExact = false } = {},
 ) => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
@@ -62,7 +62,16 @@ export const useClients = (
     error,
     refetch,
   } = useQuery(GET_CLIENTS, {
-    variables: { workspaceId, page, limit, search },
+    // searchExact (bouton « Aa ») envoyé seulement s'il est coché avec une
+    // saisie : la clé de cache de la recherche par défaut reste inchangée
+    // (relue par les mises à jour du cache des mutations)
+    variables: {
+      workspaceId,
+      page,
+      limit,
+      search,
+      ...(search && searchExact ? { searchExact: true } : {}),
+    },
     // skip : clients fournis par l'appelant, ou rôle sans accès aux clients
     skip: !workspaceId || skip,
   });

@@ -24,6 +24,7 @@ import {
 import { DocumentStatusBadge } from "@/src/components/documents/linked-document-row";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
 const ALL = "__all__";
 const TAB_CLASS =
@@ -45,7 +46,7 @@ const formatDate = (value) =>
  * Espace gestionnaire : liste de factures, devis, bons de commande, bons de
  * livraison ou avoirs de tous les clients du cabinet, au format des listes
  * du tableau de bord.
- * Filtres dans l'adresse (?statut, ?dossier, ?q, ?page) ; un clic ouvre le
+ * Filtres dans l'adresse (?statut, ?dossier, ?q, ?exact, ?page) ; un clic ouvre le
  * document dans le dossier du client (bascule d'espace puis panneau).
  */
 export default function ManagedDocumentsView({
@@ -64,6 +65,8 @@ export default function ManagedDocumentsView({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState(current.q || "");
+  // Bouton « Aa » : recherche exacte, gardée dans l'adresse (?exact=1)
+  const searchExact = current.exact === true;
   const [opening, setOpening] = useState(null);
   const inputRef = useRef(null);
   const { organization: activeOrganization } = useActiveOrganization();
@@ -179,7 +182,7 @@ export default function ManagedDocumentsView({
         <div className="relative max-w-md">
           <Input
             ref={inputRef}
-            className={cn("w-full sm:w-[320px] ps-9", query && "pe-9")}
+            className={cn("w-full sm:w-[320px] ps-9 pe-9", query && "pe-16")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Recherchez par numéro ou destinataire..."
@@ -192,7 +195,7 @@ export default function ManagedDocumentsView({
           {query && (
             <button
               type="button"
-              className="text-muted-foreground/80 hover:text-foreground absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center outline-none"
+              className="text-muted-foreground/80 hover:text-foreground absolute inset-y-0 end-7 flex h-full w-9 items-center justify-center outline-none"
               aria-label="Effacer la recherche"
               onClick={() => {
                 setQuery("");
@@ -202,6 +205,14 @@ export default function ManagedDocumentsView({
               <CircleXIcon size={16} aria-hidden="true" />
             </button>
           )}
+          <div className="absolute inset-y-0 end-1.5 flex items-center">
+            <SearchExactToggle
+              pressed={searchExact}
+              onPressedChange={(pressed) =>
+                setParams({ exact: pressed ? "1" : "" })
+              }
+            />
+          </div>
         </div>
         <Select
           value={current.organizationId || ALL}

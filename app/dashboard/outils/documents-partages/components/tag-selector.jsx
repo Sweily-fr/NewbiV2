@@ -41,6 +41,7 @@ import {
   useCreateDocumentTag,
 } from "@/src/hooks/useSharedDocuments";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 // Palette (alignée sur le backend)
 export const TAG_PALETTE = [
@@ -186,11 +187,11 @@ export function TagSelector({
   const selected = new Set(value);
   const trimmed = query.trim();
 
+  // Sans accents ni majuscules : « equipe » trouve « Équipe »
+  const matchesTag = createSearchMatcher(trimmed);
   const suggestions = registry
     .filter((t) => !excluded.has(t.name))
-    .filter((t) =>
-      trimmed ? t.name.toLowerCase().includes(trimmed.toLowerCase()) : true,
-    );
+    .filter((t) => matchesTag(t.name));
 
   const exactExists = registry.some(
     (t) => t.name.toLowerCase() === trimmed.toLowerCase(),

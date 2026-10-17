@@ -45,6 +45,7 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { columns } from "./columns/transactionColumns";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
 import CategorySearchSelect from "@/src/components/category-search-select";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import { mapTransactionToExpense } from "./utils/mapTransactionToExpense";
 import { findCarryingPurchaseInvoice } from "./utils/receiptFiles";
 import { MobileToolbar } from "./components/MobileToolbar";
@@ -351,6 +352,8 @@ export default function TransactionTable({
   });
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -377,6 +380,14 @@ export default function TransactionTable({
       resetToFirstPage();
     },
     [resetToFirstPage],
+  );
+
+  const handleSearchExactChange = useCallback(
+    (value) => {
+      setSearchExact(value);
+      if (globalFilter?.trim()) resetToFirstPage();
+    },
+    [globalFilter, resetToFirstPage],
   );
 
   // Changement de compte sélectionné → retour première page
@@ -568,6 +579,7 @@ export default function TransactionTable({
   } = useTransactionsPage({
     tab: activeTab,
     search: globalFilter,
+    searchExact,
     accountId,
     advancedFilters,
     page: pagination.pageIndex + 1,
@@ -1325,6 +1337,10 @@ export default function TransactionTable({
                 <CircleXIcon size={16} aria-hidden="true" />
               </button>
             )}
+            <SearchExactToggle
+              pressed={searchExact}
+              onPressedChange={handleSearchExactChange}
+            />
           </div>
 
           {/* Colonnes visibles Button */}
@@ -1819,6 +1835,8 @@ export default function TransactionTable({
         inputRef={inputRef}
         globalFilter={globalFilter}
         setGlobalFilter={handleSearchChange}
+        searchExact={searchExact}
+        setSearchExact={handleSearchExactChange}
         onFilterPress={() => setIsFiltersOpen(!isFiltersOpen)}
         activeFilterCount={advancedFilters.length}
         activeTab={activeTab}

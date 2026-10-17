@@ -40,6 +40,8 @@ import {
 import { useClients, useUnblockClient } from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { createSearchMatcher } from "@/src/utils/search-text";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import {
   ShieldOff,
   ShieldCheck,
@@ -57,6 +59,8 @@ function BlockedContent() {
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const [search, setSearch] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const inputRef = useRef(null);
@@ -73,12 +77,10 @@ function BlockedContent() {
   const blockedClients = useMemo(() => {
     const blocked = (clients || []).filter((c) => c.isBlocked);
     if (!search) return blocked;
-    const s = search.toLowerCase();
-    return blocked.filter(
-      (c) =>
-        c.name?.toLowerCase().includes(s) || c.email?.toLowerCase().includes(s),
-    );
-  }, [clients, search]);
+    // Sans accents ni majuscules, sauf bouton « Aa » coché
+    const match = createSearchMatcher(search, { exact: searchExact });
+    return blocked.filter((c) => match(c.name, c.email));
+  }, [clients, search, searchExact]);
 
   const totalPages = Math.ceil(blockedClients.length / pageSize) || 1;
   const paginatedClients = useMemo(() => {
@@ -180,6 +182,14 @@ function BlockedContent() {
                 <CircleXIcon size={16} aria-hidden="true" />
               </button>
             )}
+            <SearchExactToggle
+              pressed={searchExact}
+              onPressedChange={(value) => {
+                setSearchExact(value);
+                // Résultats changés : même remise à zéro qu'une saisie
+                if (search) handleSearchChange(search);
+              }}
+            />
           </div>
         </div>
         {selectedIds.size > 0 && canBlockClients && (

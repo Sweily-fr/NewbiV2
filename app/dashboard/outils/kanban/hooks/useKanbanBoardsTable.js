@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 function TruncatedText({ children, className }) {
   const ref = useRef(null);
@@ -64,23 +65,21 @@ function TruncatedText({ children, className }) {
   );
 }
 
-// Custom filter function for multi-column search
-const multiColumnFilterFn = (row, columnId, filterValue) => {
+// Recherche titre / description / client, sans accents ni majuscules sauf si
+// le bouton « Aa » est coché. Le filtre global vaut { query, exact } ;
+// resolveFilterValue prépare la comparaison une seule fois par saisie.
+const multiColumnFilterFn = (row, columnId, match) => {
   const board = row.original;
-  const title = board.title || "";
-  const description = board.description || "";
   const client = board.client;
   const clientName = client
     ? client.type === "INDIVIDUAL"
       ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
       : client.name || ""
     : "";
-  const searchTerm = (filterValue ?? "").toLowerCase().trim();
-  const searchableContent = [title, description, clientName]
-    .filter(Boolean)
-    .map((s) => s.toString().toLowerCase().trim());
-  return searchableContent.some((content) => content.includes(searchTerm));
+  return match(board.title, board.description, clientName);
 };
+multiColumnFilterFn.resolveFilterValue = (value) =>
+  createSearchMatcher(value?.query, { exact: value?.exact });
 
 export function useKanbanBoardsTable({
   data = [],
@@ -96,6 +95,8 @@ export function useKanbanBoardsTable({
   workspaceId,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
 
   // Vérifier si au moins un board a un montant facturable
   const hasBillableAmount = useMemo(
@@ -384,6 +385,11 @@ export function useKanbanBoardsTable({
     ],
   );
 
+  const tableGlobalFilter = useMemo(
+    () => (globalFilter ? { query: globalFilter, exact: searchExact } : ""),
+    [globalFilter, searchExact],
+  );
+
   // Create table instance
   const table = useReactTable({
     data: filteredData,
@@ -400,7 +406,7 @@ export function useKanbanBoardsTable({
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: multiColumnFilterFn,
     state: {
-      globalFilter,
+      globalFilter: tableGlobalFilter,
     },
     initialState: {
       pagination: {
@@ -417,6 +423,8 @@ export function useKanbanBoardsTable({
     table,
     globalFilter,
     setGlobalFilter,
+    searchExact,
+    setSearchExact,
     selectedRows,
     uniqueClients,
     uniqueCategories,

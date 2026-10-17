@@ -63,6 +63,7 @@ import AssignMembersDialog from "./components/assign-members-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
 const STANDARD_COLUMNS = [
   { id: "email", label: "Email" },
@@ -87,6 +88,8 @@ function ClientsContent() {
   const searchParams = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedClients, setSelectedClients] = useState(new Set());
   // Lookup id -> contact (avec `hasDocuments`) remonté par le tableau, pour
@@ -399,6 +402,10 @@ function ClientsContent() {
                     <CircleXIcon size={16} aria-hidden="true" />
                   </button>
                 )}
+                <SearchExactToggle
+                  pressed={searchExact}
+                  onPressedChange={setSearchExact}
+                />
               </div>
               <ClientFilters
                 selectedTypes={selectedTypes}
@@ -618,6 +625,7 @@ function ClientsContent() {
             lists={lists}
             onListsUpdated={refetchLists}
             globalFilter={globalFilter}
+            searchExact={searchExact}
             selectedTypes={selectedTypes}
             hideSearchBar={true}
             selectedClients={selectedClients}

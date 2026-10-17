@@ -97,6 +97,8 @@ import { TransferTableSkeleton } from "./transfer-page-skeleton";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { DocumentTextIcon } from "@/src/components/icons";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { createSearchMatcher } from "@/src/utils/search-text";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -128,6 +130,9 @@ export default function TransferTable({
   loading,
   searchQuery = "",
   setSearchQuery,
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  searchExact = false,
+  setSearchExact,
   activeTab = "all",
   onTabChange,
   transferCounts = {},
@@ -168,21 +173,19 @@ export default function TransferTable({
       result = result.filter((t) => t.status === "expired");
     }
 
-    // Filtrer par recherche
+    // Filtrer par recherche (sans accents ni majuscules, sauf bouton « Aa »)
     if (debouncedSearchQuery) {
-      const query = debouncedSearchQuery.toLowerCase();
+      const match = createSearchMatcher(debouncedSearchQuery, {
+        exact: searchExact,
+      });
       result = result.filter((transfer) => {
         const files = transfer.files || [];
-        return files.some((file) =>
-          (file.originalName || file.fileName || "")
-            .toLowerCase()
-            .includes(query),
-        );
+        return files.some((file) => match(file.originalName || file.fileName));
       });
     }
 
     return result;
-  }, [transfers, activeTab, debouncedSearchQuery]);
+  }, [transfers, activeTab, debouncedSearchQuery, searchExact]);
 
   const data = useMemo(() => filteredData, [filteredData]);
 
@@ -639,6 +642,10 @@ export default function TransferTable({
                 <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
               </button>
             )}
+            <SearchExactToggle
+              pressed={searchExact}
+              onPressedChange={setSearchExact}
+            />
           </div>
         </div>
 
@@ -799,7 +806,12 @@ export default function TransferTable({
               placeholder="Rechercher des transferts..."
               value={searchQuery ?? ""}
               onChange={(event) => setSearchQuery?.(event.target.value)}
-              className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+              className="h-9 pl-3 pr-9 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+            />
+            <SearchExactToggle
+              pressed={searchExact}
+              onPressedChange={setSearchExact}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2"
             />
           </div>
 

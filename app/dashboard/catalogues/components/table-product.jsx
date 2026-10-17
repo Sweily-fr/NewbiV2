@@ -102,14 +102,16 @@ import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { MenuBoardIcon } from "@/src/components/icons";
 import { CataloguesTableSkeleton } from "./catalogues-page-skeleton";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { createSearchMatcher } from "@/src/utils/search-text";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
-// Custom filter function for multi-column searching
-const multiColumnFilterFn = (row, columnId, filterValue) => {
-  const searchableRowContent =
-    `${row.original.name} ${row.original.reference} ${row.original.category || ""}`.toLowerCase();
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableRowContent.includes(searchTerm);
-};
+// Recherche nom / référence / catégorie, sans accents ni majuscules sauf si
+// le bouton « Aa » est coché. Le filtre vaut { query, exact } ;
+// resolveFilterValue prépare la comparaison une seule fois par saisie.
+const multiColumnFilterFn = (row, columnId, match) =>
+  match(row.original.name, row.original.reference, row.original.category);
+multiColumnFilterFn.resolveFilterValue = (value) =>
+  createSearchMatcher(value?.query, { exact: value?.exact });
 
 const categoryFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -380,6 +382,8 @@ export default function TableProduct({
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const debouncedGlobalFilter = useDebouncedValue(globalFilter, 300);
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -406,13 +410,29 @@ export default function TableProduct({
   const filteredProducts = useMemo(() => {
     if (!debouncedGlobalFilter) return allProducts;
 
-    const searchTerm = debouncedGlobalFilter.toLowerCase();
-    return allProducts.filter((product) => {
-      const searchableContent =
-        `${product.name} ${product.reference || ""} ${product.category || ""}`.toLowerCase();
-      return searchableContent.includes(searchTerm);
+    // Sans accents ni majuscules, sauf bouton « Aa » coché
+    const match = createSearchMatcher(debouncedGlobalFilter, {
+      exact: searchExact,
     });
-  }, [allProducts, debouncedGlobalFilter]);
+    return allProducts.filter((product) =>
+      match(product.name, product.reference, product.category),
+    );
+  }, [allProducts, debouncedGlobalFilter, searchExact]);
+
+  // Filtre de colonne « name » (immédiat, sans attendre le délai de saisie) :
+  // { query, exact }, rejoué quand le bouton « Aa » change
+  useEffect(() => {
+    setColumnFilters((prev) => {
+      const otherFilters = prev.filter((f) => f.id !== "name");
+      if (globalFilter) {
+        return [
+          ...otherFilters,
+          { id: "name", value: { query: globalFilter, exact: searchExact } },
+        ];
+      }
+      return otherFilters.length === prev.length ? prev : otherFilters;
+    });
+  }, [globalFilter, searchExact]);
 
   const [sorting, setSorting] = useState([
     {
@@ -574,17 +594,13 @@ export default function TableProduct({
                   id={`${id}-input`}
                   ref={inputRef}
                   value={globalFilter}
-                  onChange={(e) => {
-                    setGlobalFilter(e.target.value);
-                    table.getColumn("name")?.setFilterValue(e.target.value);
-                  }}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
                   placeholder="Recherchez par nom ou par référence..."
                 />
                 {Boolean(globalFilter) && (
                   <button
                     onClick={() => {
                       setGlobalFilter("");
-                      table.getColumn("name")?.setFilterValue("");
                       inputRef.current?.focus();
                     }}
                     className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
@@ -593,6 +609,10 @@ export default function TableProduct({
                     <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
                   </button>
                 )}
+                <SearchExactToggle
+                  pressed={searchExact}
+                  onPressedChange={setSearchExact}
+                />
               </div>
 
               {/* Filters Button - move to left side */}
@@ -860,11 +880,13 @@ export default function TableProduct({
                 <Input
                   placeholder="Rechercher..."
                   value={globalFilter}
-                  onChange={(e) => {
-                    setGlobalFilter(e.target.value);
-                    table.getColumn("name")?.setFilterValue(e.target.value);
-                  }}
-                  className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  className="h-9 pl-3 pr-9 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
+                />
+                <SearchExactToggle
+                  pressed={searchExact}
+                  onPressedChange={setSearchExact}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2"
                 />
               </div>
 

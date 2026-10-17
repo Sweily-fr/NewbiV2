@@ -29,6 +29,7 @@ import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -67,7 +68,10 @@ const formatDateForSearch = (dateValue) => {
   }
 };
 
-const multiColumnFilter = (row, columnId, filterValue) => {
+// Recherche globale, sans accents ni majuscules sauf si le bouton « Aa » est
+// coché. Le filtre global vaut { query, exact } ; resolveFilterValue prépare
+// la comparaison (match) une seule fois par saisie.
+const multiColumnFilter = (row, columnId, match) => {
   const dn = row.original;
   const searchableContent = [
     dn.number,
@@ -80,13 +84,12 @@ const multiColumnFilter = (row, columnId, filterValue) => {
     DELIVERY_NOTE_STATUS_LABELS[dn.status],
     ...(dn.issueDate ? formatDateForSearch(dn.issueDate) : []),
     ...(dn.deliveryDate ? formatDateForSearch(dn.deliveryDate) : []),
-  ]
-    .filter(Boolean)
-    .map((s) => s.toString().toLowerCase().trim());
+  ].filter(Boolean);
 
-  const searchTerm = (filterValue ?? "").toLowerCase().trim();
-  return searchableContent.some((content) => content.includes(searchTerm));
+  return match(...searchableContent);
 };
+multiColumnFilter.resolveFilterValue = (value) =>
+  createSearchMatcher(value?.query, { exact: value?.exact });
 
 const clientFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -173,6 +176,8 @@ export function useDeliveryNoteTable({
   onOpenSidebar,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
@@ -445,6 +450,13 @@ export function useDeliveryNoteTable({
     [statusFilter, clientFilter, dateFilter],
   );
 
+  // Le drapeau « exact » voyage dans la valeur du filtre pour relancer le
+  // filtrage quand on bascule le bouton « Aa »
+  const tableGlobalFilter = useMemo(
+    () => (globalFilter ? { query: globalFilter, exact: searchExact } : ""),
+    [globalFilter, searchExact],
+  );
+
   const table = useReactTable({
     data,
     columns,
@@ -454,11 +466,10 @@ export function useDeliveryNoteTable({
     getFilteredRowModel: getFilteredRowModel(),
     autoResetPageIndex: false,
     enableMultiRemove: true,
-    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: multiColumnFilter,
     state: {
-      globalFilter,
+      globalFilter: tableGlobalFilter,
       columnVisibility,
       columnFilters,
     },
@@ -514,6 +525,8 @@ export function useDeliveryNoteTable({
     table,
     globalFilter,
     setGlobalFilter,
+    searchExact,
+    setSearchExact,
     statusFilter,
     setStatusFilter,
     clientFilter,

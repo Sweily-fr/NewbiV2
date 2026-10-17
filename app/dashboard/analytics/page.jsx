@@ -42,6 +42,8 @@ import {
 } from "lucide-react";
 import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
 import { PcgTableSkeleton } from "./components/analytics-skeleton";
+import { createSearchMatcher } from "@/src/utils/search-text";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
 const PARENT_CATEGORIES = [
   "Tous",
@@ -78,6 +80,8 @@ function ConfidenceBadge({ confidence }) {
 function PCGMappingTable() {
   const { data, loading, error } = useQuery(GET_PCG_MAPPING_TABLE);
   const [search, setSearch] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("Tous");
   const [confidenceFilter, setConfidenceFilter] = useState("all");
   const [sortField, setSortField] = useState("bridgeCategoryId");
@@ -106,15 +110,16 @@ function PCGMappingTable() {
     if (!data?.pcgMappingTable) return [];
     let items = [...data.pcgMappingTable];
 
-    // Filter by search
-    if (search) {
-      const s = search.toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.bridgeLabel.toLowerCase().includes(s) ||
-          item.pcgNumero.includes(s) ||
-          item.pcgIntitule.toLowerCase().includes(s) ||
-          item.parentCategory.toLowerCase().includes(s),
+    // Filter by search (sans accents ni majuscules, sauf bouton « Aa »)
+    if (search.trim()) {
+      const match = createSearchMatcher(search, { exact: searchExact });
+      items = items.filter((item) =>
+        match(
+          item.bridgeLabel,
+          item.pcgNumero,
+          item.pcgIntitule,
+          item.parentCategory,
+        ),
       );
     }
 
@@ -145,7 +150,15 @@ function PCGMappingTable() {
     });
 
     return items;
-  }, [data, search, categoryFilter, confidenceFilter, sortField, sortDir]);
+  }, [
+    data,
+    search,
+    searchExact,
+    categoryFilter,
+    confidenceFilter,
+    sortField,
+    sortDir,
+  ]);
 
   // Stats
   const stats = useMemo(() => {
@@ -231,7 +244,12 @@ function PCGMappingTable() {
             placeholder="Rechercher par catégorie, compte PCG..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 pr-9"
+          />
+          <SearchExactToggle
+            pressed={searchExact}
+            onPressedChange={setSearchExact}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>

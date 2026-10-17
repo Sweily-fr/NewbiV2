@@ -84,6 +84,7 @@ import {
 } from "@/src/hooks/useOrganizationRoles";
 import { TRANSFER_ORGANIZATION_OWNERSHIP } from "@/src/graphql/organizationRoleQueries";
 import { invalidateFullOrganizationCache } from "@/src/lib/full-organization-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 export default function EspacesSection() {
   const [organizations, setOrganizations] = useState([]);
@@ -306,12 +307,15 @@ export default function EspacesSection() {
   }, [refreshTrigger]);
 
   // Filter members based on search term + status filters
+  // (recherche sans accents ni majuscules)
+  const memberSearchMatch = createSearchMatcher(debouncedSearchTerm);
   const filteredMembers = members.filter((member) => {
     // Search filter
-    const matchesSearch =
-      member.name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      member.role?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+    const matchesSearch = memberSearchMatch(
+      member.name,
+      member.email,
+      member.role,
+    );
 
     // Status filter
     const memberStatus =

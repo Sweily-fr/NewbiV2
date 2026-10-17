@@ -18,6 +18,7 @@ import {
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
 import { COUNTRIES, findCountry } from "@/src/lib/countries";
+import { matchesSearch } from "@/src/utils/search-text";
 
 /**
  * Composant select-search pour choisir un pays.
@@ -81,10 +82,8 @@ export function CountrySearchSelect({
           filter={(value, search) => {
             // value est le `value` du CommandItem (on y met `${name} ${code}`)
             // search est ce que l'utilisateur tape
-            if (!search) return 1;
-            const v = value.toLowerCase();
-            const s = search.toLowerCase().trim();
-            return v.includes(s) ? 1 : 0;
+            // sans accents ni majuscules : « suede » trouve « Suède »
+            return matchesSearch(value, search) ? 1 : 0;
           }}
         >
           <CommandInput placeholder="Rechercher un pays..." />

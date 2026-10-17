@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getModuleActionsForMemberships } from "./organization-roles.js";
+import { buildSearchRegExp } from "./search-regex.js";
 
 /**
  * Espace gestionnaire : factures, devis, bons de commande, bons de
@@ -165,11 +166,21 @@ export async function listReadableClientOrganizations(
  * @param {string} [params.status] valeur d'onglet (voir MANAGED_DOCUMENT_KINDS)
  * @param {string} [params.organizationId] un seul dossier
  * @param {string} [params.q] recherche : numéro ou client destinataire
+ * @param {boolean} [params.exact] recherche exacte (majuscules et accents)
  * @param {number} [params.page]
  */
 export async function listManagedDocuments(
   mongoDb,
-  { managerId, userId, kind, status = "all", organizationId, q = "", page = 1 },
+  {
+    managerId,
+    userId,
+    kind,
+    status = "all",
+    organizationId,
+    q = "",
+    exact = false,
+    page = 1,
+  },
 ) {
   const config = MANAGED_DOCUMENT_KINDS[kind];
   if (!config) throw new Error(`Type de document inconnu : ${kind}`);
@@ -204,7 +215,8 @@ export async function listManagedDocuments(
   const base = { workspaceId: { $in: workspaceIds } };
   const search = typeof q === "string" ? q.trim().slice(0, 100) : "";
   if (search) {
-    const regex = new RegExp(escapeRegex(search), "i");
+    // Sans accents ni majuscules, sauf bouton « Aa » coché
+    const regex = buildSearchRegExp(search, { exact });
     const or = [
       { number: regex },
       { prefix: regex },

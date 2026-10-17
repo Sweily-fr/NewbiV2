@@ -62,6 +62,7 @@ import {
   Download,
   Trash2,
 } from "lucide-react";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 const BRANDFETCH_CDN = "https://cdn.brandfetch.io";
 
@@ -2696,14 +2697,12 @@ export function ApplicationsSection() {
   const installedApps = appsWithStatus.filter((app) => app.installed);
 
   const filteredApps = useMemo(() => {
+    // Sans accents ni majuscules
+    const match = createSearchMatcher(searchQuery);
     return appsWithStatus.filter((app) => {
       const matchesCategory =
         activeCategory === "all" || app.category === activeCategory;
-      const matchesSearch =
-        !searchQuery ||
-        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.author.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = match(app.name, app.description, app.author);
       return matchesCategory && matchesSearch;
     });
   }, [activeCategory, searchQuery, appsWithStatus]);
