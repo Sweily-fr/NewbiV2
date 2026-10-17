@@ -127,10 +127,12 @@ export function DocumentPreviewPanel({
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose?.();
-      }
+      if (e.key !== "Escape") return;
+      // Une liste ou un calendrier ouvert par-dessus (contenu Radix en
+      // portail) se ferme d'abord : le volet reste ouvert.
+      if (e.target?.closest?.("[data-radix-popper-content-wrapper]")) return;
+      e.stopPropagation();
+      onClose?.();
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
