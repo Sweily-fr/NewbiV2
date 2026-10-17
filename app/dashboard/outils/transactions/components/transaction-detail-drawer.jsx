@@ -256,8 +256,10 @@ export function TransactionDetailDrawer({
   // Fermer avec Escape + lock scroll body
   useEffect(() => {
     if (!open) return;
+    // Échap déjà traité par une couche au-dessus (liste, calendrier,
+    // dialogue de confirmation) : le tiroir reste ouvert
     const handleEscape = (e) => {
-      if (e.key === "Escape") onOpenChange(false);
+      if (e.key === "Escape" && !e.defaultPrevented) onOpenChange(false);
     };
     document.addEventListener("keydown", handleEscape);
     const prevOverflow = document.body.style.overflow;

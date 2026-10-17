@@ -149,9 +149,12 @@ export default function CategorySearchSelect({
         >
           <Command filter={filterCategory}>
             <CommandInput placeholder="Rechercher une catégorie..." />
+            {/* Molette et doigt : la liste défile même sous le verrou de
+                défilement d'un Dialog ou d'un tiroir parent */}
             <CommandList
               className="max-h-[250px] overflow-y-auto overscroll-contain"
               onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
             >
               <CommandEmpty>Aucune catégorie trouvée.</CommandEmpty>
               {groups.map((group) => (
