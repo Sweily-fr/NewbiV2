@@ -219,6 +219,25 @@ describe("listManagedDocuments", () => {
     });
   });
 
+  it("cherche sans accents ni majuscules, à l'identique avec exact", async () => {
+    await db.collection("invoices").insertOne({
+      workspaceId: orgA,
+      prefix: "F-202610",
+      number: "0004",
+      status: "PENDING",
+      issueDate: new Date(),
+      createdAt: new Date(),
+      finalTotalTTC: 50,
+      client: { name: "Société Méta" },
+    });
+
+    const names = async (params) =>
+      (await list(params)).rows.map((r) => r.clientName);
+    expect(await names({ q: "societe meta" })).toEqual(["Société Méta"]);
+    expect(await names({ q: "Méta", exact: true })).toEqual(["Société Méta"]);
+    expect(await names({ q: "meta", exact: true })).toEqual([]);
+  });
+
   it("bons de livraison : sans montant, ouverts dans leur liste", async () => {
     await db.collection("deliverynotes").insertOne({
       workspaceId: orgA,

@@ -17,6 +17,7 @@ import {
   formatRecurrenceFrequency,
 } from "@/src/graphql/invoiceRecurrenceQueries";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 const COLUMNS = [
   { id: "client", label: "Client", size: 220 },
@@ -98,25 +99,26 @@ export default function RecurringInvoicesTable({
   error,
   onRetry,
   globalFilter = "",
+  searchExact = false,
   onManage,
 }) {
   const rows = useMemo(() => {
-    const q = globalFilter.trim().toLowerCase();
+    // Sans accents ni majuscules sauf si le bouton « Aa » est coché
+    const match = createSearchMatcher(globalFilter, { exact: searchExact });
     return [...recurrences]
-      .filter((r) => {
-        if (!q) return true;
-        return (
-          reference(r).toLowerCase().includes(q) ||
-          (r.sourceInvoice?.clientName || "").toLowerCase().includes(q) ||
-          (r.sourceInvoice?.clientEmail || "").toLowerCase().includes(q)
-        );
-      })
+      .filter((r) =>
+        match(
+          reference(r),
+          r.sourceInvoice?.clientName,
+          r.sourceInvoice?.clientEmail,
+        ),
+      )
       .sort(
         (a, b) =>
           (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3) ||
           (a.nextRunDate || "9999").localeCompare(b.nextRunDate || "9999"),
       );
-  }, [recurrences, globalFilter]);
+  }, [recurrences, globalFilter, searchExact]);
 
   if (error) {
     return (

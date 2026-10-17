@@ -131,13 +131,29 @@ import ClientFilters from "./client-filters";
 import CreateListDialog from "./create-list-dialog";
 import AssignMembersDialog from "./assign-members-dialog";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-// Custom filter function for multi-column searching
-const multiColumnFilterFn = (row, columnId, filterValue) => {
-  const searchableRowContent =
-    `${row.original.name} ${row.original.email} ${row.original.firstName || ""} ${row.original.lastName || ""}`.toLowerCase();
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableRowContent.includes(searchTerm);
+import { createSearchMatcher } from "@/src/utils/search-text";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
+// Recherche sur les champs que la recherche serveur interroge (nom, e-mail,
+// prénom et nom, SIRET, TVA, adresse) : sans quoi le filtre local écartait
+// des résultats du serveur. Sans accents ni majuscules sauf si le bouton
+// « Aa » est coché. Le filtre vaut { query, exact } ; resolveFilterValue
+// prépare la comparaison une seule fois par saisie.
+const multiColumnFilterFn = (row, columnId, match) => {
+  const client = row.original;
+  return match(
+    client.name,
+    client.email,
+    [client.firstName, client.lastName].filter(Boolean).join(" "),
+    client.siret,
+    client.vatNumber,
+    client.address?.street,
+    client.address?.postalCode,
+    client.address?.city,
+    client.address?.country,
+  );
 };
+multiColumnFilterFn.resolveFilterValue = (value) =>
+  createSearchMatcher(value?.query, { exact: value?.exact });
 
 const typeFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -429,6 +445,7 @@ export default function TableClients({
   onSelectList,
   workspaceId,
   externalGlobalFilter = "",
+  externalSearchExact = false,
   externalSelectedTypes = [],
   selectedList = null,
   hideSearchBar = false,
@@ -474,6 +491,7 @@ export default function TableClients({
   });
   const inputRef = useRef(null);
   const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
+  const [internalSearchExact, setInternalSearchExact] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [assignTargetClient, setAssignTargetClient] = useState(null);
@@ -483,21 +501,30 @@ export default function TableClients({
     ? externalGlobalFilter
     : internalGlobalFilter;
   const setGlobalFilter = setInternalGlobalFilter;
+  // Bouton « Aa » (recherche exacte) : celui de la page si elle porte la
+  // barre de recherche, sinon celui du tableau
+  const searchExact = hideSearchBar ? externalSearchExact : internalSearchExact;
+  const setSearchExact = setInternalSearchExact;
 
   const debouncedGlobalFilter = useDebouncedValue(globalFilter, 300);
 
-  // Appliquer le filtre externe au filtre de colonne quand useProvidedClients est true
+  // Recherche locale (clients fournis, ou barre propre au tableau) : le
+  // filtre de colonne « name » vaut { query, exact }, rejoué quand le bouton
+  // « Aa » change. Sans barre ni clients fournis, la recherche est côté
+  // serveur uniquement.
   useEffect(() => {
-    if (useProvidedClients && externalGlobalFilter !== undefined) {
-      setColumnFilters((prev) => {
-        const otherFilters = prev.filter((f) => f.id !== "name");
-        if (externalGlobalFilter) {
-          return [...otherFilters, { id: "name", value: externalGlobalFilter }];
-        }
-        return otherFilters;
-      });
-    }
-  }, [useProvidedClients, externalGlobalFilter]);
+    const localSearch = useProvidedClients || !hideSearchBar;
+    setColumnFilters((prev) => {
+      const otherFilters = prev.filter((f) => f.id !== "name");
+      if (localSearch && globalFilter) {
+        return [
+          ...otherFilters,
+          { id: "name", value: { query: globalFilter, exact: searchExact } },
+        ];
+      }
+      return otherFilters.length === prev.length ? prev : otherFilters;
+    });
+  }, [useProvidedClients, hideSearchBar, globalFilter, searchExact]);
 
   // Appliquer le filtre de type externe (depuis la page parente)
   useEffect(() => {
@@ -517,7 +544,7 @@ export default function TableClients({
     debouncedGlobalFilter,
     // Pas de requête si les clients sont fournis (vue d'une liste) ou si le
     // rôle ne peut pas lire les clients
-    { skip: useProvidedClients || !canOpenClients },
+    { skip: useProvidedClients || !canOpenClients, searchExact },
   );
 
   const {
@@ -800,14 +827,10 @@ export default function TableClients({
                   ref={inputRef}
                   className={cn(
                     "w-full sm:w-[320px] lg:w-[320px] ps-9",
-                    Boolean(table.getColumn("name")?.getFilterValue()) &&
-                      "pe-9",
+                    Boolean(globalFilter) ? "pe-16" : "pe-9",
                   )}
                   value={globalFilter}
-                  onChange={(e) => {
-                    setGlobalFilter(e.target.value);
-                    table.getColumn("name")?.setFilterValue(e.target.value);
-                  }}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
                   placeholder="Recherchez par nom, email ou SIRET..."
                   type="text"
                   aria-label="Filter by name or email"
@@ -817,11 +840,10 @@ export default function TableClients({
                 </div>
                 {Boolean(globalFilter) && (
                   <button
-                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-7 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Clear filter"
                     onClick={() => {
                       setGlobalFilter("");
-                      table.getColumn("name")?.setFilterValue("");
                       if (inputRef.current) {
                         inputRef.current.focus();
                       }
@@ -830,6 +852,11 @@ export default function TableClients({
                     <CircleXIcon size={16} aria-hidden="true" />
                   </button>
                 )}
+                <SearchExactToggle
+                  pressed={searchExact}
+                  onPressedChange={setSearchExact}
+                  className="absolute end-1.5 top-1/2 -translate-y-1/2"
+                />
               </div>
 
               {/* Filters Button */}
@@ -1145,11 +1172,13 @@ export default function TableClients({
                 <Input
                   placeholder="Rechercher des clients..."
                   value={globalFilter}
-                  onChange={(e) => {
-                    setGlobalFilter(e.target.value);
-                    table.getColumn("name")?.setFilterValue(e.target.value);
-                  }}
-                  className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  className="h-9 pl-3 pr-9 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
+                />
+                <SearchExactToggle
+                  pressed={searchExact}
+                  onPressedChange={setSearchExact}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2"
                 />
               </div>
 

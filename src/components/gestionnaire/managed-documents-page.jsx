@@ -48,6 +48,7 @@ export default async function ManagedDocumentsPage({ kind, searchParams }) {
     status: String(one(params?.statut) || "all"),
     organizationId: String(one(params?.dossier) || ""),
     q: String(one(params?.q) || ""),
+    exact: one(params?.exact) === "1",
     page: Number(one(params?.page)) || 1,
   };
 
@@ -58,6 +59,7 @@ export default async function ManagedDocumentsPage({ kind, searchParams }) {
     status: current.status,
     organizationId: current.organizationId || undefined,
     q: current.q,
+    exact: current.exact,
     page: current.page,
   });
 

@@ -7,6 +7,7 @@ import { Input } from "@/src/components/ui/input";
 import { Search, LoaderCircle } from "lucide-react";
 import { useClients } from "@/src/graphql/clientQueries";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 export default function AutoReminderClients() {
   const { watch, setValue } = useFormContext();
@@ -24,14 +25,11 @@ export default function AutoReminderClients() {
   const filteredClients = useMemo(() => {
     if (!clients) return [];
 
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return clients;
+    if (!searchQuery.trim()) return clients;
 
-    return clients.filter(
-      (client) =>
-        client.name?.toLowerCase().includes(query) ||
-        client.email?.toLowerCase().includes(query),
-    );
+    // Sans accents ni majuscules
+    const match = createSearchMatcher(searchQuery);
+    return clients.filter((client) => match(client.name, client.email));
   }, [clients, searchQuery]);
 
   // excludedClientIds peut contenir des IDs de clients supprimés depuis :

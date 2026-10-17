@@ -23,6 +23,7 @@ import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 export default function BankingConnectButton() {
   const { workspaceId } = useWorkspace();
@@ -60,9 +61,10 @@ export default function BankingConnectButton() {
     }
   }, [isModalOpen]);
 
-  // Filtrer les institutions par recherche
+  // Filtrer les institutions par recherche (sans accents ni majuscules)
+  const institutionMatch = createSearchMatcher(debouncedSearchQuery);
   const filteredInstitutions = institutions.filter((inst) =>
-    inst.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
+    institutionMatch(inst.name),
   );
 
   const handleOpenModal = () => {

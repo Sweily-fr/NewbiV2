@@ -28,6 +28,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Label } from "@/src/components/ui/label";
 import {
@@ -128,6 +129,8 @@ export default function DeliveryNoteTable({ dnIdToOpen }) {
     table,
     globalFilter,
     setGlobalFilter,
+    searchExact,
+    setSearchExact,
     statusFilter,
     setStatusFilter,
     clientFilter,
@@ -235,6 +238,10 @@ export default function DeliveryNoteTable({ dnIdToOpen }) {
                   <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
                 </button>
               )}
+              <SearchExactToggle
+                pressed={searchExact}
+                onPressedChange={setSearchExact}
+              />
             </div>
 
             <DeliveryNoteFilters
@@ -345,8 +352,15 @@ export default function DeliveryNoteTable({ dnIdToOpen }) {
               placeholder="Rechercher..."
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(event.target.value)}
-              className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+              className="h-9 pl-3 pr-9 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
             />
+            {/* Bouton « Aa » (recherche exacte) */}
+            <div className="absolute inset-y-0 end-0 flex items-center pe-1.5">
+              <SearchExactToggle
+                pressed={searchExact}
+                onPressedChange={setSearchExact}
+              />
+            </div>
           </div>
 
           <Popover>

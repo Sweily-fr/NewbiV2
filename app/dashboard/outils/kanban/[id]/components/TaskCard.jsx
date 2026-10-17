@@ -74,6 +74,7 @@ import { useTaskFieldMutations } from "../hooks/useTaskFieldMutations";
 import { useTaskViewers } from "../hooks/useTaskPresence";
 import { TaskViewersAvatars, PRESENCE_RING_CLASS } from "./TaskViewers";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 // Choisit la pièce jointe à afficher en couverture de carte :
 // une image en priorité, sinon la première vidéo.
@@ -154,15 +155,14 @@ const CardTagPopover = memo(function CardTagPopover({
 
   // filteredTags + canCreate dépendent de search → memoize ensemble
   const { filteredTags, canCreate } = useMemo(() => {
-    const lowerSearch = search.toLowerCase();
+    // Sans accents ni majuscules : « equipe » trouve « Équipe »
+    const matchesTag = createSearchMatcher(search);
     const trimmedLower = search.trim().toLowerCase();
     const taskTagsLower = taskTags.map((t) => t.name.toLowerCase());
     const taskTagsSet = new Set(taskTagsLower);
 
     const filtered = existingTags.filter(
-      (t) =>
-        t.name.toLowerCase().includes(lowerSearch) &&
-        !taskTagsSet.has(t.name.toLowerCase()),
+      (t) => matchesTag(t.name) && !taskTagsSet.has(t.name.toLowerCase()),
     );
 
     const can =

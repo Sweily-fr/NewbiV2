@@ -33,6 +33,7 @@ import { DocumentText2Icon } from "@/src/components/icons";
 import { useCreditNotes } from "@/src/graphql/creditNoteQueries";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 
@@ -79,6 +80,7 @@ function formatNumber(item) {
 
 export default function CreditNotesTable({
   globalFilter = "",
+  searchExact = false,
   onPreviewInvoice,
 }) {
   // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
@@ -92,33 +94,26 @@ export default function CreditNotesTable({
 
   const filtered = useMemo(() => {
     const list = creditNotes || [];
-    const q = (globalFilter || "").trim().toLowerCase();
-    if (!q) return list;
+    if (!(globalFilter || "").trim()) return list;
+    // Sans accents ni majuscules sauf si le bouton « Aa » est coché
+    const match = createSearchMatcher(globalFilter, { exact: searchExact });
     return list.filter((creditNote) => {
-      const number = formatNumber(creditNote).toLowerCase();
-      const invoiceNumber = (
+      const number = formatNumber(creditNote);
+      const invoiceNumber =
         formatNumber(creditNote.originalInvoice) ||
         creditNote.originalInvoiceNumber ||
-        ""
-      )
-        .toString()
-        .toLowerCase();
-      const clientName = (creditNote.client?.name || "").toLowerCase();
+        "";
+      const clientName = creditNote.client?.name || "";
       const amount = String(
         creditNote.finalTotalTTC ?? creditNote.totalTTC ?? "",
       );
-      return (
-        number.includes(q) ||
-        invoiceNumber.includes(q) ||
-        clientName.includes(q) ||
-        amount.includes(q)
-      );
+      return match(number, invoiceNumber, clientName, amount);
     });
-  }, [creditNotes, globalFilter]);
+  }, [creditNotes, globalFilter, searchExact]);
 
   useEffect(() => {
     setPageIndex(0);
-  }, [globalFilter, pageSize]);
+  }, [globalFilter, searchExact, pageSize]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageRows = useMemo(() => {

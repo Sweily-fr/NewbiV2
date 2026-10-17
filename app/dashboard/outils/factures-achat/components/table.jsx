@@ -100,6 +100,8 @@ import {
 } from "@/lib/category-icons-config";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
 const STATUS_LABELS = {
   TO_PROCESS: "À traiter",
@@ -116,17 +118,17 @@ const CATEGORIZE_OPTIONS = Object.fromEntries(
   EXPENSE_CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
 );
 
-const multiColumnFilterFn = (row, columnId, filterValue) => {
-  const search = filterValue.toLowerCase();
-  const supplierName = (row.getValue("supplierName") || "").toLowerCase();
-  const invoiceNumber = (row.original.invoiceNumber || "").toLowerCase();
-  const amount = String(row.original.amountTTC || "");
-  return (
-    supplierName.includes(search) ||
-    invoiceNumber.includes(search) ||
-    amount.includes(search)
+// Recherche fournisseur / n° / montant, sans accents ni majuscules sauf si
+// le bouton « Aa » est coché. Le filtre global vaut { query, exact } ;
+// resolveFilterValue prépare la comparaison une seule fois par saisie.
+const multiColumnFilterFn = (row, columnId, match) =>
+  match(
+    row.getValue("supplierName"),
+    row.original.invoiceNumber,
+    row.original.amountTTC,
   );
-};
+multiColumnFilterFn.resolveFilterValue = (value) =>
+  createSearchMatcher(value?.query, { exact: value?.exact });
 
 export default function PurchaseInvoiceTable({
   invoices = [],
@@ -147,6 +149,7 @@ export default function PurchaseInvoiceTable({
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [searchExact, setSearchExact] = useState(false);
   const [sorting, setSorting] = useState([{ id: "issueDate", desc: true }]);
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
@@ -373,19 +376,23 @@ export default function PurchaseInvoiceTable({
     [onRowClick, canSelectPurchaseInvoices],
   );
 
+  const tableGlobalFilter = useMemo(
+    () => (globalFilter ? { query: globalFilter, exact: searchExact } : ""),
+    [globalFilter, searchExact],
+  );
+
   const table = useReactTable({
     data: filteredInvoices,
     columns,
     state: {
       columnFilters,
-      globalFilter,
+      globalFilter: tableGlobalFilter,
       sorting,
       rowSelection,
       columnVisibility,
       pagination,
     },
     onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
@@ -398,6 +405,12 @@ export default function PurchaseInvoiceTable({
     globalFilterFn: multiColumnFilterFn,
     getRowId: (row) => row.id,
   });
+
+  // Liste mobile : même recherche que le tableau, appliquée à la main
+  const mobileSearchMatch = useMemo(
+    () => createSearchMatcher(globalFilter, { exact: searchExact }),
+    [globalFilter, searchExact],
+  );
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const hasSelection = selectedRows.length > 0;
@@ -457,6 +470,10 @@ export default function PurchaseInvoiceTable({
                     <CircleXIcon size={16} strokeWidth={2} />
                   </button>
                 )}
+                <SearchExactToggle
+                  pressed={searchExact}
+                  onPressedChange={setSearchExact}
+                />
               </div>
 
               <DropdownMenu>
@@ -1009,6 +1026,10 @@ export default function PurchaseInvoiceTable({
                   <CircleXIcon size={16} strokeWidth={2} />
                 </button>
               )}
+              <SearchExactToggle
+                pressed={searchExact}
+                onPressedChange={setSearchExact}
+              />
             </div>
           </div>
 
@@ -1079,15 +1100,13 @@ export default function PurchaseInvoiceTable({
                 />
               ) : (
                 filteredInvoices
-                  .filter((inv) => {
-                    if (!globalFilter) return true;
-                    const s = globalFilter.toLowerCase();
-                    return (
-                      (inv.supplierName || "").toLowerCase().includes(s) ||
-                      (inv.invoiceNumber || "").toLowerCase().includes(s) ||
-                      String(inv.amountTTC).includes(s)
-                    );
-                  })
+                  .filter((inv) =>
+                    mobileSearchMatch(
+                      inv.supplierName,
+                      inv.invoiceNumber,
+                      inv.amountTTC,
+                    ),
+                  )
                   .map((inv) => (
                     <div
                       key={inv.id}

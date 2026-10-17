@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_CLIENT_SEGMENTS = gql`
   query GetClientSegments($workspaceId: String!) {
@@ -43,8 +43,22 @@ export const GET_CLIENT_SEGMENT = gql`
 `;
 
 export const GET_CLIENTS_IN_SEGMENT = gql`
-  query GetClientsInSegment($workspaceId: String!, $segmentId: ID!, $page: Int, $limit: Int, $search: String) {
-    clientsInSegment(workspaceId: $workspaceId, segmentId: $segmentId, page: $page, limit: $limit, search: $search) {
+  query GetClientsInSegment(
+    $workspaceId: String!
+    $segmentId: ID!
+    $page: Int
+    $limit: Int
+    $search: String
+    $searchExact: Boolean
+  ) {
+    clientsInSegment(
+      workspaceId: $workspaceId
+      segmentId: $segmentId
+      page: $page
+      limit: $limit
+      search: $search
+      searchExact: $searchExact
+    ) {
       items {
         id
         name

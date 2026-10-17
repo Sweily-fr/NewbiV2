@@ -97,6 +97,7 @@ import {
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 import { cn } from "@/src/lib/utils";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import {
   Popover,
   PopoverContent,
@@ -224,6 +225,8 @@ function KanbanPageContent() {
     table,
     globalFilter,
     setGlobalFilter,
+    searchExact,
+    setSearchExact,
     selectedRows,
     uniqueClients,
     uniqueCategories,
@@ -663,11 +666,16 @@ function KanbanPageContent() {
               placeholder="Rechercher une liste ou un client..."
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(event.target.value)}
-              className="w-full sm:w-[300px] ps-9"
+              className="w-full sm:w-[300px] ps-9 pe-9"
             />
             <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
               <Search size={16} aria-hidden="true" />
             </div>
+            <SearchExactToggle
+              pressed={searchExact}
+              onPressedChange={setSearchExact}
+              className="absolute end-1.5 top-1/2 -translate-y-1/2"
+            />
           </div>
 
           {/* Bouton Filtres */}

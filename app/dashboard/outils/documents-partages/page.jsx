@@ -178,6 +178,7 @@ import { Label } from "@/src/components/ui/label";
 import { toast } from "@/src/components/ui/sonner";
 import { Progress } from "@/src/components/ui/progress";
 import { cn } from "@/src/lib/utils";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -351,6 +352,8 @@ export default function DocumentsPartagesPage() {
   const [selectedFolders, setSelectedFolders] = useState([]);
   const [highlightedFolderId, setHighlightedFolderId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("documents-partages-viewMode") || "list";
@@ -544,6 +547,7 @@ export default function DocumentsPartagesPage() {
   } = useSharedDocuments({
     folderId: selectedFolder,
     search: debouncedSearch || undefined,
+    searchExact,
     sortBy,
     sortOrder,
     // Filtres avancés
@@ -2928,7 +2932,12 @@ export default function DocumentsPartagesPage() {
                           placeholder="Rechercher..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-8 w-32 md:w-48 h-8 text-sm"
+                          className="pl-8 pr-8 w-32 md:w-48 h-8 text-sm"
+                        />
+                        <SearchExactToggle
+                          pressed={searchExact}
+                          onPressedChange={setSearchExact}
+                          className="absolute right-1 top-1/2 -translate-y-1/2"
                         />
                       </div>
                       {/* Mobile search icon toggle */}
@@ -2944,13 +2953,20 @@ export default function DocumentsPartagesPage() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-64 p-2" align="end">
-                            <Input
-                              placeholder="Rechercher..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="h-8 text-sm"
-                              autoFocus
-                            />
+                            <div className="relative">
+                              <Input
+                                placeholder="Rechercher..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-8 pr-8 text-sm"
+                                autoFocus
+                              />
+                              <SearchExactToggle
+                                pressed={searchExact}
+                                onPressedChange={setSearchExact}
+                                className="absolute right-1 top-1/2 -translate-y-1/2"
+                              />
+                            </div>
                           </PopoverContent>
                         </Popover>
                       )}

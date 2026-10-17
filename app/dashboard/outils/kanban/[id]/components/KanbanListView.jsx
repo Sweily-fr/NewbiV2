@@ -77,6 +77,7 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
 import { calculateTaskAmount, formatTaskAmount } from "./taskAmount";
 import { toast } from "sonner";
+import { createSearchMatcher, matchesSearch } from "@/src/utils/search-text";
 
 function formatDate(dateString) {
   if (!dateString) return "";
@@ -281,9 +282,7 @@ const MembersPopover = React.memo(function MembersPopover({
         </div>
         <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
           {members
-            .filter((m) =>
-              m.name?.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
+            .filter((m) => matchesSearch(m.name, searchQuery))
             .map((member) => {
               const isSelected = effectiveMembers.includes(member.id);
               return (
@@ -347,9 +346,8 @@ function StatusPopoverContent({
   onClose,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const filtered = columns.filter((c) =>
-    c.title?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Sans accents ni majuscules
+  const filtered = columns.filter((c) => matchesSearch(c.title, searchQuery));
 
   return (
     <>
@@ -1443,11 +1441,7 @@ function InlineAssignPopover({ members, assignedMembers, setAssignedMembers }) {
         </div>
         <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
           {members
-            .filter((m) =>
-              (m.name || m.user?.name || "")
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase()),
-            )
+            .filter((m) => matchesSearch(m.name || m.user?.name, searchQuery))
             .map((member) => {
               const memberId = member.userId || member.id;
               const memberName = member.name || member.user?.name || memberId;
@@ -1793,9 +1787,11 @@ function InlineTagPopover({ task, workspaceId, allBoardTags = [] }) {
     });
   }, [allBoardTags]);
 
+  // Sans accents ni majuscules : « equipe » trouve « Équipe »
+  const matchesTag = createSearchMatcher(search);
   const filteredTags = existingTags.filter(
     (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) &&
+      matchesTag(t.name) &&
       !taskTags.some((tt) => tt.name.toLowerCase() === t.name.toLowerCase()),
   );
 

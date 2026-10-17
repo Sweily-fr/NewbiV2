@@ -53,6 +53,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 // Custom filter functions
 // Une facture importée VALIDATED est "Terminée" au même titre qu'une facture
@@ -69,8 +70,10 @@ const statusFilterFn = (row, columnId, filterValue) => {
   return filterValue.includes(normalizeStatusForFilter(row));
 };
 
-// Mémoize filter functions to prevent recreation on each render
-const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
+// Recherche globale, sans accents ni majuscules sauf si le bouton « Aa » est
+// coché. Le filtre global vaut { query, exact } ; resolveFilterValue prépare
+// la comparaison (match) une seule fois par saisie.
+const memoizedMultiColumnFilter = (row, columnId, match) => {
   const invoice = row.original;
   const clientName = invoice.client?.name || invoice.vendor?.name || "";
   const invoiceNumber = invoice.number || invoice.originalInvoiceNumber || "";
@@ -154,15 +157,13 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
     status,
     amount.replace(/\./g, ","), // Montant avec virgule
     amount.replace(/\./g, ""), // Montant sans séparateur
-  ]
-    .filter(Boolean)
-    .map((s) => s.toString().toLowerCase().trim());
-
-  const searchTerm = (filterValue ?? "").toLowerCase().trim();
+  ].filter(Boolean);
 
   // Vérifier si le terme de recherche correspond à l'un des éléments
-  return searchableContent.some((content) => content.includes(searchTerm));
+  return match(...searchableContent);
 };
+memoizedMultiColumnFilter.resolveFilterValue = (value) =>
+  createSearchMatcher(value?.query, { exact: value?.exact });
 
 const memoizedStatusFilter = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -242,6 +243,8 @@ export function useInvoiceTable({
   onManageRecurrence,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
@@ -1030,6 +1033,13 @@ export function useInvoiceTable({
     [statusFilter, clientFilter, dateFilter, typeFilter],
   );
 
+  // Le drapeau « exact » voyage dans la valeur du filtre pour relancer le
+  // filtrage quand on bascule le bouton « Aa »
+  const tableGlobalFilter = useMemo(
+    () => (globalFilter ? { query: globalFilter, exact: searchExact } : ""),
+    [globalFilter, searchExact],
+  );
+
   // Create table instance with optimized settings
   const table = useReactTable({
     data,
@@ -1051,11 +1061,10 @@ export function useInvoiceTable({
     enableMultiRemove: true,
 
     // Filtering
-    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: memoizedMultiColumnFilter,
     state: {
-      globalFilter,
+      globalFilter: tableGlobalFilter,
       columnVisibility,
       columnFilters,
     },
@@ -1163,6 +1172,8 @@ export function useInvoiceTable({
     table,
     globalFilter,
     setGlobalFilter,
+    searchExact,
+    setSearchExact,
     statusFilter,
     setStatusFilter,
     clientFilter,

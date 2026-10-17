@@ -50,6 +50,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -316,6 +317,8 @@ export default function InvoiceTable({
     table,
     globalFilter,
     setGlobalFilter,
+    searchExact,
+    setSearchExact,
     statusFilter,
     setStatusFilter,
     clientFilter,
@@ -346,6 +349,7 @@ export default function InvoiceTable({
   // Notifier le parent des données filtrées pour les KPIs
   const filterKey = JSON.stringify({
     globalFilter,
+    searchExact,
     statusFilter,
     clientFilter,
     dateFilter: dateFilter
@@ -619,6 +623,10 @@ export default function InvoiceTable({
                   <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
                 </button>
               )}
+              <SearchExactToggle
+                pressed={searchExact}
+                onPressedChange={setSearchExact}
+              />
             </div>
 
             {/* Filters Button */}
@@ -906,8 +914,8 @@ export default function InvoiceTable({
               <Input
                 ref={inputRef}
                 className={cn(
-                  "peer w-full ps-9",
-                  Boolean(globalFilter) && "pe-9",
+                  "peer w-full ps-9 pe-9",
+                  Boolean(globalFilter) && "pe-16",
                 )}
                 value={globalFilter ?? ""}
                 onChange={(e) => setGlobalFilter(e.target.value)}
@@ -918,18 +926,25 @@ export default function InvoiceTable({
               <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
                 <Search size={16} aria-hidden="true" />
               </div>
-              {Boolean(globalFilter) && (
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Effacer la recherche"
-                  onClick={() => {
-                    setGlobalFilter("");
-                    inputRef.current?.focus();
-                  }}
-                >
-                  <CircleXIcon size={16} aria-hidden="true" />
-                </button>
-              )}
+              {/* Effacer + bouton « Aa » (recherche exacte) */}
+              <div className="absolute inset-y-0 end-0 flex items-center gap-1 pe-1.5">
+                {Boolean(globalFilter) && (
+                  <button
+                    className="text-muted-foreground/80 hover:text-foreground focus-visible:ring-ring/50 flex size-6 items-center justify-center rounded-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px]"
+                    aria-label="Effacer la recherche"
+                    onClick={() => {
+                      setGlobalFilter("");
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    <CircleXIcon size={16} aria-hidden="true" />
+                  </button>
+                )}
+                <SearchExactToggle
+                  pressed={searchExact}
+                  onPressedChange={setSearchExact}
+                />
+              </div>
             </div>
 
             {/* Filter Button */}
@@ -1205,6 +1220,7 @@ export default function InvoiceTable({
       {isCreditNotesView && (
         <CreditNotesTable
           globalFilter={globalFilter}
+          searchExact={searchExact}
           onPreviewInvoice={(invoiceId) => {
             const inv = (invoices || []).find((i) => i.id === invoiceId);
             if (inv) openSidebarManually(inv);
@@ -1219,6 +1235,7 @@ export default function InvoiceTable({
           error={recurrencesError}
           onRetry={refetchRecurrences}
           globalFilter={globalFilter}
+          searchExact={searchExact}
           // Gestion des récurrences : action « recurring » des factures
           onManage={
             canManageRecurring

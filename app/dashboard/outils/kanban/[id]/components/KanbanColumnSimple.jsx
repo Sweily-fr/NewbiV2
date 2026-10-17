@@ -41,6 +41,7 @@ import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
 import { useLazyVisible } from "../hooks/useLazyVisible";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { matchesSearch } from "@/src/utils/search-text";
 
 // Hauteur réservée pour une carte tant que son contenu n'est pas monté.
 const BOARD_CARD_MIN_HEIGHT = 92;
@@ -279,11 +280,7 @@ function InlineNewTask({
           </div>
           <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
             {members
-              .filter((m) =>
-                (m.name || m.user?.name || "")
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()),
-              )
+              .filter((m) => matchesSearch(m.name || m.user?.name, searchQuery))
               .map((member) => {
                 const memberId = member.userId || member.id;
                 const memberName = member.name || member.user?.name || memberId;

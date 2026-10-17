@@ -16,6 +16,7 @@ import {
 } from "../../components/ui/select";
 import { Input } from "../../components/ui/input";
 import { CheckCircle2, Search, Filter } from "lucide-react";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 export function ValidatedTab() {
   const [filter, setFilter] = useState("all");
@@ -42,12 +43,9 @@ export function ValidatedTab() {
 
     // Filtre par recherche
     if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.title.toLowerCase().includes(query) ||
-          s.description.toLowerCase().includes(query),
-      );
+      // Sans accents ni majuscules
+      const match = createSearchMatcher(debouncedSearchQuery);
+      filtered = filtered.filter((s) => match(s.title, s.description));
     }
 
     return filtered;

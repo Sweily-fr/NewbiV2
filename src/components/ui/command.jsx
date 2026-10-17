@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Command as CommandPrimitive } from "cmdk";
+import { Command as CommandPrimitive, defaultFilter } from "cmdk";
 import { SearchIcon } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
+import { normalizeSearchText } from "@/src/utils/search-text";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,17 @@ import {
   VisuallyHidden,
 } from "@/src/components/ui/dialog";
 
-function Command({ className, ...props }) {
+// Score par défaut de cmdk, calculé sur le texte sans accents : « societe »
+// trouve « Société » (cmdk ne compare qu'en minuscules). Un `filter` passé
+// explicitement, ou shouldFilter={false}, l'emporte.
+const accentInsensitiveFilter = (value, search, keywords) =>
+  defaultFilter(
+    normalizeSearchText(value),
+    normalizeSearchText(search),
+    keywords?.map(normalizeSearchText),
+  );
+
+function Command({ className, filter = accentInsensitiveFilter, ...props }) {
   return (
     <CommandPrimitive
       data-slot="command"
@@ -20,6 +31,7 @@ function Command({ className, ...props }) {
         "bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md",
         className,
       )}
+      filter={filter}
       {...props}
     />
   );

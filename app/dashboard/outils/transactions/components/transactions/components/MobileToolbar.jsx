@@ -2,6 +2,7 @@ import { FilterIcon, SearchIcon, CircleXIcon } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
 // Mêmes onglets serveur que le desktop (les compteurs viennent de tabCounts,
 // calculés côté serveur sur toute la base)
@@ -15,6 +16,8 @@ export function MobileToolbar({
   inputRef,
   globalFilter,
   setGlobalFilter,
+  searchExact,
+  setSearchExact,
   onFilterPress,
   activeFilterCount,
   activeTab,
@@ -36,8 +39,8 @@ export function MobileToolbar({
             <Input
               ref={inputRef}
               className={cn(
-                "peer w-full ps-9",
-                Boolean(globalFilter) && "pe-9",
+                "peer w-full ps-9 pe-9",
+                Boolean(globalFilter) && "pe-16",
               )}
               value={globalFilter}
               onChange={(e) => {
@@ -50,20 +53,27 @@ export function MobileToolbar({
             <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
               <SearchIcon size={16} aria-hidden="true" />
             </div>
-            {Boolean(globalFilter) && (
-              <button
-                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Clear filter"
-                onClick={() => {
-                  setGlobalFilter("");
-                  if (inputRef.current) {
-                    inputRef.current.focus();
-                  }
-                }}
-              >
-                <CircleXIcon size={16} aria-hidden="true" />
-              </button>
-            )}
+            {/* Effacer + bouton « Aa » (recherche exacte) */}
+            <div className="absolute inset-y-0 end-0 flex items-center gap-1 pe-1.5">
+              {Boolean(globalFilter) && (
+                <button
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:ring-ring/50 flex size-6 items-center justify-center rounded-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px]"
+                  aria-label="Clear filter"
+                  onClick={() => {
+                    setGlobalFilter("");
+                    if (inputRef.current) {
+                      inputRef.current.focus();
+                    }
+                  }}
+                >
+                  <CircleXIcon size={16} aria-hidden="true" />
+                </button>
+              )}
+              <SearchExactToggle
+                pressed={searchExact}
+                onPressedChange={setSearchExact}
+              />
+            </div>
           </div>
 
           {/* Bouton Filtre */}

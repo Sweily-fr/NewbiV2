@@ -46,6 +46,7 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 function BankBalanceCardInner(
   {
@@ -205,12 +206,9 @@ function BankBalanceCardInner(
   // Filtrer les banques par recherche
   const filteredInstitutions = useMemo(() => {
     if (!searchQuery) return institutions;
-    const query = searchQuery.toLowerCase();
-    return institutions.filter(
-      (inst) =>
-        inst.name.toLowerCase().includes(query) ||
-        inst.groupName?.toLowerCase().includes(query),
-    );
+    // Sans accents ni majuscules : « societe » trouve « Société Générale »
+    const match = createSearchMatcher(searchQuery);
+    return institutions.filter((inst) => match(inst.name, inst.groupName));
   }, [institutions, searchQuery]);
 
   // Ouvrir le modal de sélection (vérifie l'email d'abord)
