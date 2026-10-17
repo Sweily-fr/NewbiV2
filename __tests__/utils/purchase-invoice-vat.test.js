@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   applyVatLinesToForm,
+  completeVatAmounts,
   deriveVatRate,
   formatVatRate,
   invoiceVatLines,
@@ -158,7 +159,7 @@ describe("vatInputFromForm", () => {
     ).toBe(20);
   });
 
-  it("HT vide : TTC - TVA, et taux déduit", () => {
+  it("HT vide : envoyé tel qu'affiché (0), le taux vide est déduit sur TTC - TVA", () => {
     expect(
       vatInputFromForm({
         amountHT: "",
@@ -168,7 +169,7 @@ describe("vatInputFromForm", () => {
         vatLines: [],
       }),
     ).toEqual({
-      amountHT: 8.83,
+      amountHT: 0,
       amountTVA: 1.76,
       vatRate: 20,
       vatBreakdown: [],
@@ -262,5 +263,62 @@ describe("vatLinesOf (tableau, export)", () => {
 
   it("TVA non renseignée : rien", () => {
     expect(vatLinesOf({ vatRate: 20, amountTVA: null })).toEqual([]);
+  });
+});
+
+// Mêmes cas que l'API (newbi-api __tests__/utils/purchase-invoice-vat.test.js)
+describe("completeVatAmounts", () => {
+  const fill = { fillMissingVat: true };
+
+  it("TTC seul : sans TVA seulement si demandé", () => {
+    expect(completeVatAmounts({ amountTTC: 10 }, fill)).toEqual({
+      amountHT: 10,
+      amountTVA: 0,
+      amountTTC: 10,
+      vatRate: 0,
+    });
+    expect(completeVatAmounts({ amountTTC: "10" })).toEqual({
+      amountHT: null,
+      amountTVA: null,
+      amountTTC: 10,
+      vatRate: null,
+    });
+  });
+
+  it("TTC et TVA, TTC et HT, TTC et taux", () => {
+    expect(
+      completeVatAmounts({ amountTTC: "10,59", amountTVA: "1,76" }),
+    ).toMatchObject({ amountHT: 8.83, amountTVA: 1.76, vatRate: 20 });
+    expect(
+      completeVatAmounts({ amountTTC: 120, amountHT: 100, amountTVA: 0 }),
+    ).toMatchObject({ amountHT: 100, amountTVA: 20, vatRate: 20 });
+    expect(
+      completeVatAmounts({ amountTTC: 120, vatRate: 20 }, fill),
+    ).toMatchObject({ amountHT: 100, amountTVA: 20, vatRate: 20 });
+  });
+
+  it("taux fabriqué ou « TVA 0 € à 20 % » : le taux suit les montants", () => {
+    expect(
+      completeVatAmounts({
+        amountHT: 100,
+        amountTVA: 5.5,
+        amountTTC: 105.5,
+        vatRate: 6,
+      }).vatRate,
+    ).toBe(5.5);
+    expect(
+      completeVatAmounts({ amountTVA: 0, amountTTC: 120.5, vatRate: 20 }, fill),
+    ).toMatchObject({ amountHT: 120.5, amountTVA: 0, vatRate: 0 });
+  });
+
+  it("taux cohérent gardé", () => {
+    expect(
+      completeVatAmounts({
+        amountHT: 100,
+        amountTVA: 12.34,
+        amountTTC: 112.34,
+        vatRate: 12.34,
+      }).vatRate,
+    ).toBe(12.34);
   });
 });

@@ -214,6 +214,75 @@ export function deriveVatRate({ amountHT, amountTVA, amountTTC } = {}) {
   );
 }
 
+const isLegalVatRate = (rate) => LEGAL_VAT_RATES.includes(rate);
+
+// Taux qui redonne la TVA au centime près (en centimes entiers)
+const rateMatchesAmounts = (rate, ht, tva) =>
+  Math.abs(Math.round(Math.abs(ht) * rate) - Math.round(Math.abs(tva) * 100)) <=
+  1;
+
+/**
+ * Complète des montants de TVA partiels (lecture OCR, saisie) de façon
+ * cohérente : HT + TVA = TTC, et un taux qui redonne la TVA. null = inconnu
+ * (0 est une valeur connue). Même règle que l'API (completeVatAmounts,
+ * newbi-api utils/purchaseInvoiceVat.js) : le TTC prime ; TVA connue, HT =
+ * TTC - TVA ; HT connu, TVA = TTC - HT ; seul le taux connu (fromRate), HT =
+ * TTC / (1 + taux) ; rien de connu (fillMissingVat), sans TVA et 0 %. Le taux
+ * fourni n'est gardé que s'il redonne la TVA, un taux légal lui étant préféré.
+ */
+export function completeVatAmounts(
+  { amountHT, amountTVA, amountTTC, vatRate } = {},
+  { fillMissingVat = false, fromRate = true } = {},
+) {
+  let ht = toNumber(amountHT);
+  let tva = toNumber(amountTVA);
+  let ttc = toNumber(amountTTC);
+  let rate = toNumber(vatRate);
+
+  if (ttc === null && ht !== null && tva !== null) ttc = round2(ht + tva);
+  if (ttc !== null && ttc > 0) {
+    // Lecture plus grande que le TTC : impossible, donc inconnue
+    if (tva !== null && tva > ttc) tva = null;
+    if (ht !== null && ht > ttc) ht = null;
+    if (ht !== null && tva !== null) {
+      if (Math.abs(round2(ht + tva) - ttc) > 0.01) {
+        const tvaFromHT = round2(ttc - ht);
+        const htFromTVA = round2(ttc - tva);
+        const legalFromHT = isLegalVatRate(
+          deriveVatRate({ amountHT: ht, amountTVA: tvaFromHT }),
+        );
+        const legalFromTVA = isLegalVatRate(
+          deriveVatRate({ amountHT: htFromTVA, amountTVA: tva }),
+        );
+        if (legalFromHT && !legalFromTVA) tva = tvaFromHT;
+        else ht = htFromTVA;
+      }
+    } else if (tva !== null) {
+      ht = round2(ttc - tva);
+    } else if (ht !== null) {
+      tva = round2(ttc - ht);
+    } else if (fromRate && rate !== null) {
+      ht = round2(ttc / (1 + rate / 100));
+      tva = round2(ttc - ht);
+    } else if (fillMissingVat) {
+      ht = ttc;
+      tva = 0;
+    }
+  }
+
+  if (ht !== null && tva !== null) {
+    const derived = deriveVatRate({ amountHT: ht, amountTVA: tva });
+    const matches =
+      rate !== null &&
+      (tva === 0 ? rate === 0 : ht !== 0 && rateMatchesAmounts(rate, ht, tva));
+    const keep =
+      matches &&
+      (rate === 0 || isLegalVatRate(rate) || !isLegalVatRate(derived));
+    rate = keep ? rate : derived;
+  }
+  return { amountHT: ht, amountTVA: tva, amountTTC: ttc, vatRate: rate };
+}
+
 /** Champs de TVA à envoyer à l'API depuis le formulaire. */
 export function vatInputFromForm(form) {
   const lines = parseVatLines(form.vatLines);
@@ -221,19 +290,18 @@ export function vatInputFromForm(form) {
     return { ...summarizeVatLines(lines), vatBreakdown: lines };
   }
   const rate = toNumber(form.vatRate);
-  const ht = toNumber(form.amountHT);
-  const tva = toNumber(form.amountTVA) ?? 0;
-  const ttc = toNumber(form.amountTTC);
-  // HT ou taux vides : déduits des montants (TTC - TVA, deriveVatRate)
-  // plutôt que 0 € et 20 %, comme côté API
-  const amountHT = ht > 0 ? ht : ttc > tva ? round2(ttc - tva) : (ht ?? 0);
+  const amountHT = toNumber(form.amountHT) ?? 0;
+  const amountTVA = toNumber(form.amountTVA) ?? 0;
   return {
+    // HT et TVA tels qu'affichés : réenregistrer une facture ne les change
+    // pas à l'insu de l'utilisateur
     amountHT,
-    amountTVA: tva,
-    // 0 % (exonération, autoliquidation) est un taux valide
+    amountTVA,
+    // 0 % (exonération, autoliquidation) est un taux valide ; un taux vide
+    // est déduit des montants plutôt que fixé à 20 %
     vatRate:
       rate === null
-        ? deriveVatRate({ amountHT, amountTVA: tva, amountTTC: ttc })
+        ? deriveVatRate({ amountHT, amountTVA, amountTTC: form.amountTTC })
         : rate,
     vatBreakdown: [],
   };
