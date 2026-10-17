@@ -186,6 +186,34 @@ export function splitVatIntoLines(form) {
   ];
 }
 
+// Taux légaux (métropole, Corse, DOM), préférés au quotient brut quand ils
+// redonnent la TVA au centime près
+const LEGAL_VAT_RATES = [20, 10, 5.5, 2.1, 13, 0.9, 8.5, 1.75, 1.05];
+
+/**
+ * Taux d'une facture dont le taux n'est pas saisi, déduit des montants
+ * plutôt que fixé à 20 % : sans TVA, 0 % (et non « TVA 0 € à 20 % »). Base :
+ * le HT, sinon TTC - TVA. Même règle que l'API (deriveVatRate, newbi-api
+ * utils/purchaseInvoiceVat.js).
+ */
+export function deriveVatRate({ amountHT, amountTVA, amountTTC } = {}) {
+  const tva = Math.abs(toNumber(amountTVA) ?? 0);
+  if (tva === 0) return 0;
+  const ht = Math.abs(toNumber(amountHT) ?? 0);
+  const ttc = Math.abs(toNumber(amountTTC) ?? 0);
+  const base = ht > 0 ? ht : ttc > tva ? round2(ttc - tva) : 0;
+  if (base === 0) return 20;
+  const raw = (tva / base) * 100;
+  // Comparaison en centimes entiers (1,77 - 1,76 ne vaut pas 0,01 en flottant)
+  const legal = LEGAL_VAT_RATES.filter(
+    (rate) => Math.abs(Math.round(base * rate) - Math.round(tva * 100)) <= 1,
+  );
+  if (legal.length === 0) return round2(raw);
+  return legal.reduce((a, b) =>
+    Math.abs(b - raw) < Math.abs(a - raw) ? b : a,
+  );
+}
+
 /** Champs de TVA à envoyer à l'API depuis le formulaire. */
 export function vatInputFromForm(form) {
   const lines = parseVatLines(form.vatLines);
@@ -193,11 +221,20 @@ export function vatInputFromForm(form) {
     return { ...summarizeVatLines(lines), vatBreakdown: lines };
   }
   const rate = toNumber(form.vatRate);
+  const ht = toNumber(form.amountHT);
+  const tva = toNumber(form.amountTVA) ?? 0;
+  const ttc = toNumber(form.amountTTC);
+  // HT ou taux vides : déduits des montants (TTC - TVA, deriveVatRate)
+  // plutôt que 0 € et 20 %, comme côté API
+  const amountHT = ht > 0 ? ht : ttc > tva ? round2(ttc - tva) : (ht ?? 0);
   return {
-    amountHT: toNumber(form.amountHT) ?? 0,
-    amountTVA: toNumber(form.amountTVA) ?? 0,
+    amountHT,
+    amountTVA: tva,
     // 0 % (exonération, autoliquidation) est un taux valide
-    vatRate: rate === null ? 20 : rate,
+    vatRate:
+      rate === null
+        ? deriveVatRate({ amountHT, amountTVA: tva, amountTTC: ttc })
+        : rate,
     vatBreakdown: [],
   };
 }

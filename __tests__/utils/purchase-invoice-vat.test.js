@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   applyVatLinesToForm,
+  deriveVatRate,
   formatVatRate,
   invoiceVatLines,
   parseVatLines,
@@ -133,6 +134,64 @@ describe("vatInputFromForm", () => {
         vatLines: [],
       }),
     ).toEqual({ amountHT: 40, amountTVA: 0, vatRate: 0, vatBreakdown: [] });
+  });
+
+  it("taux vide : déduit des montants, plus de repli à 20 %", () => {
+    // Ticket sans TVA : 0 %, pas « TVA 0 € à 20 % »
+    expect(
+      vatInputFromForm({
+        amountHT: "10",
+        amountTVA: "",
+        amountTTC: "10",
+        vatRate: "",
+        vatLines: [],
+      }),
+    ).toEqual({ amountHT: 10, amountTVA: 0, vatRate: 0, vatBreakdown: [] });
+    expect(
+      vatInputFromForm({
+        amountHT: "100",
+        amountTVA: "20",
+        amountTTC: "120",
+        vatRate: "",
+        vatLines: [],
+      }).vatRate,
+    ).toBe(20);
+  });
+
+  it("HT vide : TTC - TVA, et taux déduit", () => {
+    expect(
+      vatInputFromForm({
+        amountHT: "",
+        amountTVA: "1,76",
+        amountTTC: "10,59",
+        vatRate: "",
+        vatLines: [],
+      }),
+    ).toEqual({
+      amountHT: 8.83,
+      amountTVA: 1.76,
+      vatRate: 20,
+      vatBreakdown: [],
+    });
+  });
+});
+
+describe("deriveVatRate", () => {
+  it("sans TVA : 0 %", () => {
+    expect(deriveVatRate({ amountHT: 10, amountTVA: 0 })).toBe(0);
+    expect(deriveVatRate({ amountTTC: 10 })).toBe(0);
+    expect(deriveVatRate()).toBe(0);
+  });
+
+  it("taux légal qui redonne la TVA au centime, sinon quotient arrondi", () => {
+    expect(deriveVatRate({ amountHT: 8.33, amountTVA: 1.67 })).toBe(20);
+    expect(deriveVatRate({ amountHT: 100, amountTVA: 5.5 })).toBe(5.5);
+    expect(deriveVatRate({ amountTVA: 1.76, amountTTC: 10.59 })).toBe(20);
+    expect(deriveVatRate({ amountHT: 100, amountTVA: 12.34 })).toBe(12.34);
+  });
+
+  it("TVA connue sans aucune base : 20 % en dernier recours", () => {
+    expect(deriveVatRate({ amountTVA: 5 })).toBe(20);
   });
 });
 
