@@ -124,6 +124,7 @@ import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { DocumentText2Icon } from "@/src/components/icons";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -401,7 +402,9 @@ export default function InvoiceTable({
     }
   };
 
-  const isCreditNotesView = activeTab === "credit-notes" && canReadCreditNotes;
+  // Onglet Avoirs toujours affiché : sans « Voir », son contenu propose de
+  // demander l'accès
+  const isCreditNotesView = activeTab === "credit-notes";
   const isRecurringView = activeTab === "recurring";
   // Onglets qui remplacent le tableau des factures par leur propre vue
   const isSideView = isCreditNotesView || isRecurringView;
@@ -481,7 +484,7 @@ export default function InvoiceTable({
     { id: "pending", label: "À encaisser" },
     { id: "overdue", label: "En retard" },
     { id: "completed", label: "Terminées" },
-    ...(canReadCreditNotes ? [{ id: "credit-notes", label: "Avoirs" }] : []),
+    { id: "credit-notes", label: "Avoirs" },
     { id: "recurring", label: "Récurrentes" },
   ];
 
@@ -740,17 +743,17 @@ export default function InvoiceTable({
                   {invoiceCounts.completed}
                 </span>
               </TabsTrigger>
-              {canReadCreditNotes && (
-                <TabsTrigger
-                  value="credit-notes"
-                  className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-                >
-                  <span>Avoirs</span>
+              <TabsTrigger
+                value="credit-notes"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Avoirs</span>
+                {canReadCreditNotes && (
                   <span className="text-xs text-muted-foreground">
                     {invoiceCounts["credit-notes"]}
                   </span>
-                </TabsTrigger>
-              )}
+                )}
+              </TabsTrigger>
               <TabsTrigger
                 value="recurring"
                 className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
@@ -1217,7 +1220,15 @@ export default function InvoiceTable({
       )}
 
       {/* Vue Avoirs - rendue après les onglets mobiles & desktop pour respecter l'ordre visuel */}
-      {isCreditNotesView && (
+      {isCreditNotesView && !canReadCreditNotes && (
+        <AccessDeniedPage
+          moduleKey="creditNotes"
+          action="view"
+          canView={false}
+          embedded
+        />
+      )}
+      {isCreditNotesView && canReadCreditNotes && (
         <CreditNotesTable
           globalFilter={globalFilter}
           searchExact={searchExact}
