@@ -664,7 +664,8 @@ export default function EspacesSection() {
             <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
-          {!canManageOrgSettings && myMembership && (
+          {/* Sans « Voir les membres », la demande d'accès suffit */}
+          {!canManageOrgSettings && myMembership && canViewMembers && (
             <div className="mb-4">
               <Callout type="info" noMargin>
                 <p>
@@ -676,70 +677,72 @@ export default function EspacesSection() {
           )}
 
           {/* Search + Filter + Invite */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par nom ou email"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          {canViewMembers && (
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom ou email"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="cursor-pointer gap-2"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filtrer
+                    {activeFilterCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                      >
+                        {activeFilterCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuCheckboxItem
+                    checked={statusFilters.active}
+                    onCheckedChange={() => toggleStatusFilter("active")}
+                  >
+                    Actif
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={statusFilters.pending}
+                    onCheckedChange={() => toggleStatusFilter("pending")}
+                  >
+                    Invité
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={statusFilters.suspended}
+                    onCheckedChange={() => toggleStatusFilter("suspended")}
+                  >
+                    Suspendu
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* Inviter : « Inviter des membres » de la page Membres */}
+              {canInviteMembers && (
                 <Button
                   type="button"
-                  variant="outline"
-                  className="cursor-pointer gap-2"
+                  onClick={() => setInviteDialogOpen(true)}
+                  disabled={isReadOnly}
+                  className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
+                  title={readOnlyTooltip || ""}
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Filtrer
-                  {activeFilterCount > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
-                    >
-                      {activeFilterCount}
-                    </Badge>
-                  )}
+                  <UserRoundPlusIcon size={14} />
+                  Inviter des membres
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuCheckboxItem
-                  checked={statusFilters.active}
-                  onCheckedChange={() => toggleStatusFilter("active")}
-                >
-                  Actif
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={statusFilters.pending}
-                  onCheckedChange={() => toggleStatusFilter("pending")}
-                >
-                  Invité
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={statusFilters.suspended}
-                  onCheckedChange={() => toggleStatusFilter("suspended")}
-                >
-                  Suspendu
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* Inviter : « Inviter des membres » de la page Membres */}
-            {canInviteMembers && (
-              <Button
-                type="button"
-                onClick={() => setInviteDialogOpen(true)}
-                disabled={isReadOnly}
-                className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
-                title={readOnlyTooltip || ""}
-              >
-                <UserRoundPlusIcon size={14} />
-                Inviter des membres
-              </Button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Members Table (sans « Voir les membres » : demande d'accès) */}
           {!canViewMembers ? (
