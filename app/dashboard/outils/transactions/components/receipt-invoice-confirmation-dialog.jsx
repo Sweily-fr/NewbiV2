@@ -31,7 +31,7 @@ import {
 } from "@/app/dashboard/outils/factures-achat/components/vat-breakdown";
 import {
   applyVatLinesToForm,
-  completeVatAmounts,
+  deriveVatRate,
   invoiceVatLines,
   parseVatLines,
   splitVatIntoLines,
@@ -140,40 +140,75 @@ const toMutationValues = (values) => {
   return out;
 };
 
-// Taux unique : montant gardé avec le TTC selon le champ saisi (le TTC
-// modifié garde la TVA), les autres étant recalculés
-const VAT_KEPT_BY_KEY = {
-  amountHT: "amountHT",
-  amountTVA: "amountTVA",
-  vatRate: "vatRate",
-  amountTTC: "amountTVA",
-};
+// Champs de montant que l'utilisateur peut saisir, et ceux qui se
+// recalculent entre eux (le TTC, dépense bancaire, n'est jamais recalculé)
+const AMOUNT_INPUT_KEYS = new Set([
+  "amountHT",
+  "amountTVA",
+  "vatRate",
+  "amountTTC",
+]);
+const VAT_KEYS = ["amountHT", "amountTVA", "vatRate"];
+const round2 = (n) => Math.round(n * 100) / 100;
 
 /**
- * Champs recalculés après la saisie de `key`, au format affiché (centimes) :
- * TVA ou TTC saisi, HT = TTC - TVA ; HT, TVA = TTC - HT ; taux, HT = TTC /
- * (1 + taux) et TVA = TTC - HT ; le taux suit les montants (completeVatAmounts).
- * Rien quand la saisie ne s'y prête pas : vide, illisible, TTC inconnu ou
- * nul, TVA ou HT plus grand que le TTC.
+ * Taux unique : montants recalculés après une saisie, au format affiché
+ * (centimes). Les deux dernières saisies parmi HT, TVA et taux commandent
+ * (`typed`, de la plus ancienne à la plus récente) et ne sont jamais
+ * réécrites ; les autres champs suivent :
+ * - une saisie : TVA, HT = TTC - TVA ; HT, TVA = TTC - HT ; taux, HT = TTC /
+ *   (1 + taux) et TVA = TTC - HT ;
+ * - deux : HT et TVA, le taux suit ; HT et taux, TVA = HT x taux ; TVA et
+ *   taux, HT = TVA / taux ;
+ * - TTC seul saisi : TVA gardée, HT = TTC - TVA.
+ * Le taux suit les montants (deriveVatRate). Rien quand une valeur manque ou
+ * ne se lit pas, ou que le résultat serait négatif.
  */
-const recalculatedVat = (form, key) => {
-  const kept = VAT_KEPT_BY_KEY[key];
-  if (!kept) return {};
-  const known = {
-    amountHT: null,
-    amountTVA: null,
-    vatRate: null,
-    amountTTC: toNumber(form.amountTTC),
-    [kept]: toNumber(form[kept]),
-  };
-  if (known.amountTTC === null || known[kept] === null) return {};
-  const done = completeVatAmounts(known);
-  const out = {};
-  for (const k of ["amountHT", "amountTVA", "vatRate"]) {
-    if (k === kept) continue;
-    if (!Number.isFinite(done[k])) return {};
-    out[k] = MONEY_KEYS.has(k) ? done[k].toFixed(2) : String(done[k]);
+const recalculatedVat = (form, typed) => {
+  const n = (key) => toNumber(form[key]);
+  const ttc = n("amountTTC");
+  const drivers = typed.filter((k) => VAT_KEYS.includes(k)).slice(-2);
+  const has = (key) => drivers.includes(key);
+  let ht = null;
+  let tva = null;
+  let rate = null;
+  if (drivers.length === 2) {
+    if (has("amountHT") && has("amountTVA")) {
+      ht = n("amountHT");
+      tva = n("amountTVA");
+    } else if (has("amountHT")) {
+      ht = n("amountHT");
+      rate = n("vatRate");
+      if (ht !== null && rate !== null) tva = round2((ht * rate) / 100);
+    } else {
+      tva = n("amountTVA");
+      rate = n("vatRate");
+      if (tva !== null && rate > 0) ht = round2((tva * 100) / rate);
+    }
+  } else if (ttc !== null && ttc > 0) {
+    if (has("amountHT")) {
+      ht = n("amountHT");
+      if (ht !== null) tva = round2(ttc - ht);
+    } else if (has("vatRate")) {
+      rate = n("vatRate");
+      if (rate !== null) {
+        ht = round2(ttc / (1 + rate / 100));
+        tva = round2(ttc - ht);
+      }
+    } else {
+      // TVA saisie, ou TTC seul saisi : TVA gardée
+      tva = n("amountTVA");
+      if (tva !== null) ht = round2(ttc - tva);
+    }
   }
+  if (ht === null || tva === null || ht < 0 || tva < 0) return {};
+  if (rate === null) rate = deriveVatRate({ amountHT: ht, amountTVA: tva });
+  const out = {
+    amountHT: ht.toFixed(2),
+    amountTVA: tva.toFixed(2),
+    vatRate: String(rate),
+  };
+  for (const key of drivers) delete out[key];
   return out;
 };
 
@@ -227,6 +262,9 @@ export function ReceiptInvoiceConfirmationDialog({
   const duplicate = proposal?.duplicate || null;
 
   const [drafts, setDrafts] = useState({});
+  // Montants saisis par l'utilisateur, du plus ancien au plus récent
+  // (recalculatedVat)
+  const [typedAmounts, setTypedAmounts] = useState([]);
   // Lignes de TVA quand le justificatif mêle plusieurs taux (≥ 2 lignes)
   const [vatLines, setVatLines] = useState([]);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
@@ -236,6 +274,7 @@ export function ReceiptInvoiceConfirmationDialog({
   // sans traîner les corrections saisies pour le précédent.
   useEffect(() => {
     setDrafts({});
+    setTypedAmounts([]);
     setPending(null);
     setMobilePreviewOpen(false);
   }, [receiptFile?.id]);
@@ -320,16 +359,28 @@ export function ReceiptInvoiceConfirmationDialog({
   }
   const creationBlocked = Object.keys(fieldErrors).length > 0;
 
-  // Taux unique : la dernière valeur saisie commande les autres montants,
+  // Taux unique : les saisies récentes commandent les autres montants,
   // recalculés dans leurs champs (ce qui est affiché est ce qui part), au
-  // lieu d'une « TVA 20,08 € à 0 % » dont HT + TVA ne fait pas le TTC. Avec
-  // le détail par taux, HT / TVA / taux restent le résumé des lignes.
-  const handleFieldChange = (key, value) =>
+  // lieu d'une « TVA 20,08 € à 0 % » dont HT + TVA ne fait pas le TTC. Une
+  // saisie de l'utilisateur n'est jamais réécrite ; un champ vidé ne commande
+  // plus rien (l'API le complète à la création). Avec le détail par taux,
+  // HT / TVA / taux restent le résumé des lignes.
+  const handleFieldChange = (key, value) => {
+    const filled = Boolean(String(value ?? "").trim());
+    let typed = typedAmounts;
+    if (AMOUNT_INPUT_KEYS.has(key)) {
+      typed = typedAmounts.filter((k) => k !== key);
+      if (filled) typed = [...typed, key];
+      setTypedAmounts(typed);
+    }
     setDrafts((d) => {
       const next = { ...d, [key]: value };
-      if (vatLines.length >= 2) return next;
-      return { ...next, ...recalculatedVat({ ...initial, ...next }, key) };
+      if (vatLines.length >= 2 || !AMOUNT_INPUT_KEYS.has(key) || !filled) {
+        return next;
+      }
+      return { ...next, ...recalculatedVat({ ...initial, ...next }, typed) };
     });
+  };
 
   // Plusieurs taux : HT / TVA / taux affichés sont le résumé des lignes. Le
   // TTC ne bouge pas, c'est la dépense bancaire.

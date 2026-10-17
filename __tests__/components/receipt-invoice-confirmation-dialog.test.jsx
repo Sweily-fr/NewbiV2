@@ -218,6 +218,81 @@ describe("ReceiptInvoiceConfirmationDialog : montants recalculés", () => {
     });
   });
 
+  it("HT puis TTC saisis : le HT tapé est gardé, la TVA suit", async () => {
+    // TTC mal lu : l'utilisateur corrige le HT, puis le TTC. Avant, le TTC
+    // gardait la TVA recalculée et réécrivait le HT tapé (HT 118,42 à 1,75 %).
+    const { onConfirm, user } = renderDialog({
+      amountHT: 82.42,
+      amountTVA: 20.08,
+      vatRate: 24.36,
+      amountTTC: 102.5,
+    });
+
+    await user.clear(field("Montant HT"));
+    await user.type(field("Montant HT"), "100,42");
+    await user.clear(field("Montant TTC"));
+    await user.type(field("Montant TTC"), "120,50");
+
+    expect(field("Montant HT")).toHaveValue("100,42");
+    expect(field("TVA")).toHaveValue("20.08");
+    expect(field("Taux de TVA (%)")).toHaveValue("20");
+    expect(await created(onConfirm, user)).toMatchObject({
+      amountHT: 100.42,
+      amountTVA: 20.08,
+      vatRate: 20,
+      amountTTC: 120.5,
+    });
+  });
+
+  it("taux puis TTC saisis : le taux tapé est gardé, HT et TVA suivent", async () => {
+    const { onConfirm, user } = renderDialog({
+      amountHT: 82.42,
+      amountTVA: 20.08,
+      vatRate: 24.36,
+      amountTTC: 102.5,
+    });
+
+    await user.clear(field("Taux de TVA (%)"));
+    await user.type(field("Taux de TVA (%)"), "20");
+    await user.clear(field("Montant TTC"));
+    await user.type(field("Montant TTC"), "120,50");
+
+    expect(field("Taux de TVA (%)")).toHaveValue("20");
+    expect(field("Montant HT")).toHaveValue("100.42");
+    expect(field("TVA")).toHaveValue("20.08");
+    expect(await created(onConfirm, user)).toMatchObject({
+      amountHT: 100.42,
+      amountTVA: 20.08,
+      vatRate: 20,
+    });
+  });
+
+  it("HT puis TVA saisis : les deux gardés, le taux suit (TTC inchangé)", async () => {
+    // Hôtel avec taxe de séjour : HT + TVA ne fait pas le TTC
+    const { onConfirm, user } = renderDialog({
+      amountHT: 101.65,
+      amountTVA: 0,
+      vatRate: 0,
+      amountTTC: 101.65,
+    });
+
+    await user.clear(field("Montant HT"));
+    await user.type(field("Montant HT"), "90,91");
+    await user.clear(field("TVA"));
+    await user.type(field("TVA"), "9,09");
+
+    expect(field("Montant HT")).toHaveValue("90,91");
+    expect(field("TVA")).toHaveValue("9,09");
+    expect(field("Taux de TVA (%)")).toHaveValue("10");
+    expect(field("Montant TTC")).toHaveValue("101.65");
+    expect(await created(onConfirm, user)).toMatchObject({
+      amountHT: 90.91,
+      amountTVA: 9.09,
+      vatRate: 10,
+      amountTTC: 101.65,
+    });
+  });
+
   it("champ vidé ou illisible : rien n'est recalculé", async () => {
     const { user } = renderDialog();
     const unchanged = () => {
