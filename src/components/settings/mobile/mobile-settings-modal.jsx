@@ -64,15 +64,10 @@ export function MobileSettingsModal({
     { id: "subscription", label: "Abonnement", icon: "Crown" },
     { id: "depenses-clients", label: "Dépenses clients", icon: "Wallet" },
   ]
-    // Dépenses clients : comptes gestionnaires seulement
-    .filter((tab) => isAccountManager || tab.id !== "depenses-clients")
-    // Abonnement et facturation Newbi sans « Voir l'abonnement » : cadenas,
-    // le contenu propose de demander l'accès
-    .map((tab) =>
-      !showBilling && ["facturation", "subscription"].includes(tab.id)
-        ? { ...tab, locked: true }
-        : tab,
-    );
+    // Dépenses clients : comptes gestionnaires seulement. Abonnement et
+    // facturation Newbi sans « Voir l'abonnement » : listés, leur contenu
+    // propose de demander l'accès
+    .filter((tab) => isAccountManager || tab.id !== "depenses-clients");
 
   const currentTab = tabs.find((tab) => tab.id === activeTab);
 

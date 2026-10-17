@@ -53,7 +53,6 @@ import {
   Truck,
   RotateCcw,
   History,
-  Lock,
 } from "lucide-react";
 import { GET_CLIENTS } from "@/src/graphql/clientQueries";
 import {
@@ -269,17 +268,6 @@ const Kbd = ({ children, className = "" }) => (
 
 // --- Main component ---
 
-// Page sans « Voir » pour le rôle (navigation) : cadenas
-function LockHint({ locked }) {
-  if (!locked) return null;
-  return (
-    <Lock
-      className="ml-auto size-3 shrink-0 text-muted-foreground/70"
-      aria-label="Accès à demander"
-    />
-  );
-}
-
 export function SearchCommand() {
   const [open, setOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
@@ -317,16 +305,12 @@ export function SearchCommand() {
     );
   };
   // Navigation vers les pages : comme dans le menu, toutes listées sauf
-  // celles masquées au Comptable par défaut ; sans « Voir », un cadenas et
-  // la page refusée propose de demander l'accès
+  // celles masquées au Comptable par défaut (sans « Voir », la page propose
+  // de demander l'accès)
   const canList = (url) => {
     const moduleKey = moduleForPath(url);
     if (!permissionsReady || !moduleKey) return true;
     return !isHiddenForRole(permissionsRole, permissionActions, moduleKey);
-  };
-  const isLocked = (url) => {
-    const moduleKey = moduleForPath(url);
-    return permissionsReady && Boolean(moduleKey) && !can(moduleKey, "read");
   };
   const canSearchClients = canReadModule("clients");
   const canSearchInvoices = canReadModule("invoices");
@@ -991,7 +975,6 @@ export function SearchCommand() {
                         <Users className="size-3.5" />
                       </IconWrapper>
                       <span>Clients</span>
-                      <LockHint locked={isLocked("/dashboard/clients")} />
                     </CommandItem>
                   )}
                   {canList("/dashboard/catalogues") && (
@@ -1004,7 +987,6 @@ export function SearchCommand() {
                         <Package className="size-3.5" />
                       </IconWrapper>
                       <span>Catalogues</span>
-                      <LockHint locked={isLocked("/dashboard/catalogues")} />
                     </CommandItem>
                   )}
                   {canReadModule("team") && (
@@ -1027,7 +1009,6 @@ export function SearchCommand() {
                         <Calendar className="size-3.5" />
                       </IconWrapper>
                       <span>Calendrier</span>
-                      <LockHint locked={isLocked("/dashboard/calendar")} />
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/analytiques") && (
@@ -1042,9 +1023,6 @@ export function SearchCommand() {
                         <BarChart3 className="size-3.5" />
                       </IconWrapper>
                       <span>Analytics</span>
-                      <LockHint
-                        locked={isLocked("/dashboard/outils/analytiques")}
-                      />
                     </CommandItem>
                   )}
                   {canReadModule("integrations") && (
@@ -1082,9 +1060,6 @@ export function SearchCommand() {
                         <Receipt className="size-3.5" />
                       </IconWrapper>
                       <span>Factures</span>
-                      <LockHint
-                        locked={isLocked("/dashboard/outils/factures")}
-                      />
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/devis") && (
@@ -1097,7 +1072,6 @@ export function SearchCommand() {
                         <FileText className="size-3.5" />
                       </IconWrapper>
                       <span>Devis</span>
-                      <LockHint locked={isLocked("/dashboard/outils/devis")} />
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/bons-commande") && (
@@ -1112,9 +1086,6 @@ export function SearchCommand() {
                         <ShoppingCart className="size-3.5" />
                       </IconWrapper>
                       <span>Bons de commande</span>
-                      <LockHint
-                        locked={isLocked("/dashboard/outils/bons-commande")}
-                      />
                     </CommandItem>
                   )}
                   {deliveryNotesAllowed &&
@@ -1130,11 +1101,6 @@ export function SearchCommand() {
                           <Truck className="size-3.5" />
                         </IconWrapper>
                         <span>Bons de livraison</span>
-                        <LockHint
-                          locked={isLocked(
-                            "/dashboard/outils/bons-de-livraison",
-                          )}
-                        />
                       </CommandItem>
                     )}
                   {canList("/dashboard/outils/transactions") && (
@@ -1149,9 +1115,6 @@ export function SearchCommand() {
                         <CreditCard className="size-3.5" />
                       </IconWrapper>
                       <span>Transactions</span>
-                      <LockHint
-                        locked={isLocked("/dashboard/outils/transactions")}
-                      />
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/kanban") && (
@@ -1166,7 +1129,6 @@ export function SearchCommand() {
                         <Kanban className="size-3.5" />
                       </IconWrapper>
                       <span>Kanban</span>
-                      <LockHint locked={isLocked("/dashboard/outils/kanban")} />
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/signatures-mail") && (
@@ -1181,9 +1143,6 @@ export function SearchCommand() {
                         <Mail className="size-3.5" />
                       </IconWrapper>
                       <span>Signatures de mail</span>
-                      <LockHint
-                        locked={isLocked("/dashboard/outils/signatures-mail")}
-                      />
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/documents-partages") && (
@@ -1198,11 +1157,6 @@ export function SearchCommand() {
                         <Share2 className="size-3.5" />
                       </IconWrapper>
                       <span>Documents partagés</span>
-                      <LockHint
-                        locked={isLocked(
-                          "/dashboard/outils/documents-partages",
-                        )}
-                      />
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/transferts-fichiers") && (
@@ -1217,11 +1171,6 @@ export function SearchCommand() {
                         <Upload className="size-3.5" />
                       </IconWrapper>
                       <span>Transferts de fichiers</span>
-                      <LockHint
-                        locked={isLocked(
-                          "/dashboard/outils/transferts-fichiers",
-                        )}
-                      />
                     </CommandItem>
                   )}
                 </CommandGroup>

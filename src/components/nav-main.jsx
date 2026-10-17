@@ -9,7 +9,6 @@ import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import {
   Crown,
   ChevronRight,
-  Lock,
   Plus,
   Search,
   LayoutGrid,
@@ -59,18 +58,6 @@ import {
 import { useCreationLinkClick } from "@/src/components/company-info-gate";
 import { createSearchMatcher } from "@/src/utils/search-text";
 
-// Page sans « Voir » pour le rôle : affichée quand même avec un cadenas,
-// l'ouvrir mène à la page « Accès refusé » d'où l'on demande l'accès
-function LockedHint({ locked }) {
-  if (!locked) return null;
-  return (
-    <Lock
-      className="ml-auto size-3 shrink-0 text-muted-foreground/70"
-      aria-label="Accès à demander"
-    />
-  );
-}
-
 export function NavMain({
   items,
   navFinances = [],
@@ -118,12 +105,9 @@ export function NavMain({
   // Raccourcis « Nouveau … » : action « create » du module
   const canCreate = (moduleKey) =>
     !permissionsReady || canDo(moduleKey, "create");
-  // Toutes les pages restent dans le menu ; sans « Voir », un cadenas
-  // (`locked`) et la page refusée propose de demander l'accès
-  const visibleItems = (list) =>
-    list
-      .filter((item) => !isHiddenPage(item.url))
-      .map((item) => (canSee(item.url) ? item : { ...item, locked: true }));
+  // Toutes les pages restent dans le menu : sans « Voir », la page affiche
+  // qu'elle est inaccessible et propose de demander l'accès au super admin
+  const visibleItems = (list) => list.filter((item) => !isHiddenPage(item.url));
   const { workspaceId } = useWorkspace();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
@@ -396,7 +380,6 @@ export function NavMain({
                       >
                         {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
-                        <LockedHint locked={subItem.locked} />
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
@@ -479,7 +462,6 @@ export function NavMain({
                         >
                           {subItem.icon && <subItem.icon className="w-4 h-4" />}
                           <span>{subItem.title}</span>
-                          <LockedHint locked={subItem.locked} />
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
@@ -568,7 +550,6 @@ export function NavMain({
                       >
                         {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
-                        <LockedHint locked={subItem.locked} />
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
@@ -650,7 +631,6 @@ export function NavMain({
                         >
                           {subItem.icon && <subItem.icon className="w-4 h-4" />}
                           <span>{subItem.title}</span>
-                          <LockedHint locked={subItem.locked} />
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
@@ -998,7 +978,6 @@ export function NavMain({
                               >
                                 {item.icon && <item.icon className="w-4 h-4" />}
                                 {item.title}
-                                <LockedHint locked={item.locked} />
                               </Link>
                             ) : (
                               <div className="flex items-center justify-between w-full">
@@ -1039,7 +1018,6 @@ export function NavMain({
                       >
                         {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
-                        <LockedHint locked={subItem.locked} />
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
@@ -1134,7 +1112,6 @@ export function NavMain({
                                   )}
                                 >
                                   <span className="text-sm">{item.title}</span>
-                                  <LockedHint locked={item.locked} />
                                 </Link>
                               ) : (
                                 <div className="flex items-center justify-between w-full">
@@ -1174,7 +1151,6 @@ export function NavMain({
                         >
                           {subItem.icon && <subItem.icon className="w-4 h-4" />}
                           <span>{subItem.title}</span>
-                          <LockedHint locked={subItem.locked} />
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
@@ -1296,15 +1272,12 @@ export function NavMain({
             tooltip={
               isProTab && !hasAccess
                 ? `${item.title} - Fonctionnalité Pro`
-                : item.locked
-                  ? `${item.title} (accès à demander)`
-                  : item.title
+                : item.title
             }
             disabled={!hasAccess}
           >
             {item.icon && <item.icon />}
             <span>{item.title}</span>
-            {!isCollapsed && <LockedHint locked={item.locked} />}
             {isProTab && !hasAccess && (
               <Crown className="w-3 h-3 ml-auto text-[#5b4fff]" />
             )}
@@ -1334,7 +1307,7 @@ export function NavMain({
           {/* Menu Ventes avec sous-menus et actions rapides */}
           {navVentes.length > 0 &&
             (() => {
-              // Pages sans accès : cadenas (voir visibleItems)
+              // Pages sans accès : affichées (voir visibleItems)
               const filteredNavVentes = visibleItems(navVentes).filter(
                 (item) =>
                   deliveryNotesAllowed ||
@@ -1378,13 +1351,12 @@ export function NavMain({
                   title: "Tâches",
                   url: "/dashboard/outils/kanban",
                   icon: FolderKanban,
-                  locked: true,
                 }))}
 
           {/* Menu Documents avec sous-menus */}
           {navDocuments.length > 0 &&
             (() => {
-              // Pages sans accès : cadenas (voir visibleItems)
+              // Pages sans accès : affichées (voir visibleItems)
               const filteredNavDocuments = visibleItems(navDocuments);
               return (
                 filteredNavDocuments.length > 0 &&

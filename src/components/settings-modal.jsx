@@ -21,7 +21,6 @@ import {
   LayoutGrid,
   DollarSign,
   Wallet,
-  Lock,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -522,8 +521,8 @@ export function SettingsModal({
   };
 
   const renderContent = () => {
-    // Onglet sans le droit de le voir (cadenas dans la liste) : on propose
-    // de demander l'accès au super admin
+    // Onglet sans le droit de le voir : on indique qu'il est inaccessible et
+    // on propose de demander l'accès au super admin
     const deniedModule =
       ["facturation", "subscription"].includes(activeTab) && !showBilling
         ? "billing"
@@ -671,8 +670,8 @@ export function SettingsModal({
         { id: "roles", label: "Rôles", icon: KeyRound },
       ],
     },
-    // Sans « Voir » : onglets affichés avec un cadenas, leur contenu propose
-    // de demander l'accès
+    // Sans « Voir » : onglets affichés, leur contenu indique que la section
+    // est inaccessible et propose de demander l'accès
     {
       title: "Intégrations",
       items: [
@@ -680,19 +679,16 @@ export function SettingsModal({
           id: "applications",
           label: "Applications",
           icon: LayoutGrid,
-          locked: !showIntegrations,
         },
         {
           id: "comptes-bancaires",
           label: "Comptes bancaires",
           icon: Landmark,
-          locked: !showIntegrations,
         },
         {
           id: "facturation-electronique",
           label: "Facturation électronique",
           icon: Zap,
-          locked: !showIntegrations,
         },
       ],
     },
@@ -703,13 +699,11 @@ export function SettingsModal({
           id: "subscription",
           label: "Abonnement",
           icon: Crown,
-          locked: !showBilling,
         },
         {
           id: "facturation",
           label: "Facturation",
           icon: DollarSign,
-          locked: !showBilling,
         },
       ],
     },
@@ -849,12 +843,6 @@ export function SettingsModal({
                                 <Icon className="h-4 w-4" />
                                 <span className="flex font-normal items-center gap-2">
                                   {item.label}
-                                  {item.locked && (
-                                    <Lock
-                                      className="size-3 text-muted-foreground/70"
-                                      aria-label="Accès à demander"
-                                    />
-                                  )}
                                   {item.isNew && (
                                     <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 rounded-md">
                                       nouveau

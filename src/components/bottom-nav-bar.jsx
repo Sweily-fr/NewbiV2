@@ -22,7 +22,6 @@ import {
   LogOut,
   Search,
   ChevronRight,
-  Lock,
   Users,
   ReceiptText,
 } from "lucide-react";
@@ -273,8 +272,8 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
     actions: permissionActions,
   } = useMyPermissions();
   // Comme dans le menu : toutes les pages sont listées, sauf celles
-  // masquées au Comptable par défaut ; sans « Voir », un cadenas (la page
-  // refusée propose de demander l'accès)
+  // masquées au Comptable par défaut ; sans « Voir », la page affiche
+  // qu'elle est inaccessible et propose de demander l'accès
   const isHiddenPage = (href) => {
     const moduleKey = moduleForPath(href);
     return (
@@ -282,10 +281,6 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
       Boolean(moduleKey) &&
       isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
-  };
-  const isLockedPage = (href) => {
-    const moduleKey = moduleForPath(href);
-    return permissionsReady && Boolean(moduleKey) && !canDo(moduleKey, "view");
   };
   const canCreateInvoices = !permissionsReady || canDo("invoices", "create");
   const canCreateQuotes = !permissionsReady || canDo("quotes", "create");
@@ -462,15 +457,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                       <span className="text-sm font-medium text-foreground">
                         {item.label}
                       </span>
-                      <span className="flex items-center gap-2">
-                        {isLockedPage(item.href) && (
-                          <Lock
-                            className="w-3.5 h-3.5 text-[#3D3E42]/40"
-                            aria-label="Accès à demander"
-                          />
-                        )}
-                        <ChevronRight className="w-4 h-4 shrink-0 text-[#3D3E42]/40" />
-                      </span>
+                      <ChevronRight className="w-4 h-4 shrink-0 text-[#3D3E42]/40" />
                     </Link>
                   );
                 })}
@@ -623,14 +610,6 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                           >
                             {item.label}
                           </span>
-                          {item.href &&
-                            !item.external &&
-                            isLockedPage(item.href) && (
-                              <Lock
-                                className="w-3.5 h-3.5 text-[#3D3E42]/40 shrink-0"
-                                aria-label="Accès à demander"
-                              />
-                            )}
                           {/* Notification badge */}
                           {item.badge && unreadCount > 0 && (
                             <span className="px-1.5 py-0.5 text-[10px] font-bold text-white bg-red-500 rounded-full min-w-[18px] text-center">
