@@ -271,20 +271,21 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
     role: permissionsRole,
     actions: permissionActions,
   } = useMyPermissions();
-  // Pages masquées au rôle exclues comme dans le menu (Comptable par défaut)
-  const canViewPage = (href) => {
+  // Comme dans le menu : toutes les pages sont listées, sauf celles
+  // masquées au Comptable par défaut ; sans « Voir », la page affiche
+  // qu'elle est inaccessible et propose de demander l'accès
+  const isHiddenPage = (href) => {
     const moduleKey = moduleForPath(href);
     return (
-      !permissionsReady ||
-      !moduleKey ||
-      (canDo(moduleKey, "view") &&
-        !isHiddenForRole(permissionsRole, permissionActions, moduleKey))
+      permissionsReady &&
+      Boolean(moduleKey) &&
+      isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
   };
   const canCreateInvoices = !permissionsReady || canDo("invoices", "create");
   const canCreateQuotes = !permissionsReady || canDo("quotes", "create");
   const isVisibleMoreItem = (item) =>
-    !item.href || item.external || canViewPage(item.href);
+    !item.href || item.external || !isHiddenPage(item.href);
   const pathname = usePathname();
   const [billingOpen, setBillingOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -437,7 +438,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                   (item) =>
                     (isDeliveryNotesAllowed(session?.user?.email) ||
                       item.href !== "/dashboard/outils/bons-de-livraison") &&
-                    canViewPage(item.href),
+                    !isHiddenPage(item.href),
                 )
                 .map((item) => {
                   const isActive =
@@ -692,9 +693,10 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
       >
         <div className="bg-white dark:bg-zinc-900 shadow-[0_-1px_3px_rgba(0,0,0,0.06)]">
           <div className="flex items-center justify-around h-16 px-1">
-            {/* Onglet d'une page sans « Voir » masqué (Transactions) */}
+            {/* Onglet d'une page masquée au Comptable par défaut exclu ;
+                sans « Voir », l'onglet mène à la demande d'accès */}
             {tabs
-              .filter((tab) => !tab.href || canViewPage(tab.href))
+              .filter((tab) => !tab.href || !isHiddenPage(tab.href))
               .map((tab) => {
                 const active =
                   tab.key === "billing"

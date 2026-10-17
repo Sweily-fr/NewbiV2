@@ -95,10 +95,19 @@ export function NavMain({
       !isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
   };
+  // Pages masquées au Comptable tant qu'il garde ses droits par défaut :
+  // seules à rester hors du menu
+  const isHiddenPage = (url) => {
+    const moduleKey = moduleForPath(url);
+    if (!permissionsReady || !moduleKey) return false;
+    return isHiddenForRole(permissionsRole, permissionActions, moduleKey);
+  };
   // Raccourcis « Nouveau … » : action « create » du module
   const canCreate = (moduleKey) =>
     !permissionsReady || canDo(moduleKey, "create");
-  const visibleItems = (list) => list.filter((item) => canSee(item.url));
+  // Toutes les pages restent dans le menu : sans « Voir », la page affiche
+  // qu'elle est inaccessible et propose de demander l'accès au super admin
+  const visibleItems = (list) => list.filter((item) => !isHiddenPage(item.url));
   const { workspaceId } = useWorkspace();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
@@ -1298,7 +1307,7 @@ export function NavMain({
           {/* Menu Ventes avec sous-menus et actions rapides */}
           {navVentes.length > 0 &&
             (() => {
-              // Pages sans accès pour le rôle masquées
+              // Pages sans accès : affichées (voir visibleItems)
               const filteredNavVentes = visibleItems(navVentes).filter(
                 (item) =>
                   deliveryNotesAllowed ||
@@ -1335,13 +1344,19 @@ export function NavMain({
         <SidebarMenu>
           {/* Menu Projets avec tableaux Kanban */}
           {showProjets &&
-            canSee("/dashboard/outils/kanban") &&
-            renderProjetsMenu()}
+            !isHiddenPage("/dashboard/outils/kanban") &&
+            (canSee("/dashboard/outils/kanban")
+              ? renderProjetsMenu()
+              : renderSimpleItem({
+                  title: "Tâches",
+                  url: "/dashboard/outils/kanban",
+                  icon: FolderKanban,
+                }))}
 
           {/* Menu Documents avec sous-menus */}
           {navDocuments.length > 0 &&
             (() => {
-              // Pages sans accès pour le rôle masquées
+              // Pages sans accès : affichées (voir visibleItems)
               const filteredNavDocuments = visibleItems(navDocuments);
               return (
                 filteredNavDocuments.length > 0 &&

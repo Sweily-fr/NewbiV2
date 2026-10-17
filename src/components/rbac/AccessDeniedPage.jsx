@@ -67,7 +67,16 @@ function initials(name = "") {
  * @param {"view"|"create"|"edit"} action - action refusée
  * @param {boolean} canView - le rôle peut consulter la page
  */
-export function AccessDeniedPage({ moduleKey, action, canView }) {
+/**
+ * `embedded` : affichée dans un panneau (onglet des paramètres) plutôt
+ * qu'en page : marges réduites, sans les boutons de retour.
+ */
+export function AccessDeniedPage({
+  moduleKey,
+  action,
+  canView,
+  embedded = false,
+}) {
   const router = useRouter();
   const { roleName } = useMyPermissions();
   const { workspaceId } = useWorkspace();
@@ -133,7 +142,13 @@ export function AccessDeniedPage({ moduleKey, action, canView }) {
     : `Votre rôle${roleName ? ` ${quote(roleName)}` : ""} ne donne pas accès à ${quote(pageLabel)}.`;
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-16 sm:px-6 sm:py-24">
+    <div
+      className={
+        embedded
+          ? "flex flex-1 items-center justify-center px-2 py-8"
+          : "flex flex-1 items-center justify-center px-4 py-16 sm:px-6 sm:py-24"
+      }
+    >
       <div className="flex w-full max-w-md flex-col items-center text-center">
         {/* Illustration : cadenas dans des halos concentriques */}
         <div className="relative mb-8 flex size-28 items-center justify-center">
@@ -209,26 +224,28 @@ export function AccessDeniedPage({ moduleKey, action, canView }) {
           )}
         </div>
 
-        <div className="mt-6 flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-center">
-          <Button
-            type="button"
-            variant="ghost"
-            className="cursor-pointer gap-1.5"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="size-4" />
-            Page précédente
-          </Button>
-          {viewOnly && listPath ? (
-            <Button asChild variant="primary" className="cursor-pointer">
-              <Link href={listPath}>Revenir à {quote(pageLabel)}</Link>
+        {!embedded && (
+          <div className="mt-6 flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-center">
+            <Button
+              type="button"
+              variant="ghost"
+              className="cursor-pointer gap-1.5"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="size-4" />
+              Page précédente
             </Button>
-          ) : (
-            <Button asChild variant="primary" className="cursor-pointer">
-              <Link href="/dashboard">Retour à l'accueil</Link>
-            </Button>
-          )}
-        </div>
+            {viewOnly && listPath ? (
+              <Button asChild variant="primary" className="cursor-pointer">
+                <Link href={listPath}>Revenir à {quote(pageLabel)}</Link>
+              </Button>
+            ) : (
+              <Button asChild variant="primary" className="cursor-pointer">
+                <Link href="/dashboard">Retour à l'accueil</Link>
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
