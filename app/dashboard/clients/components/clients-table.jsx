@@ -118,6 +118,8 @@ export default function ClientsTable({
   useProvidedClients = false,
   defaultListId = null,
   globalFilter = "",
+  // Bouton « Aa » de la barre de recherche de la page (hideSearchBar)
+  searchExact = false,
   selectedTypes = [],
   selectedList = null,
   hideSearchBar = false,
@@ -293,6 +295,7 @@ export default function ClientsTable({
         onSelectList={onSelectList}
         workspaceId={workspaceId}
         externalGlobalFilter={globalFilter}
+        externalSearchExact={searchExact}
         externalSelectedTypes={selectedTypes}
         selectedList={selectedList}
         hideSearchBar={hideSearchBar}

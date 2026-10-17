@@ -77,6 +77,8 @@ function TransfertsContent() {
   const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectionState, setSelectionState] = useState(null);
@@ -349,6 +351,8 @@ function TransfertsContent() {
               loading={transfersLoading}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
+              searchExact={searchExact}
+              setSearchExact={setSearchExact}
               activeTab={activeTab}
               onTabChange={handleTabChange}
               transferCounts={transferCounts}
@@ -391,6 +395,8 @@ function TransfertsContent() {
               loading={transfersLoading}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
+              searchExact={searchExact}
+              setSearchExact={setSearchExact}
               activeTab={activeTab}
               onTabChange={handleTabChange}
               transferCounts={transferCounts}

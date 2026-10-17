@@ -19,6 +19,8 @@ import {
 import { authClient } from "@/src/lib/auth-client";
 import { Button, buttonVariants } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
+import { createSearchMatcher } from "@/src/utils/search-text";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,12 +53,6 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
 });
 const formatDate = (value) =>
   value ? dateFormat.format(new Date(value)) : "-";
-
-const normalize = (value) =>
-  String(value || "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
 
 const BADGE =
   "inline-flex items-center rounded-md border px-2 py-0.5 text-xs whitespace-nowrap";
@@ -156,6 +152,7 @@ export default function ManagedClientsView({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [searchExact, setSearchExact] = useState(false);
   const [opening, setOpening] = useState(null);
   const [busy, setBusy] = useState(null);
   const [planFor, setPlanFor] = useState(null);
@@ -223,14 +220,13 @@ export default function ManagedClientsView({
   }, []);
 
   const rows = useMemo(() => {
-    const q = normalize(query.trim());
-    if (!q) return clients;
+    if (!query.trim()) return clients;
+    // Sans accents ni majuscules, sauf bouton « Aa » coché
+    const match = createSearchMatcher(query, { exact: searchExact });
     return clients.filter((c) =>
-      [c.name, c.siret, c.ownerName, c.ownerEmail, c.invitedEmail].some((v) =>
-        normalize(v).includes(q),
-      ),
+      match(c.name, c.siret, c.ownerName, c.ownerEmail, c.invitedEmail),
     );
-  }, [clients, query]);
+  }, [clients, query, searchExact]);
   const activeCount = clients.filter((c) => c.status === "active").length;
 
   // Action d'une ligne, avec retour à l'utilisateur
@@ -347,10 +343,10 @@ export default function ManagedClientsView({
 
       {/* Recherche */}
       <div className="flex items-center gap-4 px-4 sm:px-6 py-4 flex-shrink-0">
-        <div className="relative w-full max-w-md">
+        <div className="relative w-full max-w-md sm:w-[320px]">
           <Input
             ref={inputRef}
-            className={cn("w-full sm:w-[320px] ps-9", query && "pe-9")}
+            className={cn("w-full sm:w-[320px] ps-9 pe-9", query && "pe-16")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Recherchez par entreprise, dirigeant ou SIRET..."
@@ -363,7 +359,7 @@ export default function ManagedClientsView({
           {query && (
             <button
               type="button"
-              className="text-muted-foreground/80 hover:text-foreground absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center outline-none"
+              className="text-muted-foreground/80 hover:text-foreground absolute inset-y-0 end-7 flex h-full w-9 items-center justify-center outline-none"
               aria-label="Effacer la recherche"
               onClick={() => {
                 setQuery("");
@@ -373,6 +369,12 @@ export default function ManagedClientsView({
               <CircleXIcon size={16} aria-hidden="true" />
             </button>
           )}
+          <div className="absolute inset-y-0 end-1.5 flex items-center">
+            <SearchExactToggle
+              pressed={searchExact}
+              onPressedChange={setSearchExact}
+            />
+          </div>
         </div>
       </div>
 

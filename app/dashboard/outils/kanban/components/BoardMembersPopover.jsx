@@ -18,6 +18,7 @@ import {
   GET_ORGANIZATION_MEMBERS,
   UPDATE_BOARD,
 } from "@/src/graphql/kanbanQueries";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 /**
  * Popover pour gérer l'accès au board (vue liste Kanban).
@@ -88,16 +89,11 @@ export function BoardMembersPopover({
     ? orgMembers.find((m) => String(m.id) === ownerId)
     : null;
 
+  // Sans accents ni majuscules : « helene » trouve « Hélène »
+  const matchesMember = createSearchMatcher(search);
   const filtered = orgMembers
     .filter((m) => String(m.id) !== ownerId)
-    .filter((m) => {
-      if (!search.trim()) return true;
-      const q = search.trim().toLowerCase();
-      return (
-        (m.name || "").toLowerCase().includes(q) ||
-        (m.email || "").toLowerCase().includes(q)
-      );
-    });
+    .filter((m) => matchesMember(m.name, m.email));
 
   const memberHasAccess = (memberId) => {
     if (ownerId && memberId === ownerId) return true; // créateur toujours inclus

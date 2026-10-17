@@ -57,6 +57,7 @@ import {
   useDeleteClientSegment,
   useClientsInSegment,
 } from "@/src/hooks/useClientSegments";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import {
   Plus,
   MoreHorizontal,
@@ -466,12 +467,16 @@ function SegmentDetailView({ segment, onBack }) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés), sans
+  // délai contrairement à la saisie
+  const [searchExact, setSearchExact] = useState(false);
   const limit = 25;
   const { clients, totalItems, totalPages, loading } = useClientsInSegment(
     segment.id,
     page,
     limit,
     search,
+    { searchExact },
   );
 
   const searchTimeoutRef = useRef(null);
@@ -560,7 +565,15 @@ function SegmentDetailView({ segment, onBack }) {
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher un contact..."
-            className="h-8 text-sm pl-8"
+            className="h-8 text-sm pl-8 pr-8"
+          />
+          <SearchExactToggle
+            pressed={searchExact}
+            onPressedChange={(value) => {
+              setSearchExact(value);
+              if (search) setPage(1);
+            }}
+            className="absolute right-1 top-1/2 -translate-y-1/2"
           />
         </div>
       </div>

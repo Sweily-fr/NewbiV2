@@ -28,6 +28,7 @@ import CreateListDialog from "../components/create-list-dialog";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { ListesPageSkeleton } from "./components/listes-page-skeleton";
 import { cn } from "@/src/lib/utils";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
 function ListesContent() {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -52,6 +53,8 @@ function ListesContent() {
   const { deleteLists } = useDeleteClientLists();
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
+  // Bouton « Aa » : recherche exacte (majuscules et accents respectés)
+  const [searchExact, setSearchExact] = useState(false);
   const [viewingList, setViewingList] = useState(false);
   const [rowSelection, setRowSelection] = useState({});
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = useState(false);
@@ -117,7 +120,7 @@ function ListesContent() {
                 ref={inputRef}
                 className={cn(
                   "w-full sm:w-[300px] ps-9",
-                  Boolean(globalFilter) && "pe-9",
+                  Boolean(globalFilter) ? "pe-16" : "pe-9",
                 )}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
@@ -130,7 +133,7 @@ function ListesContent() {
               </div>
               {Boolean(globalFilter) && (
                 <button
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-7 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Effacer le filtre"
                   onClick={() => {
                     setGlobalFilter("");
@@ -142,6 +145,11 @@ function ListesContent() {
                   <CircleXIcon size={16} aria-hidden="true" />
                 </button>
               )}
+              <SearchExactToggle
+                pressed={searchExact}
+                onPressedChange={setSearchExact}
+                className="absolute end-1.5 top-1/2 -translate-y-1/2"
+              />
             </div>
 
             {selectedListIds.length > 0 && canDeleteLists && (
@@ -207,6 +215,7 @@ function ListesContent() {
         onListsUpdated={refetchLists}
         selectedList={initialSelectedList}
         globalFilter={globalFilter}
+        searchExact={searchExact}
         onCreateList={() => setCreateListDialogOpen(true)}
         onViewingListChange={setViewingList}
         rowSelection={rowSelection}

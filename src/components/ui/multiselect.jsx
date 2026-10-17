@@ -12,6 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/src/components/ui/command";
+import { matchesSearch } from "@/src/utils/search-text";
 
 export function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = React.useState(value);
@@ -53,7 +54,7 @@ function removePickedOption(groupOption, picked) {
 
   for (const [key, value] of Object.entries(cloneOption)) {
     cloneOption[key] = value.filter(
-      (val) => !picked.find((p) => p.value === val.value)
+      (val) => !picked.find((p) => p.value === val.value),
     );
   }
   return cloneOption;
@@ -119,7 +120,7 @@ const MultipleSelector = ({
 
   const [selected, setSelected] = React.useState(value || []);
   const [options, setOptions] = React.useState(
-    transToGroupOption(arrayDefaultOptions, groupBy)
+    transToGroupOption(arrayDefaultOptions, groupBy),
   );
   const [inputValue, setInputValue] = React.useState("");
   const debouncedSearchTerm = useDebounce(inputValue, delay || 500);
@@ -142,7 +143,7 @@ const MultipleSelector = ({
       setSelected(newOptions);
       onChange?.(newOptions);
     },
-    [onChange, selected]
+    [onChange, selected],
   );
 
   const handleKeyDown = React.useCallback(
@@ -164,7 +165,7 @@ const MultipleSelector = ({
         }
       }
     },
-    [handleUnselect, selected]
+    [handleUnselect, selected],
   );
 
   useEffect(() => {
@@ -311,7 +312,7 @@ const MultipleSelector = ({
 
   const selectables = React.useMemo(
     () => removePickedOption(options, selected),
-    [options, selected]
+    [options, selected],
   );
 
   /** Avoid Creatable Selector freezing or lagging when paste a long string. */
@@ -322,7 +323,8 @@ const MultipleSelector = ({
 
     if (creatable) {
       return (value, search) => {
-        return value.toLowerCase().includes(search.toLowerCase()) ? 1 : -1;
+        // Sans accents ni majuscules
+        return matchesSearch(value, search) ? 1 : -1;
       };
     }
     // Using default filter in `cmdk`. We don&lsquo;t have to provide it.
@@ -339,7 +341,7 @@ const MultipleSelector = ({
       }}
       className={cn(
         "h-auto overflow-visible bg-transparent",
-        commandProps?.className
+        commandProps?.className,
       )}
       shouldFilter={
         commandProps?.shouldFilter !== undefined
@@ -356,7 +358,7 @@ const MultipleSelector = ({
             "cursor-text": !disabled && selected.length !== 0,
           },
           !hideClearAllButton && "pe-9",
-          className
+          className,
         )}
         onClick={() => {
           if (disabled) return;
@@ -370,7 +372,7 @@ const MultipleSelector = ({
                 key={option.value}
                 className={cn(
                   "animate-fadeIn relative inline-flex h-7 cursor-default items-center rounded-md border bg-background ps-2 pe-7 pl-2 text-xs font-medium text-secondary-foreground transition-all hover:bg-background disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 data-fixed:pe-2",
-                  badgeClassName
+                  badgeClassName,
                 )}
                 data-fixed={option.fixed}
                 data-disabled={disabled || undefined}
@@ -430,7 +432,7 @@ const MultipleSelector = ({
                 "px-3 py-2": selected.length === 0,
                 "ml-1": selected.length !== 0,
               },
-              inputProps?.className
+              inputProps?.className,
             )}
           />
           <button
@@ -445,7 +447,7 @@ const MultipleSelector = ({
                 disabled ||
                 selected.length < 1 ||
                 selected.filter((s) => s.fixed).length === selected.length) &&
-                "hidden"
+                "hidden",
             )}
             aria-label="Clear all"
           >
@@ -458,7 +460,7 @@ const MultipleSelector = ({
           className={cn(
             "absolute top-2 z-10 w-full overflow-hidden rounded-md border border-input",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
-            !open && "hidden"
+            !open && "hidden",
           )}
           data-state={open ? "open" : "closed"}
         >
@@ -514,7 +516,7 @@ const MultipleSelector = ({
                               className={cn(
                                 "cursor-pointer",
                                 option.disable &&
-                                  "pointer-events-none cursor-not-allowed opacity-50"
+                                  "pointer-events-none cursor-not-allowed opacity-50",
                               )}
                             >
                               {option.label}

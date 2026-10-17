@@ -29,6 +29,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 const formatCurrency = (amount) =>
   getNumberFormat("fr-FR", {
@@ -94,8 +95,9 @@ export function ConvertToInvoiceModal({
   const filteredTasks = useMemo(() => {
     let result = tasks;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter((t) => t.title?.toLowerCase().includes(q));
+      // Sans accents ni majuscules
+      const match = createSearchMatcher(searchQuery);
+      result = result.filter((t) => match(t.title));
     }
     if (filterColumnId) {
       result = result.filter((t) => t.columnId === filterColumnId);

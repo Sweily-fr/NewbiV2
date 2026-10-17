@@ -28,11 +28,15 @@ const EMPTY_TAB_COUNTS = {
  * côté serveur sont mappés (category, paymentMethod, source, amount "égal à",
  * plage de dates).
  */
-function buildFilters({ search, accountId, advancedFilters }) {
+function buildFilters({ search, searchExact, accountId, advancedFilters }) {
   const filters = {};
 
   const trimmedSearch = (search || "").trim();
-  if (trimmedSearch) filters.search = trimmedSearch;
+  if (trimmedSearch) {
+    filters.search = trimmedSearch;
+    // Bouton « Aa » : par défaut le serveur ignore majuscules et accents
+    if (searchExact) filters.searchExact = true;
+  }
   if (accountId) filters.accountId = accountId;
 
   (advancedFilters || []).forEach((filter) => {
@@ -77,6 +81,7 @@ function buildFilters({ search, accountId, advancedFilters }) {
  * @param {Object} options
  * @param {string} options.tab - Onglet actif ("all" | "lastMonth" | "toReconcile" | "missingReceipt")
  * @param {string} options.search - Terme de recherche (debouncé en interne, 350 ms)
+ * @param {boolean} options.searchExact - Recherche exacte (majuscules et accents respectés), non debouncée
  * @param {string|null} options.accountId - externalId du compte bancaire sélectionné
  * @param {Array} options.advancedFilters - Filtres avancés du tableau
  * @param {number} options.page - Page serveur (1-based)
@@ -85,6 +90,7 @@ function buildFilters({ search, accountId, advancedFilters }) {
 export function useTransactionsPage({
   tab = "all",
   search = "",
+  searchExact = false,
   accountId = null,
   advancedFilters = [],
   page = 1,
@@ -94,8 +100,14 @@ export function useTransactionsPage({
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
   const filters = useMemo(
-    () => buildFilters({ search: debouncedSearch, accountId, advancedFilters }),
-    [debouncedSearch, accountId, advancedFilters],
+    () =>
+      buildFilters({
+        search: debouncedSearch,
+        searchExact,
+        accountId,
+        advancedFilters,
+      }),
+    [debouncedSearch, searchExact, accountId, advancedFilters],
   );
 
   const { data, previousData, loading, refetch } = useQuery(

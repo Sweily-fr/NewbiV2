@@ -56,6 +56,7 @@ import {
   SmsIcon as MessageSquare,
 } from "@/src/components/icons";
 import { useCreationLinkClick } from "@/src/components/company-info-gate";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 export function NavMain({
   items,
@@ -131,12 +132,10 @@ export function NavMain({
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
     // Filtrer par terme de recherche si présent, sinon afficher tous
+    // (sans accents ni majuscules)
+    const boardMatch = createSearchMatcher(debouncedKanbanSearch);
     const filtered = debouncedKanbanSearch
-      ? sortedBoards.filter((board) =>
-          board.title
-            .toLowerCase()
-            .includes(debouncedKanbanSearch.toLowerCase()),
-        )
+      ? sortedBoards.filter((board) => boardMatch(board.title))
       : sortedBoards; // Afficher tous les dossiers
     return filtered;
   }, [kanbanData?.boards, debouncedKanbanSearch]);

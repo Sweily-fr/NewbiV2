@@ -48,6 +48,7 @@ import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert"
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 /**
  * Formate un IBAN pour l'affichage (groupes de 4)
@@ -284,12 +285,9 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   // Filtrer les institutions par recherche
   const filteredInstitutions = useMemo(() => {
     if (!debouncedSearchQuery) return institutions;
-    const query = debouncedSearchQuery.toLowerCase();
-    return institutions.filter(
-      (inst) =>
-        inst.name.toLowerCase().includes(query) ||
-        inst.groupName?.toLowerCase().includes(query),
-    );
+    // Sans accents ni majuscules : « societe » trouve « Société Générale »
+    const match = createSearchMatcher(debouncedSearchQuery);
+    return institutions.filter((inst) => match(inst.name, inst.groupName));
   }, [institutions, debouncedSearchQuery]);
 
   // Ouvrir le modal de sélection

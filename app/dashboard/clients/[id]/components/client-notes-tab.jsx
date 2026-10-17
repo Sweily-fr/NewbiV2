@@ -43,6 +43,7 @@ import {
 import { GET_ORGANIZATION_MEMBERS } from "@/src/graphql/kanbanQueries";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 const toolbarItems = [
   { icon: Bold, tooltip: "Gras", command: "bold" },
@@ -96,14 +97,9 @@ function MentionDropdown({ members, query, onSelect, position }) {
   const listRef = useRef(null);
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    return members.filter((m) => {
-      const displayName = m.name || m.email || "";
-      return (
-        displayName.toLowerCase().includes(q) ||
-        (m.email || "").toLowerCase().includes(q)
-      );
-    });
+    // Sans accents ni majuscules : « helene » trouve « Hélène »
+    const match = createSearchMatcher(query);
+    return members.filter((m) => match(m.name || m.email || "", m.email));
   }, [members, query]);
 
   useEffect(() => {

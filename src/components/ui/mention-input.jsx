@@ -13,6 +13,7 @@ import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { Button } from "@/src/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
 import DOMPurify from "dompurify";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 // Get the text before the cursor in a contentEditable
 function getTextBeforeCursor() {
@@ -37,14 +38,9 @@ function MentionDropdown({ members, query, onSelect, anchorRef }) {
   const [pos, setPos] = useState(null);
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    return members.filter((m) => {
-      const displayName = m.name || m.email || "";
-      return (
-        displayName.toLowerCase().includes(q) ||
-        (m.email || "").toLowerCase().includes(q)
-      );
-    });
+    // Sans accents ni majuscules : « helene » trouve « Hélène »
+    const match = createSearchMatcher(query);
+    return members.filter((m) => match(m.name || m.email || "", m.email));
   }, [members, query]);
 
   useEffect(() => {

@@ -193,6 +193,8 @@ import { useKanbanColumns } from "./hooks/useKanbanColumns";
 import { useKanbanTasks } from "./hooks/useKanbanTasks";
 import { useKanbanDnDSimple } from "./hooks/useKanbanDnDSimple";
 import { useKanbanSearch } from "./hooks/useKanbanSearch";
+import { createSearchMatcher } from "@/src/utils/search-text";
+import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import { useKanbanMemberFilter } from "./hooks/useKanbanMemberFilter";
 import { useColumnCollapse } from "./hooks/useColumnCollapse";
 import { useViewMode } from "./hooks/useViewMode";
@@ -532,11 +534,11 @@ function EmojiPicker({ boardEmoji, onSelect, onClear, disabled = false }) {
 
   const filteredCategories = React.useMemo(() => {
     if (!search) return EMOJI_CATEGORIES;
+    // Sans accents ni majuscules : « idees » trouve « Idées »
+    const matchesCategory = createSearchMatcher(search);
     const filtered = {};
     for (const [cat, emojis] of Object.entries(EMOJI_CATEGORIES)) {
-      const match = emojis.filter(() =>
-        cat.toLowerCase().includes(search.toLowerCase()),
-      );
+      const match = emojis.filter(() => matchesCategory(cat));
       if (match.length) filtered[cat] = match;
     }
     // Si pas de match par catégorie, chercher tous les emojis
@@ -630,7 +632,12 @@ function EmojiPicker({ boardEmoji, onSelect, onClear, disabled = false }) {
   );
 }
 
-function ExpandableSearch({ searchQuery, setSearchQuery }) {
+function ExpandableSearch({
+  searchQuery,
+  setSearchQuery,
+  searchExact,
+  setSearchExact,
+}) {
   const [isOpen, setIsOpen] = React.useState(false);
   const inputRef = React.useRef(null);
   const containerRef = React.useRef(null);
@@ -698,6 +705,13 @@ function ExpandableSearch({ searchQuery, setSearchQuery }) {
           <CircleXIcon size={14} aria-hidden="true" />
         </button>
       )}
+      <SearchExactToggle
+        pressed={searchExact}
+        onPressedChange={(value) => {
+          setSearchExact(value);
+          inputRef.current?.focus();
+        }}
+      />
     </div>
   );
 }
@@ -1059,6 +1073,8 @@ function KanbanBoardPageContent({ params }) {
   const {
     searchQuery,
     setSearchQuery,
+    searchExact,
+    setSearchExact,
     filterTasks: filterTasksBySearch,
   } = useKanbanSearch();
 
@@ -1807,6 +1823,8 @@ function KanbanBoardPageContent({ params }) {
                 <ExpandableSearch
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
+                  searchExact={searchExact}
+                  setSearchExact={setSearchExact}
                 />
 
                 {/* Bouton Filtres */}

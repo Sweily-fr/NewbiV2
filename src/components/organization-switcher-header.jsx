@@ -83,6 +83,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { createSearchMatcher } from "@/src/utils/search-text";
 
 // Fonction helper pour obtenir l'icône Lucide correspondante
 const getIconComponent = (iconName) => {
@@ -207,9 +208,9 @@ export function OrganizationSwitcherHeader() {
   // Filtrer les organisations selon la recherche
   const filteredOrganizations = React.useMemo(() => {
     if (!debouncedSearchQuery.trim()) return sortedOrganizations;
-    return sortedOrganizations.filter((org) =>
-      org.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
-    );
+    // Sans accents ni majuscules
+    const match = createSearchMatcher(debouncedSearchQuery);
+    return sortedOrganizations.filter((org) => match(org.name));
   }, [sortedOrganizations, debouncedSearchQuery]);
 
   // Fonction pour changer d'organisation active

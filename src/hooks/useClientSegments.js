@@ -62,6 +62,7 @@ export const useClientsInSegment = (
   page = 1,
   limit = 10,
   search = "",
+  { searchExact = false } = {},
 ) => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
@@ -71,7 +72,16 @@ export const useClientsInSegment = (
     error,
     refetch,
   } = useQuery(GET_CLIENTS_IN_SEGMENT, {
-    variables: { workspaceId, segmentId, page, limit, search },
+    // searchExact (bouton « Aa ») envoyé seulement s'il est coché avec une
+    // saisie : pas de requête inutile quand on le bascule sans recherche
+    variables: {
+      workspaceId,
+      segmentId,
+      page,
+      limit,
+      search,
+      ...(search && searchExact ? { searchExact: true } : {}),
+    },
     skip: !segmentId || !workspaceId,
   });
 

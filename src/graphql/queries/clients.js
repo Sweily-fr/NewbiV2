@@ -6,12 +6,14 @@ export const GET_CLIENTS = gql`
     $page: Int
     $limit: Int
     $search: String
+    $searchExact: Boolean
   ) {
     clients(
       workspaceId: $workspaceId
       page: $page
       limit: $limit
       search: $search
+      searchExact: $searchExact
     ) {
       items {
         id
