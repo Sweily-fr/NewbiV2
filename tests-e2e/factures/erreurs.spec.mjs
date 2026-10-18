@@ -43,7 +43,7 @@ test.describe("Factures : erreurs de saisie", () => {
     await etape(page, "Créer sans article", async () => {
       await creerFacture(page);
       await expect(
-        notifications(page).or(page.getByText("Veuillez ajouter au moins un article")).first(),
+        notifications(page).filter({ hasText: "Veuillez ajouter au moins un article à la facture" }),
         "Un message doit expliquer qu'il faut au moins un article",
       ).toBeVisible();
       await expect(page).toHaveURL(/\/factures\/new/);
@@ -66,9 +66,8 @@ test.describe("Factures : erreurs de saisie", () => {
     await ajouterArticle(page, 1, { quantite: 1, prix: 130 });
     await etape(page, "Créer la facture", async () => {
       await creerFacture(page);
-      // Un message (notification ou erreur sous le champ) doit expliquer le refus.
       await expect(
-        notifications(page).or(page.getByText(/prix unitaire|incomplet|requis|obligatoire/i)).first(),
+        notifications(page).filter({ hasText: "Certains articles sont incomplets" }),
         "Un message doit expliquer pourquoi la facture n'est pas créée",
       ).toBeVisible();
       await expect(page).toHaveURL(/\/factures\/new/);

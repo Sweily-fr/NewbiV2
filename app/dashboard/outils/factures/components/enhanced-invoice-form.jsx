@@ -614,6 +614,9 @@ export default function EnhancedInvoiceForm({
 
   const handleCreateInvoice = () => {
     if (!isStep2Valid()) {
+      // Sans message, le clic paraissait sans effet quand aucune erreur
+      // n'était visible à l'écran (aucun article, par exemple).
+      toast.error(step2ErrorMessage());
       scrollToFirstError();
       return;
     }
@@ -622,6 +625,20 @@ export default function EnhancedInvoiceForm({
     if (onSubmit) {
       onSubmit();
     }
+  };
+
+  /** Ce qui empêche de créer la facture, dit à l'utilisateur. */
+  const step2ErrorMessage = () => {
+    if (!data.items || data.items.length === 0) {
+      return "Veuillez ajouter au moins un article à la facture";
+    }
+    if (validationErrors?.discount) {
+      return "La remise est invalide : corrigez-la avant de continuer";
+    }
+    if (validationErrors?.shipping) {
+      return "Les informations de livraison sont incomplètes ou invalides";
+    }
+    return "Certains articles sont incomplets : renseignez le nom, la quantité et le prix";
   };
 
   const isStep1Valid = () => {
