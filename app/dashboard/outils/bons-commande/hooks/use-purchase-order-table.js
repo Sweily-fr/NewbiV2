@@ -111,6 +111,10 @@ const memoizedMultiColumnFilter = (row, columnId, match) => {
   const purchaseOrder = row.original;
   const searchableContent = [
     purchaseOrder.number,
+    // Référence telle qu'affichée dans la liste (« BC-092026-0004 »)
+    purchaseOrder.prefix && purchaseOrder.number
+      ? `${purchaseOrder.prefix.replace(/-$/, "")}-${purchaseOrder.number}`
+      : null,
     purchaseOrder.client?.name,
     purchaseOrder.client?.email,
     PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status],

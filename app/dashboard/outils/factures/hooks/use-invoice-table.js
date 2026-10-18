@@ -152,6 +152,10 @@ const memoizedMultiColumnFilter = (row, columnId, match) => {
   const searchableContent = [
     clientName,
     invoiceNumber, // Numéro de facture exact
+    // Référence telle qu'affichée dans la liste (« F-092026-0003 »)
+    invoice.prefix && invoice.number
+      ? `${invoice.prefix.replace(/-$/, "")}-${invoice.number}`
+      : null,
     ...issueDates,
     ...dueDates,
     status,

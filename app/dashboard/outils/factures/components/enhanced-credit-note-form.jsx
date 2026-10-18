@@ -98,22 +98,23 @@ import ClientSelector from "./invoices-form-sections/client-selector";
 import { CREDIT_TYPE, REFUND_METHOD } from "@/src/graphql/creditNoteQueries";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
-// Labels for display
+// Choix proposés : uniquement les valeurs acceptées par l'API. Les anciennes
+// clés CANCELLATION, DISCOUNT et OTHER n'existaient pas : leurs options
+// valaient "undefined" (« Autre » refusé par l'API, « Autre méthode »
+// enregistré en déduction sur prochaine facture).
 const CREDIT_TYPE_LABELS = {
   [CREDIT_TYPE.CORRECTION]: "Correction d'erreur",
   [CREDIT_TYPE.COMMERCIAL_GESTURE]: "Geste commercial",
   [CREDIT_TYPE.REFUND]: "Remboursement",
-  [CREDIT_TYPE.CANCELLATION]: "Annulation",
-  [CREDIT_TYPE.DISCOUNT]: "Remise supplémentaire",
-  [CREDIT_TYPE.OTHER]: "Autre",
+  [CREDIT_TYPE.STOCK_SHORTAGE]: "Rupture de stock",
 };
 
 const REFUND_METHOD_LABELS = {
   [REFUND_METHOD.NEXT_INVOICE]: "Déduction sur prochaine facture",
   [REFUND_METHOD.BANK_TRANSFER]: "Virement bancaire",
   [REFUND_METHOD.CHECK]: "Chèque",
+  [REFUND_METHOD.VOUCHER]: "Bon d'achat",
   [REFUND_METHOD.CASH]: "Espèces",
-  [REFUND_METHOD.OTHER]: "Autre méthode",
 };
 
 // Composant de recherche de produits pour les avoirs

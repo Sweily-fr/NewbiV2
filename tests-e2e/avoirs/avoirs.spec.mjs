@@ -49,7 +49,6 @@ test.describe("Avoirs : création", () => {
       expect(avoirs, "Un avoir enregistré pour cette facture").toHaveLength(1);
       expect.soft(avoirs[0], "Avoir enregistré").toMatchObject({
         prefix: "AV",
-        originalInvoiceNumber: `${f.prefix}-${f.number}`,
         creditType: "CORRECTION",
         refundMethod: "NEXT_INVOICE",
         status: "CREATED",
@@ -57,6 +56,7 @@ test.describe("Avoirs : création", () => {
         finalTotalTTC: -1200,
       });
       expect.soft(String(avoirs[0].number), "Numéro").toMatch(/^\d+$/);
+      expect.soft(avoirs[0].originalInvoice.toHexString(), "Facture d'origine").toBe(f._id.toHexString());
       expect.soft((await factureEnBase(f)).status, "La facture garde son statut").toBe("PENDING");
     });
   });
@@ -73,7 +73,8 @@ test.describe("Avoirs : création", () => {
       await suivant(page);
       const quantite = await ouvrirArticle(page, 0, f.items[0].description);
       await expect(quantite).toHaveValue("-2");
-      await quantite.fill("-1");
+      // Le champ refuse le signe « - » : on tape 1, l'avoir l'enregistre en négatif.
+      await quantite.fill("1");
       await creerAvoir(page);
       await expect(notifications(page).filter({ hasText: "Avoir créé avec succès" }).first()).toBeVisible();
     }, { capture: "ecran" });
@@ -87,22 +88,28 @@ test.describe("Avoirs : création", () => {
     });
   });
 
-  test("Chaque type d'avoir proposé est accepté (« Autre »)", async ({ page }) => {
+  test("Types et remboursements proposés : ceux que l'API accepte, et l'avoir est créé", async ({ page }) => {
     const f = F.aCrediterPartiel;
     const avant = (await avoirsDe(f)).length;
     await nouvelAvoir(page, f);
-    await choisirType(page, "Autre");
+    await etape(page, "Choix proposés", async () => {
+      await page.getByRole("combobox").filter({ hasText: "Correction d'erreur" }).click();
+      await expect(page.getByRole("option")).toHaveText(["Correction d'erreur", "Geste commercial", "Remboursement", "Rupture de stock"]);
+      await page.getByRole("option", { name: "Rupture de stock" }).click();
+      await page.getByRole("combobox").filter({ hasText: "Déduction sur prochaine facture" }).click();
+      await expect(page.getByRole("option")).toHaveText(["Déduction sur prochaine facture", "Virement bancaire", "Chèque", "Bon d'achat", "Espèces"]);
+      await page.getByRole("option", { name: "Bon d'achat" }).click();
+    }, { capture: "ecran" });
     await suivant(page);
     const quantite = await ouvrirArticle(page, 0, f.items[0].description);
-    await quantite.fill("-0.5");
-    await etape(page, "Créer l'avoir de type « Autre »", async () => {
+    await quantite.fill("1");
+    await etape(page, "Créer l'avoir", async () => {
       await creerAvoir(page);
-      await expect(
-        notifications(page).filter({ hasText: "Avoir créé avec succès" }).first(),
-        "Le type « Autre » est proposé : l'avoir doit être créé",
-      ).toBeVisible();
+      await expect(notifications(page).filter({ hasText: "Avoir créé avec succès" }).first()).toBeVisible();
     }, { capture: "ecran" });
-    expect(await avoirsDe(f), "Avoir enregistré").toHaveLength(avant + 1);
+    const avoirs = await avoirsDe(f);
+    expect(avoirs, "Avoir enregistré").toHaveLength(avant + 1);
+    expect(avoirs.at(-1), "Type et remboursement enregistrés").toMatchObject({ creditType: "STOCK_SHORTAGE", refundMethod: "VOUCHER" });
   });
 });
 
