@@ -98,6 +98,13 @@ test.describe("Factures : liste", () => {
     await expect(ligne(page, FACTURES_LISTE.aEncaisser)).toHaveCount(0);
   });
 
+  test("Recherche par la référence complète affichée dans la liste", async ({ page }) => {
+    await ouvrirListe(page);
+    await page.getByPlaceholder(/Recherchez par numéro, client ou montant/).fill(numeroListe(FACTURES_LISTE.payee));
+    await expect(ligne(page, FACTURES_LISTE.payee), `« ${numeroListe(FACTURES_LISTE.payee)} » doit être trouvée`).toHaveCount(1);
+    await expect(ligne(page, FACTURES_LISTE.aEncaisser)).toHaveCount(0);
+  });
+
   test("Clic sur une facture : panneau avec client, dates, articles et totaux", async ({ page }) => {
     const f = FACTURES_LISTE.aEncaisser;
     await ouvrirListe(page);
