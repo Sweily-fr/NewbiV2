@@ -644,10 +644,16 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     throw new Error("Un avoir doit contenir au moins un article");
   }
 
-  // Clean client data and ensure shippingAddress includes fullName
+  // Clean client data and ensure shippingAddress includes fullName.
+  // documentFields (champs de la fiche client affichés sur le document) est
+  // lu avec la facture mais n'existe pas dans ClientInput : l'envoyer fait
+  // refuser tout l'avoir. L'API les recopie elle-même depuis la facture.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { documentFields: _documentFields, ...clientSansChampsAffiches } =
+    cleanedData.client || {};
   const cleanClient = cleanedData.client
     ? {
-        ...cleanedData.client,
+        ...clientSansChampsAffiches,
         shippingAddress: cleanedData.client.shippingAddress
           ? {
               fullName: cleanedData.client.shippingAddress.fullName,
