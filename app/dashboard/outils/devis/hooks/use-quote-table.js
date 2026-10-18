@@ -149,6 +149,10 @@ const memoizedMultiColumnFilter = (row, columnId, match) => {
   const quote = row.original;
   const searchableContent = [
     quote.number, // Numéro de devis
+    // Référence telle qu'affichée dans la liste (« D-092026-0003 »)
+    quote.prefix && quote.number
+      ? `${quote.prefix.replace(/-$/, "")}-${quote.number}`
+      : null,
     quote.client?.name, // Nom du client
     quote.client?.email, // Email du client
     QUOTE_STATUS_LABELS[quote.status], // Statut traduit
