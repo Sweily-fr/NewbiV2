@@ -1,7 +1,8 @@
 # Tests de bout en bout de Newbi (site + API), lancés depuis la page
 # « Tests » de l'admin (admin.newbi.fr/tests/newbi) ou à la main depuis
 # l'onglet Actions. Données de test uniquement (base Mongo en mémoire, services
-# externes coupés, voir tests-e2e/serveur.mjs) : aucun secret.
+# externes coupés, voir tests-e2e/serveur.mjs) : aucun secret de prod (seul
+# NEWBI_API_TOKEN, en lecture seule sur newbi-api, si ce dépôt est privé).
 # Le rapport (résultats, captures, vidéos des échecs) est publié en artefact
 # « rapport-admin », que la page « Tests » lit ensuite.
 name: Tests E2E
@@ -35,12 +36,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # NEWBI_API_TOKEN (jeton en lecture seule sur newbi-api) est nécessaire
+      # quand newbi-api est privé ; tant qu'il est public, l'accès par défaut suffit.
       - name: Récupérer newbi-api
         uses: actions/checkout@v4
         with:
           repository: Sweily-fr/newbi-api
           ref: ${{ inputs.branche_api || 'develop' }}
           path: newbi-api
+          token: ${{ secrets.NEWBI_API_TOKEN || github.token }}
 
       - uses: actions/setup-node@v4
         with:
