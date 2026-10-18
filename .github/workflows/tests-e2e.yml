@@ -1,0 +1,96 @@
+# Tests de bout en bout de Newbi (site + API), lancés depuis la page
+# « Tests » de l'admin (admin.newbi.fr/tests/newbi) ou à la main depuis
+# l'onglet Actions. Données de test uniquement (base Mongo en mémoire, services
+# externes coupés, voir tests-e2e/serveur.mjs) : aucun secret.
+# Le rapport (résultats, captures, vidéos des échecs) est publié en artefact
+# « rapport-admin », que la page « Tests » lit ensuite.
+name: Tests E2E
+run-name: Tests E2E${{ inputs.declenche_par && format(' ({0})', inputs.declenche_par) || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      declenche_par:
+        description: "Qui lance les tests (e-mail de l'admin)"
+        required: false
+        default: ""
+      branche_api:
+        description: "Branche de newbi-api à tester avec le site"
+        required: false
+        default: "develop"
+
+# Un lancement à la fois ; un second attend la fin du premier.
+concurrency:
+  group: tests-e2e
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Tests E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Récupérer newbi-api
+        uses: actions/checkout@v4
+        with:
+          repository: Sweily-fr/newbi-api
+          ref: ${{ inputs.branche_api || 'develop' }}
+          path: newbi-api
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            newbi-api/package-lock.json
+
+      - name: Installer les dépendances du site
+        run: npm ci
+
+      - name: Installer les dépendances de l'API
+        run: npm ci
+        working-directory: newbi-api
+
+      - name: Cache MongoDB, navigateurs et build du site
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mongodb-binaries
+            ~/.cache/ms-playwright
+            .next-e2e-newbi/cache
+          key: e2e-${{ runner.os }}-${{ hashFiles('package-lock.json', 'newbi-api/package-lock.json') }}
+
+      - name: Installer Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Lancer les tests
+        run: npx playwright test -c tests-e2e
+        env:
+          NEWBI_API_DIR: newbi-api
+          E2E_CAPTURES: "1"
+          E2E_RAPPORT_ADMIN: "1"
+          E2E_DECLENCHE_PAR: ${{ inputs.declenche_par }}
+
+      - name: Publier le rapport pour l'admin
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-admin
+          path: rapport-admin/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Publier le rapport Playwright complet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: tests-e2e/rapport-html/
+          retention-days: 14
+          if-no-files-found: ignore

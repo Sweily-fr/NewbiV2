@@ -32,6 +32,10 @@
     "e2e:a11y": "playwright test --project=a11y",
     "e2e:codegen": "playwright codegen --browser=chromium http://localhost:3000",
     "e2e:install": "playwright install --with-deps",
+    "tests-e2e": "playwright test -c tests-e2e",
+    "tests-e2e:ui": "playwright test -c tests-e2e --ui",
+    "tests-e2e:voir": "playwright test -c tests-e2e --headed",
+    "tests-e2e:rapport": "playwright show-report tests-e2e/rapport-html",
     "prepare": "husky"
   },
   "lint-staged": {
