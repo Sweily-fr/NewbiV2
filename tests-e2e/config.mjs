@@ -34,6 +34,8 @@ export const SECRET_INTERNE = "e2e-secret-interne-local-uniquement";
 export const SESSION_TOKEN = "e2eSessionTokenNewbiLocalUniquement";
 /** Session du compte de l'organisation « Liste » (factures pré-remplies). */
 export const SESSION_TOKEN_LISTE = "e2eSessionTokenNewbiListeUniquement";
+/** Session du compte de l'organisation « Avoirs » (factures à créditer). */
+export const SESSION_TOKEN_AVOIRS = "e2eSessionTokenNewbiAvoirsUniquement";
 
 /** Cookie de session Better Auth signé comme le fait better-call (HMAC SHA-256). */
 export function sessionCookie(token = SESSION_TOKEN) {

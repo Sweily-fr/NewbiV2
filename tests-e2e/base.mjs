@@ -17,7 +17,9 @@ export async function base() {
   return (await connexion).db(BASE_DE_DONNEES);
 }
 
-/** Factures d'une organisation qui contiennent un article portant ce nom. */
-export async function facturesAvecArticle(nomArticle) {
-  return (await base()).collection("invoices").find({ "items.description": nomArticle }).toArray();
+/** Documents d'une collection (invoices, quotes…) qui contiennent un article portant ce nom. */
+export async function documentsAvecArticle(collection, nomArticle) {
+  return (await base()).collection(collection).find({ "items.description": nomArticle }).toArray();
 }
+
+export const facturesAvecArticle = (nomArticle) => documentsAvecArticle("invoices", nomArticle);

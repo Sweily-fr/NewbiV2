@@ -4,31 +4,11 @@
  * par l'éditeur (champs par défaut de l'API compris).
  */
 import { CLIENTS, COMPTES, DANS, MAINTENANT, oid } from "./base.mjs";
+import { entreprise, ligne, snapshotClient } from "./documents.mjs";
 
-const { utilisateur, organisation } = COMPTES.liste;
-
-function snapshotClient(c) {
-  const { organisation: _, _id, ...reste } = c;
-  return { ...reste, id: _id.toHexString(), documentFields: [], hasDifferentShippingAddress: false };
-}
-
-const ENTREPRISE = {
-  name: organisation.companyName,
-  email: organisation.companyEmail,
-  phone: organisation.companyPhone,
-  siret: organisation.siret,
-  vatNumber: organisation.vatNumber,
-  companyStatus: "SASU",
-  capitalSocial: "10000",
-  rcs: "Paris B 987 654 321",
-  transactionCategory: "SERVICES",
-  vatPaymentCondition: "NONE",
-  vatFranchise: false,
-  address: { street: "1 rue de la Paix", city: "Paris", postalCode: "75001", country: "France" },
-};
-
-/** Une facture « telle qu'enregistrée », avec ses totaux calculés. */
-function facture({ n, numero, statut, emiseIlYa, echeanceDans, client, articles, payeeLe = null, creeeIlYa = 30 - n }) {
+/** Une facture « telle qu'enregistrée », avec ses totaux calculés (compte « Liste » par défaut). */
+export function facture({ n, numero, statut, emiseIlYa, echeanceDans, client, articles, payeeLe = null, creeeIlYa = 30 - n, compte = "liste" }) {
+  const { utilisateur, organisation } = COMPTES[compte];
   const ht = articles.reduce((t, a) => t + a.quantity * a.unitPrice, 0);
   const tva = articles.reduce((t, a) => t + (a.quantity * a.unitPrice * a.vatRate) / 100, 0);
   const emise = DANS(-emiseIlYa);
@@ -49,7 +29,7 @@ function facture({ n, numero, statut, emiseIlYa, echeanceDans, client, articles,
     depositAmount: 0,
     contractTotal: 0,
     client: snapshotClient(client),
-    companyInfo: ENTREPRISE,
+    companyInfo: entreprise(compte),
     items: articles.map((a) => ({ details: "", unit: "", discount: 0, discountType: "PERCENTAGE", progressPercentage: 100, vatExemptionText: "", ...a })),
     discount: 0,
     discountType: "PERCENTAGE",
@@ -92,8 +72,6 @@ function facture({ n, numero, statut, emiseIlYa, echeanceDans, client, articles,
     updatedAt: MAINTENANT,
   };
 }
-
-const ligne = (description, quantity, unitPrice, vatRate = 20) => ({ description, quantity, unitPrice, vatRate });
 
 /** Les factures, par rôle dans les tests. */
 export const FACTURES_LISTE = {
