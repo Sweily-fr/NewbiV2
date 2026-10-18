@@ -10,26 +10,37 @@ Ils se lancent depuis l'admin (**admin.newbi.fr/tests/newbi**, workflow
 
 ## Ce qui est testé
 
-- `socle.spec.mjs` : le compte de test est connecté et la liste des factures s'affiche.
-- `factures/creation.spec.mjs` : **catalogue de cas** de création dans l'éditeur
-  (complète, brouillon, particulier, remises, TVA à 0 %, plusieurs taux,
-  autoliquidation, acompte…), avec vérification de ce qui est enregistré en base.
-- `factures/erreurs.spec.mjs` : erreurs de saisie, message attendu et aucune facture créée.
-- `factures/liste.spec.mjs` : onglets, lignes, recherche, panneau latéral et actions
-  (payée, annulée, brouillon validé, brouillon supprimé), avec le compte « Liste ».
+Un dossier par fonctionnalité ; l'admin range le rapport de la même façon
+(fonctionnalité = dossier, partie = premier `describe`, écrit « Devis : création »).
 
-Chaque page est contrôlée d'office (`outils.mjs`) : erreur JavaScript ou console,
-réponse 500, « undefined » / « NaN » affichés, appel vers l'extérieur.
+| Dossier           | Création                                                      | Erreurs de saisie                                                | Liste et actions                                                                                              |
+| ----------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `factures/`       | catalogue (remises, TVA, autoliquidation, acompte…)           | sans client, sans article, TVA 0 % sans mention, remise > 100 %… | onglets, recherche, panneau, payée, annulée, brouillon validé ou supprimé                                     |
+| `devis/`          | catalogue (référence, validité 30 jours, remises, TVA…)       | communes (`erreurs.mjs`)                                         | onglets, « Expiré », accepter, rejeter, créer un brouillon, supprimer, convertir en facture                   |
+| `bons-commande/`  | catalogue (référence du devis, remise en €…)                  | communes (`erreurs.mjs`)                                         | onglets, cycle validé → en cours → livré, annuler, créer un brouillon, supprimer                              |
+| `bons-livraison/` | transporteur, adresse du client ou saisie                     | sans article, désignation vide, adresse incomplète               | onglets, recherche transporteur et suivi, émettre, expédier, livrer (réception), annuler, facturer, supprimer |
+| `avoirs/`         | total depuis le panneau, partiel (type, remboursement, motif) | montant restant dépassé, facture en brouillon                    | onglet « Avoirs », panneau de la facture                                                                      |
+
+`socle.spec.mjs` vérifie que le compte de test est connecté. Chaque page est
+contrôlée d'office (`outils.mjs`) : erreur JavaScript ou console, réponse 500,
+« undefined » / « NaN » affichés, appel vers l'extérieur.
 
 ## Ajouter un cas
 
-Une entrée dans `CAS` (`factures/creation.spec.mjs`) : client, articles
-(`nom`, `quantite`, `prix`, `tva`, `mention`, `remise`), actions avant création, et
-l'`attendu` en base. Les actions de l'éditeur sont dans `factures/editeur.mjs`, les
-données de départ dans `donnees/` (deux comptes : « Atelier », vide, et « Liste »,
-pré-rempli). Toujours ouvrir avec `ouvrir()` et cliquer avec `cliquer()`
-(`navigation.mjs`) : ils attendent que la page soit hydratée et que les requêtes
-Next et GraphQL soient finies.
+- **Création** : une entrée dans `CAS` du `creation.spec.mjs` de la fonctionnalité
+  (client, articles `nom`, `quantite`, `prix`, `tva`, `mention`, `remise`, actions
+  avant création, `attendu` en base). Devis et bons de commande partagent le même
+  déroulé (`creation.mjs`) et les mêmes erreurs (`erreurs.mjs`).
+- **Actions communes des éditeurs** (client, articles, remise, brouillon) :
+  `editeur.mjs` ; ce qui est propre à un document : `<dossier>/editeur.mjs`.
+- **Listes** (ligne d'un document, menu de ligne, panneau, statut en base) : `liste.mjs`.
+- **Données de départ** : `donnees/`, trois comptes : « Atelier » (vide, pour les
+  créations), « Liste » (factures, devis, bons de commande et de livraison dans
+  chaque état, un document par action qui le modifie) et « Avoirs » (factures à
+  créditer, à part pour ne pas changer la liste des factures).
+
+Toujours ouvrir avec `ouvrir()` et cliquer avec `cliquer()` (`navigation.mjs`) : ils
+attendent que la page soit hydratée et que les requêtes Next et GraphQL soient finies.
 
 ## Lancer en local
 

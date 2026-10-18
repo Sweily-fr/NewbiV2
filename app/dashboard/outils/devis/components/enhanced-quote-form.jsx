@@ -460,7 +460,9 @@ export default function EnhancedQuoteForm({
   /** Ce qui empêche de créer le devis, dit à l'utilisateur. */
   const step2ErrorMessage = () => {
     if (!data.items || data.items.length === 0) {
-      return "Veuillez ajouter au moins un article au devis";
+      return documentType === "purchaseOrder"
+        ? "Veuillez ajouter au moins un article au bon de commande"
+        : "Veuillez ajouter au moins un article au devis";
     }
     if (validationErrors?.discount) {
       return "La remise est invalide : corrigez-la avant de continuer";

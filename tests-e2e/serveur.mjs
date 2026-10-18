@@ -158,6 +158,9 @@ const envSite = {
   NEXT_PUBLIC_BETTER_AUTH_URL: BASE_URL,
   NEXT_PUBLIC_APP_URL: BASE_URL,
   ADDITIONAL_TRUSTED_ORIGINS: BASE_URL,
+  // Un seul navigateur enchaîne les pages : la limite de Better Auth (100
+  // requêtes par 10 s) renverrait des 429 et des listes en erreur.
+  AUTH_RATE_LIMIT_MAX: "100000",
   NEXT_PUBLIC_API_URL: `${API_URL}/`,
   NEXT_PUBLIC_WS_URL: `ws://localhost:${PORT_API}/graphql`,
   NEXT_PUBLIC_APP_ENV: "test",

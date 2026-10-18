@@ -3,13 +3,16 @@
  * organisation complète (informations d'entreprise remplies, abonnement
  * actif, sessions illimitées), avec sa session et ses clients.
  *   - « Atelier » : organisation vide où les tests créent leurs factures ;
- *   - « Liste » : organisation pré-remplie de factures dans chaque état,
- *     pour les tests de la liste et des actions (voir factures-liste.mjs).
+ *   - « Liste » : organisation pré-remplie de factures, devis, bons de
+ *     commande et bons de livraison dans chaque état, pour les tests des
+ *     listes et des actions (voir *-liste.mjs) ;
+ *   - « Avoirs » : organisation dont les factures servent à créer des avoirs
+ *     (voir avoirs.mjs), à part pour ne pas changer la liste des factures.
  * Mêmes formes qu'en prod : collections Better Auth au singulier, collections
  * de l'API au pluriel.
  */
 import { ObjectId } from "mongodb";
-import { SESSION_TOKEN, SESSION_TOKEN_LISTE } from "../config.mjs";
+import { SESSION_TOKEN, SESSION_TOKEN_AVOIRS, SESSION_TOKEN_LISTE } from "../config.mjs";
 
 // Préfixe hexadécimal par type : un id de test se reconnaît d'un coup d'œil.
 const PREFIXES = {
@@ -20,6 +23,10 @@ const PREFIXES = {
   session: "e2e5",
   membre: "e2e6",
   abonnement: "e2e7",
+  devis: "e2e8",
+  bonCommande: "e2e9",
+  bonLivraison: "e2ea",
+  avoir: "e2eb",
 };
 
 export function oid(type, n) {
@@ -59,6 +66,11 @@ export const COMPTES = {
     utilisateur: { _id: oid("utilisateur", 2), email: "liste@e2e.test", name: "Dominique Liste" },
     organisation: organisation(2, "Liste Test SASU"),
     token: SESSION_TOKEN_LISTE,
+  },
+  avoirs: {
+    utilisateur: { _id: oid("utilisateur", 3), email: "avoirs@e2e.test", name: "Alex Avoirs" },
+    organisation: organisation(3, "Avoirs Test SASU"),
+    token: SESSION_TOKEN_AVOIRS,
   },
 };
 
@@ -117,6 +129,18 @@ export const CLIENTS = {
     isInternational: false,
     isBlocked: false,
     address: { fullName: "Studio Delta", street: "3 rue Sainte-Catherine", city: "Bordeaux", postalCode: "33000", country: "France" },
+  },
+  epsilon: {
+    _id: oid("client", 5),
+    organisation: "avoirs",
+    name: "Maison Epsilon",
+    email: "achats@epsilon.test",
+    type: "COMPANY",
+    siret: "44455566600019",
+    vatNumber: "FR44444555666",
+    isInternational: false,
+    isBlocked: false,
+    address: { fullName: "Maison Epsilon", street: "8 rue Nationale", city: "Lille", postalCode: "59000", country: "France" },
   },
 };
 
