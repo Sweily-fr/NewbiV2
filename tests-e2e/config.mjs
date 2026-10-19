@@ -36,6 +36,17 @@ export const SESSION_TOKEN = "e2eSessionTokenNewbiLocalUniquement";
 export const SESSION_TOKEN_LISTE = "e2eSessionTokenNewbiListeUniquement";
 /** Session du compte de l'organisation « Avoirs » (factures à créditer). */
 export const SESSION_TOKEN_AVOIRS = "e2eSessionTokenNewbiAvoirsUniquement";
+/** Session du propriétaire de l'organisation « Clients » (contacts, listes, segments). */
+export const SESSION_TOKEN_CLIENTS = "e2eSessionTokenNewbiClientsUniquement";
+/** Membre de l'organisation « Clients » avec le rôle « Membre » (lecture seule partout). */
+export const SESSION_TOKEN_LECTEUR = "e2eSessionTokenNewbiLecteurUniquement";
+/** Membre de l'organisation « Clients » avec le rôle « Éditeur » (rien supprimer). */
+export const SESSION_TOKEN_EDITEUR = "e2eSessionTokenNewbiEditeurUniquement";
+/** Propriétaire d'une autre organisation, qui tente d'atteindre les données des autres. */
+export const SESSION_TOKEN_INTRUS = "e2eSessionTokenNewbiIntrusUniquement";
+
+/** État de navigateur connecté avec la session donnée (pour `test.use({ storageState })`). */
+export const connecte = (token) => ({ cookies: [sessionCookie(token)], origins: [] });
 
 /** Cookie de session Better Auth signé comme le fait better-call (HMAC SHA-256). */
 export function sessionCookie(token = SESSION_TOKEN) {

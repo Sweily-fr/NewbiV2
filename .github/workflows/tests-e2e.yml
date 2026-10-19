@@ -30,6 +30,10 @@ on:
         description: "Seulement ces dossiers ou fichiers de tests (ex. « clients factures/liste »), vide = tout"
         required: false
         default: ""
+      filtre:
+        description: "Seulement les tests dont le nom contient ce texte (--grep), vide = tous"
+        required: false
+        default: ""
       machines:
         description: "Nombre de machines en parallèle"
         required: false
@@ -119,12 +123,15 @@ jobs:
             echo "::error::Liste de fichiers invalide : $FICHIERS"
             exit 1
           fi
+          FILTRER=()
+          if [ -n "$FILTRE" ]; then FILTRER=(--grep "$FILTRE"); fi
           # shellcheck disable=SC2086 # plusieurs dossiers séparés par des espaces
-          npx playwright test -c tests-e2e $FICHIERS \
+          npx playwright test -c tests-e2e $FICHIERS "${FILTRER[@]}" \
             --shard="${{ matrix.machine }}/${{ strategy.job-total }}" \
             --reporter=blob,list --pass-with-no-tests
         env:
           FICHIERS: ${{ inputs.fichiers }}
+          FILTRE: ${{ inputs.filtre }}
           NEWBI_API_DIR: newbi-api
           E2E_CAPTURES: "1"
           E2E_RAPPORT_ADMIN: "1"

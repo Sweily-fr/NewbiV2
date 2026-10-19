@@ -5,6 +5,7 @@
  */
 import { test as base, expect } from "@playwright/test";
 import { suivreRequetes } from "./navigation.mjs";
+import { brancherAnnuaire } from "./donnees/annuaire.mjs";
 
 // Seuls le site et l'API de test sont joignables : Google Ads (balise en dur),
 // analytics, recherche d'entreprises de l'État… reçoivent une réponse vide.
@@ -33,6 +34,9 @@ export const test = base.extend({
         (url) => !LOCAL.has(url.hostname) && url.protocol.startsWith("http"),
         (route) => route.fulfill({ status: 204, body: "" }),
       );
+      // Recherche d'entreprise : annuaire simulé (le site interroge sinon
+      // l'annuaire officiel sur Internet, depuis son serveur).
+      await brancherAnnuaire(page);
       // Adresses des réponses en erreur : la console dit seulement « Failed to
       // load resource », sans dire laquelle.
       const introuvables = [];
@@ -51,6 +55,12 @@ export const test = base.extend({
         if (res.status() >= 500) problemes.push(`Erreur serveur ${res.status()} : ${res.url()}`);
       });
       page.on("dialog", (dialog) => {
+        // « Quitter sans enregistrer ? » quand un test quitte un éditeur
+        // modifié : comportement voulu, on quitte.
+        if (dialog.type() === "beforeunload") {
+          dialog.accept().catch(() => {});
+          return;
+        }
         problemes.push(`Boîte de dialogue inattendue : ${dialog.message()}`);
         dialog.dismiss().catch(() => {});
       });

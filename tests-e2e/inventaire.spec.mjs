@@ -12,8 +12,9 @@ import path from "node:path";
 import { test } from "./outils.mjs";
 import { ouvrir } from "./navigation.mjs";
 import { inventorier, contenu } from "./exploration.mjs";
-import { sessionCookie, SESSION_TOKEN_LISTE, SESSION_TOKEN_AVOIRS } from "./config.mjs";
+import { connecte, sessionCookie, SESSION_TOKEN_LISTE, SESSION_TOKEN_AVOIRS, SESSION_TOKEN_CLIENTS, SESSION_TOKEN_LECTEUR, SESSION_TOKEN_EDITEUR } from "./config.mjs";
 import { CLIENTS } from "./donnees/base.mjs";
+import { CONTACTS, LISTES_CLIENTS, SEGMENTS } from "./donnees/clients.mjs";
 import { FACTURES_LISTE } from "./donnees/factures-liste.mjs";
 import { DEVIS_LISTE } from "./donnees/devis-liste.mjs";
 import { BONS_COMMANDE_LISTE } from "./donnees/bons-commande-liste.mjs";
@@ -67,6 +68,20 @@ const PAGES_AVOIRS = {
   "avoir-existant": `/dashboard/outils/factures/${id(FACTURES_AVOIRS.avecAvoir)}/avoir/${id(AVOIRS.existant)}`,
 };
 
+// Pages des contacts, vues par chaque rôle de l'organisation « Clients ».
+const PAGES_CLIENTS = {
+  contacts: "/dashboard/clients",
+  "contact-complet": `/dashboard/clients/${id(CONTACTS.complet)}`,
+  "contact-particulier": `/dashboard/clients/${id(CONTACTS.particulier)}`,
+  "contact-bloque": `/dashboard/clients/${id(CONTACTS.bloque)}`,
+  "contact-avec-factures": `/dashboard/clients/${id(CONTACTS.avecFactures)}`,
+  listes: "/dashboard/clients/listes",
+  "liste-prospects": `/dashboard/clients/listes?listId=${id(LISTES_CLIENTS.prospects)}`,
+  segments: "/dashboard/clients/segments",
+  "segment-lyonnais": `/dashboard/clients/segments?segmentId=${id(SEGMENTS.lyonnais)}`,
+  bloques: "/dashboard/clients/blocked",
+};
+
 const PAGES_SANS_CONNEXION = {
   connexion: "/auth/login",
   inscription: "/auth/signup",
@@ -103,6 +118,13 @@ test.describe("Relevé des pages (compte Liste)", () => {
     enregistrer("mise-en-page-en-tete", await inventorier(page, { ouvrir: ouvrirAccueil, zone: (p) => p.locator("main > header").first(), problemes: surveillance }));
   });
 });
+
+for (const [role, token] of [["proprietaire", SESSION_TOKEN_CLIENTS], ["lecteur", SESSION_TOKEN_LECTEUR], ["editeur", SESSION_TOKEN_EDITEUR]]) {
+  test.describe(`Relevé des contacts (${role})`, () => {
+    test.use({ storageState: connecte(token) });
+    relever(Object.fromEntries(Object.entries(PAGES_CLIENTS).map(([nom, url]) => [`clients-${role}-${nom}`, url])));
+  });
+}
 
 test.describe("Relevé des pages (compte Avoirs)", () => {
   test.use({ storageState: { cookies: [sessionCookie(SESSION_TOKEN_AVOIRS)], origins: [] } });

@@ -12,7 +12,15 @@
  * de l'API au pluriel.
  */
 import { ObjectId } from "mongodb";
-import { SESSION_TOKEN, SESSION_TOKEN_AVOIRS, SESSION_TOKEN_LISTE } from "../config.mjs";
+import {
+  SESSION_TOKEN,
+  SESSION_TOKEN_AVOIRS,
+  SESSION_TOKEN_CLIENTS,
+  SESSION_TOKEN_EDITEUR,
+  SESSION_TOKEN_INTRUS,
+  SESSION_TOKEN_LECTEUR,
+  SESSION_TOKEN_LISTE,
+} from "../config.mjs";
 
 // Préfixe hexadécimal par type : un id de test se reconnaît d'un coup d'œil.
 const PREFIXES = {
@@ -27,10 +35,15 @@ const PREFIXES = {
   bonCommande: "e2e9",
   bonLivraison: "e2ea",
   avoir: "e2eb",
+  listeClients: "e2ec",
+  segment: "e2ed",
+  champClient: "e2ee",
 };
 
 export function oid(type, n) {
-  return new ObjectId(PREFIXES[type] + String(n).padStart(20, "0"));
+  const prefixe = PREFIXES[type];
+  if (!prefixe) throw new Error(`[e2e] type d'identifiant inconnu : ${type}`);
+  return new ObjectId(prefixe + String(n).padStart(24 - prefixe.length, "0"));
 }
 
 export const MAINTENANT = new Date();
@@ -71,6 +84,39 @@ export const COMPTES = {
     utilisateur: { _id: oid("utilisateur", 3), email: "avoirs@e2e.test", name: "Alex Avoirs" },
     organisation: organisation(3, "Avoirs Test SASU"),
     token: SESSION_TOKEN_AVOIRS,
+  },
+  // Contacts, listes, segments et champs personnalisés (voir clients.mjs).
+  clients: {
+    utilisateur: { _id: oid("utilisateur", 4), email: "clients@e2e.test", name: "Morgan Clients" },
+    organisation: organisation(4, "Clients Test SASU"),
+    token: SESSION_TOKEN_CLIENTS,
+  },
+  // Une autre entreprise : ses tests vérifient qu'elle n'atteint jamais les
+  // données des autres organisations, ni à l'écran ni par l'API.
+  intrus: {
+    utilisateur: { _id: oid("utilisateur", 5), email: "intrus@e2e.test", name: "Sacha Intrus" },
+    organisation: organisation(5, "Intrus Test SASU"),
+    token: SESSION_TOKEN_INTRUS,
+  },
+};
+
+/**
+ * Membres invités dans l'organisation d'un autre compte, avec un rôle
+ * limité : leurs tests vérifient qu'aucune action interdite n'est possible,
+ * ni à l'écran ni par l'API.
+ */
+export const MEMBRES = {
+  lecteur: {
+    utilisateur: { _id: oid("utilisateur", 6), email: "lecteur@e2e.test", name: "Lou Lecteur" },
+    de: "clients",
+    role: "viewer",
+    token: SESSION_TOKEN_LECTEUR,
+  },
+  editeur: {
+    utilisateur: { _id: oid("utilisateur", 7), email: "editeur@e2e.test", name: "Eden Éditeur" },
+    de: "clients",
+    role: "member",
+    token: SESSION_TOKEN_EDITEUR,
   },
 };
 
@@ -144,22 +190,36 @@ export const CLIENTS = {
   },
 };
 
+const utilisateurPret = (utilisateur) => ({
+  ...utilisateur,
+  emailVerified: true,
+  role: "member",
+  isActive: true,
+  isDisabled: false,
+  hasSeenOnboarding: true,
+  onboardingStep: "completed",
+  hasCompletedTutorial: true,
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+});
+
+const session = (n, token, utilisateur, organisation) => ({
+  _id: oid("session", n),
+  token,
+  userId: utilisateur._id,
+  activeOrganizationId: organisation._id.toHexString(),
+  expiresAt: DANS(30),
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+  ipAddress: "127.0.0.1",
+  userAgent: "playwright-e2e",
+});
+
 export function socle() {
   const docs = { user: [], organization: [], member: [], subscription: [], session: [], clients: [] };
   Object.values(COMPTES).forEach(({ utilisateur, organisation: org, token }, i) => {
     const n = i + 1;
-    docs.user.push({
-      ...utilisateur,
-      emailVerified: true,
-      role: "member",
-      isActive: true,
-      isDisabled: false,
-      hasSeenOnboarding: true,
-      onboardingStep: "completed",
-      hasCompletedTutorial: true,
-      createdAt: MAINTENANT,
-      updatedAt: MAINTENANT,
-    });
+    docs.user.push(utilisateurPret(utilisateur));
     docs.organization.push({
       ...org,
       logo: null,
@@ -181,17 +241,15 @@ export function socle() {
       createdAt: MAINTENANT,
       updatedAt: MAINTENANT,
     });
-    docs.session.push({
-      _id: oid("session", n),
-      token,
-      userId: utilisateur._id,
-      activeOrganizationId: org._id.toHexString(),
-      expiresAt: DANS(30),
-      createdAt: MAINTENANT,
-      updatedAt: MAINTENANT,
-      ipAddress: "127.0.0.1",
-      userAgent: "playwright-e2e",
-    });
+    docs.session.push(session(n, token, utilisateur, org));
+  });
+  // Membres invités : pas d'organisation à eux, une session dans celle qui les invite.
+  Object.values(MEMBRES).forEach(({ utilisateur, de, role, token }, i) => {
+    const n = 100 + i;
+    const org = COMPTES[de].organisation;
+    docs.user.push(utilisateurPret(utilisateur));
+    docs.member.push({ _id: oid("membre", n), userId: utilisateur._id, organizationId: org._id, role, createdAt: MAINTENANT });
+    docs.session.push(session(n, token, utilisateur, org));
   });
   for (const { organisation: cleOrg, ...c } of Object.values(CLIENTS)) {
     const compte = COMPTES[cleOrg];

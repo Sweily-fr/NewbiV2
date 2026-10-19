@@ -8,16 +8,29 @@ import { DEVIS_LISTE } from "./devis-liste.mjs";
 import { BONS_COMMANDE_LISTE } from "./bons-commande-liste.mjs";
 import { BONS_LIVRAISON_LISTE } from "./bons-livraison-liste.mjs";
 import { AVOIRS, FACTURES_AVOIRS } from "./avoirs.mjs";
+import { donneesClients } from "./clients.mjs";
+
+/** Rassemble les données de plusieurs fonctionnalités, collection par collection. */
+function fusionner(...sources) {
+  const collections = {};
+  for (const source of sources) {
+    for (const [nom, docs] of Object.entries(source)) collections[nom] = [...(collections[nom] || []), ...docs];
+  }
+  return collections;
+}
 
 export async function semer(db) {
-  const collections = {
-    ...socle(),
-    invoices: [...Object.values(FACTURES_LISTE), ...Object.values(FACTURES_AVOIRS)],
-    quotes: Object.values(DEVIS_LISTE),
-    purchaseorders: Object.values(BONS_COMMANDE_LISTE),
-    deliverynotes: Object.values(BONS_LIVRAISON_LISTE),
-    creditnotes: Object.values(AVOIRS),
-  };
+  const collections = fusionner(
+    socle(),
+    {
+      invoices: [...Object.values(FACTURES_LISTE), ...Object.values(FACTURES_AVOIRS)],
+      quotes: Object.values(DEVIS_LISTE),
+      purchaseorders: Object.values(BONS_COMMANDE_LISTE),
+      deliverynotes: Object.values(BONS_LIVRAISON_LISTE),
+      creditnotes: Object.values(AVOIRS),
+    },
+    donneesClients(),
+  );
   for (const [nom, docs] of Object.entries(collections)) {
     if (docs.length) await db.collection(nom).insertMany(docs);
   }

@@ -37,6 +37,8 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     locale: "fr-FR",
+    // « Copier l'e-mail », « Copier le lien » : le presse-papiers doit marcher comme chez un utilisateur.
+    permissions: ["clipboard-read", "clipboard-write"],
     timezoneId: "Europe/Paris",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",

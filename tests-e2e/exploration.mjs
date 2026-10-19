@@ -190,8 +190,17 @@ const chemin = (url) => {
  * Lance une action et relève ce qu'elle a produit. `cible` (facultatif) :
  * l'élément lui-même, pour voir s'il a changé d'état (coché, déplié…).
  */
+/** Empreinte du texte visible de la page principale, pour voir si une action l'a changé. */
+const empreinte = (page) =>
+  page
+    .locator("main")
+    .first()
+    .evaluate((m) => m.innerText.replace(/\s+/g, " ").trim())
+    .catch(() => "");
+
 export async function observer(page, action, { cible = null, attente = 400 } = {}) {
   const urlAvant = chemin(page.url());
+  const texteAvant = await empreinte(page);
   const fenetresAvant = await fenetresOuvertes(page);
   const notificationsAvant = await notificationsAffichees(page);
   const etatAvant = cible ? (await decrire(cible)).etat : "";
@@ -248,6 +257,7 @@ export async function observer(page, action, { cible = null, attente = 400 } = {
     const etatApres = await decrire(cible).then((d) => d.etat).catch(() => etatAvant);
     if (etatApres !== etatAvant) issue.etat = `${etatAvant || "(aucun)"} → ${etatApres || "(aucun)"}`;
   }
+  if (!issue.navigation && !issue.fenetres && (await empreinte(page)) !== texteAvant) issue.contenuModifie = true;
   if (!Object.keys(issue).length) issue.rien = true;
   return issue;
 }
@@ -339,14 +349,125 @@ export async function inventorier(page, { ouvrir, zone = contenu, problemes = []
   }
 }
 
+/** Premier lien d'une zone dont l'adresse suit ce motif (« /dashboard/clients/:id »). */
+async function trouverLien(zone, motif) {
+  for (const lien of await zone.getByRole("link").all()) {
+    if (motifDeLien(await lien.getAttribute("href").catch(() => "")) === motif) return lien;
+  }
+  return zone.getByRole("link", { name: "__lien introuvable__" });
+}
+
+/** Clé d'un élément dans la description d'une page : « button Nouveau contact », « link /dashboard/clients/:id ». */
+export const cleElement = (e) => (e.role === "link" ? `link ${e.lien}` : `${e.role} ${e.nom}`);
+
 /** Les éléments trouvés correspondent exactement à ceux décrits par le test. */
 export function comparerAuxAttendus(trouves, attendus) {
-  const cles = new Set(trouves.map((e) => (e.role === "link" ? `link ${e.lien}` : `${e.role} ${e.nom}`)));
-  const decrits = new Set(Object.keys(attendus));
+  const cles = new Set(trouves.map(cleElement));
+  const decrits = new Set(Object.keys(attendus).filter((c) => !c.includes(" > ")));
   return {
     nonCouverts: [...cles].filter((c) => !decrits.has(c)),
     disparus: [...decrits].filter((c) => !cles.has(c)),
   };
+}
+
+const correspond = (attendu, recu) => (attendu instanceof RegExp ? attendu.test(recu ?? "") : recu === attendu);
+const lisible = (v) => (v instanceof RegExp ? String(v) : JSON.stringify(v));
+
+/**
+ * Vérifie l'issue observée d'un clic contre ce qu'en dit la description :
+ *   fenetre: "Titre" | /motif/        une fenêtre s'ouvre avec ce titre
+ *   menu: ["A", "B"]                  un menu s'ouvre avec exactement ces éléments
+ *   navigation: "/chemin" | /motif/   la page change pour cette adresse
+ *   telechargement: /\.csv$/          un fichier est téléchargé
+ *   notification: /motif/             une notification apparaît
+ *   etat: /\[checked\]/               l'élément change d'état (coché, déplié…)
+ *   contenu: true                     le contenu de la page change (filtre, tri, section)
+ *   options: ["5", "10"]              une liste de choix s'ouvre
+ *   selecteurDeFichier: true          le sélecteur de fichiers s'ouvre
+ *   desactive: "raison"               l'élément est grisé (et doit le rester)
+ *   sansEffet: "raison"               rien de visible : comportement voulu, expliqué
+ */
+export function verifierIssue(issue, attendu, contexte) {
+  if (issue.erreur) throw new Error(`${contexte} : le clic a échoué (${issue.erreur})`);
+  if (attendu.fenetre !== undefined) {
+    expect(issue.fenetres?.some((f) => correspond(attendu.fenetre, f)), `${contexte} : fenêtre ${lisible(attendu.fenetre)} attendue, ouvertes : ${JSON.stringify(issue.fenetres || [])}`).toBe(true);
+  }
+  if (attendu.menu !== undefined) {
+    const recu = issue.menu || [];
+    const ok = recu.length === attendu.menu.length && attendu.menu.every((a, i) => correspond(a, recu[i]));
+    expect(ok, `${contexte} : menu attendu ${JSON.stringify(attendu.menu.map(String))}, reçu ${JSON.stringify(recu)}`).toBe(true);
+  }
+  if (attendu.navigation !== undefined) {
+    expect(correspond(attendu.navigation, issue.navigation), `${contexte} : navigation vers ${lisible(attendu.navigation)}, reçue ${issue.navigation || "aucune"}`).toBe(true);
+  }
+  if (attendu.telechargement !== undefined) {
+    expect(issue.telechargements?.some((t) => correspond(attendu.telechargement, t)), `${contexte} : téléchargement ${lisible(attendu.telechargement)}, reçus ${JSON.stringify(issue.telechargements || [])}`).toBe(true);
+  }
+  if (attendu.notification !== undefined) {
+    expect(issue.notifications?.some((n) => correspond(attendu.notification, n)), `${contexte} : notification ${lisible(attendu.notification)}, reçues ${JSON.stringify(issue.notifications || [])}`).toBe(true);
+  }
+  if (attendu.etat !== undefined) expect(correspond(attendu.etat, issue.etat), `${contexte} : changement d'état ${lisible(attendu.etat)}, reçu ${issue.etat || "aucun"}`).toBe(true);
+  if (attendu.contenu) expect(issue.contenuModifie || issue.etat, `${contexte} : le contenu de la page devait changer`).toBeTruthy();
+  if (attendu.options !== undefined) expect(issue.options, `${contexte} : choix proposés`).toEqual(attendu.options);
+  if (attendu.selecteurDeFichier) expect(issue.selecteurDeFichier, `${contexte} : le sélecteur de fichiers devait s'ouvrir`).toBe(true);
+  if (attendu.sansEffet) expect(issue.rien, `${contexte} : aucun effet attendu (${attendu.sansEffet}), observé ${JSON.stringify(issue)}`).toBe(true);
+  const decrit = ["fenetre", "menu", "navigation", "telechargement", "notification", "etat", "contenu", "options", "selecteurDeFichier", "sansEffet"].some((k) => attendu[k] !== undefined);
+  if (!decrit) throw new Error(`${contexte} : description sans effet attendu (${JSON.stringify(attendu)})`);
+}
+
+/**
+ * Les tests « tous les boutons » d'une page, à partir de sa description :
+ *   titre      : « Contacts »
+ *   ouvrir     : (page) => ouvre la page, prête
+ *   zone       : (page) => zone explorée (par défaut le contenu sous l'en-tête)
+ *   boutons    : { "button Nouveau contact": { fenetre: "Ajouter un client" },
+ *                  "button Exporter": { menu: ["CSV", "Excel"] },
+ *                  "button Exporter > CSV": { telechargement: /\.csv$/ }, … }
+ *     Un élément de menu se décrit « déclencheur > élément ». `parcours:
+ *     "…"` renvoie au test qui couvre l'action en entier (rien n'est cliqué
+ *     ici). `desactive: "raison"` : présent mais grisé.
+ *   test       : la fonction `test` (fixtures de outils.mjs)
+ * Un test vérifie que la page propose exactement les éléments décrits : un
+ * bouton ajouté sans test, ou un bouton disparu, le fait échouer.
+ */
+export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test }) {
+  test.describe(`${titre} : tous les boutons`, () => {
+    test("Chaque élément de la page est décrit et testé", async ({ page }) => {
+      await ouvrir(page);
+      const trouves = await elementsActionnables(zone(page));
+      const { nonCouverts, disparus } = comparerAuxAttendus(trouves, boutons);
+      expect.soft(nonCouverts, "Éléments présents sur la page mais sans test (à décrire)").toEqual([]);
+      expect.soft(disparus, "Éléments décrits mais absents de la page").toEqual([]);
+      for (const e of trouves) {
+        const attendu = boutons[cleElement(e)];
+        if (!attendu) continue;
+        expect.soft(e.desactive, `${cleElement(e)} : ${attendu.desactive ? "doit être grisé" : "ne doit pas être grisé"}`).toBe(Boolean(attendu.desactive));
+      }
+    });
+
+    for (const [cle, attendu] of Object.entries(boutons)) {
+      if (attendu.parcours || attendu.desactive) continue;
+      const [declencheur, item] = cle.split(" > ");
+      test(item ? `« ${declencheur.replace(/^\w+ /, "")} » puis « ${item} »` : `« ${declencheur.replace(/^\w+ /, "")} »`, async ({ page }) => {
+        await ouvrir(page);
+        const role = declencheur.split(" ")[0];
+        const nom = declencheur.slice(role.length + 1);
+        const el = role === "link" ? await trouverLien(zone(page), nom) : zone(page).getByRole(role, { name: nom, exact: true }).first();
+        await expect(el, `Élément « ${declencheur} »`).toBeVisible();
+        if (!item) {
+          const issue = await observer(page, () => el.click({ timeout: 5_000 }), { cible: el });
+          verifierIssue(issue, attendu, `« ${nom} »`);
+          return;
+        }
+        await el.click();
+        const menu = page.getByRole("menu").last();
+        await expect(menu, `Menu de « ${nom} »`).toBeVisible();
+        const elementMenu = ["menuitem", "menuitemcheckbox", "menuitemradio"].map((r) => menu.getByRole(r, { name: item, exact: true })).reduce((a, b) => a.or(b)).first();
+        const issue = await observer(page, () => elementMenu.click({ timeout: 5_000 }));
+        verifierIssue(issue, attendu, `« ${nom} » puis « ${item} »`);
+      });
+    }
+  });
 }
 
 export { expect };

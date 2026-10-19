@@ -1,0 +1,173 @@
+/**
+ * « Tous les champs » : un formulaire est décrit une fois (comment l'ouvrir,
+ * le remplir correctement, le valider, retrouver ce qu'il enregistre), avec
+ * pour chaque champ les valeurs qui doivent être refusées et celles, réelles
+ * et parfois inhabituelles, qui doivent passer. Un test est généré par cas :
+ *
+ *   - tout vide : un message pour chaque champ obligatoire, rien d'enregistré ;
+ *   - un champ obligatoire vide (ou rempli d'espaces), les autres justes ;
+ *   - une valeur fausse (format, longueur, caractère interdit) : un message
+ *     clair, rien d'enregistré ;
+ *   - une valeur juste mais inhabituelle (accents, apostrophe, « n° »,
+ *     numéro étranger…) : acceptée, enregistrée telle quelle, sans erreur ;
+ *   - un texte piégé (balise <script>) : jamais exécuté (la surveillance
+ *     échoue sur toute boîte de dialogue), affiché comme du texte.
+ *
+ * Une valeur fausse acceptée, une valeur juste refusée ou un refus sans
+ * message sont des défauts : l'utilisateur ne doit jamais rester sans
+ * explication, ni voir enregistrée une donnée invalide.
+ */
+import { test, expect, etape } from "./outils.mjs";
+
+/** Messages d'erreur visibles : texte en rouge, alerte, champ marqué invalide, notification d'erreur. */
+export async function erreursVisibles(page, zone = page) {
+  const textes = await zone
+    .locator(".text-red-500, .text-red-600, .text-destructive, [role=alert], [data-slot=form-message], [id$='-form-item-message']")
+    .evaluateAll((els) =>
+      els
+        .filter((e) => {
+          const r = e.getBoundingClientRect();
+          const style = getComputedStyle(e);
+          return r.width > 0 && r.height > 0 && style.visibility !== "hidden" && e.textContent.trim();
+        })
+        .map((e) => e.textContent.replace(/\s+/g, " ").trim()),
+    )
+    .catch(() => []);
+  const invalides = await zone
+    .locator("[aria-invalid=true]")
+    .evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width > 0).map((e) => `champ invalide : ${e.getAttribute("placeholder") || e.name || e.id}`))
+    .catch(() => []);
+  const notifications = await page
+    .locator("[data-sonner-toast][data-type=error]")
+    .evaluateAll((els) => els.map((e) => `notification : ${e.textContent.replace(/\s+/g, " ").trim()}`))
+    .catch(() => []);
+  return [...new Set([...textes, ...invalides, ...notifications])];
+}
+
+/**
+ * Formulaire décrit par la fonctionnalité :
+ *   nom          : « Nouveau contact (entreprise) »
+ *   ouvrir(page) : ouvre le formulaire, renvoie sa zone (fenêtre, panneau, page)
+ *   remplir(zone, valeurs) : remplit tous les champs avec `valeurs`
+ *   valider(zone) : clique sur le bouton qui enregistre
+ *   valeurs(cas) : jeu de valeurs justes et uniques pour ce cas (retrouvable en base)
+ *   enregistre(valeurs) : le document enregistré pour ces valeurs, ou null
+ *   ferme(zone, page) : le formulaire s'est fermé après un enregistrement réussi
+ *   champs       : { [nom du champ]: { cle, obligatoire, refuses: { cas: valeur }, acceptes: { cas: valeur }, lu?(doc) } }
+ *     `cle` : propriété de `valeurs` remplie par ce champ ; `lu(doc)` : valeur
+ *     enregistrée pour ce champ (par défaut doc[cle]).
+ *   sansTexteLibre : champs où un texte piégé n'a pas de sens (e-mail, numéros…)
+ */
+export function verifierFormulaire(formulaire) {
+  const { nom, ouvrir, remplir, valider, valeurs, enregistre, champs } = formulaire;
+  const ferme = formulaire.ferme || (async (zone) => expect(zone).toBeHidden({ timeout: 15_000 }));
+
+  async function essayer(page, cas, modifier) {
+    const zone = await ouvrir(page);
+    const v = { ...valeurs(cas), ...modifier };
+    await remplir(zone, v);
+    await valider(zone);
+    await page.waitForTimeout(600);
+    return { zone, v };
+  }
+
+  async function refuse(page, zone, v, raison) {
+    await etape(
+      page,
+      "Un message explique le refus",
+      async () => {
+        await expect
+          .poll(() => erreursVisibles(page, page), { message: `${raison} : aucun message d'erreur affiché`, timeout: 8_000 })
+          .not.toEqual([]);
+      },
+      { capture: "ecran" },
+    );
+    await etape(page, "Rien n'est enregistré", async () => {
+      expect(await enregistre(v), `${raison} : la donnée invalide a été enregistrée`).toBeNull();
+    });
+    await expect(zone, "Le formulaire reste ouvert pour corriger").toBeVisible();
+  }
+
+  async function accepte(page, zone, v, cle, attendu, lu) {
+    await etape(
+      page,
+      "Enregistré sans erreur",
+      async () => {
+        const erreurs = await erreursVisibles(page, page);
+        expect(erreurs, "Aucun message d'erreur pour une saisie juste").toEqual([]);
+        await ferme(zone, page);
+      },
+      { capture: "ecran" },
+    );
+    await etape(page, "Enregistré tel que saisi", async () => {
+      await expect.poll(() => enregistre(v), { message: "Le document n'a pas été enregistré", timeout: 10_000 }).not.toBeNull();
+      if (cle) {
+        const doc = await enregistre(v);
+        expect(lu ? lu(doc) : doc[cle], `Valeur enregistrée pour « ${cle} »`).toBe(attendu);
+      }
+    });
+  }
+
+  test.describe(`${nom} : tous les champs`, () => {
+    test("Saisie complète et juste : enregistrée", async ({ page }) => {
+      const { zone, v } = await essayer(page, "complet", {});
+      await accepte(page, zone, v);
+    });
+
+    const obligatoires = Object.entries(champs).filter(([, c]) => c.obligatoire);
+    if (obligatoires.length) {
+      test("Tout vide : refusé, chaque champ obligatoire signalé", async ({ page }) => {
+        const zone = await ouvrir(page);
+        await valider(zone);
+        await page.waitForTimeout(600);
+        await etape(
+          page,
+          "Un message par champ obligatoire",
+          async () => {
+            const erreurs = await erreursVisibles(page, page);
+            expect(erreurs.length, `Messages affichés : ${erreurs.join(" | ") || "aucun"}`).toBeGreaterThan(0);
+          },
+          { capture: "ecran" },
+        );
+        await expect(zone).toBeVisible();
+      });
+    }
+
+    for (const [libelle, champ] of Object.entries(champs)) {
+      if (champ.obligatoire) {
+        test(`« ${libelle} » vide : refusé avec un message`, async ({ page }) => {
+          const { zone, v } = await essayer(page, `${champ.cle}-vide`, { [champ.cle]: "" });
+          await refuse(page, zone, v, `« ${libelle} » vide`);
+        });
+        if (!champ.sansEspaces) {
+          test(`« ${libelle} » rempli d'espaces : refusé avec un message`, async ({ page }) => {
+            const { zone, v } = await essayer(page, `${champ.cle}-espaces`, { [champ.cle]: "   " });
+            await refuse(page, zone, v, `« ${libelle} » rempli d'espaces`);
+          });
+        }
+      }
+      for (const [cas, valeur] of Object.entries(champ.refuses || {})) {
+        test(`« ${libelle} » ${cas} : refusé avec un message`, async ({ page }) => {
+          const { zone, v } = await essayer(page, `${champ.cle}-${cas}`, { [champ.cle]: valeur });
+          await refuse(page, zone, v, `« ${libelle} » ${cas} (${JSON.stringify(valeur).slice(0, 60)})`);
+        });
+      }
+      for (const [cas, valeur] of Object.entries(champ.acceptes || {})) {
+        test(`« ${libelle} » ${cas} : accepté et enregistré tel quel`, async ({ page }) => {
+          const { zone, v } = await essayer(page, `${champ.cle}-${cas}`, { [champ.cle]: valeur });
+          await accepte(page, zone, v, champ.cle, champ.normaliser ? champ.normaliser(valeur) : valeur, champ.lu);
+        });
+      }
+    }
+  });
+}
+
+/** Texte unique par cas, pour retrouver en base ce qu'un test a enregistré. */
+export function marque(cas) {
+  return cas
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .slice(0, 40);
+}
