@@ -126,6 +126,24 @@ for (const [role, token] of [["proprietaire", SESSION_TOKEN_CLIENTS], ["lecteur"
   });
 }
 
+// États particuliers : une ligne sélectionnée (actions groupées), onglets d'une fiche.
+test.describe("Relevé des contacts (états)", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_CLIENTS) });
+  const ouvrirAvecSelection = async (p) => {
+    await ouvrir(p, "/dashboard/clients");
+    await p.getByRole("checkbox", { name: "Select row" }).first().check();
+    await p.waitForTimeout(500);
+  };
+  test("Relevé : clients-selection", async ({ page, surveillance }) => {
+    test.setTimeout(20 * 60_000);
+    enregistrer("clients-selection", await inventorier(page, { ouvrir: ouvrirAvecSelection, problemes: surveillance }));
+  });
+  relever({
+    "clients-notes": `/dashboard/clients/${id(CONTACTS.complet)}?tab=notes`,
+    "clients-factures": `/dashboard/clients/${id(CONTACTS.avecFactures)}?tab=invoices`,
+  });
+});
+
 test.describe("Relevé des pages (compte Avoirs)", () => {
   test.use({ storageState: { cookies: [sessionCookie(SESSION_TOKEN_AVOIRS)], origins: [] } });
   relever(PAGES_AVOIRS);
