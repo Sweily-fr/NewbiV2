@@ -1,14 +1,18 @@
 # Tests de bout en bout de Newbi (site + API), lancés depuis la page
-# « Tests » de l'admin (admin.newbi.fr/tests/newbi) ou à la main depuis
-# l'onglet Actions. Données de test uniquement (base Mongo en mémoire, services
+# « Tests » de l'admin (admin.newbi.fr/tests/newbi), à la main depuis
+# l'onglet Actions, et sur chaque PR vers main (release ou hotfix) : dernier
+# filet avant la prod, avec l'API de main (celle de la prod, toujours livrée
+# avant le site). Données de test uniquement (base Mongo en mémoire, services
 # externes coupés, voir tests-e2e/serveur.mjs) : aucun secret de prod (seul
 # NEWBI_API_TOKEN, en lecture seule sur newbi-api, si ce dépôt est privé).
 # Le rapport (résultats, captures, vidéos des échecs) est publié en artefact
 # « rapport-admin », que la page « Tests » lit ensuite.
 name: Tests E2E
-run-name: Tests E2E${{ inputs.declenche_par && format(' ({0})', inputs.declenche_par) || '' }}
+run-name: "Tests E2E${{ github.event_name == 'pull_request' && format(' (PR #{0})', github.event.pull_request.number) || inputs.declenche_par && format(' ({0})', inputs.declenche_par) || '' }}"
 
 on:
+  pull_request:
+    branches: [main]
   workflow_dispatch:
     inputs:
       declenche_par:
@@ -20,10 +24,11 @@ on:
         required: false
         default: "develop"
 
-# Un lancement à la fois ; un second attend la fin du premier.
+# Lancements depuis l'admin : un à la fois, un second attend la fin du premier.
+# Sur une PR : un nouveau push remplace le lancement en cours de cette PR.
 concurrency:
-  group: tests-e2e
-  cancel-in-progress: false
+  group: tests-e2e-${{ github.event.pull_request.number || 'admin' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -42,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Sweily-fr/newbi-api
-          ref: ${{ inputs.branche_api || 'develop' }}
+          ref: ${{ inputs.branche_api || github.base_ref == 'main' && 'main' || 'develop' }}
           path: newbi-api
           token: ${{ secrets.NEWBI_API_TOKEN || github.token }}
 
@@ -61,14 +66,25 @@ jobs:
         run: npm ci
         working-directory: newbi-api
 
-      - name: Cache MongoDB, navigateurs et build du site
-        uses: actions/cache@v4
+      # Restauration et sauvegarde séparées : actions/cache ne sauve rien quand
+      # un test échoue, et les lancements suivants retéléchargeaient tout.
+      - name: Restaurer MongoDB et Chromium
+        id: cache-outils
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cache/mongodb-binaries
             ~/.cache/ms-playwright
-            .next-e2e-newbi/cache
-          key: e2e-${{ runner.os }}-${{ hashFiles('package-lock.json', 'newbi-api/package-lock.json') }}
+          key: e2e-outils-${{ runner.os }}-${{ hashFiles('package-lock.json', 'newbi-api/package-lock.json') }}
+
+      # Cache de compilation Next : clé par commit, repris du plus récent.
+      - name: Restaurer le cache de compilation du site
+        id: cache-build
+        uses: actions/cache/restore@v4
+        with:
+          path: .next-e2e-newbi/cache
+          key: e2e-build-${{ runner.os }}-${{ github.sha }}
+          restore-keys: e2e-build-${{ runner.os }}-
 
       - name: Installer Chromium
         run: npx playwright install --with-deps chromium
@@ -79,7 +95,23 @@ jobs:
           NEWBI_API_DIR: newbi-api
           E2E_CAPTURES: "1"
           E2E_RAPPORT_ADMIN: "1"
-          E2E_DECLENCHE_PAR: ${{ inputs.declenche_par }}
+          E2E_DECLENCHE_PAR: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || inputs.declenche_par }}"
+
+      - name: Garder MongoDB et Chromium pour les prochains lancements
+        if: ${{ !cancelled() && steps.cache-outils.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cache/mongodb-binaries
+            ~/.cache/ms-playwright
+          key: ${{ steps.cache-outils.outputs.cache-primary-key }}
+
+      - name: Garder le cache de compilation du site
+        if: ${{ !cancelled() && steps.cache-build.outputs.cache-hit != 'true' && hashFiles('.next-e2e-newbi/cache/**') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .next-e2e-newbi/cache
+          key: ${{ steps.cache-build.outputs.cache-primary-key }}
 
       - name: Publier le rapport pour l'admin
         if: always()

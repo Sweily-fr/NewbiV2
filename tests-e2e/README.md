@@ -6,7 +6,9 @@ mémoire (replica set), API lancée sans crons, services externes coupés
 dans le navigateur. Rien ne touche la prod.
 
 Ils se lancent depuis l'admin (**admin.newbi.fr/tests/newbi**, workflow
-`.github/workflows/tests-e2e.yml`) ou en local.
+`.github/workflows/tests-e2e.yml`), en local, et d'office sur chaque PR vers
+`main` (release ou hotfix) avec l'API de `main` : dernier filet avant la prod.
+Ces lancements apparaissent aussi dans l'admin (« Par : PR #n »).
 
 ## Ce qui est testé
 
