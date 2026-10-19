@@ -5,8 +5,11 @@
 # avant le site). Données de test uniquement (base Mongo en mémoire, services
 # externes coupés, voir tests-e2e/serveur.mjs) : aucun secret de prod (seul
 # NEWBI_API_TOKEN, en lecture seule sur newbi-api, si ce dépôt est privé).
-# Le rapport (résultats, captures, vidéo de chaque test) est publié en artefact
-# « rapport-admin », que la page « Tests » lit ensuite.
+#
+# Les tests sont répartis sur plusieurs machines en parallèle (chacune avec sa
+# base, son API et son site), puis un dernier job rassemble leurs résultats
+# en un seul rapport (résultats, captures, vidéo de chaque test), publié en
+# artefact « rapport-admin », que la page « Tests » lit ensuite.
 name: Tests E2E
 run-name: "Tests E2E${{ github.event_name == 'pull_request' && format(' (PR #{0})', github.event.pull_request.number) || inputs.declenche_par && format(' ({0})', inputs.declenche_par) || '' }}"
 
@@ -23,11 +26,26 @@ on:
         description: "Branche de newbi-api à tester avec le site"
         required: false
         default: "develop"
+      fichiers:
+        description: "Seulement ces dossiers ou fichiers de tests (ex. « clients factures/liste »), vide = tout"
+        required: false
+        default: ""
+      machines:
+        description: "Nombre de machines en parallèle"
+        required: false
+        type: choice
+        options: ["4", "1", "2", "6", "8"]
+        default: "4"
+      inventaire:
+        description: "Relevé de toutes les pages (outil pour écrire les tests, ne vérifie rien)"
+        required: false
+        type: boolean
+        default: false
 
-# Lancements depuis l'admin : un à la fois, un second attend la fin du premier.
+# Lancements à la main : un à la fois par branche (l'admin lance sur develop).
 # Sur une PR : un nouveau push remplace le lancement en cours de cette PR.
 concurrency:
-  group: tests-e2e-${{ github.event.pull_request.number || 'admin' }}
+  group: tests-e2e-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -35,9 +53,13 @@ permissions:
 
 jobs:
   e2e:
-    name: Tests E2E
+    name: Tests E2E (machine ${{ matrix.machine }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: ${{ inputs.inventaire && 120 || 45 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: ${{ fromJSON('{"1":[1],"2":[1,2],"4":[1,2,3,4],"6":[1,2,3,4,5,6],"8":[1,2,3,4,5,6,7,8]}')[inputs.machines || '4'] }}
     steps:
       - uses: actions/checkout@v4
 
@@ -89,16 +111,28 @@ jobs:
       - name: Installer Chromium
         run: npx playwright install --with-deps chromium
 
+      # Chaque machine prend sa part des tests (--shard) et garde ses
+      # résultats bruts (blob), rassemblés par le job « Rapport ».
       - name: Lancer les tests
-        run: npx playwright test -c tests-e2e
+        run: |
+          if ! [[ "$FICHIERS" =~ ^[A-Za-z0-9_./\ -]*$ ]]; then
+            echo "::error::Liste de fichiers invalide : $FICHIERS"
+            exit 1
+          fi
+          # shellcheck disable=SC2086 # plusieurs dossiers séparés par des espaces
+          npx playwright test -c tests-e2e $FICHIERS \
+            --shard="${{ matrix.machine }}/${{ strategy.job-total }}" \
+            --reporter=blob,list --pass-with-no-tests
         env:
+          FICHIERS: ${{ inputs.fichiers }}
           NEWBI_API_DIR: newbi-api
           E2E_CAPTURES: "1"
           E2E_RAPPORT_ADMIN: "1"
-          E2E_DECLENCHE_PAR: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || inputs.declenche_par }}"
+          E2E_INVENTAIRE: ${{ inputs.inventaire && '1' || '' }}
+          PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/machine-${{ matrix.machine }}.zip
 
       - name: Garder MongoDB et Chromium pour les prochains lancements
-        if: ${{ !cancelled() && steps.cache-outils.outputs.cache-hit != 'true' }}
+        if: ${{ !cancelled() && steps.cache-outils.outputs.cache-hit != 'true' && matrix.machine == 1 }}
         uses: actions/cache/save@v4
         with:
           path: |
@@ -107,14 +141,62 @@ jobs:
           key: ${{ steps.cache-outils.outputs.cache-primary-key }}
 
       - name: Garder le cache de compilation du site
-        if: ${{ !cancelled() && steps.cache-build.outputs.cache-hit != 'true' && hashFiles('.next-e2e-newbi/cache/**') != '' }}
+        if: ${{ !cancelled() && steps.cache-build.outputs.cache-hit != 'true' && matrix.machine == 1 && hashFiles('.next-e2e-newbi/cache/**') != '' }}
         uses: actions/cache/save@v4
         with:
           path: .next-e2e-newbi/cache
           key: ${{ steps.cache-build.outputs.cache-primary-key }}
 
+      - name: Garder les résultats de cette machine
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultats-machine-${{ matrix.machine }}
+          path: blob-report/
+          retention-days: 1
+          if-no-files-found: ignore
+
+      - name: Publier le relevé des pages
+        if: ${{ !cancelled() && inputs.inventaire }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventaire-machine-${{ matrix.machine }}
+          path: tests-e2e/inventaire-resultats/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  rapport:
+    name: Rapport
+    needs: e2e
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances du site
+        run: npm ci
+
+      - name: Récupérer les résultats des machines
+        uses: actions/download-artifact@v4
+        with:
+          pattern: resultats-machine-*
+          path: blob-report
+          merge-multiple: true
+
+      # Un seul rapport, comme si tout avait tourné sur une machine.
+      - name: Rassembler les résultats
+        run: npx playwright merge-reports -c tests-e2e/rapport.config.mjs blob-report
+        env:
+          E2E_RAPPORT_ADMIN: "1"
+          E2E_DECLENCHE_PAR: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || inputs.declenche_par }}"
+
       - name: Publier le rapport pour l'admin
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: rapport-admin
@@ -123,10 +205,16 @@ jobs:
           if-no-files-found: warn
 
       - name: Publier le rapport Playwright complet
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: rapport-playwright
           path: tests-e2e/rapport-html/
           retention-days: 14
           if-no-files-found: ignore
+
+      # Les tests rouges font échouer le lancement (comme avant la répartition).
+      - name: Résultat
+        if: ${{ needs.e2e.result != 'success' }}
+        run: |
+          echo "::error::Des tests ont échoué : voir le rapport."
+          exit 1

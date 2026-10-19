@@ -16,7 +16,8 @@ const RACINE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
  */
 export default defineConfig({
   testDir: ".",
-  testMatch: "**/*.spec.mjs",
+  // Le relevé des pages (outil pour écrire les tests) ne tourne que seul, à la demande.
+  ...(process.env.E2E_INVENTAIRE === "1" ? { testMatch: "**/inventaire.spec.mjs" } : { testMatch: "**/*.spec.mjs", testIgnore: "**/inventaire.spec.mjs" }),
   outputDir: path.join(RACINE, DOSSIERS.resultats),
   globalSetup: "./prechauffage.mjs",
   fullyParallel: true,
