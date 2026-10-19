@@ -54,6 +54,18 @@ const PREFIXES = {
   // ── Lot collaboration (e2e5a à e2e5f, e2e6a à e2e6f) ──
   // ── fin du lot collaboration ──
   // ── Lot pilotage (e2e7a à e2e7f, e2eda à e2edf) ──
+  pilFacture: "e2e7a",
+  pilDevis: "e2e7b",
+  pilAchat: "e2e7c",
+  pilTransaction: "e2e7d",
+  pilCompteBancaire: "e2e7e",
+  pilImportee: "e2e7f",
+  pilClient: "e2eda",
+  pilAvoir: "e2edb",
+  pilGestion: "e2edc",
+  pilMembre: "e2edd",
+  pilAbonnement: "e2ede",
+  pilDivers: "e2edf",
   // ── fin du lot pilotage ──
 };
 
@@ -142,6 +154,22 @@ export const COMPTES = {
   // ── Lot collaboration (organisations et utilisateurs 35 à 39) ──
   // ── fin du lot collaboration ──
   // ── Lot pilotage (organisations et utilisateurs 40 à 44) ──
+  // Accueil, analytiques et mise en page : documents, banque et achats du
+  // mois (voir lot-pilotage.mjs). Suivie par le cabinet (client « Pilotage »).
+  pilotage: {
+    utilisateur: { _id: oid("utilisateur", 40), email: "pilotage@e2e.test", name: "Noé Pilotage" },
+    organisation: organisation(40, "Pilotage Test SASU"),
+    // = SESSION_TOKEN_PILOTAGE (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageUniquement",
+  },
+  // Client du cabinet : super admin de « Boulangerie Cliente » (suivie, plus
+  // de 50 factures) et de deux espaces libres, à confier par invitation.
+  clientCabinet: {
+    utilisateur: { _id: oid("utilisateur", 44), email: "client-cabinet@e2e.test", name: "Bastien Boulanger" },
+    organisation: organisation(41, "Boulangerie Cliente SARL"),
+    // = SESSION_TOKEN_CLIENT_CABINET (config.mjs)
+    token: "e2eSessionTokenNewbiClientCabinetUniquement",
+  },
   // ── fin du lot pilotage ──
 };
 
@@ -175,6 +203,29 @@ export const MEMBRES = {
   // ── Lot collaboration (utilisateurs 35 à 39) ──
   // ── fin du lot collaboration ──
   // ── Lot pilotage (utilisateurs 40 à 44) ──
+  pilotageEditeur: {
+    utilisateur: { _id: oid("utilisateur", 41), email: "pilotage-editeur@e2e.test", name: "Léa Éditrice" },
+    de: "pilotage",
+    role: "member",
+    // = SESSION_TOKEN_PILOTAGE_EDITEUR (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageEditeurUniquement",
+  },
+  pilotageMembre: {
+    utilisateur: { _id: oid("utilisateur", 42), email: "pilotage-membre@e2e.test", name: "Sam Lecteur" },
+    de: "pilotage",
+    role: "viewer",
+    // = SESSION_TOKEN_PILOTAGE_MEMBRE (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageMembreUniquement",
+  },
+  // Compte gestionnaire (cabinet) : Comptable chez ses clients, session
+  // ouverte dans « Boulangerie Cliente » (comptes gestionnaires : lot-pilotage.mjs).
+  cabinet: {
+    utilisateur: { _id: oid("utilisateur", 43), email: "cabinet@e2e.test", name: "Claire Comptable" },
+    de: "clientCabinet",
+    role: "accountant",
+    // = SESSION_TOKEN_CABINET (config.mjs)
+    token: "e2eSessionTokenNewbiCabinetUniquement",
+  },
   // ── fin du lot pilotage ──
 };
 
