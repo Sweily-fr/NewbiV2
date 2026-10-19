@@ -58,7 +58,8 @@ async function contactEnregistre(v) {
   return (await base()).collection("clients").findOne({ workspaceId: ATELIER, $or: ou });
 }
 
-const valider = (fenetre) => fenetre.getByRole("button", { name: "Créer un contact" }).click();
+const boutonValider = (fenetre) => fenetre.getByRole("button", { name: "Créer un contact" });
+const valider = (fenetre) => boutonValider(fenetre).click();
 const adresse = (doc, cle) => doc?.address?.[cle];
 
 // --- Particulier --------------------------------------------------------------
@@ -78,6 +79,7 @@ verifierFormulaire({
   ouvrir: (page) => ouvrirFiche(page, "INDIVIDUAL"),
   remplir: (fenetre, v) => remplirParIndication(fenetre, CHAMPS_PARTICULIER, v),
   valider,
+  boutonValider,
   valeurs: (cas) => ({
     prenom: "Sophie",
     nom: `Testeur ${lettres(cas)}`,
@@ -194,6 +196,7 @@ verifierFormulaire({
   ouvrir: (page) => ouvrirFiche(page, "COMPANY"),
   remplir: remplirEntreprise,
   valider,
+  boutonValider,
   valeurs: (cas) => ({
     raisonSociale: `Entreprise ${lettres(cas)} SAS`,
     nomContact: "Jean Dupont",
@@ -302,7 +305,9 @@ test.describe("Nouveau contact : après l'enregistrement", () => {
       "Fiche du contact : le texte s'affiche, rien ne s'exécute",
       async () => {
         await ouvrir(page, `/dashboard/clients/${doc._id.toHexString()}`);
+        await page.getByRole("button", { name: "Voir plus ↓" }).click();
         await expect(page.getByText(piege).first()).toBeVisible();
+        expect(await page.evaluate(() => document.querySelectorAll("main img[src='x']").length), "La balise image a été créée dans la page").toBe(0);
       },
       { capture: "ecran" },
     );

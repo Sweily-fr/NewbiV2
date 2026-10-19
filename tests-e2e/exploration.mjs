@@ -37,8 +37,10 @@ async function decrire(el) {
   const snap = await el.ariaSnapshot({ timeout: 2_000 }).catch(() => "");
   const m = LIGNE.exec(snap.split("\n")[0] || "");
   const attributs = m?.[3] || "";
+  const nom = m?.[2] ? JSON.parse(`"${m[2]}"`) : "";
   return {
-    nom: m?.[2] ? JSON.parse(`"${m[2]}"`) : "",
+    // Un nom réduit à un nombre (pastille de compteur) n'en est pas un : « 1, bouton ».
+    nom: /^\d+$/.test(nom) ? "" : nom,
     desactive: /\[disabled\]/.test(attributs),
     etat: attributs.trim(),
   };
@@ -121,10 +123,9 @@ export async function elementsActionnables(zone, { roles = ROLES_ACTIONNABLES, t
 
 /** Retrouve un élément décrit par elementsActionnables() sur une page neuve. */
 export async function retrouver(zone, cible) {
-  if (!cible.sansNom) {
-    const meme = zone.getByRole(cible.role, { name: cible.nom, exact: true });
-    if ((await meme.count()) > cible.occurrence) return meme.nth(cible.occurrence);
-  }
+  const meme = cible.sansNom && !cible.nom ? null : parNom(zone, cible.role, cible.nom);
+  if (meme && (await meme.count()) > cible.occurrence) return meme.nth(cible.occurrence);
+  if (!cible.sansNom) return null;
   const parIndex = zone.getByRole(cible.role).nth(cible.index);
   return (await parIndex.count()) ? parIndex : null;
 }
@@ -349,6 +350,18 @@ export async function inventorier(page, { ouvrir, zone = contenu, problemes = []
   }
 }
 
+/**
+ * Retrouve un élément par la clé d'une description : son nom accessible, ou,
+ * pour un élément sans nom, son icône (« icône settings2 ») ou son titre.
+ */
+function parNom(zone, role, nom) {
+  const icone = /^icône (.+)$/.exec(nom);
+  if (icone) return zone.getByRole(role).filter({ has: zone.page().locator(`svg.lucide-${icone[1]}`) });
+  const titre = /^titre « (.+) »$/.exec(nom);
+  if (titre) return zone.getByRole(role).and(zone.page().locator(`[title="${titre[1]}"], [data-tooltip="${titre[1]}"]`));
+  return zone.getByRole(role, { name: nom, exact: true });
+}
+
 /** Premier lien d'une zone dont l'adresse suit ce motif (« /dashboard/clients/:id »). */
 async function trouverLien(zone, motif) {
   for (const lien of await zone.getByRole("link").all()) {
@@ -459,7 +472,7 @@ export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test }
         await ouvrir(page);
         const role = declencheur.split(" ")[0];
         const nom = declencheur.slice(role.length + 1);
-        const el = role === "link" ? await trouverLien(zone(page), nom) : zone(page).getByRole(role, { name: nom, exact: true }).first();
+        const el = role === "link" ? await trouverLien(zone(page), nom) : parNom(zone(page), role, nom).first();
         await expect(el, `Élément « ${declencheur} »`).toBeVisible();
         if (!item) {
           const issue = await observer(page, () => el.click({ timeout: 5_000 }), { cible: el });

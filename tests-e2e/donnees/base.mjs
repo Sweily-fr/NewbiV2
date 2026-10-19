@@ -17,6 +17,7 @@ import {
   SESSION_TOKEN_AVOIRS,
   SESSION_TOKEN_CLIENTS,
   SESSION_TOKEN_EDITEUR,
+  SESSION_TOKEN_FREELANCE,
   SESSION_TOKEN_INTRUS,
   SESSION_TOKEN_LECTEUR,
   SESSION_TOKEN_LISTE,
@@ -98,6 +99,14 @@ export const COMPTES = {
     utilisateur: { _id: oid("utilisateur", 5), email: "intrus@e2e.test", name: "Sacha Intrus" },
     organisation: organisation(5, "Intrus Test SASU"),
     token: SESSION_TOKEN_INTRUS,
+  },
+  // Offre d'entrée : ses plafonds (champs personnalisés, segments…) doivent
+  // tenir aussi face à un appel direct à l'API (voir clients/offre.spec.mjs).
+  freelance: {
+    utilisateur: { _id: oid("utilisateur", 8), email: "freelance@e2e.test", name: "Robin Freelance" },
+    organisation: organisation(6, "Freelance Test EI"),
+    token: SESSION_TOKEN_FREELANCE,
+    plan: "freelance",
   },
 };
 
@@ -218,7 +227,7 @@ const session = (n, token, utilisateur, organisation) => ({
 
 export function socle() {
   const docs = { user: [], organization: [], member: [], subscription: [], session: [], clients: [] };
-  Object.values(COMPTES).forEach(({ utilisateur, organisation: org, token }, i) => {
+  Object.values(COMPTES).forEach(({ utilisateur, organisation: org, token, plan = "pme" }, i) => {
     const n = i + 1;
     docs.user.push(utilisateurPret(utilisateur));
     docs.organization.push({
@@ -235,7 +244,7 @@ export function socle() {
     docs.subscription.push({
       _id: oid("abonnement", n),
       referenceId: org._id.toHexString(),
-      plan: "pme",
+      plan,
       status: "active",
       periodStart: DANS(-1),
       periodEnd: DANS(30),

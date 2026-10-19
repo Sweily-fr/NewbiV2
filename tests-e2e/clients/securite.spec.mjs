@@ -14,20 +14,42 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { connecte, SESSION_TOKEN_EDITEUR, SESSION_TOKEN_INTRUS, SESSION_TOKEN_LECTEUR } from "../config.mjs";
+import {
+  BASE_URL,
+  connecte,
+  SESSION_TOKEN_CLIENTS,
+  SESSION_TOKEN_EDITEUR,
+  SESSION_TOKEN_INTRUS,
+  SESSION_TOKEN_LECTEUR,
+} from "../config.mjs";
 import { COMPTES, MEMBRES } from "../donnees/base.mjs";
-import { AUTOMATISATIONS, CHAMPS_CLIENTS, CONTACTS, LISTES_CLIENTS, SEGMENTS } from "../donnees/clients.mjs";
+import {
+  AUTOMATISATIONS,
+  CHAMPS_CLIENTS,
+  CONTACTS,
+  LISTES_CLIENTS,
+  SEGMENTS,
+} from "../donnees/clients.mjs";
 import { appelApi, verifierRefus, id } from "../securite.mjs";
 import { base } from "../base.mjs";
 
 const ORG = id(COMPTES.clients.organisation);
 const ORG_INTRUS = id(COMPTES.intrus.organisation);
-const adresse = { street: "1 rue du Contrôle", city: "Paris", postalCode: "75001", country: "France" };
+const adresse = {
+  street: "1 rue du Contrôle",
+  city: "Paris",
+  postalCode: "75001",
+  country: "France",
+};
 const _id = (doc) => doc._id;
 
 /** Document(s) tels qu'en base, sans la date de mise à jour : un refus ne doit rien changer. */
 async function photo([collection, filtre]) {
-  const docs = await (await base()).collection(collection).find(filtre).sort({ _id: 1 }).toArray();
+  const docs = await (await base())
+    .collection(collection)
+    .find(filtre)
+    .sort({ _id: 1 })
+    .toArray();
   return JSON.stringify(docs.map(({ updatedAt, ...d }) => d));
 }
 
@@ -44,7 +66,16 @@ const ECRITURES = [
     droit: "create",
     champ: "createClient",
     requete: `mutation($w: String, $input: ClientInput!) { createClient(workspaceId: $w, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, input: { type: "COMPANY", name: `Créé par ${qui} SARL`, email: `cree-par-${qui}@e2e.test`, siret: "12345678900011", address: adresse } }),
+    variables: (w, qui) => ({
+      w,
+      input: {
+        type: "COMPANY",
+        name: `Créé par ${qui} SARL`,
+        email: `cree-par-${qui}@e2e.test`,
+        siret: "12345678900011",
+        address: adresse,
+      },
+    }),
     temoin: (qui) => ["clients", { name: `Créé par ${qui} SARL` }],
   },
   {
@@ -57,7 +88,14 @@ const ECRITURES = [
     variables: (w, qui) => ({
       w,
       id: id(CONTACTS.cibleModifier),
-      input: { type: "COMPANY", name: CONTACTS.cibleModifier.name, email: CONTACTS.cibleModifier.email, siret: "12345678900011", address: adresse, contactFunction: `Modifié par ${qui}` },
+      input: {
+        type: "COMPANY",
+        name: CONTACTS.cibleModifier.name,
+        email: CONTACTS.cibleModifier.email,
+        siret: "12345678900011",
+        address: adresse,
+        contactFunction: `Modifié par ${qui}`,
+      },
     }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleModifier) }],
   },
@@ -78,27 +116,43 @@ const ECRITURES = [
     champ: "addClientNote",
     cible: true,
     requete: `mutation($w: String, $c: ID!, $input: ClientNoteInput!) { addClientNote(workspaceId: $w, clientId: $c, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, c: id(CONTACTS.cibleNoter), input: { content: `Note de ${qui}` } }),
+    variables: (w, qui) => ({
+      w,
+      c: id(CONTACTS.cibleNoter),
+      input: { content: `Note de ${qui}` },
+    }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleNoter) }],
   },
   {
-    nom: "Modifier une note",
+    nom: "Modifier la note d'un autre membre",
     module: "clients",
     droit: "notes",
+    // Seul l'auteur d'une note peut la modifier ou la supprimer.
+    auteurSeulement: true,
     champ: "updateClientNote",
     cible: true,
     requete: `mutation($w: String, $c: ID!, $n: ID!, $t: String!) { updateClientNote(workspaceId: $w, clientId: $c, noteId: $n, content: $t) { id } }`,
-    variables: (w, qui) => ({ w, c: id(CONTACTS.cibleNoter), n: CONTACTS.cibleNoter.notes[0].id, t: `Note modifiée par ${qui}` }),
+    variables: (w, qui) => ({
+      w,
+      c: id(CONTACTS.cibleNoter),
+      n: CONTACTS.cibleNoter.notes[0].id,
+      t: `Note modifiée par ${qui}`,
+    }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleNoter) }],
   },
   {
-    nom: "Supprimer une note",
+    nom: "Supprimer la note d'un autre membre",
     module: "clients",
     droit: "notes",
+    auteurSeulement: true,
     champ: "deleteClientNote",
     cible: true,
     requete: `mutation($w: String, $c: ID!, $n: ID!) { deleteClientNote(workspaceId: $w, clientId: $c, noteId: $n) { id } }`,
-    variables: (w) => ({ w, c: id(CONTACTS.cibleNoter), n: CONTACTS.cibleNoter.notes[1].id }),
+    variables: (w) => ({
+      w,
+      c: id(CONTACTS.cibleNoter),
+      n: CONTACTS.cibleNoter.notes[1].id,
+    }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleNoter) }],
   },
   {
@@ -108,7 +162,11 @@ const ECRITURES = [
     champ: "addClientActivity",
     cible: true,
     requete: `mutation($w: String, $c: ID!, $input: ClientActivityInput!) { addClientActivity(workspaceId: $w, clientId: $c, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, c: id(CONTACTS.cibleNoter), input: { type: "note_added", description: `Activité de ${qui}` } }),
+    variables: (w, qui) => ({
+      w,
+      c: id(CONTACTS.cibleNoter),
+      input: { type: "note_added", description: `Activité de ${qui}` },
+    }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleNoter) }],
   },
   {
@@ -118,7 +176,11 @@ const ECRITURES = [
     champ: "assignClientMembers",
     cible: true,
     requete: `mutation($w: String, $id: ID!, $m: [String!]!) { assignClientMembers(workspaceId: $w, id: $id, memberIds: $m) { id } }`,
-    variables: (w) => ({ w, id: id(CONTACTS.cibleAssigner), m: [id(MEMBRES.editeur.utilisateur)] }),
+    variables: (w) => ({
+      w,
+      id: id(CONTACTS.cibleAssigner),
+      m: [id(MEMBRES.editeur.utilisateur)],
+    }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleAssigner) }],
   },
   {
@@ -128,7 +190,11 @@ const ECRITURES = [
     champ: "blockClient",
     cible: true,
     requete: `mutation($w: String, $id: ID!, $r: String) { blockClient(workspaceId: $w, id: $id, reason: $r) { id } }`,
-    variables: (w, qui) => ({ w, id: id(CONTACTS.cibleBloquer), r: `Bloqué par ${qui}` }),
+    variables: (w, qui) => ({
+      w,
+      id: id(CONTACTS.cibleBloquer),
+      r: `Bloqué par ${qui}`,
+    }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleBloquer) }],
   },
   {
@@ -157,7 +223,11 @@ const ECRITURES = [
     champ: "updateClientList",
     cible: true,
     requete: `mutation($w: String!, $id: ID!, $input: UpdateClientListInput!) { updateClientList(workspaceId: $w, id: $id, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, id: id(LISTES_CLIENTS.droits), input: { description: `Modifiée par ${qui}` } }),
+    variables: (w, qui) => ({
+      w,
+      id: id(LISTES_CLIENTS.droits),
+      input: { description: `Modifiée par ${qui}` },
+    }),
     temoin: () => ["clientlists", { _id: _id(LISTES_CLIENTS.droits) }],
   },
   {
@@ -189,7 +259,11 @@ const ECRITURES = [
     champ: "addClientToList",
     cible: true,
     requete: `mutation($w: String!, $l: ID!, $c: ID!) { addClientToList(workspaceId: $w, listId: $l, clientId: $c) { id } }`,
-    variables: (w) => ({ w, l: id(LISTES_CLIENTS.droits), c: id(CONTACTS.cibleListe1) }),
+    variables: (w) => ({
+      w,
+      l: id(LISTES_CLIENTS.droits),
+      c: id(CONTACTS.cibleListe1),
+    }),
     temoin: () => ["clientlists", { _id: _id(LISTES_CLIENTS.droits) }],
   },
   {
@@ -199,7 +273,11 @@ const ECRITURES = [
     champ: "removeClientFromList",
     cible: true,
     requete: `mutation($w: String!, $l: ID!, $c: ID!) { removeClientFromList(workspaceId: $w, listId: $l, clientId: $c) { id } }`,
-    variables: (w) => ({ w, l: id(LISTES_CLIENTS.droits), c: id(CONTACTS.cibleModifier) }),
+    variables: (w) => ({
+      w,
+      l: id(LISTES_CLIENTS.droits),
+      c: id(CONTACTS.cibleModifier),
+    }),
     temoin: () => ["clientlists", { _id: _id(LISTES_CLIENTS.droits) }],
   },
   {
@@ -209,7 +287,11 @@ const ECRITURES = [
     champ: "addClientsToList",
     cible: true,
     requete: `mutation($w: String!, $l: ID!, $c: [ID!]!) { addClientsToList(workspaceId: $w, listId: $l, clientIds: $c) { id } }`,
-    variables: (w) => ({ w, l: id(LISTES_CLIENTS.droits), c: [id(CONTACTS.cibleListe2)] }),
+    variables: (w) => ({
+      w,
+      l: id(LISTES_CLIENTS.droits),
+      c: [id(CONTACTS.cibleListe2)],
+    }),
     temoin: () => ["clientlists", { _id: _id(LISTES_CLIENTS.droits) }],
   },
   {
@@ -219,7 +301,11 @@ const ECRITURES = [
     champ: "removeClientsFromList",
     cible: true,
     requete: `mutation($w: String!, $l: ID!, $c: [ID!]!) { removeClientsFromList(workspaceId: $w, listId: $l, clientIds: $c) { id } }`,
-    variables: (w) => ({ w, l: id(LISTES_CLIENTS.droits), c: [id(CONTACTS.cibleNoter)] }),
+    variables: (w) => ({
+      w,
+      l: id(LISTES_CLIENTS.droits),
+      c: [id(CONTACTS.cibleNoter)],
+    }),
     temoin: () => ["clientlists", { _id: _id(LISTES_CLIENTS.droits) }],
   },
   {
@@ -229,7 +315,11 @@ const ECRITURES = [
     champ: "addClientToLists",
     cible: true,
     requete: `mutation($w: String!, $c: ID!, $l: [ID!]!) { addClientToLists(workspaceId: $w, clientId: $c, listIds: $l) { id } }`,
-    variables: (w) => ({ w, c: id(CONTACTS.cibleListe3), l: [id(LISTES_CLIENTS.droits)] }),
+    variables: (w) => ({
+      w,
+      c: id(CONTACTS.cibleListe3),
+      l: [id(LISTES_CLIENTS.droits)],
+    }),
     temoin: () => ["clientlists", { _id: _id(LISTES_CLIENTS.droits) }],
   },
   {
@@ -239,7 +329,11 @@ const ECRITURES = [
     champ: "removeClientFromLists",
     cible: true,
     requete: `mutation($w: String!, $c: ID!, $l: [ID!]!) { removeClientFromLists(workspaceId: $w, clientId: $c, listIds: $l) { id } }`,
-    variables: (w) => ({ w, c: id(CONTACTS.cibleAssigner), l: [id(LISTES_CLIENTS.droits)] }),
+    variables: (w) => ({
+      w,
+      c: id(CONTACTS.cibleAssigner),
+      l: [id(LISTES_CLIENTS.droits)],
+    }),
     temoin: () => ["clientlists", { _id: _id(LISTES_CLIENTS.droits) }],
   },
   {
@@ -248,7 +342,14 @@ const ECRITURES = [
     droit: "create",
     champ: "createClientSegment",
     requete: `mutation($w: String!, $input: CreateClientSegmentInput!) { createClientSegment(workspaceId: $w, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, input: { name: `Segment de ${qui}`, matchType: "all", rules: [{ field: "type", operator: "equals", value: "COMPANY" }] } }),
+    variables: (w, qui) => ({
+      w,
+      input: {
+        name: `Segment de ${qui}`,
+        matchType: "all",
+        rules: [{ field: "type", operator: "equals", value: "COMPANY" }],
+      },
+    }),
     temoin: (qui) => ["clientsegments", { name: `Segment de ${qui}` }],
   },
   {
@@ -258,7 +359,11 @@ const ECRITURES = [
     champ: "updateClientSegment",
     cible: true,
     requete: `mutation($w: String!, $id: ID!, $input: UpdateClientSegmentInput!) { updateClientSegment(workspaceId: $w, id: $id, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, id: id(SEGMENTS.droits), input: { description: `Modifié par ${qui}` } }),
+    variables: (w, qui) => ({
+      w,
+      id: id(SEGMENTS.droits),
+      input: { description: `Modifié par ${qui}` },
+    }),
     temoin: () => ["clientsegments", { _id: _id(SEGMENTS.droits) }],
   },
   {
@@ -277,7 +382,10 @@ const ECRITURES = [
     droit: "create",
     champ: "createClientCustomField",
     requete: `mutation($w: ID!, $input: ClientCustomFieldInput!) { createClientCustomField(workspaceId: $w, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, input: { name: `Champ de ${qui}`, fieldType: "TEXT" } }),
+    variables: (w, qui) => ({
+      w,
+      input: { name: `Champ de ${qui}`, fieldType: "TEXT" },
+    }),
     temoin: (qui) => ["clientcustomfields", { name: `Champ de ${qui}` }],
   },
   {
@@ -287,8 +395,15 @@ const ECRITURES = [
     champ: "updateClientCustomField",
     cible: true,
     requete: `mutation($w: ID!, $id: ID!, $input: ClientCustomFieldInput!) { updateClientCustomField(workspaceId: $w, id: $id, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, id: id(CHAMPS_CLIENTS.aSupprimer), input: { name: `Renommé par ${qui}`, fieldType: "TEXT" } }),
-    temoin: () => ["clientcustomfields", { _id: _id(CHAMPS_CLIENTS.aSupprimer) }],
+    variables: (w, qui) => ({
+      w,
+      id: id(CHAMPS_CLIENTS.aSupprimer),
+      input: { name: `Renommé par ${qui}`, fieldType: "TEXT" },
+    }),
+    temoin: () => [
+      "clientcustomfields",
+      { _id: _id(CHAMPS_CLIENTS.aSupprimer) },
+    ],
   },
   {
     nom: "Supprimer un champ personnalisé",
@@ -298,7 +413,10 @@ const ECRITURES = [
     cible: true,
     requete: `mutation($w: ID!, $id: ID!) { deleteClientCustomField(workspaceId: $w, id: $id) }`,
     variables: (w) => ({ w, id: id(CHAMPS_CLIENTS.aSupprimer) }),
-    temoin: () => ["clientcustomfields", { _id: _id(CHAMPS_CLIENTS.aSupprimer) }],
+    temoin: () => [
+      "clientcustomfields",
+      { _id: _id(CHAMPS_CLIENTS.aSupprimer) },
+    ],
   },
   {
     nom: "Réordonner les champs personnalisés",
@@ -307,8 +425,14 @@ const ECRITURES = [
     champ: "reorderClientCustomFields",
     cible: true,
     requete: `mutation($w: ID!, $ids: [ID!]!) { reorderClientCustomFields(workspaceId: $w, fieldIds: $ids) { id } }`,
-    variables: (w) => ({ w, ids: Object.values(CHAMPS_CLIENTS).map(id).reverse() }),
-    temoin: () => ["clientcustomfields", { workspaceId: COMPTES.clients.organisation._id }],
+    variables: (w) => ({
+      w,
+      ids: Object.values(CHAMPS_CLIENTS).map(id).reverse(),
+    }),
+    temoin: () => [
+      "clientcustomfields",
+      { workspaceId: COMPTES.clients.organisation._id },
+    ],
   },
   {
     nom: "Créer une automatisation",
@@ -316,8 +440,20 @@ const ECRITURES = [
     droit: "create",
     champ: "createClientAutomation",
     requete: `mutation($w: ID!, $input: CreateClientAutomationInput!) { createClientAutomation(workspaceId: $w, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, input: { name: `Automatisation de ${qui}`, triggerType: "CLIENT_CREATED", actionType: "ADD_TO_LIST", targetListId: id(LISTES_CLIENTS.droits), isActive: false } }),
-    temoin: (qui) => ["clientautomations", { name: `Automatisation de ${qui}` }],
+    variables: (w, qui) => ({
+      w,
+      input: {
+        name: `Automatisation de ${qui}`,
+        triggerType: "CLIENT_CREATED",
+        actionType: "ADD_TO_LIST",
+        targetListId: id(LISTES_CLIENTS.droits),
+        isActive: false,
+      },
+    }),
+    temoin: (qui) => [
+      "clientautomations",
+      { name: `Automatisation de ${qui}` },
+    ],
   },
   {
     nom: "Modifier une automatisation",
@@ -326,7 +462,11 @@ const ECRITURES = [
     champ: "updateClientAutomation",
     cible: true,
     requete: `mutation($w: ID!, $id: ID!, $input: UpdateClientAutomationInput!) { updateClientAutomation(workspaceId: $w, id: $id, input: $input) { id } }`,
-    variables: (w, qui) => ({ w, id: id(AUTOMATISATIONS.droits), input: { description: `Modifiée par ${qui}` } }),
+    variables: (w, qui) => ({
+      w,
+      id: id(AUTOMATISATIONS.droits),
+      input: { description: `Modifiée par ${qui}` },
+    }),
     temoin: () => ["clientautomations", { _id: _id(AUTOMATISATIONS.droits) }],
   },
   {
@@ -361,48 +501,138 @@ const ECRITURES = [
   },
 ];
 
-/** Ce que l'« Éditeur » peut faire (rolePermissions.js de newbi-api) : ni supprimer, ni gérer les champs personnalisés. */
-const editeurPeut = (op) => op.droit !== "delete" && op.module !== "clientCustomFields";
+/**
+ * Ce que l'« Éditeur » peut faire (rolePermissions.js de newbi-api) : ni
+ * supprimer, ni gérer les champs personnalisés, ni toucher aux notes des autres.
+ */
+const editeurPeut = (op) =>
+  op.droit !== "delete" &&
+  op.module !== "clientCustomFields" &&
+  !op.auteurSeulement;
 
 /** Lectures : contacts et tout ce qui les entoure, pour l'intrus et le visiteur. */
 const LECTURES = [
-  ["Un contact", "client", `query($w: String, $id: ID!) { client(workspaceId: $w, id: $id) { id name email } }`, (w) => ({ w, id: id(CONTACTS.complet) })],
-  ["La liste des contacts", "clients", `query($w: String) { clients(workspaceId: $w, page: 1, limit: 100) { items { id name } } }`, (w) => ({ w })],
-  ["Les listes", "clientLists", `query($w: String!) { clientLists(workspaceId: $w) { id name } }`, (w) => ({ w })],
-  ["Une liste", "clientList", `query($w: String!, $id: ID!) { clientList(workspaceId: $w, id: $id) { id name } }`, (w) => ({ w, id: id(LISTES_CLIENTS.prospects) })],
-  ["Les contacts d'une liste", "clientsInList", `query($w: String!, $l: ID!) { clientsInList(workspaceId: $w, listId: $l) { items { id name } } }`, (w) => ({ w, l: id(LISTES_CLIENTS.prospects) })],
-  ["Les listes d'un contact", "clientListsByClient", `query($w: String!, $c: ID!) { clientListsByClient(workspaceId: $w, clientId: $c) { id name } }`, (w) => ({ w, c: id(CONTACTS.complet) })],
-  ["Les segments", "clientSegments", `query($w: String!) { clientSegments(workspaceId: $w) { id name } }`, (w) => ({ w })],
-  ["Un segment", "clientSegment", `query($w: String!, $id: ID!) { clientSegment(workspaceId: $w, id: $id) { id name } }`, (w) => ({ w, id: id(SEGMENTS.lyonnais) })],
-  ["Les contacts d'un segment", "clientsInSegment", `query($w: String!, $s: ID!) { clientsInSegment(workspaceId: $w, segmentId: $s) { items { id name } } }`, (w) => ({ w, s: id(SEGMENTS.lyonnais) })],
-  ["Les champs personnalisés", "clientCustomFields", `query($w: ID!) { clientCustomFields(workspaceId: $w) { id name } }`, (w) => ({ w })],
-  ["Un champ personnalisé", "clientCustomField", `query($w: ID!, $id: ID!) { clientCustomField(workspaceId: $w, id: $id) { id name } }`, (w) => ({ w, id: id(CHAMPS_CLIENTS.secteur) })],
-  ["Les champs d'un contact pour les documents", "clientDocumentFields", `query($w: ID!, $c: ID!) { clientDocumentFields(workspaceId: $w, clientId: $c) { __typename } }`, (w) => ({ w, c: id(CONTACTS.complet) })],
-  ["Les automatisations", "clientAutomations", `query($w: ID!) { clientAutomations(workspaceId: $w) { id name } }`, (w) => ({ w })],
-  ["Une automatisation", "clientAutomation", `query($w: ID!, $id: ID!) { clientAutomation(workspaceId: $w, id: $id) { id name } }`, (w) => ({ w, id: id(AUTOMATISATIONS.droits) })],
+  [
+    "Un contact",
+    "client",
+    `query($w: String, $id: ID!) { client(workspaceId: $w, id: $id) { id name email } }`,
+    (w) => ({ w, id: id(CONTACTS.complet) }),
+  ],
+  [
+    "La liste des contacts",
+    "clients",
+    `query($w: String) { clients(workspaceId: $w, page: 1, limit: 100) { items { id name } } }`,
+    (w) => ({ w }),
+  ],
+  [
+    "Les listes",
+    "clientLists",
+    `query($w: String!) { clientLists(workspaceId: $w) { id name } }`,
+    (w) => ({ w }),
+  ],
+  [
+    "Une liste",
+    "clientList",
+    `query($w: String!, $id: ID!) { clientList(workspaceId: $w, id: $id) { id name } }`,
+    (w) => ({ w, id: id(LISTES_CLIENTS.prospects) }),
+  ],
+  [
+    "Les contacts d'une liste",
+    "clientsInList",
+    `query($w: String!, $l: ID!) { clientsInList(workspaceId: $w, listId: $l) { items { id name } } }`,
+    (w) => ({ w, l: id(LISTES_CLIENTS.prospects) }),
+  ],
+  [
+    "Les listes d'un contact",
+    "clientListsByClient",
+    `query($w: String!, $c: ID!) { clientListsByClient(workspaceId: $w, clientId: $c) { id name } }`,
+    (w) => ({ w, c: id(CONTACTS.complet) }),
+  ],
+  [
+    "Les segments",
+    "clientSegments",
+    `query($w: String!) { clientSegments(workspaceId: $w) { id name } }`,
+    (w) => ({ w }),
+  ],
+  [
+    "Un segment",
+    "clientSegment",
+    `query($w: String!, $id: ID!) { clientSegment(workspaceId: $w, id: $id) { id name } }`,
+    (w) => ({ w, id: id(SEGMENTS.lyonnais) }),
+  ],
+  [
+    "Les contacts d'un segment",
+    "clientsInSegment",
+    `query($w: String!, $s: ID!) { clientsInSegment(workspaceId: $w, segmentId: $s) { items { id name } } }`,
+    (w) => ({ w, s: id(SEGMENTS.lyonnais) }),
+  ],
+  [
+    "Les champs personnalisés",
+    "clientCustomFields",
+    `query($w: ID!) { clientCustomFields(workspaceId: $w) { id name } }`,
+    (w) => ({ w }),
+  ],
+  [
+    "Un champ personnalisé",
+    "clientCustomField",
+    `query($w: ID!, $id: ID!) { clientCustomField(workspaceId: $w, id: $id) { id name } }`,
+    (w) => ({ w, id: id(CHAMPS_CLIENTS.secteur) }),
+  ],
+  [
+    "Les champs d'un contact pour les documents",
+    "clientDocumentFields",
+    `query($w: ID!, $c: ID!) { clientDocumentFields(workspaceId: $w, clientId: $c) { __typename } }`,
+    (w) => ({ w, c: id(CONTACTS.complet) }),
+  ],
+  [
+    "Les automatisations",
+    "clientAutomations",
+    `query($w: ID!) { clientAutomations(workspaceId: $w) { id name } }`,
+    (w) => ({ w }),
+  ],
+  [
+    "Une automatisation",
+    "clientAutomation",
+    `query($w: ID!, $id: ID!) { clientAutomation(workspaceId: $w, id: $id) { id name } }`,
+    (w) => ({ w, id: id(AUTOMATISATIONS.droits) }),
+  ],
 ];
 
 /** Une réponse ne contient aucune donnée de l'organisation « Clients ». */
 function sansFuite(reponse) {
   const texte = JSON.stringify(reponse.data ?? {});
   for (const c of [CONTACTS.complet, CONTACTS.particulier]) {
-    expect(texte, `Fuite : « ${c.name} » renvoyé à l'intrus`).not.toContain(id(c));
+    expect(texte, `Fuite : « ${c.name} » renvoyé à l'intrus`).not.toContain(
+      id(c),
+    );
     expect(texte).not.toContain(c.name);
   }
-  for (const l of [LISTES_CLIENTS.prospects, SEGMENTS.lyonnais, CHAMPS_CLIENTS.secteur, AUTOMATISATIONS.droits]) {
-    expect(texte, `Fuite : « ${l.name} » renvoyé à l'intrus`).not.toContain(id(l));
+  for (const l of [
+    LISTES_CLIENTS.prospects,
+    SEGMENTS.lyonnais,
+    CHAMPS_CLIENTS.secteur,
+    AUTOMATISATIONS.droits,
+  ]) {
+    expect(texte, `Fuite : « ${l.name} » renvoyé à l'intrus`).not.toContain(
+      id(l),
+    );
   }
 }
 
 async function refusSansEffet(page, op, qui, w) {
   const avant = await photo(op.temoin(qui));
-  const reponse = await appelApi(page, op.requete, op.variables(w, qui), { organisation: w });
+  const reponse = await appelApi(page, op.requete, op.variables(w, qui), {
+    organisation: w,
+  });
   if (op.nombre && reponse.data?.[op.champ] === 0) {
     // « 0 liste supprimée » : refus silencieux mais sans effet, vérifié par le témoin.
   } else {
     verifierRefus(reponse, op.champ, `${op.nom} (${qui})`);
   }
-  expect(await photo(op.temoin(qui)), `${op.nom} (${qui}) : la base a changé malgré le refus`).toBe(avant);
+  expect(
+    await photo(op.temoin(qui)),
+    `${op.nom} (${qui}) : la base a changé malgré le refus`,
+  ).toBe(avant);
 }
 
 test.describe("Contacts : droits du rôle « Membre » (lecture seule)", () => {
@@ -411,11 +641,22 @@ test.describe("Contacts : droits du rôle « Membre » (lecture seule)", () => {
     await ouvrir(page, "/dashboard");
   });
 
-  test("Peut lire les contacts, listes, segments et champs", async ({ page }) => {
+  test("Peut lire les contacts, listes, segments et champs", async ({
+    page,
+  }) => {
     for (const [nom, champ, requete, variables] of LECTURES) {
-      const reponse = await appelApi(page, requete, variables(ORG), { organisation: ORG });
-      expect.soft(reponse.errors, `${nom} : le Membre doit pouvoir lire`).toEqual([]);
-      expect.soft(reponse.data?.[champ], `${nom} : aucune donnée renvoyée au Membre`).toBeTruthy();
+      const reponse = await appelApi(page, requete, variables(ORG), {
+        organisation: ORG,
+      });
+      expect
+        .soft(reponse.errors, `${nom} : le Membre doit pouvoir lire`)
+        .toEqual([]);
+      expect
+        .soft(
+          reponse.data?.[champ],
+          `${nom} : aucune donnée renvoyée au Membre`,
+        )
+        .toBeTruthy();
     }
   });
 
@@ -435,9 +676,20 @@ test.describe("Contacts : droits du rôle « Éditeur »", () => {
   for (const op of ECRITURES) {
     if (editeurPeut(op)) {
       test(`${op.nom} : permis`, async ({ page }) => {
-        const reponse = await appelApi(page, op.requete, op.variables(ORG, "editeur"), { organisation: ORG });
-        expect(reponse.errors, `${op.nom} : l'Éditeur doit pouvoir le faire`).toEqual([]);
-        expect(reponse.data?.[op.champ], `${op.nom} : réponse vide`).toBeTruthy();
+        const reponse = await appelApi(
+          page,
+          op.requete,
+          op.variables(ORG, "editeur"),
+          { organisation: ORG },
+        );
+        expect(
+          reponse.errors,
+          `${op.nom} : l'Éditeur doit pouvoir le faire`,
+        ).toEqual([]);
+        expect(
+          reponse.data?.[op.champ],
+          `${op.nom} : réponse vide`,
+        ).toBeTruthy();
       });
     } else {
       test(`${op.nom} : refusé`, async ({ page }) => {
@@ -456,49 +708,149 @@ test.describe("Contacts : une autre entreprise n'atteint rien", () => {
   for (const [nom, champ, requete, variables] of LECTURES) {
     test(`Lire « ${nom} » des autres : refusé`, async ({ page }) => {
       await etape(page, "En visant leur organisation", async () => {
-        const reponse = await appelApi(page, requete, variables(ORG), { organisation: ORG });
+        const reponse = await appelApi(page, requete, variables(ORG), {
+          organisation: ORG,
+        });
         sansFuite(reponse);
         verifierRefus(reponse, champ, `${nom} (organisation des autres)`);
       });
-      await etape(page, "Depuis sa propre organisation, avec leurs identifiants", async () => {
-        const reponse = await appelApi(page, requete, variables(ORG_INTRUS), { organisation: ORG_INTRUS });
-        sansFuite(reponse);
-      });
+      await etape(
+        page,
+        "Depuis sa propre organisation, avec leurs identifiants",
+        async () => {
+          const reponse = await appelApi(page, requete, variables(ORG_INTRUS), {
+            organisation: ORG_INTRUS,
+          });
+          sansFuite(reponse);
+        },
+      );
     });
   }
 
   for (const op of ECRITURES) {
     test(`${op.nom} chez les autres : refusé`, async ({ page }) => {
-      await etape(page, "En visant leur organisation", () => refusSansEffet(page, op, "intrus", ORG));
+      await etape(page, "En visant leur organisation", () =>
+        refusSansEffet(page, op, "intrus", ORG),
+      );
       if (op.cible) {
-        await etape(page, "Depuis sa propre organisation, avec leurs identifiants", () => refusSansEffet(page, op, "intrus", ORG_INTRUS));
+        await etape(
+          page,
+          "Depuis sa propre organisation, avec leurs identifiants",
+          () => refusSansEffet(page, op, "intrus", ORG_INTRUS),
+        );
       }
     });
   }
 
-  test("La fiche d'un contact des autres ne s'affiche pas", async ({ page }) => {
-    await page.goto(`/dashboard/clients/${id(CONTACTS.complet)}`);
-    await page.waitForTimeout(3_000);
-    const texte = await page.locator("body").innerText();
-    expect(texte, "Le nom du contact des autres est affiché").not.toContain(CONTACTS.complet.name);
-    expect(texte, "L'e-mail du contact des autres est affiché").not.toContain(CONTACTS.complet.email);
+  test.describe(() => {
+    // Refus attendu de l'API (« Client non trouvé »), que le site écrit dans la console.
+    test.use({ erreursConsoleAutorisees: [/Client non trouvé/, /NOT_FOUND/] });
+    test("La fiche d'un contact des autres ne s'affiche pas", async ({
+      page,
+    }) => {
+      await page.goto(`/dashboard/clients/${id(CONTACTS.complet)}`);
+      await page.waitForTimeout(3_000);
+      const texte = await page.locator("body").innerText();
+      expect(texte, "Le nom du contact des autres est affiché").not.toContain(
+        CONTACTS.complet.name,
+      );
+      expect(texte, "L'e-mail du contact des autres est affiché").not.toContain(
+        CONTACTS.complet.email,
+      );
+    });
   });
 });
 
+/**
+ * Texte piégé (XSS stockée) : un membre qui a le droit d'écrire des notes
+ * enregistre, par l'API, une note contenant du HTML qui exécute du code.
+ * Quand le propriétaire ouvre la fiche (activité, par défaut) ou les notes,
+ * rien ne doit s'exécuter : sinon ce code agit avec la session du
+ * propriétaire (supprimer, changer les rôles…). La surveillance des tests
+ * échoue sur toute boîte de dialogue, et la page ne doit pas porter la marque
+ * posée par le code.
+ */
+test.describe("Contacts : un texte piégé ne s'exécute jamais", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_CLIENTS) });
+  const PIEGE = `<img src="x-piege" onerror="window.__piege = 'execute'; alert('code exécuté depuis une note')">Rendez-vous confirmé`;
+
+  test.beforeAll(async ({ browser }) => {
+    const contexte = await browser.newContext({
+      baseURL: BASE_URL,
+      storageState: connecte(SESSION_TOKEN_EDITEUR),
+    });
+    const page = await contexte.newPage();
+    await page.goto("/dashboard");
+    const reponse = await appelApi(
+      page,
+      `mutation($w: String, $c: ID!, $input: ClientNoteInput!) { addClientNote(workspaceId: $w, clientId: $c, input: $input) { id } }`,
+      { w: ORG, c: id(CONTACTS.cibleXss), input: { content: PIEGE } },
+      { organisation: ORG },
+    );
+    await contexte.close();
+    expect(reponse.errors, "L'Éditeur doit pouvoir écrire une note").toEqual(
+      [],
+    );
+  });
+
+  for (const [nom, suffixe] of [
+    ["Fiche du contact (activité)", ""],
+    ["Onglet Notes", "?tab=notes"],
+  ]) {
+    test(`${nom} : la note s'affiche comme du texte, rien ne s'exécute`, async ({
+      page,
+    }) => {
+      await ouvrir(
+        page,
+        `/dashboard/clients/${id(CONTACTS.cibleXss)}${suffixe}`,
+        { pret: page.getByText(CONTACTS.cibleXss.email).first() },
+      );
+      await page.waitForTimeout(1_500);
+      expect(
+        await page.evaluate(() => window.__piege ?? null),
+        "Le code de la note s'est exécuté",
+      ).toBeNull();
+    });
+  }
+});
+
 test.describe("Contacts : sans session, rien", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
+  // Refus attendus : le jeton est refusé (401), l'API répond « non authentifié ».
+  test.use({
+    storageState: { cookies: [], origins: [] },
+    erreursConsoleAutorisees: [/401.*\/api\/auth\/token/],
+  });
 
   test("Lectures et écritures refusées", async ({ page }) => {
     await ouvrir(page, "/auth/login");
     for (const [nom, champ, requete, variables] of LECTURES) {
-      const reponse = await appelApi(page, requete, variables(ORG), { organisation: ORG });
-      expect.soft(reponse.data?.[champ] ?? null, `${nom} : renvoyé sans session`).toBeNull();
+      const reponse = await appelApi(page, requete, variables(ORG), {
+        organisation: ORG,
+      });
+      expect
+        .soft(reponse.data?.[champ] ?? null, `${nom} : renvoyé sans session`)
+        .toBeNull();
     }
     for (const op of ECRITURES) {
       const avant = await photo(op.temoin("visiteur"));
-      const reponse = await appelApi(page, op.requete, op.variables(ORG, "visiteur"), { organisation: ORG });
-      expect.soft(reponse.data?.[op.champ] ?? null, `${op.nom} : accepté sans session`).toBeNull();
-      expect.soft(await photo(op.temoin("visiteur")), `${op.nom} : la base a changé sans session`).toBe(avant);
+      const reponse = await appelApi(
+        page,
+        op.requete,
+        op.variables(ORG, "visiteur"),
+        { organisation: ORG },
+      );
+      expect
+        .soft(
+          reponse.data?.[op.champ] ?? null,
+          `${op.nom} : accepté sans session`,
+        )
+        .toBeNull();
+      expect
+        .soft(
+          await photo(op.temoin("visiteur")),
+          `${op.nom} : la base a changé sans session`,
+        )
+        .toBe(avant);
     }
   });
 });

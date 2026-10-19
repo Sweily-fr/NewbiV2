@@ -44,6 +44,8 @@ export const SESSION_TOKEN_LECTEUR = "e2eSessionTokenNewbiLecteurUniquement";
 export const SESSION_TOKEN_EDITEUR = "e2eSessionTokenNewbiEditeurUniquement";
 /** Propriétaire d'une autre organisation, qui tente d'atteindre les données des autres. */
 export const SESSION_TOKEN_INTRUS = "e2eSessionTokenNewbiIntrusUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée (« freelance ») : ses plafonds. */
+export const SESSION_TOKEN_FREELANCE = "e2eSessionTokenNewbiFreelanceUniquement";
 
 /** État de navigateur connecté avec la session donnée (pour `test.use({ storageState })`). */
 export const connecte = (token) => ({ cookies: [sessionCookie(token)], origins: [] });

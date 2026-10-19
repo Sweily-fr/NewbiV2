@@ -154,6 +154,27 @@ export const CONTACTS = {
   avecFactures: contact(109, { name: "Client avec factures SAS", email: "factures@client-factures.test", siret: "62345678900015" }),
   aNoter: contact(110, { name: "Client à annoter SARL", email: "a-annoter@e2e.test" }),
   intrus: contact(150, { name: "Client de l'intrus SAS", email: "secret@intrus.test", organisation: "intrus" }),
+  // Un contact par action des parcours de la fiche (fiche.spec.mjs).
+  aDebloquerFiche: contact(145, {
+    name: "Client à débloquer depuis la fiche SAS",
+    email: "debloquer-fiche@e2e.test",
+    isBlocked: true,
+    blockedAt: DANS(-2),
+    blockedReason: "Relance en cours",
+  }),
+  aSupprimerFiche: contact(146, { name: "Client à supprimer depuis la fiche SARL", email: "supprimer-fiche@e2e.test" }),
+  aBloquerFiche: contact(147, { name: "Client à bloquer depuis la fiche SARL", email: "bloquer-fiche@e2e.test" }),
+  aAssignerFiche: contact(148, { name: "Client à assigner depuis la fiche SARL", email: "assigner-fiche@e2e.test" }),
+  aRappeler: contact(157, { name: "Client à rappeler SARL", email: "rappeler@e2e.test", phone: "+33611223344" }),
+  // Actions groupées de la liste (liste.spec.mjs) : retrouvés par la recherche « Lot ».
+  lotBloquer1: contact(151, { name: "Lot à bloquer un SARL", email: "lot-bloquer1@e2e.test" }),
+  lotBloquer2: contact(152, { name: "Lot à bloquer deux SARL", email: "lot-bloquer2@e2e.test" }),
+  lotSupprimer1: contact(153, { name: "Lot à supprimer un SARL", email: "lot-supprimer1@e2e.test" }),
+  lotSupprimer2: contact(154, { name: "Lot à supprimer deux SARL", email: "lot-supprimer2@e2e.test" }),
+  lotAssigner: contact(155, { name: "Lot à assigner SARL", email: "lot-assigner@e2e.test" }),
+  lotLister: contact(156, { name: "Lot à lister SARL", email: "lot-lister@e2e.test" }),
+  // Reçoit une note piégée (HTML) écrite par l'éditeur : elle ne doit jamais s'exécuter.
+  cibleXss: contact(119, { name: "Test des droits texte piégé SARL", email: "droits-xss@e2e.test" }),
   // Cibles des actions permises à l'éditeur dans les tests de droits (securite.spec.mjs).
   cibleModifier: contact(111, { name: "Test des droits modification SARL", email: "droits-modifier@e2e.test" }),
   cibleBloquer: contact(112, { name: "Test des droits blocage SARL", email: "droits-bloquer@e2e.test" }),
@@ -291,6 +312,15 @@ export const SEGMENTS = {
     color: "#ef4444",
     ...enOrganisation(),
   },
+  aModifier: {
+    _id: oid("segment", 4),
+    name: "Segment à modifier",
+    description: "",
+    matchType: "all",
+    rules: [{ field: "type", operator: "equals", value: "INDIVIDUAL" }],
+    color: "#10b981",
+    ...enOrganisation(),
+  },
   droits: {
     _id: oid("segment", 3),
     name: "Segment des tests de droits",
@@ -335,6 +365,22 @@ export const AUTOMATISATIONS = {
   },
 };
 
+/** Organisation « freelance » : déjà au plafond de champs personnalisés de son offre (5). */
+export const CHAMPS_FREELANCE = Array.from({ length: 5 }, (_, i) => ({
+  _id: oid("champClient", 50 + i),
+  name: `Champ freelance ${i + 1}`,
+  // Le premier est une date : une automatisation d'e-mails s'appuie sur un champ date.
+  fieldType: i === 0 ? "DATE" : "TEXT",
+  description: "",
+  options: [],
+  placeholder: "",
+  isRequired: false,
+  order: i,
+  showOnDocuments: false,
+  isActive: true,
+  ...enOrganisation("freelance"),
+}));
+
 export function donneesClients() {
   return {
     clients: [...Object.values(CONTACTS), ...REMPLISSAGE],
@@ -342,6 +388,6 @@ export function donneesClients() {
     clientlists: Object.values(LISTES_CLIENTS),
     clientsegments: Object.values(SEGMENTS),
     clientautomations: Object.values(AUTOMATISATIONS),
-    clientcustomfields: Object.values(CHAMPS_CLIENTS).map((c) => ({ ...c, ...enOrganisation() })),
+    clientcustomfields: [...Object.values(CHAMPS_CLIENTS).map((c) => ({ ...c, ...enOrganisation() })), ...CHAMPS_FREELANCE],
   };
 }

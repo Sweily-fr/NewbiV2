@@ -24,7 +24,7 @@ const ouvrirContacts = (page) =>
 const ouvrirFiche = (contact) => (page) => ouvrir(page, `/dashboard/clients/${id(contact)}`, { pret: page.getByText(contact.email).first() });
 const ouvrirListes = (page) => ouvrir(page, "/dashboard/clients/listes", { pret: page.getByText(LISTES_CLIENTS.prospects.name).first() });
 const ouvrirListe = (page) =>
-  ouvrir(page, `/dashboard/clients/listes?listId=${id(LISTES_CLIENTS.prospects)}`, { pret: page.getByRole("row").filter({ hasText: CONTACTS.aModifier.name }) });
+  ouvrir(page, `/dashboard/clients/listes?listId=${id(LISTES_CLIENTS.prospects)}`, { pret: page.getByRole("row").filter({ hasText: CONTACTS.complet.name }) });
 const ouvrirSegments = (page) => ouvrir(page, "/dashboard/clients/segments", { pret: page.getByText("Clients lyonnais").first() });
 const ouvrirBloques = (page) => ouvrir(page, "/dashboard/clients/blocked", { pret: page.getByText(CONTACTS.bloque.name).first() });
 
@@ -63,10 +63,11 @@ const ACTIVITE = {
   "button Tout > Tout": { sansEffet: "le filtre est déjà sur « Tout »" },
   ...Object.fromEntries(["Factures", "Devis", "Emails", "Notes", "Rappels", "Listes"].map((f) => [`button Tout > ${f}`, { contenu: true }])),
   "tab Activité": { sansEffet: "onglet déjà affiché" },
-  "tab Factures": { navigation: /\?tab=invoices$/ },
   "tab Devis": { navigation: /\?tab=quotes$/ },
   "tab Bons de commande": { navigation: /\?tab=purchaseorders$/ },
 };
+/** Onglet des factures : son nom porte le nombre de factures quand il y en a (« Factures 2 »). */
+const ONGLET_FACTURES = (nombre) => ({ [`tab Factures${nombre ? ` ${nombre}` : ""}`]: { navigation: /\?tab=invoices$/ } });
 const SECTIONS = (...noms) => Object.fromEntries(noms.map((n) => [`button ${n}`, { contenu: true }]));
 const NAVIGATION_FICHE = (premier) => ({
   "button icône arrow-left": { navigation: "/dashboard/clients" },
@@ -128,6 +129,7 @@ test.describe("Contacts (propriétaire)", () => {
       "button icône settings2 > Supprimer définitivement": { fenetre: "Supprimer ce contact ?" },
       "button Modifier": { fenetre: "Modifier le client" },
       ...ACTIVITE,
+      ...ONGLET_FACTURES(0),
       "tab Notes 1": { navigation: /\?tab=notes$/ },
       ...SECTIONS("Informations de contact", "Voir plus ↓", "Sur les documents", "Facturation", "Détails"),
       ...CHAMPS_SUR_DOCUMENTS("Industrie"),
@@ -148,6 +150,7 @@ test.describe("Contacts (propriétaire)", () => {
       "button icône settings2 > Supprimer définitivement": { fenetre: "Supprimer ce contact ?" },
       "button Modifier": { fenetre: "Modifier le client" },
       ...ACTIVITE,
+      ...ONGLET_FACTURES(0),
       "tab Notes": { navigation: /\?tab=notes$/ },
       ...SECTIONS("Informations de contact", "Voir plus ↓", "Sur les documents", "Blocage", "Facturation", "Détails"),
       ...CHAMPS_SUR_DOCUMENTS("Non renseigné"),
@@ -171,7 +174,7 @@ test.describe("Contacts (propriétaire)", () => {
       "button Modifier": { fenetre: "Modifier le client" },
       ...ACTIVITE,
       "tab Notes": { navigation: /\?tab=notes$/ },
-      "tab Factures 2": { navigation: /\?tab=invoices$/ },
+      ...ONGLET_FACTURES(2),
       ...SECTIONS("Informations de contact", "Voir plus ↓", "Sur les documents", "Facturation", "Détails"),
       ...CHAMPS_SUR_DOCUMENTS("Non renseigné"),
     },
@@ -290,6 +293,7 @@ test.describe("Contacts (éditeur)", () => {
       "button icône settings2 > Copier le numéro sur WhatsApp": WHATSAPP,
       "button Modifier": { fenetre: "Modifier le client" },
       ...ACTIVITE,
+      ...ONGLET_FACTURES(0),
       "tab Notes 1": { navigation: /\?tab=notes$/ },
       ...SECTIONS("Informations de contact", "Voir plus ↓", "Facturation", "Détails"),
     },
@@ -352,6 +356,7 @@ test.describe("Contacts (membre, lecture seule)", () => {
       "button icône settings2": { menu: ["Copier le numéro sur WhatsApp"] },
       "button icône settings2 > Copier le numéro sur WhatsApp": WHATSAPP,
       ...ACTIVITE,
+      ...ONGLET_FACTURES(0),
       "tab Notes 1": { navigation: /\?tab=notes$/ },
       ...SECTIONS("Informations de contact", "Voir plus ↓", "Facturation", "Détails"),
     },

@@ -50,6 +50,8 @@ export async function erreursVisibles(page, zone = page) {
  *   ouvrir(page) : ouvre le formulaire, renvoie sa zone (fenêtre, panneau, page)
  *   remplir(zone, valeurs) : remplit tous les champs avec `valeurs`
  *   valider(zone) : clique sur le bouton qui enregistre
+ *   boutonValider(zone) : ce bouton (facultatif) ; grisé, il vaut refus explicite
+ *     (le formulaire empêche d'envoyer une saisie incomplète)
  *   valeurs(cas) : jeu de valeurs justes et uniques pour ce cas (retrouvable en base)
  *   enregistre(valeurs) : le document enregistré pour ces valeurs, ou null
  *   ferme(zone, page) : le formulaire s'est fermé après un enregistrement réussi
@@ -61,13 +63,14 @@ export async function erreursVisibles(page, zone = page) {
  */
 export function verifierFormulaire(formulaire) {
   const { nom, ouvrir, remplir, valider, valeurs, enregistre, champs } = formulaire;
-  const ferme = formulaire.ferme || (async (zone) => expect(zone).toBeHidden({ timeout: 15_000 }));
+  const ferme = formulaire.ferme || (async (zone, _page, timeout = 15_000) => expect(zone).toBeHidden({ timeout }));
 
   async function essayer(page, cas, modifier) {
     const zone = await ouvrir(page);
     const v = { ...valeurs(cas), ...modifier };
     await remplir(zone, v);
-    await valider(zone);
+    const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled().catch(() => false) : false;
+    if (!grise) await valider(zone);
     await page.waitForTimeout(600);
     return { zone, v };
   }
@@ -77,9 +80,12 @@ export function verifierFormulaire(formulaire) {
       page,
       "Un message explique le refus",
       async () => {
+        const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled().catch(() => false) : false;
+        if (grise) return;
+        // Souple : la vérification en base dit ensuite si la saisie a été enregistrée quand même.
         await expect
-          .poll(() => erreursVisibles(page, page), { message: `${raison} : aucun message d'erreur affiché`, timeout: 8_000 })
-          .not.toEqual([]);
+          .soft(async () => expect(await erreursVisibles(page, page)).not.toEqual([]), `${raison} : aucun message d'erreur affiché`)
+          .toPass({ timeout: 8_000 });
       },
       { capture: "ecran" },
     );
@@ -94,9 +100,13 @@ export function verifierFormulaire(formulaire) {
       page,
       "Enregistré sans erreur",
       async () => {
-        const erreurs = await erreursVisibles(page, page);
-        expect(erreurs, "Aucun message d'erreur pour une saisie juste").toEqual([]);
-        await ferme(zone, page);
+        // Tant que le formulaire est ouvert, un message d'erreur qui apparaît (même en retard) est le motif de l'échec.
+        let derniers = [];
+        await expect(async () => {
+          derniers = await erreursVisibles(page, page);
+          expect(derniers, "Messages d'erreur affichés pour une saisie juste").toEqual([]);
+          await ferme(zone, page, 1_000);
+        }, `Le formulaire ne s'est pas fermé (messages : ${JSON.stringify(derniers)})`).toPass({ timeout: 15_000 });
       },
       { capture: "ecran" },
     );
@@ -119,12 +129,15 @@ export function verifierFormulaire(formulaire) {
     if (obligatoires.length) {
       test("Tout vide : refusé, chaque champ obligatoire signalé", async ({ page }) => {
         const zone = await ouvrir(page);
-        await valider(zone);
+        await remplir(zone, Object.fromEntries(Object.values(champs).map((c) => [c.cle, ""])));
+        const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled().catch(() => false) : false;
+        if (!grise) await valider(zone);
         await page.waitForTimeout(600);
         await etape(
           page,
-          "Un message par champ obligatoire",
+          "Un message par champ obligatoire (ou bouton grisé)",
           async () => {
+            if (grise) return;
             const erreurs = await erreursVisibles(page, page);
             expect(erreurs.length, `Messages affichés : ${erreurs.join(" | ") || "aucun"}`).toBeGreaterThan(0);
           },

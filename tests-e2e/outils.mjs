@@ -26,8 +26,10 @@ const ERREURS_ATTENDUES = [/404 \S*\/api\/document-preview\//];
 
 export const test = base.extend({
   erreursConsoleAutorisees: [[], { option: true }],
+  // Fenêtres natives voulues par le site (ex. « URL du lien : ») : le test y répond lui-même.
+  dialoguesAttendus: [[], { option: true }],
   surveillance: [
-    async ({ page, erreursConsoleAutorisees }, use, testInfo) => {
+    async ({ page, erreursConsoleAutorisees, dialoguesAttendus }, use, testInfo) => {
       const problemes = [];
       suivreRequetes(page);
       await page.route(
@@ -61,6 +63,7 @@ export const test = base.extend({
           dialog.accept().catch(() => {});
           return;
         }
+        if (dialoguesAttendus.some((re) => re.test(dialog.message()))) return;
         problemes.push(`Boîte de dialogue inattendue : ${dialog.message()}`);
         dialog.dismiss().catch(() => {});
       });
