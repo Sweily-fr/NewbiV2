@@ -9,6 +9,12 @@ import { BONS_COMMANDE_LISTE } from "./bons-commande-liste.mjs";
 import { BONS_LIVRAISON_LISTE } from "./bons-livraison-liste.mjs";
 import { AVOIRS, FACTURES_AVOIRS } from "./avoirs.mjs";
 import { donneesClients } from "./clients.mjs";
+import { donneesFactures } from "./lot-factures.mjs";
+import { donneesDevisBcBl } from "./lot-devis-bc-bl.mjs";
+import { donneesAchatsBanque } from "./lot-achats-banque.mjs";
+import { donneesParametresAuth } from "./lot-parametres-auth.mjs";
+import { donneesCollaboration } from "./lot-collaboration.mjs";
+import { donneesPilotage } from "./lot-pilotage.mjs";
 
 /** Rassemble les données de plusieurs fonctionnalités, collection par collection. */
 function fusionner(...sources) {
@@ -30,6 +36,12 @@ export async function semer(db) {
       creditnotes: Object.values(AVOIRS),
     },
     donneesClients(),
+    donneesFactures(),
+    donneesDevisBcBl(),
+    donneesAchatsBanque(),
+    donneesParametresAuth(),
+    donneesCollaboration(),
+    donneesPilotage(),
   );
   for (const [nom, docs] of Object.entries(collections)) {
     if (docs.length) await db.collection(nom).insertMany(docs);

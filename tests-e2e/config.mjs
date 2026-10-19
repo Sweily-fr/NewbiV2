@@ -48,6 +48,19 @@ export const SESSION_TOKEN_INTRUS = "e2eSessionTokenNewbiIntrusUniquement";
 export const SESSION_TOKEN_FREELANCE = "e2eSessionTokenNewbiFreelanceUniquement";
 /** Propriétaire de l'organisation « Réglages » : tests qui changent la configuration (champs, import…). */
 export const SESSION_TOKEN_REGLAGES = "e2eSessionTokenNewbiReglagesUniquement";
+// Sessions propres à un lot : entre ses deux repères (une chaîne unique par compte).
+// ── Lot factures ──
+// ── fin du lot factures ──
+// ── Lot devis-bc-bl ──
+// ── fin du lot devis-bc-bl ──
+// ── Lot achats-banque ──
+// ── fin du lot achats-banque ──
+// ── Lot parametres-auth ──
+// ── fin du lot parametres-auth ──
+// ── Lot collaboration ──
+// ── fin du lot collaboration ──
+// ── Lot pilotage ──
+// ── fin du lot pilotage ──
 
 /** État de navigateur connecté avec la session donnée (pour `test.use({ storageState })`). */
 export const connecte = (token) => ({ cookies: [sessionCookie(token)], origins: [] });

@@ -41,6 +41,20 @@ const PREFIXES = {
   segment: "e2ed",
   champClient: "e2ee",
   automatisation: "e2ef",
+  // Chaque lot ajoute ses types entre ses deux repères, avec ses seuls préfixes
+  // réservés (un préfixe de 4 caractères prolongé par une lettre, jamais par un chiffre).
+  // ── Lot factures (e2e4a à e2e4f, e2eba à e2ebf) ──
+  // ── fin du lot factures ──
+  // ── Lot devis-bc-bl (e2e8a à e2e8f, e2e9a à e2e9f, e2eaa à e2eaf) ──
+  // ── fin du lot devis-bc-bl ──
+  // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
+  // ── fin du lot achats-banque ──
+  // ── Lot parametres-auth (e2e1a à e2e1f, e2e2a à e2e2f) ──
+  // ── fin du lot parametres-auth ──
+  // ── Lot collaboration (e2e5a à e2e5f, e2e6a à e2e6f) ──
+  // ── fin du lot collaboration ──
+  // ── Lot pilotage (e2e7a à e2e7f, e2eda à e2edf) ──
+  // ── fin du lot pilotage ──
 };
 
 export function oid(type, n) {
@@ -116,6 +130,19 @@ export const COMPTES = {
     organisation: organisation(7, "Réglages Test SASU"),
     token: SESSION_TOKEN_REGLAGES,
   },
+  // Comptes propres à un lot : entre ses deux repères, avec ses numéros réservés.
+  // ── Lot factures (organisations et utilisateurs 10 à 14) ──
+  // ── fin du lot factures ──
+  // ── Lot devis-bc-bl (organisations et utilisateurs 15 à 19) ──
+  // ── fin du lot devis-bc-bl ──
+  // ── Lot achats-banque (organisations et utilisateurs 20 à 24) ──
+  // ── fin du lot achats-banque ──
+  // ── Lot parametres-auth (organisations et utilisateurs 25 à 34) ──
+  // ── fin du lot parametres-auth ──
+  // ── Lot collaboration (organisations et utilisateurs 35 à 39) ──
+  // ── fin du lot collaboration ──
+  // ── Lot pilotage (organisations et utilisateurs 40 à 44) ──
+  // ── fin du lot pilotage ──
 };
 
 /**
@@ -136,6 +163,19 @@ export const MEMBRES = {
     role: "member",
     token: SESSION_TOKEN_EDITEUR,
   },
+  // Membres propres à un lot : entre ses deux repères.
+  // ── Lot factures (utilisateurs 10 à 14) ──
+  // ── fin du lot factures ──
+  // ── Lot devis-bc-bl (utilisateurs 15 à 19) ──
+  // ── fin du lot devis-bc-bl ──
+  // ── Lot achats-banque (utilisateurs 20 à 24) ──
+  // ── fin du lot achats-banque ──
+  // ── Lot parametres-auth (utilisateurs 25 à 34) ──
+  // ── fin du lot parametres-auth ──
+  // ── Lot collaboration (utilisateurs 35 à 39) ──
+  // ── fin du lot collaboration ──
+  // ── Lot pilotage (utilisateurs 40 à 44) ──
+  // ── fin du lot pilotage ──
 };
 
 // Compatibilité : le compte « Atelier » est le compte par défaut des tests.

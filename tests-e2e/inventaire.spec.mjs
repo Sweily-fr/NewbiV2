@@ -1,17 +1,11 @@
 /**
- * Relevé de toutes les pages (E2E_INVENTAIRE=1 seulement) : pour chaque page,
- * chaque bouton, onglet, case, liste et lien est essayé sur une page neuve, et
- * chaque élément de chaque menu ; le résultat (fenêtres ouvertes et leurs
- * champs, navigations, téléchargements, erreurs) est écrit en JSON dans
- * tests-e2e/inventaire-resultats/, publié par la CI. Sert à écrire les tests
- * de chaque fonctionnalité et à vérifier qu'aucun élément n'est oublié ; ce
- * n'est pas un test en soi (il ne vérifie rien).
+ * Relevé des pages déjà couvertes au départ (voir releve.mjs) ; chaque
+ * fonctionnalité ajoute les siennes dans `<dossier>/inventaire.spec.mjs`.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import { test } from "./outils.mjs";
 import { ouvrir } from "./navigation.mjs";
-import { inventorier, contenu } from "./exploration.mjs";
+import { inventorier } from "./exploration.mjs";
+import { relever, enregistrer } from "./releve.mjs";
 import { connecte, sessionCookie, SESSION_TOKEN_LISTE, SESSION_TOKEN_AVOIRS, SESSION_TOKEN_CLIENTS, SESSION_TOKEN_LECTEUR, SESSION_TOKEN_EDITEUR } from "./config.mjs";
 import { CLIENTS } from "./donnees/base.mjs";
 import { CONTACTS, LISTES_CLIENTS, SEGMENTS } from "./donnees/clients.mjs";
@@ -23,7 +17,6 @@ import { AVOIRS, FACTURES_AVOIRS } from "./donnees/avoirs.mjs";
 
 test.skip(process.env.E2E_INVENTAIRE !== "1", "Relevé des pages : E2E_INVENTAIRE=1");
 
-const DOSSIER = path.resolve("tests-e2e/inventaire-resultats");
 const id = (doc) => doc._id.toHexString();
 
 const PAGES_LISTE = {
@@ -87,21 +80,6 @@ const PAGES_SANS_CONNEXION = {
   inscription: "/auth/signup",
   "mot-de-passe-oublie": "/auth/forget-password",
 };
-
-function enregistrer(nom, releve) {
-  mkdirSync(DOSSIER, { recursive: true });
-  writeFileSync(path.join(DOSSIER, `${nom}.json`), JSON.stringify(releve, null, 2));
-}
-
-function relever(pages, { zone = contenu } = {}) {
-  for (const [nom, url] of Object.entries(pages)) {
-    test(`Relevé : ${nom}`, async ({ page, surveillance }) => {
-      test.setTimeout(20 * 60_000);
-      const releve = await inventorier(page, { ouvrir: (p) => ouvrir(p, url), zone, problemes: surveillance });
-      enregistrer(nom, releve);
-    });
-  }
-}
 
 test.describe("Relevé des pages (compte Liste)", () => {
   test.use({ storageState: { cookies: [sessionCookie(SESSION_TOKEN_LISTE)], origins: [] } });
