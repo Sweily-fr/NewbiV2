@@ -17,7 +17,7 @@
  * message sont des défauts : l'utilisateur ne doit jamais rester sans
  * explication, ni voir enregistrée une donnée invalide.
  */
-import { test, expect, etape } from "./outils.mjs";
+import { test, expect, etape, SELECTEUR_NOTIFICATION_ERREUR } from "./outils.mjs";
 
 /** Messages d'erreur visibles : texte en rouge, alerte, champ marqué invalide, notification d'erreur. */
 export async function erreursVisibles(page, zone = page) {
@@ -38,7 +38,7 @@ export async function erreursVisibles(page, zone = page) {
     .evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width > 0).map((e) => `champ invalide : ${e.getAttribute("placeholder") || e.name || e.id}`))
     .catch(() => []);
   const notifications = await page
-    .locator("[data-sonner-toast][data-type=error]")
+    .locator(SELECTEUR_NOTIFICATION_ERREUR)
     .evaluateAll((els) => els.map((e) => `notification : ${e.textContent.replace(/\s+/g, " ").trim()}`))
     .catch(() => []);
   return [...new Set([...textes, ...invalides, ...notifications])];
@@ -83,9 +83,13 @@ export function verifierFormulaire(formulaire) {
         const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled().catch(() => false) : false;
         if (grise) return;
         // Souple : la vérification en base dit ensuite si la saisie a été enregistrée quand même.
-        await expect
-          .soft(async () => expect(await erreursVisibles(page, page)).not.toEqual([]), `${raison} : aucun message d'erreur affiché`)
-          .toPass({ timeout: 8_000 });
+        let erreurs = [];
+        for (const fin = Date.now() + 6_000; Date.now() < fin; ) {
+          erreurs = await erreursVisibles(page, page);
+          if (erreurs.length) break;
+          await page.waitForTimeout(300);
+        }
+        expect.soft(erreurs, `${raison} : aucun message d'erreur affiché`).not.toEqual([]);
       },
       { capture: "ecran" },
     );

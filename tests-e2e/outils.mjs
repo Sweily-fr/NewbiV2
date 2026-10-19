@@ -29,7 +29,10 @@ export const test = base.extend({
   // Fenêtres natives voulues par le site (ex. « URL du lien : ») : le test y répond lui-même.
   dialoguesAttendus: [[], { option: true }],
   surveillance: [
-    async ({ page, erreursConsoleAutorisees, dialoguesAttendus }, use, testInfo) => {
+    async ({ page, erreursConsoleAutorisees: autorisees, dialoguesAttendus: attendus }, use, testInfo) => {
+      // Un motif seul ou une liste (test.use lit un tableau comme « valeur, options » : préférer un motif).
+      const erreursConsoleAutorisees = [].concat(autorisees || []);
+      const dialoguesAttendus = [].concat(attendus || []);
       const problemes = [];
       suivreRequetes(page);
       await page.route(
@@ -80,6 +83,16 @@ export const test = base.extend({
 });
 
 export { expect };
+
+/**
+ * Notifications (sonner) du site : faites sur mesure, sans attribut de type ;
+ * une erreur porte l'icône d'alerte rouge, un succès l'icône verte.
+ */
+export const SELECTEUR_NOTIFICATION_ERREUR = "[data-sonner-toast]:has(svg.text-red-500), [data-sonner-toast][data-type=error]";
+export const notificationsErreur = (page) => page.locator(SELECTEUR_NOTIFICATION_ERREUR);
+
+/** Fenêtre (dialogue ou alerte) par son titre : le site emploie les deux pour une même action. */
+export const fenetre = (page, titre) => page.getByRole("alertdialog", { name: titre }).or(page.getByRole("dialog", { name: titre }));
 
 /**
  * Captures pour la page « Tests » de l'admin (E2E_CAPTURES=1, en CI) : en

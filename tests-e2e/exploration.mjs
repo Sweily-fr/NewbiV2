@@ -39,8 +39,9 @@ async function decrire(el) {
   const attributs = m?.[3] || "";
   const nom = m?.[2] ? JSON.parse(`"${m[2]}"`) : "";
   return {
-    // Un nom réduit à un nombre (pastille de compteur) n'en est pas un : « 1, bouton ».
-    nom: /^\d+$/.test(nom) ? "" : nom,
+    // Un bouton dont le nom se réduit à un nombre (pastille de compteur) n'a
+    // pas de vrai nom : « 1, bouton ». Une option « 10 » (lignes par page) si.
+    nom: m?.[1] === "button" && /^\d+$/.test(nom) ? "" : nom,
     desactive: /\[disabled\]/.test(attributs),
     etat: attributs.trim(),
   };
@@ -168,7 +169,12 @@ export async function fenetresOuvertes(page) {
 export async function notificationsAffichees(page) {
   return page
     .locator("[data-sonner-toast]")
-    .evaluateAll((toasts) => toasts.map((t) => `${t.getAttribute("data-type") || "info"} : ${t.textContent.replace(/\s+/g, " ").trim()}`))
+    .evaluateAll((toasts) =>
+      toasts.map((t) => {
+        const type = t.getAttribute("data-type") || (t.querySelector("svg.text-red-500") ? "erreur" : t.querySelector("svg.text-green-600") ? "succès" : "info");
+        return `${type} : ${t.textContent.replace(/\s+/g, " ").trim()}`;
+      }),
+    )
     .catch(() => []);
 }
 

@@ -5,7 +5,7 @@
  * « Clients » ; chaque action a son contact (donnees/clients.mjs).
  */
 import { readFileSync } from "node:fs";
-import { test, expect, etape } from "../outils.mjs";
+import { test, expect, etape, fenetre } from "../outils.mjs";
 import { ouvrir, cliquer, attendreCalme } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { connecte, SESSION_TOKEN_CLIENTS } from "../config.mjs";
@@ -55,7 +55,7 @@ test.describe("Contacts : ce que la liste affiche", () => {
     const tous = await contactsTries();
     const affiches = await nomsAffiches(page);
     expect(affiches.length, "10 contacts par page").toBe(Math.min(10, tous.length));
-    tous.slice(0, 10).forEach((c, i) => expect.soft(affiches[i] ?? "", `Ligne ${i + 1}`).toContain(c.name));
+    tous.slice(0, 10).forEach((c, i) => expect.soft((affiches[i] ?? "").toLowerCase(), `Ligne ${i + 1}`).toContain(c.name.toLowerCase()));
     await expect(page.getByText(`1-${Math.min(10, tous.length)} sur ${tous.length}`)).toBeVisible();
   });
 
@@ -65,12 +65,12 @@ test.describe("Contacts : ce que la liste affiche", () => {
     await cliquer(page, page.getByRole("button", { name: "Go to next page" }));
     await attendreCalme(page);
     const page2 = await nomsAffiches(page);
-    tous.slice(10, 20).forEach((c, i) => expect.soft(page2[i] ?? "", `Page 2, ligne ${i + 1}`).toContain(c.name));
+    tous.slice(10, 20).forEach((c, i) => expect.soft((page2[i] ?? "").toLowerCase(), `Page 2, ligne ${i + 1}`).toContain(c.name.toLowerCase()));
     await cliquer(page, page.getByRole("button", { name: "Go to last page" }));
     await attendreCalme(page);
     const derniere = await nomsAffiches(page);
     const debut = Math.floor((tous.length - 1) / 10) * 10;
-    tous.slice(debut).forEach((c, i) => expect.soft(derniere[i] ?? "", `Dernière page, ligne ${i + 1}`).toContain(c.name));
+    tous.slice(debut).forEach((c, i) => expect.soft((derniere[i] ?? "").toLowerCase(), `Dernière page, ligne ${i + 1}`).toContain(c.name.toLowerCase()));
     await expect(page.getByText(`${debut + 1}-${tous.length} sur ${tous.length}`)).toBeVisible();
     await expect(page.getByRole("button", { name: "Go to next page" })).toBeDisabled();
   });
@@ -82,6 +82,14 @@ test.describe("Contacts : ce que la liste affiche", () => {
     await attendreCalme(page);
     const tous = await contactsTries();
     expect((await nomsAffiches(page)).length).toBe(Math.min(25, tous.length));
+  });
+
+  test("Les noms s'affichent tels qu'enregistrés (majuscules comprises)", async ({ page }) => {
+    await ouvrirContacts(page);
+    for (const c of [CONTACTS.complet, CONTACTS.international, CONTACTS.particulier]) {
+      await rechercher(page, c.email);
+      await expect.soft(rangee(page, c), `« ${c.name} » affiché autrement (majuscules réécrites)`).toBeVisible();
+    }
   });
 
   test("Un contact bloqué est marqué « bloqué » dans la liste, avec sa raison", async ({ page }) => {
@@ -190,6 +198,19 @@ test.describe("Contacts : export et copie", () => {
 });
 
 test.describe("Contacts : actions sur un contact", () => {
+  test("Modifier un contact : aucune erreur dans la console (cache du site à jour)", async ({ page }) => {
+    await ouvrirContacts(page);
+    await actionDeContact(page, CONTACTS.aModifier, "Modifier");
+    const fiche = page.getByRole("dialog", { name: "Modifier le client" });
+    await fiche.getByPlaceholder("Ex: Direction commerciale").fill("Finances");
+    await fiche.getByRole("button", { name: "Modifier", exact: true }).click();
+    await expect(fiche).toBeHidden({ timeout: 15_000 });
+    await page.waitForTimeout(1_000);
+  });
+
+  test.describe(() => {
+    // Erreur du cache Apollo (champ invoiceCount manquant) : vérifiée par le test précédent.
+    test.use({ erreursConsoleAutorisees: /go\.apollo\.dev\/c\/err/ });
   test("Modifier : la nouvelle valeur est enregistrée", async ({ page }) => {
     await ouvrirContacts(page);
     await actionDeContact(page, CONTACTS.aModifier, "Modifier");
@@ -204,6 +225,7 @@ test.describe("Contacts : actions sur un contact", () => {
     const doc = await enBase(CONTACTS.aModifier);
     expect(doc.name, "Le reste ne change pas").toBe(CONTACTS.aModifier.name);
     expect(doc.email).toBe(CONTACTS.aModifier.email);
+  });
   });
 
   test("Supprimer un contact sans document : confirmé, supprimé", async ({ page }) => {
@@ -273,7 +295,7 @@ test.describe("Contacts : actions groupées", () => {
     await selectionner(page, "Lot à bloquer");
     await page.getByRole("button", { name: "Plus d'actions" }).click();
     await page.getByRole("menuitem", { name: /^Bloquer/ }).click();
-    const alerte = page.getByRole("alertdialog").last();
+    const alerte = page.getByRole("alertdialog").or(page.getByRole("dialog")).filter({ has: page.getByPlaceholder("Raison du blocage (optionnel)") });
     await alerte.getByPlaceholder("Raison du blocage (optionnel)").fill("Audit en cours");
     await alerte.getByRole("button", { name: "Bloquer" }).click();
     await expect(alerte).toBeHidden();

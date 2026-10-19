@@ -3,7 +3,7 @@
  * blocage sont enregistrés, et un contact bloqué ne peut plus servir à créer
  * un document (« exclu de la création de documents », dit la confirmation).
  */
-import { test, expect, etape } from "../outils.mjs";
+import { test, expect, etape, fenetre } from "../outils.mjs";
 import { ouvrir, cliquer, attendreCalme } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { ouvrirEditeur } from "../editeur.mjs";
@@ -36,7 +36,7 @@ test.describe("Contacts bloqués", () => {
 
   test("Rechercher un contact bloqué, sans accents ni majuscules", async ({ page }) => {
     await ouvrirBloques(page);
-    await page.getByPlaceholder("Rechercher").fill("debloquer depuis la fiche");
+    await page.getByRole("textbox", { name: "Rechercher" }).fill("debloquer depuis la fiche");
     await attendreCalme(page);
     await expect(page.getByText(CONTACTS.aDebloquerFiche.name).first()).toBeVisible();
     await expect(page.getByText(CONTACTS.bloque.name, { exact: true })).toHaveCount(0);
@@ -72,7 +72,7 @@ test.describe("Contacts bloqués", () => {
     const rangee = page.getByRole("row").filter({ hasText: CONTACTS.aBloquer.name });
     await cliquer(page, rangee.getByRole("button", { name: "Actions du client" }));
     await page.getByRole("menuitem", { name: "Bloquer" }).click();
-    const alerte = page.getByRole("alertdialog", { name: `Bloquer ${CONTACTS.aBloquer.name} ?` });
+    const alerte = fenetre(page, `Bloquer ${CONTACTS.aBloquer.name} ?`);
     await alerte.getByPlaceholder("Raison du blocage (optionnel)").fill("Facture contestée depuis trois mois");
     await etape(page, "Bloquer", async () => {
       await alerte.getByRole("button", { name: "Bloquer" }).click();

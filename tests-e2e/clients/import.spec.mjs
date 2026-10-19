@@ -134,7 +134,7 @@ test.describe("Import de contacts", () => {
     const suivant = fenetre.getByRole("button", { name: "Suivant" });
     if (await suivant.isEnabled()) await suivant.click();
     await page.waitForTimeout(800);
-    const messages = await page.locator("[data-sonner-toast][data-type=error], .text-red-500, .text-destructive, [role=alert]").count();
+    const messages = await page.locator("[data-sonner-toast]:has(svg.text-red-500), .text-red-500, .text-destructive, [role=alert]").count();
     expect(messages + ((await suivant.isDisabled()) ? 1 : 0), "Un fichier texte est accepté sans explication").toBeGreaterThan(0);
   });
 
@@ -179,7 +179,7 @@ test.describe("Import de contacts", () => {
     await fenetre.getByRole("button", { name: /^Importer \d+ contact/ }).click();
     await page.waitForTimeout(1_500);
     expect(await (await base()).collection("clients").countDocuments({ workspaceId: ORG, email: existant.email }), "Doublon créé").toBe(1);
-    const messages = await page.locator("[data-sonner-toast][data-type=error]").count();
+    const messages = await page.locator("[data-sonner-toast]:has(svg.text-red-500)").count();
     expect(messages, "Le doublon n'est pas signalé").toBeGreaterThan(0);
   });
 

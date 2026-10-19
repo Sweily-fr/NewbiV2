@@ -207,7 +207,7 @@ test.describe("Champs personnalisés : saisie dans la fiche contact", () => {
       await fiche.getByPlaceholder(champ.name).fill(faux);
       await fiche.getByRole("button", { name: "Créer un contact" }).click();
       await page.waitForTimeout(800);
-      const messages = await page.locator(".text-red-500, .text-destructive, [data-sonner-toast][data-type=error]").count();
+      const messages = await page.locator(".text-red-500, .text-destructive, [data-sonner-toast]:has(svg.text-red-500)").count();
       expect(messages, `« ${faux} » accepté sans message dans un champ ${libelle}`).toBeGreaterThan(0);
       expect(await contactEnBase(nom), `« ${faux} » enregistré dans un champ ${libelle}`).toBeNull();
     });
@@ -222,7 +222,7 @@ test.describe("Champs personnalisés : saisie dans la fiche contact", () => {
       await fiche.getByPlaceholder("Nom", { exact: true }).fill("Sansnumero");
       await fiche.getByPlaceholder("client@exemple.com").fill("sans-numero@e2e.test");
       await fiche.getByRole("button", { name: "Créer un contact" }).click();
-      await expect(page.locator(".text-red-500, [data-sonner-toast][data-type=error]").first()).toBeVisible();
+      await expect(page.locator(".text-red-500, [data-sonner-toast]:has(svg.text-red-500)").first()).toBeVisible();
       expect(await contactEnBase("Sansnumero"), "Contact enregistré sans le champ obligatoire").toBeNull();
     } finally {
       await champs.deleteOne({ _id: obligatoire._id });

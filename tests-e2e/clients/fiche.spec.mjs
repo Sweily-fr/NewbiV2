@@ -4,7 +4,7 @@
  * l'assignation, les rappels, les factures du contact et la suppression.
  * Organisation « Clients » ; chaque action a son contact (donnees/clients.mjs).
  */
-import { test, expect, etape } from "../outils.mjs";
+import { test, expect, etape, fenetre } from "../outils.mjs";
 import { ouvrir, cliquer, attendreCalme } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { connecte, SESSION_TOKEN_CLIENTS } from "../config.mjs";
@@ -31,21 +31,22 @@ async function menuDeLaFiche(page, action) {
 test.describe("Fiche d'un contact : contenu", () => {
   test("Les informations affichées sont celles de la base", async ({ page }) => {
     await ouvrirFiche(page, CONTACTS.complet);
+    await page.getByRole("button", { name: "Voir plus ↓" }).click();
     const c = CONTACTS.complet;
     const texte = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+    const chiffres = texte.replace(/\s/g, "");
     await etape(page, "Informations", async () => {
-      for (const [libelle, valeur] of [
+      for (const [libelle, valeur, dans] of [
         ["nom", c.name],
         ["e-mail", c.email],
-        ["SIRET", c.siret],
-        ["TVA", c.vatNumber],
+        ["SIRET", c.siret, chiffres],
+        ["TVA", c.vatNumber, chiffres],
         ["rue", c.address.street],
         ["ville", c.address.city],
         ["code postal", c.address.postalCode],
-        ["fonction", c.contactFunction],
         ["champ personnalisé « Secteur d'activité »", "Industrie"],
       ]) {
-        expect.soft(texte, `${libelle} (« ${valeur} ») absent de la fiche`).toContain(valeur);
+        expect.soft(dans ?? texte, `${libelle} (« ${valeur} ») absent de la fiche`).toContain(valeur);
       }
       const chiffresTelephone = texte.replace(/[^\d+]/g, "");
       expect.soft(chiffresTelephone, "Téléphone absent de la fiche").toContain(c.phone.replace(/[^\d+]/g, "").slice(-9));
@@ -130,7 +131,7 @@ test.describe("Fiche d'un contact : notes", () => {
   });
 
   test.describe(() => {
-    test.use({ dialoguesAttendus: [/URL du lien/] });
+    test.use({ dialoguesAttendus: /URL du lien/ });
     test("Lien dans une note : l'adresse saisie devient un lien", async ({ page }) => {
       await ouvrirFiche(page, CONTACTS.aRappeler, "?tab=notes");
       await editeur(page).click();
@@ -156,11 +157,29 @@ test.describe("Fiche d'un contact : notes", () => {
   });
 });
 
+test.describe("Fiche d'un contact : contenu complémentaire", () => {
+  test("La fonction, le service et la localisation saisis s'affichent sur la fiche", async ({ page }) => {
+    await ouvrirFiche(page, CONTACTS.complet);
+    await page.getByRole("button", { name: "Voir plus ↓" }).click();
+    const texte = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+    expect.soft(texte, "Fonction du contact absente de la fiche").toContain(CONTACTS.complet.contactFunction);
+    expect.soft(texte, "Service du contact absent de la fiche").toContain(CONTACTS.complet.contactDepartment);
+  });
+
+  test("Une note avec « < » ou « & » s'affiche telle qu'elle a été tapée", async ({ page }) => {
+    await ouvrirFiche(page, CONTACTS.aRappeler, "?tab=notes");
+    await page.locator("main [contenteditable=true]").first().click();
+    await page.keyboard.type("Prix < 100 € & remise de 5 %");
+    await page.getByRole("button", { name: "Envoyer" }).click();
+    await expect(page.locator("main").getByText("Prix < 100 € & remise de 5 %").last(), "La note s'affiche avec des codes (&lt; &amp;)").toBeVisible();
+  });
+});
+
 test.describe("Fiche d'un contact : actions", () => {
   test("Bloquer depuis la fiche, avec une raison : enregistré et affiché", async ({ page }) => {
     await ouvrirFiche(page, CONTACTS.aBloquerFiche);
     await menuDeLaFiche(page, "Bloquer le contact");
-    const alerte = page.getByRole("alertdialog", { name: "Bloquer ce contact ?" });
+    const alerte = fenetre(page, "Bloquer ce contact ?");
     await alerte.getByPlaceholder("Raison du blocage (optionnel)").fill("Coordonnées à vérifier");
     await alerte.getByRole("button", { name: "Bloquer" }).click();
     await expect(alerte).toBeHidden();
@@ -210,12 +229,17 @@ test.describe("Fiche d'un contact : actions", () => {
     await fenetre.getByRole("button", { name: "Créer", exact: true }).click();
     await page.waitForTimeout(800);
     const grise = await fenetre.getByRole("button", { name: "Créer", exact: true }).isDisabled().catch(() => false);
-    const message = await page.locator(".text-red-500, .text-destructive, [data-sonner-toast][data-type=error]").count();
+    const message = await page.locator(".text-red-500, .text-destructive, [data-sonner-toast]:has(svg.text-red-500)").count();
     expect(grise || message > 0, "Aucune explication pour un rappel sans titre").toBe(true);
     expect(await (await base()).collection("events").countDocuments({ clientId: CONTACTS.aRappeler._id })).toBe(avant);
   });
 
+  test.describe(() => {
+    test.use({ erreursConsoleAutorisees: /Client non trouvé|NOT_FOUND/ });
   test("Supprimer définitivement depuis la fiche : retour à la liste, contact supprimé", async ({ page }) => {
+    // Après la suppression, la fiche redemande le contact supprimé avant de partir
+    // (« Client non trouvé » dans la console) : sans effet visible, toléré ici.
+    test.info().annotations.push({ type: "toléré", description: "GetClient « Client non trouvé » après suppression" });
     await ouvrirFiche(page, CONTACTS.aSupprimerFiche);
     await menuDeLaFiche(page, "Supprimer définitivement");
     const alerte = page.getByRole("alertdialog", { name: "Supprimer ce contact ?" });
@@ -224,6 +248,7 @@ test.describe("Fiche d'un contact : actions", () => {
       await expect(page).toHaveURL(/\/dashboard\/clients$/, { timeout: 15_000 });
     }, { capture: "ecran" });
     await expect.poll(() => enBase(CONTACTS.aSupprimerFiche)).toBeNull();
+  });
   });
 
   test("Supprimer définitivement un contact facturé : rien n'est supprimé", async ({ page }) => {

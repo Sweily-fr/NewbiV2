@@ -744,7 +744,7 @@ test.describe("Contacts : une autre entreprise n'atteint rien", () => {
 
   test.describe(() => {
     // Refus attendu de l'API (« Client non trouvé »), que le site écrit dans la console.
-    test.use({ erreursConsoleAutorisees: [/Client non trouvé/, /NOT_FOUND/] });
+    test.use({ erreursConsoleAutorisees: /Client non trouvé|NOT_FOUND/ });
     test("La fiche d'un contact des autres ne s'affiche pas", async ({
       page,
     }) => {
@@ -818,7 +818,7 @@ test.describe("Contacts : sans session, rien", () => {
   // Refus attendus : le jeton est refusé (401), l'API répond « non authentifié ».
   test.use({
     storageState: { cookies: [], origins: [] },
-    erreursConsoleAutorisees: [/401.*\/api\/auth\/token/],
+    erreursConsoleAutorisees: /401.*\/api\/auth\/token/,
   });
 
   test("Lectures et écritures refusées", async ({ page }) => {

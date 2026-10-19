@@ -81,8 +81,10 @@ const CHAMPS_SUR_DOCUMENTS = (valeurSecteur) => ({
   "checkbox Date de premier contact Non renseigné": { notification: surDocuments("Date de premier contact") },
   "checkbox Champ à supprimer Non renseigné": { notification: surDocuments("Champ à supprimer") },
 });
-// Copier le numéro n'affiche aucune confirmation aujourd'hui : attendu, une confirmation.
+// Copier le numéro n'affiche aucune confirmation aujourd'hui : attendu, une confirmation
+// (vérifié sur la fiche du propriétaire ; pour les autres rôles, voir fiche.spec.mjs).
 const WHATSAPP = { notification: /copi/i };
+const WHATSAPP_AUTRES_ROLES = { parcours: "fiche.spec.mjs : copier le numéro (WhatsApp)" };
 
 // --- Propriétaire -------------------------------------------------------------
 
@@ -290,7 +292,7 @@ test.describe("Contacts (éditeur)", () => {
       "button icône settings2 > Modifier": { fenetre: "Modifier le client" },
       "button icône settings2 > Bloquer le contact": { fenetre: "Bloquer ce contact ?" },
       "button icône settings2 > Assigner": { fenetre: "Assigner des membres" },
-      "button icône settings2 > Copier le numéro sur WhatsApp": WHATSAPP,
+      "button icône settings2 > Copier le numéro sur WhatsApp": WHATSAPP_AUTRES_ROLES,
       "button Modifier": { fenetre: "Modifier le client" },
       ...ACTIVITE,
       ...ONGLET_FACTURES(0),
@@ -354,7 +356,7 @@ test.describe("Contacts (membre, lecture seule)", () => {
     boutons: {
       ...NAVIGATION_FICHE(true),
       "button icône settings2": { menu: ["Copier le numéro sur WhatsApp"] },
-      "button icône settings2 > Copier le numéro sur WhatsApp": WHATSAPP,
+      "button icône settings2 > Copier le numéro sur WhatsApp": WHATSAPP_AUTRES_ROLES,
       ...ACTIVITE,
       ...ONGLET_FACTURES(0),
       "tab Notes 1": { navigation: /\?tab=notes$/ },
@@ -389,7 +391,7 @@ test.describe("Contacts (membre, lecture seule)", () => {
   test.describe("Rien à modifier dans les fenêtres ouvertes", () => {
     test("Automatisations : consultables, pas d'ajout", async ({ page }) => {
       await ouvrirContacts(page);
-      await page.getByRole("button", { name: "Automatisations" }).or(page.locator("main button:has(svg.lucide-zap)")).first().click();
+      await page.locator("main button:has(svg.lucide-zap)").first().click();
       await expect(page.getByRole("dialog", { name: "Automatisations" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Ajouter une automatisation" })).toHaveCount(0);
     });

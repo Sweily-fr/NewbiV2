@@ -305,9 +305,10 @@ test.describe("Nouveau contact : après l'enregistrement", () => {
       "Fiche du contact : le texte s'affiche, rien ne s'exécute",
       async () => {
         await ouvrir(page, `/dashboard/clients/${doc._id.toHexString()}`);
-        await page.getByRole("button", { name: "Voir plus ↓" }).click();
-        await expect(page.getByText(piege).first()).toBeVisible();
-        expect(await page.evaluate(() => document.querySelectorAll("main img[src='x']").length), "La balise image a été créée dans la page").toBe(0);
+        await page.getByRole("button", { name: "Modifier", exact: true }).click();
+        const modification = page.getByRole("dialog", { name: "Modifier le client" });
+        await expect(modification.getByPlaceholder("Ex: Directeur commercial")).toHaveValue(piege);
+        expect(await page.evaluate(() => document.querySelectorAll("img[src='x']").length), "La balise image a été créée dans la page").toBe(0);
       },
       { capture: "ecran" },
     );

@@ -39,7 +39,8 @@ const CHAMP_DE_REGLE = /^(Champ|Type de client|Nom|Email|Ville|Pays|Code postal|
  * saisie de valeur selon le champ).
  */
 async function regle(page, fenetre, n, { champ, operateur, valeur }) {
-  const ligne = () => fenetre.getByRole("combobox").filter({ hasText: CHAMP_DE_REGLE }).nth(n).locator("xpath=..");
+  // La ligne : le plus proche bloc qui contient la liste « champ » et au moins une autre liste.
+  const ligne = () => fenetre.getByRole("combobox").filter({ hasText: CHAMP_DE_REGLE }).nth(n).locator("xpath=ancestor::div[count(.//*[@role='combobox'])>=2][1]");
   if (champ) await choisir(page, ligne().getByRole("combobox").nth(0), champ);
   if (operateur) await choisir(page, ligne().getByRole("combobox").nth(1), operateur);
   if (valeur !== undefined) {
