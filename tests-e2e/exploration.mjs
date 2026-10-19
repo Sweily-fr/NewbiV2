@@ -377,6 +377,8 @@ const lisible = (v) => (v instanceof RegExp ? String(v) : JSON.stringify(v));
  * Vérifie l'issue observée d'un clic contre ce qu'en dit la description :
  *   fenetre: "Titre" | /motif/        une fenêtre s'ouvre avec ce titre
  *   menu: ["A", "B"]                  un menu s'ouvre avec exactement ces éléments
+ *                                     ([] : un sous-menu sans élément de menu, ex. des cases)
+ *   menuContient: ["A"]               un menu s'ouvre et propose au moins ces éléments
  *   navigation: "/chemin" | /motif/   la page change pour cette adresse
  *   telechargement: /\.csv$/          un fichier est téléchargé
  *   notification: /motif/             une notification apparaît
@@ -406,12 +408,17 @@ export function verifierIssue(issue, attendu, contexte) {
   if (attendu.notification !== undefined) {
     expect(issue.notifications?.some((n) => correspond(attendu.notification, n)), `${contexte} : notification ${lisible(attendu.notification)}, reçues ${JSON.stringify(issue.notifications || [])}`).toBe(true);
   }
+  if (attendu.menuContient !== undefined) {
+    const recu = issue.menu || [];
+    expect(issue.menu, `${contexte} : un menu devait s'ouvrir`).toBeTruthy();
+    for (const a of attendu.menuContient) expect(recu.some((r) => correspond(a, r)), `${contexte} : le menu doit proposer ${lisible(a)}, reçu ${JSON.stringify(recu)}`).toBe(true);
+  }
   if (attendu.etat !== undefined) expect(correspond(attendu.etat, issue.etat), `${contexte} : changement d'état ${lisible(attendu.etat)}, reçu ${issue.etat || "aucun"}`).toBe(true);
   if (attendu.contenu) expect(issue.contenuModifie || issue.etat, `${contexte} : le contenu de la page devait changer`).toBeTruthy();
   if (attendu.options !== undefined) expect(issue.options, `${contexte} : choix proposés`).toEqual(attendu.options);
   if (attendu.selecteurDeFichier) expect(issue.selecteurDeFichier, `${contexte} : le sélecteur de fichiers devait s'ouvrir`).toBe(true);
   if (attendu.sansEffet) expect(issue.rien, `${contexte} : aucun effet attendu (${attendu.sansEffet}), observé ${JSON.stringify(issue)}`).toBe(true);
-  const decrit = ["fenetre", "menu", "navigation", "telechargement", "notification", "etat", "contenu", "options", "selecteurDeFichier", "sansEffet"].some((k) => attendu[k] !== undefined);
+  const decrit = ["fenetre", "menu", "menuContient", "navigation", "telechargement", "notification", "etat", "contenu", "options", "selecteurDeFichier", "sansEffet"].some((k) => attendu[k] !== undefined);
   if (!decrit) throw new Error(`${contexte} : description sans effet attendu (${JSON.stringify(attendu)})`);
 }
 

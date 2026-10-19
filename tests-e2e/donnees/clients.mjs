@@ -154,6 +154,42 @@ export const CONTACTS = {
   avecFactures: contact(109, { name: "Client avec factures SAS", email: "factures@client-factures.test", siret: "62345678900015" }),
   aNoter: contact(110, { name: "Client à annoter SARL", email: "a-annoter@e2e.test" }),
   intrus: contact(150, { name: "Client de l'intrus SAS", email: "secret@intrus.test", organisation: "intrus" }),
+  // Cibles des actions permises à l'éditeur dans les tests de droits (securite.spec.mjs).
+  cibleModifier: contact(111, { name: "Test des droits modification SARL", email: "droits-modifier@e2e.test" }),
+  cibleBloquer: contact(112, { name: "Test des droits blocage SARL", email: "droits-bloquer@e2e.test" }),
+  cibleNoter: contact(113, {
+    name: "Test des droits notes SARL",
+    email: "droits-noter@e2e.test",
+    notes: [
+      {
+        id: oid("client", 9300).toHexString(),
+        content: "Note à modifier par l'éditeur",
+        userId: proprietaire._id,
+        userName: proprietaire.name,
+        createdAt: DANS(-2),
+        updatedAt: DANS(-2),
+      },
+      {
+        id: oid("client", 9301).toHexString(),
+        content: "Note à supprimer par l'éditeur",
+        userId: proprietaire._id,
+        userName: proprietaire.name,
+        createdAt: DANS(-2),
+        updatedAt: DANS(-2),
+      },
+    ],
+  }),
+  cibleAssigner: contact(114, { name: "Test des droits assignation SARL", email: "droits-assigner@e2e.test" }),
+  cibleListe1: contact(116, { name: "Test des droits liste un SARL", email: "droits-liste1@e2e.test" }),
+  cibleListe2: contact(117, { name: "Test des droits liste deux SARL", email: "droits-liste2@e2e.test" }),
+  cibleListe3: contact(118, { name: "Test des droits liste trois SARL", email: "droits-liste3@e2e.test" }),
+  cibleDebloquer: contact(115, {
+    name: "Test des droits déblocage SARL",
+    email: "droits-debloquer@e2e.test",
+    isBlocked: true,
+    blockedAt: DANS(-1),
+    blockedReason: "Test des droits",
+  }),
 };
 
 /** Contacts de remplissage : assez pour plusieurs pages de liste. */
@@ -216,6 +252,24 @@ export const LISTES_CLIENTS = {
     isDefault: false,
     ...enOrganisation(),
   },
+  droits: {
+    _id: oid("listeClients", 4),
+    name: "Liste des tests de droits",
+    description: "",
+    clients: [CONTACTS.cibleModifier._id, CONTACTS.cibleNoter._id, CONTACTS.cibleAssigner._id],
+    color: "#64748b",
+    isDefault: false,
+    ...enOrganisation(),
+  },
+  intrus: {
+    _id: oid("listeClients", 5),
+    name: "Liste de l'intrus",
+    description: "",
+    clients: [CONTACTS.intrus._id],
+    color: "#64748b",
+    isDefault: false,
+    ...enOrganisation("intrus"),
+  },
 };
 
 export const SEGMENTS = {
@@ -237,6 +291,48 @@ export const SEGMENTS = {
     color: "#ef4444",
     ...enOrganisation(),
   },
+  droits: {
+    _id: oid("segment", 3),
+    name: "Segment des tests de droits",
+    description: "",
+    matchType: "all",
+    rules: [{ field: "type", operator: "equals", value: "COMPANY" }],
+    color: "#64748b",
+    ...enOrganisation(),
+  },
+};
+
+export const AUTOMATISATIONS = {
+  // Inactive, déclenchée par un devis accepté (aucun devis dans cette
+  // organisation) : la modifier ou l'activer ne touche aucun autre test.
+  droits: {
+    _id: oid("automatisation", 1),
+    name: "Automatisation des tests de droits",
+    description: "",
+    triggerType: "QUOTE_ACCEPTED",
+    triggerConfig: { minAmount: null, daysOverdue: 30 },
+    actionType: "ADD_TO_LIST",
+    sourceListId: null,
+    targetListId: oid("listeClients", 4),
+    isActive: false,
+    stats: { totalExecutions: 0, lastExecutedAt: null, lastClientId: null },
+    ...enOrganisation(),
+  },
+  // Active (l'appliquer aux contacts existants l'exige) : factures payées,
+  // soit le seul « Client avec factures SAS », ajouté à la liste des droits.
+  application: {
+    _id: oid("automatisation", 2),
+    name: "Automatisation appliquée par les tests de droits",
+    description: "",
+    triggerType: "INVOICE_PAID",
+    triggerConfig: { minAmount: null, daysOverdue: 30 },
+    actionType: "ADD_TO_LIST",
+    sourceListId: null,
+    targetListId: oid("listeClients", 4),
+    isActive: true,
+    stats: { totalExecutions: 0, lastExecutedAt: null, lastClientId: null },
+    ...enOrganisation(),
+  },
 };
 
 export function donneesClients() {
@@ -245,6 +341,7 @@ export function donneesClients() {
     invoices: Object.values(FACTURES_CONTACTS),
     clientlists: Object.values(LISTES_CLIENTS),
     clientsegments: Object.values(SEGMENTS),
+    clientautomations: Object.values(AUTOMATISATIONS),
     clientcustomfields: Object.values(CHAMPS_CLIENTS).map((c) => ({ ...c, ...enOrganisation() })),
   };
 }

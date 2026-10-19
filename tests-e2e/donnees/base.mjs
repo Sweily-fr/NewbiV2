@@ -38,6 +38,7 @@ const PREFIXES = {
   listeClients: "e2ec",
   segment: "e2ed",
   champClient: "e2ee",
+  automatisation: "e2ef",
 };
 
 export function oid(type, n) {

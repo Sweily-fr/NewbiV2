@@ -56,7 +56,8 @@ export async function erreursVisibles(page, zone = page) {
  *   champs       : { [nom du champ]: { cle, obligatoire, refuses: { cas: valeur }, acceptes: { cas: valeur }, lu?(doc) } }
  *     `cle` : propriété de `valeurs` remplie par ce champ ; `lu(doc)` : valeur
  *     enregistrée pour ce champ (par défaut doc[cle]).
- *   sansTexteLibre : champs où un texte piégé n'a pas de sens (e-mail, numéros…)
+ *   combinaisons : { cas: { valeurs: {…}, accepte: true|false } } : situations
+ *     réelles qui touchent plusieurs champs (client à l'étranger…)
  */
 export function verifierFormulaire(formulaire) {
   const { nom, ouvrir, remplir, valider, valeurs, enregistre, champs } = formulaire;
@@ -158,6 +159,14 @@ export function verifierFormulaire(formulaire) {
           await accepte(page, zone, v, champ.cle, champ.normaliser ? champ.normaliser(valeur) : valeur, champ.lu);
         });
       }
+    }
+
+    for (const [cas, { valeurs: modif, accepte: ok }] of Object.entries(formulaire.combinaisons || {})) {
+      test(`${cas} : ${ok ? "accepté et enregistré" : "refusé avec un message"}`, async ({ page }) => {
+        const { zone, v } = await essayer(page, `combinaison-${cas}`, modif);
+        if (ok) await accepte(page, zone, v);
+        else await refuse(page, zone, v, cas);
+      });
     }
   });
 }
