@@ -58,3 +58,12 @@ e2e/.auth/
 # Local reports output
 /reports/
 .env.local
+
+# Tests de bout en bout (tests-e2e/)
+/.next-e2e-newbi*/
+/tests-e2e/resultats*/
+/tests-e2e/rapport-html*/
+/tests-e2e/.serveur*.json
+/rapport-admin/
+# Copie de newbi-api récupérée par le workflow tests-e2e.yml
+/newbi-api/

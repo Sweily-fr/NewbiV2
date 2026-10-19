@@ -1,0 +1,53 @@
+/**
+ * Réglages communs au serveur de test et aux tests de bout en bout de
+ * Newbi (site + API). Aucune valeur de prod : base Mongo en mémoire, secrets
+ * et session propres aux tests, services externes coupés.
+ */
+import { createHmac } from "node:crypto";
+import path from "node:path";
+
+// Ports à part pour ne jamais gêner les serveurs de dev (3000 et 4000).
+// E2E_PORT : un second lancement en parallèle, avec ses propres dossiers.
+export const PORT = Number(process.env.E2E_PORT) || 3201;
+export const PORT_API = PORT + 1000;
+export const BASE_URL = `http://localhost:${PORT}`;
+export const API_URL = `http://localhost:${PORT_API}`;
+const SUFFIXE = PORT === 3201 ? "" : `-${PORT}`;
+export const DOSSIERS = {
+  build: `.next-e2e-newbi${SUFFIXE}`,
+  resultats: `tests-e2e/resultats${SUFFIXE}`,
+  rapportHtml: `tests-e2e/rapport-html${SUFFIXE}`,
+};
+
+/**
+ * Copie de newbi-api à lancer. En CI, le workflow la récupère dans
+ * `newbi-api/` ; en local, NEWBI_API_DIR pointe vers une copie dédiée, SANS
+ * fichier .env (l'API lirait sinon les vraies clés, voir serveur.mjs).
+ */
+export const API_DIR = path.resolve(process.env.NEWBI_API_DIR || "newbi-api");
+
+export const BASE_DE_DONNEES = "newbi-e2e";
+/** Écrit par serveur.mjs : adresse de la base en mémoire, pour que les tests la relisent. */
+export const FICHIER_ETAT = path.resolve(`tests-e2e/.serveur${SUFFIXE}.json`);
+export const SECRET = "e2e-secret-local-uniquement-jamais-en-prod-0123456789";
+export const SECRET_INTERNE = "e2e-secret-interne-local-uniquement";
+export const SESSION_TOKEN = "e2eSessionTokenNewbiLocalUniquement";
+/** Session du compte de l'organisation « Liste » (factures pré-remplies). */
+export const SESSION_TOKEN_LISTE = "e2eSessionTokenNewbiListeUniquement";
+/** Session du compte de l'organisation « Avoirs » (factures à créditer). */
+export const SESSION_TOKEN_AVOIRS = "e2eSessionTokenNewbiAvoirsUniquement";
+
+/** Cookie de session Better Auth signé comme le fait better-call (HMAC SHA-256). */
+export function sessionCookie(token = SESSION_TOKEN) {
+  const signature = createHmac("sha256", SECRET).update(token).digest("base64");
+  return {
+    name: "better-auth.session_token",
+    value: encodeURIComponent(`${token}.${signature}`),
+    domain: "localhost",
+    path: "/",
+    expires: -1,
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+  };
+}

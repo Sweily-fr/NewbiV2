@@ -32,6 +32,11 @@ export const auth = betterAuth({
   // ⚠️ CRITICAL: Secret requis pour signer les tokens en production
   secret: process.env.BETTER_AUTH_SECRET,
 
+  // Requêtes d'authentification autorisées par adresse IP et par fenêtre de
+  // 10 s (100 par défaut dans Better Auth). Relevé seulement par les tests de
+  // bout en bout, où un même navigateur enchaîne des dizaines de pages.
+  rateLimit: { max: Number(process.env.AUTH_RATE_LIMIT_MAX) || undefined },
+
   // trustedOrigins — function form to support dynamic origins (mobile, dev IPs).
   trustedOrigins: (request) => {
     const origins = [
