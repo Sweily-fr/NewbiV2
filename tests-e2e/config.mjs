@@ -54,6 +54,16 @@ export const SESSION_TOKEN_REGLAGES = "e2eSessionTokenNewbiReglagesUniquement";
 // ── Lot devis-bc-bl ──
 // ── fin du lot devis-bc-bl ──
 // ── Lot achats-banque ──
+/** Propriétaire de l'organisation « Achats » (catalogue, factures d'achat, transactions, prévision de référence : jamais modifiés par les tests). */
+export const SESSION_TOKEN_ACHATS = "e2eSessionTokenNewbiAchatsUniquement";
+/** « Éditeur » de l'organisation « Achats » (et de « Saisie Achats » pour les écritures permises). */
+export const SESSION_TOKEN_EDITEUR_ACHATS = "e2eSessionTokenNewbiEditeurAchatsUniquement";
+/** « Membre » (lecture seule) de l'organisation « Achats ». */
+export const SESSION_TOKEN_LECTEUR_ACHATS = "e2eSessionTokenNewbiLecteurAchatsUniquement";
+/** Propriétaire de l'organisation « Saisie Achats » : créations, modifications, suppressions. */
+export const SESSION_TOKEN_SAISIE_ACHATS = "e2eSessionTokenNewbiSaisieAchatsUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée, pour les plafonds du lot. */
+export const SESSION_TOKEN_FREELANCE_ACHATS = "e2eSessionTokenNewbiFreelanceAchatsUniquement";
 // ── fin du lot achats-banque ──
 // ── Lot parametres-auth ──
 // ── fin du lot parametres-auth ──
