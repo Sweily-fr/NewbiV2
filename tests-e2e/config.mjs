@@ -52,6 +52,16 @@ export const SESSION_TOKEN_REGLAGES = "e2eSessionTokenNewbiReglagesUniquement";
 // ── Lot factures ──
 // ── fin du lot factures ──
 // ── Lot devis-bc-bl ──
+/** Propriétaire de l'organisation « Ventes » (offre Entreprise) : devis, bons de commande et de livraison par rôle. */
+export const SESSION_TOKEN_VENTES = "e2eSessionTokenNewbiVentesUniquement";
+/** Membre « Membre » (lecture seule) de l'organisation « Ventes ». */
+export const SESSION_TOKEN_VENTES_LECTEUR = "e2eSessionTokenNewbiVentesLecteurUniquement";
+/** Membre « Éditeur » de l'organisation « Ventes ». */
+export const SESSION_TOKEN_VENTES_EDITEUR = "e2eSessionTokenNewbiVentesEditeurUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée, pour les plafonds des devis (signatures, modèles). */
+export const SESSION_TOKEN_FREELANCE_VENTES = "e2eSessionTokenNewbiFreelanceVentesUniquement";
+/** Propriétaire de l'organisation « Volume » (offre PME) : plus de 50 documents, quota de signatures atteint. */
+export const SESSION_TOKEN_VOLUME = "e2eSessionTokenNewbiVolumeUniquement";
 // ── fin du lot devis-bc-bl ──
 // ── Lot achats-banque ──
 // ── fin du lot achats-banque ──

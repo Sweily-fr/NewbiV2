@@ -22,6 +22,11 @@ import {
   SESSION_TOKEN_LECTEUR,
   SESSION_TOKEN_LISTE,
   SESSION_TOKEN_REGLAGES,
+  SESSION_TOKEN_VENTES,
+  SESSION_TOKEN_VENTES_LECTEUR,
+  SESSION_TOKEN_VENTES_EDITEUR,
+  SESSION_TOKEN_FREELANCE_VENTES,
+  SESSION_TOKEN_VOLUME,
 } from "../config.mjs";
 
 // Préfixe hexadécimal par type : un id de test se reconnaît d'un coup d'œil.
@@ -46,6 +51,14 @@ const PREFIXES = {
   // ── Lot factures (e2e4a à e2e4f, e2eba à e2ebf) ──
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (e2e8a à e2e8f, e2e9a à e2e9f, e2eaa à e2eaf) ──
+  clientVentes: "e2e8a",
+  devisVentes: "e2e8b",
+  signatureVentes: "e2e8c",
+  modeleDevis: "e2e8d",
+  bcVentes: "e2e9a",
+  modeleBc: "e2e9b",
+  factureVentes: "e2e9c",
+  blVentes: "e2eaa",
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
   // ── fin du lot achats-banque ──
@@ -134,6 +147,29 @@ export const COMPTES = {
   // ── Lot factures (organisations et utilisateurs 10 à 14) ──
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (organisations et utilisateurs 15 à 19) ──
+  // Devis, bons de commande et de livraison vus par chaque rôle (membres
+  // « Membre » et « Éditeur » ci-dessous), cibles des contrôles de droits et
+  // des parcours qui modifient. Offre Entreprise : signatures illimitées.
+  ventes: {
+    utilisateur: { _id: oid("utilisateur", 15), email: "ventes@e2e.test", name: "Valentin Ventes" },
+    organisation: organisation(15, "Ventes Test SASU"),
+    token: SESSION_TOKEN_VENTES,
+    plan: "entreprise",
+  },
+  // Offre d'entrée : quota de signatures (10 par mois), modèles de documents (10).
+  freelanceVentes: {
+    utilisateur: { _id: oid("utilisateur", 16), email: "freelance-ventes@e2e.test", name: "Fanny Freelance" },
+    organisation: organisation(16, "Freelance Ventes Test EI"),
+    token: SESSION_TOKEN_FREELANCE_VENTES,
+    plan: "freelance",
+  },
+  // Offre PME : plus de 50 devis, bons de commande et de livraison, quota de
+  // signatures du mois atteint (100), numérotation continue des devis.
+  volume: {
+    utilisateur: { _id: oid("utilisateur", 17), email: "volume@e2e.test", name: "Victor Volume" },
+    organisation: { ...organisation(17, "Volume Test SAS"), quoteAutoNumbering: true },
+    token: SESSION_TOKEN_VOLUME,
+  },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (organisations et utilisateurs 20 à 24) ──
   // ── fin du lot achats-banque ──
@@ -167,6 +203,18 @@ export const MEMBRES = {
   // ── Lot factures (utilisateurs 10 à 14) ──
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (utilisateurs 15 à 19) ──
+  ventesLecteur: {
+    utilisateur: { _id: oid("utilisateur", 18), email: "ventes-lecteur@e2e.test", name: "Léa Lectrice" },
+    de: "ventes",
+    role: "viewer",
+    token: SESSION_TOKEN_VENTES_LECTEUR,
+  },
+  ventesEditeur: {
+    utilisateur: { _id: oid("utilisateur", 19), email: "ventes-editeur@e2e.test", name: "Élio Éditeur" },
+    de: "ventes",
+    role: "member",
+    token: SESSION_TOKEN_VENTES_EDITEUR,
+  },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (utilisateurs 20 à 24) ──
   // ── fin du lot achats-banque ──
