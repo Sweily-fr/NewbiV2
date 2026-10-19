@@ -24,10 +24,15 @@ async function nouveauSegment(page) {
   return fenetre;
 }
 
-/** Choisit une option d'une liste déroulante (Radix) de la fenêtre. */
+/**
+ * Choisit une option d'une liste déroulante (Radix) de la fenêtre, puis attend
+ * qu'elle soit refermée : tant qu'elle est ouverte, le reste de la page est
+ * masqué aux technologies d'assistance (et donc aux recherches par rôle).
+ */
 async function choisir(page, declencheur, option) {
   await declencheur.click();
   await page.getByRole("option", { name: option, exact: true }).click();
+  await expect(page.getByRole("listbox")).toHaveCount(0);
 }
 
 /** Libellés possibles de la liste « champ » d'une règle (son texte affiche le champ choisi). */
@@ -44,9 +49,12 @@ async function regle(page, fenetre, n, { champ, operateur, valeur }) {
   if (champ) await choisir(page, ligne().getByRole("combobox").nth(0), champ);
   if (operateur) await choisir(page, ligne().getByRole("combobox").nth(1), operateur);
   if (valeur !== undefined) {
+    // Selon le champ, la valeur se saisit (ville…) ou se choisit dans une liste (type…).
     const saisie = ligne().getByRole("textbox");
+    const liste = ligne().getByRole("combobox").nth(2);
+    await expect(saisie.or(liste), "Champ de valeur de la règle").toBeVisible();
     if (await saisie.count()) await saisie.fill(valeur);
-    else await choisir(page, ligne().getByRole("combobox").nth(2), valeur);
+    else await choisir(page, liste, valeur);
   }
 }
 
@@ -143,7 +151,7 @@ test.describe("Segments : règles et résultats", () => {
     await regle(page, fenetre, 0, { champ: "Ville", operateur: "contient" });
     await fenetre.getByRole("button", { name: "Créer", exact: true }).click();
     await page.waitForTimeout(800);
-    const grise = await fenetre.getByRole("button", { name: "Créer", exact: true }).isDisabled().catch(() => true);
+    const grise = await fenetre.getByRole("button", { name: "Créer", exact: true }).isDisabled({ timeout: 2_000 }).catch(() => false);
     expect(grise || (await notification(page, /valeur/i).count()) > 0, "Une règle « Ville contient (rien) » a été acceptée sans message").toBe(true);
     expect(await segmentEnBase({ name: "Règle vide" }), "Segment à règle vide enregistré").toBeNull();
   });

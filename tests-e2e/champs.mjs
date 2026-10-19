@@ -69,7 +69,7 @@ export function verifierFormulaire(formulaire) {
     const zone = await ouvrir(page);
     const v = { ...valeurs(cas), ...modifier };
     await remplir(zone, v);
-    const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled().catch(() => false) : false;
+    const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled({ timeout: 2_000 }).catch(() => false) : false;
     if (!grise) await valider(zone);
     await page.waitForTimeout(600);
     return { zone, v };
@@ -80,7 +80,7 @@ export function verifierFormulaire(formulaire) {
       page,
       "Un message explique le refus",
       async () => {
-        const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled().catch(() => false) : false;
+        const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled({ timeout: 2_000 }).catch(() => false) : false;
         if (grise) return;
         // Souple : la vérification en base dit ensuite si la saisie a été enregistrée quand même.
         let erreurs = [];
@@ -134,7 +134,7 @@ export function verifierFormulaire(formulaire) {
       test("Tout vide : refusé, chaque champ obligatoire signalé", async ({ page }) => {
         const zone = await ouvrir(page);
         await remplir(zone, Object.fromEntries(Object.values(champs).map((c) => [c.cle, ""])));
-        const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled().catch(() => false) : false;
+        const grise = formulaire.boutonValider ? await formulaire.boutonValider(zone).isDisabled({ timeout: 2_000 }).catch(() => false) : false;
         if (!grise) await valider(zone);
         await page.waitForTimeout(600);
         await etape(

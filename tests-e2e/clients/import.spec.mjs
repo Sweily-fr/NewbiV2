@@ -47,7 +47,12 @@ async function importer(page, chemin, { attendus }) {
   await expect(bouton, `Bouton « Importer ${attendus} contact(s) »`).toHaveText(new RegExp(`Importer ${attendus} contact`));
   await etape(page, "Importer", async () => {
     await bouton.click();
-    await expect(notification(page, /importé/)).toBeVisible({ timeout: 30_000 });
+    // « 3 contacts importés » ou « 1 erreur lors de l'import » : l'import doit se terminer.
+    await expect(notification(page, /importé|erreur/).first(), "L'import ne se termine pas (« Import en cours » sans fin)").toBeVisible({ timeout: 30_000 });
+    if (await notification(page, /erreur/).count()) {
+      const details = (await fenetre.innerText().catch(() => "")).replace(/\s+/g, " ").trim().slice(0, 500);
+      throw new Error(`L'import a échoué : ${details}`);
+    }
   }, { capture: "ecran" });
   return fenetre;
 }
@@ -132,10 +137,10 @@ test.describe("Import de contacts", () => {
     const chemin = fichier("photo.txt", "ceci n'est pas un fichier de contacts");
     const fenetre = await deposer(page, chemin);
     const suivant = fenetre.getByRole("button", { name: "Suivant" });
-    if (await suivant.isEnabled()) await suivant.click();
+    if (await suivant.isEnabled({ timeout: 2_000 }).catch(() => false)) await suivant.click();
     await page.waitForTimeout(800);
     const messages = await page.locator("[data-sonner-toast]:has(svg.text-red-500), .text-red-500, .text-destructive, [role=alert]").count();
-    expect(messages + ((await suivant.isDisabled()) ? 1 : 0), "Un fichier texte est accepté sans explication").toBeGreaterThan(0);
+    expect(messages + ((await suivant.isDisabled({ timeout: 2_000 }).catch(() => false)) ? 1 : 0), "Un fichier texte est accepté sans explication").toBeGreaterThan(0);
   });
 
   test("Lignes invalides (e-mail faux, entreprise sans SIRET) : écartées avec la raison, les autres importées", async ({ page }) => {
@@ -150,7 +155,7 @@ test.describe("Import de contacts", () => {
     );
     const fenetre = await deposer(page, chemin);
     await fenetre.getByRole("button", { name: "Suivant" }).click();
-    await etape(page, "Les lignes écartées sont expliquées", async () => {
+    await etape(page, "Les lignes écartées sont expliquées (le bouton annonce 1 contact sur 3)", async () => {
       await expect(fenetre.getByText(/Email invalide/).first()).toBeVisible();
       await expect(fenetre.getByText(/SIREN\/SIRET est obligatoire/).first()).toBeVisible();
     }, { capture: "ecran" });
@@ -180,7 +185,8 @@ test.describe("Import de contacts", () => {
     await page.waitForTimeout(1_500);
     expect(await (await base()).collection("clients").countDocuments({ workspaceId: ORG, email: existant.email }), "Doublon créé").toBe(1);
     const messages = await page.locator("[data-sonner-toast]:has(svg.text-red-500)").count();
-    expect(messages, "Le doublon n'est pas signalé").toBeGreaterThan(0);
+    const succesAnnonce = await notification(page, /importé/).count();
+    expect(messages, succesAnnonce ? "Le doublon refusé par l'API est annoncé « importé avec succès »" : "Le doublon n'est pas signalé").toBeGreaterThan(0);
   });
 
   test("Fichier avec seulement nom, e-mail et téléphone : les contacts sont importés", async ({ page }) => {

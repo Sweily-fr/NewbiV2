@@ -23,15 +23,24 @@ async function listeEnBase(filtre) {
 
 const ATELIER = COMPTES.atelier.organisation._id;
 
+// Un refus du serveur fait planter l'enregistrement côté site (erreur de la console) :
+// défaut couvert par son propre test ci-dessous, toléré ici pour juger chaque champ.
+const ERREUR_CREATION_LISTE = /Erreur lors de la création de la liste/;
+
+async function ouvrirNouvelleListe(page) {
+  await ouvrir(page, "/dashboard/clients/listes", { pret: page.getByRole("button", { name: "Nouvelle liste" }) });
+  await page.getByRole("button", { name: "Nouvelle liste" }).click();
+  const fenetre = page.getByRole("dialog", { name: "Créer une nouvelle liste" });
+  await expect(fenetre).toBeVisible();
+  return fenetre;
+}
+
+test.describe("Nouvelle liste", () => {
+  test.use({ erreursConsoleAutorisees: ERREUR_CREATION_LISTE });
+
 verifierFormulaire({
   nom: "Nouvelle liste de contacts",
-  ouvrir: async (page) => {
-    await ouvrir(page, "/dashboard/clients/listes", { pret: page.getByRole("button", { name: "Nouvelle liste" }) });
-    await page.getByRole("button", { name: "Nouvelle liste" }).click();
-    const fenetre = page.getByRole("dialog", { name: "Créer une nouvelle liste" });
-    await expect(fenetre).toBeVisible();
-    return fenetre;
-  },
+  ouvrir: ouvrirNouvelleListe,
   remplir: async (fenetre, v) => {
     if (v.nom !== undefined) await fenetre.getByLabel("Nom de la liste *").fill(v.nom);
     if (v.description !== undefined) await fenetre.getByLabel("Description").fill(v.description);
@@ -61,6 +70,19 @@ verifierFormulaire({
       acceptes: { "avec ponctuation": "Relance : mars, avril & mai." },
     },
   },
+});
+});
+
+test("Nom de liste refusé par le serveur : le message explique pourquoi, sans erreur technique", async ({ page }) => {
+  const fenetre = await ouvrirNouvelleListe(page);
+  await fenetre.getByLabel("Nom de la liste *").fill("A");
+  await fenetre.getByRole("button", { name: "Créer la liste" }).click();
+  await etape(page, "Message affiché", async () => {
+    const message = page.locator("[data-sonner-toast]").first();
+    await expect(message, "Aucun message après le refus").toBeVisible();
+    const texte = (await message.innerText()).replace(/\s+/g, " ").trim();
+    expect(texte, `Message technique affiché à l'utilisateur : « ${texte} »`).not.toMatch(/Cannot read|TypeError|undefined|null|properties of/i);
+  }, { capture: "ecran" });
 });
 
 // --- Actions sur les listes (organisation « Clients ») ---------------------------

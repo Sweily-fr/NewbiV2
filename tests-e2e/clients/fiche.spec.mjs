@@ -180,7 +180,7 @@ test.describe("Fiche d'un contact : actions", () => {
     await ouvrirFiche(page, CONTACTS.aBloquerFiche);
     await menuDeLaFiche(page, "Bloquer le contact");
     const alerte = fenetre(page, "Bloquer ce contact ?");
-    await alerte.getByPlaceholder("Raison du blocage (optionnel)").fill("Coordonnées à vérifier");
+    await alerte.getByLabel("Raison du blocage (optionnel)").fill("Coordonnées à vérifier");
     await alerte.getByRole("button", { name: "Bloquer" }).click();
     await expect(alerte).toBeHidden();
     await expect.poll(async () => (await enBase(CONTACTS.aBloquerFiche)).isBlocked).toBe(true);
@@ -228,7 +228,7 @@ test.describe("Fiche d'un contact : actions", () => {
     const avant = await (await base()).collection("events").countDocuments({ clientId: CONTACTS.aRappeler._id });
     await fenetre.getByRole("button", { name: "Créer", exact: true }).click();
     await page.waitForTimeout(800);
-    const grise = await fenetre.getByRole("button", { name: "Créer", exact: true }).isDisabled().catch(() => false);
+    const grise = await fenetre.getByRole("button", { name: "Créer", exact: true }).isDisabled({ timeout: 2_000 }).catch(() => false);
     const message = await page.locator(".text-red-500, .text-destructive, [data-sonner-toast]:has(svg.text-red-500)").count();
     expect(grise || message > 0, "Aucune explication pour un rappel sans titre").toBe(true);
     expect(await (await base()).collection("events").countDocuments({ clientId: CONTACTS.aRappeler._id })).toBe(avant);

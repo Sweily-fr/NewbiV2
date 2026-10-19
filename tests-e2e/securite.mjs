@@ -14,30 +14,42 @@ import { API_URL } from "./config.mjs";
 /**
  * Appelle l'API GraphQL avec la session de la page (la page doit être sur le
  * site). `organisation` : en-tête x-organization-id, comme le site l'envoie.
- * Renvoie { statut, data, errors }.
+ * `delai` (ms) : au-delà, la requête est abandonnée et `sansReponse` vaut true
+ * (une requête que l'API laisse sans réponse bloque l'écran de l'utilisateur).
+ * Renvoie { statut, data, errors, sansReponse }.
  */
-export async function appelApi(page, query, variables = {}, { organisation = null } = {}) {
+export async function appelApi(page, query, variables = {}, { organisation = null, delai = 0 } = {}) {
   return page.evaluate(
-    async ({ query, variables, api, organisation }) => {
+    async ({ query, variables, api, organisation, delai }) => {
       const jeton = await fetch("/api/auth/token", { credentials: "include" })
         .then((r) => (r.ok ? r.json() : {}))
         .then((d) => d.token || null)
         .catch(() => null);
-      const res = await fetch(`${api}/graphql`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "x-app-client": "web",
-          ...(jeton ? { authorization: `Bearer ${jeton}` } : {}),
-          ...(organisation ? { "x-organization-id": organisation } : {}),
-        },
-        body: JSON.stringify({ query, variables }),
-      });
-      const corps = await res.json().catch(() => ({}));
-      return { statut: res.status, data: corps.data ?? null, errors: corps.errors ?? [] };
+      const arret = new AbortController();
+      const minuteur = delai ? setTimeout(() => arret.abort(), delai) : null;
+      try {
+        const res = await fetch(`${api}/graphql`, {
+          method: "POST",
+          credentials: "include",
+          signal: arret.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "x-app-client": "web",
+            ...(jeton ? { authorization: `Bearer ${jeton}` } : {}),
+            ...(organisation ? { "x-organization-id": organisation } : {}),
+          },
+          body: JSON.stringify({ query, variables }),
+        });
+        const corps = await res.json().catch(() => ({}));
+        return { statut: res.status, data: corps.data ?? null, errors: corps.errors ?? [], sansReponse: false };
+      } catch (erreur) {
+        if (arret.signal.aborted) return { statut: 0, data: null, errors: [], sansReponse: true };
+        throw erreur;
+      } finally {
+        if (minuteur) clearTimeout(minuteur);
+      }
     },
-    { query, variables, api: API_URL, organisation },
+    { query, variables, api: API_URL, organisation, delai },
   );
 }
 

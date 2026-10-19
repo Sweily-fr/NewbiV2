@@ -392,7 +392,7 @@ test.describe("Contacts (membre, lecture seule)", () => {
     test("Automatisations : consultables, pas d'ajout", async ({ page }) => {
       await ouvrirContacts(page);
       await page.locator("main button:has(svg.lucide-zap)").first().click();
-      await expect(page.getByRole("dialog", { name: "Automatisations" })).toBeVisible();
+      await expect(page.getByRole("dialog").filter({ has: page.getByText("Automatisations", { exact: true }) })).toBeVisible();
       await expect(page.getByRole("button", { name: "Ajouter une automatisation" })).toHaveCount(0);
     });
 

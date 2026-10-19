@@ -73,7 +73,7 @@ test.describe("Contacts bloqués", () => {
     await cliquer(page, rangee.getByRole("button", { name: "Actions du client" }));
     await page.getByRole("menuitem", { name: "Bloquer" }).click();
     const alerte = fenetre(page, `Bloquer ${CONTACTS.aBloquer.name} ?`);
-    await alerte.getByPlaceholder("Raison du blocage (optionnel)").fill("Facture contestée depuis trois mois");
+    await alerte.getByLabel("Raison du blocage (optionnel)").fill("Facture contestée depuis trois mois");
     await etape(page, "Bloquer", async () => {
       await alerte.getByRole("button", { name: "Bloquer" }).click();
       await expect(alerte).toBeHidden();

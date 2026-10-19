@@ -19,7 +19,8 @@ const notification = (page, texte) => page.locator("[data-sonner-toast]").filter
 async function ouvrirAutomatisations(page) {
   await ouvrir(page, "/dashboard/clients", { pret: page.getByRole("button", { name: "Nouveau contact" }) });
   await page.locator("main button:has(svg.lucide-zap)").first().click();
-  const panneau = page.getByRole("dialog", { name: "Automatisations" });
+  // Panneau sans nom accessible (titre non relié) : repéré par son titre visible.
+  const panneau = page.getByRole("dialog").filter({ has: page.getByText("Automatisations", { exact: true }) });
   await expect(panneau).toBeVisible();
   return panneau;
 }

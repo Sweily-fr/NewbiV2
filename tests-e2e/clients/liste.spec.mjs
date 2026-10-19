@@ -295,8 +295,8 @@ test.describe("Contacts : actions groupées", () => {
     await selectionner(page, "Lot à bloquer");
     await page.getByRole("button", { name: "Plus d'actions" }).click();
     await page.getByRole("menuitem", { name: /^Bloquer/ }).click();
-    const alerte = page.getByRole("alertdialog").or(page.getByRole("dialog")).filter({ has: page.getByPlaceholder("Raison du blocage (optionnel)") });
-    await alerte.getByPlaceholder("Raison du blocage (optionnel)").fill("Audit en cours");
+    const alerte = page.getByRole("alertdialog").or(page.getByRole("dialog")).filter({ has: page.getByLabel("Raison du blocage (optionnel)") });
+    await alerte.getByLabel("Raison du blocage (optionnel)").fill("Audit en cours");
     await alerte.getByRole("button", { name: "Bloquer" }).click();
     await expect(alerte).toBeHidden();
     for (const c of [CONTACTS.lotBloquer1, CONTACTS.lotBloquer2]) {

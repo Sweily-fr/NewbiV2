@@ -55,7 +55,7 @@ test.describe("Champs personnalisés : créer chaque type", () => {
     test(`Champ « ${libelle} » : créé avec le bon type`, async ({ page }) => {
       const fenetre = await nouveauChamp(page);
       const nom = `Champ de type ${libelle}`;
-      await fenetre.getByLabel("Nom du champ *").fill(nom);
+      await fenetre.getByPlaceholder("Ex: Date anniversaire, Source, Réseaux sociaux...").fill(nom);
       await fenetre.getByRole("combobox").first().click();
       await page.getByRole("option", { name: libelle, exact: true }).click();
       if (type === "SELECT" || type === "MULTISELECT") {
@@ -77,7 +77,7 @@ test.describe("Champs personnalisés : créer chaque type", () => {
 
   test("Choix unique sans option : refusé avec un message", async ({ page }) => {
     const fenetre = await nouveauChamp(page);
-    await fenetre.getByLabel("Nom du champ *").fill("Choix sans option");
+    await fenetre.getByPlaceholder("Ex: Date anniversaire, Source, Réseaux sociaux...").fill("Choix sans option");
     await fenetre.getByRole("combobox").first().click();
     await page.getByRole("option", { name: "Choix unique", exact: true }).click();
     await fenetre.getByRole("button", { name: "Créer", exact: true }).click();
@@ -87,7 +87,7 @@ test.describe("Champs personnalisés : créer chaque type", () => {
 
   test("Même nom qu'un champ existant : refusé avec un message", async ({ page }) => {
     const fenetre = await nouveauChamp(page);
-    await fenetre.getByLabel("Nom du champ *").fill(CHAMPS_REGLAGES.texte.name);
+    await fenetre.getByPlaceholder("Ex: Date anniversaire, Source, Réseaux sociaux...").fill(CHAMPS_REGLAGES.texte.name);
     await fenetre.getByRole("button", { name: "Créer", exact: true }).click();
     await expect(notification(page, /existe déjà/)).toBeVisible();
     expect(await (await base()).collection("clientcustomfields").countDocuments({ workspaceId: ORG, name: CHAMPS_REGLAGES.texte.name })).toBe(1);
@@ -98,7 +98,7 @@ verifierFormulaire({
   nom: "Nouveau champ personnalisé",
   ouvrir: nouveauChamp,
   remplir: async (fenetre, v) => {
-    if (v.nom !== undefined) await fenetre.getByLabel("Nom du champ *").fill(v.nom);
+    if (v.nom !== undefined) await fenetre.getByPlaceholder("Ex: Date anniversaire, Source, Réseaux sociaux...").fill(v.nom);
   },
   valider: (fenetre) => fenetre.getByRole("button", { name: "Créer", exact: true }).click(),
   valeurs: (cas) => ({ nom: `Champ ${cas}`.slice(0, 90) }),
@@ -119,7 +119,7 @@ test.describe("Champs personnalisés : modifier, désactiver, supprimer", () => 
     const panneau = await ouvrirChamps(page);
     await cliquer(page, ligneDeChamp(panneau, CHAMPS_REGLAGES.aRenommer.name).locator("button:has(svg.lucide-pen)"));
     const fenetre = page.getByRole("dialog", { name: "Modifier le champ" });
-    await fenetre.getByLabel("Nom du champ *").fill("Champ renommé par le test");
+    await fenetre.getByPlaceholder("Ex: Date anniversaire, Source, Réseaux sociaux...").fill("Champ renommé par le test");
     await fenetre.getByRole("button", { name: "Enregistrer" }).click();
     await expect(notification(page, "Champ modifié avec succès")).toBeVisible();
     expect((await champEnBase({ _id: CHAMPS_REGLAGES.aRenommer._id })).name).toBe("Champ renommé par le test");
@@ -181,7 +181,8 @@ test.describe("Champs personnalisés : saisie dans la fiche contact", () => {
     await fiche.getByPlaceholder(CHAMPS_REGLAGES.email.name).fill("compta@exemple.fr");
     await fiche.getByPlaceholder(CHAMPS_REGLAGES.telephone.name).fill("0123456789");
     await fiche.getByPlaceholder(CHAMPS_REGLAGES.texteLong.name).fill("Client rencontré au salon de Lyon.");
-    await fiche.getByLabel(CHAMPS_REGLAGES.caseACocher.name).check();
+    // Le libellé du champ n'est pas relié à la case (la case s'appelle « Oui ») : la première case qui suit le libellé.
+    await fiche.getByText(CHAMPS_REGLAGES.caseACocher.name, { exact: true }).locator("xpath=following::*[@role='checkbox' or (self::input and @type='checkbox')][1]").check();
     await fiche.getByRole("button", { name: "Créer un contact" }).click();
     await expect(fiche).toBeHidden({ timeout: 15_000 });
     const doc = await contactEnBase("Valeurs");
