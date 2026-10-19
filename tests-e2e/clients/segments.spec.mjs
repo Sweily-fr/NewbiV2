@@ -103,6 +103,20 @@ verifierFormulaire({
   },
 });
 
+test("Nom de segment refusé par le serveur : le message dit pourquoi", async ({ page }) => {
+  await ouvrir(page, "/dashboard/clients/segments", { pret: page.getByRole("button", { name: /Nouveau segment|Créer un segment/ }).first() });
+  await page.getByRole("button", { name: /Nouveau segment|Créer un segment/ }).first().click();
+  const fenetre = page.getByRole("dialog", { name: "Nouveau segment" });
+  await fenetre.getByPlaceholder("Ex: Entreprises parisiennes").fill("S");
+  await fenetre.getByRole("button", { name: "Créer", exact: true }).click();
+  await etape(page, "Message affiché", async () => {
+    const message = page.locator("[data-sonner-toast]").first();
+    await expect(message, "Aucun message après le refus").toBeVisible();
+    const texte = (await message.innerText()).replace(/\s+/g, " ").trim();
+    expect(texte, `Message qui n'explique rien : « ${texte} » (attendu : le nom doit faire au moins 2 caractères)`).toMatch(/caract|court|longueur|nom/i);
+  }, { capture: "ecran" });
+});
+
 // --- Règles et résultats (organisation « Clients ») ----------------------------------
 
 test.describe("Segments : règles et résultats", () => {

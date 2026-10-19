@@ -31,7 +31,7 @@ const CAS = [
   },
   {
     cas: "particulier avec « œ » (Anne Lecœur)",
-    input: { type: "INDIVIDUAL", firstName: "Anne", lastName: "Lecœur", email: "anne-lecoeur@e2e.test", address: adresse },
+    input: { type: "INDIVIDUAL", name: "Anne Lecœur", firstName: "Anne", lastName: "Lecœur", email: "anne-lecoeur@e2e.test", address: adresse },
   },
 ];
 

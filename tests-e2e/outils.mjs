@@ -89,6 +89,8 @@ export { expect };
  * une erreur porte l'icône d'alerte rouge, un succès l'icône verte.
  */
 export const SELECTEUR_NOTIFICATION_ERREUR = "[data-sonner-toast]:has(svg.text-red-500), [data-sonner-toast][data-type=error]";
+/** Notifications de succès (icône verte des notifications sur mesure du site). */
+export const SELECTEUR_NOTIFICATION_SUCCES = "[data-sonner-toast]:has(svg.text-green-600), [data-sonner-toast][data-type=success]";
 export const notificationsErreur = (page) => page.locator(SELECTEUR_NOTIFICATION_ERREUR);
 
 /** Fenêtre (dialogue ou alerte) par son titre : le site emploie les deux pour une même action. */

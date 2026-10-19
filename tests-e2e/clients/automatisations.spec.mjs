@@ -108,10 +108,12 @@ test.describe("Automatisations de listes", () => {
     };
     const { insertedId } = await (await base()).collection("clientautomations").insertOne(auto);
     const panneau = await ouvrirAutomatisations(page);
-    const interrupteurs = panneau.getByRole("switch");
-    await interrupteurs.last().click();
+    // La ligne de cette automatisation : seul ce test crée un déclencheur « Devis accepté » dans cette organisation
+    // (d'autres tests du fichier peuvent en ajouter avant lui sur la même machine).
+    const declencheur = panneau.getByText("Devis accepté", { exact: true });
+    await declencheur.locator("xpath=following::*[@role='switch'][1]").click();
     await expect.poll(async () => (await (await base()).collection("clientautomations").findOne({ _id: insertedId })).isActive).toBe(false);
-    await panneau.locator("button:has(svg.lucide-trash2)").last().click();
+    await declencheur.locator("xpath=following::button[.//*[contains(@class,'lucide-trash2')]][1]").click();
     const alerte = page.getByRole("alertdialog");
     if (await alerte.isVisible().catch(() => false)) await alerte.getByRole("button", { name: /Supprimer/ }).click();
     await expect.poll(() => (base().then((b) => b.collection("clientautomations").findOne({ _id: insertedId })))).toBeNull();
@@ -121,7 +123,7 @@ test.describe("Automatisations de listes", () => {
 test.describe("Automatisations d'e-mails", () => {
   async function nouvelleRelance(page) {
     const panneau = await ouvrirAutomatisations(page);
-    await panneau.getByRole("button", { name: /^Emails/ }).click();
+    await panneau.getByRole("tab", { name: /Emails/ }).click();
     await panneau.getByRole("button", { name: "Ajouter une automatisation" }).click();
     return panneau;
   }

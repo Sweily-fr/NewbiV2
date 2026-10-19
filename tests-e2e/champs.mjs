@@ -17,7 +17,7 @@
  * message sont des défauts : l'utilisateur ne doit jamais rester sans
  * explication, ni voir enregistrée une donnée invalide.
  */
-import { test, expect, etape, SELECTEUR_NOTIFICATION_ERREUR } from "./outils.mjs";
+import { test, expect, etape, SELECTEUR_NOTIFICATION_ERREUR, SELECTEUR_NOTIFICATION_SUCCES } from "./outils.mjs";
 
 /** Messages d'erreur visibles : texte en rouge, alerte, champ marqué invalide, notification d'erreur. */
 export async function erreursVisibles(page, zone = page) {
@@ -96,7 +96,7 @@ export function verifierFormulaire(formulaire) {
     await etape(page, "Rien n'est enregistré", async () => {
       expect(await enregistre(v), `${raison} : la donnée invalide a été enregistrée`).toBeNull();
     });
-    await expect(zone, "Le formulaire reste ouvert pour corriger").toBeVisible();
+    // Que la saisie reste à l'écran après un refus : test dédié, un par formulaire (plus bas).
   }
 
   async function accepte(page, zone, v, cle, attendu, lu) {
@@ -176,6 +176,30 @@ export function verifierFormulaire(formulaire) {
           await accepte(page, zone, v, champ.cle, champ.normaliser ? champ.normaliser(valeur) : valeur, champ.lu);
         });
       }
+    }
+
+    // Après un refus, la saisie reste à l'écran pour être corrigée, sans annonce de succès
+    // (un seul test par formulaire, sur le premier cas refusé décrit).
+    const premierRefus = Object.entries(champs).flatMap(([libelle, c]) =>
+      Object.entries(c.refuses || {}).map(([cas, valeur]) => ({ libelle, cle: c.cle, cas, valeur })),
+    )[0];
+    if (premierRefus) {
+      const { libelle, cle, cas, valeur } = premierRefus;
+      test(`Après un refus (« ${libelle} » ${cas}), la saisie reste à l'écran, sans annonce de succès`, async ({ page }) => {
+        const { zone, v } = await essayer(page, `${cle}-${cas}-reste`, { [cle]: valeur });
+        await page.waitForTimeout(1_500);
+        await etape(
+          page,
+          "Formulaire toujours ouvert",
+          async () => {
+            const succes = await page.locator(SELECTEUR_NOTIFICATION_SUCCES).allInnerTexts().catch(() => []);
+            expect.soft(succes.map((t) => t.replace(/\s+/g, " ").trim()), "Un succès est annoncé alors que la saisie est refusée").toEqual([]);
+            await expect(zone, "Le formulaire s'est fermé après le refus : la saisie est perdue").toBeVisible({ timeout: 2_000 });
+          },
+          { capture: "ecran" },
+        );
+        expect(await enregistre(v), "La saisie refusée a été enregistrée").toBeNull();
+      });
     }
 
     for (const [cas, { valeurs: modif, accepte: ok }] of Object.entries(formulaire.combinaisons || {})) {
