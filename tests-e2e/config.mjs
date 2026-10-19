@@ -50,6 +50,16 @@ export const SESSION_TOKEN_FREELANCE = "e2eSessionTokenNewbiFreelanceUniquement"
 export const SESSION_TOKEN_REGLAGES = "e2eSessionTokenNewbiReglagesUniquement";
 // Sessions propres à un lot : entre ses deux repères (une chaîne unique par compte).
 // ── Lot factures ──
+/** Propriétaire de l'organisation « Factures » (factures et avoirs dans chaque état). */
+export const SESSION_TOKEN_FACTURES = "e2eSessionTokenNewbiFacturesUniquement";
+/** « Éditeur » de l'organisation « Factures » (crée, modifie, envoie ; ni suppression ni annulation). */
+export const SESSION_TOKEN_FACTURES_EDITEUR = "e2eSessionTokenNewbiFacturesEditeurUniquement";
+/** « Membre » de l'organisation « Factures » (lecture seule). */
+export const SESSION_TOKEN_FACTURES_LECTEUR = "e2eSessionTokenNewbiFacturesLecteurUniquement";
+/** Propriétaire de l'organisation « Réglages Factures » (paramètres, relances, numérotation continue). */
+export const SESSION_TOKEN_FACTURES_REGLAGES = "e2eSessionTokenNewbiFacturesReglagesUniquement";
+/** Propriétaire de l'organisation « Offre Factures » (offre d'entrée : plafonds des factures). */
+export const SESSION_TOKEN_FACTURES_OFFRE = "e2eSessionTokenNewbiFacturesOffreUniquement";
 // ── fin du lot factures ──
 // ── Lot devis-bc-bl ──
 // ── fin du lot devis-bc-bl ──

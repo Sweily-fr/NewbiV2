@@ -44,6 +44,13 @@ const PREFIXES = {
   // Chaque lot ajoute ses types entre ses deux repères, avec ses seuls préfixes
   // réservés (un préfixe de 4 caractères prolongé par une lettre, jamais par un chiffre).
   // ── Lot factures (e2e4a à e2e4f, e2eba à e2ebf) ──
+  clientFactures: "e2e4a",
+  factureLot: "e2e4b",
+  recurrence: "e2e4c",
+  modeleFacture: "e2e4d",
+  importee: "e2e4e",
+  diversFactures: "e2e4f",
+  avoirLot: "e2eba",
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (e2e8a à e2e8f, e2e9a à e2e9f, e2eaa à e2eaf) ──
   // ── fin du lot devis-bc-bl ──
@@ -132,6 +139,28 @@ export const COMPTES = {
   },
   // Comptes propres à un lot : entre ses deux repères, avec ses numéros réservés.
   // ── Lot factures (organisations et utilisateurs 10 à 14) ──
+  // Factures et avoirs dans chaque état, consultés par trois rôles (voir
+  // MEMBRES) : propriétaire, « Éditeur » et « Membre » (donnees/lot-factures.mjs).
+  factures: {
+    utilisateur: { _id: oid("utilisateur", 10), email: "factures@e2e.test", name: "Fanny Factures" },
+    organisation: organisation(10, "Factures Test SASU"),
+    token: "e2eSessionTokenNewbiFacturesUniquement",
+  },
+  // Paramètres des factures, relances automatiques, numérotation continue et
+  // grand nombre de factures : ses réglages ne touchent aucun autre compte.
+  facturesReglages: {
+    utilisateur: { _id: oid("utilisateur", 13), email: "factures-reglages@e2e.test", name: "Régis Réglages" },
+    organisation: { ...organisation(11, "Réglages Factures Test SASU"), invoiceAutoNumbering: true },
+    token: "e2eSessionTokenNewbiFacturesReglagesUniquement",
+  },
+  // Offre d'entrée réservée aux factures : ses plafonds (modèles, exports)
+  // sans gêner le compte « freelance » des autres fonctionnalités.
+  facturesOffre: {
+    utilisateur: { _id: oid("utilisateur", 14), email: "factures-offre@e2e.test", name: "Odile Offre" },
+    organisation: organisation(12, "Offre Factures Test EI"),
+    token: "e2eSessionTokenNewbiFacturesOffreUniquement",
+    plan: "freelance",
+  },
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (organisations et utilisateurs 15 à 19) ──
   // ── fin du lot devis-bc-bl ──
@@ -165,6 +194,18 @@ export const MEMBRES = {
   },
   // Membres propres à un lot : entre ses deux repères.
   // ── Lot factures (utilisateurs 10 à 14) ──
+  facturesEditeur: {
+    utilisateur: { _id: oid("utilisateur", 11), email: "factures-editeur@e2e.test", name: "Élise Éditrice" },
+    de: "factures",
+    role: "member",
+    token: "e2eSessionTokenNewbiFacturesEditeurUniquement",
+  },
+  facturesLecteur: {
+    utilisateur: { _id: oid("utilisateur", 12), email: "factures-lecteur@e2e.test", name: "Louis Lecteur" },
+    de: "factures",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiFacturesLecteurUniquement",
+  },
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (utilisateurs 15 à 19) ──
   // ── fin du lot devis-bc-bl ──
