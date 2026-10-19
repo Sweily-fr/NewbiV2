@@ -286,6 +286,8 @@ export const COMPTES_AUTH = {
   reglagesSession: compte(33, { email: "reglages-session@e2e.test", name: "Rose Réglages", espace: "Réglages Session Test SASU", sessions: [{ nom: "ReglagesSession" }] }),
   // Double authentification à activer depuis Paramètres > Sécurité.
   activation2fa: compte(34, { email: "activation-2fa@e2e.test", name: "Axel Activation", motDePasse: true, espace: "Activation 2FA Test SASU", sessions: [{ nom: "Activation2fa" }] }),
+  // Super admin qui tente de quitter son espace (refusé : il doit d'abord transférer son rôle).
+  quitter: compte(36, { email: "quitter@e2e.test", name: "Quentin Quitter", espace: "Quitter Test SASU", sessions: [{ nom: "Quitter" }] }),
   // Double authentification à couper depuis Paramètres > Sécurité.
   desactivation2fa: compte(35, {
     email: "desactivation-2fa@e2e.test",
@@ -336,6 +338,8 @@ export const INVITATIONS = {
   aRefuser: { n: 11, org: () => COMPTES.configuration.organisation._id, email: "invite@e2e.test", role: "viewer", de: () => COMPTES.configuration.utilisateur._id },
   // Invitation à renvoyer depuis la liste d'« Équipe ».
   renvoyer: { n: 12, org: () => COMPTES.equipe.organisation._id, email: "invitation-renvoyer@e2e.test", role: "viewer", de: () => COMPTES.equipe.utilisateur._id },
+  // « Paramètres » : annulée par le rôle « Recrutement » (qui a le droit d'inviter).
+  recruteurAnnuler: { n: 13, org: () => COMPTES.parametres.organisation._id, email: "invitation-recruteur-annuler@e2e.test", role: "viewer", de: () => COMPTES.parametres.utilisateur._id },
 };
 
 /**
