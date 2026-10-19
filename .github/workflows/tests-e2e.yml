@@ -38,8 +38,8 @@ on:
         description: "Nombre de machines en parallèle"
         required: false
         type: choice
-        options: ["4", "1", "2", "6", "8"]
-        default: "4"
+        options: ["8", "1", "2", "4", "6", "10", "12"]
+        default: "8"
       inventaire:
         description: "Relevé de toutes les pages (outil pour écrire les tests, ne vérifie rien)"
         required: false
@@ -63,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: ${{ fromJSON('{"1":[1],"2":[1,2],"4":[1,2,3,4],"6":[1,2,3,4,5,6],"8":[1,2,3,4,5,6,7,8]}')[inputs.machines || '4'] }}
+        machine: ${{ fromJSON('{"1":[1],"2":[1,2],"4":[1,2,3,4],"6":[1,2,3,4,5,6],"8":[1,2,3,4,5,6,7,8],"10":[1,2,3,4,5,6,7,8,9,10],"12":[1,2,3,4,5,6,7,8,9,10,11,12]}')[inputs.machines || '8'] }}
     steps:
       - uses: actions/checkout@v4
 
