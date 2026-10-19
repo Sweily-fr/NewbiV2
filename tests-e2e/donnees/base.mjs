@@ -50,6 +50,21 @@ const PREFIXES = {
   // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
   // ── fin du lot achats-banque ──
   // ── Lot parametres-auth (e2e1a à e2e1f, e2e2a à e2e2f) ──
+  // Comptes semés par donnees/lot-parametres-auth.mjs (connexion par
+  // formulaire, double authentification, mot de passe, appareils…) : chacun
+  // a son mot de passe ou ses sessions, qu'un test change ou révoque sans
+  // toucher aux autres comptes.
+  utilisateurAuth: "e2e1a",
+  // Collection `account` de Better Auth (mot de passe haché).
+  compteAuth: "e2e1b",
+  sessionAuth: "e2e1c",
+  membreAuth: "e2e1d",
+  invitationAuth: "e2e1e",
+  deuxFacteursAuth: "e2e1f",
+  espaceAuth: "e2e2a",
+  abonnementAuth: "e2e2b",
+  roleEspaceAuth: "e2e2c",
+  verificationAuth: "e2e2d",
   // ── fin du lot parametres-auth ──
   // ── Lot collaboration (e2e5a à e2e5f, e2e6a à e2e6f) ──
   // ── fin du lot collaboration ──
@@ -138,6 +153,28 @@ export const COMPTES = {
   // ── Lot achats-banque (organisations et utilisateurs 20 à 24) ──
   // ── fin du lot achats-banque ──
   // ── Lot parametres-auth (organisations et utilisateurs 25 à 34) ──
+  // « Paramètres » : un membre de chaque rôle, des invitations en attente et
+  // un rôle personnalisé (voir lot-parametres-auth.mjs). Les tests y lisent
+  // et y sont refusés : rien n'y change, la page reste la même pour tous.
+  parametres: {
+    utilisateur: { _id: oid("utilisateur", 25), email: "parametres@e2e.test", name: "Noa Paramètres" },
+    organisation: organisation(25, "Paramètres Test SASU"),
+    token: "e2eSessionTokenNewbiParametresUniquement",
+  },
+  // « Configuration » : les formulaires de l'entreprise (générale, banque,
+  // informations légales) et les réglages de session y enregistrent.
+  configuration: {
+    utilisateur: { _id: oid("utilisateur", 26), email: "configuration@e2e.test", name: "Sam Configuration" },
+    organisation: organisation(26, "Configuration Test SASU"),
+    token: "e2eSessionTokenNewbiConfigurationUniquement",
+  },
+  // « Équipe » : invitations, changements de rôle, retraits et rôles
+  // personnalisés créés par les tests (un membre ou une invitation par action).
+  equipe: {
+    utilisateur: { _id: oid("utilisateur", 27), email: "equipe@e2e.test", name: "Ali Équipe" },
+    organisation: organisation(27, "Équipe Test SASU"),
+    token: "e2eSessionTokenNewbiEquipeUniquement",
+  },
   // ── fin du lot parametres-auth ──
   // ── Lot collaboration (organisations et utilisateurs 35 à 39) ──
   // ── fin du lot collaboration ──
@@ -171,6 +208,49 @@ export const MEMBRES = {
   // ── Lot achats-banque (utilisateurs 20 à 24) ──
   // ── fin du lot achats-banque ──
   // ── Lot parametres-auth (utilisateurs 25 à 34) ──
+  // Un membre par rôle dans « Paramètres » (Administrateur, Éditeur, Membre,
+  // Comptable, rôle personnalisé « Recrutement »), un dans « Équipe » avec un
+  // rôle personnalisé qui peut inviter et changer les rôles.
+  adminParametres: {
+    utilisateur: { _id: oid("utilisateur", 28), email: "admin-parametres@e2e.test", name: "Ada Administratrice" },
+    de: "parametres",
+    role: "admin",
+    token: "e2eSessionTokenNewbiAdminParametresUniquement",
+  },
+  editeurParametres: {
+    utilisateur: { _id: oid("utilisateur", 29), email: "editeur-parametres@e2e.test", name: "Élio Éditeur" },
+    de: "parametres",
+    role: "member",
+    token: "e2eSessionTokenNewbiEditeurParametresUniquement",
+  },
+  membreParametres: {
+    utilisateur: { _id: oid("utilisateur", 30), email: "membre-parametres@e2e.test", name: "Mia Membre" },
+    de: "parametres",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiMembreParametresUniquement",
+  },
+  comptableParametres: {
+    utilisateur: { _id: oid("utilisateur", 31), email: "comptable-parametres@e2e.test", name: "Côme Comptable" },
+    de: "parametres",
+    role: "accountant",
+    token: "e2eSessionTokenNewbiComptableParametresUniquement",
+  },
+  // Rôle personnalisé « Recrutement » (voir lot-parametres-auth.mjs) : voir
+  // et inviter des membres, rien d'autre.
+  recruteurParametres: {
+    utilisateur: { _id: oid("utilisateur", 32), email: "recruteur-parametres@e2e.test", name: "Rémi Recruteur" },
+    de: "parametres",
+    role: "role_e2e2c0000000000000000001",
+    token: "e2eSessionTokenNewbiRecruteurParametresUniquement",
+  },
+  // Rôle personnalisé « Gestion d'équipe » d'« Équipe » : inviter, changer
+  // les rôles et retirer des membres, sans le reste.
+  gestionnaireEquipe: {
+    utilisateur: { _id: oid("utilisateur", 33), email: "gestion-equipe@e2e.test", name: "Gaël Gestion" },
+    de: "equipe",
+    role: "role_e2e2c0000000000000000002",
+    token: "e2eSessionTokenNewbiGestionEquipeUniquement",
+  },
   // ── fin du lot parametres-auth ──
   // ── Lot collaboration (utilisateurs 35 à 39) ──
   // ── fin du lot collaboration ──

@@ -56,6 +56,20 @@ export const SESSION_TOKEN_REGLAGES = "e2eSessionTokenNewbiReglagesUniquement";
 // ── Lot achats-banque ──
 // ── fin du lot achats-banque ──
 // ── Lot parametres-auth ──
+/** Propriétaire de « Paramètres » (un membre de chaque rôle, rien n'y change). */
+export const SESSION_TOKEN_PARAMETRES = "e2eSessionTokenNewbiParametresUniquement";
+/** Propriétaire de « Configuration » (formulaires de l'entreprise, réglages de session). */
+export const SESSION_TOKEN_CONFIGURATION = "e2eSessionTokenNewbiConfigurationUniquement";
+/** Propriétaire d'« Équipe » (invitations, rôles, retraits). */
+export const SESSION_TOKEN_EQUIPE = "e2eSessionTokenNewbiEquipeUniquement";
+/** Membres de « Paramètres », un par rôle. */
+export const SESSION_TOKEN_ADMIN_PARAMETRES = "e2eSessionTokenNewbiAdminParametresUniquement";
+export const SESSION_TOKEN_EDITEUR_PARAMETRES = "e2eSessionTokenNewbiEditeurParametresUniquement";
+export const SESSION_TOKEN_MEMBRE_PARAMETRES = "e2eSessionTokenNewbiMembreParametresUniquement";
+export const SESSION_TOKEN_COMPTABLE_PARAMETRES = "e2eSessionTokenNewbiComptableParametresUniquement";
+export const SESSION_TOKEN_RECRUTEUR_PARAMETRES = "e2eSessionTokenNewbiRecruteurParametresUniquement";
+/** Membre d'« Équipe » au rôle personnalisé « Gestion d'équipe ». */
+export const SESSION_TOKEN_GESTION_EQUIPE = "e2eSessionTokenNewbiGestionEquipeUniquement";
 // ── fin du lot parametres-auth ──
 // ── Lot collaboration ──
 // ── fin du lot collaboration ──
