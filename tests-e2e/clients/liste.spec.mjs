@@ -169,7 +169,7 @@ test.describe("Contacts : export et copie", () => {
     await ouvrirContacts(page);
     await page.getByRole("button", { name: "Exporter" }).click();
     const [telechargement] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "CSV" }).click()]);
-    const texte = readFileSync(await telechargement.path(), "utf8").replace(/^﻿/, "");
+    const texte = readFileSync(await telechargement.path(), "utf8").replace(/^\uFEFF/, "");
     const lignes = texte.split(/\r?\n/).filter((l) => l.trim());
     const tous = await contactsTries();
     await etape(page, "Contenu du fichier", async () => {

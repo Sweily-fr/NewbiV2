@@ -21,6 +21,7 @@ import {
   SESSION_TOKEN_INTRUS,
   SESSION_TOKEN_LECTEUR,
   SESSION_TOKEN_LISTE,
+  SESSION_TOKEN_REGLAGES,
 } from "../config.mjs";
 
 // Préfixe hexadécimal par type : un id de test se reconnaît d'un coup d'œil.
@@ -107,6 +108,13 @@ export const COMPTES = {
     organisation: organisation(6, "Freelance Test EI"),
     token: SESSION_TOKEN_FREELANCE,
     plan: "freelance",
+  },
+  // Configuration de l'espace (champs personnalisés, import, automatisations,
+  // paramètres) : ses changements ne touchent aucun autre test.
+  reglages: {
+    utilisateur: { _id: oid("utilisateur", 9), email: "reglages@e2e.test", name: "Charlie Réglages" },
+    organisation: organisation(7, "Réglages Test SASU"),
+    token: SESSION_TOKEN_REGLAGES,
   },
 };
 

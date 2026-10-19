@@ -381,13 +381,70 @@ export const CHAMPS_FREELANCE = Array.from({ length: 5 }, (_, i) => ({
   ...enOrganisation("freelance"),
 }));
 
+/** Organisation « Réglages » : un champ de chaque type utile à la saisie, et des champs à modifier. */
+const champReglages = (n, name, fieldType, extra = {}) => ({
+  _id: oid("champClient", 100 + n),
+  name,
+  fieldType,
+  description: "",
+  options: [],
+  placeholder: "",
+  isRequired: false,
+  order: n,
+  showOnDocuments: false,
+  isActive: true,
+  ...extra,
+  ...enOrganisation("reglages"),
+});
+
+export const CHAMPS_REGLAGES = {
+  texte: champReglages(1, "Source du contact", "TEXT"),
+  url: champReglages(2, "Site web du client", "URL"),
+  email: champReglages(3, "E-mail de facturation", "EMAIL"),
+  telephone: champReglages(4, "Téléphone du standard", "PHONE"),
+  nombre: champReglages(5, "Effectif", "NUMBER"),
+  choix: champReglages(6, "Taille d'entreprise", "SELECT", {
+    options: [
+      { label: "TPE", value: "tpe", color: "#5b50FF" },
+      { label: "PME", value: "pme", color: "#10b981" },
+      { label: "ETI", value: "eti", color: "#f59e0b" },
+    ],
+  }),
+  texteLong: champReglages(7, "Commentaire interne", "TEXTAREA"),
+  caseACocher: champReglages(8, "Client VIP", "CHECKBOX"),
+  aRenommer: champReglages(9, "Champ à renommer", "TEXT"),
+  aDesactiver: champReglages(10, "Champ à désactiver", "TEXT"),
+  surDocuments: champReglages(11, "Champ à mettre sur les documents", "TEXT"),
+  aSupprimer: champReglages(12, "Champ à supprimer avec valeurs", "TEXT"),
+  anniversaire: champReglages(13, "Date d'anniversaire", "DATE"),
+};
+
+/** Liste de « Réglages », cible des automatisations créées par les tests. */
+export const LISTE_REGLAGES = {
+  _id: oid("listeClients", 20),
+  name: "Liste des automatisations",
+  description: "",
+  clients: [],
+  color: "#5b50FF",
+  isDefault: false,
+  ...enOrganisation("reglages"),
+};
+
+/** Contact de « Réglages » qui a une valeur pour le champ qui sera supprimé. */
+export const CONTACT_AVEC_VALEUR = contact(160, {
+  organisation: "reglages",
+  name: "Contact avec valeur personnalisée SARL",
+  email: "valeur-perso@e2e.test",
+  customFields: [{ fieldId: CHAMPS_REGLAGES.aSupprimer._id, value: "Valeur qui va disparaître" }],
+});
+
 export function donneesClients() {
   return {
-    clients: [...Object.values(CONTACTS), ...REMPLISSAGE],
+    clients: [...Object.values(CONTACTS), ...REMPLISSAGE, CONTACT_AVEC_VALEUR],
     invoices: Object.values(FACTURES_CONTACTS),
-    clientlists: Object.values(LISTES_CLIENTS),
+    clientlists: [...Object.values(LISTES_CLIENTS), LISTE_REGLAGES],
     clientsegments: Object.values(SEGMENTS),
     clientautomations: Object.values(AUTOMATISATIONS),
-    clientcustomfields: [...Object.values(CHAMPS_CLIENTS).map((c) => ({ ...c, ...enOrganisation() })), ...CHAMPS_FREELANCE],
+    clientcustomfields: [...Object.values(CHAMPS_CLIENTS).map((c) => ({ ...c, ...enOrganisation() })), ...CHAMPS_FREELANCE, ...Object.values(CHAMPS_REGLAGES)],
   };
 }
