@@ -5,7 +5,7 @@
 # avant le site). Données de test uniquement (base Mongo en mémoire, services
 # externes coupés, voir tests-e2e/serveur.mjs) : aucun secret de prod (seul
 # NEWBI_API_TOKEN, en lecture seule sur newbi-api, si ce dépôt est privé).
-# Le rapport (résultats, captures, vidéos des échecs) est publié en artefact
+# Le rapport (résultats, captures, vidéo de chaque test) est publié en artefact
 # « rapport-admin », que la page « Tests » lit ensuite.
 name: Tests E2E
 run-name: "Tests E2E${{ github.event_name == 'pull_request' && format(' (PR #{0})', github.event.pull_request.number) || inputs.declenche_par && format(' ({0})', inputs.declenche_par) || '' }}"
