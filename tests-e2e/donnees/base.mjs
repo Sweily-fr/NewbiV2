@@ -52,6 +52,19 @@ const PREFIXES = {
   // ── Lot parametres-auth (e2e1a à e2e1f, e2e2a à e2e2f) ──
   // ── fin du lot parametres-auth ──
   // ── Lot collaboration (e2e5a à e2e5f, e2e6a à e2e6f) ──
+  tableau: "e2e5a",
+  colonne: "e2e5b",
+  tache: "e2e5c",
+  evenement: "e2e5d",
+  transfert: "e2e5e",
+  partageTableau: "e2e5f",
+  dossierPartage: "e2e6a",
+  documentPartage: "e2e6b",
+  tagDocument: "e2e6c",
+  automatisationDocument: "e2e6d",
+  signatureMail: "e2e6e",
+  // Sous-documents et données annexes (commentaires, étiquettes, codes de visiteur…).
+  annexeCollab: "e2e6f",
   // ── fin du lot collaboration ──
   // ── Lot pilotage (e2e7a à e2e7f, e2eda à e2edf) ──
   // ── fin du lot pilotage ──
@@ -140,6 +153,20 @@ export const COMPTES = {
   // ── Lot parametres-auth (organisations et utilisateurs 25 à 34) ──
   // ── fin du lot parametres-auth ──
   // ── Lot collaboration (organisations et utilisateurs 35 à 39) ──
+  // Kanban, calendrier, transferts, documents partagés, signatures (voir lot-collaboration.mjs).
+  // Jetons : mêmes valeurs que SESSION_TOKEN_COLLAB* de config.mjs.
+  collab: {
+    utilisateur: { _id: oid("utilisateur", 35), email: "collab@e2e.test", name: "Noa Collab" },
+    organisation: organisation(35, "Collab Test SASU"),
+    token: "e2eSessionTokenNewbiCollabUniquement",
+  },
+  // Offre d'entrée : plafonds du lot (automatisations de documents, taille des transferts).
+  collabFreelance: {
+    utilisateur: { _id: oid("utilisateur", 36), email: "collab-freelance@e2e.test", name: "Ilan Freelance" },
+    organisation: organisation(36, "Collab Freelance EI"),
+    token: "e2eSessionTokenNewbiCollabFreelanceUniquement",
+    plan: "freelance",
+  },
   // ── fin du lot collaboration ──
   // ── Lot pilotage (organisations et utilisateurs 40 à 44) ──
   // ── fin du lot pilotage ──
@@ -173,6 +200,24 @@ export const MEMBRES = {
   // ── Lot parametres-auth (utilisateurs 25 à 34) ──
   // ── fin du lot parametres-auth ──
   // ── Lot collaboration (utilisateurs 35 à 39) ──
+  collabMembre: {
+    utilisateur: { _id: oid("utilisateur", 37), email: "collab-membre@e2e.test", name: "Lina Membre" },
+    de: "collab",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiCollabMembreUniquement",
+  },
+  collabEditeur: {
+    utilisateur: { _id: oid("utilisateur", 38), email: "collab-editeur@e2e.test", name: "Enzo Éditeur" },
+    de: "collab",
+    role: "member",
+    token: "e2eSessionTokenNewbiCollabEditeurUniquement",
+  },
+  collabComptable: {
+    utilisateur: { _id: oid("utilisateur", 39), email: "collab-comptable@e2e.test", name: "Jade Comptable" },
+    de: "collab",
+    role: "accountant",
+    token: "e2eSessionTokenNewbiCollabComptableUniquement",
+  },
   // ── fin du lot collaboration ──
   // ── Lot pilotage (utilisateurs 40 à 44) ──
   // ── fin du lot pilotage ──

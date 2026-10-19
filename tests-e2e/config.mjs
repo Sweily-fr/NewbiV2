@@ -58,6 +58,16 @@ export const SESSION_TOKEN_REGLAGES = "e2eSessionTokenNewbiReglagesUniquement";
 // ── Lot parametres-auth ──
 // ── fin du lot parametres-auth ──
 // ── Lot collaboration ──
+/** Propriétaire de l'organisation « Collab » (kanban, calendrier, transferts, documents partagés, signatures). */
+export const SESSION_TOKEN_COLLAB = "e2eSessionTokenNewbiCollabUniquement";
+/** Membre de « Collab » avec le rôle « Membre » (lecture seule). */
+export const SESSION_TOKEN_COLLAB_MEMBRE = "e2eSessionTokenNewbiCollabMembreUniquement";
+/** Membre de « Collab » avec le rôle « Éditeur » (crée et modifie, ne supprime pas). */
+export const SESSION_TOKEN_COLLAB_EDITEUR = "e2eSessionTokenNewbiCollabEditeurUniquement";
+/** Membre de « Collab » avec le rôle « Comptable » (kanban et signatures fermés). */
+export const SESSION_TOKEN_COLLAB_COMPTABLE = "e2eSessionTokenNewbiCollabComptableUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée : plafonds du lot (automatisations, transferts). */
+export const SESSION_TOKEN_COLLAB_FREELANCE = "e2eSessionTokenNewbiCollabFreelanceUniquement";
 // ── fin du lot collaboration ──
 // ── Lot pilotage ──
 // ── fin du lot pilotage ──
