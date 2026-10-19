@@ -3,7 +3,7 @@
  * Écrit dans `rapport-admin/` :
  *   - resultats.json : le lancement, chaque test, ses étapes et ses erreurs ;
  *   - captures/*.jpg : les captures prises par `etape()` et la fixture ;
- *   - videos/*.webm : la vidéo des tests en échec (video: "retain-on-failure").
+ *   - videos/*.webm : la vidéo de chaque test (video: "on" quand ce rapport est demandé).
  * La CI le publie tel quel comme artefact GitHub, que l'admin lit ensuite.
  * Format lu par src/lib/tests-e2e.js : le faire évoluer des deux côtés.
  */

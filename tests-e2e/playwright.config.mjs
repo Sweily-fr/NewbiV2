@@ -39,7 +39,9 @@ export default defineConfig({
     timezoneId: "Europe/Paris",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    // Rapport pour l'admin (CI) : la vidéo de chaque test, vert ou rouge, pour
+    // voir ce que le navigateur a vraiment fait. En local, seulement les échecs.
+    video: process.env.E2E_RAPPORT_ADMIN === "1" ? "on" : "retain-on-failure",
     // Connecté d'office avec le compte de test (session écrite dans la base en mémoire).
     storageState: { cookies: [sessionCookie()], origins: [] },
   },
