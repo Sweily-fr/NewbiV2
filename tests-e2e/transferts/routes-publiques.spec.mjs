@@ -76,6 +76,8 @@ test.describe("Transferts : routes publiques de téléchargement (défauts connu
 });
 
 test.describe("Transferts : un jeton de retour de paiement non valide ne révèle rien", () => {
+  // Le refus de l'API arrive en 400 (attendu) ; la session absente donne un 401 sur /api/auth/token.
+  test.use({ erreursConsoleAutorisees: /401.*\/api\/auth\/token|status of 400/ });
   const CONSOMMER = `query($t: String!){ consumePaymentReturnToken(token: $t){ success message shareLink accessKey } }`;
 
   for (const [cas, jeton] of [

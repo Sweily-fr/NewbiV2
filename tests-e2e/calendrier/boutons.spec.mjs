@@ -63,7 +63,8 @@ test.describe("Calendrier (propriétaire) : la barre d'outils agit", () => {
 
   test("Un événement externe s'ouvre en lecture seule", async ({ page }) => {
     await ouvrirAgenda(page);
-    await page.getByText(EVENEMENTS.externe.title, { exact: true }).first().click();
+    // Le titre est suivi du badge « Google » dans le même élément : recherche sans « exact ».
+    await page.getByText(EVENEMENTS.externe.title).first().click();
     await expect(page.getByRole("dialog").filter({ hasText: /Détails de l'événement/ })).toBeVisible();
   });
 });
