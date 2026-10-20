@@ -187,16 +187,15 @@ verifierFormulaire({
   valeurs: (cas) => ({ iban: "FR76 3000 6000 0112 3456 7890 189", bic: "AGRIFRPP", banque: `Banque ${marque(cas)}` }),
   enregistre: async (v) => {
     const org = await lireOrg();
-    const iban = String(v.iban || "").replace(/\s/g, "").toUpperCase();
-    const memes = egal(org.bankIban, iban) && egal(org.bankBic, v.bic) && egal(org.bankName, v.banque);
-    if (!memes) console.log(`[banque] en base : ${JSON.stringify({ iban: org.bankIban, bic: org.bankBic, nom: org.bankName })} ; saisi : ${JSON.stringify({ iban, bic: v.bic, nom: v.banque })}`);
-    return memes ? org : null;
+    // Le site retire les espaces et les autres séparateurs avant d'enregistrer l'IBAN.
+    const iban = String(v.iban || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    return egal(org.bankIban, iban) && egal(org.bankBic, v.bic) && egal(org.bankName, v.banque) ? org : null;
   },
   champs: {
     IBAN: {
       cle: "iban",
       lu: (doc) => doc.bankIban,
-      normaliser: (v) => v.replace(/\s/g, "").toUpperCase(),
+      normaliser: (v) => v.replace(/[^A-Za-z0-9]/g, "").toUpperCase(),
       refuses: {
         "trop court": "FR76 3000 6000",
         "avec une clé de contrôle fausse": "FR76 3000 6000 0112 3456 7890 188",

@@ -171,6 +171,27 @@ test.describe("Paramètres : préférences et notifications enregistrées", () =
   });
 });
 
+test.describe("Paramètres > Coordonnées bancaires : changer un seul champ", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_CONFIGURATION) });
+  // Les champs BIC et nom de la banque remplacent le onChange de react-hook-form
+  // par le leur : modifiés seuls, le formulaire ne se voit pas modifié.
+  test("Changer seulement le nom de la banque ou le BIC : « Sauvegarder » devient actif", async ({ page }) => {
+    await ouvrirParametres(page, "coordonnees-bancaires", { pret: (z) => z.getByPlaceholder("BNP Paribas") });
+    const contenu = contenuParametres(page);
+    const sauvegarder = contenu.getByRole("button", { name: "Sauvegarder", exact: true });
+    await expect(sauvegarder).toBeDisabled();
+    await etape(page, "Nom de la banque seul", async () => {
+      await contenu.getByPlaceholder("BNP Paribas").fill("Banque du Changement Seul");
+      await expect.soft(sauvegarder, "Nom de la banque modifié seul : « Sauvegarder » reste grisé, impossible d'enregistrer").toBeEnabled({ timeout: 3_000 });
+    }, { capture: "ecran" });
+    await ouvrirParametres(page, "coordonnees-bancaires", { pret: (z) => z.getByPlaceholder("BNPAFRPP") });
+    await etape(page, "BIC seul", async () => {
+      await contenuParametres(page).getByPlaceholder("BNPAFRPP").fill("CEPAFRPP");
+      await expect.soft(contenuParametres(page).getByRole("button", { name: "Sauvegarder", exact: true }), "BIC modifié seul : « Sauvegarder » reste grisé, impossible d'enregistrer").toBeEnabled({ timeout: 3_000 });
+    }, { capture: "ecran" });
+  });
+});
+
 test.describe("Paramètres : relancer le tutoriel", () => {
   test.use({ storageState: connecte(COMPTES_AUTH.tutoriel.token) });
   // Relance purement locale : rien n'est écrit en base, le tutoriel s'ouvre.
