@@ -80,6 +80,8 @@ test.describe("Contact : saisie juste", () => {
 });
 
 test.describe("Contact : champs refusés", () => {
+  // Refus du serveur (400) : le navigateur l'écrit dans la console
+  test.use({ erreursConsoleAutorisees: /status of 400.*\/api\/contact/ });
   for (const champ of ["Nom", "Email", "Sujet", "Message"]) {
     test(`« ${champ} » vide : le navigateur l'empêche avec un message, rien n'est envoyé`, async ({ page }) => {
       const reponses = await ouvrirContact(page);

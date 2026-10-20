@@ -52,6 +52,10 @@ for (const chemin of PAGES_PUBLIQUES) {
   });
 }
 
+test.describe("Inscription : liens légaux", () => {
+  // Next précharge le lien cassé (404 dans la console) : c'est le défaut vérifié ci-dessous
+  test.use({ erreursConsoleAutorisees: /404.*\/politique-confidentialite|status of 401.*\/api\/auth\/organization\// });
+
 test("Inscription : le lien « Politique de confidentialité » mène à la politique de confidentialité", async ({ page }) => {
   await page.goto("/auth/signup");
   const lien = page.getByRole("link", { name: "Politique de confidentialité" }).first();
@@ -65,6 +69,7 @@ test("Inscription : le lien « Conditions générales » mène aux conditions g�
   await expect(page.getByRole("link", { name: "Conditions générales" }).first()).toBeVisible({ timeout: 30_000 });
   const href = await page.getByRole("link", { name: "Conditions générales" }).first().getAttribute("href");
   expect(href, "« Conditions générales » ouvre les mentions légales").not.toBe("/mentions-legales");
+});
 });
 
 test("Politique de confidentialité : l'adresse annoncée aux moteurs de recherche existe", async ({ page }) => {

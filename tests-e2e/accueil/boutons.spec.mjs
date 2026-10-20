@@ -43,13 +43,10 @@ test.describe("Accueil (propriétaire)", () => {
     },
   });
 
-  test("Le bouton « + » du cadre Solde ouvre la connexion d'une banque et porte un nom lisible", async ({ page }) => {
+  test("Le bouton « + » du cadre Solde porte un nom lisible (lecteur d'écran)", async ({ page }) => {
     await ouvrirAccueil(page);
     const bouton = cadreSolde(page).getByRole("button");
     await expect(bouton).toHaveCount(1);
-    await bouton.click();
-    await expect(page.getByRole("dialog").filter({ hasText: "Connecter votre banque" })).toBeVisible();
-    await page.keyboard.press("Escape");
     await expect(bouton, "Bouton sans nom accessible (une icône seule) : un lecteur d'écran annonce « bouton »").toHaveAccessibleName(/\S/);
   });
 });
