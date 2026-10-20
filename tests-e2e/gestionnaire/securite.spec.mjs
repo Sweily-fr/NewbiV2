@@ -28,7 +28,7 @@ const ECRITURES = [
   { nom: "Annuler une invitation du cabinet", methode: "DELETE", chemin: `/api/gestionnaire/invitations/${id(INVITATIONS.aAnnuler)}` },
   { nom: "Relancer une invitation du cabinet", methode: "POST", chemin: `/api/gestionnaire/invitations/${id(INVITATIONS.expiree)}/relancer` },
   { nom: "Renvoyer l'e-mail de bienvenue", methode: "POST", chemin: `/api/gestionnaire/clients/${id(LIENS.boulangerie)}/bienvenue` },
-  { nom: "Changer le payeur d'un client", methode: "POST", chemin: `/api/gestionnaire/clients/${id(LIENS.boulangerie)}/payeur`, corps: { action: "takeover" } },
+  { nom: "Changer le payeur d'un client", methode: "POST", chemin: `/api/gestionnaire/clients/${id(LIENS.boulangerie)}/payeur`, corps: { payer: "manager", plan: "pme", isAnnual: false } },
 ];
 const LECTURES = [
   { nom: "Liste des clients du cabinet", chemin: "/api/gestionnaire/clients" },
