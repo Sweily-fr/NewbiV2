@@ -53,9 +53,7 @@ export function ChangePasswordModal({ isOpen, onClose }) {
         toast.error("Erreur lors du changement de mot de passe");
         return;
       }
-      toast.success(
-        "Mot de passe modifié. Vos autres sessions ont été fermées.",
-      );
+      toast.success("Mot de passe modifié avec succès");
       onClose();
       setCurrentPassword("");
       setNewPassword("");
