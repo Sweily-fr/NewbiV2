@@ -154,6 +154,7 @@ test.describe("Accueil : dernières factures de vente (propriétaire)", () => {
     const attendues = await dernieresFactures(W);
     await ouvrirAccueil(page);
     const zone = carte(page, "Factures de vente (HT)");
+    await expect(zone).toContainText(euros(attendues[0].ht), { timeout: 30_000 });
     const texte = texteSimple(await zone.innerText());
     for (const f of attendues) {
       expect.soft(texte, `Facture ${f.reference} (${f.client})`).toContain(texteSimple(f.client));
@@ -164,6 +165,7 @@ test.describe("Accueil : dernières factures de vente (propriétaire)", () => {
   test("Le numéro d'une facture s'écrit comme dans la liste des factures (préfixe, tiret, numéro)", async ({ page }) => {
     const [premiere] = await dernieresFactures(W);
     await ouvrirAccueil(page);
+    await expect(carte(page, "Factures de vente (HT)")).toContainText(euros(premiere.ht), { timeout: 30_000 });
     const texte = texteSimple(await carte(page, "Factures de vente (HT)").innerText());
     expect(texte, `Numéro attendu « ${premiere.reference} » (affiché collé : « ${premiere.reference.replace(/-(?=[^-]*$)/, "")} »)`).toContain(premiere.reference);
   });

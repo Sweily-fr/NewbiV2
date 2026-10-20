@@ -18,7 +18,14 @@ test.describe("Notifications (propriétaire)", () => {
   test("Le bouton annonce le nombre de notifications non lues", async ({ page }) => {
     const nonLues = await (await base()).collection("notifications").countDocuments({ userId: COMPTES.pilotage.utilisateur._id, workspaceId: COMPTES.pilotage.organisation._id, read: false });
     await ouvrir(page, "/dashboard");
-    await expect(boutonNotifications(page)).toHaveAccessibleName(new RegExp(`^Notifications\\s*${nonLues}$`));
+    await expect(boutonNotifications(page).locator("xpath=ancestor::li[1]")).toContainText(String(nonLues));
+  });
+
+  test("Barre repliée : le nombre de notifications est annoncé avec le bouton (lecteur d'écran)", async ({ page }) => {
+    const nonLues = await (await base()).collection("notifications").countDocuments({ userId: COMPTES.pilotage.utilisateur._id, workspaceId: COMPTES.pilotage.organisation._id, read: false });
+    await ouvrir(page, "/dashboard");
+    await expect(boutonNotifications(page).locator("xpath=ancestor::li[1]")).toContainText(String(nonLues));
+    await expect(boutonNotifications(page), "Le nombre est affiché à côté du bouton, hors de son nom : un lecteur d'écran annonce « Notifications » sans le nombre").toHaveAccessibleName(new RegExp(`${nonLues}`));
   });
 
   test("Le bouton ouvre les notifications ; un titre piégé s'affiche comme du texte", async ({ page }) => {
@@ -28,7 +35,7 @@ test.describe("Notifications (propriétaire)", () => {
     await expect(parametres).toBeVisible();
     await etape(page, "Notifications affichées", async () => {
       await expect(parametres.getByText(NOTIFICATIONS_PILOTAGE.nonLue.title, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
-      await expect(parametres.getByText(/Membre <img/).first()).toBeVisible();
+      await expect(parametres.getByText(/Demande <img/).first()).toBeVisible();
     }, { capture: "ecran" });
     await page.waitForTimeout(800);
     expect(await page.evaluate(() => window.__piege ?? null), "Le code de la notification s'est exécuté").toBeNull();
@@ -40,7 +47,7 @@ test.describe("Notifications (Membre de « Pilotage »)", () => {
 
   test("Les notifications du propriétaire ne lui sont ni comptées ni montrées", async ({ page }) => {
     await ouvrir(page, "/dashboard");
-    await expect(boutonNotifications(page)).toHaveAccessibleName(/^Notifications$/);
+    await expect(boutonNotifications(page).locator("xpath=ancestor::li[1]")).toHaveText(/^\s*Notifications\s*$/);
     await cliquer(page, boutonNotifications(page));
     const parametres = fenetre(page, "Paramètres de l'application");
     await expect(parametres).toBeVisible();

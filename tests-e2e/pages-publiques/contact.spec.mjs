@@ -8,8 +8,9 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir, cliquer } from "../navigation.mjs";
+import { visiteur } from "./consentement.mjs";
 
-test.use({ storageState: { cookies: [], origins: [] } });
+test.use({ storageState: visiteur() });
 
 const JUSTE = { nom: "Zoë L’Hôte-Cœur", email: "zoe.lhote@exemple.fr", sujet: "Question sur la facture n° 12", message: "Bonjour,\nj’ai une question à propos de l’export (montant : 1 234,56 €)." };
 let compteurIp = 0;

@@ -7,8 +7,16 @@
 import { readFileSync } from "node:fs";
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
+import { visiteur } from "./consentement.mjs";
 
-test.use({ storageState: { cookies: [], origins: [] } });
+test.use({ storageState: visiteur() });
+
+/**
+ * Le générateur appelle, pour un visiteur, des routes réservées aux comptes
+ * connectés (organisation active) : refus 401 écrits dans la console. Tolérés
+ * dans les tests du générateur ; un test dédié le signale.
+ */
+const REFUS_ORGANISATION = /status of 401.*\/api\/auth\/organization\//;
 
 const ESPACES_SPECIAUX = new RegExp(`[${String.fromCharCode(0x202f, 0xa0)}]`, "g");
 const simple = (t) => String(t ?? "").replace(ESPACES_SPECIAUX, " ").replace(/\s+/g, " ").trim();
@@ -28,6 +36,7 @@ for (const [nom, chemin, prefixe] of [
   ["devis", "/outils/generateur-de-devis", "D"],
 ]) {
   test.describe(`Générateur de ${nom}`, () => {
+    test.use({ erreursConsoleAutorisees: REFUS_ORGANISATION });
     const ouvrirGenerateur = (page) => ouvrir(page, chemin, { pret: page.getByText("Aperçu en direct", { exact: true }) });
 
     test("Totaux de deux lignes à 20 % et 5,5 % : HT, TVA et TTC justes", async ({ page }) => {
@@ -91,6 +100,16 @@ for (const [nom, chemin, prefixe] of [
       await page.waitForTimeout(1_000);
       expect(await page.evaluate(() => window.__piege ?? null), "Le code s'est exécuté dans l'aperçu").toBeNull();
       await expect(page.getByText(/Client <img/).first()).toBeVisible();
+    });
+
+    test("Un visiteur n'appelle aucune route réservée aux comptes connectés", async ({ page }) => {
+      const refus = [];
+      page.on("response", (r) => {
+        if (r.status() === 401) refus.push(new URL(r.url()).pathname);
+      });
+      await ouvrirGenerateur(page);
+      await page.waitForTimeout(1_500);
+      expect(refus, "Routes réservées aux comptes connectés appelées depuis la page publique (refus 401 dans la console)").toEqual([]);
     });
 
     test("Chaque champ de saisie porte son libellé (lu par les lecteurs d'écran)", async ({ page }) => {

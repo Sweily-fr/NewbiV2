@@ -18,8 +18,9 @@ export async function simulerBanques(page) {
 export async function ouvrirAccueil(page) {
   await simulerBanques(page);
   await ouvrir(page, "/dashboard", { pret: page.getByRole("heading", { name: "À traiter" }) });
-  // Squelettes des cadres : attendre la fin du chargement des montants
-  await expect(page.locator("main [data-slot=skeleton], main [data-slot=card] .animate-pulse")).toHaveCount(0, { timeout: 30_000 });
+  // Cadres chargés : les compteurs « À traiter » et le cadre du mois (ou son état vide) sont affichés
+  await expect(page.getByRole("link", { name: /^Notifications non lues\s*\d+$/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Ventes (TTC)", { exact: true }).or(page.getByText("Aucune donnée de facturation", { exact: true })).first()).toBeVisible({ timeout: 30_000 });
 }
 
 export const carte = (page, texte) => page.locator("main [data-slot=card]").filter({ has: page.getByText(texte, { exact: true }) });

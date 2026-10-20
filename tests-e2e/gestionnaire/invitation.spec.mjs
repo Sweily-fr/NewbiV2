@@ -9,7 +9,8 @@ import { test, expect, etape } from "../outils.mjs";
 import { ouvrir, cliquer } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { id } from "../securite.mjs";
-import { connecte, SESSION_TOKEN_CLIENT_CABINET, SESSION_TOKEN_PILOTAGE_EDITEUR } from "../config.mjs";
+import { SESSION_TOKEN_CLIENT_CABINET, SESSION_TOKEN_PILOTAGE_EDITEUR } from "../config.mjs";
+import { connecteAvecConsentement } from "../pages-publiques/consentement.mjs";
 import { COMPTES, MEMBRES } from "../donnees/base.mjs";
 import { CABINET, CABINET_FANTOME, ESPACES_LIBRES, INVITATIONS } from "../donnees/lot-pilotage.mjs";
 import { fiche, photoGestion } from "./outils-gestionnaire.mjs";
@@ -27,7 +28,7 @@ async function espacesAConfier(utilisateurId) {
 }
 
 test.describe("Invitation d'un cabinet : le client répond", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_CLIENT_CABINET) });
+  test.use({ storageState: connecteAvecConsentement(SESSION_TOKEN_CLIENT_CABINET) });
 
   test("La page présente le cabinet et propose ses espaces libres, pas ceux déjà suivis", async ({ page }) => {
     const attendus = await espacesAConfier(COMPTES.clientCabinet.utilisateur._id);
@@ -53,7 +54,7 @@ test.describe("Invitation d'un cabinet : le client répond", () => {
     for (const caseCochee of await page.getByRole("checkbox", { checked: true }).all()) await caseCochee.click();
     await espaceCoche(page, choisi.name).click();
     await expect(espaceCoche(page, choisi.name)).toBeChecked();
-    await cliquer(page, page.getByRole("button", { name: "Accepter" }));
+    await cliquer(page, page.getByRole("button", { name: "Accepter", exact: true }));
     await etape(page, "Confirmation affichée", () => expect(page.getByRole("heading", { name: "C'est fait" })).toBeVisible(), { capture: "ecran" });
     await etape(page, "Enregistré en base", async () => {
       const f = await fiche(INVITATIONS.aAccepter._id);
@@ -69,9 +70,9 @@ test.describe("Invitation d'un cabinet : le client répond", () => {
   });
 
   test("Refuser : l'invitation est refusée, aucun accès donné", async ({ page }) => {
-    await ouvrir(page, page_(INVITATIONS.aRefuser), { pret: page.getByRole("button", { name: "Refuser" }) });
+    await ouvrir(page, page_(INVITATIONS.aRefuser), { pret: page.getByRole("button", { name: "Refuser", exact: true }) });
     const membresAvant = await (await base()).collection("member").countDocuments({ userId: MEMBRES.cabinet.utilisateur._id });
-    await cliquer(page, page.getByRole("button", { name: "Refuser" }));
+    await cliquer(page, page.getByRole("button", { name: "Refuser", exact: true }));
     await etape(page, "Refus affiché", () => expect(page.getByRole("heading", { name: "Invitation refusée" })).toBeVisible(), { capture: "ecran" });
     const f = await fiche(INVITATIONS.aRefuser._id);
     expect(f.status).toBe("declined");
@@ -81,7 +82,7 @@ test.describe("Invitation d'un cabinet : le client répond", () => {
 });
 
 test.describe("Invitation d'un cabinet : expirée", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_PILOTAGE_EDITEUR) });
+  test.use({ storageState: connecteAvecConsentement(SESSION_TOKEN_PILOTAGE_EDITEUR) });
 
   test("Une invitation expirée l'annonce et ne propose plus de répondre", async ({ page }) => {
     await ouvrir(page, page_(INVITATIONS.expireeAffichee), { pret: page.getByRole("heading", { name: "Invitation expirée" }) });

@@ -7,8 +7,11 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
+import { visiteur } from "./consentement.mjs";
 
-test.use({ storageState: { cookies: [], origins: [] } });
+// Les générateurs appellent pour un visiteur des routes réservées aux comptes
+// connectés (401 dans la console) : défaut signalé par outils.spec.mjs.
+test.use({ storageState: visiteur(), erreursConsoleAutorisees: /status of 401.*\/api\/auth\/organization\// });
 
 export const PAGES_PUBLIQUES = ["/contact", "/outils/generateur-de-facture", "/outils/generateur-de-devis", "/outils/calculateur-penalites-retard", "/outils"];
 
@@ -50,14 +53,16 @@ for (const chemin of PAGES_PUBLIQUES) {
 }
 
 test("Inscription : le lien « Politique de confidentialité » mène à la politique de confidentialité", async ({ page }) => {
-  await ouvrir(page, "/auth/signup");
+  await page.goto("/auth/signup");
   const lien = page.getByRole("link", { name: "Politique de confidentialité" }).first();
+  await expect(lien).toBeVisible({ timeout: 30_000 });
   const href = await lien.getAttribute("href");
   await etape(page, `Lien : ${href}`, async () => expect(await statut(page, href), `${href} n'existe pas (la page est /politique-de-confidentialite)`).toBeLessThan(400), { capture: "ecran" });
 });
 
 test("Inscription : le lien « Conditions générales » mène aux conditions générales, pas aux mentions légales", async ({ page }) => {
-  await ouvrir(page, "/auth/signup");
+  await page.goto("/auth/signup");
+  await expect(page.getByRole("link", { name: "Conditions générales" }).first()).toBeVisible({ timeout: 30_000 });
   const href = await page.getByRole("link", { name: "Conditions générales" }).first().getAttribute("href");
   expect(href, "« Conditions générales » ouvre les mentions légales").not.toBe("/mentions-legales");
 });

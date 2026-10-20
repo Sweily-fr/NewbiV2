@@ -11,7 +11,7 @@ import { base } from "../base.mjs";
 import { id } from "../securite.mjs";
 import { connecte, SESSION_TOKEN_PILOTAGE_EDITEUR } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
-import { ESPACES_LIBRES, FACTURES_PILOTAGE } from "../donnees/lot-pilotage.mjs";
+import { CONTACTS_PILOTAGE, ESPACES_LIBRES } from "../donnees/lot-pilotage.mjs";
 import { remettreEspace } from "../gestionnaire/outils-gestionnaire.mjs";
 
 test.use({ storageState: connecte(SESSION_TOKEN_PILOTAGE_EDITEUR) });
@@ -34,18 +34,20 @@ async function aucuneErreur(page, contexte) {
   await expect(page.locator("body"), `${contexte} : erreur affichée`).not.toContainText(ERREURS_AFFICHEES);
 }
 
-test("Depuis la page d'une facture : arrivée sur la liste des factures du nouvel espace, sans erreur", async ({ page }) => {
-  await ouvrir(page, `/dashboard/outils/factures/${id(FACTURES_PILOTAGE.aEncaisser)}`);
+const FICHE = `/dashboard/clients/${id(CONTACTS_PILOTAGE.pilote)}`;
+
+test("Depuis la fiche d'un client : arrivée sur la liste des clients du nouvel espace, sans erreur", async ({ page }) => {
+  await ouvrir(page, FICHE, { pret: page.getByText(CONTACTS_PILOTAGE.pilote.email).first() });
   await changerPour(page, STUDIO);
-  await expect(page).toHaveURL(/\/dashboard\/outils\/factures$/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/dashboard\/clients$/, { timeout: 30_000 });
   await attendrePagePrete(page);
   await etape(
     page,
     "Nouvel espace",
     async () => {
       await expect(page.locator("[data-sonner-toast]").filter({ hasText: `Vous êtes sur l'espace ${STUDIO}` })).toBeVisible();
-      await aucuneErreur(page, "Liste des factures du nouvel espace");
-      await expect(page.locator("main"), "Une facture de l'ancien espace est encore affichée").not.toContainText(`${FACTURES_PILOTAGE.aEncaisser.prefix}-${FACTURES_PILOTAGE.aEncaisser.number}`);
+      await aucuneErreur(page, "Liste des clients du nouvel espace");
+      await expect(page.locator("main"), "Un client de l'ancien espace est encore affiché").not.toContainText(CONTACTS_PILOTAGE.pilote.name);
     },
     { capture: "ecran" },
   );
@@ -55,9 +57,9 @@ test("Depuis la page d'une facture : arrivée sur la liste des factures du nouve
 
 test("Retour arrière après un changement d'espace : pas d'erreur", async ({ page }) => {
   await ouvrir(page, "/dashboard/outils/devis");
-  await ouvrir(page, `/dashboard/outils/factures/${id(FACTURES_PILOTAGE.aEncaisser)}`);
+  await ouvrir(page, FICHE, { pret: page.getByText(CONTACTS_PILOTAGE.pilote.email).first() });
   await changerPour(page, STUDIO);
-  await expect(page).toHaveURL(/\/dashboard\/outils\/factures$/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/dashboard\/clients$/, { timeout: 30_000 });
   await attendrePagePrete(page);
   await page.goBack();
   await attendrePagePrete(page);

@@ -114,12 +114,10 @@ test.describe("Gestionnaire : actions sur les invitations", () => {
 
   test("« Garder l'invitation » ne change rien", async ({ page }) => {
     await ouvrirClients(page);
-    const avant = await fiche(INVITATIONS.aAnnuler._id);
-    test.skip(avant.status !== "pending", "Invitation déjà annulée par le test voisin sur cette machine");
-    await cliquer(page, ligne(page, INVITATIONS.aAnnuler.invitedEmail).getByRole("button", { name: "Annuler l'invitation" }));
+    await cliquer(page, ligne(page, INVITATIONS.aGarder.invitedEmail).getByRole("button", { name: "Annuler l'invitation" }));
     await fenetre(page, "Annuler l'invitation ?").getByRole("button", { name: "Garder l'invitation" }).click();
     await expect(fenetre(page, "Annuler l'invitation ?")).toBeHidden();
-    expect((await fiche(INVITATIONS.aAnnuler._id)).status).toBe("pending");
+    expect((await fiche(INVITATIONS.aGarder._id)).status).toBe("pending");
   });
 
   test("Retirer une invitation refusée : elle disparaît de la liste", async ({ page }) => {

@@ -159,6 +159,8 @@ export const INVITATIONS = {
   refuseeARelancer: invitation(29, { email: MEMBRES.pilotageEditeur.utilisateur.email, utilisateur: MEMBRES.pilotageEditeur.utilisateur._id, statut: "declined", demandeeIlYa: 35, expireDans: -21, reponduIlYa: 20 }),
   // En attente, à annuler (adresse sans compte : n'apparaît chez personne)
   aAnnuler: invitation(25, { email: "prospect-annule@e2e.test", utilisateur: PERSONNE, demandeeIlYa: 4, expireDans: 10 }),
+  // En attente, gardée après la confirmation (« Garder l'invitation »)
+  aGarder: invitation(30, { email: "prospect-garde@e2e.test", utilisateur: PERSONNE, demandeeIlYa: 5, expireDans: 9 }),
   // Refusée il y a longtemps, à retirer de la liste
   refuseeARetirer: invitation(26, { email: "prospect-refus@e2e.test", utilisateur: PERSONNE, statut: "declined", demandeeIlYa: 30, expireDans: -16, reponduIlYa: 25 }),
   // Refusée, à relancer alors que le compte n'existe plus : refus expliqué
@@ -589,15 +591,16 @@ export const TRANSACTIONS_PILOTAGE = {
 
 // --- Notifications d'activité ------------------------------------------------------
 
-function notification(n, { titre, message, lue = false, ilYa = 1 }) {
+function notification(n, { titre, message, lue = false, ilYa = 1, acteur = "Léa Éditrice" }) {
   return {
     _id: oid("pilDivers", n),
     userId: PILOTAGE.utilisateur._id,
     workspaceId: W_PILOTAGE,
-    type: "MEMBER_JOINED",
+    // Seul type de notification d'activité que l'API crée pour un membre (demande d'accès à une page)
+    type: "ACCESS_REQUESTED",
     title: titre,
     message,
-    data: { actorName: "Léa Éditrice" },
+    data: { actorId: MEMBRES.pilotageEditeur.utilisateur._id, actorName: acteur, url: "/dashboard/outils/factures" },
     read: lue,
     readAt: lue ? DANS(-ilYa) : null,
     createdAt: DANS(-ilYa),
@@ -606,9 +609,9 @@ function notification(n, { titre, message, lue = false, ilYa = 1 }) {
 }
 
 export const NOTIFICATIONS_PILOTAGE = {
-  nonLue: notification(301, { titre: "Nouveau membre", message: "Léa Éditrice a rejoint l'espace." }),
-  piegee: notification(302, { titre: `Membre ${PIEGE_HTML}`, message: `Sam ${PIEGE_HTML} a rejoint l'espace.`, ilYa: 2 }),
-  lue: notification(303, { titre: "Ancien membre", message: "Notification déjà lue.", lue: true, ilYa: 10 }),
+  nonLue: notification(301, { titre: "Demande d'accès", message: "Léa Éditrice demande à voir « Factures clients »" }),
+  piegee: notification(302, { titre: `Demande ${PIEGE_HTML}`, message: `Sam ${PIEGE_HTML} demande à voir « Devis »`, ilYa: 2, acteur: "Sam Lecteur" }),
+  lue: notification(303, { titre: "Demande d'accès", message: "Notification déjà lue", lue: true, ilYa: 10 }),
 };
 
 // --- Assemblage --------------------------------------------------------------------
