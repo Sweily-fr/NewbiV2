@@ -538,6 +538,7 @@ export function SecuritySection({
               </p>
             </div>
             <Switch
+              aria-label="Activer l'authentification à deux facteurs"
               checked={!!session?.user?.twoFactorEnabled}
               onCheckedChange={handle2FAToggle}
               className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
@@ -569,7 +570,10 @@ export function SecuritySection({
                 }
                 disabled={isSessionLoading}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger
+                  className="w-32"
+                  aria-label="Durée de session des utilisateurs"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -605,7 +609,10 @@ export function SecuritySection({
                 }
                 disabled={isSessionLoading}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger
+                  className="w-32"
+                  aria-label="Timeout d'inactivité"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -647,7 +654,10 @@ export function SecuritySection({
                 }
                 disabled={isSessionLoading}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger
+                  className="w-32"
+                  aria-label="Sessions simultanées"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
