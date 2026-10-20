@@ -698,10 +698,10 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
         w: ORG,
         input: {
           client: clientDe(CLIENTS_FACTURES.lumiere),
-          items: [{ ...article(`${MARQUE} ${piege("nom de l'article")}`), details: `Détails ${piege("détails de l'article")}` }],
-          headerNotes: `Notes ${piege("notes d'en-tête")}`,
-          footerNotes: `Bas de page ${piege("notes de bas de page")}`,
-          termsAndConditions: `Conditions ${piege("conditions générales")}`,
+          items: [{ ...article(`${MARQUE} ${piege("nom-article")}`), details: `Détails ${piege("details-article")}` }],
+          headerNotes: `Notes ${piege("notes-entete")}`,
+          footerNotes: `Bas de page ${piege("notes-bas-de-page")}`,
+          termsAndConditions: `Conditions ${piege("conditions-generales")}`,
           issueDate: AUJOURDHUI,
           dueDate: DANS_30,
           status: "PENDING",
@@ -720,9 +720,9 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
           input: {
             originalInvoiceId: factureId,
             creditType: "CORRECTION",
-            reason: `Motif ${piege("motif de l'avoir")}`,
+            reason: `Motif ${piege("motif-avoir")}`,
             client: clientDe(CLIENTS_FACTURES.lumiere),
-            items: [{ ...article(`Avoir ${piege("article de l'avoir")}`, 1), quantity: -1, details: `Détails ${piege("détails de l'avoir")}` }],
+            items: [{ ...article(`Avoir ${piege("article-avoir")}`, 1), quantity: -1, details: `Détails ${piege("details-avoir")}` }],
             issueDate: AUJOURDHUI,
           },
         },
@@ -733,13 +733,13 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
       acceptations.recurrence = await appelApi(
         page,
         `mutation($w: ID!, $i: ID!, $input: InvoiceRecurrenceInput!) { saveInvoiceRecurrence(workspaceId: $w, invoiceId: $i, input: $input) { id } }`,
-        { w: ORG, i: factureId, input: { frequency: "MONTHLY", interval: 1, startDate: DEMAIN, emailSubject: `Objet ${piege("objet de la récurrence")}`, emailBody: `Message ${piege("message de la récurrence")}` } },
+        { w: ORG, i: factureId, input: { frequency: "MONTHLY", interval: 1, startDate: DEMAIN, emailSubject: `Objet ${piege("objet-recurrence")}`, emailBody: `Message ${piege("message-recurrence")}` } },
         { organisation: ORG },
       );
       acceptations.modele = await appelApi(
         page,
         `mutation($w: ID, $input: SaveInvoiceAsTemplateInput!) { saveInvoiceAsTemplate(input: $input, workspaceId: $w) { id } }`,
-        { w: ORG, input: { invoiceId: factureId, name: `Modèle ${piege("nom du modèle")}`, description: `Description ${piege("description du modèle")}` } },
+        { w: ORG, input: { invoiceId: factureId, name: `Modèle ${piege("nom-modele")}`, description: `Description ${piege("description-modele")}` } },
         { organisation: ORG },
       );
     }
@@ -756,7 +756,7 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
   async function pasExecute(page) {
     await page.waitForTimeout(2_000);
     const executes = await page.evaluate(() => [...new Set(window.__piege || [])]);
-    expect(executes, `Du code s'est exécuté depuis : ${executes.join(", ")}`).toEqual([]);
+    expect(executes, `Du code s'est exécuté depuis : ${executes.join(", ")} (champs repérés par leur marque)`).toEqual([]);
   }
 
   test("Panneau de la facture (aperçu) : rien ne s'exécute", async ({ page }) => {

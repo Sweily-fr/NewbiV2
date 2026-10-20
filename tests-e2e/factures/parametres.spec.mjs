@@ -50,7 +50,12 @@ test.describe("Paramètres des factures", () => {
       const zone = await ouvrirParametres(page);
       await zone.getByRole("textbox", { name: "Préfixe de facture" }).fill("FAC 2026");
       await zone.getByRole("button", { name: "Enregistrer les modifications" }).click();
-      await page.waitForTimeout(1_500);
+      // Fin de l'enregistrement : la fenêtre se ferme, ou un message s'affiche.
+      await expect
+        .poll(async () => (await zone.isHidden()) || (await notificationsErreur(page).count()) > 0, { timeout: 15_000 })
+        .toBe(true)
+        .catch(() => {});
+      await page.waitForTimeout(3_000);
       await expect.soft(zone.getByText(/ne doit contenir que des lettres, chiffres et tirets/).first().or(notificationsErreur(page).first()), "Aucun message pour un préfixe avec une espace").toBeVisible();
       expect((await organisation())?.invoicePrefix ?? null, "Préfixe invalide enregistré : les factures suivantes seront refusées par l'API").toBe(avant);
     } finally {
@@ -62,7 +67,7 @@ test.describe("Paramètres des factures", () => {
   test("Coordonnées bancaires : un IBAN invalide est refusé avec un message", async ({ page }) => {
     const avant = (await organisation())?.bankIban ?? null;
     const zone = await ouvrirParametres(page);
-    await zone.getByRole("button", { name: "Configurer les coordonnées bancaires" }).click();
+    await zone.getByRole("button", { name: /coordonnées bancaires/ }).click();
     const fenetre = fenetreTitree(page, "Coordonnées bancaires");
     await fenetre.getByRole("textbox", { name: "IBAN" }).fill("FR76 1234");
     await fenetre.getByRole("textbox", { name: "BIC/SWIFT" }).fill("AGRIFRPP");
@@ -75,7 +80,7 @@ test.describe("Paramètres des factures", () => {
 
   test("Coordonnées bancaires : un IBAN valide (saisi avec des espaces) est enregistré", async ({ page }) => {
     const zone = await ouvrirParametres(page);
-    await zone.getByRole("button", { name: "Configurer les coordonnées bancaires" }).click();
+    await zone.getByRole("button", { name: /coordonnées bancaires/ }).click();
     const fenetre = fenetreTitree(page, "Coordonnées bancaires");
     await fenetre.getByRole("textbox", { name: "IBAN" }).fill("FR76 3000 6000 0112 3456 7890 189");
     await fenetre.getByRole("textbox", { name: "BIC/SWIFT" }).fill("AGRIFRPP");
@@ -90,7 +95,7 @@ test.describe("Paramètres des factures", () => {
 
   test("Nom de banque avec une apostrophe typographique (d’Île-de-France) : accepté", async ({ page }) => {
     const zone = await ouvrirParametres(page);
-    await zone.getByRole("button", { name: "Configurer les coordonnées bancaires" }).click();
+    await zone.getByRole("button", { name: /coordonnées bancaires/ }).click();
     const fenetre = fenetreTitree(page, "Coordonnées bancaires");
     await fenetre.getByRole("textbox", { name: "IBAN" }).fill("FR7630006000011234567890189");
     await fenetre.getByRole("textbox", { name: "BIC/SWIFT" }).fill("AGRIFRPP");

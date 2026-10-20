@@ -46,6 +46,13 @@ verifierFormulaire({
   valeurs: (cas) => ({ nom: `Prestation ${marque(cas)}`, details: "", quantite: "2", prix: "150" }),
   enregistre: (v) => factureAvecArticle((v.nom || "").trim() || "__aucun__"),
   champs: {
+    "Prix unitaire": {
+      cle: "prix",
+      lu: (doc) => doc.items[0].unitPrice,
+      normaliser: (v) => Number(v.replace(",", ".")),
+      refuses: { "en lettres": "abc" },
+      acceptes: { "avec virgule (1234,56)": "1234,56", "à zéro (ligne offerte)": "0" },
+    },
     "Nom de l'article": {
       cle: "nom",
       obligatoire: true,
@@ -65,20 +72,13 @@ verifierFormulaire({
       cle: "details",
       lu: (doc) => doc.items[0].details,
       refuses: { "de 501 caractères": "d".repeat(501) },
-      acceptes: { "sur deux lignes": "Ligne un\nLigne deux", "texte piégé (balise image)": "<img src=x onerror=alert(1)>" },
+      acceptes: { "sur deux lignes": "Ligne un\nLigne deux", "avec des signes < et > (texte, pas du code)": "Prix < 100 € et délai > 3 jours" },
     },
     Quantité: {
       cle: "quantite",
       lu: (doc) => doc.items[0].quantity,
       normaliser: (v) => Number(v.replace(",", ".")),
       acceptes: { "décimale avec virgule (1,5)": "1,5", "une demi-journée (0,5)": "0,5", "un quart d'heure (0,25)": "0,25" },
-    },
-    "Prix unitaire": {
-      cle: "prix",
-      lu: (doc) => doc.items[0].unitPrice,
-      normaliser: (v) => Number(v.replace(",", ".")),
-      refuses: { "en lettres": "abc" },
-      acceptes: { "avec virgule (1234,56)": "1234,56", "à zéro (ligne offerte)": "0" },
     },
   },
 });

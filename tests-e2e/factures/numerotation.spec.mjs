@@ -34,6 +34,8 @@ async function numeroAffiche(page) {
 }
 
 test.describe("Factures : numérotation continue", () => {
+  // Création refusée par l'API (échéance avant l'émission recalée) : le site l'écrit dans la console.
+  test.use({ erreursConsoleAutorisees: /Erreur lors de la sauvegarde de la facture|erreurs de validation/ });
   test("Nouvelle facture : le numéro proposé suit la séquence de tous les préfixes", async ({ page }) => {
     await ouvrirNouvelle(page);
     const attendu = await prochainNumero();
@@ -47,9 +49,8 @@ test.describe("Factures : numérotation continue", () => {
     await etape(page, "Numéro proposé dans les paramètres du brouillon", async () => {
       expect.soft(await numeroAffiche(page), "Le brouillon propose le numéro de son préfixe au lieu de la suite continue").toBe(attendu);
     }, { capture: "ecran" });
-    // Revenir au formulaire sans rien changer (« Annuler » y annonce des modifications imaginaires, voir parametres.spec.mjs).
-    await page.getByRole("button", { name: "Appliquer à cette facture" }).click();
-    await expect(page.getByText("Paramètres de la facture")).toHaveCount(0);
+    // Rouvrir le brouillon pour le valider (quitter les paramètres sans rien changer).
+    await ouvrirEdition(brouillon)(page);
     await etape(page, "Valider le brouillon", async () => {
       await page.getByRole("button", { name: /Continuer/ }).click();
       await page.getByRole("button", { name: "Créer la facture" }).click();
@@ -86,13 +87,17 @@ test.describe("Factures : numérotation continue", () => {
     await page.locator("#item-price-0").fill("95");
     await page.getByRole("button", { name: "Créer la facture" }).click();
     await expect(notifications(page).first()).toBeVisible();
-    const textes = (await notifications(page).allInnerTexts()).join(" | ");
+    await page.waitForTimeout(1_500);
+    const textes = (await notifications(page).allInnerTexts()).join(" | ").replace(/\s+/g, " ");
     const f = await (await base()).collection("invoices").findOne({ workspaceId: ORG, "items.description": nom });
-    expect(f, "Facture créée").not.toBeNull();
+    expect(
+      f,
+      `Facture refusée : la date d'émission a été recalée sans le dire et l'échéance, laissée avant, fait échouer la création (« ${textes} »)`,
+    ).not.toBeNull();
     const enregistree = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(f.issueDate);
     const voulue = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(choisie);
     if (enregistree !== voulue) {
-      expect(textes, `Date d'émission remplacée sans prévenir (choisie ${voulue}, enregistrée ${enregistree})`).toMatch(/date/i);
+      expect(textes, `Date d'émission remplacée sans prévenir (choisie ${voulue}, enregistrée ${enregistree})`).toMatch(/date d'émission/i);
     }
   });
 });

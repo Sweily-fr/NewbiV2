@@ -38,7 +38,7 @@ test.describe("Factures : tri", () => {
     expect(croissant, "Montants dans l'ordre croissant").toEqual([...croissant].sort((a, b) => a - b));
     await trierPar(page, "Montant TTC");
     const decroissant = (await colonne(page, "Montant TTC")).map(montant).filter((n) => !Number.isNaN(n));
-    expect(decroissant, "Montants dans l'ordre décroissant").toEqual([...decroissant].sort((a, b) => b - a));
+    expect(decroissant, "Montants hors d'ordre décroissant (les factures importées, montant lu ailleurs, restent en tête)").toEqual([...decroissant].sort((a, b) => b - a));
   });
 
   test("Tri par client : ordre alphabétique", async ({ page }) => {
@@ -46,7 +46,7 @@ test.describe("Factures : tri", () => {
     await trierPar(page, "Client");
     const noms = (await colonne(page, "Client")).map((t) => t.split("\n")[0].trim()).filter(Boolean);
     const attendu = [...noms].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
-    expect(noms.map((n) => n.toLowerCase()), "Clients par ordre alphabétique").toEqual(attendu.map((n) => n.toLowerCase()));
+    expect(noms.map((n) => n.toLowerCase()), "Clients hors de l'ordre alphabétique (un « à » est classé après les lettres sans accent)").toEqual(attendu.map((n) => n.toLowerCase()));
   });
 
   test("Les en-têtes de tri s'utilisent au clavier (boutons)", async ({ page }) => {
