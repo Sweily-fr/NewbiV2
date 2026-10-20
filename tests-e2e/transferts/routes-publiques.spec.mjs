@@ -27,8 +27,10 @@ test.use({ storageState: { cookies: [], origins: [] }, erreursConsoleAutorisees:
 
 const ABSENT = "e2eLienAbsentXxxxxxxxxxxxxxxxxxxx";
 const FICHIER_ABSENT = "000000000000000000000000";
-// Opérateur $ne encodé pour l'analyseur de requête (qs) d'Express : {$ne: "..."}.
-const NE = (champ) => `${champ}%5B%24ne%5D=${ABSENT}`;
+// Opérateur $ne via les paramètres encodés par Playwright : l'analyseur qs
+// d'Express reconstruit { champ: { $ne: "..." } }.
+const INJECTION_FICHIER = { "link[$ne]": ABSENT, "key[$ne]": ABSENT, fileId: FICHIER_ABSENT };
+const INJECTION_TOUT = { "link[$ne]": ABSENT, "key[$ne]": ABSENT };
 
 test.describe("Transferts : routes publiques de téléchargement (défauts connus)", () => {
   test("download-file : une injection NoSQL ne doit pas atteindre le transfert d'autrui", async ({ page }) => {
@@ -38,7 +40,7 @@ test.describe("Transferts : routes publiques de téléchargement (défauts connu
     expect((await temoin.text()).toLowerCase(), "Référence : un lien inconnu doit être « non trouvé »").toContain("transfert non trouvé");
 
     // Injection par paramètres de requête : $ne contourne la comparaison.
-    const injection = await page.request.get(`${API_URL}/file-transfer/download-file?${NE("link")}&${NE("key")}&fileId=${FICHIER_ABSENT}`);
+    const injection = await page.request.get(`${API_URL}/file-transfer/download-file`, { params: INJECTION_FICHIER });
     const corps = (await injection.text()).toLowerCase();
     await etape(page, "L'injection ne doit pas trouver de transfert", async () => {
       // Attendu : « Transfert non trouvé ». Faille : un transfert est atteint, la
@@ -57,7 +59,7 @@ test.describe("Transferts : routes publiques de téléchargement (défauts connu
 
     let corps = "";
     try {
-      const injection = await page.request.get(`${API_URL}/file-transfer/download-all?${NE("link")}&${NE("key")}`, { timeout: 12_000 });
+      const injection = await page.request.get(`${API_URL}/file-transfer/download-all`, { params: INJECTION_TOUT, timeout: 12_000 });
       corps = (await injection.text().catch(() => "")).toLowerCase();
     } catch {
       // Le serveur a commencé à renvoyer l'archive (transfert trouvé, fichiers sur R2 injoignable).
