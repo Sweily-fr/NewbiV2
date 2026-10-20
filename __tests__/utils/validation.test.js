@@ -11,16 +11,23 @@ describe("validateField — address fields", () => {
       ["123 Rue de la Paix", true],
       ["7 bis, avenue des Champs", true],
       ["Saint-Étienne 12", true],
+      // Vraies adresses : barre oblique, « n° » et bâtiment, apostrophe typographique
+      ["12/14 rue des Tanneurs", true],
+      ["5 rue de l'Église, Bât. A n°3", true],
+      ["5 rue de l’Église", true],
     ])("accepts valid street: %s", (value, expected) => {
       expect(validateField(value, "street", true).isValid).toBe(expected);
     });
 
     it.each([
-      ["7/9 jojo", "slash not allowed"],
       ["ab", "too short (< 3 chars)"],
-      ["@invalid", "special char not allowed"],
+      ["a".repeat(101), "too long (> 100 chars)"],
     ])("rejects invalid street: %s (%s)", (value) => {
       expect(validateField(value, "street", true).isValid).toBe(false);
+    });
+
+    it("rejects a street with a tag (< and >)", () => {
+      expect(VALIDATION_PATTERNS.street.pattern.test("1 rue <b>")).toBe(false);
     });
   });
 
@@ -29,16 +36,22 @@ describe("validateField — address fields", () => {
       ["Paris", true],
       ["Saint-Étienne", true],
       ["L'Haÿ-les-Roses", true],
+      // Cedex (chiffres) et apostrophe typographique
+      ["Paris Cedex 08", true],
+      ["L’Haÿ-les-Roses", true],
     ])("accepts valid city: %s", (value, expected) => {
       expect(validateField(value, "city", true).isValid).toBe(expected);
     });
 
     it.each([
-      ["P@ris", "@ not allowed"],
-      ["Paris123", "digits not allowed in city"],
       ["A", "too short"],
+      ["a".repeat(51), "too long"],
     ])("rejects invalid city: %s (%s)", (value) => {
       expect(validateField(value, "city", true).isValid).toBe(false);
+    });
+
+    it("rejects a city with a tag (< and >)", () => {
+      expect(VALIDATION_PATTERNS.city.pattern.test("Paris <b>")).toBe(false);
     });
   });
 

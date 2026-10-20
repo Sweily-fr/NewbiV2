@@ -17,9 +17,15 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/src/lib/utils";
-import { VALIDATION_PATTERNS, validateField } from "@/src/lib/validation";
+import {
+  VALIDATION_PATTERNS,
+  validateField,
+  isBlank,
+  isFranceCountry,
+  getPostalCodeError,
+} from "@/src/lib/validation";
 import ClientActivity from "./ClientActivity";
-import CustomFieldsForm from "./custom-fields-form";
+import CustomFieldsForm, { validateFieldValue } from "./custom-fields-form";
 import ClientContactsForm from "./client-contacts-form";
 
 import { Button } from "@/src/components/ui/button";
@@ -130,6 +136,7 @@ export default function ClientsModal({
     setValue,
     setError,
     trigger,
+    getValues,
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange", // Validation en temps réel
@@ -221,15 +228,24 @@ export default function ClientsModal({
     return false;
   };
 
-  // Valide les champs personnalisés obligatoires et peuple customErrors
+  // Valide les champs personnalisés (obligatoires, puis format des
+  // téléphones, e-mails et liens) et peuple customErrors : une valeur fausse
+  // signalée sous le champ ne doit pas être enregistrée quand même
   const validateCustomFields = () => {
     const errors = {};
     (customFieldDefinitions || [])
-      .filter((field) => field.isActive && field.isRequired)
+      .filter((field) => field.isActive)
       .forEach((field) => {
-        if (isCustomFieldEmpty(customFieldValues[field.id])) {
+        const value = customFieldValues[field.id];
+        if (field.isRequired && isCustomFieldEmpty(value)) {
           errors[field.id] = "Ce champ est requis";
+          return;
         }
+        const formatError =
+          typeof value === "string"
+            ? validateFieldValue(field.fieldType, value)
+            : null;
+        if (formatError) errors[field.id] = formatError;
       });
     setCustomErrors(errors);
     return Object.keys(errors).length > 0;
@@ -277,6 +293,8 @@ export default function ClientsModal({
 
     if (isRequired) {
       rules.required = "Ce champ est requis";
+      // Rempli d'espaces : refusé comme un champ vide (sinon enregistré vide)
+      rules.validate = (value) => !isBlank(value) || "Ce champ est requis";
     }
 
     if (pattern) {
@@ -287,6 +305,44 @@ export default function ClientsModal({
     }
 
     return rules;
+  };
+
+  // Prénom, nom et nom du contact : mêmes règles que l'API (lettres de tous
+  // les alphabets, espaces, apostrophes, points et tirets)
+  const personNameRules = (requiredMessage, patternMessage) => ({
+    ...(requiredMessage ? { required: requiredMessage } : {}),
+    pattern: {
+      value: VALIDATION_PATTERNS.personName.pattern,
+      message: patternMessage,
+    },
+    validate: (value) =>
+      !isBlank(value) || requiredMessage || "Le nom ne peut pas être vide",
+  });
+  const firstNameRules = personNameRules(
+    "Le prénom est requis",
+    "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, points et tirets uniquement)",
+  );
+  const lastNameRules = personNameRules(
+    "Le nom est requis",
+    "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, points et tirets uniquement)",
+  );
+  const contactNameRules = personNameRules(
+    null,
+    "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, points et tirets uniquement)",
+  );
+
+  // Téléphone de l'entreprise : même règle que l'API (au moins 9 chiffres,
+  // points, espaces, tirets ou indicatif international), libre hors France
+  const phoneValidationRules = {
+    validate: (value) => {
+      if (!value || value.trim() === "") return true;
+      const country = watch("address.country");
+      if (watch("isInternational") || !isFranceCountry(country)) return true;
+      return (
+        VALIDATION_PATTERNS.contactPhone.pattern.test(value.trim()) ||
+        VALIDATION_PATTERNS.contactPhone.message
+      );
+    },
   };
 
   // Règles de validation dynamiques pour SIRET (utilise validate pour évaluation dynamique)
@@ -327,26 +383,20 @@ export default function ClientsModal({
     },
   };
 
-  // Règles de validation dynamiques pour le code postal (format libre pour international)
+  // Règles de validation dynamiques pour le code postal : format français
+  // en France, format libre pour une entreprise « Hors France » ou un pays
+  // étranger saisi dans l'adresse (même règle que l'API)
   const postalCodeValidationRules = {
     validate: (value) => {
       if (!value || value.trim() === "") {
         return "Le code postal est obligatoire";
       }
-      const currentIsInternational = watch("isInternational");
-      // Pour les entreprises internationales, format libre (2-20 caractères alphanumériques)
-      if (currentIsInternational) {
-        if (value.length < 2 || value.length > 20) {
-          return "Le code postal doit contenir entre 2 et 20 caractères";
-        }
-        return true;
-      }
-      // Pour la France, validation stricte du format
-      const frenchPostalCodeRegex = /^(0[1-9]|[1-8]\d|9[0-8])\d{3}$/;
-      if (!frenchPostalCodeRegex.test(value)) {
-        return "Code postal français invalide (format: 01000 à 98999)";
-      }
-      return true;
+      return (
+        getPostalCodeError(value, {
+          country: watch("address.country"),
+          international: watch("isInternational"),
+        }) || true
+      );
     },
   };
 
@@ -372,6 +422,13 @@ export default function ClientsModal({
       return true;
     },
   };
+
+  // Code postal saisi avant le pays (Belgique, Royaume-Uni…) : le revalider
+  // quand le pays change, sinon l'erreur « Code postal français » reste
+  const billingCountry = watch("address.country");
+  useEffect(() => {
+    if (getValues("address.postalCode")) trigger("address.postalCode");
+  }, [billingCountry, isInternational, getValues, trigger]);
 
   // États pour la recherche d'entreprises via API Gouv
   const [companyQuery, setCompanyQuery] = useState("");
@@ -967,14 +1024,7 @@ export default function ClientsModal({
                               errors.firstName &&
                                 "border-red-500 hover:border-red-500",
                             )}
-                            {...register("firstName", {
-                              required: "Le prénom est requis",
-                              pattern: {
-                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                message:
-                                  "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                              },
-                            })}
+                            {...register("firstName", firstNameRules)}
                           />
                           {errors.firstName && (
                             <p className="text-sm text-red-500">
@@ -994,14 +1044,7 @@ export default function ClientsModal({
                               errors.lastName &&
                                 "border-red-500 hover:border-red-500",
                             )}
-                            {...register("lastName", {
-                              required: "Le nom est requis",
-                              pattern: {
-                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                message:
-                                  "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                              },
-                            })}
+                            {...register("lastName", lastNameRules)}
                           />
                           {errors.lastName && (
                             <p className="text-sm text-red-500">
@@ -1023,13 +1066,7 @@ export default function ClientsModal({
                               errors.firstName &&
                                 "border-red-500 hover:border-red-500",
                             )}
-                            {...register("firstName", {
-                              pattern: {
-                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                message:
-                                  "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                              },
-                            })}
+                            {...register("firstName", contactNameRules)}
                           />
                           {errors.firstName && (
                             <p className="text-sm text-red-500">
@@ -1124,8 +1161,17 @@ export default function ClientsModal({
                           <Input
                             type="tel"
                             placeholder="01 23 45 67 89"
-                            {...register("phone")}
+                            className={cn(
+                              errors.phone &&
+                                "border-red-500 hover:border-red-500",
+                            )}
+                            {...register("phone", phoneValidationRules)}
                           />
+                          {errors.phone && (
+                            <p className="text-sm text-red-500">
+                              {errors.phone.message}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1780,14 +1826,7 @@ export default function ClientsModal({
                               errors.firstName &&
                                 "border-red-500 hover:border-red-500",
                             )}
-                            {...register("firstName", {
-                              required: "Le prénom est requis",
-                              pattern: {
-                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                message:
-                                  "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                              },
-                            })}
+                            {...register("firstName", firstNameRules)}
                           />
                           {errors.firstName && (
                             <p className="text-sm text-red-500">
@@ -1807,14 +1846,7 @@ export default function ClientsModal({
                               errors.lastName &&
                                 "border-red-500 hover:border-red-500",
                             )}
-                            {...register("lastName", {
-                              required: "Le nom est requis",
-                              pattern: {
-                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                message:
-                                  "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                              },
-                            })}
+                            {...register("lastName", lastNameRules)}
                           />
                           {errors.lastName && (
                             <p className="text-sm text-red-500">
@@ -1836,13 +1868,7 @@ export default function ClientsModal({
                               errors.firstName &&
                                 "border-red-500 hover:border-red-500",
                             )}
-                            {...register("firstName", {
-                              pattern: {
-                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                message:
-                                  "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                              },
-                            })}
+                            {...register("firstName", contactNameRules)}
                           />
                           {errors.firstName && (
                             <p className="text-sm text-red-500">
@@ -1937,8 +1963,17 @@ export default function ClientsModal({
                           <Input
                             type="tel"
                             placeholder="01 23 45 67 89"
-                            {...register("phone")}
+                            className={cn(
+                              errors.phone &&
+                                "border-red-500 hover:border-red-500",
+                            )}
+                            {...register("phone", phoneValidationRules)}
                           />
+                          {errors.phone && (
+                            <p className="text-sm text-red-500">
+                              {errors.phone.message}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
