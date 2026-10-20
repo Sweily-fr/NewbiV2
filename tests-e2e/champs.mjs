@@ -26,6 +26,8 @@ export async function erreursVisibles(page, zone = page) {
     .evaluateAll((els) =>
       els
         .filter((e) => {
+          // Annonceur de navigation de Next (role=alert, 1 px) : il lit le titre de la nouvelle page, ce n'est pas une erreur.
+          if (e.id === "__next-route-announcer__") return false;
           const r = e.getBoundingClientRect();
           const style = getComputedStyle(e);
           return r.width > 0 && r.height > 0 && style.visibility !== "hidden" && e.textContent.trim();
