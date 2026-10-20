@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useId } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useMutation } from "@apollo/client";
 import { parseDate } from "@internationalized/date";
 import {
@@ -244,8 +244,6 @@ export function TransactionDetailDrawer({
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const prevOpenRef = useRef(false);
   const fileInputRef = useRef(null);
-  // Titre du tiroir : nom de la fenêtre annoncé par les lecteurs d'écran
-  const drawerTitleId = useId();
 
   // Détecter mobile pour la sidebar
   useEffect(() => {
@@ -1304,12 +1302,8 @@ export function TransactionDetailDrawer({
         </>
       )}
 
-      {/* Main Sidebar - slide depuis la droite. Fenêtre pour les lecteurs
-          d'écran (rôle et titre), sans aria-modal : le volet d'aperçu, à
-          côté, en fait partie. */}
+      {/* Main Sidebar - slide depuis la droite */}
       <motion.div
-        role="dialog"
-        aria-labelledby={drawerTitleId}
         className="fixed inset-y-0 right-0 z-50 md:w-[500px] w-full bg-background border-l shadow-lg flex flex-col"
         initial={{ x: "100%" }}
         animate={{
@@ -1324,7 +1318,7 @@ export function TransactionDetailDrawer({
         {/* Header */}
         <div className="flex items-center justify-between gap-2 px-6 py-4 border-b shrink-0">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <h2 id={drawerTitleId} className="text-base font-medium truncate">
+            <h2 className="text-base font-medium truncate">
               {getDrawerTitle()}
             </h2>
             {!isCreateMode && isBankTransaction && (
