@@ -139,8 +139,8 @@ export const TACHES = {
     comments: [
       {
         _id: oid("annexeCollab", 2),
-        userId: membre("collabEditeur").toHexString(),
-        content: "Commentaire de l'éditeur",
+        userId: PROPRIO.toHexString(),
+        content: "Commentaire du propriétaire",
         mentions: [],
         images: [],
         isExternal: false,

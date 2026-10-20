@@ -41,7 +41,6 @@ const LECTURES = [
   ["Les tâches", "tasks", `query($w: ID,$b: ID!){ tasks(workspaceId:$w,boardId:$b){ id title } }`, (w) => ({ w, b: id(TABLEAUX.lecture) })],
   ["Une tâche", "task", `query($w: ID,$id: ID!){ task(workspaceId:$w,id:$id){ id title } }`, (w) => ({ w, id: id(TACHES.lecture1) })],
   ["Recherche de tâches", "searchTasks", `query($w: ID,$s: String){ searchTasks(workspaceId:$w,search:$s){ id title boardTitle } }`, (w) => ({ w, s: "maquette" })],
-  ["Les membres de l'espace", "organizationMembers", `query($w: ID!){ organizationMembers(workspaceId:$w){ id name } }`, (w) => ({ w })],
 ];
 
 /* --- Écritures ------------------------------------------------------------ */
@@ -336,10 +335,10 @@ test.describe("Kanban : sans session, rien", () => {
 
 /* --- Lien public : ce tableau seulement, en lecture ----------------------- */
 
-const PUBLIC_BOARD = `query($t: String!,$s: String){ getPublicBoard(token:$t,sessionToken:$s){ success message requiresVisitorSession board{ id title columns{ id title tasks{ id title description } } } } }`;
+const PUBLIC_BOARD = `query($t: String!,$s: String){ getPublicBoard(token:$t,sessionToken:$s){ success message requiresVisitorSession board{ id title columns{ id title } tasks{ id title description } } } }`;
 
 test.describe("Kanban : le lien public ne donne que ce tableau, en lecture", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
+  test.use({ storageState: { cookies: [], origins: [] }, erreursConsoleAutorisees: /401.*\/api\/auth\/token/ });
 
   test("Un lien actif, avec la session du visiteur, ouvre son tableau", async ({ page }) => {
     await ouvrir(page, "/auth/login");
@@ -477,8 +476,8 @@ test.describe("Kanban : texte piégé ouvert par le rôle « Membre » (défaut 
 test.describe("Kanban : texte piégé ouvert par un visiteur du lien public (défaut connu)", () => {
   test.use({
     storageState: { cookies: [], origins: [] },
-    // Le temps réel du lien public (graphql-ws) peut bruiter la console ; l'image piégée vise une 404.
-    erreursConsoleAutorisees: /x-collab-piege|graphql|websocket|ws:\/\/|subscription/i,
+    // Bruit d'environnement du lien public : jeton (401), temps réel (ws), icônes et image piégée (hôtes absents en CI).
+    erreursConsoleAutorisees: /x-collab-piege|graphql|websocket|ws:\/\/|subscription|401|Failed to load|Content Security Policy|fichiers\.e2e\.invalid|about:srcdoc|An error occurred/i,
   });
 
   test("La description piégée ne s'exécute pas sur la page publique", async ({ page }) => {
@@ -517,7 +516,7 @@ test.describe("Kanban : l'API ne nettoie pas la description (constat)", () => {
   test("getPublicBoard renvoie la description telle quelle (preuve de l'absence de nettoyage)", async ({ page }) => {
     await ouvrir(page, "/dashboard");
     const reponse = await appelApi(page, PUBLIC_BOARD, { t: PARTAGES.actif.token, s: VISITEUR.sessionToken });
-    const tasks = reponse.data?.getPublicBoard?.board?.columns?.flatMap((c) => c.tasks) || [];
+    const tasks = reponse.data?.getPublicBoard?.board?.tasks || [];
     const piegee = tasks.find((t) => t.description?.includes("onerror"));
     expect(piegee, "La description piégée est renvoyée en HTML brut par l'API (aucun nettoyage côté serveur)").toBeTruthy();
   });

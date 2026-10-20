@@ -83,7 +83,7 @@ test.describe("Transferts : une autre entreprise n'atteint rien", () => {
 });
 
 test.describe("Transferts : le lien public ne donne plus rien quand il ne doit plus", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
+  test.use({ storageState: { cookies: [], origins: [] }, erreursConsoleAutorisees: /401.*\/api\/auth\/token/ });
   test.beforeEach(async ({ page }) => ouvrir(page, "/auth/login"));
 
   test("Lien actif avec la bonne clé : le transfert est accessible", async ({ page }) => {

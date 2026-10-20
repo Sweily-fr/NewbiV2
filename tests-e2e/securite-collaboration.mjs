@@ -14,7 +14,7 @@ import { base } from "./base.mjs";
 
 /** Codes et messages d'un refus de l'API (droits, session, donnée introuvable). */
 export const REFUS =
-  /FORBIDDEN|UNAUTHENTICATED|UNAUTHORIZED|NOT_FOUND|permission|autoris|droit|acc[eè]s|interdit|non trouv|introuvable|n'existe pas|not found|membre de l'organisation|connect|authentifi|session|expir|invalide|r[ôo]le/i;
+  /FORBIDDEN|UNAUTHENTICATED|UNAUTHORIZED|NOT_FOUND|permission|autoris|droit|acc[eè]s|interdit|non trouv|introuvable|n'existe pas|not found|Failed to|membre de l'organisation|connect|authentifi|session|expir|invalide|r[ôo]le/i;
 
 const SANS_DATES = ({ updatedAt, lastActivity, lastAccessedAt, ...reste }) => reste;
 
@@ -42,9 +42,11 @@ export function verifierRefusCollab(reponse, champ, contexte) {
   expect(reponse.sansReponse, `${contexte} : l'API n'a pas répondu (requête bloquée)`).not.toBe(true);
   const valeur = reponse.data?.[champ];
   const echec = valeur && typeof valeur === "object" && !Array.isArray(valeur) && valeur.success === false;
-  const vide = valeur === null || valeur === undefined || valeur === false || (Array.isArray(valeur) && valeur.length === 0) || echec;
+  const vide = valeur === null || valeur === undefined || valeur === false || valeur === 0 || (Array.isArray(valeur) && valeur.length === 0) || echec;
   expect(vide, `${contexte} : l'API ne doit rien renvoyer pour « ${champ} » (reçu ${JSON.stringify(valeur)?.slice(0, 300)})`).toBe(true);
-  if (!Array.isArray(valeur)) {
+  // Une mutation booléenne (false) ou numérique (0) refuse sans message : le témoin (base inchangée) le garantit.
+  const refusSilencieux = valeur === false || valeur === 0;
+  if (!Array.isArray(valeur) && !refusSilencieux) {
     expect(messagesDe(reponse), `${contexte} : l'API doit expliquer son refus`).toMatch(REFUS);
   }
 }

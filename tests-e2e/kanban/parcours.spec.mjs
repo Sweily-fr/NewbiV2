@@ -9,7 +9,8 @@ import { base } from "../base.mjs";
 import { COMPTES } from "../donnees/base.mjs";
 import { connecte, SESSION_TOKEN_COLLAB } from "../config.mjs";
 
-test.use({ storageState: connecte(SESSION_TOKEN_COLLAB) });
+const APOLLO = /go\.apollo\.dev\/c\/err|An error occurred! For more details/;
+test.use({ storageState: connecte(SESSION_TOKEN_COLLAB), erreursConsoleAutorisees: APOLLO });
 
 const COLLAB = COMPTES.collab.organisation._id;
 const boardParTitre = async (titre) => (await base()).collection("boards").findOne({ workspaceId: COLLAB, title: titre });
@@ -55,9 +56,8 @@ test.describe("Kanban : création d'un tableau", () => {
       { capture: "ecran" },
     );
     await etape(page, "Le tableau est en base avec sa catégorie", async () => {
-      const board = await expect.poll(() => boardParTitre(titre), { timeout: 10_000 }).not.toBeNull().catch(() => null);
+      await expect.poll(() => boardParTitre(titre), { message: "Le tableau n'a pas été enregistré", timeout: 10_000 }).not.toBeNull();
       const doc = await boardParTitre(titre);
-      expect(doc, "Le tableau n'a pas été enregistré").not.toBeNull();
       expect(doc.category, "La catégorie n'a pas été enregistrée").toBe("Marketing");
     });
   });

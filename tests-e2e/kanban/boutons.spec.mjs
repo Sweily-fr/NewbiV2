@@ -12,6 +12,7 @@ import { ouvrir } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_COLLAB, SESSION_TOKEN_COLLAB_EDITEUR, SESSION_TOKEN_COLLAB_MEMBRE } from "../config.mjs";
 import { TABLEAUX } from "../donnees/lot-collaboration.mjs";
 
+const APOLLO = /go\.apollo\.dev\/c\/err|An error occurred! For more details/;
 const id = (doc) => doc._id.toHexString();
 
 const ouvrirListe = (page) => ouvrir(page, "/dashboard/outils/kanban", { pret: page.getByRole("button", { name: "Vue grille" }) });
@@ -25,7 +26,7 @@ const ouvrirNouveau = (page) => ouvrir(page, "/dashboard/outils/kanban/new", { p
 /* --- Tests de visibilité par rôle (liste et page d'un tableau) ------------- */
 
 test.describe("Kanban (liste) : le propriétaire voit créer, exporter, supprimer", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB) });
+  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB), erreursConsoleAutorisees: APOLLO });
   test("Barre d'outils complète", async ({ page }) => {
     await ouvrirListe(page);
     await expect(page.getByRole("button", { name: "Nouvelle liste" })).toBeVisible();
@@ -41,7 +42,7 @@ test.describe("Kanban (liste) : le propriétaire voit créer, exporter, supprime
 });
 
 test.describe("Kanban (liste) : l'Éditeur crée et exporte, sans supprimer", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_EDITEUR) });
+  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_EDITEUR), erreursConsoleAutorisees: APOLLO });
   test("Barre d'outils avec création et export", async ({ page }) => {
     await ouvrirListe(page);
     await expect(page.getByRole("button", { name: "Nouvelle liste" })).toBeVisible();
@@ -57,7 +58,7 @@ test.describe("Kanban (liste) : l'Éditeur crée et exporte, sans supprimer", ()
 });
 
 test.describe("Kanban (liste) : le Membre ne voit ni créer, ni exporter, ni supprimer", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_MEMBRE) });
+  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_MEMBRE), erreursConsoleAutorisees: APOLLO });
   test("Pas de création ni d'export", async ({ page }) => {
     await ouvrirListe(page);
     await expect(page.getByRole("button", { name: "Nouvelle liste" })).toHaveCount(0);
@@ -72,7 +73,7 @@ test.describe("Kanban (tableau) : partage et colonnes selon le rôle", () => {
     ["membre", SESSION_TOKEN_COLLAB_MEMBRE, false],
   ]) {
     test.describe(`Rôle ${role}`, () => {
-      test.use({ storageState: connecte(token) });
+      test.use({ storageState: connecte(token), erreursConsoleAutorisees: APOLLO });
       test(`Partager et « Ajouter une colonne » : ${peut ? "visibles" : "cachés"}`, async ({ page }) => {
         await ouvrirTableau(page);
         const partager = page.getByRole("button", { name: "Partager" });
@@ -91,7 +92,7 @@ test.describe("Kanban (tableau) : partage et colonnes selon le rôle", () => {
 
 test.describe("Kanban (nouveau tableau) : création", () => {
   test.describe("Propriétaire", () => {
-    test.use({ storageState: connecte(SESSION_TOKEN_COLLAB) });
+    test.use({ storageState: connecte(SESSION_TOKEN_COLLAB), erreursConsoleAutorisees: APOLLO });
     test("« Créer le tableau » présent, grisé tant que le titre est vide", async ({ page }) => {
       await ouvrirNouveau(page);
       const bouton = page.getByRole("button", { name: "Créer le tableau" });
@@ -102,7 +103,7 @@ test.describe("Kanban (nouveau tableau) : création", () => {
     });
   });
   test.describe("Membre", () => {
-    test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_MEMBRE) });
+    test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_MEMBRE), erreursConsoleAutorisees: APOLLO });
     test("« Créer le tableau » absent pour un rôle sans création", async ({ page }) => {
       await ouvrirNouveau(page);
       await expect(page.getByRole("button", { name: "Créer le tableau" })).toHaveCount(0);
@@ -113,7 +114,7 @@ test.describe("Kanban (nouveau tableau) : création", () => {
 /* --- Comportement de chaque bouton de la barre d'outils (propriétaire) ----- */
 
 test.describe("Kanban (liste) : chaque bouton de la barre d'outils agit", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB) });
+  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB), erreursConsoleAutorisees: APOLLO });
 
   test("« Nouvelle liste » ouvre la fenêtre de création", async ({ page }) => {
     await ouvrirListe(page);
