@@ -424,6 +424,9 @@ export const FACTURES_VENTE = {
   // « Saisie Achats » : encaissement à rapprocher depuis la transaction.
   aRapprocher: factureVente(10, "saisieAchats", { numero: "0201", statut: "PENDING", emiseIlYa: 12, echeanceDans: 18, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation à encaisser", 1, 750)] }),
   liee: factureVente(11, "saisieAchats", { numero: "0202", statut: "COMPLETED", emiseIlYa: 30, echeanceDans: 0, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation encaissée", 1, 400)], payeeIlYa: 8, transactions: [TX(124)] }),
+  // Rapprochements de l'Éditeur (sécurité des transactions).
+  editeur: factureVente(12, "saisieAchats", { numero: "0203", statut: "PENDING", emiseIlYa: 6, echeanceDans: 24, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation de l'Éditeur", 1, 300)] }),
+  editeurLiee: factureVente(13, "saisieAchats", { numero: "0204", statut: "COMPLETED", emiseIlYa: 15, echeanceDans: 15, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation liée de l'Éditeur", 1, 310)], payeeIlYa: 9, transactions: [TX(136)] }),
 };
 
 // --- Organisation de référence : fournisseurs, factures d'achat, transactions --------
@@ -526,6 +529,7 @@ const FS = {
   doublon: fournisseur(106, "saisieAchats", "Fournisseur Doublon", "OTHER"),
   justificatif: fournisseur(107, "saisieAchats", "Fournisseur avec justificatif", "OTHER"),
   editeur: fournisseur(108, "saisieAchats", "Fournisseur de l'Éditeur", "OTHER"),
+  aFusionner: fournisseur(109, "saisieAchats", "Fournisseur à fusionner", "OTHER"),
 };
 export const FOURNISSEURS_SAISIE = FS;
 const CBS = COMPTES_BANCAIRES.saisie;
@@ -552,8 +556,17 @@ export const FACTURES_ACHAT_SAISIE = {
   menuCategorie: factureAchat(118, "saisieAchats", { fournisseur: FS.payer, numero: "MEN-CAT-118", emiseIlYa: 3, ttc: 53, statut: "TO_PROCESS" }),
   aModifier: factureAchat(119, "saisieAchats", { fournisseur: FS.payer, numero: "MOD-119", emiseIlYa: 3, ttc: 54, statut: "TO_PROCESS" }),
   depuisTransaction: factureAchat(120, "saisieAchats", { fournisseur: FS.rapprocher, numero: "RAP-120", emiseIlYa: 5, ttc: 145, statut: "TO_PAY", categorie: "SERVICES", sousCategorie: "conseil" }),
+  // Écritures permises de l'Éditeur (sécurité) : une facture par opération.
   editeur: factureAchat(121, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-121", emiseIlYa: 3, ttc: 61, statut: "TO_PAY" }),
   editeurPayer: factureAchat(122, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-122", emiseIlYa: 3, ttc: 62, statut: "TO_PAY" }),
+  editeurDelier: factureAchat(123, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-123", emiseIlYa: 9, ttc: 63, statut: "PAID", transactions: [TX(132)], payeeIlYa: 8 }),
+  editeurToutDelier: factureAchat(124, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-124", emiseIlYa: 9, ttc: 64, statut: "PAID", transactions: [TX(133)], payeeIlYa: 8 }),
+  editeurFichier: factureAchat(125, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-125", emiseIlYa: 3, ttc: 65, statut: "TO_PROCESS", fichiers: [fichier(125, "saisieAchats", "Justificatif de l'Éditeur.pdf")] }),
+  editeurMarquer: factureAchat(126, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-126", emiseIlYa: 3, ttc: 66, statut: "TO_PAY" }),
+  editeurStatutGroupe: factureAchat(127, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-127", emiseIlYa: 3, ttc: 67, statut: "TO_PROCESS" }),
+  editeurCategorieGroupe: factureAchat(128, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-128", emiseIlYa: 3, ttc: 68, statut: "TO_PROCESS" }),
+  editeurRapprocher: factureAchat(129, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-129", emiseIlYa: 3, ttc: 69, statut: "TO_PAY" }),
+  piege: factureAchat(130, "saisieAchats", { fournisseur: FS.editeur, numero: "PIE-130", emiseIlYa: 2, ttc: 70, statut: "TO_PROCESS" }),
 };
 
 /** Transactions de « Saisie Achats » : une par action (catégoriser, rapprocher, justificatifs…). */
@@ -577,6 +590,15 @@ export const TRANSACTIONS_SAISIE = {
   editeur: transaction(129, "saisieAchats", { libelle: "CB TRANSACTION DE L'EDITEUR", montant: -16.5, ilYa: 3, compteBancaire: CBS }),
   piege: transaction(130, "saisieAchats", { libelle: "CB TRANSACTION PIEGEE", montant: -17.5, ilYa: 3, compteBancaire: CBS }),
   formule: transaction(131, "saisieAchats", { libelle: "=1+1 VIREMENT FORMULE", montant: -18.5, ilYa: 3, compteBancaire: CBS }),
+  // Écritures permises de l'Éditeur (sécurité des factures d'achat et des transactions).
+  editeurDelier: transaction(132, "saisieAchats", { libelle: "PRLV EDITEUR A DELIER", montant: -63, ilYa: 8, compteBancaire: CBS, facturesAchat: [FA(123)] }),
+  editeurToutDelier: transaction(133, "saisieAchats", { libelle: "PRLV EDITEUR A TOUT DELIER", montant: -64, ilYa: 8, compteBancaire: CBS, facturesAchat: [FA(124)] }),
+  editeurRapprocher: transaction(134, "saisieAchats", { libelle: "PRLV EDITEUR A RAPPROCHER", montant: -69, ilYa: 2, compteBancaire: CBS }),
+  editeurEncaissement: transaction(135, "saisieAchats", { libelle: "VIR SEPA EDITEUR ENCAISSEMENT", montant: 360, ilYa: 2, compteBancaire: CBS }),
+  editeurEncaissementLie: transaction(136, "saisieAchats", { libelle: "VIR SEPA EDITEUR ENCAISSEMENT LIE", montant: 372, ilYa: 9, compteBancaire: CBS, factures: [FV(13)] }),
+  editeurIgnorer: transaction(137, "saisieAchats", { libelle: "VIR EDITEUR A IGNORER", montant: 15, ilYa: 2, compteBancaire: CBS }),
+  editeurDesignorer: transaction(138, "saisieAchats", { libelle: "VIR EDITEUR A REINTEGRER", montant: 16, ilYa: 2, compteBancaire: CBS, statut: "ignored" }),
+  editeurJustificatif: transaction(139, "saisieAchats", { libelle: "CB EDITEUR JUSTIFICATIF", montant: -21, ilYa: 2, compteBancaire: CBS, justificatifs: [justificatif(139, "saisieAchats", "Ticket Éditeur.pdf")] }),
 };
 
 // --- Prévision de trésorerie ----------------------------------------------------------
@@ -645,6 +667,9 @@ export const SCENARIOS = {
   optimiste: scenario(1, "achats", { name: "Optimiste", incomeMultiplier: 1.2, expenseMultiplier: 0.9 }),
   aSupprimer: scenario(10, "saisieAchats", { name: "Scénario à supprimer" }),
   aRenommer: scenario(11, "saisieAchats", { name: "Scénario à renommer", incomeMultiplier: 1.1 }),
+  editeur: scenario(12, "saisieAchats", { name: "Scénario de l'Éditeur" }),
+  // Offre d'entrée : cinq scénarios, le plafond est atteint à l'écran.
+  ...Object.fromEntries(["Été", "Hiver", "Printemps", "Automne", "Année"].map((name, i) => [`freelance${i + 1}`, scenario(30 + i, "freelanceAchats", { name })])),
   // Quatre scénarios déjà créés : le 5e passe, le 6e doit être refusé.
   ...Object.fromEntries(
     ["Prudent", "Croissance", "Crise", "Stable"].map((name, i) => [
@@ -670,6 +695,81 @@ export const SAISIES_SAISIE = {
   editeur: saisie(104, "saisieAchats", { name: "Prévision de l'Éditeur", type: "EXPENSE", category: "OTHER_EXPENSE", subcategory: "autre", amount: 40 }),
   piege: saisie(105, "saisieAchats", { name: "Prévision piégée", type: "EXPENSE", category: "OTHER_EXPENSE", subcategory: "autre", amount: 41 }),
 };
+
+const moisDansNMois = (n) => {
+  const d = debutDeMois(n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+function recurrence(n, compte, { partyName, type = "EXPENSE", category, montant, source = "TRANSACTION" }) {
+  const { organisation } = COMPTES[compte];
+  return {
+    _id: oid("saisiePrevision", 500 + n),
+    workspaceId: organisation._id,
+    source,
+    type,
+    partyKey: partyName.toLowerCase(),
+    partyName,
+    category,
+    categoryOverride: null,
+    subcategoryOverride: null,
+    amountOverride: null,
+    frequencyOverride: null,
+    labelOverride: null,
+    averageAmount: montant,
+    frequency: "MONTHLY",
+    intervalDays: 30,
+    occurrenceCount: 3,
+    lastSeenDate: DANS(-10),
+    lastSeenMonth: moisDansNMois(0),
+    consecutiveMonths: 3,
+    isActive: true,
+    isMuted: false,
+    excludedMonths: [],
+    lastDetectedAt: DANS(-1),
+    createdAt: DANS(-30),
+    updatedAt: MAINTENANT,
+  };
+}
+
+/** Récurrences détectées (dépenses mensuelles) : référence et actions de l'Éditeur. */
+export const RECURRENCES = {
+  orange: recurrence(1, "achats", { partyName: "Orange Pro", category: "telephone", montant: 89 }),
+  editeurMuter: recurrence(10, "saisieAchats", { partyName: "Abonnement à couper", category: "abonnement", montant: 19 }),
+  editeurModifier: recurrence(11, "saisieAchats", { partyName: "Abonnement à corriger", category: "abonnement", montant: 29 }),
+};
+
+function previsionMensuelle(n, compte, { category, type = "EXPENSE", montant, mois = 1 }) {
+  const { utilisateur, organisation } = COMPTES[compte];
+  return { _id: oid("saisiePrevision", 700 + n), workspaceId: organisation._id, month: moisDansNMois(mois), category, type, forecastAmount: montant, notes: "", createdBy: utilisateur._id, createdAt: DANS(-10), updatedAt: MAINTENANT };
+}
+
+/** Prévisions par mois et par catégorie (ancien tableau de prévision, encore servi par l'API). */
+export const PREVISIONS_MENSUELLES = {
+  achats: previsionMensuelle(1, "achats", { category: "MARKETING", montant: 300 }),
+  saisie: previsionMensuelle(2, "saisieAchats", { category: "MARKETING", montant: 150 }),
+};
+
+/** Métriques d'appels à la banque (Bridge) d'« Achats » : elles ne regardent que cette entreprise. */
+export const METRIQUES_BANCAIRES = [
+  {
+    _id: oid("saisiePrevision", 900),
+    provider: "bridge",
+    endpoint: "/v3/aggregation/transactions",
+    method: "GET",
+    requestCount: 777,
+    successCount: 770,
+    errorCount: 7,
+    responseTime: { total: 77700, average: 100, min: 40, max: 900 },
+    cost: { total: 123.45, perRequest: 0.16, currency: "EUR" },
+    date: new Date(DANS(-2).setHours(0, 0, 0, 0)),
+    workspaceId: hex(COMPTES.achats.organisation),
+    errors: [],
+    metadata: {},
+    createdAt: DANS(-2),
+    updatedAt: DANS(-2),
+  },
+];
 
 // --- Assemblage -----------------------------------------------------------------------
 
@@ -719,5 +819,8 @@ export function donneesAchatsBanque() {
     invoices: Object.values(FACTURES_VENTE),
     forecastscenarios: Object.values(SCENARIOS).map((s) => (s.workspaceId.equals(ORGANISATION_SCENARIOS._id) ? { ...s, createdBy: proprietaireScenarios._id } : s)),
     manualcashflowentries: [...Object.values(SAISIES), ...Object.values(SAISIES_SAISIE)],
+    detectedrecurrences: Object.values(RECURRENCES),
+    treasuryforecasts: Object.values(PREVISIONS_MENSUELLES),
+    api_metrics: METRIQUES_BANCAIRES,
   };
 }
