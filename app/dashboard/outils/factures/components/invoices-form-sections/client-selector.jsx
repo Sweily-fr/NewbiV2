@@ -682,7 +682,8 @@ export default function ClientSelector({
                 Client existant
               </TabsNewTrigger>
               {canCreateClients && (
-                <TabsNewTrigger value="new">
+                // Consultation d'une facture émise : son client ne change pas
+                <TabsNewTrigger value="new" disabled={disabled}>
                   <Plus className="h-3.5 w-3.5" />
                   Nouveau client
                 </TabsNewTrigger>
@@ -858,7 +859,9 @@ export default function ClientSelector({
                         <div className="flex items-center gap-1 shrink-0">
                           <button
                             type="button"
-                            className="flex items-center justify-center size-7 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                            className="flex items-center justify-center size-7 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                            // Consultation : on ne retire pas le client
+                            disabled={disabled}
                             onClick={(e) => {
                               e.stopPropagation();
                               onSelect?.(null);

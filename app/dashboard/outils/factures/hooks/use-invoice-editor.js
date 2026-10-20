@@ -1780,6 +1780,65 @@ export function useInvoiceEditor({
     }
   }, [mode, isFormInitialized, setValue]);
 
+  // Pré-remplissage depuis « Dupliquer » de la consultation d'une facture
+  // (via sessionStorage, comme la conversion d'un devis)
+  useEffect(() => {
+    if (mode === "create" && isFormInitialized) {
+      const duplicateData = sessionStorage.getItem("duplicateInvoiceData");
+      if (duplicateData) {
+        try {
+          const d = JSON.parse(duplicateData);
+          sessionStorage.removeItem("duplicateInvoiceData");
+
+          if (d.client) setValue("client", d.client);
+          if (d.items?.length > 0) {
+            setValue(
+              "items",
+              d.items.map((item) => ({
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate ?? 0,
+                unit: item.unit || "",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "",
+                vatExemptionText: item.vatExemptionText || "",
+                progressPercentage: item.progressPercentage ?? 100,
+                ...pickLinkFields(item),
+                ...pickItemImage(item),
+              })),
+            );
+          }
+          if (d.discount != null) setValue("discount", d.discount);
+          if (d.discountType) setValue("discountType", d.discountType);
+          if (d.customFields?.length > 0) {
+            setValue(
+              "customFields",
+              d.customFields.map((cf) => ({
+                name: cf.key || cf.name || "",
+                value: cf.value || "",
+              })),
+            );
+          }
+          if (d.shipping) setValue("shipping", d.shipping);
+          if (d.isReverseCharge != null)
+            setValue("isReverseCharge", d.isReverseCharge);
+          if (d.isVatExempt != null) setValue("isVatExempt", d.isVatExempt);
+          if (d.retenueGarantie != null)
+            setValue("retenueGarantie", d.retenueGarantie);
+          if (d.escompte != null) setValue("escompte", d.escompte);
+          if (d.headerNotes) setValue("headerNotes", d.headerNotes);
+          if (d.footerNotes) setValue("footerNotes", d.footerNotes);
+          if (d.termsAndConditions)
+            setValue("termsAndConditions", d.termsAndConditions);
+        } catch {
+          sessionStorage.removeItem("duplicateInvoiceData");
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
   // Pre-fill from Quote linked invoice (via sessionStorage)
   useEffect(() => {
     if (mode === "create" && isFormInitialized) {
