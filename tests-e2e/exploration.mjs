@@ -360,13 +360,18 @@ export async function inventorier(page, { ouvrir, zone = contenu, problemes = []
  * Retrouve un élément par la clé d'une description : son nom accessible, ou,
  * pour un élément sans nom, son icône (« icône settings2 ») ou son titre.
  */
-function parNom(zone, role, nom) {
+function parNom(zone, role, nom, { nomsVariables = false } = {}) {
   const icone = /^icône (.+)$/.exec(nom);
   if (icone) return zone.getByRole(role).filter({ has: zone.page().locator(`svg.lucide-${icone[1]}`) });
   const titre = /^titre « (.+) »$/.exec(nom);
   if (titre) return zone.getByRole(role).and(zone.page().locator(`[title="${titre[1]}"], [data-tooltip="${titre[1]}"]`));
+  // Nom suivi d'un compteur qui varie (« Brouillons 11 ») : décrit sans le compteur.
+  if (nomsVariables) return zone.getByRole(role, { name: new RegExp(`^${nom.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s\\d+)?$`) });
   return zone.getByRole(role, { name: nom, exact: true });
 }
+
+/** Nom sans le compteur final (« Brouillons 11 » → « Brouillons »), pour les pages dont les compteurs varient. */
+export const sansCompteur = (e) => ({ ...e, nom: e.nom.replace(/\s\d+$/, "") });
 
 /** Premier lien d'une zone dont l'adresse suit ce motif (« /dashboard/clients/:id »). */
 async function trouverLien(zone, motif) {
@@ -456,11 +461,11 @@ export function verifierIssue(issue, attendu, contexte) {
  * Un test vérifie que la page propose exactement les éléments décrits : un
  * bouton ajouté sans test, ou un bouton disparu, le fait échouer.
  */
-export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test }) {
+export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test, nomsVariables = false }) {
   test.describe(`${titre} : tous les boutons`, () => {
     test("Chaque élément de la page est décrit et testé", async ({ page }) => {
       await ouvrir(page);
-      const trouves = await elementsActionnables(zone(page));
+      const trouves = (await elementsActionnables(zone(page))).map((e) => (nomsVariables ? sansCompteur(e) : e));
       const { nonCouverts, disparus } = comparerAuxAttendus(trouves, boutons);
       expect.soft(nonCouverts, "Éléments présents sur la page mais sans test (à décrire)").toEqual([]);
       expect.soft(disparus, "Éléments décrits mais absents de la page").toEqual([]);
@@ -478,7 +483,7 @@ export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test }
         await ouvrir(page);
         const role = declencheur.split(" ")[0];
         const nom = declencheur.slice(role.length + 1);
-        const el = role === "link" ? await trouverLien(zone(page), nom) : parNom(zone(page), role, nom).first();
+        const el = role === "link" ? await trouverLien(zone(page), nom) : parNom(zone(page), role, nom, { nomsVariables }).first();
         await expect(el, `Élément « ${declencheur} »`).toBeVisible();
         if (!item) {
           const issue = await observer(page, () => el.click({ timeout: 5_000 }), { cible: el });

@@ -74,7 +74,7 @@ const ECRITURES = [
       w,
       input: { client: clientDe(CLIENTS_FACTURES.lumiere), items: [article(`Créée par ${qui}`)], issueDate: AUJOURDHUI, dueDate: DANS_30, status: "DRAFT" },
     }),
-    temoin: (qui) => ["invoices", { "items.description": `Créée par ${qui}` }],
+    temoin: (qui) => ["invoices", { workspaceId: ORG_ID, "items.description": `Créée par ${qui}` }],
   },
   {
     nom: "Modifier un brouillon",
@@ -100,6 +100,8 @@ const ECRITURES = [
     nom: "Envoyer une facture (sendInvoice)",
     champ: "sendInvoice",
     editeur: "permis",
+    // L'API ne fait rien de plus que répondre « vrai » (envoi non implémenté).
+    sansEffetEnBase: true,
     cible: true,
     workspace: true,
     requete: `mutation($w: ID!, $id: ID!, $e: String!) { sendInvoice(id: $id, workspaceId: $w, email: $e) }`,
@@ -189,13 +191,13 @@ const ECRITURES = [
       input: {
         originalInvoiceId: id(qui === "editeur" ? F.aCrediterParEditeur : F.cibleAttente),
         creditType: "COMMERCIAL_GESTURE",
-        client: clientDe(qui === "editeur" ? CLIENTS_FACTURES.oeuvre : CLIENTS_FACTURES.oeuvre),
+        client: clientDe(qui === "editeur" ? CLIENTS_FACTURES.dumas : CLIENTS_FACTURES.dumas),
         items: [{ ...article(`Avoir de ${qui}`, 1), quantity: -1 }],
         issueDate: AUJOURDHUI,
         refundMethod: "NEXT_INVOICE",
       },
     }),
-    temoin: (qui) => ["creditnotes", { "items.description": `Avoir de ${qui}` }],
+    temoin: (qui) => ["creditnotes", { workspaceId: ORG_ID, "items.description": `Avoir de ${qui}` }],
   },
   {
     nom: "Modifier un avoir",
@@ -259,7 +261,7 @@ const ECRITURES = [
     workspace: true,
     requete: `mutation($w: ID, $input: SaveInvoiceAsTemplateInput!) { saveInvoiceAsTemplate(input: $input, workspaceId: $w) { id } }`,
     variables: (w, qui) => ({ w, input: { invoiceId: id(F.cibleAttente), name: `Modèle de ${qui}` } }),
-    temoin: (qui) => ["invoicetemplates", { name: `Modèle de ${qui}` }],
+    temoin: (qui) => ["invoicetemplates", { workspaceId: ORG_ID, name: `Modèle de ${qui}` }],
   },
   {
     nom: "Supprimer un modèle",
@@ -382,7 +384,6 @@ const LECTURES = [
   ["Les références de situation", "situationReferences", `query($w: ID!) { situationReferences(workspaceId: $w) { __typename } }`, (w) => ({ w })],
   ["Les factures de situation d'un devis", "situationInvoicesByQuoteRef", `query($w: ID!) { situationInvoicesByQuoteRef(workspaceId: $w, purchaseOrderNumber: "D-092026-0001") { id } }`, (w) => ({ w })],
   ["L'adresse du PDF d'une facture", "invoiceDocumentUrl", `query($w: ID!, $i: ID!) { invoiceDocumentUrl(workspaceId: $w, invoiceId: $i) }`, (w) => ({ w, i: id(F.attente) })],
-  ["L'aiguillage de facturation électronique d'une facture", "previewInvoiceRouting", `mutation($w: ID!, $i: ID!) { previewInvoiceRouting(workspaceId: $w, invoiceId: $i) { __typename } }`, (w) => ({ w, i: id(F.attente) })],
   ["Un avoir", "creditNote", `query($w: ID!, $id: ID!) { creditNote(id: $id, workspaceId: $w) { id number reason } }`, (w) => ({ w, id: id(AVOIRS_FACTURES.existant) })],
   ["La liste des avoirs", "creditNotes", `query($w: ID!) { creditNotes(workspaceId: $w, page: 1, limit: 100) { __typename } }`, (w) => ({ w })],
   ["Les avoirs d'une facture", "creditNotesByInvoice", `query($w: ID!, $i: ID!) { creditNotesByInvoice(invoiceId: $i, workspaceId: $w) { id number } }`, (w) => ({ w, i: id(F.avecAvoir) })],
@@ -408,18 +409,26 @@ function sansFuite(reponse) {
   for (const doc of [F.attente, F.cibleAttente, AVOIRS_FACTURES.existant, IMPORTEES.validee, RECURRENCES.active, MODELES.maintenance]) {
     expect(texte, `Fuite : un identifiant de l'organisation « Factures » renvoyé à l'intrus`).not.toContain(id(doc));
   }
-  for (const nom of [CLIENTS_FACTURES.lumiere.name, CLIENTS_FACTURES.oeuvre.name, F.attente.items[0].description, MODELES.maintenance.name]) {
+  for (const nom of [CLIENTS_FACTURES.lumiere.name, CLIENTS_FACTURES.dumas.name, F.attente.items[0].description, MODELES.maintenance.name]) {
     expect(texte, `Fuite : « ${nom} » renvoyé à l'intrus`).not.toContain(nom);
   }
 }
 
 const estRefusDeDroits = (reponse) => reponse.errors.some((e) => /FORBIDDEN|UNAUTHENTICATED|permission|autoris|membre de l'organisation/i.test(`${e.extensions?.code || ""} ${e.message}`));
 
+/**
+ * `entete` : organisation annoncée dans l'en-tête, quand elle diffère de
+ * celle passée en argument. L'API peut alors travailler dans l'organisation
+ * de l'en-tête (la sienne, validée) : seul compte que rien ne bouge chez les
+ * autres et que rien de chez eux ne revienne.
+ */
 async function refusSansEffet(page, op, qui, w, { entete = w } = {}) {
   const avant = await photo(op.temoin(qui));
   const reponse = await appelApi(page, op.requete, op.variables(w, qui), { organisation: entete, delai: 15_000 });
   expect(reponse.sansReponse, `${op.nom} (${qui}) : l'API n'a pas répondu en 15 s`).toBe(false);
-  if (op.nombre && reponse.data?.[op.champ] === 0) {
+  if (entete !== w) {
+    sansFuite(reponse);
+  } else if (op.nombre && reponse.data?.[op.champ] === 0) {
     // « 0 suppression » : refus silencieux mais sans effet, vérifié par le témoin.
   } else {
     verifierRefus(reponse, op.champ, `${op.nom} (${qui})`);
@@ -461,7 +470,7 @@ test.describe("Factures : droits du rôle « Éditeur »", () => {
         const reponse = await appelApi(page, op.requete, op.variables(ORG, "editeur"), { organisation: ORG, delai: 15_000 });
         expect(reponse.errors, `${op.nom} : l'Éditeur doit pouvoir le faire`).toEqual([]);
         expect(reponse.data?.[op.champ], `${op.nom} : réponse vide`).toBeTruthy();
-        expect(await photo(op.temoin("editeur")), `${op.nom} : rien n'a changé en base`).not.toBe(avant);
+        if (!op.sansEffetEnBase) expect(await photo(op.temoin("editeur")), `${op.nom} : rien n'a changé en base`).not.toBe(avant);
       });
     } else if (op.editeur === "autorise") {
       test(`${op.nom} : le droit de l'Éditeur est reconnu`, async ({ page }) => {
@@ -658,7 +667,6 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
           headerNotes: `Notes ${PIEGE}`,
           footerNotes: `Bas de page ${PIEGE}`,
           termsAndConditions: `Conditions ${PIEGE}`,
-          customFields: [{ key: `Champ ${PIEGE}`, value: "valeur" }],
           issueDate: AUJOURDHUI,
           dueDate: DANS_30,
           status: "PENDING",

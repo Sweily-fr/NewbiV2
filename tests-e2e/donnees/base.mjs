@@ -157,7 +157,8 @@ export const COMPTES = {
   // sans gêner le compte « freelance » des autres fonctionnalités.
   facturesOffre: {
     utilisateur: { _id: oid("utilisateur", 14), email: "factures-offre@e2e.test", name: "Odile Offre" },
-    organisation: organisation(12, "Offre Factures Test EI"),
+    // En franchise en base de TVA : mention « TVA non applicable, art. 293 B du CGI ».
+    organisation: { ...organisation(12, "Offre Factures Test EI"), vatFranchise: true },
     token: "e2eSessionTokenNewbiFacturesOffreUniquement",
     plan: "freelance",
   },
