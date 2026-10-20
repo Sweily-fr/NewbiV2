@@ -405,6 +405,17 @@ export const TRANSFERTS = {
     shareLink: "e2ecollabtransfertintrus000000000",
     accessKey: "e2eclefintrus00000000000000000000",
   }),
+  // Cibles des parcours d'interface (renommer, supprimer), distinctes de la sécurité.
+  renommerUi: transfert(7, {
+    title: "Transfert à renommer (UI)",
+    shareLink: "e2ecollabtransfertrenommerui00000",
+    accessKey: "e2eclefrenommerui0000000000000000",
+  }),
+  supprimerUi: transfert(8, {
+    title: "Transfert à supprimer (UI)",
+    shareLink: "e2ecollabtransfertsupprimerui0000",
+    accessKey: "e2eclefsupprimerui000000000000000",
+  }),
 };
 
 /* ------------------------------------------------------------------ */

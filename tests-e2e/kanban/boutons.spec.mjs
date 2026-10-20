@@ -122,7 +122,7 @@ test.describe("Kanban (liste) : chaque bouton de la barre d'outils agit", () => 
     await expect(page.getByRole("dialog").filter({ has: page.getByText("Nouvelle liste", { exact: true }) })).toBeVisible();
   });
 
-  test("« Exporter » télécharge un CSV puis un Excel", async ({ page }) => {
+  test("« Exporter » télécharge un CSV (contenant les tableaux) puis un Excel", async ({ page }) => {
     await ouvrirListe(page);
     for (const [item, motif] of [["CSV (.csv)", /\.csv$/], ["Excel (.xlsx)", /\.xlsx$/]]) {
       await page.getByRole("button", { name: "Exporter" }).click();
@@ -131,6 +131,13 @@ test.describe("Kanban (liste) : chaque bouton de la barre d'outils agit", () => 
         page.getByRole("menuitem", { name: item }).click(),
       ]);
       expect(fichier.suggestedFilename()).toMatch(motif);
+      if (item.includes("csv")) {
+        const flux = await fichier.createReadStream();
+        const morceaux = [];
+        for await (const m of flux) morceaux.push(m);
+        const texte = Buffer.concat(morceaux).toString("utf8");
+        expect(texte, "Le CSV exporté ne contient pas les tableaux").toContain(TABLEAUX.lecture.title);
+      }
     }
   });
 
