@@ -274,6 +274,7 @@ export const COMPTES_BANCAIRES = {
   achats: compteBancaire(1, "achats", { name: "Compte courant pro", iban: "FR7630006000011234567890189", solde: 12345.67 }),
   achatsEpargne: compteBancaire(2, "achats", { name: "Livret pro", iban: "FR7630006000019876543210123", solde: 5000 }),
   saisie: compteBancaire(3, "saisieAchats", { name: "Compte courant saisie", iban: "FR7630006000015555555555512", solde: 8000 }),
+  freelance: compteBancaire(4, "freelanceAchats", { name: "Compte pro freelance", iban: "FR7630006000017777777777734", solde: 2500 }),
 };
 
 function justificatif(n, compte, nom, { avecId = true } = {}) {
@@ -612,6 +613,20 @@ export const TRANSACTIONS_SAISIE = {
   editeurJustificatif: transaction(139, "saisieAchats", { libelle: "CB EDITEUR JUSTIFICATIF", montant: -21, ilYa: 2, compteBancaire: CBS, justificatifs: [justificatif(139, "saisieAchats", "Ticket Éditeur.pdf")] }),
 };
 
+// --- Suggestions de rapprochement (offre d'entrée : deux suggestions seulement) ---------
+
+const FF = {
+  suggestionA: fournisseur(201, "freelanceAchats", "Hébergeur Suggestion", "SOFTWARE"),
+  suggestionB: fournisseur(202, "freelanceAchats", "Assureur Suggestion", "INSURANCE"),
+};
+/** Débit du même montant qu'une facture d'achat à payer : une carte « Rattacher / Masquer » chacun. */
+export const SUGGESTIONS = {
+  facture: factureAchat(201, "freelanceAchats", { fournisseur: FF.suggestionA, numero: "HEB-SUG-1", emiseIlYa: 6, echeanceDans: 10, ttc: 39.9, statut: "TO_PAY", categorie: "SOFTWARE", sousCategorie: "saas" }),
+  transaction: transaction(201, "freelanceAchats", { libelle: "PRLV HEBERGEUR SUGGESTION", montant: -39.9, ilYa: 2, compteBancaire: COMPTES_BANCAIRES.freelance }),
+  factureMasquee: factureAchat(202, "freelanceAchats", { fournisseur: FF.suggestionB, numero: "ASS-SUG-2", emiseIlYa: 8, echeanceDans: 10, ttc: 77.7, statut: "TO_PAY", categorie: "INSURANCE", sousCategorie: "assurance" }),
+  transactionMasquee: transaction(202, "freelanceAchats", { libelle: "PRLV ASSUREUR SUGGESTION", montant: -77.7, ilYa: 3, compteBancaire: COMPTES_BANCAIRES.freelance }),
+};
+
 // --- Prévision de trésorerie ----------------------------------------------------------
 
 function saisie(n, compte, { name, type, category, subcategory = null, amount, debut = 0, fin = null, frequency = "MONTHLY", scenario = null, notes = "" }) {
@@ -824,10 +839,10 @@ export function donneesAchatsBanque() {
     member: membresEnPlus(),
     products: [...Object.values(PRODUITS), ...Object.values(PRODUITS_SAISIE), ...PRODUITS_VOLUMINEUX],
     productcustomfields: [...Object.values(CHAMPS_PRODUITS), ...CHAMPS_FREELANCE_ACHATS, ...Object.values(CHAMPS_SAISIE)],
-    suppliers: [...Object.values(F), ...Object.values(FS)],
-    purchaseinvoices: [...Object.values(FACTURES_ACHAT), ...FACTURES_ACHAT_REMPLISSAGE, ...Object.values(FACTURES_ACHAT_SAISIE)],
+    suppliers: [...Object.values(F), ...Object.values(FS), ...Object.values(FF)],
+    purchaseinvoices: [...Object.values(FACTURES_ACHAT), ...FACTURES_ACHAT_REMPLISSAGE, ...Object.values(FACTURES_ACHAT_SAISIE), SUGGESTIONS.facture, SUGGESTIONS.factureMasquee],
     accounts_bankings: Object.values(COMPTES_BANCAIRES),
-    transactions: [...Object.values(TRANSACTIONS), ...Object.values(TRANSACTIONS_SAISIE)],
+    transactions: [...Object.values(TRANSACTIONS), ...Object.values(TRANSACTIONS_SAISIE), SUGGESTIONS.transaction, SUGGESTIONS.transactionMasquee],
     clients: Object.values(CLIENTS_ACHATS),
     invoices: Object.values(FACTURES_VENTE),
     forecastscenarios: Object.values(SCENARIOS).map((s) => (s.workspaceId.equals(ORGANISATION_SCENARIOS._id) ? { ...s, createdBy: proprietaireScenarios._id } : s)),

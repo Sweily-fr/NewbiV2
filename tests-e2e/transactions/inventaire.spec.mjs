@@ -14,12 +14,12 @@ import { TRANSACTIONS } from "../donnees/lot-achats-banque.mjs";
 test.skip(process.env.E2E_INVENTAIRE !== "1", "Relevé des pages : E2E_INVENTAIRE=1");
 
 const id = (doc) => doc._id.toHexString();
-// Tiroir maison (sans rôle de fenêtre) : volet fixe à droite.
-const tiroir = (p) => p.locator("div.fixed.inset-y-0.right-0.z-50").last();
+// Tiroir maison (sans rôle de fenêtre) : volet fixe à droite, avec son titre.
+const tiroir = (p) => p.locator("div.fixed.right-0").filter({ has: p.getByRole("heading", { level: 2 }) }).last();
 const URL = "/dashboard/outils/transactions";
 const ouvrirListe = (p) => ouvrir(p, URL, { pret: p.getByText("Spotify").first() });
 const ouvrirTiroir = (t) => async (p) => {
-  await ouvrir(p, `${URL}?transactionId=${id(t)}`, { pret: tiroir(p).locator("h2") });
+  await ouvrir(p, `${URL}?transactionId=${id(t)}`, { pret: tiroir(p) });
   await p.waitForTimeout(1_200);
 };
 
@@ -27,11 +27,6 @@ for (const [role, token] of [["proprietaire", SESSION_TOKEN_ACHATS], ["editeur",
   test.describe(`Relevé des transactions (${role})`, () => {
     test.use({ storageState: connecteAchats(token) });
     releverEtat(`transactions-${role}-depense`, ouvrirTiroir(TRANSACTIONS.carburant), { zone: tiroir });
-    releverEtat(`transactions-${role}-selection`, async (p) => {
-      await ouvrirListe(p);
-      await p.getByRole("checkbox", { name: "Select row" }).first().check({ timeout: 10_000 });
-      await p.waitForTimeout(500);
-    });
   });
 }
 

@@ -27,7 +27,7 @@ import { test, expect, etape } from "./outils.mjs";
 import { ouvrir } from "./navigation.mjs";
 import { API_URL, BASE_URL, connecte, sessionCookie, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_LECTEUR_ACHATS } from "./config.mjs";
 import { COMPTES } from "./donnees/base.mjs";
-import { TRANSACTIONS, TRANSACTIONS_SAISIE } from "./donnees/lot-achats-banque.mjs";
+import { SUGGESTIONS, TRANSACTIONS, TRANSACTIONS_SAISIE } from "./donnees/lot-achats-banque.mjs";
 import { appelApi, verifierRefus, id } from "./securite.mjs";
 import { base } from "./base.mjs";
 
@@ -39,7 +39,7 @@ import { base } from "./base.mjs";
  * lignes. Les suggestions ont leurs propres tests, avec une session normale.
  */
 export function connecteAchats(token) {
-  const ids = JSON.stringify([...Object.values(TRANSACTIONS), ...Object.values(TRANSACTIONS_SAISIE)].map((t) => t._id.toHexString()));
+  const ids = JSON.stringify([...Object.values(TRANSACTIONS), ...Object.values(TRANSACTIONS_SAISIE), SUGGESTIONS.transaction, SUGGESTIONS.transactionMasquee].map((t) => t._id.toHexString()));
   return {
     cookies: [sessionCookie(token)],
     origins: [
