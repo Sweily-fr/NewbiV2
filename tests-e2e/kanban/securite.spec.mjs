@@ -60,8 +60,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateBoard",
     requete: `mutation($w: ID,$input: UpdateBoardInput!){ updateBoard(workspaceId:$w,input:$input){ id } }`,
-    variables: (w, qui) => ({ w, input: { id: id(TABLEAUX.modifier), description: `Modifié par ${qui}` } }),
-    temoin: () => ["boards", { _id: TABLEAUX.modifier._id }],
+    variables: (w, qui) => ({ w, input: { id: id(TABLEAUX.lecture), description: `Modifié par ${qui}` } }),
+    variablesEditeur: (w) => ({ w, input: { id: id(TABLEAUX.editeur), description: "Modifié par l'éditeur" } }),
+    temoin: () => ["boards", { _id: TABLEAUX.lecture._id }],
   },
   {
     nom: "Supprimer un tableau",
@@ -81,8 +82,9 @@ const ECRITURES = [
     cible: true,
     champ: "toggleBoardFavorite",
     requete: `mutation($w: ID,$b: ID!){ toggleBoardFavorite(workspaceId:$w,boardId:$b){ id isFavorite } }`,
-    variables: (w) => ({ w, b: id(TABLEAUX.favori) }),
-    temoin: () => ["boards", { _id: TABLEAUX.favori._id }],
+    variables: (w) => ({ w, b: id(TABLEAUX.lecture) }),
+    variablesEditeur: (w) => ({ w, b: id(TABLEAUX.favoriEditeur) }),
+    temoin: () => ["boards", { _id: TABLEAUX.lecture._id }],
   },
   {
     nom: "Créer une colonne",
@@ -98,8 +100,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateColumn",
     requete: `mutation($w: ID,$input: UpdateColumnInput!){ updateColumn(workspaceId:$w,input:$input){ id } }`,
-    variables: (w, qui) => ({ w, input: { id: id(COLONNES.modifier), title: `Colonne ${qui}` } }),
-    temoin: () => ["columns", { _id: COLONNES.modifier._id }],
+    variables: (w, qui) => ({ w, input: { id: id(COLONNES.lectureAfaire), title: `Colonne ${qui}` } }),
+    variablesEditeur: (w) => ({ w, input: { id: id(COLONNES.editeur), title: "Colonne éditée" } }),
+    temoin: () => ["columns", { _id: COLONNES.lectureAfaire._id }],
   },
   {
     nom: "Supprimer une colonne",
@@ -128,8 +131,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateTask",
     requete: `mutation($w: ID,$input: UpdateTaskInput!){ updateTask(workspaceId:$w,input:$input){ id } }`,
-    variables: (w, qui) => ({ w, input: { id: id(TACHES.modifier), description: `Modifiée par ${qui}` } }),
-    temoin: () => ["tasks", { _id: TACHES.modifier._id }],
+    variables: (w, qui) => ({ w, input: { id: id(TACHES.lecture1), description: `Modifiée par ${qui}` } }),
+    variablesEditeur: (w) => ({ w, input: { id: id(TACHES.modifierEditeur), description: "Modifiée par l'éditeur" } }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
   {
     nom: "Supprimer une tâche",
@@ -147,8 +151,9 @@ const ECRITURES = [
     cible: true,
     champ: "moveTask",
     requete: `mutation($w: ID,$id: ID!,$c: String!,$p: Int!){ moveTask(workspaceId:$w,id:$id,columnId:$c,position:$p){ id } }`,
-    variables: (w) => ({ w, id: id(TACHES.deplacer), c: id(COLONNES.taches), p: 0 }),
-    temoin: () => ["tasks", { _id: TACHES.deplacer._id }],
+    variables: (w) => ({ w, id: id(TACHES.lecture1), c: id(COLONNES.lectureEnCours), p: 0 }),
+    variablesEditeur: (w) => ({ w, id: id(TACHES.deplacerEditeur), c: id(COLONNES.taches), p: 0 }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
   {
     nom: "Assigner un membre à une tâche",
@@ -156,8 +161,9 @@ const ECRITURES = [
     cible: true,
     champ: "assignTaskMember",
     requete: `mutation($w: ID,$t: ID!,$m: String!){ assignTaskMember(workspaceId:$w,taskId:$t,memberId:$m){ id } }`,
-    variables: (w) => ({ w, t: id(TACHES.assigner), m: id(MEMBRES.collabEditeur.utilisateur) }),
-    temoin: () => ["tasks", { _id: TACHES.assigner._id }],
+    variables: (w) => ({ w, t: id(TACHES.lecture1), m: id(MEMBRES.collabEditeur.utilisateur) }),
+    variablesEditeur: (w) => ({ w, t: id(TACHES.assignerEditeur), m: id(MEMBRES.collabEditeur.utilisateur) }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
   {
     nom: "Étiqueter une tâche",
@@ -165,8 +171,9 @@ const ECRITURES = [
     cible: true,
     champ: "addTaskTag",
     requete: `mutation($w: ID,$t: ID!,$tag: TagInput!){ addTaskTag(workspaceId:$w,taskId:$t,tag:$tag){ id } }`,
-    variables: (w) => ({ w, t: id(TACHES.etiqueter), tag: TAG }),
-    temoin: () => ["tasks", { _id: TACHES.etiqueter._id }],
+    variables: (w) => ({ w, t: id(TACHES.lecture1), tag: TAG }),
+    variablesEditeur: (w) => ({ w, t: id(TACHES.etiqueterEditeur), tag: TAG }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
   {
     nom: "Ajouter un point de checklist",
@@ -174,8 +181,9 @@ const ECRITURES = [
     cible: true,
     champ: "addChecklistItem",
     requete: `mutation($w: ID,$t: ID!,$x: String!){ addChecklistItem(workspaceId:$w,taskId:$t,text:$x){ id } }`,
-    variables: (w, qui) => ({ w, t: id(TACHES.checklist), x: `Point de ${qui}` }),
-    temoin: () => ["tasks", { _id: TACHES.checklist._id }],
+    variables: (w, qui) => ({ w, t: id(TACHES.lecture1), x: `Point de ${qui}` }),
+    variablesEditeur: (w) => ({ w, t: id(TACHES.checklistEditeur), x: "Point de l'éditeur" }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
   {
     nom: "Commenter une tâche",
@@ -183,8 +191,9 @@ const ECRITURES = [
     cible: true,
     champ: "addComment",
     requete: `mutation($w: ID,$t: ID!,$input: CommentInput!){ addComment(workspaceId:$w,taskId:$t,input:$input){ id } }`,
-    variables: (w, qui) => ({ w, t: id(TACHES.commenter), input: { content: `Commentaire de ${qui}` } }),
-    temoin: () => ["tasks", { _id: TACHES.commenter._id }],
+    variables: (w, qui) => ({ w, t: id(TACHES.lecture1), input: { content: `Commentaire de ${qui}` } }),
+    variablesEditeur: (w) => ({ w, t: id(TACHES.commenterEditeur), input: { content: "Commentaire de l'éditeur" } }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
   {
     nom: "Modifier le commentaire d'un autre membre",
@@ -203,8 +212,9 @@ const ECRITURES = [
     cible: true,
     champ: "startTimer",
     requete: `mutation($w: ID,$t: ID!){ startTimer(workspaceId:$w,taskId:$t){ id } }`,
-    variables: (w) => ({ w, t: id(TACHES.minuteur) }),
-    temoin: () => ["tasks", { _id: TACHES.minuteur._id }],
+    variables: (w) => ({ w, t: id(TACHES.lecture1) }),
+    variablesEditeur: (w) => ({ w, t: id(TACHES.minuteurEditeur) }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
   {
     nom: "Lier deux tâches",
@@ -212,8 +222,9 @@ const ECRITURES = [
     cible: true,
     champ: "linkTask",
     requete: `mutation($w: ID,$t: ID!,$l: ID!){ linkTask(workspaceId:$w,taskId:$t,linkedTaskId:$l){ id } }`,
-    variables: (w) => ({ w, t: id(TACHES.lier), l: id(TACHES.lierCible) }),
-    temoin: () => ["tasks", { _id: TACHES.lier._id }],
+    variables: (w) => ({ w, t: id(TACHES.lecture1), l: id(TACHES.lecture2) }),
+    variablesEditeur: (w) => ({ w, t: id(TACHES.lierEditeur), l: id(TACHES.lierCibleEditeur) }),
+    temoin: () => ["tasks", { _id: TACHES.lecture1._id }],
   },
 ];
 
@@ -252,7 +263,8 @@ test.describe("Kanban : droits du rôle « Éditeur »", () => {
   for (const op of ECRITURES) {
     if (editeurPeut(op) || op.niveauLecture) {
       test(`${op.nom} : permis`, async ({ page }) => {
-        const reponse = await appelApi(page, op.requete, op.variables(ORG, "editeur"), { organisation: ORG, delai: 15_000 });
+        const vars = (op.variablesEditeur || op.variables)(ORG, "editeur");
+        const reponse = await appelApi(page, op.requete, vars, { organisation: ORG, delai: 15_000 });
         verifierReussite(reponse, op.champ, op.nom);
       });
     } else {

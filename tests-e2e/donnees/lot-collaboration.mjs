@@ -107,6 +107,10 @@ export const TABLEAUX = {
   partage: board(8, "Tableau partagé publiquement"),
   // Tableau d'une autre entreprise (intrus) : l'intrus y a ses droits, les autres non.
   intrus: board(9, "Tableau de l'intrus", { organisation: "intrus" }),
+  // Cibles mutées par l'Éditeur (permis) : séparées de celles que les rôles
+  // refusés lisent, pour qu'aucune donnée changée ne soit partagée entre tests.
+  editeur: board(10, "Tableau édité par l'Éditeur"),
+  favoriEditeur: board(11, "Tableau mis en favori par l'Éditeur"),
 };
 
 export const COLONNES = {
@@ -120,6 +124,7 @@ export const COLONNES = {
   taches: colonne(8, 7, "À faire", 0),
   partage: colonne(9, 8, "À faire", 0),
   intrus: colonne(10, 9, "À faire", 0, { organisation: "intrus" }),
+  editeur: colonne(11, 7, "Colonne éditée par l'Éditeur", 5),
 };
 
 export const TACHES = {
@@ -157,6 +162,16 @@ export const TACHES = {
   }),
   partageXss: tache(15, 8, 9, "Tâche piégée du lien public", { description: PIEGE, startDate: DANS(1) }),
   intrus: tache(16, 9, 10, "Tâche de l'intrus", { organisation: "intrus" }),
+  // Cibles mutées par l'Éditeur (permis).
+  modifierEditeur: tache(17, 7, 8, "Tâche modifiée par l'Éditeur"),
+  deplacerEditeur: tache(18, 7, 8, "Tâche déplacée par l'Éditeur"),
+  assignerEditeur: tache(19, 7, 8, "Tâche assignée par l'Éditeur"),
+  etiqueterEditeur: tache(20, 7, 8, "Tâche étiquetée par l'Éditeur"),
+  checklistEditeur: tache(21, 7, 8, "Checklist par l'Éditeur"),
+  commenterEditeur: tache(22, 7, 8, "Commentée par l'Éditeur"),
+  minuteurEditeur: tache(23, 7, 8, "Minuteur par l'Éditeur"),
+  lierEditeur: tache(24, 7, 8, "Liée par l'Éditeur"),
+  lierCibleEditeur: tache(25, 7, 8, "Autre tâche liée par l'Éditeur"),
 };
 
 /* ------------------------------------------------------------------ */
