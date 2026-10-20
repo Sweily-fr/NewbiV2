@@ -341,6 +341,11 @@ export function SecuritySection({
 
   // Fonction pour sauvegarder les paramètres de session
   const handleSessionSettingsChange = async (setting, value) => {
+    // Valeur vide : la liste n'a pas trouvé la valeur enregistrée, rien à
+    // enregistrer (sinon une erreur s'affichait à l'ouverture de l'onglet)
+    if (value === "" || value == null || Number.isNaN(parseFloat(value))) {
+      return;
+    }
     setIsSessionLoading(true);
 
     try {
@@ -661,6 +666,13 @@ export function SecuritySection({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Ancien réglage « Illimité » (0) : affiché tel quel tant
+                      que l'espace ne choisit pas une limite */}
+                  {securitySettings.maxSessions <= 0 && (
+                    <SelectItem value={securitySettings.maxSessions.toString()}>
+                      Illimité
+                    </SelectItem>
+                  )}
                   <SelectItem value="1">1 session</SelectItem>
                   <SelectItem value="2">2 sessions</SelectItem>
                   <SelectItem value="3">3 sessions</SelectItem>
@@ -668,11 +680,11 @@ export function SecuritySection({
               </Select>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {
-                  { 1: "1 session", 2: "2 sessions", 3: "3 sessions" }[
-                    securitySettings.maxSessions.toString()
-                  ]
-                }
+                {securitySettings.maxSessions <= 0
+                  ? "Illimité"
+                  : { 1: "1 session", 2: "2 sessions", 3: "3 sessions" }[
+                      securitySettings.maxSessions.toString()
+                    ]}
               </span>
             )}
           </div>
