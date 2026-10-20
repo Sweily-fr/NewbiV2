@@ -4,7 +4,10 @@ import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
 import { toObjectId, withErrorHandler } from "@/src/lib/security";
 import { enforceSessionLimit } from "@/src/lib/enforce-session-limit";
-import { logSessionRevocation } from "@/src/lib/session-revocation-log";
+import {
+  logSessionRevocation,
+  tokenPrefix,
+} from "@/src/lib/session-revocation-log";
 
 async function handler() {
   const session = await auth.api.getSession({
@@ -92,6 +95,41 @@ async function handler() {
     trigger: "login_check_route",
   });
 
+  // Limite déjà appliquée à la création de la session (hook Better Auth) :
+  // ces révocations, notées au journal pour cette session, sont annoncées
+  // une fois à l'utilisateur (sinon il ne savait pas que ses autres
+  // appareils avaient été déconnectés)
+  let revokedAtCreation = 0;
+  if (currentSessionToken) {
+    try {
+      const log = mongoDb.collection("session_revocation_log");
+      const entries = await log
+        .find(
+          {
+            userId: String(userObjectId),
+            mechanism: "max_sessions_limit",
+            trigger: "login_session_create",
+            keptTokenPrefix: tokenPrefix(currentSessionToken),
+            announcedAt: { $exists: false },
+          },
+          { projection: { revokedCount: 1 } },
+        )
+        .toArray();
+      if (entries.length > 0) {
+        revokedAtCreation = entries.reduce(
+          (total, entry) => total + (entry.revokedCount || 0),
+          0,
+        );
+        await log.updateMany(
+          { _id: { $in: entries.map((entry) => entry._id) } },
+          { $set: { announcedAt: now } },
+        );
+      }
+    } catch {
+      // Le journal ne doit pas empêcher la vérification
+    }
+  }
+
   // Récupérer l'état final des sessions (après nettoyage + révocation)
   const activeSessions = await mongoDb
     .collection("session")
@@ -105,7 +143,7 @@ async function handler() {
     hasReachedLimit: false,
     sessionCount: activeSessions.length,
     maxSessions,
-    revokedCount,
+    revokedCount: revokedCount + revokedAtCreation,
     // Jetons jamais renvoyés au navigateur (cookie httpOnly) : la session
     // courante est signalée par `isCurrent`, la révocation se fait par id.
     sessions: activeSessions.map((s) => ({

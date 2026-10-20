@@ -69,6 +69,13 @@ export function SecuritySection({
     orgLoadingProp !== undefined ? orgLoadingProp : hookData.loading;
 
   const { data: session, refetch: refetchSession } = useSession();
+  // Appareil utilisé : la session de ce navigateur (les autres se révoquent)
+  const isCurrentDevice = (device) =>
+    Boolean(
+      (session?.session?.id && device.sessionId === session.session.id) ||
+      (session?.session?.token &&
+        device.sessionToken === session.session.token),
+    );
   const { session: user } = useUser();
 
   const [securitySettings, setSecuritySettings] = useState({
@@ -171,7 +178,7 @@ export function SecuritySection({
                 ? "Local"
                 : "Localisation inconnue"),
             createdAt: sessionData.createdAt || sessionData.created,
-            current: true, // Pour l'instant, on considère que c'est la session actuelle
+            sessionId: sessionData.id || null,
             sessionToken:
               sessionData.token || sessionData.sessionToken || sessionData.id,
           };
@@ -421,17 +428,28 @@ export function SecuritySection({
     try {
       const device = devices.find((d) => d.id === deviceId);
 
-      if (device?.current) {
+      if (device && isCurrentDevice(device)) {
         // Session actuelle - déconnexion complète
         await performLogout();
-      } else if (device?.sessionToken) {
-        // Déconnecter une session spécifique avec Better Auth
-        const { error } = await authClient.multiSession.revoke({
-          sessionToken: device.sessionToken,
+      } else if (device?.sessionId || device?.sessionToken) {
+        // Session d'un autre appareil : supprimée côté serveur (multiSession
+        // ne révoque que les comptes ouverts dans ce navigateur)
+        const response = await fetch("/api/revoke-session", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            device.sessionId
+              ? { sessionId: device.sessionId }
+              : { sessionToken: device.sessionToken },
+          ),
         });
 
-        if (error) {
-          console.error("Erreur lors de la révocation de session:", error);
+        if (!response.ok) {
+          console.error(
+            "Erreur lors de la révocation de session:",
+            response.status,
+          );
           toast.error("Erreur lors de la déconnexion de l'appareil");
           return;
         }
@@ -783,7 +801,7 @@ export function SecuritySection({
                               <span className="font-normal text-xs">
                                 {device.device}
                               </span>
-                              {device.current && (
+                              {isCurrentDevice(device) && (
                                 <Badge
                                   variant="secondary"
                                   className="text-[8px]"
@@ -811,7 +829,7 @@ export function SecuritySection({
                         <span className="text-xs">{device.location}</span>
                       </TableCell>
                       <TableCell>
-                        {!device.current && (
+                        {!isCurrentDevice(device) && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
