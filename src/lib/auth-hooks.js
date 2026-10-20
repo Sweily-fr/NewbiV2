@@ -89,6 +89,9 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
     }
   }
 
+  // ── 2 bis. Plafonds de l'offre : rôles, sièges, espaces ──
+  await checkPlanLimits(ctx);
+
   // ── 3. Rôles des espaces : membres, organisation, définition des rôles ──
   await checkOrganizationRoles(ctx);
 
@@ -125,6 +128,97 @@ function requestedRoles(role) {
     .filter(Boolean);
 }
 
+// Rôles prédéfinis soumis à l'offre (availableRoles de plan-limits) ; les
+// rôles personnalisés de l'espace sont proposés sur toutes les offres.
+const PLAN_ROLE_LABELS = {
+  admin: "Administrateur",
+  member: "Éditeur",
+  viewer: "Membre",
+  accountant: "Comptable",
+};
+
+/**
+ * Plafonds de l'offre (src/lib/plan-limits.js) que l'interface applique et
+ * que le serveur fait respecter face à un appel direct à Better Auth :
+ *   - rôles proposés (pas d'Administrateur sur l'offre d'entrée), à
+ *     l'invitation comme au changement de rôle ;
+ *   - sièges, par le même calcul que l'interface (canInviteMember) ;
+ *   - espaces : un nouvel espace se crée avec son abonnement (création au
+ *     paiement), /organization/create ne sert qu'au tout premier.
+ * Fail-open sur une erreur de lecture, comme le contrôle d'abonnement.
+ */
+async function checkPlanLimits(ctx) {
+  const isInvite = ctx.path === "/organization/invite-member";
+  const isRoleChange = ctx.path === "/organization/update-member-role";
+  const isCreate = ctx.path === "/organization/create";
+  if (!isInvite && !isRoleChange && !isCreate) return;
+
+  const { getSessionFromCtx } = await import("better-auth/api");
+  const session = await getSessionFromCtx(ctx).catch(() => null);
+  // Pas de session : Better Auth refusera lui-même la requête
+  if (!session?.user?.id) return;
+
+  let denial = null;
+  try {
+    const { getMongoDb } = await import("./mongodb");
+    const { ObjectId } = await import("mongodb");
+    const db = await getMongoDb();
+
+    if (isCreate) {
+      const userId = String(session.user.id);
+      const membership = await db.collection("member").findOne(
+        {
+          userId: {
+            $in: ObjectId.isValid(userId)
+              ? [new ObjectId(userId), userId]
+              : [userId],
+          },
+        },
+        { projection: { _id: 1 } },
+      );
+      if (membership) {
+        denial =
+          "Un nouvel espace se crée avec son propre abonnement, depuis la création d'espace du tableau de bord.";
+      }
+    } else {
+      const organizationId =
+        ctx.body?.organizationId || session.session?.activeOrganizationId;
+      if (organizationId) {
+        const roles = requestedRoles(ctx.body?.role);
+        const subscription = await db
+          .collection("subscription")
+          .findOne({ referenceId: String(organizationId) });
+        const { getPlanLimits } = await import("./plan-limits");
+        const available = getPlanLimits(subscription?.plan).availableRoles;
+        const unavailable = roles.find(
+          (r) => PLAN_ROLE_LABELS[r] && !available?.includes(r),
+        );
+        if (unavailable) {
+          denial = `Le rôle ${PLAN_ROLE_LABELS[unavailable]} n'est pas compris dans votre offre.`;
+        } else if (isInvite) {
+          const { seatSyncService } =
+            await import("../services/seatSyncService.js");
+          const seats = await seatSyncService.canInviteMember(
+            String(organizationId),
+            roles.length === 1 ? roles[0] : roles.join(",") || "member",
+          );
+          if (!seats?.canInvite) {
+            denial =
+              seats?.reason || "Limite de membres atteinte pour votre offre.";
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(
+      "⚠️ [planLimits] contrôle impossible, autorisé :",
+      error?.message,
+    );
+  }
+
+  if (denial) await forbid(denial);
+}
+
 /**
  * Contrôle des routes membres et organisation de Better Auth selon la grille
  * Newbi. Les lectures en base sont dans un try/catch fail-closed : un
@@ -150,7 +244,7 @@ async function checkOrganizationRoles(ctx) {
   try {
     const { getMongoDb } = await import("./mongodb");
     const { ObjectId } = await import("mongodb");
-    const { getAccountActions, isOwnerRole } =
+    const { getAccountActions, getRoleAccountPowers, isOwnerRole } =
       await import("./organization-roles");
     const db = await getMongoDb();
 
@@ -174,6 +268,8 @@ async function checkOrganizationRoles(ctx) {
       moduleKey: isOrgUpdate ? "orgSettings" : "team",
     });
     const callerIsOwner = isOwnerRole(caller.role);
+    // Rôle du membre visé (changement de rôle, retrait), lu plus bas
+    let targetRole = null;
     // Case de la page Membres exigée par chaque route
     const requiredTeamAction = {
       "/organization/invite-member": "invite",
@@ -216,7 +312,7 @@ async function checkOrganizationRoles(ctx) {
             organizationId: orgObjectId,
           })
         : null;
-      let targetRole = targetMember?.role;
+      targetRole = targetMember?.role;
       if (!targetMember && typeof target === "string" && target.includes("@")) {
         const user = await db
           .collection("user")
@@ -238,6 +334,46 @@ async function checkOrganizationRoles(ctx) {
       ) {
         // Sans quoi un rôle qui gère les membres pourrait s'attribuer plus
         denial = "Vous ne pouvez pas changer votre propre rôle.";
+      }
+    }
+
+    // Pas de rôle plus élevé que le sien : hors super admin, on n'attribue
+    // (invitation, changement de rôle) qu'un rôle dont les pouvoirs sur le
+    // compte (membres, informations de l'entreprise, applications,
+    // abonnement) sont aussi les siens, et on ne modifie ni ne retire un
+    // membre qui en a davantage. Sans quoi un rôle qui gère les membres
+    // invitait une autre de ses adresses comme Administrateur.
+    if (!denial && !isOrgUpdate && !callerIsOwner) {
+      const own = await getRoleAccountPowers(db, {
+        organizationId,
+        role: caller.role,
+      });
+      const exceedsOwn = (powers) => [...powers].some((p) => !own.has(p));
+      if (
+        ctx.path === "/organization/invite-member" ||
+        ctx.path === "/organization/update-member-role"
+      ) {
+        for (const role of requestedRoles(ctx.body?.role)) {
+          const powers = await getRoleAccountPowers(db, {
+            organizationId,
+            role,
+          });
+          if (exceedsOwn(powers)) {
+            denial =
+              "Vous ne pouvez pas attribuer un rôle qui a plus de droits que le vôtre sur le compte (membres, informations de l'entreprise, applications, abonnement).";
+            break;
+          }
+        }
+      }
+      if (!denial && targetRole) {
+        const powers = await getRoleAccountPowers(db, {
+          organizationId,
+          role: targetRole,
+        });
+        if (exceedsOwn(powers)) {
+          denial =
+            "Vous ne pouvez pas modifier ni retirer un membre qui a plus de droits que vous sur le compte.";
+        }
       }
     }
   } catch (error) {
@@ -464,7 +600,38 @@ export const afterHook = createAuthMiddleware(async (ctx) => {
   }
 
   // ========================================
-  // 2. OAuth callback — vérification des organisations
+  // 2. Mot de passe changé : les autres sessions sont fermées
+  // ========================================
+  if (ctx.path === "/change-password") {
+    const { getSessionFromCtx, isAPIError } = await import("better-auth/api");
+    const returned = ctx.context?.returned;
+    if (!returned || isAPIError(returned)) return;
+    try {
+      const current = await getSessionFromCtx(ctx);
+      const userId = current?.user?.id || current?.session?.userId;
+      // revokeOtherSessions demandé par le client : Better Auth a déjà
+      // remplacé la session, on garde la nouvelle (returned.token)
+      const keepToken = returned.token || current?.session?.token;
+      if (userId && keepToken) {
+        const { revokeSessionsAfterPasswordChange } =
+          await import("./revoke-sessions-after-password");
+        await revokeSessionsAfterPasswordChange({
+          userId,
+          keepToken,
+          trigger: "change_password",
+        });
+      }
+    } catch (error) {
+      console.error(
+        "❌ [PASSWORD] Fermeture des autres sessions :",
+        error?.message,
+      );
+    }
+    return;
+  }
+
+  // ========================================
+  // 3. OAuth callback — vérification des organisations
   // ========================================
   if (!ctx.path?.includes("/callback/")) {
     return;
