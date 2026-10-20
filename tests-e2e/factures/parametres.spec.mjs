@@ -46,12 +46,17 @@ test.describe("Paramètres des factures", () => {
 
   test("Préfixe avec une espace : refusé avec un message, rien n'est enregistré", async ({ page }) => {
     const avant = (await organisation())?.invoicePrefix ?? null;
-    const zone = await ouvrirParametres(page);
-    await zone.getByRole("textbox", { name: "Préfixe de facture" }).fill("FAC 2026");
-    await zone.getByRole("button", { name: "Enregistrer les modifications" }).click();
-    await page.waitForTimeout(1_500);
-    await expect(zone.getByText(/ne doit contenir que des lettres, chiffres et tirets/).first().or(notificationsErreur(page).first())).toBeVisible();
-    expect((await organisation())?.invoicePrefix ?? null, "Préfixe invalide enregistré").toBe(avant);
+    try {
+      const zone = await ouvrirParametres(page);
+      await zone.getByRole("textbox", { name: "Préfixe de facture" }).fill("FAC 2026");
+      await zone.getByRole("button", { name: "Enregistrer les modifications" }).click();
+      await page.waitForTimeout(1_500);
+      await expect.soft(zone.getByText(/ne doit contenir que des lettres, chiffres et tirets/).first().or(notificationsErreur(page).first()), "Aucun message pour un préfixe avec une espace").toBeVisible();
+      expect((await organisation())?.invoicePrefix ?? null, "Préfixe invalide enregistré : les factures suivantes seront refusées par l'API").toBe(avant);
+    } finally {
+      // Le défaut ne doit pas gêner les autres tests de l'organisation (numérotation).
+      await (await base()).collection("organization").updateOne({ _id: ORG }, avant === null ? { $unset: { invoicePrefix: "" } } : { $set: { invoicePrefix: avant } });
+    }
   });
 
   test("Coordonnées bancaires : un IBAN invalide est refusé avec un message", async ({ page }) => {
@@ -74,14 +79,26 @@ test.describe("Paramètres des factures", () => {
     const fenetre = fenetreTitree(page, "Coordonnées bancaires");
     await fenetre.getByRole("textbox", { name: "IBAN" }).fill("FR76 3000 6000 0112 3456 7890 189");
     await fenetre.getByRole("textbox", { name: "BIC/SWIFT" }).fill("AGRIFRPP");
-    await fenetre.getByRole("textbox", { name: "Nom de la banque" }).fill("Crédit Agricole d’Île-de-France");
+    await fenetre.getByRole("textbox", { name: "Nom de la banque" }).fill("Crédit Agricole Île-de-France");
     await etape(page, "Enregistrer", async () => {
       await fenetre.getByRole("button", { name: "Enregistrer" }).click();
       await expect(notifications(page).filter({ hasText: "Coordonnées bancaires mises à jour avec succès" }).first()).toBeVisible();
     }, { capture: "ecran" });
     await expect.poll(async () => (await organisation())?.bankBic).toBe("AGRIFRPP");
-    const org = await organisation();
-    expect.soft(org.bankName, "Nom de la banque (apostrophe typographique et accents)").toBe("Crédit Agricole d’Île-de-France");
+    expect((await organisation()).bankName).toBe("Crédit Agricole Île-de-France");
+  });
+
+  test("Nom de banque avec une apostrophe typographique (d’Île-de-France) : accepté", async ({ page }) => {
+    const zone = await ouvrirParametres(page);
+    await zone.getByRole("button", { name: "Configurer les coordonnées bancaires" }).click();
+    const fenetre = fenetreTitree(page, "Coordonnées bancaires");
+    await fenetre.getByRole("textbox", { name: "IBAN" }).fill("FR7630006000011234567890189");
+    await fenetre.getByRole("textbox", { name: "BIC/SWIFT" }).fill("AGRIFRPP");
+    await fenetre.getByRole("textbox", { name: "Nom de la banque" }).fill("Caisse d’Épargne d’Île-de-France");
+    await fenetre.getByRole("button", { name: "Enregistrer" }).click();
+    await page.waitForTimeout(1_200);
+    await expect(fenetre.getByText("Nom de banque invalide"), "Le vrai nom d'une banque, écrit avec l'apostrophe que posent le Mac et l'iPhone, est refusé").toHaveCount(0);
+    await expect.poll(async () => (await organisation())?.bankName).toBe("Caisse d’Épargne d’Île-de-France");
   });
 });
 

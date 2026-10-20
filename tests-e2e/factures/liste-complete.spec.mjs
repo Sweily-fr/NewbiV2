@@ -74,14 +74,15 @@ test.describe("Factures : liste (compteurs et filtres)", () => {
     await expect(ligne(page, F.payee)).toHaveCount(0);
   });
 
-  test("Colonnes visibles : masquer la colonne « Client » la retire du tableau", async ({ page }) => {
+  test("Colonnes visibles : masquer la colonne « Échéance » la retire du tableau", async ({ page }) => {
     await ouvrirListe(page);
-    await expect(page.getByRole("columnheader", { name: /Client/i }).first()).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: /^Échéance/ }).first()).toBeVisible();
     await page.getByRole("button", { name: "Filtres" }).click();
     await page.getByRole("menuitem", { name: /^Colonnes visibles/ }).click();
-    await page.getByRole("menu").last().getByText(/^Client$/i).first().click();
+    await page.getByRole("menu").last().getByText("Échéance", { exact: true }).click();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("columnheader", { name: /^Client/i })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: /^Échéance/ })).toHaveCount(0);
+    await expect(ligne(page, F.attente), "La facture reste listée").toHaveCount(1);
   });
 
   for (const [nom, saisie, attendue, absente] of [

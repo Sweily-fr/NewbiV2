@@ -17,7 +17,7 @@ import { verifierFormulaire, marque } from "../champs.mjs";
 import { connecte, SESSION_TOKEN_FACTURES_OFFRE, SESSION_TOKEN_FACTURES_REGLAGES } from "../config.mjs";
 import { CLIENTS, COMPTES } from "../donnees/base.mjs";
 import { CHAMP_DOCUMENTS, CLIENTS_FACTURES } from "../donnees/lot-factures.mjs";
-import { etapeArticles, LISTE, notifications, ouvrirNouvelle } from "./pages.mjs";
+import { ajouterLigne, etapeArticles, LISTE, notifications, ouvrirNouvelle } from "./pages.mjs";
 
 const ATELIER = COMPTES.atelier.organisation._id;
 const ALPHA = CLIENTS.alpha.name;
@@ -25,9 +25,7 @@ const factureAvecArticle = async (nom, organisation = ATELIER) => (await base())
 
 async function ouvrirArticle(page) {
   await etapeArticles(page, ALPHA);
-  await page.getByRole("button", { name: "Ajouter un article" }).first().click();
-  await expect(page.locator("#item-description-0")).toBeVisible();
-  await attendreCalme(page);
+  await ajouterLigne(page);
   return page.locator("main");
 }
 
@@ -133,7 +131,7 @@ test.describe("Éditeur de factures : paramètres de la facture", () => {
   test("Notes d'en-tête, notes de bas de page et conditions : appliquées à la facture et enregistrées", async ({ page }) => {
     const nom = "Prestation avec notes et conditions";
     await etapeArticles(page, ALPHA);
-    await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+    await ajouterLigne(page);
     await page.locator("#item-description-0").fill(nom);
     await page.locator("#item-price-0").fill("300");
     await parametresDeLaFacture(page);
@@ -154,7 +152,7 @@ test.describe("Éditeur de factures : paramètres de la facture", () => {
   test("Préfixe de 13 caractères accepté par les paramètres : la facture est créée avec ce préfixe", async ({ page }) => {
     const nom = "Prestation au préfixe long";
     await etapeArticles(page, ALPHA);
-    await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+    await ajouterLigne(page);
     await page.locator("#item-description-0").fill(nom);
     await page.locator("#item-price-0").fill("120");
     await parametresDeLaFacture(page);
@@ -179,7 +177,7 @@ test.describe("Éditeur de factures : franchise en base de TVA", () => {
 
   test("Entreprise en franchise : l'aperçu porte « TVA non applicable, art. 293 B du CGI »", async ({ page }) => {
     await etapeArticles(page, CLIENTS_FACTURES.offre.name);
-    await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+    await ajouterLigne(page);
     await page.locator("#item-description-0").fill("Prestation en franchise");
     await page.locator("#item-price-0").fill("500");
     await page.waitForTimeout(1_000);
@@ -195,7 +193,7 @@ test.describe("Éditeur de factures : champs du client sur les documents", () =>
   test("Champ du client « Sur les documents » : visible dans l'aperçu et figé sur la facture émise", async ({ page }) => {
     const nom = "Entretien avec numéro de dossier";
     await etapeArticles(page, CLIENTS_FACTURES.volume.name);
-    await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+    await ajouterLigne(page);
     await page.locator("#item-description-0").fill(nom);
     await page.locator("#item-price-0").fill("80");
     await page.waitForTimeout(1_000);

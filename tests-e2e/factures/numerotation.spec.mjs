@@ -12,7 +12,7 @@ import { base } from "../base.mjs";
 import { connecte, SESSION_TOKEN_FACTURES_REGLAGES } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
 import { CLIENTS_FACTURES, NUMEROTATION } from "../donnees/lot-factures.mjs";
-import { choisirClient, dansJours, etapeArticles, notifications, ouvrirEdition, ouvrirNouvelle } from "./pages.mjs";
+import { ajouterLigne, choisirClient, dansJours, etapeArticles, notifications, ouvrirEdition, ouvrirNouvelle } from "./pages.mjs";
 
 test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_REGLAGES) });
 
@@ -47,8 +47,8 @@ test.describe("Factures : numérotation continue", () => {
     await etape(page, "Numéro proposé dans les paramètres du brouillon", async () => {
       expect.soft(await numeroAffiche(page), "Le brouillon propose le numéro de son préfixe au lieu de la suite continue").toBe(attendu);
     }, { capture: "ecran" });
-    // Fermer les paramètres sans rien changer.
-    await page.getByRole("button", { name: "Annuler", exact: true }).first().click();
+    // Revenir au formulaire sans rien changer (« Annuler » y annonce des modifications imaginaires, voir parametres.spec.mjs).
+    await page.getByRole("button", { name: "Appliquer à cette facture" }).click();
     await expect(page.getByText("Paramètres de la facture")).toHaveCount(0);
     await etape(page, "Valider le brouillon", async () => {
       await page.getByRole("button", { name: /Continuer/ }).click();
@@ -81,7 +81,7 @@ test.describe("Factures : numérotation continue", () => {
     await bouton.click();
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: /Continuer/ }).click();
-    await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+    await ajouterLigne(page);
     await page.locator("#item-description-0").fill(nom);
     await page.locator("#item-price-0").fill("95");
     await page.getByRole("button", { name: "Créer la facture" }).click();
@@ -102,7 +102,7 @@ test.describe("Factures : numérotation d'une facture créée", () => {
     const nom = "Entretien numéroté à la suite";
     await etapeArticles(page, CLIENTS_FACTURES.volume.name);
     const attendu = await prochainNumero();
-    await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+    await ajouterLigne(page);
     await page.locator("#item-description-0").fill(nom);
     await page.locator("#item-price-0").fill("60");
     await page.getByRole("button", { name: "Créer la facture" }).click();

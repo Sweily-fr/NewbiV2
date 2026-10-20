@@ -7,6 +7,8 @@ import { test, expect, etape, notificationsErreur } from "../outils.mjs";
 import { attendreCalme, cliquer } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { connecte, SESSION_TOKEN_FACTURES } from "../config.mjs";
+import { COMPTES } from "../donnees/base.mjs";
+import { appelApi } from "../securite.mjs";
 import { AVOIRS_FACTURES, F } from "../donnees/lot-factures.mjs";
 import { notifications, ouvrirAvoirExistant, ouvrirAvoirNouveau, ouvrirListe, panneau } from "../factures/pages.mjs";
 
@@ -60,6 +62,18 @@ test.describe("Avoirs : montants", () => {
     await articleDeLAvoir(page, 0, AVOIRS_FACTURES.existant.items[0].description);
     await expect(page.getByRole("heading", { name: "Modifier l'avoir" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Créer l'avoir" }), "« Créer l'avoir » sur un avoir déjà émis (il est modifié, pas créé)").toHaveCount(0);
+  });
+});
+
+test.describe("Avoirs : modification par l'API", () => {
+  test("Modifier le motif d'un avoir : enregistré et réponse sans erreur", async ({ page }) => {
+    const a = AVOIRS_FACTURES.modifieApi;
+    const w = COMPTES.factures.organisation._id.toHexString();
+    await ouvrirListe(page);
+    const reponse = await appelApi(page, `mutation($w: ID!, $id: ID!, $input: UpdateCreditNoteInput!) { updateCreditNote(id: $id, workspaceId: $w, input: $input) { id reason } }`, { w, id: a._id.toHexString(), input: { reason: "Motif corrigé par l'API" } }, { organisation: w });
+    const apres = await (await base()).collection("creditnotes").findOne({ _id: a._id });
+    expect.soft(apres.reason, "Motif enregistré").toBe("Motif corrigé par l'API");
+    expect(reponse.errors.map((e) => e.message), "L'API répond en erreur alors que l'avoir est modifié (journal d'événements : type CREDIT_NOTE_UPDATED refusé)").toEqual([]);
   });
 });
 

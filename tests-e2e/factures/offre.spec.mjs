@@ -1,8 +1,8 @@
 /**
  * Plafonds de l'offre d'entrée (« freelance », src/lib/plan-limits.js) pour
  * les factures, avec l'organisation « Offre Factures » : 10 modèles de
- * documents (atteints), exports comptables limités au CSV et à Excel, pas
- * de serveur d'envoi personnalisé. L'interface les applique ; l'API doit les
+ * documents (atteints), exports comptables limités au CSV et à Excel.
+ * L'interface les applique ; l'API doit les
  * appliquer aussi, sinon un appel direct les contourne.
  */
 import { test, expect, etape } from "../outils.mjs";
@@ -53,15 +53,4 @@ test.describe("Offre d'entrée : plafonds des factures", () => {
     for (const nom of ["CSV", "Excel"]) await expect(page.getByRole("menuitem", { name: nom, exact: true })).not.toHaveAttribute("data-disabled", "");
   });
 
-  test("Serveur d'envoi personnalisé (SMTP) : hors offre, refusé par l'API", async ({ page }) => {
-    await ouvrir(page, "/dashboard");
-    const reponse = await appelApi(
-      page,
-      `mutation($input: SmtpSettingsInput!) { updateSmtpSettings(input: $input) { __typename } }`,
-      { input: { enabled: false, smtpHost: "smtp.offre-factures.test", smtpPort: 587, smtpUser: "offre", fromEmail: "offre@e2e.test" } },
-      { organisation: W },
-    );
-    const enregistre = await (await base()).collection("smtpsettings").findOne({ workspaceId: { $in: [ORG, W] } });
-    expect(enregistre, `Réglage SMTP enregistré sur l'offre d'entrée (réservé à l'offre Entreprise) : ${JSON.stringify(reponse.errors).slice(0, 200)}`).toBeNull();
-  });
 });

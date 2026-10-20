@@ -144,7 +144,14 @@ test.describe("Factures : actions du menu de la ligne", () => {
   test("Copier le lien de paiement : le presse-papiers contient le lien de la facture", async ({ page }) => {
     const f = F.attente;
     await ouvrirListe(page);
-    await actionDeLigne(page, f, "Copier le lien de paiement");
+    await chercher(page, f);
+    await cliquer(page, ligne(page, f).getByRole("button", { name: "Ouvrir le menu" }));
+    const copier = page.getByRole("menu").last().getByRole("menuitem", { name: "Copier le lien de paiement" });
+    await expect(
+      copier,
+      "« Copier le lien de paiement » absent : l'API ne renvoie pas le lien dans la liste (compte Stripe Connect actif ; journal de l'API : « Query was already executed » sur StripeConnectAccount)",
+    ).toBeVisible({ timeout: 5_000 });
+    await copier.click();
     await expect(succes(page, "Lien de paiement copié")).toBeVisible();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${API_URL}/pay/invoice/${id(f)}`);
   });
@@ -218,7 +225,7 @@ test.describe("Factures : actions du menu de la ligne", () => {
     const f = F.aRendreRecurrente;
     await ouvrirListe(page);
     await actionDeLigne(page, f, "Rendre récurrente");
-    const fenetre = fenetreTitree(page, "Récurrence de la facture");
+    const fenetre = fenetreTitree(page, "Rendre la facture récurrente");
     await expect(fenetre).toBeVisible();
     await etape(page, "Programmer", async () => {
       await fenetre.getByRole("button", { name: "Programmer" }).click();
@@ -389,7 +396,7 @@ test.describe("Factures récurrentes : suspendre, reprendre, arrêter", () => {
 
   test("Reprendre une récurrence suspendue", async ({ page }) => {
     const fenetre = await gerer(page, RECURRENCES.aReprendre);
-    await fenetre.getByRole("button", { name: "Reprendre" }).click();
+    await fenetre.getByRole("button", { name: "Reprendre", exact: true }).click();
     await expect(succes(page, "Récurrence reprise")).toBeVisible();
     await statutRecurrence(RECURRENCES.aReprendre).toBe("ACTIVE");
   });

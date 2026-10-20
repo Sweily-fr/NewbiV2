@@ -263,6 +263,7 @@ export const AVOIRS_FACTURES = {
   cible: avoir(4, { facture: F.ciblePayee, numero: "0004", lignes: [ligne("Avoir cible des droits", -1, 2)] }),
   editeur: avoir(5, { facture: F.aCrediterParEditeur, numero: "0005", lignes: [ligne("Avoir modifié par l'Éditeur", -1, 10)] }),
   restant: avoir(6, { facture: F.avoirRestantExact, numero: "0006", lignes: [ligne("Deux viennoiseries abîmées", -2, 12)] }),
+  modifieApi: avoir(7, { facture: F.aCrediterPourSuppression, numero: "0007", lignes: [ligne("Avoir dont le motif change", -1, 3)] }),
 };
 
 // --- Factures récurrentes -------------------------------------------------------

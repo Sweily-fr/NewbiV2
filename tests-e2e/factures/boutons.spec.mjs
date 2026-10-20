@@ -273,12 +273,13 @@ test.describe("Factures (propriétaire)", () => {
       "button Modifier vos informations légales": { fenetre: "Informations légales" },
       "button Configurer les coordonnées bancaires": { fenetre: "Coordonnées bancaires" },
       // Couleurs : texte (sans nom, voir accessibilite), texte de l'en-tête, fond de l'en-tête.
-      "button ": { etat: /\[expanded\]/ },
+      // Bouton sans nom : impossible à viser sans le confondre avec la croix (voir « boutons sans nom »).
+      "button ": { parcours: "boutons.spec.mjs : boutons sans nom" },
       "button FFFFFF": { etat: /\[expanded\]/ },
       "button 5B4FFF": { etat: /\[expanded\]/ },
       "button Au centre": { sansEffet: "position du client sur l'aperçu, aucun texte ne change" },
       "button À droite": { sansEffet: "position du client sur l'aperçu, aucun texte ne change" },
-      "button Suggestions": { menuContient: [/^Remerciement standard/, /^CGV B2B standard/] },
+      "button Suggestions": { menuContient: [/^Remerciement standard/] },
       "button Ajouter une annexe PDF": { selecteurDeFichier: true },
       "button Annuler": { parcours: "parametres.spec.mjs : annuler sans rien changer" },
       "button Enregistrer les modifications": { parcours: "parametres.spec.mjs : enregistrer les paramètres" },

@@ -68,6 +68,18 @@ export async function choisirClient(page, nom = CLIENTS_FACTURES.lumiere.name) {
   await expect(page.getByRole("combobox").filter({ hasText: nom })).toBeVisible();
 }
 
+/** Ajoute une ligne d'article et l'ouvre (accordéon) : ses champs sont alors visibles. */
+export async function ajouterLigne(page, n = 1) {
+  const i = n - 1;
+  await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+  const champ = page.locator(`#item-description-${i}`);
+  if (!(await champ.isVisible().catch(() => false))) {
+    await page.getByRole("button", { name: new RegExp(`Article ${n}\\b`) }).first().click();
+  }
+  await expect(champ).toBeVisible();
+  await attendreCalme(page);
+}
+
 export async function etapeArticles(page, nomClient) {
   await ouvrirNouvelle(page);
   await choisirClient(page, nomClient);

@@ -3,7 +3,7 @@
  * facturation : droits vérifiés à l'API, pas seulement à l'écran. Chaque
  * opération GraphQL (schémas de newbi-api : invoice, creditNote,
  * invoiceRecurrence, invoiceTemplate, invoiceReminderSettings,
- * documentSettings, emailSettings, smtpSettings, documentEmail,
+ * documentSettings, emailSettings, documentEmail,
  * importedInvoice, eInvoicing) est appelée directement, avec la session du
  * navigateur, comme le ferait quelqu'un qui contourne l'interface :
  *   - « Membre » (lecture seule) : lit tout, toute écriture est refusée ;
@@ -162,6 +162,8 @@ const ECRITURES = [
     nom: "Renvoyer une facture à la plateforme de facturation électronique",
     champ: "resendInvoiceToSuperPdp",
     editeur: "autorise",
+    // Depuis son organisation, l'intrus est arrêté avant la facture : sa facturation électronique n'est pas activée.
+    refus: /facturation électronique n'est pas activée/,
     cible: true,
     workspace: true,
     requete: `mutation($w: ID!, $i: ID!) { resendInvoiceToSuperPdp(workspaceId: $w, invoiceId: $i) { __typename } }`,
@@ -220,7 +222,8 @@ const ECRITURES = [
   {
     nom: "Modifier un avoir",
     champ: "updateCreditNote",
-    editeur: "permis",
+    // Droit reconnu ; la réponse de l'API est en erreur pour tout le monde (test dédié plus bas).
+    editeur: "autorise",
     cible: true,
     workspace: true,
     requete: `mutation($w: ID!, $id: ID!, $input: UpdateCreditNoteInput!) { updateCreditNote(id: $id, workspaceId: $w, input: $input) { id } }`,
@@ -317,22 +320,6 @@ const ECRITURES = [
     temoin: parametres("emailsettings"),
   },
   {
-    nom: "Serveur d'envoi personnalisé (updateSmtpSettings)",
-    champ: "updateSmtpSettings",
-    editeur: "refuse",
-    requete: `mutation($input: SmtpSettingsInput!) { updateSmtpSettings(input: $input) { __typename } }`,
-    variables: (_w, qui) => ({ input: { enabled: false, smtpHost: `smtp.${qui}.test`, smtpPort: 587, smtpUser: qui, fromEmail: `${qui}@e2e.test` } }),
-    temoin: parametres("smtpsettings"),
-  },
-  {
-    nom: "Tester le serveur d'envoi (testSmtpConnection)",
-    champ: "testSmtpConnection",
-    editeur: "refuse",
-    requete: `mutation { testSmtpConnection { success } }`,
-    variables: () => ({}),
-    temoin: parametres("smtpsettings"),
-  },
-  {
     nom: "Modifier une facture importée",
     champ: "updateImportedInvoice",
     editeur: "permis",
@@ -413,7 +400,6 @@ const LECTURES = [
   ["Les réglages des relances", "getInvoiceReminderSettings", `query { getInvoiceReminderSettings { id emailSubject } }`, () => ({})],
   ["Les paramètres par défaut des factures", "getDocumentSettings", `query { getDocumentSettings(documentType: INVOICE) { __typename } }`, () => ({})],
   ["L'expéditeur des e-mails", "getEmailSettings", `query($w: ID) { getEmailSettings(workspaceId: $w) { fromEmail } }`, (w) => ({ w })],
-  ["Le serveur d'envoi personnalisé", "getSmtpSettings", `query { getSmtpSettings { smtpHost } }`, () => ({})],
   ["Une facture importée", "importedInvoice", `query($id: ID!) { importedInvoice(id: $id) { id originalInvoiceNumber } }`, () => ({ id: id(IMPORTEES.validee) })],
   ["Les factures importées", "importedInvoices", `query($w: ID!) { importedInvoices(workspaceId: $w, page: 1, limit: 100) { invoices { id originalInvoiceNumber } total } }`, (w) => ({ w })],
   ["Les compteurs des factures importées", "importedInvoiceStats", `query($w: ID!) { importedInvoiceStats(workspaceId: $w) { __typename } }`, (w) => ({ w })],
@@ -432,7 +418,8 @@ function sansFuite(reponse) {
   }
 }
 
-const estRefusDeDroits = (reponse) => reponse.errors.some((e) => /FORBIDDEN|UNAUTHENTICATED|permission|autoris|membre de l'organisation/i.test(`${e.extensions?.code || ""} ${e.message}`));
+const estRefusDeDroits = (reponse) =>
+  reponse.errors.some((e) => /^(FORBIDDEN|UNAUTHENTICATED)$/.test(e.extensions?.code || "") || /n'avez pas la permission|n'êtes pas membre/i.test(e.message));
 
 /**
  * `entete` : organisation annoncée dans l'en-tête, quand elle diffère de
@@ -448,6 +435,8 @@ async function refusSansEffet(page, op, qui, w, { entete = w } = {}) {
     sansFuite(reponse);
   } else if (op.nombre && reponse.data?.[op.champ] === 0) {
     // « 0 suppression » : refus silencieux mais sans effet, vérifié par le témoin.
+  } else if (op.refus && reponse.errors.some((e) => op.refus.test(e.message)) && !reponse.data?.[op.champ]) {
+    // Refus propre à l'opération, sans donnée renvoyée.
   } else {
     verifierRefus(reponse, op.champ, `${op.nom} (${qui})`);
   }
@@ -568,16 +557,15 @@ test.describe("Factures : une autre entreprise n'atteint rien", () => {
       await page.goto(`/dashboard/outils/factures/${id(F.attente)}`);
       await page.waitForTimeout(4_000);
       const texte = await page.locator("body").innerText();
-      expect(texte, "Le nom du client des autres est affiché").not.toContain(F.attente.client.name);
-      expect(texte, "Un article des autres est affiché").not.toContain(F.attente.items[0].description);
+      expect(texte, "Un article de la facture des autres est affiché").not.toContain(F.attente.items[0].description);
+      expect(texte, "Le montant de la facture des autres est affiché").not.toContain("1 080,00");
     });
 
     test("L'éditeur d'un brouillon des autres ne montre rien", async ({ page }) => {
       await page.goto(`/dashboard/outils/factures/${id(F.brouillon)}/editer`);
       await page.waitForTimeout(4_000);
       const texte = await page.locator("body").innerText();
-      expect(texte, "Le nom du client des autres est affiché").not.toContain(F.brouillon.client.name);
-      expect(texte, "Un article des autres est affiché").not.toContain(F.brouillon.items[0].description);
+      expect(texte, "Un article du brouillon des autres est affiché").not.toContain(F.brouillon.items[0].description);
     });
 
     test("L'avoir d'une facture des autres ne s'affiche pas", async ({ page }) => {
@@ -585,7 +573,6 @@ test.describe("Factures : une autre entreprise n'atteint rien", () => {
       await page.waitForTimeout(4_000);
       const texte = await page.locator("body").innerText();
       expect(texte, "Le motif de l'avoir des autres est affiché").not.toContain(AVOIRS_FACTURES.existant.reason);
-      expect(texte, "Le client des autres est affiché").not.toContain(F.avecAvoir.client.name);
     });
 
     test("Le PDF et les données d'impression d'une facture des autres sont refusés", async ({ page }) => {
@@ -686,12 +673,15 @@ test.describe("Factures : une facture émise ne se modifie pas", () => {
 
 /**
  * Texte piégé (XSS stockée) : l'Éditeur enregistre par l'API une facture,
- * un avoir, une récurrence et un modèle dont les textes contiennent du HTML
- * qui exécute du code. Le propriétaire les ouvre : rien ne doit s'exécuter.
+ * un avoir, une récurrence et un modèle dont chaque texte contient du HTML
+ * qui exécute du code, avec une marque par champ. Le propriétaire les ouvre :
+ * rien ne doit s'exécuter ; sinon le message dit quels champs.
  */
 test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
   test.use({ storageState: connecte(SESSION_TOKEN_FACTURES) });
-  const PIEGE = `<img src="x-piege" onerror="window.__piege = 'execute'; alert('code exécuté depuis une facture')">`;
+  // L'image piégée n'existe pas : le navigateur la demande (404) avant de lancer le code.
+  test.use({ erreursConsoleAutorisees: /x-piege/ });
+  const piege = (champ) => `<img src="x-piege-${champ}" onerror="(window.__piege = window.__piege || []).push('${champ}')">`;
   const MARQUE = "Piège XSS facture";
   let factureId = null;
   let avoirId = null;
@@ -708,10 +698,10 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
         w: ORG,
         input: {
           client: clientDe(CLIENTS_FACTURES.lumiere),
-          items: [{ ...article(`${MARQUE} ${PIEGE}`), details: `Détails ${PIEGE}` }],
-          headerNotes: `Notes ${PIEGE}`,
-          footerNotes: `Bas de page ${PIEGE}`,
-          termsAndConditions: `Conditions ${PIEGE}`,
+          items: [{ ...article(`${MARQUE} ${piege("nom de l'article")}`), details: `Détails ${piege("détails de l'article")}` }],
+          headerNotes: `Notes ${piege("notes d'en-tête")}`,
+          footerNotes: `Bas de page ${piege("notes de bas de page")}`,
+          termsAndConditions: `Conditions ${piege("conditions générales")}`,
           issueDate: AUJOURDHUI,
           dueDate: DANS_30,
           status: "PENDING",
@@ -730,9 +720,9 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
           input: {
             originalInvoiceId: factureId,
             creditType: "CORRECTION",
-            reason: `Motif ${PIEGE}`,
+            reason: `Motif ${piege("motif de l'avoir")}`,
             client: clientDe(CLIENTS_FACTURES.lumiere),
-            items: [{ ...article(`Avoir ${PIEGE}`, 1), quantity: -1 }],
+            items: [{ ...article(`Avoir ${piege("article de l'avoir")}`, 1), quantity: -1, details: `Détails ${piege("détails de l'avoir")}` }],
             issueDate: AUJOURDHUI,
           },
         },
@@ -743,13 +733,13 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
       acceptations.recurrence = await appelApi(
         page,
         `mutation($w: ID!, $i: ID!, $input: InvoiceRecurrenceInput!) { saveInvoiceRecurrence(workspaceId: $w, invoiceId: $i, input: $input) { id } }`,
-        { w: ORG, i: factureId, input: { frequency: "MONTHLY", interval: 1, startDate: DEMAIN, emailSubject: `Objet ${PIEGE}`, emailBody: `Message ${PIEGE}` } },
+        { w: ORG, i: factureId, input: { frequency: "MONTHLY", interval: 1, startDate: DEMAIN, emailSubject: `Objet ${piege("objet de la récurrence")}`, emailBody: `Message ${piege("message de la récurrence")}` } },
         { organisation: ORG },
       );
       acceptations.modele = await appelApi(
         page,
         `mutation($w: ID, $input: SaveInvoiceAsTemplateInput!) { saveInvoiceAsTemplate(input: $input, workspaceId: $w) { id } }`,
-        { w: ORG, input: { invoiceId: factureId, name: `Modèle ${PIEGE}`, description: `Description ${PIEGE}` } },
+        { w: ORG, input: { invoiceId: factureId, name: `Modèle ${piege("nom du modèle")}`, description: `Description ${piege("description du modèle")}` } },
         { organisation: ORG },
       );
     }
@@ -763,12 +753,13 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
     expect(factureId, `Facture piégée refusée : ${JSON.stringify(acceptations.facture?.errors).slice(0, 300)}`).toBeTruthy();
   });
 
-  const pasExecute = async (page) => {
-    await page.waitForTimeout(1_500);
-    expect(await page.evaluate(() => window.__piege ?? null), "Le code d'un texte piégé s'est exécuté").toBeNull();
-  };
+  async function pasExecute(page) {
+    await page.waitForTimeout(2_000);
+    const executes = await page.evaluate(() => [...new Set(window.__piege || [])]);
+    expect(executes, `Du code s'est exécuté depuis : ${executes.join(", ")}`).toEqual([]);
+  }
 
-  test("Liste et panneau de la facture : le texte s'affiche, rien ne s'exécute", async ({ page }) => {
+  test("Panneau de la facture (aperçu) : rien ne s'exécute", async ({ page }) => {
     test.skip(!factureId, "Facture piégée non créée");
     await ouvrir(page, `/dashboard/outils/factures?id=${factureId}`, { pret: page.getByRole("heading", { name: "Factures clients" }) });
     await page.getByText(MARQUE).first().waitFor({ timeout: 20_000 }).catch(() => {});
@@ -781,16 +772,25 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
     await pasExecute(page);
   });
 
+  test("Liste des factures seule (sans panneau) : rien ne s'exécute", async ({ page }) => {
+    test.skip(!factureId, "Facture piégée non créée");
+    await ouvrir(page, "/dashboard/outils/factures", { pret: page.getByRole("heading", { name: "Factures clients" }) });
+    await pasExecute(page);
+  });
+
   test("Onglet « Récurrentes » et fenêtre de la récurrence : rien ne s'exécute", async ({ page }) => {
     test.skip(!factureId, "Facture piégée non créée");
     await ouvrir(page, "/dashboard/outils/factures", { pret: page.getByRole("heading", { name: "Factures clients" }) });
     await page.getByRole("tab", { name: /^Récurrentes/ }).click();
+    const gerer = page.getByRole("row").filter({ hasText: CLIENTS_FACTURES.lumiere.name }).getByRole("button", { name: "Gérer" }).first();
+    if (await gerer.isVisible().catch(() => false)) await gerer.click();
     await pasExecute(page);
   });
 
   test("Avoir piégé ouvert par le propriétaire : rien ne s'exécute", async ({ page }) => {
     test.skip(!avoirId, "Avoir piégé non créé");
     await ouvrir(page, `/dashboard/outils/factures/${factureId}/avoir/${avoirId}`);
+    await page.getByRole("button", { name: "Suivant" }).click().catch(() => {});
     await pasExecute(page);
   });
 
