@@ -70,6 +70,18 @@ const PREFIXES = {
   bcImporte: "e2e9d",
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
+  produit: "e2e0a",
+  factureAchat: "e2e0b",
+  transactionBancaire: "e2e0c",
+  compteBancaire: "e2e0d",
+  fournisseur: "e2e0e",
+  champProduit: "e2e0f",
+  saisiePrevision: "e2eca",
+  scenarioPrevision: "e2ecb",
+  factureVenteAchats: "e2ecc",
+  fichierAchats: "e2ecd",
+  membreAchats: "e2ece",
+  clientAchats: "e2ecf",
   // ── fin du lot achats-banque ──
   // ── Lot parametres-auth (e2e1a à e2e1f, e2e2a à e2e2f) ──
   // Comptes semés par donnees/lot-parametres-auth.mjs (connexion par
@@ -232,6 +244,27 @@ export const COMPTES = {
   },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (organisations et utilisateurs 20 à 24) ──
+  // Jetons : mêmes chaînes que SESSION_TOKEN_*_ACHATS de config.mjs (repères du lot).
+  // « Achats » : catalogue, factures d'achat, transactions et prévision de
+  // référence, que les tests ne modifient jamais (boutons, affichage, filtres).
+  achats: {
+    utilisateur: { _id: oid("utilisateur", 20), email: "achats@e2e.test", name: "Sam Achats" },
+    organisation: organisation(20, "Achats Test SASU"),
+    token: "e2eSessionTokenNewbiAchatsUniquement",
+  },
+  // « Saisie Achats » : créations, modifications et suppressions (une donnée par action).
+  saisieAchats: {
+    utilisateur: { _id: oid("utilisateur", 23), email: "saisie-achats@e2e.test", name: "Noa Saisie" },
+    organisation: organisation(23, "Saisie Achats Test SASU"),
+    token: "e2eSessionTokenNewbiSaisieAchatsUniquement",
+  },
+  // Offre d'entrée : plafonds du catalogue, et un catalogue de plus de 100 produits.
+  freelanceAchats: {
+    utilisateur: { _id: oid("utilisateur", 24), email: "freelance-achats@e2e.test", name: "Lior Freelance" },
+    organisation: organisation(24, "Achats Freelance Test EI"),
+    token: "e2eSessionTokenNewbiFreelanceAchatsUniquement",
+    plan: "freelance",
+  },
   // ── fin du lot achats-banque ──
   // ── Lot parametres-auth (organisations et utilisateurs 25 à 34) ──
   // « Paramètres » : un membre de chaque rôle, des invitations en attente et
@@ -325,6 +358,20 @@ export const MEMBRES = {
   },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (utilisateurs 20 à 24) ──
+  // L'Éditeur est aussi membre de « Saisie Achats » (lot-achats-banque.mjs) : ses
+  // écritures permises y vont, la référence « Achats » ne bouge jamais.
+  editeurAchats: {
+    utilisateur: { _id: oid("utilisateur", 21), email: "editeur-achats@e2e.test", name: "Eli Éditeur" },
+    de: "achats",
+    role: "member",
+    token: "e2eSessionTokenNewbiEditeurAchatsUniquement",
+  },
+  lecteurAchats: {
+    utilisateur: { _id: oid("utilisateur", 22), email: "lecteur-achats@e2e.test", name: "Lou Membre" },
+    de: "achats",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiLecteurAchatsUniquement",
+  },
   // ── fin du lot achats-banque ──
   // ── Lot parametres-auth (utilisateurs 25 à 34) ──
   // Un membre par rôle dans « Paramètres » (Administrateur, Éditeur, Membre,
