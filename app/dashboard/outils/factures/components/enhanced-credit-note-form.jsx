@@ -668,7 +668,14 @@ export default function EnhancedCreditNoteForm({
                       disabled={!isStep2Valid() || !canEdit || saving}
                       className="px-6 text-sm font-normal"
                     >
-                      {saving ? "Création..." : "Créer l'avoir"}
+                      {/* Avoir existant : il est modifié, pas créé */}
+                      {mode === "edit"
+                        ? saving
+                          ? "Enregistrement..."
+                          : "Enregistrer l'avoir"
+                        : saving
+                          ? "Création..."
+                          : "Créer l'avoir"}
                     </Button>
                   )}
                 </>
