@@ -14,6 +14,7 @@ import {
 } from "./auth-plugins";
 import { beforeSignInHook, afterHook } from "./auth-hooks";
 import {
+  sendChangeEmailConfirmation,
   sendReactivationEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
@@ -421,6 +422,20 @@ export const auth = betterAuth({
           error?.message,
         );
       }
+      // Lien « mot de passe oublié » : toutes les sessions sont fermées
+      try {
+        const { revokeSessionsAfterPasswordChange } =
+          await import("./revoke-sessions-after-password.js");
+        await revokeSessionsAfterPasswordChange({
+          userId: user?.id,
+          trigger: "reset_password",
+        });
+      } catch (error) {
+        console.error(
+          "[AUTH] Fermeture des sessions après réinitialisation :",
+          error?.message,
+        );
+      }
     },
   },
 
@@ -540,6 +555,14 @@ export const auth = betterAuth({
   },
 
   user: {
+    // Changement d'adresse e-mail (Paramètres > Compte) : confirmé depuis
+    // l'adresse actuelle, puis vérifié sur la nouvelle (flux de Better Auth)
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+        await sendChangeEmailConfirmation(user, newEmail, url);
+      },
+    },
     additionalFields: {
       name: {
         type: "string",

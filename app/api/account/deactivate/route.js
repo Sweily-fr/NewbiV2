@@ -48,10 +48,21 @@ export async function POST(request) {
       userId: toObjectId(session.user.id),
     });
 
-    return NextResponse.json({
+    // Cookies de session effacés dans la réponse : sans eux, le cache de
+    // session du navigateur gardait la page active jusqu'à la redirection, et
+    // ses requêtes (espace actif…) échouaient en erreur serveur
+    const signOut = await auth.api
+      .signOut({ headers: request.headers, asResponse: true })
+      .catch(() => null);
+
+    const response = NextResponse.json({
       success: true,
       message: "Compte désactivé avec succès",
     });
+    for (const cookie of signOut?.headers?.getSetCookie?.() || []) {
+      response.headers.append("set-cookie", cookie);
+    }
+    return response;
   } catch (error) {
     console.error("Erreur lors de la désactivation du compte:", error);
     return NextResponse.json(

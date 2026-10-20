@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toCsvCell, toHtmlCell } from "@/src/utils/spreadsheet-cell";
 
 /**
  * Convertit une valeur en Date valide
@@ -8,21 +9,21 @@ import { fr } from "date-fns/locale";
  */
 function convertToDate(dateValue) {
   if (!dateValue) return null;
-  
+
   try {
     // Si c'est déjà une Date
     if (dateValue instanceof Date) {
       return isNaN(dateValue.getTime()) ? null : dateValue;
     }
-    
+
     // Si c'est un timestamp numérique
-    if (typeof dateValue === 'number') {
+    if (typeof dateValue === "number") {
       const date = new Date(dateValue);
       return isNaN(date.getTime()) ? null : date;
     }
-    
+
     // Si c'est une string
-    if (typeof dateValue === 'string') {
+    if (typeof dateValue === "string") {
       // Essayer de parser comme timestamp
       if (/^\d+$/.test(dateValue)) {
         const timestamp = parseInt(dateValue, 10);
@@ -33,10 +34,10 @@ function convertToDate(dateValue) {
       const date = new Date(dateValue);
       return isNaN(date.getTime()) ? null : date;
     }
-    
+
     return null;
   } catch (error) {
-    console.warn('Erreur conversion date:', error);
+    console.warn("Erreur conversion date:", error);
     return null;
   }
 }
@@ -49,26 +50,26 @@ function convertToDate(dateValue) {
 function formatProductForExport(product) {
   const createdAt = convertToDate(product.createdAt);
   const updatedAt = convertToDate(product.updatedAt);
-  
+
   return {
     // Identification
-    "Nom": product.name || "",
-    "Référence": product.reference || "",
-    "Catégorie": product.category || "",
-    
+    Nom: product.name || "",
+    Référence: product.reference || "",
+    Catégorie: product.category || "",
+
     // Prix et TVA
     "Prix unitaire HT (€)": formatAmount(product.unitPrice),
     "Taux TVA (%)": formatAmount(product.vatRate),
-    "Unité": product.unit || "",
-    
+    Unité: product.unit || "",
+
     // Description
-    "Description": product.description || "",
-    
+    Description: product.description || "",
+
     // Dates
-    "Date de création": createdAt 
+    "Date de création": createdAt
       ? format(createdAt, "dd/MM/yyyy HH:mm", { locale: fr })
       : "",
-    "Date de modification": updatedAt 
+    "Date de modification": updatedAt
       ? format(updatedAt, "dd/MM/yyyy HH:mm", { locale: fr })
       : "",
   };
@@ -81,13 +82,13 @@ function formatProductForExport(product) {
  */
 function formatAmount(amount) {
   if (amount === null || amount === undefined || amount === "") return "0.00";
-  
+
   // Convertir en nombre si c'est une string
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+
   // Vérifier que c'est un nombre valide
   if (isNaN(numAmount)) return "0.00";
-  
+
   return numAmount.toFixed(2);
 }
 
@@ -127,38 +128,40 @@ export function exportToCSV(products) {
   if (!products || products.length === 0) {
     return { success: false, error: "Aucun produit à exporter" };
   }
-  
+
   try {
+    // Formater les données
+    const formattedData = products.map(formatProductForExport);
 
-  // Formater les données
-  const formattedData = products.map(formatProductForExport);
+    // Créer le CSV
+    const headers = Object.keys(formattedData[0]);
+    const csvContent = [
+      headers.join(";"),
+      ...formattedData.map((row) =>
+        headers
+          .map((header) => {
+            // Texte neutralisé (formules du tableur), guillemets échappés
+            return toCsvCell(row[header] || "");
+          })
+          .join(";"),
+      ),
+    ].join("\n");
 
-  // Créer le CSV
-  const headers = Object.keys(formattedData[0]);
-  const csvContent = [
-    headers.join(";"),
-    ...formattedData.map((row) =>
-      headers.map((header) => {
-        const value = row[header] || "";
-        // Échapper les guillemets et entourer de guillemets si nécessaire
-        if (value.toString().includes(";") || value.toString().includes('"')) {
-          return `"${value.toString().replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(";")
-    ),
-  ].join("\n");
+    // Ajouter le BOM UTF-8 pour Excel
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-  // Ajouter le BOM UTF-8 pour Excel
-  const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
-  
-  // Télécharger le fichier
-  const filename = generateFilename("csv");
-  downloadBlob(blob, filename);
-  return { success: true };
+    // Télécharger le fichier
+    const filename = generateFilename("csv");
+    downloadBlob(blob, filename);
+    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message || "Erreur lors de l'export CSV" };
+    return {
+      success: false,
+      error: error.message || "Erreur lors de l'export CSV",
+    };
   }
 }
 
@@ -171,15 +174,14 @@ export function exportToExcel(products) {
   if (!products || products.length === 0) {
     return { success: false, error: "Aucun produit à exporter" };
   }
-  
+
   try {
+    // Formater les données
+    const formattedData = products.map(formatProductForExport);
 
-  // Formater les données
-  const formattedData = products.map(formatProductForExport);
-
-  // Créer le tableau HTML
-  const headers = Object.keys(formattedData[0]);
-  const htmlContent = `
+    // Créer le tableau HTML
+    const headers = Object.keys(formattedData[0]);
+    const htmlContent = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
       <head>
         <meta charset="utf-8">
@@ -216,8 +218,10 @@ export function exportToExcel(products) {
               .map(
                 (row) =>
                   `<tr>${headers
-                    .map((header) => `<td>${row[header] || ""}</td>`)
-                    .join("")}</tr>`
+                    .map(
+                      (header) => `<td>${toHtmlCell(row[header] || "")}</td>`,
+                    )
+                    .join("")}</tr>`,
               )
               .join("")}
           </tbody>
@@ -226,15 +230,18 @@ export function exportToExcel(products) {
     </html>
   `;
 
-  // Créer le blob
-  const blob = new Blob([htmlContent], { type: "application/vnd.ms-excel" });
-  
-  // Télécharger le fichier
-  const filename = generateFilename("xls");
-  downloadBlob(blob, filename);
-  return { success: true };
+    // Créer le blob
+    const blob = new Blob([htmlContent], { type: "application/vnd.ms-excel" });
+
+    // Télécharger le fichier
+    const filename = generateFilename("xls");
+    downloadBlob(blob, filename);
+    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message || "Erreur lors de l'export Excel" };
+    return {
+      success: false,
+      error: error.message || "Erreur lors de l'export Excel",
+    };
   }
 }
 
@@ -250,92 +257,93 @@ export function downloadCSVTemplate() {
     "Prix unitaire HT (€)",
     "Taux TVA (%)",
     "Unité",
-    "Description"
+    "Description",
   ];
 
   // Exemple de données
   const exampleData = [
     {
-      "Nom": "Ordinateur portable Dell XPS 13",
-      "Référence": "DELL-XPS13-2024",
-      "Catégorie": "Matériel informatique",
+      Nom: "Ordinateur portable Dell XPS 13",
+      Référence: "DELL-XPS13-2024",
+      Catégorie: "Matériel informatique",
       "Prix unitaire HT (€)": "1299.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Ordinateur portable professionnel 13 pouces"
+      Unité: "unité",
+      Description: "Ordinateur portable professionnel 13 pouces",
     },
     {
-      "Nom": "Consultation développement web",
-      "Référence": "CONS-WEB-001",
-      "Catégorie": "Services",
+      Nom: "Consultation développement web",
+      Référence: "CONS-WEB-001",
+      Catégorie: "Services",
       "Prix unitaire HT (€)": "80.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "heure",
-      "Description": "Consultation et développement web sur mesure"
+      Unité: "heure",
+      Description: "Consultation et développement web sur mesure",
     },
     {
-      "Nom": "Licence Microsoft Office 365",
-      "Référence": "MS-OFFICE-365",
-      "Catégorie": "Logiciels",
+      Nom: "Licence Microsoft Office 365",
+      Référence: "MS-OFFICE-365",
+      Catégorie: "Logiciels",
       "Prix unitaire HT (€)": "69.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Licence annuelle Microsoft Office 365"
+      Unité: "unité",
+      Description: "Licence annuelle Microsoft Office 365",
     },
     {
-      "Nom": "Formation WordPress avancée",
-      "Référence": "FORM-WP-ADV",
-      "Catégorie": "Formation",
+      Nom: "Formation WordPress avancée",
+      Référence: "FORM-WP-ADV",
+      Catégorie: "Formation",
       "Prix unitaire HT (€)": "500.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "jour",
-      "Description": "Formation WordPress avancée 2 jours"
+      Unité: "jour",
+      Description: "Formation WordPress avancée 2 jours",
     },
     {
-      "Nom": "Maintenance serveur mensuelle",
-      "Référence": "MAINT-SERV-M",
-      "Catégorie": "Services",
+      Nom: "Maintenance serveur mensuelle",
+      Référence: "MAINT-SERV-M",
+      Catégorie: "Services",
       "Prix unitaire HT (€)": "300.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "mois",
-      "Description": "Maintenance et monitoring serveur"
+      Unité: "mois",
+      Description: "Maintenance et monitoring serveur",
     },
     {
-      "Nom": "Caméra de surveillance IP",
-      "Référence": "CAM-IP-4K",
-      "Catégorie": "Matériel informatique",
+      Nom: "Caméra de surveillance IP",
+      Référence: "CAM-IP-4K",
+      Catégorie: "Matériel informatique",
       "Prix unitaire HT (€)": "249.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Caméra IP 4K avec vision nocturne"
+      Unité: "unité",
+      Description: "Caméra IP 4K avec vision nocturne",
     },
     {
-      "Nom": "Audit de sécurité informatique",
-      "Référence": "AUDIT-SEC-IT",
-      "Catégorie": "Services",
+      Nom: "Audit de sécurité informatique",
+      Référence: "AUDIT-SEC-IT",
+      Catégorie: "Services",
       "Prix unitaire HT (€)": "1500.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Audit complet de sécurité informatique"
-    }
+      Unité: "unité",
+      Description: "Audit complet de sécurité informatique",
+    },
   ];
 
   const csvContent = [
     headers.join(";"),
     ...exampleData.map((row) =>
-      headers.map((header) => {
-        const value = row[header] || "";
-        if (value.toString().includes(";") || value.toString().includes('"')) {
-          return `"${value.toString().replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(";")
+      headers
+        .map((header) => {
+          // Texte neutralisé (formules du tableur), guillemets échappés
+          return toCsvCell(row[header] || "");
+        })
+        .join(";"),
     ),
   ].join("\n");
 
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
-  
+  const blob = new Blob([BOM + csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
   const filename = "Modele_Import_Catalogue.csv";
   downloadBlob(blob, filename);
 }
@@ -352,74 +360,74 @@ export function downloadExcelTemplate() {
     "Prix unitaire HT (€)",
     "Taux TVA (%)",
     "Unité",
-    "Description"
+    "Description",
   ];
 
   // Exemple de données
   const exampleData = [
     {
-      "Nom": "Ordinateur portable Dell XPS 13",
-      "Référence": "DELL-XPS13-2024",
-      "Catégorie": "Matériel informatique",
+      Nom: "Ordinateur portable Dell XPS 13",
+      Référence: "DELL-XPS13-2024",
+      Catégorie: "Matériel informatique",
       "Prix unitaire HT (€)": "1299.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Ordinateur portable professionnel 13 pouces"
+      Unité: "unité",
+      Description: "Ordinateur portable professionnel 13 pouces",
     },
     {
-      "Nom": "Consultation développement web",
-      "Référence": "CONS-WEB-001",
-      "Catégorie": "Services",
+      Nom: "Consultation développement web",
+      Référence: "CONS-WEB-001",
+      Catégorie: "Services",
       "Prix unitaire HT (€)": "80.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "heure",
-      "Description": "Consultation et développement web sur mesure"
+      Unité: "heure",
+      Description: "Consultation et développement web sur mesure",
     },
     {
-      "Nom": "Licence Microsoft Office 365",
-      "Référence": "MS-OFFICE-365",
-      "Catégorie": "Logiciels",
+      Nom: "Licence Microsoft Office 365",
+      Référence: "MS-OFFICE-365",
+      Catégorie: "Logiciels",
       "Prix unitaire HT (€)": "69.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Licence annuelle Microsoft Office 365"
+      Unité: "unité",
+      Description: "Licence annuelle Microsoft Office 365",
     },
     {
-      "Nom": "Formation WordPress avancée",
-      "Référence": "FORM-WP-ADV",
-      "Catégorie": "Formation",
+      Nom: "Formation WordPress avancée",
+      Référence: "FORM-WP-ADV",
+      Catégorie: "Formation",
       "Prix unitaire HT (€)": "500.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "jour",
-      "Description": "Formation WordPress avancée 2 jours"
+      Unité: "jour",
+      Description: "Formation WordPress avancée 2 jours",
     },
     {
-      "Nom": "Maintenance serveur mensuelle",
-      "Référence": "MAINT-SERV-M",
-      "Catégorie": "Services",
+      Nom: "Maintenance serveur mensuelle",
+      Référence: "MAINT-SERV-M",
+      Catégorie: "Services",
       "Prix unitaire HT (€)": "300.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "mois",
-      "Description": "Maintenance et monitoring serveur"
+      Unité: "mois",
+      Description: "Maintenance et monitoring serveur",
     },
     {
-      "Nom": "Caméra de surveillance IP",
-      "Référence": "CAM-IP-4K",
-      "Catégorie": "Matériel informatique",
+      Nom: "Caméra de surveillance IP",
+      Référence: "CAM-IP-4K",
+      Catégorie: "Matériel informatique",
       "Prix unitaire HT (€)": "249.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Caméra IP 4K avec vision nocturne"
+      Unité: "unité",
+      Description: "Caméra IP 4K avec vision nocturne",
     },
     {
-      "Nom": "Audit de sécurité informatique",
-      "Référence": "AUDIT-SEC-IT",
-      "Catégorie": "Services",
+      Nom: "Audit de sécurité informatique",
+      Référence: "AUDIT-SEC-IT",
+      Catégorie: "Services",
       "Prix unitaire HT (€)": "1500.00",
       "Taux TVA (%)": "20.00",
-      "Unité": "unité",
-      "Description": "Audit complet de sécurité informatique"
-    }
+      Unité: "unité",
+      Description: "Audit complet de sécurité informatique",
+    },
   ];
 
   const htmlContent = `
@@ -459,8 +467,10 @@ export function downloadExcelTemplate() {
               .map(
                 (row) =>
                   `<tr>${headers
-                    .map((header) => `<td>${row[header] || ""}</td>`)
-                    .join("")}</tr>`
+                    .map(
+                      (header) => `<td>${toHtmlCell(row[header] || "")}</td>`,
+                    )
+                    .join("")}</tr>`,
               )
               .join("")}
           </tbody>
@@ -470,7 +480,7 @@ export function downloadExcelTemplate() {
   `;
 
   const blob = new Blob([htmlContent], { type: "application/vnd.ms-excel" });
-  
+
   const filename = "Modele_Import_Catalogue.xls";
   downloadBlob(blob, filename);
 }

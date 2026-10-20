@@ -286,11 +286,12 @@ export function NavSecondary({
   const canManageIntegrations =
     permissionsReady && canDo("integrations", "manage");
   // Réglages e-invoicing lisibles avec les factures ou les applications :
-  // requête coupée sinon (barre latérale montée sur toutes les pages)
+  // requête coupée sinon (barre latérale montée sur toutes les pages), et
+  // lancée une fois les droits connus
   const { settings: eInvoicingSettings, loading: eInvoicingLoading } =
     useEInvoicingSettings({
       skip:
-        permissionsReady && !canRead("invoices") && !canRead("integrations"),
+        !permissionsReady || (!canRead("invoices") && !canRead("integrations")),
     });
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -392,6 +393,13 @@ export function NavSecondary({
             <SidebarMenuButton
               className="mb-1 cursor-pointer"
               tooltip="Notifications"
+              // Barre repliée, le nombre est affiché hors du bouton : il
+              // reste annoncé avec lui par les lecteurs d'écran
+              aria-label={
+                notificationCount > 0
+                  ? `Notifications (${notificationCount} non lue${notificationCount > 1 ? "s" : ""})`
+                  : "Notifications"
+              }
               onClick={() => {
                 if (onOpenNotifications) onOpenNotifications();
                 handleLinkClick();

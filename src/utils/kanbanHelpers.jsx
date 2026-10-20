@@ -82,12 +82,14 @@ export const getPriorityIcon = (priority) => {
  */
 export const stripHtml = (html) => {
   if (!html) return "";
-  if (typeof document !== "undefined") {
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
+  // DOMParser construit un document inerte : ni script ni chargement
+  // d'image, contrairement à un élément du document courant (innerHTML),
+  // où une image piégée (onerror) s'exécute même sans être affichée.
+  if (typeof DOMParser !== "undefined") {
+    const doc = new DOMParser().parseFromString(String(html), "text/html");
+    return doc.body?.textContent || "";
   }
-  return html.replace(/<[^>]*>/g, "");
+  return String(html).replace(/<[^>]*>/g, "");
 };
 
 /**

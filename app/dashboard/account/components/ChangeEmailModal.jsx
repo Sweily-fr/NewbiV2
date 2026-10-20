@@ -13,6 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { toast } from "@/src/components/ui/sonner";
+import { authClient } from "@/src/lib/auth-client";
 
 export function ChangeEmailModal({ isOpen, onClose, currentEmail }) {
   const [newEmail, setNewEmail] = useState("");
@@ -29,7 +30,7 @@ export function ChangeEmailModal({ isOpen, onClose, currentEmail }) {
 
     if (newEmail === currentEmail) {
       toast.error(
-        "La nouvelle adresse email doit être différente de l'actuelle"
+        "La nouvelle adresse email doit être différente de l'actuelle",
       );
       return;
     }
@@ -37,13 +38,20 @@ export function ChangeEmailModal({ isOpen, onClose, currentEmail }) {
     setIsLoading(true);
 
     try {
-      // TODO: Implémenter la logique de changement d'email
-
-      // Simulation d'une requête
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Better Auth envoie un lien de confirmation (à l'adresse actuelle
+      // si elle est vérifiée, sinon à la nouvelle) ; l'adresse ne change
+      // qu'une fois ce lien suivi
+      const { error } = await authClient.changeEmail({
+        newEmail,
+        callbackURL: "/dashboard",
+      });
+      if (error) {
+        toast.error("Impossible de changer l'adresse e-mail pour le moment");
+        return;
+      }
 
       toast.success(
-        "Un email de confirmation a été envoyé à votre nouvelle adresse"
+        "Un e-mail de confirmation vous a été envoyé : suivez son lien pour terminer le changement",
       );
       onClose();
       setNewEmail("");
