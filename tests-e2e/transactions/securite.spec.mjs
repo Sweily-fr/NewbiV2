@@ -12,7 +12,7 @@ import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_T
 import { COMPTES } from "../donnees/base.mjs";
 import { COMPTES_BANCAIRES, FACTURES_VENTE, METRIQUES_BANCAIRES, TRANSACTIONS, TRANSACTIONS_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
-import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
+import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, connecteAchats, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
 
 const T = TRANSACTIONS;
 const TS = TRANSACTIONS_SAISIE;
@@ -278,7 +278,7 @@ test.describe("Transactions : métriques bancaires d'une autre entreprise", () =
  * puis le tiroir de la transaction.
  */
 test.describe("Transactions : un libellé piégé ne s'exécute jamais", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_SAISIE_ACHATS) });
   const LIBELLE = `${PIEGE}Libellé piégé`;
 
   test.beforeAll(async ({ browser }) => {
@@ -294,13 +294,14 @@ test.describe("Transactions : un libellé piégé ne s'exécute jamais", () => {
   });
 
   test("Liste et tiroir de la transaction : le texte s'affiche, rien ne s'exécute", async ({ page }) => {
-    await ouvrir(page, "/dashboard/outils/transactions", { pret: page.getByText("Libellé piégé").first() });
+    // Le libellé est tronqué dans la liste : repéré par le début du texte piégé, affiché comme du texte.
+    await ouvrir(page, "/dashboard/outils/transactions", { pret: page.getByText(/x-piege/).first() });
     await etape(page, "Liste", async () => {
       await page.waitForTimeout(1_000);
       await verifierPiegeInerte(page);
     }, { capture: "ecran" });
     await etape(page, "Tiroir de la transaction", async () => {
-      await ouvrir(page, `/dashboard/outils/transactions?transactionId=${id(TS.piege)}`, { pret: page.getByRole("dialog").getByText("Libellé piégé").first() });
+      await ouvrir(page, `/dashboard/outils/transactions?transactionId=${id(TS.piege)}`, { pret: page.locator("div.fixed.right-0").filter({ has: page.getByRole("heading", { level: 2 }) }).last() });
       await page.waitForTimeout(1_000);
       await verifierPiegeInerte(page);
     }, { capture: "ecran" });

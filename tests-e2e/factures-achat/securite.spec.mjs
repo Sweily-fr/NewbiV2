@@ -13,7 +13,7 @@ import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_T
 import { FACTURES_ACHAT, FACTURES_ACHAT_SAISIE, FOURNISSEURS, FOURNISSEURS_SAISIE, TRANSACTIONS, TRANSACTIONS_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { base } from "../base.mjs";
-import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, photo, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
+import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, connecteAchats, photo, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
 
 const FA = FACTURES_ACHAT;
 const FAS = FACTURES_ACHAT_SAISIE;
@@ -357,7 +357,7 @@ test.describe("Factures d'achat : rien ne passe d'un espace à l'autre", () => {
  * le propriétaire ouvre la liste puis la fiche de la facture.
  */
 test.describe("Factures d'achat : un texte piégé ne s'exécute jamais", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_SAISIE_ACHATS) });
   const FOURNISSEUR_PIEGE = `${PIEGE}Fournisseur piégé`;
 
   test.beforeAll(async ({ browser }) => {
@@ -373,7 +373,9 @@ test.describe("Factures d'achat : un texte piégé ne s'exécute jamais", () => 
   });
 
   test("Liste et fiche de la facture : le texte s'affiche, rien ne s'exécute", async ({ page }) => {
-    await ouvrir(page, "/dashboard/outils/factures-achat", { pret: page.getByText("Fournisseur piégé").first() });
+    await ouvrir(page, "/dashboard/outils/factures-achat", { pret: page.getByRole("tab", { name: /^Toutes/ }) });
+    await page.getByPlaceholder("Recherchez par fournisseur, n° facture ou montant...").fill("Fournisseur piégé");
+    await page.waitForTimeout(800);
     await etape(page, "Liste", async () => {
       await page.waitForTimeout(1_000);
       await verifierPiegeInerte(page);

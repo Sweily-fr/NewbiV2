@@ -125,8 +125,9 @@ async function refusSansEffet(page, op, qui, w) {
   const temoin = op.temoin(qui, w);
   const avant = await photo(temoin);
   const reponse = await appeler(page, op, w, qui);
+  // La base d'abord : un refus mal annoncé et une écriture réelle sont deux défauts distincts.
+  expect.soft(await photo(temoin), `${op.nom} (${qui}) : la base a changé malgré le refus`).toBe(avant);
   verifierRefusOp(reponse, op, `${op.nom} (${qui})`);
-  expect(await photo(temoin), `${op.nom} (${qui}) : la base a changé malgré le refus`).toBe(avant);
 }
 
 /**

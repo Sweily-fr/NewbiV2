@@ -146,7 +146,8 @@ test.describe("Catalogue : recherche et filtres", () => {
     await ouvrirCatalogue(page);
     await page.getByRole("button", { name: "Filtres" }).click();
     await page.getByRole("menuitem", { name: "Filtrer par catégorie" }).click();
-    await page.getByRole("checkbox", { name: "Formation" }).or(page.getByRole("menuitemcheckbox", { name: "Formation" })).first().click();
+    // Cases sans nom accessible : on clique sur leur libellé.
+    await page.getByRole("menu").last().getByText("Formation", { exact: true }).click();
     await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
     await attendreCalme(page);

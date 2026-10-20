@@ -110,7 +110,7 @@ test.describe("Factures d'achat : ce que la liste affiche", () => {
     await ouvrirListe(page);
     await page.getByRole("button", { name: "Filtres" }).click();
     await page.getByRole("menuitem", { name: "Statut" }).click();
-    await page.getByRole("menuitemcheckbox", { name: "En retard" }).or(page.getByRole("checkbox", { name: "En retard" })).first().click();
+    await page.getByRole("menu").last().getByText("En retard", { exact: true }).click();
     await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
     await attendreCalme(page);

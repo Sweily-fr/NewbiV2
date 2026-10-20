@@ -12,7 +12,7 @@ import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_T
 import { CHAMPS_PRODUITS, CHAMPS_SAISIE, PRODUITS, PRODUITS_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { base } from "../base.mjs";
-import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
+import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, connecteAchats, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
 
 /** Données visées : « Achats » (Membre, intrus, visiteur) ou « Saisie Achats » (Éditeur). */
 const CIBLES = {
@@ -163,7 +163,7 @@ test.describe("Catalogue : image d'un produit", () => {
  * doit s'exécuter (la surveillance échoue aussi sur toute boîte de dialogue).
  */
 test.describe("Catalogue : un texte piégé ne s'exécute jamais", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_SAISIE_ACHATS) });
 
   test.beforeAll(async ({ browser }) => {
     const reponse = await avecSession(browser, SESSION_TOKEN_EDITEUR_ACHATS, (page) =>
@@ -178,10 +178,11 @@ test.describe("Catalogue : un texte piégé ne s'exécute jamais", () => {
   });
 
   test("Liste du catalogue et fiche du produit : le texte s'affiche, rien ne s'exécute", async ({ page }) => {
-    await ouvrir(page, "/dashboard/catalogues", { pret: page.getByRole("row").filter({ hasText: PRODUITS_SAISIE.piege.name }) });
+    await ouvrir(page, "/dashboard/catalogues", { pret: page.getByRole("heading", { name: "Gestion du Catalogue" }) });
     await etape(page, "Liste", async () => {
       await page.getByPlaceholder("Recherchez par nom ou par référence...").fill(PRODUITS_SAISIE.piege.name);
       await attendreCalme(page);
+      await expect(page.getByRole("row").filter({ hasText: PRODUITS_SAISIE.piege.name })).toBeVisible();
       await page.waitForTimeout(1_000);
       await verifierPiegeInerte(page);
     }, { capture: "ecran" });
