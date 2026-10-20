@@ -15,7 +15,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect } from "@playwright/test";
-import { BASE_URL, PORT } from "../config.mjs";
+import { BASE_URL, PORT, sessionCookie } from "../config.mjs";
 import { ouvrir } from "../navigation.mjs";
 
 const FICHIER_QUOTAS = path.join(os.tmpdir(), `e2e-newbi-quotas-auth-${PORT}.json`);
@@ -66,19 +66,26 @@ export function noterAppel(chemin, quand = Date.now()) {
 }
 
 /**
- * Attend que Better Auth accepte un appel de plus sur ce chemin (marge de
- * 1,5 s), puis le note. `chemin` : chemin Better Auth, ex. "/sign-in/email".
+ * Attend que Better Auth accepte un appel de plus sur ce chemin, puis le note.
+ * Son compteur ne repart à zéro qu'après une fenêtre entière sans appel
+ * depuis le dernier accepté : on rejoue ce calcul sur les appels notés, et
+ * s'il en reste moins d'un de libre, on attend la fin de la fenêtre (marge
+ * de 1,5 s). `chemin` : chemin Better Auth, ex. "/sign-in/email".
  */
 export async function attendreQuota(chemin) {
   const r = regle(chemin);
   if (!r) return;
   const [, fenetre, max] = r;
   const marge = 1_500;
-  const recents = (lireQuotas()[chemin] || []).filter((t) => Date.now() - t < fenetre + marge).sort((a, b) => a - b);
-  if (recents.length >= max) {
-    const attente = recents[recents.length - max] + fenetre + marge - Date.now();
-    if (attente > 0) await new Promise((fin) => setTimeout(fin, attente));
+  const appels = (lireQuotas()[chemin] || []).slice().sort((a, b) => a - b);
+  let compte = 0;
+  let dernier = 0;
+  for (const t of appels) {
+    compte = t - dernier > fenetre ? 1 : Math.min(compte + 1, max);
+    dernier = t;
   }
+  const reste = dernier + fenetre + marge - Date.now();
+  if (compte >= max - 1 && reste > 0) await new Promise((fin) => setTimeout(fin, reste));
   noterAppel(chemin);
 }
 
@@ -149,6 +156,9 @@ export async function ouvrirInscription(page, pret) {
     .toBe(true);
   await page.waitForTimeout(500);
 }
+
+/** Session de test et bannière des cookies déjà répondue (pages hors tableau de bord). */
+export const connecteAvecConsentement = (token) => ({ cookies: [sessionCookie(token)], origins: SANS_SESSION.origins });
 
 // --- Fenêtre des Paramètres -------------------------------------------------
 

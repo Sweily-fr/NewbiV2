@@ -34,6 +34,22 @@ const onglet = (id) => async (page) => {
 };
 
 const FERMER = { parcours: "parcours.spec.mjs : « Annuler » ferme la fenêtre" };
+
+/** Onglet Espaces, puis la liste des membres de « Paramètres ». */
+const membres = async (page) => {
+  await onglet("espaces")(page);
+  await contenuParametres(page).getByRole("row").filter({ hasText: PARAMETRES.organisation.name }).first().click();
+  await contenuParametres(page).getByPlaceholder("Rechercher par nom ou email").waitFor();
+};
+// Panneau des membres glissé hors de l'écran tant qu'aucun espace n'est choisi :
+// ses boutons restent dans la page (voir accessibilite.spec.mjs).
+const ESPACES_LISTE = {
+  "button icône arrow-left": { parcours: "accessibilite.spec.mjs : panneau des membres masqué mais atteignable" },
+  "button Filtrer": { parcours: "accessibilite.spec.mjs : panneau des membres masqué mais atteignable" },
+  "button Annuler": FERMER,
+};
+const FILTRE_MEMBRES = { "button Filtrer": { menu: ["Actif", "Invité", "Suspendu"] } };
+const RETOUR_ESPACES = { "button icône arrow-left": { parcours: "parcours.spec.mjs : retour à la liste des espaces" } };
 const ONGLET = { parcours: "parcours.spec.mjs : chaque onglet du menu ouvre sa page" };
 const DEMANDER_ACCES = { notification: /Demande (d'accès envoyée|déjà envoyée)/ };
 const MENU = (initiale, nom) => ({
@@ -199,6 +215,16 @@ test.describe("Paramètres (propriétaire)", () => {
     },
   });
 
+  verifierBoutons({ test, titre: "Espaces (liste des espaces)", ouvrir: onglet("espaces"), zone: contenuParametres, boutons: ESPACES_LISTE });
+
+  verifierBoutons({
+    test,
+    titre: "Espaces (membres de l'espace)",
+    ouvrir: membres,
+    zone: contenuParametres,
+    boutons: { ...RETOUR_ESPACES, ...FILTRE_MEMBRES, "button Inviter des membres": { fenetre: "Inviter des membres" }, "button Annuler": FERMER },
+  });
+
   verifierBoutons({
     test,
     titre: "Rôles",
@@ -336,6 +362,14 @@ for (const [role, token, initiale, nom] of [
     verifierBoutons({ test, titre: "Coordonnées bancaires", ouvrir: onglet("coordonnees-bancaires"), zone: contenuParametres, boutons: { ...AIDES_BANQUE, "button Annuler": FERMER } });
     verifierBoutons({ test, titre: "Informations légales", ouvrir: onglet("informations-legales"), zone: contenuParametres, boutons: LECTURE_SEULE_LEGALES });
     verifierBoutons({ test, titre: "Sécurité", ouvrir: onglet("securite"), zone: contenuParametres, boutons: SECURITE_SANS_REGLAGES });
+    verifierBoutons({ test, titre: "Espaces (liste des espaces)", ouvrir: onglet("espaces"), zone: contenuParametres, boutons: ESPACES_LISTE });
+    verifierBoutons({
+      test,
+      titre: "Espaces (membres de l'espace)",
+      ouvrir: membres,
+      zone: contenuParametres,
+      boutons: { ...RETOUR_ESPACES, ...FILTRE_MEMBRES, "button Annuler": FERMER },
+    });
     verifierBoutons({ test, titre: "Rôles", ouvrir: onglet("roles"), zone: contenuParametres, boutons: { ...ROLES_LISTE("Voir"), "button Annuler": FERMER } });
     for (const [id, titre] of [
       ["applications", "Applications"],

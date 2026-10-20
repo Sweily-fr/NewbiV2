@@ -20,27 +20,14 @@ test.describe("Paramètres > Sécurité : appareils connectés", () => {
     await (await base()).collection("organization").updateOne({ _id: COMPTES_AUTH.appareils.organisation._id }, { $set: { "sessionSettings.maxSessions": 3 } });
   });
 
-  test("Les trois appareils du compte sont listés", async ({ page }) => {
+  // Chaque session de la liste est marquée « Actuel » (current: true pour toutes) :
+  // aucun bouton « Révoquer », impossible de déconnecter un seul appareil perdu.
+  test("Seul l'appareil utilisé est « Actuel », chaque autre appareil a son bouton « Révoquer »", async ({ page }) => {
     await ouvrirParametres(page, "securite");
     const contenu = contenuParametres(page);
-    await expect(contenu.getByRole("button", { name: "Révoquer" }).first()).toBeVisible();
-    await expect(contenu.getByRole("button", { name: "Révoquer" }), "Une ligne « Révoquer » par autre appareil").toHaveCount(2);
-  });
-
-  // Les appareils sont lus par listSessions (toutes les sessions du compte), mais
-  // révoqués par multiSession.revoke, qui n'accepte que les sessions de CE navigateur.
-  test("Révoquer un autre appareil : sa session est fermée", async ({ page }) => {
-    await ouvrirParametres(page, "securite");
-    const contenu = contenuParametres(page);
-    await contenu.getByRole("button", { name: "Révoquer" }).first().click();
-    const alerte = page.getByRole("alertdialog", { name: "Révoquer la session" });
-    await alerte.getByRole("button", { name: "Révoquer" }).click();
-    await page.waitForTimeout(2_000);
-    const restantes = [COMPTES_AUTH.appareils.sessions[1].token, COMPTES_AUTH.appareils.sessions[2].token];
-    const ouvertes = [];
-    for (const t of restantes) if (await sessionParJeton(t)) ouvertes.push(t);
-    expect(ouvertes.length, "Aucun des deux autres appareils n'a été déconnecté : « Erreur lors de la déconnexion de l'appareil »").toBe(1);
-    expect(await sessionParJeton(COMPTES_AUTH.appareils.token), "La session en cours a été fermée").not.toBeNull();
+    await expect(contenu.getByText(/3 appareil\(s\) connecté\(s\)/)).toBeVisible();
+    await etape(page, "Un seul appareil « Actuel »", () => expect(contenu.getByText("Actuel", { exact: true }), "Tous les appareils sont marqués « Actuel »").toHaveCount(1), { capture: "ecran" });
+    await expect(contenu.getByRole("button", { name: "Révoquer" }), "Aucun bouton « Révoquer » pour les autres appareils").toHaveCount(2);
   });
 });
 

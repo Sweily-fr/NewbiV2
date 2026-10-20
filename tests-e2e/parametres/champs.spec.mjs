@@ -9,7 +9,7 @@
  * (« Cœur de Lion », « n° », « Cedex », IBAN belge…). Un refus de l'une
  * d'elles est un défaut : une vraie entreprise ne pourrait pas s'enregistrer.
  */
-import { test, expect, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
+import { test, expect } from "../outils.mjs";
 import { base } from "../base.mjs";
 import { COMPTES } from "../donnees/base.mjs";
 import { connecte, SESSION_TOKEN_CONFIGURATION } from "../config.mjs";
@@ -32,9 +32,12 @@ function siretDe(cas) {
 
 const boutonValider = (zone) => zone.getByRole("button", { name: "Sauvegarder", exact: true });
 const valider = (zone) => boutonValider(zone).click();
-/** Les onglets ne se ferment pas : l'enregistrement est annoncé par une notification. */
-const ferme = async (_zone, page, timeout = 15_000) =>
-  expect(page.locator(SELECTEUR_NOTIFICATION_SUCCES).filter({ hasText: "Modifications sauvegardées" })).toBeVisible({ timeout });
+/**
+ * Les onglets ne se ferment pas : après un enregistrement réussi, le formulaire
+ * repart de ses nouvelles valeurs et « Sauvegarder » redevient grisé (la
+ * notification de succès, brève, peut avoir disparu). Un refus le laisse actif.
+ */
+const ferme = async (zone, _page, timeout = 15_000) => expect(boutonValider(zone)).toBeDisabled({ timeout });
 
 async function remplir(zone, champs, v) {
   for (const [cle, nom] of Object.entries(champs)) {
@@ -224,7 +227,13 @@ const CHAMPS_LEGAUX = { siret: "Numéro SIRET*", rcs: "Numéro RCS*", capital: {
 verifierFormulaire({
   nom: "Paramètres > Informations légales",
   ouvrir: (page) => ouvrirParametres(page, "informations-legales", { pret: (z) => z.getByRole("textbox", { name: "Numéro SIRET*", exact: true }) }),
-  remplir: (zone, v) => remplir(zone, CHAMPS_LEGAUX, v),
+  remplir: async (zone, v) => {
+    // Catégorie d'activité obligatoire pour une société, vide dans l'espace de test.
+    await zone.getByRole("combobox").nth(1).click();
+    await zone.page().getByRole("option", { name: "Activité commerciale", exact: true }).click();
+    await expect(zone.page().getByRole("listbox")).toHaveCount(0);
+    await remplir(zone, CHAMPS_LEGAUX, v);
+  },
   valider,
   boutonValider,
   ferme,

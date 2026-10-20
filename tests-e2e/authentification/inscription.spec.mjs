@@ -11,12 +11,9 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { base } from "../base.mjs";
-import { connecte } from "../config.mjs";
-import { verifierFormulaire, marque } from "../champs.mjs";
 import { COMPTES_AUTH } from "../donnees/lot-parametres-auth.mjs";
-import { attendreQuota, ouvrirInscription, SANS_SESSION } from "./outils-auth.mjs";
+import { attendreQuota, connecteAvecConsentement, ouvrirInscription, SANS_SESSION } from "./outils-auth.mjs";
 
-const slug = (cas) => marque(cas).toLowerCase().replace(/\s+/g, "-");
 const utilisateur = async (filtre) => (await base()).collection("user").findOne(filtre);
 const donneesInscription = (u) => {
   try {
@@ -28,57 +25,72 @@ const donneesInscription = (u) => {
 
 // --- Formulaire e-mail ----------------------------------------------------------
 
-test.describe(() => {
-  test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 4\d\d.*\/api\/auth\// });
+/**
+ * La page précharge le lien cassé « /politique-confidentialite » (404 dans la
+ * console à chaque visite) : défaut dédié dans parcours.spec.mjs, toléré ici.
+ */
+const LIEN_CASSE = /politique-confidentialite|status of 4\d\d.*\/api\/auth\//;
+const MESSAGE_EMAIL = "Veuillez saisir une adresse email valide pour continuer.";
+const MESSAGE_MDP = /mot de passe/i;
 
-  verifierFormulaire({
-    nom: "Inscription par e-mail",
-    ouvrir: async (page) => {
-      await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
-      await page.getByRole("button", { name: "Continuer avec l'email" }).click();
-      const formulaire = page.locator("form").filter({ has: page.getByPlaceholder("Saisissez votre email") });
-      await expect(formulaire).toBeVisible();
-      return formulaire;
-    },
-    remplir: async (zone, v) => {
-      if (v.email !== undefined) await zone.getByPlaceholder("Saisissez votre email").fill(v.email);
-      if (v.mdp !== undefined) await zone.getByPlaceholder("Saisissez votre mot de passe").fill(v.mdp);
-    },
-    valider: async (zone) => {
-      await attendreQuota("/sign-up/email");
-      await zone.getByRole("button", { name: "S'inscrire" }).click();
-    },
-    boutonValider: (zone) => zone.getByRole("button", { name: "S'inscrire" }),
-    valeurs: (cas) => ({ email: `inscription.${slug(cas)}@e2e.test`, mdp: "Inscription-2026!" }),
-    enregistre: (v) => utilisateur({ email: String(v.email || "").trim().toLowerCase() }),
-    champs: {
-      "E-mail": {
-        cle: "email",
-        obligatoire: true,
-        lu: (doc) => doc.email,
-        normaliser: (v) => v.toLowerCase(),
-        refuses: { "sans arobase": "inscription.e2e.test", "avec une espace": "ins cription@e2e.test", "sans domaine": "inscription@" },
-        acceptes: { "avec un plus": "inscription+factures@e2e.test", "en majuscules": "Inscription.Majuscules@E2E.test" },
-      },
-      "Mot de passe": {
-        cle: "mdp",
-        obligatoire: true,
-        // Un mot de passe ne se relit pas : le compte créé suffit.
-        lu: (doc) => Boolean(doc),
-        normaliser: () => true,
-        refuses: { "de 7 caractères": "Abcde1!", "sans chiffre": "Abcdefgh!", "sans majuscule": "abcdefg1!", "sans minuscule": "ABCDEFG1!" },
-        acceptes: { "avec des accents": "Été-Sécurisé-2026", "de 64 caractères": `Aa1${"x".repeat(61)}` },
-      },
-    },
-  });
+async function formulaireInscription(page) {
+  await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
+  await page.getByRole("button", { name: "Continuer avec l'email" }).click();
+  await expect(page.getByPlaceholder("Saisissez votre email")).toBeVisible();
+}
+
+async function inscrire(page, email, mdp) {
+  await formulaireInscription(page);
+  await page.getByPlaceholder("Saisissez votre email").fill(email);
+  await page.getByPlaceholder("Saisissez votre mot de passe").fill(mdp);
+  await attendreQuota("/sign-up/email");
+  await page.getByRole("button", { name: "S'inscrire" }).click();
+}
+
+test.describe("Inscription par e-mail : tous les champs", () => {
+  test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: LIEN_CASSE });
+
+  const REFUS = [
+    ["Tout vide", "", "", /Veuillez saisir|nécessaire/],
+    ["E-mail rempli d'espaces", "   ", "Inscription-2026!", MESSAGE_EMAIL],
+    ["E-mail sans arobase", "inscription.e2e.test", "Inscription-2026!", MESSAGE_EMAIL],
+    ["E-mail avec une espace", "ins cription@e2e.test", "Inscription-2026!", MESSAGE_EMAIL],
+    ["E-mail sans domaine", "inscription@", "Inscription-2026!", MESSAGE_EMAIL],
+    ["Mot de passe vide", "mdp-vide@e2e.test", "", MESSAGE_MDP],
+    ["Mot de passe de 7 caractères", "mdp-court@e2e.test", "Abcde1!", MESSAGE_MDP],
+    ["Mot de passe sans chiffre", "mdp-sans-chiffre@e2e.test", "Abcdefgh!", MESSAGE_MDP],
+    ["Mot de passe sans majuscule", "mdp-sans-majuscule@e2e.test", "abcdefg1!", MESSAGE_MDP],
+    ["Mot de passe sans minuscule", "mdp-sans-minuscule@e2e.test", "ABCDEFG1!", MESSAGE_MDP],
+  ];
+  for (const [cas, email, mdp, message] of REFUS) {
+    test(`${cas} : refusé avec un message, aucun compte créé`, async ({ page }) => {
+      await formulaireInscription(page);
+      await page.getByPlaceholder("Saisissez votre email").fill(email);
+      await page.getByPlaceholder("Saisissez votre mot de passe").fill(mdp);
+      await page.getByRole("button", { name: "S'inscrire" }).click();
+      await etape(page, "Un message explique le refus", () => expect(page.getByText(message).first()).toBeVisible(), { capture: "ecran" });
+      await expect(page.getByPlaceholder("Saisissez votre email"), "Le formulaire a disparu").toBeVisible();
+      if (email.trim()) expect(await utilisateur({ email: email.trim().toLowerCase() }), "Compte créé malgré le refus").toBeNull();
+    });
+  }
+
+  const ACCEPTES = [
+    ["E-mail avec un plus", "inscription+factures@e2e.test", "Inscription-2026!"],
+    ["E-mail en majuscules", "Inscription.Majuscules@E2E.test", "Inscription-2026!"],
+    ["Mot de passe avec des accents", "inscription.accents@e2e.test", "Été-Sécurisé-2026"],
+    ["Mot de passe de 64 caractères", "inscription.long@e2e.test", `Aa1${"x".repeat(61)}`],
+  ];
+  for (const [cas, email, mdp] of ACCEPTES) {
+    test(`${cas} : accepté, compte créé`, async ({ page }) => {
+      await inscrire(page, email, mdp);
+      await expect(page.getByPlaceholder("Nom de l'entreprise, SIRET ou SIREN..."), "L'inscription n'est pas passée à l'étape entreprise").toBeVisible({ timeout: 30_000 });
+      const u = await utilisateur({ email: email.toLowerCase() });
+      expect(u?.email, "Compte absent de la base").toBe(email.toLowerCase());
+    });
+  }
 
   test("Inscription réussie : compte créé à l'étape « Votre entreprise », e-mail à vérifier", async ({ page }) => {
-    await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
-    await page.getByRole("button", { name: "Continuer avec l'email" }).click();
-    await page.getByPlaceholder("Saisissez votre email").fill("nouvelle-inscription@e2e.test");
-    await page.getByPlaceholder("Saisissez votre mot de passe").fill("Nouvelle-Inscription-2026!");
-    await attendreQuota("/sign-up/email");
-    await page.getByRole("button", { name: "S'inscrire" }).click();
+    await inscrire(page, "nouvelle-inscription@e2e.test", "Nouvelle-Inscription-2026!");
     await expect(page.getByPlaceholder("Nom de l'entreprise, SIRET ou SIREN...")).toBeVisible({ timeout: 30_000 });
     const u = await utilisateur({ email: "nouvelle-inscription@e2e.test" });
     expect(u?.onboardingStep).toBe("workspace");
@@ -88,12 +100,7 @@ test.describe(() => {
   });
 
   test("Adresse déjà inscrite : refusée avec un message, aucun second compte", async ({ page }) => {
-    await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
-    await page.getByRole("button", { name: "Continuer avec l'email" }).click();
-    await page.getByPlaceholder("Saisissez votre email").fill(COMPTES_AUTH.connexion.utilisateur.email);
-    await page.getByPlaceholder("Saisissez votre mot de passe").fill("Doublon-Inscription-2026!");
-    await attendreQuota("/sign-up/email");
-    await page.getByRole("button", { name: "S'inscrire" }).click();
+    await inscrire(page, COMPTES_AUTH.connexion.utilisateur.email, "Doublon-Inscription-2026!");
     await expect(page.locator("[data-sonner-toast]").first(), "Aucun message pour une adresse déjà inscrite").toBeVisible();
     expect(await (await base()).collection("user").countDocuments({ email: COMPTES_AUTH.connexion.utilisateur.email })).toBe(1);
   });
@@ -111,7 +118,7 @@ async function etapeEntreprise(page) {
 }
 
 test.describe("Inscription : étape « Votre entreprise » sans SIRET", () => {
-  test.use({ storageState: connecte(COMPTES_AUTH.inscriptionSansSiret.token) });
+  test.use({ storageState: connecteAvecConsentement(COMPTES_AUTH.inscriptionSansSiret.token), erreursConsoleAutorisees: LIEN_CASSE });
   test.beforeEach(() => aLEtapeEntreprise(COMPTES_AUTH.inscriptionSansSiret));
 
   test("Entreprise en cours d'immatriculation : nom libre, inscription poursuivie", async ({ page }) => {
@@ -135,7 +142,7 @@ test.describe("Inscription : étape « Votre entreprise » sans SIRET", () => {
 });
 
 test.describe("Inscription : étape « Votre entreprise » avec le SIRET", () => {
-  test.use({ storageState: connecte(COMPTES_AUTH.inscriptionAvecSiret.token) });
+  test.use({ storageState: connecteAvecConsentement(COMPTES_AUTH.inscriptionAvecSiret.token), erreursConsoleAutorisees: LIEN_CASSE });
   test.beforeEach(() => aLEtapeEntreprise(COMPTES_AUTH.inscriptionAvecSiret));
 
   test("Entreprise trouvée dans l'annuaire : SIRET, adresse et nom repris", async ({ page }) => {
@@ -176,7 +183,7 @@ test.describe("Inscription : étape « Votre entreprise » avec le SIRET", () =>
 });
 
 test.describe("Inscription : forme juridique reprise de l'annuaire", () => {
-  test.use({ storageState: connecte(COMPTES_AUTH.inscriptionFormes.token) });
+  test.use({ storageState: connecteAvecConsentement(COMPTES_AUTH.inscriptionFormes.token), erreursConsoleAutorisees: LIEN_CASSE });
 
   for (const [code, forme, nom] of [
     ["1000", "EI", "JEAN DUPONT"],

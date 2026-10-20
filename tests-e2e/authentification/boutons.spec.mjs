@@ -16,7 +16,9 @@ const corps = (page) => page.locator("body");
 const page_ = (url, pret) => async (page) => ouvrir(page, url, { pret: pret(page) });
 
 test.describe("Pages publiques de l'authentification", () => {
-  test.use({ storageState: SANS_SESSION });
+  // La page d'inscription précharge le lien cassé « /politique-confidentialite » (404) :
+  // défaut dédié dans parcours.spec.mjs, toléré ici.
+  test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /politique-confidentialite/ });
 
   verifierBoutons({
     test,
@@ -44,11 +46,10 @@ test.describe("Pages publiques de l'authentification", () => {
     },
     zone: corps,
     boutons: {
+      "button Afficher le mot de passe": { sansEffet: "montre le mot de passe en clair dans le champ" },
       "button Se connecter": { parcours: "parcours.spec.mjs : connexion par e-mail" },
       "button Retour à la connexion": { parcours: "retour au choix du mode de connexion" },
       "link /auth/forget-password": { navigation: "/auth/forget-password" },
-      "link /auth/signup": { navigation: "/auth/signup" },
-      "link /": { navigation: "/" },
     },
   });
 
@@ -65,7 +66,6 @@ test.describe("Pages publiques de l'authentification", () => {
       // Lien cassé (le dossier est politique-de-confidentialite) : parcours.spec.mjs.
       "link /politique-confidentialite": { parcours: "parcours.spec.mjs : chaque lien de la page d'inscription mène à une page qui existe" },
       "link /auth/login": { navigation: "/auth/login" },
-      "link /": { navigation: "/" },
     },
   });
 
@@ -86,6 +86,7 @@ test.describe("Pages publiques de l'authentification", () => {
     ouvrir: page_("/auth/reset-password?token=e2eJetonInconnu", (p) => p.getByPlaceholder("Nouveau mot de passe").first()),
     zone: corps,
     boutons: {
+      "button Afficher le mot de passe": { sansEffet: "montre le mot de passe en clair dans le champ" },
       "button Réinitialiser le mot de passe": { parcours: "parcours.spec.mjs : mot de passe oublié" },
       "link /auth/login": { navigation: "/auth/login" },
     },
@@ -105,18 +106,6 @@ test.describe("Pages publiques de l'authentification", () => {
     },
   });
 
-  verifierBoutons({
-    test,
-    titre: "Supprimer mon compte (information)",
-    ouvrir: async (page) => {
-      await page.goto("/supprimer-compte");
-      await page.getByRole("heading", { level: 1 }).waitFor();
-    },
-    zone: corps,
-    boutons: {
-      "link /politique-de-confidentialite": { navigation: "/politique-de-confidentialite" },
-    },
-  });
 });
 
 test.describe("Page du code de double authentification", () => {
@@ -133,10 +122,10 @@ test.describe("Page du code de double authentification", () => {
     zone: corps,
     boutons: {
       "button Vérifier": { desactive: "aucun code saisi" },
-      "checkbox Faire confiance à cet appareil pendant 60 jours": { etat: /\[checked\]/ },
+      // Page qui ne devient jamais « calme » : cochée dans parcours.spec.mjs (code de l'application).
+      "checkbox Faire confiance à cet appareil pendant 60 jours": { parcours: "parcours.spec.mjs : code de l'application" },
       "button Recevoir un code par email": { parcours: "non testable : l'e-mail du code part par Resend, injoignable dans les tests" },
       "button Utiliser un code de secours": { parcours: "parcours.spec.mjs : code de secours" },
-      "link /auth/login": { navigation: "/auth/login" },
     },
   });
 });

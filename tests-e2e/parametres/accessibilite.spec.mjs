@@ -55,6 +55,13 @@ test.describe("Paramètres : chaque réglage a un nom accessible", () => {
     expect(noms.filter((n) => !n).length, `${noms.filter((n) => !n).length} interrupteur(s) sur ${noms.length} sans nom dans les préférences de notifications`).toBe(0);
   });
 
+  // Le panneau des membres est seulement glissé hors de l'écran : ses boutons restent
+  // atteignables au clavier et annoncés par les lecteurs d'écran.
+  test("Espaces : le panneau des membres masqué n'est pas atteignable", async ({ page }) => {
+    await ouvrirParametres(page, "espaces", { pret: (z) => z.getByRole("row").filter({ hasText: COMPTES.parametres.organisation.name }) });
+    await expect(contenuParametres(page).getByRole("button", { name: "Filtrer" }), "Le bouton « Filtrer » du panneau masqué est exposé").toHaveCount(0);
+  });
+
   test("Rôles : les cases des droits d'un rôle", async ({ page }) => {
     await ouvrirParametres(page, "roles");
     await contenuParametres(page).getByRole("button", { name: "Créer un rôle" }).click();

@@ -207,6 +207,18 @@ export const COMPTES_AUTH = {
       { nom: "LimiteAncienneFirefox", appareil: FIREFOX_WINDOWS, ip: "10.0.1.17", il_y_a_minutes: 60 },
     ],
   }),
+  // Même situation, pour l'avertissement affiché à la connexion (test à part).
+  limiteSessionsAvis: compte(52, {
+    email: "limite-sessions-avis@e2e.test",
+    name: "Lou Limite",
+    motDePasse: true,
+    espace: "Limite Avis Test SASU",
+    organisation: { sessionSettings: { maxSessions: 1 } },
+    sessions: [
+      { nom: "LimiteAvisIphone", appareil: IPHONE, ip: "10.0.0.52", il_y_a_minutes: 30 },
+      { nom: "LimiteAvisFirefox", appareil: FIREFOX_WINDOWS, ip: "10.0.1.52", il_y_a_minutes: 60 },
+    ],
+  }),
   // Page « Gérer mes appareils » (/auth/manage-devices).
   gestionAppareils: compte(18, {
     email: "gestion-appareils@e2e.test",
@@ -313,6 +325,8 @@ export const COMPTES_AUTH = {
     espace: "Cible Sessions Test SASU",
     sessions: [{ nom: "CibleSessionsMac" }, { nom: "CibleSessionsIphone", appareil: IPHONE, ip: "10.0.0.50" }],
   }),
+  // Inviter à l'écran depuis un espace qui a encore des sièges (« Équipe » est au-delà de 10).
+  invitationsEcran: compte(51, { email: "invitations-ecran@e2e.test", name: "Ilan Invitations", espace: "Invitations Écran Test SASU", sessions: [{ nom: "InvitationsEcran" }] }),
   // Nom complet modifié depuis Paramètres > Compte.
   nomComplet: compte(39, { email: "nom-complet@e2e.test", name: "Nora Nom", espace: "Nom Complet Test SASU", sessions: [{ nom: "NomComplet" }] }),
   // Double authentification à activer depuis Paramètres > Sécurité.

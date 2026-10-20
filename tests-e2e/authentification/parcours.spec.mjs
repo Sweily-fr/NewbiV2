@@ -9,6 +9,7 @@
  * connecter ou se déconnecter ne touche aucun autre compte de test. Les
  * appels à Better Auth respectent ses limites (outils-auth.mjs).
  */
+import { createHmac } from "node:crypto";
 import { createOTP } from "@better-auth/utils/otp";
 import { signJWT } from "better-auth/crypto";
 import { test, expect, etape, SELECTEUR_NOTIFICATION_SUCCES, notificationsErreur } from "../outils.mjs";
@@ -100,15 +101,29 @@ test.describe("Connexion par e-mail", () => {
   });
   });
 
-  test("Limite d'une session : les sessions plus anciennes sont fermées, l'utilisateur est prévenu", async ({ page }) => {
+  test("Limite d'une session : les deux sessions plus anciennes sont fermées", async ({ page }) => {
     const compte = COMPTES_AUTH.limiteSessions;
     await seConnecter(page, compte.utilisateur.email, MOT_DE_PASSE);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
-    await expect(page.locator("[data-sonner-toast]").filter({ hasText: /autres sessions ont été déconnectées|autre session a été déconnectée/ }).first()).toBeVisible();
-    const restantes = await sessionsDe(compte);
-    expect(restantes.map((s) => s.token), "Les deux anciennes sessions devaient être fermées").not.toEqual(expect.arrayContaining([compte.sessions[0].token]));
-    expect(restantes.map((s) => s.token)).not.toEqual(expect.arrayContaining([compte.sessions[1].token]));
+    const restantes = (await sessionsDe(compte)).map((s) => s.token);
+    expect(restantes, "L'ancienne session de l'iPhone est toujours ouverte").not.toContain(compte.sessions[0].token);
+    expect(restantes, "L'ancienne session de Firefox est toujours ouverte").not.toContain(compte.sessions[1].token);
     expect(restantes.length).toBe(1);
+  });
+});
+
+test.describe("Connexion au-delà de la limite de sessions : l'utilisateur est prévenu", () => {
+  test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 40[01]|\/api\/auth\/token/ });
+  // La limite est appliquée à la création de la session (hook Better Auth) ; la
+  // route appelée ensuite pour prévenir l'utilisateur ne trouve plus rien à fermer.
+  test("Une notification dit que d'autres sessions ont été déconnectées", async ({ page }) => {
+    const compte = COMPTES_AUTH.limiteSessionsAvis;
+    await seConnecter(page, compte.utilisateur.email, MOT_DE_PASSE);
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+    await expect(
+      page.locator("[data-sonner-toast]").filter({ hasText: /autres sessions ont été déconnectées|autre session a été déconnectée/ }).first(),
+      "Aucune notification : l'utilisateur ne sait pas que ses autres appareils ont été déconnectés",
+    ).toBeVisible();
   });
 });
 
@@ -117,7 +132,8 @@ test.describe("Déconnexion", () => {
   test("Depuis le menu du compte : session fermée, retour à la connexion", async ({ page }) => {
     const compte = COMPTES_AUTH.deconnexion;
     await ouvrir(page, "/dashboard");
-    await page.getByRole("button", { name: new RegExp(compte.utilisateur.email.replace(".", "\\.")) }).last().click();
+    // Barre latérale repliée : le menu du compte est l'avatar aux initiales (« DD »).
+    await page.getByRole("button").filter({ hasText: /^\s*DD\s*$/ }).last().click();
     await page.getByRole("menuitem", { name: "Se déconnecter" }).click();
     await expect(page).toHaveURL(/\/auth\/login/, { timeout: 30_000 });
     expect(await (await db()).collection("session").findOne({ token: compte.token }), "La session est toujours active après la déconnexion").toBeNull();
@@ -136,6 +152,9 @@ test.describe("Double authentification", () => {
     await etape(page, "Aucune session tant que le code n'est pas saisi", async () => {
       expect(await sessionsDe(compte)).toEqual([]);
     });
+    const confiance = page.getByRole("checkbox", { name: "Faire confiance à cet appareil pendant 60 jours" });
+    await confiance.check();
+    await expect(confiance).toBeChecked();
     await attendreQuota("/two-factor/verify-totp");
     await page.locator("input[data-input-otp]").fill(await codeTotp());
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
@@ -181,6 +200,9 @@ test.describe("Mot de passe oublié", () => {
     expect(ancien.statut, "L'ancien mot de passe ouvre encore la session").toBeGreaterThanOrEqual(400);
   });
 
+  test.describe(() => {
+    // Refus attendu (lien expiré), écrit dans la console par la page.
+    test.use({ erreursConsoleAutorisees: /RESET PASSWORD|status of 40[01]/ });
   test("Lien expiré : message clair, mot de passe inchangé", async ({ page }) => {
     const compte = COMPTES_AUTH.jetonExpire;
     await ouvrir(page, `/auth/reset-password?token=${JETONS_REINITIALISATION.expire.jeton}`, { pret: page.getByPlaceholder("Nouveau mot de passe").first() });
@@ -189,6 +211,7 @@ test.describe("Mot de passe oublié", () => {
     await expect(notificationsErreur(page).first(), "Aucun message pour un lien expiré").toBeVisible();
     await expect(notificationsErreur(page).first()).toHaveText(/expir|invalide/i);
     expect(await motDePasseEnBase(compte)).toBe(HACHAGE_MOT_DE_PASSE);
+  });
   });
 
   test("Nouveau mot de passe de 7 caractères : refusé avant l'envoi", async ({ page }) => {
@@ -267,3 +290,45 @@ test.describe("Vérification de l'e-mail et pages d'information", () => {
 });
 
 
+
+/** Lien de réactivation, signé comme le site l'envoie (HMAC avec le secret des tests, 24 h). */
+function jetonReactivation(userId, quand = Date.now() - 1_000) {
+  const charge = Buffer.from(`${userId}:${quand}`).toString("base64url");
+  return `${charge}.${createHmac("sha256", SECRET).update(`reactivation:${charge}`).digest("base64url")}`;
+}
+
+test.describe("Réactivation du compte par le lien reçu", () => {
+  test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 4\d\d/ });
+
+  test("Lien valide : compte réactivé, connexion de nouveau possible", async ({ page }) => {
+    const compte = COMPTES_AUTH.reactivation;
+    const jeton = jetonReactivation(compte.utilisateur._id.toHexString());
+    await page.goto(`/reactivate-account?email=${encodeURIComponent(compte.utilisateur.email)}&token=${jeton}`);
+    await expect(page.locator(SELECTEUR_NOTIFICATION_SUCCES).filter({ hasText: "Compte réactivé avec succès" })).toBeVisible({ timeout: 30_000 });
+    expect((await (await db()).collection("user").findOne({ _id: compte.utilisateur._id }))?.isActive).toBe(true);
+    const r = await connexionApi(page, compte.utilisateur.email, MOT_DE_PASSE);
+    expect(r.statut, "La connexion reste impossible après la réactivation").toBe(200);
+  });
+
+  test("Lien modifié : refusé avec un message, le compte reste désactivé", async ({ page }) => {
+    const compte = COMPTES_AUTH.desactive;
+    const jeton = jetonReactivation(compte.utilisateur._id.toHexString()).replace(/.$/, (c) => (c === "A" ? "B" : "A"));
+    await page.goto(`/reactivate-account?email=${encodeURIComponent(compte.utilisateur.email)}&token=${jeton}`);
+    await expect(notificationsErreur(page).first(), "Aucun message pour un lien modifié").toBeVisible({ timeout: 30_000 });
+    expect((await (await db()).collection("user").findOne({ _id: compte.utilisateur._id }))?.isActive).toBe(false);
+  });
+});
+
+test.describe("Supprimer mon compte (page d'information)", () => {
+  test.use({ storageState: SANS_SESSION });
+  test("La démarche est expliquée et chaque lien interne mène à une page qui existe", async ({ page }) => {
+    await page.goto("/supprimer-compte");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('a[href^="mailto:contact@newbi.fr"]').first(), "Aucun moyen de demander la suppression").toBeVisible();
+    const liens = await page.evaluate(() => [...new Set([...document.querySelectorAll('main a[href^="/"], article a[href^="/"], section a[href^="/"]')].map((a) => a.getAttribute("href")))]);
+    for (const href of liens) {
+      const reponse = await page.request.get(href, { maxRedirects: 0 });
+      expect.soft(reponse.status(), `Lien ${href}`).toBeLessThan(400);
+    }
+  });
+});

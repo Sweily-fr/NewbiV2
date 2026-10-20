@@ -12,7 +12,7 @@ import { base } from "../base.mjs";
 import { COMPTES, oid } from "../donnees/base.mjs";
 import { connecte, SESSION_TOKEN_EQUIPE, SESSION_TOKEN_GESTION_EQUIPE } from "../config.mjs";
 import { COMPTES_AUTH, INVITATIONS, MEMBRES_CIBLES, ROLES_PERSO } from "../donnees/lot-parametres-auth.mjs";
-import { appelSite, contenuParametres, ouvrirParametres, SANS_SESSION } from "../authentification/outils-auth.mjs";
+import { appelSite, connecteAvecConsentement, contenuParametres, ouvrirParametres, SANS_SESSION } from "../authentification/outils-auth.mjs";
 
 const EQUIPE = COMPTES.equipe;
 const idInvitation = (cle) => oid("invitationAuth", INVITATIONS[cle].n);
@@ -38,24 +38,6 @@ async function menuDeLigne(page, zone, texte) {
 
 test.describe("Espaces : le propriétaire gère les membres d'« Équipe »", () => {
   test.use({ storageState: connecte(SESSION_TOKEN_EQUIPE) });
-
-  test("Inviter un membre : invitation en attente, avec le rôle choisi", async ({ page }) => {
-    const zone = await ouvrirMembres(page, EQUIPE.organisation.name);
-    await zone.getByRole("button", { name: "Inviter des membres" }).click();
-    const fenetre = page.getByRole("dialog", { name: "Inviter des membres" });
-    await fenetre.getByPlaceholder("exemple@email.com").fill("nouvelle-recrue@e2e.test");
-    await fenetre.getByPlaceholder("exemple@email.com").press("Enter");
-    await fenetre.getByRole("combobox").click();
-    await page.getByRole("option", { name: "Éditeur" }).click();
-    await expect(page.getByRole("listbox")).toHaveCount(0);
-    await fenetre.getByRole("button", { name: /Envoyer les invitations/ }).click();
-    await expect.poll(async () => (await (await db()).collection("invitation").findOne({ email: "nouvelle-recrue@e2e.test" }))?.role, { message: "Invitation absente de la base" }).toBe(
-      "member",
-    );
-    const inv = await (await db()).collection("invitation").findOne({ email: "nouvelle-recrue@e2e.test" });
-    expect(String(inv.organizationId)).toBe(EQUIPE.organisation._id.toHexString());
-    expect(inv.status).toBe("pending");
-  });
 
   test("Changer le rôle d'un membre : Membre devient Éditeur", async ({ page }) => {
     const zone = await ouvrirMembres(page, EQUIPE.organisation.name);
@@ -132,8 +114,32 @@ test.describe("Espaces : le propriétaire gère les membres d'« Équipe »", ()
   });
 });
 
+test.describe("Espaces : inviter un membre à l'écran", () => {
+  // « Équipe » dépasse les 10 utilisateurs de l'offre (membres et invitations des
+  // autres tests) : l'invitation passe par l'achat de sièges. Espace à part.
+  test.use({ storageState: connecte(COMPTES_AUTH.invitationsEcran.token) });
+  test("Inviter un membre : invitation en attente, avec le rôle choisi", async ({ page }) => {
+    const compte = COMPTES_AUTH.invitationsEcran;
+    const zone = await ouvrirMembres(page, compte.organisation.name);
+    await zone.getByRole("button", { name: "Inviter des membres" }).click();
+    const fenetre = page.getByRole("dialog", { name: "Inviter des membres" });
+    await fenetre.getByPlaceholder("exemple@email.com").fill("nouvelle-recrue@e2e.test");
+    await fenetre.getByPlaceholder("exemple@email.com").press("Enter");
+    await fenetre.getByRole("combobox").click();
+    await page.getByRole("option", { name: "Éditeur" }).click();
+    await expect(page.getByRole("listbox")).toHaveCount(0);
+    await fenetre.getByRole("button", { name: /Envoyer les invitations/ }).click();
+    await expect.poll(async () => (await (await db()).collection("invitation").findOne({ email: "nouvelle-recrue@e2e.test" }))?.role, { message: "Invitation absente de la base" }).toBe("member");
+    const inv = await (await db()).collection("invitation").findOne({ email: "nouvelle-recrue@e2e.test" });
+    expect(String(inv.organizationId)).toBe(compte.organisation._id.toHexString());
+    expect(inv.status).toBe("pending");
+  });
+});
+
 test.describe("Espaces : le rôle « Gestion d'équipe » gère les membres à l'écran", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_GESTION_EQUIPE) });
+  // Le tableau de bord lance des requêtes refusées à ce rôle limité (défaut dédié,
+  // parametres/lecture-seule.spec.mjs) : tolérées ici.
+  test.use({ storageState: connecte(SESSION_TOKEN_GESTION_EQUIPE), erreursConsoleAutorisees: /GraphQL Error|FORBIDDEN|permission/ });
   // Le rôle a « Changer le rôle » et « Retirer » sur la page Membres (le serveur
   // les accepte, voir securite.spec.mjs) ; le menu d'une ligne dépend pourtant du
   // droit de modifier les informations de l'entreprise.
@@ -167,7 +173,7 @@ test.describe("Espaces : transférer le rôle de super admin", () => {
 
 test.describe("Espaces : ouvrir son invitation", () => {
   test.describe(() => {
-    test.use({ storageState: connecte(COMPTES_AUTH.invite.token) });
+    test.use({ storageState: connecteAvecConsentement(COMPTES_AUTH.invite.token) });
 
     // La page lit invitation.email, que la route ne renvoie plus (données minimales
     // avant connexion) : « Cannot read properties of undefined (reading 'toLowerCase') ».
@@ -197,7 +203,7 @@ test.describe("Espaces : ouvrir son invitation", () => {
 
   test.describe(() => {
     // Refus attendu de la route d'acceptation (403), écrit dans la console.
-    test.use({ storageState: connecte(COMPTES_AUTH.inviteAutre.token), erreursConsoleAutorisees: /status of 403/ });
+    test.use({ storageState: connecteAvecConsentement(COMPTES_AUTH.inviteAutre.token), erreursConsoleAutorisees: /status of 403/ });
     test("Un autre compte connecté ne peut pas accepter l'invitation : refus explicite, pas membre", async ({ page }) => {
       await ouvrir(page, "/mentions-legales");
       const r = await appelSite(page, `/api/invitations/${idInvitation("autreDestinataire").toHexString()}`, { methode: "POST", corps: { action: "accept" } });
@@ -212,7 +218,7 @@ test.describe("Espaces : ouvrir son invitation", () => {
     test.use({ storageState: SANS_SESSION });
     test("Invitation expirée : la page le dit au lieu de proposer de créer un compte", async ({ page }) => {
       await page.goto(`/accept-invitation/${idInvitation("expiree").toHexString()}`);
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/Rejoindre/).first()).toBeVisible({ timeout: 30_000 });
       await etape(page, "L'expiration est annoncée", () => expect(page.getByText(/expir/i).first(), "La page propose « Créer mon compte » pour une invitation expirée").toBeVisible(), { capture: "ecran" });
     });
 

@@ -50,6 +50,15 @@ test.describe("Paramètres : la fenêtre et ses onglets", () => {
     }
   });
 
+  test("Espaces : retour de la liste des membres à la liste des espaces", async ({ page }) => {
+    await ouvrirParametres(page, "espaces", { pret: (z) => z.getByRole("row").filter({ hasText: COMPTES.parametres.organisation.name }) });
+    const contenu = contenuParametres(page);
+    await contenu.getByRole("row").filter({ hasText: COMPTES.parametres.organisation.name }).first().click();
+    await expect(contenu.getByPlaceholder("Rechercher par nom ou email")).toBeInViewport();
+    await contenu.locator("button:has(svg.lucide-arrow-left)").click();
+    await expect(contenu.getByRole("heading", { level: 2, name: "Gestion des espaces" })).toBeInViewport();
+  });
+
   test("« Annuler » ferme la fenêtre", async ({ page }) => {
     await ouvrirParametres(page, "generale");
     await contenuParametres(page).getByRole("button", { name: "Annuler", exact: true }).click();

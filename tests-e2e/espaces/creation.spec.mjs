@@ -9,10 +9,10 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { base } from "../base.mjs";
-import { connecte, SESSION_TOKEN_EQUIPE } from "../config.mjs";
-import { verifierBoutons } from "../exploration.mjs";
+import { SESSION_TOKEN_EQUIPE } from "../config.mjs";
+import { connecteAvecConsentement } from "../authentification/outils-auth.mjs";
 
-test.use({ storageState: connecte(SESSION_TOKEN_EQUIPE) });
+test.use({ storageState: connecteAvecConsentement(SESSION_TOKEN_EQUIPE) });
 
 async function ouvrirCreation(page) {
   await page.goto("/create-workspace");
@@ -40,16 +40,15 @@ test.describe("Créer un espace", () => {
   });
 });
 
-verifierBoutons({
-  test,
-  titre: "Erreur de paiement à la création d'un espace",
-  ouvrir: async (page) => {
-    await page.goto("/create-workspace/payment-error");
-    await expect(page.getByRole("button", { name: "Réessayer" })).toBeVisible({ timeout: 45_000 });
-  },
-  zone: (page) => page.locator("body"),
-  boutons: {
-    "button Réessayer": { navigation: "/create-workspace" },
-    "button Retour au tableau de bord": { navigation: "/dashboard" },
-  },
+test.describe("Erreur de paiement à la création d'un espace", () => {
+  for (const [bouton, adresse] of [
+    ["Réessayer", /\/create-workspace$/],
+    ["Retour au tableau de bord", /\/dashboard$/],
+  ]) {
+    test(`« ${bouton} » mène à la bonne page`, async ({ page }) => {
+      await page.goto("/create-workspace/payment-error");
+      await page.getByRole("button", { name: bouton }).click();
+      await expect(page).toHaveURL(adresse, { timeout: 30_000 });
+    });
+  }
 });
