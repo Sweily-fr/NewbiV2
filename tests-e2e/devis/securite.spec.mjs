@@ -6,11 +6,11 @@
  * piégé écrit par l'Éditeur et ouvert par le propriétaire.
  */
 import { test, expect } from "../outils.mjs";
-import { BASE_URL, connecte, SESSION_TOKEN_VENTES, SESSION_TOKEN_VENTES_EDITEUR } from "../config.mjs";
+import { connecte, SESSION_TOKEN_VENTES_EDITEUR } from "../config.mjs";
 import { CLIENTS_VENTES, DEVIS_IMPORTES as I, DEVIS_VENTES as D, FACTURE_VENTES, MODELE_DEVIS_A_SUPPRIMER, SIGNATURES_CIBLES as S } from "../donnees/lot-devis-bc-bl.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { article, CLIENT_API, ORG, ORG_ID, PDF_BASE64, PIEGE, verifierDroits } from "./droits.mjs";
+import { article, CLIENT_API, ORG, ORG_ID, PDF_BASE64, piegeDe, verifierDroits, verifierTextesPieges } from "./droits.mjs";
 import { epingler, ouvrirPanneau } from "./ventes.mjs";
 
 const _id = (doc) => doc._id;
@@ -259,62 +259,34 @@ verifierDroits({
   temoinsFuite: [id(D.enAttente), id(D.cibleCachet), id(I.stable), id(S.signee), CLIENTS_VENTES.lumiere.name, "PROJ-VENTES-01", "DEV-IMP-001"],
 });
 
-/**
- * Texte piégé (XSS stockée) : l'Éditeur enregistre, par l'API, un devis dont
- * les notes, les conditions générales, la référence et les articles
- * contiennent du HTML qui exécute du code. Quand le propriétaire ouvre la
- * liste, le panneau du devis ou son éditeur, rien ne doit s'exécuter : la
- * surveillance échoue sur toute boîte de dialogue, et la page ne doit pas
- * porter la marque posée par le code.
- */
-
-test.describe("Devis : un texte piégé ne s'exécute jamais", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_VENTES) });
-
-  test.beforeAll(async ({ browser }) => {
-    const contexte = await browser.newContext({ baseURL: BASE_URL, storageState: connecte(SESSION_TOKEN_VENTES_EDITEUR) });
-    const page = await contexte.newPage();
-    await page.goto("/dashboard");
-    const reponse = await appelApi(
+verifierTextesPieges({
+  titre: "Devis",
+  ecrire: (page) =>
+    appelApi(
       page,
       `mutation($id: ID!, $input: UpdateQuoteInput!) { updateQuote(id: $id, input: $input) { id } }`,
       {
         id: id(D.cibleXss),
         input: {
-          headerNotes: `Notes ${PIEGE}`,
-          footerNotes: `Bas de page ${PIEGE}`,
-          termsAndConditions: `Conditions ${PIEGE}`,
-          projectReference: "REF<b>piege</b>",
-          items: [{ ...article(`Article ${PIEGE}`), details: `Détails ${PIEGE}` }],
+          headerNotes: `Notes ${piegeDe("notes-entete")}`,
+          footerNotes: `Bas de page ${piegeDe("notes-bas-de-page")}`,
+          termsAndConditions: `Conditions ${piegeDe("conditions-generales")}`,
+          items: [{ ...article(`Article ${piegeDe("nom-article")}`), details: `Détails ${piegeDe("details-article")}` }],
         },
       },
       { organisation: ORG },
-    );
-    await contexte.close();
-    expect(reponse.errors, "L'Éditeur doit pouvoir enregistrer le devis").toEqual([]);
-  });
-
-  const piegeExecute = (page) => page.evaluate(() => window.__piege ?? null);
-
-  test("Liste des devis : le devis s'affiche, rien ne s'exécute", async ({ page }) => {
-    await epingler(page, "devis", D.cibleXss);
-    await page.waitForTimeout(1_000);
-    expect(await piegeExecute(page), "Le code du devis s'est exécuté").toBeNull();
-  });
-
-  test("Panneau et aperçu du devis : le texte s'affiche comme du texte", async ({ page }) => {
-    await ouvrirPanneau(page, "devis", D.cibleXss);
-    await page.waitForTimeout(1_500);
-    expect(await piegeExecute(page), "Le code du devis s'est exécuté").toBeNull();
-    await expect(page.getByText("Conditions <img", { exact: false }).first(), "Les conditions s'affichent telles quelles").toBeVisible();
-  });
-
-  test("Éditeur du devis : le texte reste du texte", async ({ page }) => {
-    await ouvrir(page, `/dashboard/outils/devis/${id(D.cibleXss)}/editer`, { pret: page.getByText("Sélection d'un client").first() });
-    await page.getByRole("button", { name: /Continuer/ }).click();
-    await page.waitForTimeout(1_500);
-    expect(await piegeExecute(page), "Le code du devis s'est exécuté").toBeNull();
-  });
+    ),
+  ouvertures: [
+    ["Liste des devis (sans panneau)", (page) => epingler(page, "devis", D.cibleXss)],
+    ["Consultation du devis (panneau et aperçu)", (page) => ouvrirPanneau(page, "devis", D.cibleXss)],
+    [
+      "Aperçu dans l'éditeur du devis",
+      async (page) => {
+        await ouvrir(page, `/dashboard/outils/devis/${id(D.cibleXss)}/editer`, { pret: page.getByText("Sélection d'un client").first() });
+        await page.getByRole("button", { name: /Continuer/ }).click();
+      },
+    ],
+  ],
 });
 
 test.describe("Devis : une facture n'est pas un devis", () => {

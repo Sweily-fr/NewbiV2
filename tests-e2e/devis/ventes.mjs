@@ -128,3 +128,11 @@ export function dejaEssayes(boutons, ou, garder = []) {
     Object.entries(boutons).map(([cle, attendu]) => [cle, attendu.desactive || attendu.parcours || garder.includes(cle) ? attendu : { parcours: `essayé sur « ${ou} »` }]),
   );
 }
+
+/**
+ * Texte utile d'un PDF (sans « Page 1 / 1 »). Vide pour le PDF image que le site produit quand la
+ * génération côté serveur est indisponible (coupée en test) : le contenu n'est alors pas lisible.
+ */
+export function texteUtile(pdf) {
+  return pdf.texte.replace(/Page\s*\d+\s*\/\s*\d+/gi, "").trim();
+}

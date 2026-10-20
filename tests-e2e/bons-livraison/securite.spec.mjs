@@ -7,11 +7,11 @@
  * propriétaire.
  */
 import { test, expect } from "../outils.mjs";
-import { BASE_URL, connecte, SESSION_TOKEN_VENTES, SESSION_TOKEN_VENTES_EDITEUR } from "../config.mjs";
+import { connecte, SESSION_TOKEN_VENTES } from "../config.mjs";
 import { BL_VENTES as B, CLIENTS_VENTES, FACTURE_VENTES } from "../donnees/lot-devis-bc-bl.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { CLIENT_API, ORG, ORG_ID, PIEGE, PIEGE_COURT, verifierDroits } from "../devis/droits.mjs";
+import { CLIENT_API, ORG, ORG_ID, piegeDe, verifierDroits, verifierTextesPieges } from "../devis/droits.mjs";
 import { epingler, ouvrirPanneau } from "../devis/ventes.mjs";
 
 const _id = (doc) => doc._id;
@@ -148,53 +148,37 @@ test.describe("Bons de livraison : jamais de prix", () => {
   });
 });
 
-test.describe("Bons de livraison : un texte piégé ne s'exécute jamais", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_VENTES) });
-
-  test.beforeAll(async ({ browser }) => {
-    const contexte = await browser.newContext({ baseURL: BASE_URL, storageState: connecte(SESSION_TOKEN_VENTES_EDITEUR) });
-    const page = await contexte.newPage();
-    await page.goto("/dashboard");
-    const reponse = await appelApi(
+verifierTextesPieges({
+  titre: "Bons de livraison",
+  ecrire: (page) =>
+    appelApi(
       page,
       `mutation($id: ID!, $w: ID!, $input: UpdateDeliveryNoteInput!) { updateDeliveryNote(id: $id, workspaceId: $w, input: $input) { id } }`,
       {
         id: id(B.cibleXss),
         w: ORG,
         input: {
-          notes: `Instructions ${PIEGE}`,
-          carrier: PIEGE_COURT,
-          trackingNumber: "SUIVI-PIEGE-01",
-          headerNotes: `Notes ${PIEGE}`,
-          footerNotes: `Bas de page ${PIEGE}`,
-          termsAndConditions: `Conditions ${PIEGE}`,
-          items: [{ ...ligneBl(`Article ${PIEGE}`), details: `Détails ${PIEGE}` }],
+          notes: `Remarques ${piegeDe("remarques")}`,
+          // Transporteur : 100 caractères au plus, piège court.
+          carrier: `<img src=x-piege-t onerror="window.__piege=['transporteur']">`,
+          headerNotes: `Notes ${piegeDe("notes-entete")}`,
+          footerNotes: `Bas de page ${piegeDe("notes-bas-de-page")}`,
+          termsAndConditions: `Conditions ${piegeDe("conditions-generales")}`,
+          items: [{ ...ligneBl(`Article ${piegeDe("nom-article")}`), details: `Détails ${piegeDe("details-article")}` }],
         },
       },
       { organisation: ORG },
-    );
-    await contexte.close();
-    expect(reponse.errors, "L'Éditeur doit pouvoir enregistrer le bon de livraison").toEqual([]);
-  });
-
-  const piegeExecute = (page) => page.evaluate(() => window.__piege ?? null);
-
-  test("Liste des bons de livraison : rien ne s'exécute", async ({ page }) => {
-    await epingler(page, "bl", B.cibleXss);
-    await page.waitForTimeout(1_000);
-    expect(await piegeExecute(page), "Le code du bon de livraison s'est exécuté").toBeNull();
-  });
-
-  test("Panneau et aperçu : le texte s'affiche comme du texte", async ({ page }) => {
-    await ouvrirPanneau(page, "bl", B.cibleXss);
-    await page.waitForTimeout(1_500);
-    expect(await piegeExecute(page), "Le code du bon de livraison s'est exécuté").toBeNull();
-  });
-
-  test("Éditeur du bon de livraison : le texte reste du texte", async ({ page }) => {
-    await ouvrir(page, `/dashboard/outils/bons-de-livraison/${id(B.cibleXss)}/editer`, { pret: page.getByText("Sélection d'un client").first() });
-    await page.getByRole("button", { name: /Continuer/ }).click();
-    await page.waitForTimeout(1_500);
-    expect(await piegeExecute(page), "Le code du bon de livraison s'est exécuté").toBeNull();
-  });
+    ),
+  ouvertures: [
+    ["Liste des bons de livraison (sans panneau)", (page) => epingler(page, "bl", B.cibleXss)],
+    ["Consultation du bon de livraison (panneau et aperçu)", (page) => ouvrirPanneau(page, "bl", B.cibleXss)],
+    ["Page du bon de livraison (/bons-de-livraison/<id>)", (page) => ouvrir(page, `/dashboard/outils/bons-de-livraison/${id(B.cibleXss)}`)],
+    [
+      "Aperçu dans l'éditeur du bon de livraison",
+      async (page) => {
+        await ouvrir(page, `/dashboard/outils/bons-de-livraison/${id(B.cibleXss)}/editer`, { pret: page.getByText("Sélection d'un client").first() });
+        await page.getByRole("button", { name: /Continuer/ }).click();
+      },
+    ],
+  ],
 });

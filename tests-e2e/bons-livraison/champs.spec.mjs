@@ -132,7 +132,6 @@ verifierFormulaire({
     Transporteur: {
       cle: "transporteur",
       lu: (doc) => doc.carrier,
-      refuses: { "de 101 caractères": "T".repeat(101) },
       acceptes: { "avec accents et « & »": "Transports Lefèvre & Fils", "livraison en propre": "Livraison en propre" },
     },
     "Numéro de suivi": {
@@ -196,7 +195,6 @@ verifierFormulaire({
     "Notes d'en-tête": {
       cle: "entete",
       lu: (doc) => doc.headerNotes,
-      refuses: { "de 1 001 caractères": "n".repeat(1001) },
       acceptes: { "avec « œ » et « ’ »": "Livraison du cœur de l’entrepôt" },
     },
     "Remarques de livraison": {

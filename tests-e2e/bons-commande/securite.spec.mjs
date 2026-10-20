@@ -5,12 +5,10 @@
  * Membre, l'Éditeur, l'intrus et un visiteur sans session. Plus un texte
  * piégé écrit par l'Éditeur et ouvert par le propriétaire.
  */
-import { test, expect } from "../outils.mjs";
-import { BASE_URL, connecte, SESSION_TOKEN_VENTES, SESSION_TOKEN_VENTES_EDITEUR } from "../config.mjs";
 import { BC_IMPORTES as I, BC_VENTES as B, CLIENTS_VENTES, MODELE_BC_VENTES } from "../donnees/lot-devis-bc-bl.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { article, CLIENT_API, ORG, ORG_ID, PIEGE, verifierDroits } from "../devis/droits.mjs";
+import { article, CLIENT_API, ORG, ORG_ID, piegeDe, verifierDroits, verifierTextesPieges } from "../devis/droits.mjs";
 import { epingler, ouvrirPanneau } from "../devis/ventes.mjs";
 
 const _id = (doc) => doc._id;
@@ -186,51 +184,33 @@ verifierDroits({
   temoinsFuite: [id(B.enAttente), id(I.stable), CLIENTS_VENTES.lumiere.name, "D-REF-0001", "BC-IMP-001", MODELE_BC_VENTES.name],
 });
 
-test.describe("Bons de commande : un texte piégé ne s'exécute jamais", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_VENTES) });
-
-  test.beforeAll(async ({ browser }) => {
-    const contexte = await browser.newContext({ baseURL: BASE_URL, storageState: connecte(SESSION_TOKEN_VENTES_EDITEUR) });
-    const page = await contexte.newPage();
-    await page.goto("/dashboard");
-    const reponse = await appelApi(
+verifierTextesPieges({
+  titre: "Bons de commande",
+  ecrire: (page) =>
+    appelApi(
       page,
       `mutation($id: ID!, $w: ID!, $input: UpdatePurchaseOrderInput!) { updatePurchaseOrder(id: $id, workspaceId: $w, input: $input) { id } }`,
       {
         id: id(B.cibleXss),
         w: ORG,
         input: {
-          headerNotes: `Notes ${PIEGE}`,
-          footerNotes: `Bas de page ${PIEGE}`,
-          termsAndConditions: `Conditions ${PIEGE}`,
-          items: [{ ...article(`Article ${PIEGE}`), details: `Détails ${PIEGE}` }],
+          headerNotes: `Notes ${piegeDe("notes-entete")}`,
+          footerNotes: `Bas de page ${piegeDe("notes-bas-de-page")}`,
+          termsAndConditions: `Conditions ${piegeDe("conditions-generales")}`,
+          items: [{ ...article(`Article ${piegeDe("nom-article")}`), details: `Détails ${piegeDe("details-article")}` }],
         },
       },
       { organisation: ORG },
-    );
-    await contexte.close();
-    expect(reponse.errors, "L'Éditeur doit pouvoir enregistrer le bon de commande").toEqual([]);
-  });
-
-  const piegeExecute = (page) => page.evaluate(() => window.__piege ?? null);
-
-  test("Liste des bons de commande : rien ne s'exécute", async ({ page }) => {
-    await epingler(page, "bc", B.cibleXss);
-    await page.waitForTimeout(1_000);
-    expect(await piegeExecute(page), "Le code du bon de commande s'est exécuté").toBeNull();
-  });
-
-  test("Panneau et aperçu : le texte s'affiche comme du texte", async ({ page }) => {
-    await ouvrirPanneau(page, "bc", B.cibleXss);
-    await page.waitForTimeout(1_500);
-    expect(await piegeExecute(page), "Le code du bon de commande s'est exécuté").toBeNull();
-    await expect(page.getByText("Conditions <img", { exact: false }).first(), "Les conditions s'affichent telles quelles").toBeVisible();
-  });
-
-  test("Éditeur du bon de commande : le texte reste du texte", async ({ page }) => {
-    await ouvrir(page, `/dashboard/outils/bons-commande/${id(B.cibleXss)}/editer`, { pret: page.getByText("Sélection d'un client").first() });
-    await page.getByRole("button", { name: /Continuer/ }).click();
-    await page.waitForTimeout(1_500);
-    expect(await piegeExecute(page), "Le code du bon de commande s'est exécuté").toBeNull();
-  });
+    ),
+  ouvertures: [
+    ["Liste des bons de commande (sans panneau)", (page) => epingler(page, "bc", B.cibleXss)],
+    ["Consultation du bon de commande (panneau et aperçu)", (page) => ouvrirPanneau(page, "bc", B.cibleXss)],
+    [
+      "Aperçu dans l'éditeur du bon de commande",
+      async (page) => {
+        await ouvrir(page, `/dashboard/outils/bons-commande/${id(B.cibleXss)}/editer`, { pret: page.getByText("Sélection d'un client").first() });
+        await page.getByRole("button", { name: /Continuer/ }).click();
+      },
+    ],
+  ],
 });

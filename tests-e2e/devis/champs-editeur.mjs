@@ -124,8 +124,11 @@ export function champsDesParametres(document) {
     await continuer(page);
     await page.getByRole("button", { name: "Ajouter un article" }).first().click();
     await page.locator("#item-description-0").fill(v.article);
-    await page.locator("#item-price-0").fill("100");
+    const prix = page.locator("#item-price-0");
+    await prix.fill("100");
     await attendreCalme(page);
+    if ((await prix.inputValue()) !== "100") await prix.fill("100");
+    await expect(prix).toHaveValue("100");
   }
   verifierFormulaire({
     nom: `${document.nom} : paramètres`,

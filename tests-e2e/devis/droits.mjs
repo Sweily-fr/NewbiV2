@@ -21,7 +21,7 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { connecte, SESSION_TOKEN_INTRUS, SESSION_TOKEN_VENTES_EDITEUR, SESSION_TOKEN_VENTES_LECTEUR } from "../config.mjs";
+import { BASE_URL, connecte, SESSION_TOKEN_INTRUS, SESSION_TOKEN_VENTES, SESSION_TOKEN_VENTES_EDITEUR, SESSION_TOKEN_VENTES_LECTEUR } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
 import { appelApi, verifierRefus, id } from "../securite.mjs";
 import { base } from "../base.mjs";
@@ -199,3 +199,45 @@ export const article = (texte, prix = 100) => ({ description: texte, quantity: 1
 export const PIEGE = `<img src="x-piege" onerror="window.__piege='execute';alert('code exécuté depuis un document')">`;
 /** Texte piégé court, pour les champs limités à 100 caractères (transporteur…). */
 export const PIEGE_COURT = `<img src=y onerror="window.__piege='execute'">`;
+
+/** Texte piégé marqué par son champ : s'il s'exécute, le nom du champ est noté dans window.__piege. */
+export const piegeDe = (champ) => `<img src="x-piege-${champ}" onerror="(window.__piege = window.__piege || []).push('${champ}')">`;
+
+/**
+ * Texte piégé (XSS stockée), sur le modèle de factures/securite.spec.mjs :
+ * l'Éditeur enregistre par l'API un document dont chaque texte porte un
+ * piège marqué par son champ ; le propriétaire l'ouvre partout où il
+ * s'affiche (liste, consultation, aperçu de l'éditeur). Rien ne doit
+ * s'exécuter, sinon ce code agirait avec la session du propriétaire.
+ *   ecrire(page)  : enregistre le document piégé (session de l'Éditeur), renvoie la réponse de l'API
+ *   ouvertures    : [[nom, ouvrir(page)]]
+ */
+export function verifierTextesPieges({ titre, ecrire, ouvertures }) {
+  test.describe(`${titre} : un texte piégé ne s'exécute jamais`, () => {
+    // L'image piégée n'existe pas : le navigateur la demande (404) avant de lancer le code.
+    test.use({ storageState: connecte(SESSION_TOKEN_VENTES), erreursConsoleAutorisees: /x-piege/ });
+    let reponse = null;
+
+    test.beforeAll(async ({ browser }) => {
+      const contexte = await browser.newContext({ baseURL: BASE_URL, storageState: connecte(SESSION_TOKEN_VENTES_EDITEUR) });
+      const page = await contexte.newPage();
+      await page.goto("/dashboard");
+      reponse = await ecrire(page);
+      await contexte.close();
+    });
+
+    test("L'Éditeur enregistre les textes piégés tels quels", async () => {
+      expect(reponse?.errors ?? ["aucune réponse"], "Document piégé refusé par l'API").toEqual([]);
+    });
+
+    for (const [nom, ouvrirPage] of ouvertures) {
+      test(`${nom} : rien ne s'exécute`, async ({ page }) => {
+        test.skip(!reponse || reponse.errors.length > 0, "Document piégé non enregistré");
+        await ouvrirPage(page);
+        await page.waitForTimeout(2_000);
+        const executes = await page.evaluate(() => [...new Set(window.__piege || [])]);
+        expect(executes, `Du code s'est exécuté depuis : ${executes.join(", ")} (champs repérés par leur marque)`).toEqual([]);
+      });
+    }
+  });
+}
