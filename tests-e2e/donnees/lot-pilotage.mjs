@@ -153,6 +153,10 @@ export const INVITATIONS = {
   fantome: invitation(23, { cabinet: CABINET_FANTOME, email: BOULANGERIE.utilisateur.email, utilisateur: CLIENT_CABINET_ID, demandeeIlYa: 3 }),
   // Expirée, à relancer : l'Éditeur de « Pilotage » est super admin d'un espace libre
   expiree: invitation(24, { email: MEMBRES.pilotageEditeur.utilisateur.email, utilisateur: MEMBRES.pilotageEditeur.utilisateur._id, demandeeIlYa: 20, expireDans: -6 }),
+  // Expirée, seulement consultée par l'invité (page « Invitation expirée »)
+  expireeAffichee: invitation(28, { email: MEMBRES.pilotageEditeur.utilisateur.email, utilisateur: MEMBRES.pilotageEditeur.utilisateur._id, demandeeIlYa: 25, expireDans: -11 }),
+  // Refusée il y a longtemps par l'Éditeur (super admin de « Studio Invitable ») : à relancer
+  refuseeARelancer: invitation(29, { email: MEMBRES.pilotageEditeur.utilisateur.email, utilisateur: MEMBRES.pilotageEditeur.utilisateur._id, statut: "declined", demandeeIlYa: 35, expireDans: -21, reponduIlYa: 20 }),
   // En attente, à annuler (adresse sans compte : n'apparaît chez personne)
   aAnnuler: invitation(25, { email: "prospect-annule@e2e.test", utilisateur: PERSONNE, demandeeIlYa: 4, expireDans: 10 }),
   // Refusée il y a longtemps, à retirer de la liste
@@ -237,7 +241,8 @@ export const FACTURES_PILOTAGE = {
   payee: facturePil(3, { numero: "0103", statut: "COMPLETED", emise: ceMois(5), echeance: DANS(25), payeeLe: ceMois(1), client: C.pilote, articles: [ligne("Tableau de bord", 1, 1000)], envoyee: true }),
   annulee: facturePil(4, { numero: "0104", statut: "CANCELED", emise: ceMois(3), client: C.pilote, articles: [ligne("Mission annulée du mois", 1, 300)], envoyee: true }),
   brouillon: facturePil(5, { numero: "DRAFT-0101", statut: "DRAFT", emise: ceMois(1), client: C.pilote, articles: [ligne("Brouillon du mois", 1, 800)] }),
-  piegee: facturePil(6, { numero: "0105", statut: "PENDING", emise: ceMois(4), echeance: DANS(30), client: C.piege, articles: [ligne("Prestation au nom piégé", 1, 250)], envoyee: true }),
+  // La plus récente : toujours dans les « Factures de vente » de l'accueil
+  piegee: facturePil(6, { numero: "0105", statut: "PENDING", emise: ceMois(4), echeance: DANS(30), creeeLe: MAINTENANT, client: C.piege, articles: [ligne("Prestation au nom piégé", 1, 250)], envoyee: true }),
   accents: facturePil(7, { numero: "0106", statut: "COMPLETED", emise: ceMois(6), echeance: DANS(24), payeeLe: ceMois(2), client: C.coeur, articles: [ligne("Œuvre graphique n° 2", 2, 1000, 10)], envoyee: true }),
   // Mois précédents
   ancienneEnRetard: facturePil(8, { numero: "0090", statut: "PENDING", emise: DANS(-45), echeance: DANS(-15), client: C.coeur, articles: [ligne("Conseil de septembre", 1, 700)], envoyee: true }),
@@ -303,6 +308,12 @@ function facturesBoulangerie() {
   return docs;
 }
 export const FACTURES_BOULANGERIE = facturesBoulangerie();
+
+/** Facture d'un espace libre (jamais confié au cabinet) : le cabinet ne doit jamais la voir. */
+export const FACTURE_ESPACE_LIBRE = {
+  ...facturePil(300, { compte: "clientCabinet", prefixe: "F-LIB", numero: "0001", statut: "PENDING", emise: DANS(-3), echeance: DANS(27), client: C.restaurant, articles: [ligne("Prestation d'un espace non confié", 1, 777)], envoyee: true }),
+  workspaceId: ESPACES_LIBRES.traiteur._id,
+};
 
 // --- Avoirs ------------------------------------------------------------------------
 
@@ -545,7 +556,8 @@ function transaction(n, { montant, date, libelle, statut = "completed", rapproch
     amount: montant,
     currency: "EUR",
     description: libelle,
-    fromAccount: COMPTE_BANCAIRE_PILOTAGE.externalId,
+    // Comme Bridge : l'identifiant du compte chez la banque (externalId), aucun pour les espèces
+    fromAccount: fournisseur === "manual" ? null : COMPTE_BANCAIRE_PILOTAGE.externalId,
     workspaceId: W_PILOTAGE.toHexString(),
     userId: PILOTAGE.utilisateur._id,
     date,
@@ -634,7 +646,7 @@ export function donneesPilotage() {
     accountmanagers: [CABINET, CABINET_FANTOME],
     managedclients: [...Object.values(LIENS), ...Object.values(INVITATIONS)],
     clients: Object.values(CONTACTS_PILOTAGE).map(contactEnBase),
-    invoices: [...Object.values(FACTURES_PILOTAGE), ...FACTURES_BOULANGERIE],
+    invoices: [...Object.values(FACTURES_PILOTAGE), ...FACTURES_BOULANGERIE, FACTURE_ESPACE_LIBRE],
     creditnotes: Object.values(AVOIRS_PILOTAGE),
     quotes: Object.values(DEVIS_PILOTAGE),
     purchaseorders: Object.values(BONS_COMMANDE_PILOTAGE),
