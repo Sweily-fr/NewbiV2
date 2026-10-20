@@ -202,6 +202,8 @@ export const F = {
   emiseAModifierApi: f(49, { numero: "0033", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: zoe, articles: [ligne("Facture émise modifiée par l'API", 1, 14)], creeeIlYa: 409 }),
   aCrediterPourSuppression: f(50, { numero: "0034", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: lumiere, articles: [ligne("Facture dont l'avoir sera supprimé", 1, 15)], creeeIlYa: 410 }),
   aCrediterParEditeur: f(51, { numero: "0035", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: oeuvre, articles: [ligne("Facture créditée par l'Éditeur", 1, 160)], creeeIlYa: 411 }),
+  cibleRecurrence: f(52, { numero: "0036", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: lumiere, articles: [ligne("Cible de la récurrence (droits)", 1, 17)], creeeIlYa: 412 }),
+  cibleRecurrenceEditeur: f(53, { numero: "0037", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: oeuvre, articles: [ligne("Récurrence suspendue par l'Éditeur", 1, 18)], creeeIlYa: 413 }),
 };
 
 /** Référence affichée dans la liste et le panneau (« F-092026-0001 »). */
@@ -251,6 +253,7 @@ export const AVOIRS_FACTURES = {
   aModifier: avoir(2, { facture: F.avecAvoirAModifier, numero: "0002", lignes: [ligne("Geste commercial sur la mission", -1, 500)], motif: "Retard de livraison" }),
   aSupprimerApi: avoir(3, { facture: F.aCrediterPourSuppression, numero: "0003", lignes: [ligne("Avoir à ne jamais supprimer", -1, 5)] }),
   cible: avoir(4, { facture: F.ciblePayee, numero: "0004", lignes: [ligne("Avoir cible des droits", -1, 2)] }),
+  editeur: avoir(5, { facture: F.aCrediterParEditeur, numero: "0005", lignes: [ligne("Avoir modifié par l'Éditeur", -1, 10)] }),
 };
 
 // --- Factures récurrentes -------------------------------------------------------
@@ -288,6 +291,8 @@ export const RECURRENCES = {
   aPauser: recurrence(3, F.recurrenceAPauser, { prochaine: 10 }),
   aReprendre: recurrence(4, F.recurrenceAReprendre, { statut: "PAUSED", prochaine: 10 }),
   aArreter: recurrence(5, F.recurrenceAArreter, { prochaine: 10 }),
+  cible: recurrence(6, F.cibleRecurrence, { prochaine: 10 }),
+  cibleEditeur: recurrence(7, F.cibleRecurrenceEditeur, { prochaine: 10 }),
 };
 
 // --- Modèles de factures -----------------------------------------------------------
@@ -324,6 +329,7 @@ function modele(n, compte, { nom, description = "", lignes }) {
 export const MODELES = {
   maintenance: modele(1, "factures", { nom: "Modèle maintenance mensuelle", lignes: [ligne("Maintenance mensuelle (modèle)", 1, 150), ligne("Astreinte (modèle)", 2, 40)] }),
   aSupprimer: modele(2, "factures", { nom: "Modèle à supprimer", lignes: [ligne("Ligne du modèle à supprimer", 1, 1)] }),
+  cible: modele(3, "factures", { nom: "Modèle cible des droits", lignes: [ligne("Ligne du modèle cible", 1, 2)] }),
   // Offre d'entrée : 10 modèles = plafond atteint.
   ...Object.fromEntries(
     Array.from({ length: 10 }, (_, i) => [`offre${i + 1}`, modele(10 + i, "facturesOffre", { nom: `Modèle de l'offre ${i + 1}`, lignes: [ligne(`Ligne du modèle ${i + 1}`, 1, 10 + i)] })]),
@@ -362,6 +368,12 @@ function importee(n, { numero, client: nomClient, montantHT, statut = "VALIDATED
 
 export const IMPORTEES = {
   validee: importee(1, { numero: "ANCIEN-2025-042", client: "Client d'avant Newbi SARL", montantHT: 640 }),
+  // Cibles des contrôles de droits (appels directs à l'API)
+  cible: importee(2, { numero: "IMPORT-CIBLE-001", client: "Client importé cible", montantHT: 50, emiseIlYa: 300 }),
+  editeurModifier: importee(3, { numero: "IMPORT-EDIT-002", client: "Client importé modifié", montantHT: 51, emiseIlYa: 301 }),
+  editeurValider: importee(4, { numero: "IMPORT-EDIT-003", client: "Client importé à valider", montantHT: 52, statut: "PENDING_REVIEW", emiseIlYa: 302 }),
+  editeurRejeter: importee(5, { numero: "IMPORT-EDIT-004", client: "Client importé rejeté", montantHT: 53, statut: "PENDING_REVIEW", emiseIlYa: 303 }),
+  editeurArchiver: importee(6, { numero: "IMPORT-EDIT-005", client: "Client importé archivé", montantHT: 54, emiseIlYa: 304 }),
 };
 
 // --- Organisation « Réglages Factures » : numérotation continue et volume -------------
