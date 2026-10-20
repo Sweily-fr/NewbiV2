@@ -98,6 +98,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
+import { sanitizeRichText } from "@/src/utils/sanitize-html";
 
 // Périodes proposées pour l'export PDF. "displayed" = période affichée à
 // l'écran (comportement historique) ; les presets "derniers X" sont des
@@ -1178,7 +1179,9 @@ export function KanbanGanttView({
                                   <div
                                     className="text-sm text-muted-foreground break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
                                     dangerouslySetInnerHTML={{
-                                      __html: task.description,
+                                      __html: sanitizeRichText(
+                                        task.description,
+                                      ),
                                     }}
                                   />
                                 ) : (

@@ -41,7 +41,8 @@ export function ChangePasswordModal({ isOpen, onClose }) {
     setIsLoading(true);
 
     try {
-      // TODO: Implémenter la logique de changement de mot de passe
+      // Les autres sessions sont fermées par le serveur (hook après
+      // /change-password), celle-ci est gardée
       const { data, error } = await authClient.changePassword({
         newPassword: newPassword, // required
         currentPassword: currentPassword, // required
@@ -52,7 +53,9 @@ export function ChangePasswordModal({ isOpen, onClose }) {
         toast.error("Erreur lors du changement de mot de passe");
         return;
       }
-      toast.success("Mot de passe modifié avec succès");
+      toast.success(
+        "Mot de passe modifié. Vos autres sessions ont été fermées.",
+      );
       onClose();
       setCurrentPassword("");
       setNewPassword("");

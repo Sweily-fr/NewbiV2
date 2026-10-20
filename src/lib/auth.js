@@ -421,6 +421,20 @@ export const auth = betterAuth({
           error?.message,
         );
       }
+      // Lien « mot de passe oublié » : toutes les sessions sont fermées
+      try {
+        const { revokeSessionsAfterPasswordChange } =
+          await import("./revoke-sessions-after-password.js");
+        await revokeSessionsAfterPasswordChange({
+          userId: user?.id,
+          trigger: "reset_password",
+        });
+      } catch (error) {
+        console.error(
+          "[AUTH] Fermeture des sessions après réinitialisation :",
+          error?.message,
+        );
+      }
     },
   },
 

@@ -37,6 +37,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/avatar";
+import { toCsvCell } from "@/src/utils/spreadsheet-cell";
 
 export function ExportDialog({
   open,
@@ -271,19 +272,8 @@ export function ExportDialog({
       headers.join(";"),
       ...data.map((row) =>
         headers
-          .map((header) => {
-            const value = row[header];
-            // Échapper les guillemets et entourer de guillemets si nécessaire
-            if (
-              typeof value === "string" &&
-              (value.includes(";") ||
-                value.includes('"') ||
-                value.includes("\n"))
-            ) {
-              return `"${value.replace(/"/g, '""')}"`;
-            }
-            return value;
-          })
+          // Texte neutralisé (formules du tableur), guillemets échappés
+          .map((header) => toCsvCell(row[header]))
           .join(";"),
       ),
     ].join("\n");

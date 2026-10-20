@@ -119,6 +119,7 @@ import {
 import { fr } from "date-fns/locale";
 import { TimerDisplay } from "@/app/dashboard/outils/kanban/[id]/components/TimerDisplay";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import { sanitizeRichText } from "@/src/utils/sanitize-html";
 
 const scrollbarStyles = `
   .kanban-column-scroll::-webkit-scrollbar { width: 6px; }
@@ -993,7 +994,9 @@ function PublicTaskCard({ task, onEdit }) {
                   <h4 className="font-medium text-sm">Description</h4>
                   <div
                     className="text-sm text-muted-foreground whitespace-pre-wrap break-words prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: task.description }}
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeRichText(task.description),
+                    }}
                   />
                 </div>
               </PopoverContent>
@@ -2039,7 +2042,9 @@ function PublicListView({ columns, tasksByColumn, onEditTask }) {
                                       <div
                                         className="text-sm text-muted-foreground whitespace-pre-wrap break-words prose prose-sm max-w-none"
                                         dangerouslySetInnerHTML={{
-                                          __html: task.description,
+                                          __html: sanitizeRichText(
+                                            task.description,
+                                          ),
                                         }}
                                       />
                                     </div>
@@ -2913,7 +2918,9 @@ function PublicTaskModal({
                   <Label className="text-sm font-normal">Description</Label>
                   <div
                     className="w-full min-h-[100px] bg-muted/30 text-foreground border border-input rounded-md px-3 py-2 whitespace-pre-wrap prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: task.description }}
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeRichText(task.description),
+                    }}
                   />
                 </div>
               )}
@@ -3349,7 +3356,9 @@ function PublicTaskModal({
                     <Label className="text-sm font-normal">Description</Label>
                     <div
                       className="w-full min-h-[80px] bg-muted/30 text-foreground border border-input rounded-md px-3 py-2 whitespace-pre-wrap text-sm prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: task.description }}
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeRichText(task.description),
+                      }}
                     />
                   </div>
                 )}

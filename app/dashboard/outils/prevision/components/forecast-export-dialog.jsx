@@ -11,6 +11,7 @@ import { CornerDownLeft, LoaderCircle } from "lucide-react";
 import { ExportIcon } from "@/src/components/icons";
 import { format } from "date-fns";
 import { useState } from "react";
+import { toCsvCell } from "@/src/utils/spreadsheet-cell";
 
 const INCOME_ROWS = [
   { category: "SALES", label: "Ventes", type: "INCOME" },
@@ -122,13 +123,8 @@ export function ForecastExportDialog({ open, onOpenChange, months }) {
           .map((cell) => {
             if (typeof cell === "number")
               return cell.toString().replace(".", ",");
-            if (
-              typeof cell === "string" &&
-              (cell.includes(";") || cell.includes('"'))
-            ) {
-              return `"${cell.replace(/"/g, '""')}"`;
-            }
-            return cell;
+            // Texte neutralisé (formules du tableur), guillemets échappés
+            return toCsvCell(cell);
           })
           .join(";"),
       ),

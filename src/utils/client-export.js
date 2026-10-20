@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toCsvCell, toHtmlCell } from "@/src/utils/spreadsheet-cell";
 
 /**
  * Formate le type de contact pour l'export
@@ -104,15 +105,8 @@ export function exportToCSV(clients) {
       ...formattedData.map((row) =>
         headers
           .map((header) => {
-            const value = row[header] || "";
-            // Échapper les guillemets et entourer de guillemets si nécessaire
-            if (
-              value.toString().includes(";") ||
-              value.toString().includes('"')
-            ) {
-              return `"${value.toString().replace(/"/g, '""')}"`;
-            }
-            return value;
+            // Texte neutralisé (formules du tableur), guillemets échappés
+            return toCsvCell(row[header] || "");
           })
           .join(";"),
       ),
@@ -188,7 +182,9 @@ export function exportToExcel(clients) {
               .map(
                 (row) =>
                   `<tr>${headers
-                    .map((header) => `<td>${row[header] || ""}</td>`)
+                    .map(
+                      (header) => `<td>${toHtmlCell(row[header] || "")}</td>`,
+                    )
                     .join("")}</tr>`,
               )
               .join("")}
