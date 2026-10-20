@@ -1,4 +1,7 @@
 /**
+ * Outils du lot « achats-banque » : session sans bandeaux de rapprochement
+ * (connecteAchats) et droits vérifiés à l'API (verifierDroits).
+ *
  * Droits vérifiés à l'API pour les fonctionnalités du lot « achats-banque »
  * (catalogue, factures d'achat, transactions, prévision), sur le modèle de
  * clients/securite.spec.mjs. Chaque opération GraphQL est appelée
@@ -22,10 +25,34 @@
  */
 import { test, expect, etape } from "./outils.mjs";
 import { ouvrir } from "./navigation.mjs";
-import { API_URL, BASE_URL, connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_LECTEUR_ACHATS } from "./config.mjs";
+import { API_URL, BASE_URL, connecte, sessionCookie, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_LECTEUR_ACHATS } from "./config.mjs";
 import { COMPTES } from "./donnees/base.mjs";
+import { TRANSACTIONS, TRANSACTIONS_SAISIE } from "./donnees/lot-achats-banque.mjs";
 import { appelApi, verifierRefus, id } from "./securite.mjs";
 import { base } from "./base.mjs";
+
+/**
+ * Session d'un compte du lot, avec les suggestions de rapprochement déjà
+ * écartées (« Masquer », gardé par le navigateur) : les données de test en
+ * font naître (débit du même montant qu'une facture), et leurs cartes,
+ * empilées en bas à droite, couvrent la pagination et les actions des
+ * lignes. Les suggestions ont leurs propres tests, avec une session normale.
+ */
+export function connecteAchats(token) {
+  const ids = JSON.stringify([...Object.values(TRANSACTIONS), ...Object.values(TRANSACTIONS_SAISIE)].map((t) => t._id.toHexString()));
+  return {
+    cookies: [sessionCookie(token)],
+    origins: [
+      {
+        origin: BASE_URL,
+        localStorage: [
+          { name: "purchase_invoice_reconciliation_ignored_suggestions", value: ids },
+          { name: "reconciliation_ignored_suggestions", value: ids },
+        ],
+      },
+    ],
+  };
+}
 
 export const ORG = id(COMPTES.achats.organisation);
 export const ORG_SAISIE = id(COMPTES.saisieAchats.organisation);

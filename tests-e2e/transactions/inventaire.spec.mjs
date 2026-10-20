@@ -6,40 +6,40 @@
  */
 import { test } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { relever, releverEtat } from "../releve.mjs";
-import { connecte, SESSION_TOKEN_ACHATS, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_LECTEUR_ACHATS } from "../config.mjs";
+import { releverEtat } from "../releve.mjs";
+import { SESSION_TOKEN_ACHATS, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_LECTEUR_ACHATS } from "../config.mjs";
+import { connecteAchats } from "../achats-banque.mjs";
 import { TRANSACTIONS } from "../donnees/lot-achats-banque.mjs";
 
 test.skip(process.env.E2E_INVENTAIRE !== "1", "Relevé des pages : E2E_INVENTAIRE=1");
 
 const id = (doc) => doc._id.toHexString();
-const tiroir = (p) => p.getByRole("dialog").last();
+// Tiroir maison (sans rôle de fenêtre) : volet fixe à droite.
+const tiroir = (p) => p.locator("div.fixed.inset-y-0.right-0.z-50").last();
 const URL = "/dashboard/outils/transactions";
-const ouvrirListe = (p) => ouvrir(p, URL, { pret: p.getByText(TRANSACTIONS.spotify.description).first() });
+const ouvrirListe = (p) => ouvrir(p, URL, { pret: p.getByText("Spotify").first() });
 const ouvrirTiroir = (t) => async (p) => {
-  await ouvrir(p, `${URL}?transactionId=${id(t)}`, { pret: p.getByText(t.description).first() });
+  await ouvrir(p, `${URL}?transactionId=${id(t)}`, { pret: tiroir(p).locator("h2") });
   await p.waitForTimeout(1_200);
 };
 
 for (const [role, token] of [["proprietaire", SESSION_TOKEN_ACHATS], ["editeur", SESSION_TOKEN_EDITEUR_ACHATS], ["lecteur", SESSION_TOKEN_LECTEUR_ACHATS]]) {
   test.describe(`Relevé des transactions (${role})`, () => {
-    test.use({ storageState: connecte(token) });
-    relever({ [`transactions-${role}`]: URL });
+    test.use({ storageState: connecteAchats(token) });
     releverEtat(`transactions-${role}-depense`, ouvrirTiroir(TRANSACTIONS.carburant), { zone: tiroir });
     releverEtat(`transactions-${role}-selection`, async (p) => {
       await ouvrirListe(p);
-      await p.getByRole("checkbox", { name: "Select row" }).first().check().catch(() => {});
+      await p.getByRole("checkbox", { name: "Select row" }).first().check({ timeout: 10_000 });
       await p.waitForTimeout(500);
     });
   });
 }
 
 test.describe("Relevé des transactions (propriétaire, autres états)", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_ACHATS) });
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_ACHATS) });
   releverEtat("transactions-depense-rapprochee", ouvrirTiroir(TRANSACTIONS.adobe), { zone: tiroir });
   releverEtat("transactions-encaissement", ouvrirTiroir(TRANSACTIONS.virementDelta), { zone: tiroir });
   releverEtat("transactions-encaissement-rapproche", ouvrirTiroir(TRANSACTIONS.virementGamma), { zone: tiroir });
   releverEtat("transactions-justifiee", ouvrirTiroir(TRANSACTIONS.loyer), { zone: tiroir });
   releverEtat("transactions-ignoree", ouvrirTiroir(TRANSACTIONS.ignoree), { zone: tiroir });
-  relever({ "banking-callback": "/banking-callback", "banking-callback-erreur": "/banking-callback?error=access_denied" }, { zone: (p) => p.locator("body") });
 });

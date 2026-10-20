@@ -2,7 +2,7 @@
  * Transactions : droits vérifiés à l'API (transactions, justificatifs,
  * rapprochement avec les factures de vente, paiements, comptes bancaires,
  * synchronisation) pour le Membre, l'Éditeur, une autre entreprise et un
- * visiteur (voir achats-banque-securite.mjs). Plus : les métriques bancaires
+ * visiteur (voir achats-banque.mjs). Plus : les métriques bancaires
  * d'une entreprise ne sortent pas chez une autre, et un libellé piégé reste
  * du texte chez le propriétaire.
  */
@@ -12,7 +12,7 @@ import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_T
 import { COMPTES } from "../donnees/base.mjs";
 import { COMPTES_BANCAIRES, FACTURES_VENTE, METRIQUES_BANCAIRES, TRANSACTIONS, TRANSACTIONS_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
-import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, verifierDroits, verifierPiegeInerte } from "../achats-banque-securite.mjs";
+import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
 
 const T = TRANSACTIONS;
 const TS = TRANSACTIONS_SAISIE;

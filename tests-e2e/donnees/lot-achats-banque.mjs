@@ -22,6 +22,12 @@ import { facture } from "./factures-liste.mjs";
 import { ligne } from "./documents.mjs";
 
 const hex = (doc) => doc._id.toHexString();
+/**
+ * Jour calendaire, à minuit UTC, décalé de `n` jours : dates des opérations
+ * bancaires (Bridge les donne ainsi) et des factures d'achat (saisies au jour).
+ * Le site les lit en date calendaire, sans décalage de fuseau.
+ */
+export const jour = (n = 0) => new Date(Date.UTC(MAINTENANT.getUTCFullYear(), MAINTENANT.getUTCMonth(), MAINTENANT.getUTCDate() + n));
 const arrondi = (n) => Math.round(n * 100) / 100;
 /** Premier jour du mois, décalé de `mois` mois (prévisions mensuelles). */
 const debutDeMois = (mois = 0) => new Date(MAINTENANT.getFullYear(), MAINTENANT.getMonth() + mois, 1, 12);
@@ -206,8 +212,8 @@ function factureAchat(n, compte, { fournisseur: f, numero = "", emiseIlYa, echea
     supplierName: f.name,
     supplierId: f._id,
     invoiceNumber: numero,
-    issueDate: DANS(-emiseIlYa),
-    ...(echeanceDans !== null ? { dueDate: DANS(echeanceDans) } : {}),
+    issueDate: jour(-emiseIlYa),
+    ...(echeanceDans !== null ? { dueDate: jour(echeanceDans) } : {}),
     amountHT,
     amountTVA,
     vatRate,
@@ -222,7 +228,7 @@ function factureAchat(n, compte, { fournisseur: f, numero = "", emiseIlYa, echea
     internalReference: reference,
     files: fichiers,
     ocrMetadata: {},
-    ...(payeeIlYa !== null ? { paymentDate: DANS(-payeeIlYa) } : {}),
+    ...(payeeIlYa !== null ? { paymentDate: jour(-payeeIlYa) } : {}),
     ...(moyen ? { paymentMethod: moyen } : {}),
     linkedTransactionIds: transactions.map((t) => t._id),
     isReconciled: transactions.length > 0,
@@ -312,8 +318,8 @@ function transaction(n, compte, { libelle, montant, ilYa, categorie = null, comp
     fromAccount: cb.externalId,
     workspaceId: hex(organisation),
     userId: utilisateur._id,
-    date: DANS(-ilYa),
-    processedAt: DANS(-ilYa),
+    date: jour(-ilYa),
+    processedAt: jour(-ilYa),
     fees: { amount: 0, currency: "EUR" },
     metadata: moyen ? { paymentMethod: moyen } : {},
     linkedInvoiceIds: factures.map((f) => f._id),
@@ -644,13 +650,13 @@ function scenario(n, compte, { name, incomeMultiplier = 1, expenseMultiplier = 1
   };
 }
 
-/** Organisation sans session : son plafond de 5 scénarios est testé par l'API. */
-export const ORGANISATION_SCENARIOS = {
-  _id: oid("organisation", 21),
-  name: "Scénarios Test SASU",
-  slug: "scenarios-test-sasu",
-  companyName: "Scénarios Test SASU",
-  companyEmail: "facturation@org21.test",
+/** Organisation sans session (propriétaire : celui de « Saisie Achats »), testée par l'API seulement. */
+const organisationApi = (n, nom) => ({
+  _id: oid("organisation", n),
+  name: nom,
+  slug: nom.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"),
+  companyName: nom,
+  companyEmail: `facturation@org${n}.test`,
   companyPhone: "+33123456789",
   addressStreet: "1 rue de la Paix",
   addressCity: "Paris",
@@ -661,7 +667,11 @@ export const ORGANISATION_SCENARIOS = {
   vatNumber: "FR98765432100",
   capitalSocial: "10000",
   rcs: "Paris B 987 654 321",
-};
+});
+/** Plafond de 5 scénarios. */
+export const ORGANISATION_SCENARIOS = organisationApi(21, "Scénarios Test SASU");
+/** Valeurs hors limites (scénarios) : ce qui y est accepté à tort ne gêne aucun autre test. */
+export const ORGANISATION_BORNES = organisationApi(22, "Bornes Test SASU");
 
 export const SCENARIOS = {
   optimiste: scenario(1, "achats", { name: "Optimiste", incomeMultiplier: 1.2, expenseMultiplier: 0.9 }),
@@ -694,6 +704,7 @@ export const SAISIES_SAISIE = {
   duScenario: saisie(103, "saisieAchats", { name: "Prévision du scénario à supprimer", type: "INCOME", category: "SALES", subcategory: "services", amount: 300, scenario: SCENARIOS.aSupprimer }),
   editeur: saisie(104, "saisieAchats", { name: "Prévision de l'Éditeur", type: "EXPENSE", category: "OTHER_EXPENSE", subcategory: "autre", amount: 40 }),
   piege: saisie(105, "saisieAchats", { name: "Prévision piégée", type: "EXPENSE", category: "OTHER_EXPENSE", subcategory: "autre", amount: 41 }),
+  bornes: saisie(106, "saisieAchats", { name: "Prévision aux bornes", type: "EXPENSE", category: "OTHER_EXPENSE", subcategory: "autre", amount: 42 }),
 };
 
 const moisDansNMois = (n) => {
@@ -778,6 +789,7 @@ function membresEnPlus() {
   return [
     { _id: oid("membreAchats", 1), userId: MEMBRES.editeurAchats.utilisateur._id, organizationId: COMPTES.saisieAchats.organisation._id, role: "member", createdAt: MAINTENANT },
     { _id: oid("membreAchats", 2), userId: COMPTES.saisieAchats.utilisateur._id, organizationId: ORGANISATION_SCENARIOS._id, role: "owner", createdAt: MAINTENANT },
+    { _id: oid("membreAchats", 3), userId: COMPTES.saisieAchats.utilisateur._id, organizationId: ORGANISATION_BORNES._id, role: "owner", createdAt: MAINTENANT },
   ];
 }
 
@@ -785,29 +797,25 @@ function membresEnPlus() {
 export function donneesAchatsBanque() {
   const proprietaireScenarios = COMPTES.saisieAchats.utilisateur;
   return {
-    organization: [
-      {
-        ...ORGANISATION_SCENARIOS,
-        logo: null,
-        metadata: null,
-        organizationType: "business",
-        onboardingCompleted: true,
-        sessionSettings: { maxSessions: 0 },
-        createdAt: MAINTENANT,
-      },
-    ],
-    subscription: [
-      {
-        _id: oid("membreAchats", 50),
-        referenceId: ORGANISATION_SCENARIOS._id.toHexString(),
-        plan: "pme",
-        status: "active",
-        periodStart: DANS(-1),
-        periodEnd: DANS(30),
-        createdAt: MAINTENANT,
-        updatedAt: MAINTENANT,
-      },
-    ],
+    organization: [ORGANISATION_SCENARIOS, ORGANISATION_BORNES].map((org) => ({
+      ...org,
+      logo: null,
+      metadata: null,
+      organizationType: "business",
+      onboardingCompleted: true,
+      sessionSettings: { maxSessions: 0 },
+      createdAt: MAINTENANT,
+    })),
+    subscription: [ORGANISATION_SCENARIOS, ORGANISATION_BORNES].map((org, i) => ({
+      _id: oid("membreAchats", 50 + i),
+      referenceId: org._id.toHexString(),
+      plan: "pme",
+      status: "active",
+      periodStart: DANS(-1),
+      periodEnd: DANS(30),
+      createdAt: MAINTENANT,
+      updatedAt: MAINTENANT,
+    })),
     member: membresEnPlus(),
     products: [...Object.values(PRODUITS), ...Object.values(PRODUITS_SAISIE), ...PRODUITS_VOLUMINEUX],
     productcustomfields: [...Object.values(CHAMPS_PRODUITS), ...CHAMPS_FREELANCE_ACHATS, ...Object.values(CHAMPS_SAISIE)],

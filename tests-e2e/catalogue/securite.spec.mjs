@@ -1,7 +1,7 @@
 /**
  * Catalogue : droits vérifiés à l'API, pas seulement à l'écran (produits,
  * images, champs personnalisés), pour le Membre, l'Éditeur, une autre
- * entreprise et un visiteur (voir achats-banque-securite.mjs). Plus : un
+ * entreprise et un visiteur (voir achats-banque.mjs). Plus : un
  * produit d'une autre entreprise ne peut pas être lié, une image venue
  * d'ailleurs n'est pas enregistrée, et un texte piégé écrit par l'Éditeur
  * reste du texte chez le propriétaire.
@@ -12,7 +12,7 @@ import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_T
 import { CHAMPS_PRODUITS, CHAMPS_SAISIE, PRODUITS, PRODUITS_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { base } from "../base.mjs";
-import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, verifierDroits, verifierPiegeInerte } from "../achats-banque-securite.mjs";
+import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
 
 /** Données visées : « Achats » (Membre, intrus, visiteur) ou « Saisie Achats » (Éditeur). */
 const CIBLES = {
