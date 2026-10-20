@@ -24,10 +24,12 @@ export default defineConfig({
   // Un test à la fois : les données sont partagées et la machine de CI est
   // modeste (même choix que la suite de l'admin).
   workers: 1,
-  // Une seconde tentative : un vrai défaut du site échoue à chaque fois (reste
-  // rouge), seul un aléa de l'environnement (charge, écriture en base en retard)
-  // passe au second essai. Rien n'est masqué d'un défaut reproductible.
-  retries: 1,
+  // Aucune seconde tentative : certains tests de sécurité (plafonds d'offre tenus
+  // par l'API) sont déterministes mais peuvent, sous charge, échouer pour une
+  // autre raison puis passer au 2e essai, ce qui masquerait la faille. On préfère
+  // laisser quelques rouges instables (identifiés à la main) plutôt que cela.
+  // La suite est de toute façon rouge tant que les défauts du site ne sont pas corrigés.
+  retries: 0,
   forbidOnly: Boolean(process.env.CI),
   timeout: 90_000,
   expect: { timeout: 15_000 },
