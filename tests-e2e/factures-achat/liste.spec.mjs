@@ -37,8 +37,9 @@ async function ouvrirListe(page) {
 
 /** Fiche (tiroir) d'une facture, par le lien direct « ?id= ». */
 async function ouvrirFiche(page, f) {
-  await ouvrir(page, `${URL}?id=${f._id.toHexString()}`, { pret: page.getByRole("dialog").filter({ hasText: f.supplierName }).first() });
-  const tiroir = page.getByRole("dialog").filter({ hasText: f.supplierName }).first();
+  await ouvrir(page, `${URL}?id=${f._id.toHexString()}`, { pret: page.getByRole("dialog", { name: "Détail de la facture" }) });
+  const tiroir = page.getByRole("dialog", { name: "Détail de la facture" });
+  await expect(tiroir).toContainText(f.invoiceNumber || f.supplierName);
   await attendreCalme(page);
   return tiroir;
 }
@@ -88,26 +89,35 @@ test.describe("Factures d'achat : ce que la liste affiche", () => {
     const total = [...Object.values(FA), ...FACTURES_ACHAT_REMPLISSAGE].length;
     const page1 = await fournisseursAffiches(page);
     expect(page1.length).toBe(25);
-    expect(page1[0], "La facture la plus récente doit être en tête").toContain(FA.adobe.supplierName);
+    expect(page1[0], "La facture la plus récente (Adobe, 49,99 €) doit être en tête").toContain("49,99");
     await cliquer(page, page.getByRole("button", { name: "Page suivante" }));
     await attendreCalme(page);
     expect((await fournisseursAffiches(page)).length).toBe(total - 25);
   });
 
-  for (const [nom, saisie, attendu] of [
-    ["sans accent (« meta » trouve « Méta »)", "meta", FA.meta],
-    ["sans accent (« electricite » trouve « Électricité »)", "electricite", FA.provence],
-    ["par le numéro de facture", "HON-T3", FA.martin],
-    ["par le montant (« 245 »)", "245", FA.hotel],
+  // Chaque facture se reconnaît à son montant (le nom d'un fournisseur connu peut être remplacé par celui d'une marque).
+  for (const [nom, saisie, attendu, montant] of [
+    ["sans accent (« meta » trouve « Méta »)", "meta", FA.meta, "29,00"],
+    ["sans accent (« electricite » trouve « Électricité »)", "electricite", FA.provence, "78,40"],
+    ["par le numéro de facture", "HON-T3", FA.martin, "700,00"],
+    ["par le montant (« 245 »)", "245", FA.hotel, "245,00"],
   ]) {
     test(`Recherche ${nom}`, async ({ page }) => {
       await ouvrirListe(page);
       await rechercher(page, saisie);
       const lignes = await fournisseursAffiches(page);
-      expect(lignes.length, `Résultats : ${JSON.stringify(lignes)}`).toBeGreaterThan(0);
-      expect(lignes.every((l) => l.includes(attendu.supplierName))).toBe(true);
+      expect(lignes.length, `Résultats : ${JSON.stringify(lignes)}`).toBe(1);
+      expect(lignes[0], `« ${attendu.supplierName} » attendu`).toContain(montant);
     });
   }
+
+  test("Le fournisseur « Adobe Systems » s'affiche sous son nom, pas sous celui d'une autre marque", async ({ page }) => {
+    await ouvrirListe(page);
+    await rechercher(page, FA.adobe.invoiceNumber);
+    const lignes = await fournisseursAffiches(page);
+    expect(lignes.length).toBe(1);
+    expect(lignes[0], "« Adobe Systems » s'affiche « Microsoft » (le motif « ms » de « Systems » est pris pour Microsoft)").not.toContain("Microsoft");
+  });
 
   test("Filtre « Statut : En retard » puis « Effacer tous les filtres »", async ({ page }) => {
     await ouvrirListe(page);
@@ -122,9 +132,10 @@ test.describe("Factures d'achat : ce que la liste affiche", () => {
 
   test("Facture en dollars : montants affichés en dollars, pas en euros", async ({ page }) => {
     await ouvrirListe(page);
-    await rechercher(page, FA.aws.supplierName);
-    await expect(ligne(page, FA.aws)).toContainText(/\$|USD/);
-    await expect(ligne(page, FA.aws)).not.toContainText("€");
+    await rechercher(page, FA.aws.invoiceNumber);
+    await expect(lignesDonnees(page)).toHaveCount(1);
+    await expect(lignesDonnees(page).first()).toContainText(/\$|USD/);
+    await expect(lignesDonnees(page).first()).not.toContainText("€");
   });
 
   test("Fiche d'une facture à deux taux de TVA : une ligne par taux, totaux justes", async ({ page }) => {
@@ -311,7 +322,9 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   });
 
   test("Modifier depuis la fiche : fournisseur et notes enregistrés", async ({ page }) => {
-    const tiroir = await ouvrirFiche(page, FAS.aModifier);
+    await ouvrirFiche(page, FAS.aModifier);
+    // En modification, le nom du fournisseur est dans un champ : la fiche se repère comme dernière fenêtre.
+    const tiroir = page.getByRole("dialog").last();
     await tiroir.getByRole("button", { name: "Modifier" }).click();
     await tiroir.getByPlaceholder("Nom du fournisseur").fill("Fournisseur renommé à la main");
     await tiroir.getByPlaceholder("Commentaires internes...").fill("Note ajoutée après coup");
@@ -334,10 +347,12 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   });
 
   test("Rapprocher une facture de deux virements (acompte et solde) : deux liens", async ({ page }) => {
-    const tiroir = await ouvrirFiche(page, FAS.deuxPaiements);
+    await ouvrirFiche(page, FAS.deuxPaiements);
+    const tiroir = page.getByRole("dialog").last();
     for (const t of [TS.premierPaiement, TS.secondPaiement]) {
+      await attendreCalme(page);
       const bouton = tiroir.getByRole("button", { name: /Rechercher une transaction|Rattacher une autre transaction/ }).first();
-      await bouton.click();
+      await cliquer(page, bouton);
       await tiroir.getByPlaceholder("Libellé, référence, montant...").fill(t.description.split(" ").slice(-1)[0]);
       await attendreCalme(page);
       await tiroir.getByText(t.description).click();
@@ -380,12 +395,17 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
     await expect.poll(async () => (await txEnBase(TS.rapprocheeCategorie)).category, { message: "La catégorie de la facture n'est pas passée à la transaction rapprochée" }).toBe("telephone");
   });
 
+});
+
+test.describe("Factures d'achat : retirer un justificatif", () => {
+  // Confirmation par une fenêtre native du navigateur (« Retirer ce justificatif de la facture ? »), acceptée ici.
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_SAISIE_ACHATS), dialoguesAttendus: /Retirer ce justificatif/ });
+
   test("Retirer le justificatif : plus en base", async ({ page }) => {
     await simulerApercus(page);
+    page.on("dialog", (d) => d.accept().catch(() => {}));
     const tiroir = await ouvrirFiche(page, FAS.avecJustificatif);
     await tiroir.getByRole("button", { name: "Retirer ce justificatif" }).first().click();
-    const confirmation = page.getByRole("alertdialog");
-    if (await confirmation.isVisible({ timeout: 2_000 }).catch(() => false)) await confirmation.getByRole("button", { name: /Retirer|Supprimer|Confirmer/ }).click();
     await expect.poll(async () => (await enBase(FAS.avecJustificatif)).files.length).toBe(0);
   });
 });

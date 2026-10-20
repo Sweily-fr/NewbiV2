@@ -237,7 +237,7 @@ test.describe("Saisie manuelle : doublon signalé avant la création", () => {
 
   test("« Utiliser cette facture » : la facture existante s'ouvre, rien de créé", async ({ page }) => {
     await saisirDoublon(page);
-    await page.getByRole("button", { name: /Utiliser cette facture/ }).click();
+    await page.getByRole("button", { name: /Utiliser cette facture/ }).first().click();
     await expect(page.getByRole("dialog").filter({ hasText: source.supplierName }).filter({ hasText: /Modifier|Payée/ }).first()).toBeVisible();
     expect(await compter()).toBeLessThanOrEqual(2);
   });

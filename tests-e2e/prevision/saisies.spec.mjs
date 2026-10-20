@@ -29,7 +29,8 @@ async function ouvrirPrevision(page) {
 
 /** Bouton « Modifier » de la ligne d'une saisie (nom affiché dans la liste des saisies). */
 async function modifierSaisie(page, saisie) {
-  await page.getByText(saisie.name, { exact: true }).first().locator("xpath=following::button[normalize-space()='Modifier'][1]").click();
+  // Crayon de la ligne de la saisie (titre « Modifier ») ; les « Modifier » écrits sont ceux des récurrences détectées.
+  await page.getByText(saisie.name, { exact: true }).first().locator("xpath=following::button[@title='Modifier'][1]").click();
   const dialogue = fenetre(page, "Modifier la saisie");
   await expect(dialogue).toBeVisible();
   return dialogue;
@@ -98,7 +99,7 @@ verifierFormulaire({
     Commentaire: {
       cle: "notes",
       lu: (doc) => doc.notes,
-      acceptes: { "sur deux lignes": "Première ligne\nSeconde ligne" },
+      acceptes: { "avec apostrophe et accents": "Révision prévue d’ici l’été" },
     },
   },
   combinaisons: {

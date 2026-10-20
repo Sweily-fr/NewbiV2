@@ -13,9 +13,14 @@ import { FACTURES_ACHAT, FACTURES_ACHAT_REMPLISSAGE } from "../donnees/lot-achat
 import { connecteAchats } from "../achats-banque.mjs";
 
 const URL = "/dashboard/outils/factures-achat";
-// Le numéro de facture est une colonne masquée au départ : la ligne se repère par le fournisseur.
-const ouvrirListe = (page) => ouvrir(page, URL, { pret: page.getByRole("row").filter({ hasText: FACTURES_ACHAT.adobe.supplierName }) });
-const tiroir = (f) => (page) => page.getByRole("dialog").filter({ hasText: f.supplierName }).first();
+// Liste prête : onglets affichés et première ligne visible (le nom affiché d'un fournisseur
+// connu peut être remplacé par celui d'une marque, voir liste.spec.mjs).
+const ouvrirListe = async (page) => {
+  await ouvrir(page, URL, { pret: page.getByRole("tab", { name: /^Toutes/ }) });
+  await expect(page.getByRole("row").filter({ has: page.locator("button:has(svg.lucide-ellipsis)") }).first()).toBeVisible();
+};
+// Fiche d'une facture : tiroir « Détail de la facture » (le nom du fournisseur peut y être celui d'une marque).
+const tiroir = () => (page) => page.getByRole("dialog", { name: "Détail de la facture" });
 const ouvrirFiche = (f) => async (page) => {
   await ouvrir(page, `${URL}?id=${f._id.toHexString()}`, { pret: tiroir(f)(page) });
   await page.waitForTimeout(800);
