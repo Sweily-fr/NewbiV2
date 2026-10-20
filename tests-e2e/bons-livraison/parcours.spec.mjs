@@ -5,7 +5,7 @@
  * cachés repris), page d'un bon, PDF sans prix, suppression groupée, envoi
  * par e-mail. Chaque parcours a son bon (donnees/lot-devis-bc-bl.mjs).
  */
-import { test, expect, etape, fenetre, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
+import { test, expect, etape, fenetre, SELECTEUR_NOTIFICATION_ERREUR, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
 import { attendreCalme, cliquer, ouvrir } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_VENTES } from "../config.mjs";
 import { BL_VENTES as B } from "../donnees/lot-devis-bc-bl.mjs";
@@ -129,7 +129,7 @@ test.describe("Bons de livraison : actions groupées et envoi", () => {
     const f = page.getByRole("dialog").filter({ hasText: "Envoyer le bon de livraison" });
     await expect(f).toBeVisible();
     await f.getByRole("button", { name: /Envoyer au client/ }).click();
-    await page.waitForTimeout(8_000);
+    await expect(page.locator(SELECTEUR_NOTIFICATION_SUCCES).or(page.locator(SELECTEUR_NOTIFICATION_ERREUR)).first(), "Aucune annonce après l'envoi, ni succès ni erreur").toBeVisible({ timeout: 45_000 });
     const succes = await page.locator(SELECTEUR_NOTIFICATION_SUCCES).allInnerTexts().catch(() => []);
     expect(succes.map((t) => t.replace(/\s+/g, " ").trim()), "Un envoi qui a échoué est annoncé réussi").toEqual([]);
   });

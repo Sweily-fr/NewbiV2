@@ -42,7 +42,8 @@ export async function photo([collection, filtre]) {
 }
 
 /** Erreur de droits ou d'authentification dans une réponse. */
-const REFUS_DE_DROITS = /FORBIDDEN|UNAUTHENTICATED|UNAUTHORIZED|permission|autoris|n'êtes pas membre/i;
+// (« Erreur lors de la vérification des permissions : … » enrobe toute erreur interne : ce n'est pas un refus.)
+const REFUS_DE_DROITS = /FORBIDDEN|UNAUTHENTICATED|UNAUTHORIZED|Vous n'avez pas la permission|n'êtes pas membre|Non authentifié/i;
 const messages = (reponse) => reponse.errors.map((e) => `${e.extensions?.code || ""} ${e.message}`).join(" | ");
 
 async function appeler(page, op, w, qui, organisation = w) {
@@ -196,3 +197,5 @@ export const article = (texte, prix = 100) => ({ description: texte, quantity: 1
 
 /** Texte piégé (XSS stockée) : s'il s'exécute, il pose une marque et ouvre une alerte (la surveillance échoue). */
 export const PIEGE = `<img src="x-piege" onerror="window.__piege='execute';alert('code exécuté depuis un document')">`;
+/** Texte piégé court, pour les champs limités à 100 caractères (transporteur…). */
+export const PIEGE_COURT = `<img src=y onerror="window.__piege='execute'">`;

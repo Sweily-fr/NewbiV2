@@ -11,7 +11,7 @@ import { BASE_URL, connecte, SESSION_TOKEN_VENTES, SESSION_TOKEN_VENTES_EDITEUR 
 import { BL_VENTES as B, CLIENTS_VENTES, FACTURE_VENTES } from "../donnees/lot-devis-bc-bl.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { CLIENT_API, ORG, ORG_ID, PIEGE, verifierDroits } from "../devis/droits.mjs";
+import { CLIENT_API, ORG, ORG_ID, PIEGE, PIEGE_COURT, verifierDroits } from "../devis/droits.mjs";
 import { epingler, ouvrirPanneau } from "../devis/ventes.mjs";
 
 const _id = (doc) => doc._id;
@@ -120,7 +120,8 @@ verifierDroits({
 });
 
 test.describe("Bons de livraison : jamais de prix", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_VENTES) });
+  // Requête refusée par le schéma GraphQL (400) : le navigateur l'écrit dans la console, c'est voulu.
+  test.use({ storageState: connecte(SESSION_TOKEN_VENTES), erreursConsoleAutorisees: /status of 400.*graphql/ });
 
   test("L'API refuse de renvoyer un prix sur une ligne de bon de livraison", async ({ page }) => {
     await ouvrir(page, "/dashboard");
@@ -162,8 +163,8 @@ test.describe("Bons de livraison : un texte piégé ne s'exécute jamais", () =>
         w: ORG,
         input: {
           notes: `Instructions ${PIEGE}`,
-          carrier: `Transporteur ${PIEGE}`,
-          trackingNumber: "SUIVI<b>piege</b>",
+          carrier: PIEGE_COURT,
+          trackingNumber: "SUIVI-PIEGE-01",
           headerNotes: `Notes ${PIEGE}`,
           footerNotes: `Bas de page ${PIEGE}`,
           termsAndConditions: `Conditions ${PIEGE}`,

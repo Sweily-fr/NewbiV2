@@ -102,8 +102,9 @@ export async function textePdf(chemin) {
   const racine = path.resolve("node_modules/pdfjs-dist");
   const pdfjs = await import(path.join(racine, "legacy/build/pdf.mjs"));
   const octets = new Uint8Array(readFileSync(chemin));
+  const entete = Buffer.from(octets.subarray(0, 5)).toString();
   const document = await pdfjs.getDocument({
-    data: octets,
+    data: octets.slice(),
     disableFontFace: true,
     isEvalSupported: false,
     standardFontDataUrl: `${path.join(racine, "standard_fonts")}/`,
@@ -113,7 +114,7 @@ export async function textePdf(chemin) {
     const contenu = await (await document.getPage(i)).getTextContent();
     pages.push(contenu.items.map((x) => x.str).join(" "));
   }
-  return { pages: document.numPages, texte: pages.join("\n").replace(/\s+/g, " "), entete: Buffer.from(octets.slice(0, 5)).toString() };
+  return { pages: document.numPages, texte: pages.join("\n").replace(/\s+/g, " "), entete };
 }
 
 /**

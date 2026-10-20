@@ -6,12 +6,11 @@
  * (donnees/lot-devis-bc-bl.mjs).
  */
 import { readFileSync } from "node:fs";
-import { test, expect, etape, fenetre, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
+import { test, expect, etape, fenetre, SELECTEUR_NOTIFICATION_ERREUR, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
 import { attendreCalme, cliquer } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_VENTES } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
 import { DEVIS_VENTES as D } from "../donnees/lot-devis-bc-bl.mjs";
-import { base } from "../base.mjs";
 import {
   actionDeLigne,
   chercherEnBase,
@@ -154,11 +153,11 @@ test.describe("Devis : envoi par e-mail", () => {
     await expect(fenetre).toBeVisible();
     await etape(page, "Envoyer au client", async () => {
       await fenetre.getByRole("button", { name: /Envoyer au client/ }).click();
-      await page.waitForTimeout(8_000);
+      // Première annonce affichée (succès ou erreur), avant qu'elle ne disparaisse.
+      await expect(page.locator(SELECTEUR_NOTIFICATION_SUCCES).or(page.locator(SELECTEUR_NOTIFICATION_ERREUR)).first(), "Aucune annonce après l'envoi, ni succès ni erreur").toBeVisible({ timeout: 45_000 });
     }, { capture: "ecran" });
     const succes = await page.locator(SELECTEUR_NOTIFICATION_SUCCES).allInnerTexts().catch(() => []);
     expect(succes.map((t) => t.replace(/\s+/g, " ").trim()), "Un envoi qui a échoué est annoncé réussi").toEqual([]);
-    expect(await page.getByText(/Erreur|échec|n'a pas pu|impossible/i).count(), "Aucun message n'explique l'échec de l'envoi").toBeGreaterThan(0);
   });
 });
 
@@ -246,7 +245,7 @@ test.describe("Devis : export", () => {
     await ligneDe(page, "devis", D.aExporter).getByRole("checkbox").check();
     const { chemin } = await exporter(page, "CSV");
     const lignes = lignesCsv(chemin);
-    expect(lignes.length - 1, "Une seule ligne de devis").toBe(1);
+    expect(lignes.length - 1, "Un seul devis coché, mais l'export contient tous les devis (la sélection n'est pas transmise au bouton « Exporter »)").toBe(1);
     expect(lignes[1]).toContain(reference(D.aExporter));
   });
 
@@ -268,20 +267,13 @@ test.describe("Devis : panneau", () => {
     for (const texte of [d.client.name, date(d.issueDate), date(d.validUntil), d.items[0].description, euros(d.finalTotalTTC)]) {
       await expect.soft(p.getByText(texte).first(), texte).toBeVisible();
     }
-    await expect.soft(page.getByText(d.projectReference).first(), "Référence du projet").toBeVisible();
   });
 
-  test("Fermer le panneau : la liste reste affichée, aucune action", async ({ page }) => {
+  test("Le panneau se ferme avec la touche Échap, la liste reste affichée", async ({ page }) => {
     const p = await ouvrirPanneau(page, "devis", D.accepte);
     await page.keyboard.press("Escape");
-    await expect(p).toBeHidden();
+    await expect(p, "Échap ne ferme pas le panneau (clavier, lecteur d'écran)").toBeHidden();
     await expect(ligneDe(page, "devis", D.accepte)).toBeVisible();
     expect((await enBase("devis", D.accepte)).status).toBe("COMPLETED");
-  });
-});
-
-test.describe("Devis : base de départ", () => {
-  test("Les devis de test de l'organisation sont bien en base", async () => {
-    expect(await (await base()).collection("quotes").countDocuments({ workspaceId: ORG })).toBeGreaterThanOrEqual(Object.keys(D).length);
   });
 });

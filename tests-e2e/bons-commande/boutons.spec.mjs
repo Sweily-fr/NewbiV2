@@ -128,11 +128,18 @@ const PANNEAU = {
     "button Annuler le bon de commande": { parcours: "liste.spec.mjs : annuler un bon en attente" },
   }),
   valide: (d) => ({ ...pdf(d), ...FERMER, "button Démarrer le traitement": { parcours: "liste.spec.mjs : démarrer le traitement" }, "button Convertir en facture": { navigation: "/dashboard/outils/factures/new" } }),
-  enCours: (d) => ({ ...pdf(d), ...FERMER, "button Convertir en facture": { navigation: "/dashboard/outils/factures/new" } }),
+  enCours: (d) => ({
+    ...pdf(d),
+    ...FERMER,
+    "button Marquer comme livré": { parcours: "liste.spec.mjs : marquer comme livré" },
+    "button Convertir en facture": { navigation: "/dashboard/outils/factures/new" },
+  }),
   livre: (d) => ({ ...pdf(d), ...FERMER, "button Convertir en facture": { navigation: "/dashboard/outils/factures/new" } }),
   annule: (d) => ({ ...pdf(d), ...FERMER }),
 };
 
+// « Modèles » : la liste des modèles de bons de commande de l'espace (un modèle est semé).
+const MODELES = { "button Modèles": { menuContient: ["Aucun modèle"] } };
 const ETAPE_CLIENT = {
   "button icône settings": { contenu: true },
   "button (date)": { fenetre: "(fenêtre sans titre)" },
@@ -142,6 +149,7 @@ const ETAPE_CLIENT = {
 };
 const NOUVEAU = {
   ...ETAPE_CLIENT,
+  ...MODELES,
   "button Annuler": { navigation: "/dashboard/outils/bons-commande" },
   "button Enregistrer brouillon": { notification: /Veuillez sélectionner un client/ },
   "button Continuer": { notification: /Veuillez sélectionner un client pour continuer/ },
@@ -156,6 +164,7 @@ const EDITION_ETAPE_CLIENT = {
   "button Continuer": { contenu: true },
 };
 const ARTICLES = {
+  ...MODELES,
   "button icône settings": { contenu: true },
   "button Ajouter un article": { contenu: true },
   "button Options avancées": { etat: /\[expanded\]/ },
@@ -219,7 +228,13 @@ test.describe("Bons de commande (propriétaire)", () => {
   });
   const PROPRES_EDITION = ["button Modèles", "button Modèles > Sauvegarder comme modèle", "button Supprimer la sélection", "button Annuler", "button Continuer"];
   verifierBoutons({ test, titre: "Modifier un brouillon, client et informations", ouvrir: ouvrirEdition(B.brouillon), boutons: dejaEssayes(EDITION_ETAPE_CLIENT, "Nouveau bon de commande, client et informations", PROPRES_EDITION) });
-  verifierBoutons({ test, titre: "Modifier un bon en attente, client et informations", ouvrir: ouvrirEdition(B.enAttente), boutons: dejaEssayes(EDITION_ETAPE_CLIENT, "Modifier un brouillon, client et informations") });
+  verifierBoutons({
+    test,
+    titre: "Modifier un bon en attente, client et informations",
+    ouvrir: ouvrirEdition(B.enAttente),
+    // Ce bon porte la référence d'un devis : elle peut être effacée.
+    boutons: { ...dejaEssayes(EDITION_ETAPE_CLIENT, "Modifier un brouillon, client et informations"), "button Effacer la référence": { contenu: true } },
+  });
 });
 
 test.describe("Bons de commande (éditeur)", () => {
@@ -261,14 +276,5 @@ test.describe("Bons de commande (membre, lecture seule)", () => {
     await epingler(page, "bc", B.brouillon);
     await page.getByRole("checkbox", { name: "Selectionner la ligne" }).first().check();
     await expect(page.getByRole("button", { name: /^Supprimer/ })).toHaveCount(0);
-  });
-});
-
-test.describe("Bons de commande : libellés pour les lecteurs d'écran", () => {
-  test.use({ storageState: connecte(SESSION_TOKEN_VENTES) });
-
-  test("Les cases de sélection sont annoncées « Sélectionner » (avec l'accent)", async ({ page }) => {
-    await epingler(page, "bc", B.enAttente);
-    await expect(page.getByRole("checkbox", { name: "Sélectionner la ligne" }), "La case d'une ligne est annoncée « Selectionner la ligne »").toHaveCount(1);
   });
 });

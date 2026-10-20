@@ -84,7 +84,9 @@ test.describe("Offre d'entrée : signatures électroniques (10 par mois)", () =>
     const creees = (await demandesDe(F.cachet)) - avant;
     expect(
       creees,
-      `Une demande de cachet a été créée et transmise au prestataire au-delà du quota (réponse : ${messages(reponse) || JSON.stringify(reponse.data)})`,
+      // L'API ne contrôle ni le quota ni la signature préalable du client : elle enregistre la demande, puis
+      // ne s'arrête que faute de certificat de l'entreprise (une entreprise qui en a un passerait).
+      `Demande de cachet enregistrée au-delà du quota, pour un devis que le client n'a pas signé (réponse : ${messages(reponse) || JSON.stringify(reponse.data)})`,
     ).toBe(0);
     expect(messages(reponse), "Le refus doit être expliqué").toMatch(/\S/);
   });
@@ -133,7 +135,8 @@ test.describe("Signature qualifiée (QES) : réservée à l'offre Entreprise", (
     expect(reponse.sansReponse, "L'API n'a pas répondu").toBe(false);
     expect(
       (await demandesDe(doc)) - avant,
-      `Une demande de signature qualifiée a été créée sur l'offre PME (réponse : ${messages(reponse)})`,
+      // Aucun contrôle de l'offre : la demande est enregistrée, l'envoi ne s'arrête que faute de certificat.
+      `Demande de signature qualifiée enregistrée sur l'offre PME, sans contrôle de l'offre (réponse : ${messages(reponse)})`,
     ).toBe(0);
   });
 });

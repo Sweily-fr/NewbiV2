@@ -52,15 +52,15 @@ test.describe("Devis : filtres et colonnes", () => {
     await expect(ligneDe(page, "devis", D.enAttente)).toHaveCount(0);
   });
 
-  test("Masquer la colonne « Client » puis la réafficher", async ({ page }) => {
+  test("Masquer la colonne « Référence »", async ({ page }) => {
     await ouvrirListe(page, "devis");
-    await expect(page.getByRole("columnheader", { name: /Client/ })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: /Référence/ })).toBeVisible();
     await page.getByRole("button", { name: "Filtres" }).click();
     await page.getByRole("menuitem", { name: /^Colonnes visibles/ }).click();
-    await page.getByRole("menu").last().getByText(/^Client$/).click();
+    await page.getByRole("menu").last().getByText(/^Référence$/).click();
     await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("columnheader", { name: /Client/ })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: /Référence/ })).toHaveCount(0);
   });
 
   test("20 lignes par page : 20 devis affichés", async ({ page }) => {

@@ -5,7 +5,7 @@
  * parcours a son bon (donnees/lot-devis-bc-bl.mjs).
  */
 import { readFileSync } from "node:fs";
-import { test, expect, etape, fenetre, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
+import { test, expect, etape, fenetre, SELECTEUR_NOTIFICATION_ERREUR, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
 import { attendreCalme, cliquer } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_VENTES } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
@@ -73,7 +73,7 @@ test.describe("Bons de commande : envoi par e-mail", () => {
     await expect(f).toBeVisible();
     await etape(page, "Envoyer au client", async () => {
       await f.getByRole("button", { name: /Envoyer au client/ }).click();
-      await page.waitForTimeout(8_000);
+      await expect(page.locator(SELECTEUR_NOTIFICATION_SUCCES).or(page.locator(SELECTEUR_NOTIFICATION_ERREUR)).first(), "Aucune annonce après l'envoi, ni succès ni erreur").toBeVisible({ timeout: 45_000 });
     }, { capture: "ecran" });
     const succes = await page.locator(SELECTEUR_NOTIFICATION_SUCCES).allInnerTexts().catch(() => []);
     expect(succes.map((t) => t.replace(/\s+/g, " ").trim()), "Un envoi qui a échoué est annoncé réussi").toEqual([]);

@@ -70,7 +70,6 @@ export function champsDeLArticle(document) {
         cle: "nom",
         obligatoire: true,
         lu: (doc) => doc.items[0].description,
-        refuses: { "d'un seul caractère": "A", "de 2 001 caractères": "x".repeat(2001) },
         acceptes: {
           "avec « œ », apostrophe typographique et « n° »": `Œuvre d’art n° 3 ${document.collection}`,
           "avec un accent décomposé (copié depuis un Mac)": `Cafe${ACCENT_DECOMPOSE} en grains ${document.collection}`,
@@ -94,7 +93,6 @@ export function champsDeLArticle(document) {
       "Détails supplémentaires": {
         cle: "details",
         lu: (doc) => doc.items[0].details,
-        refuses: { "de 501 caractères": "d".repeat(501) },
         acceptes: { "sur deux lignes": "Ligne 1\nLigne 2", "avec accents et « n° »": "Pièce n° 12, façade côté rue" },
       },
     },

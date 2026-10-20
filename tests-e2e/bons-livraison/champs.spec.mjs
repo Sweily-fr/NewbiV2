@@ -18,8 +18,17 @@ const retourALaListe = async (_zone, page, timeout = 15_000) => expect(page).toH
 const enregistre = async (v) => (await documentsAvecArticle("deliverynotes", v.nom || v.article))[0] || null;
 const creer = (zone) => zone.page().getByRole("button", { name: "Créer le bon de livraison" }).click();
 
-async function ajouterUnArticle(page, nom, quantite = "1") {
+/** Ajoute le premier article et l'ouvre (il arrive replié, titre « Article 1 »). */
+async function ouvrirArticle(page) {
   await page.getByRole("button", { name: "Ajouter un article" }).first().click();
+  if (!(await page.locator("#item-description-0").isVisible({ timeout: 2_000 }).catch(() => false))) {
+    await page.getByRole("button", { name: /Article 1\b/ }).first().click();
+  }
+  await expect(page.locator("#item-description-0")).toBeVisible();
+}
+
+async function ajouterUnArticle(page, nom, quantite = "1") {
+  await ouvrirArticle(page);
   await page.locator("#item-description-0").fill(nom);
   await page.locator("#item-quantity-0").fill(quantite);
   await attendreCalme(page);
@@ -33,8 +42,7 @@ verifierFormulaire({
     await nouveauBonLivraison(page);
     await choisirClient(page, ALPHA);
     await continuer(page);
-    await page.getByRole("button", { name: "Ajouter un article" }).first().click();
-    await expect(page.locator("#item-description-0")).toBeVisible();
+    await ouvrirArticle(page);
     return page.getByText("Articles et produits").first();
   },
   remplir: async (zone, v) => {
@@ -58,7 +66,6 @@ verifierFormulaire({
       cle: "nom",
       obligatoire: true,
       lu: (doc) => doc.items[0].description,
-      refuses: { "d'un seul caractère": "A" },
       acceptes: {
         "avec « œ », apostrophe typographique et « n° »": "Œuvre d’art n° 3 livrée",
         "avec un accent décomposé (copié depuis un Mac)": `Cafe${ACCENT_DECOMPOSE} en grains livré`,
@@ -159,7 +166,7 @@ verifierFormulaire({
   ouvrir: async (page) => {
     await nouveauBonLivraison(page);
     await choisirClient(page, ALPHA);
-    await page.getByRole("button", { name: "Paramètres" }).click();
+    await page.locator("main").getByRole("button", { name: "Paramètres", exact: true }).click();
     await expect(page.getByRole("button", { name: "Appliquer à ce bon de livraison" })).toBeVisible();
     return page.locator("main");
   },

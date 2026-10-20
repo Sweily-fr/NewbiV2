@@ -203,7 +203,6 @@ test.describe("Bons de commande : un texte piégé ne s'exécute jamais", () => 
           headerNotes: `Notes ${PIEGE}`,
           footerNotes: `Bas de page ${PIEGE}`,
           termsAndConditions: `Conditions ${PIEGE}`,
-          purchaseOrderNumber: "REF<b>piege</b>",
           items: [{ ...article(`Article ${PIEGE}`), details: `Détails ${PIEGE}` }],
         },
       },

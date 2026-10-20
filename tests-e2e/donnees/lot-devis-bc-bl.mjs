@@ -453,6 +453,15 @@ export const BL_VOLUME = Array.from({ length: 55 }, (_, i) => {
   });
 });
 
+// Cibles des contrôles de droits (appelées par l'API, jamais ouvertes dans une liste) : les plus
+// anciennes, pour que les documents ouverts dans les listes restent parmi les 50 qu'elles chargent,
+// même après les créations des tests. Le texte piégé, lui, s'ouvre dans la liste.
+for (const docs of [DEVIS_VENTES, BC_VENTES, BL_VENTES]) {
+  Object.entries(docs).forEach(([cle, doc], i) => {
+    if (cle.startsWith("cible") && cle !== "cibleXss") doc.createdAt = DANS(-(400 + i));
+  });
+}
+
 // --- Facture (génération croisée facture → bon de livraison) --------------------
 
 export const FACTURE_VENTES = (() => {

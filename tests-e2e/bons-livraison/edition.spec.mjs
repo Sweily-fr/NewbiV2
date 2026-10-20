@@ -11,7 +11,7 @@ import { BL_VENTES as B } from "../donnees/lot-devis-bc-bl.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { ORG } from "../devis/droits.mjs";
 import { continuer } from "../editeur.mjs";
-import { chercherEnBase, enBase, idDe, notification, relu } from "../devis/ventes.mjs";
+import { chercherEnBase, enBase, idDe, relu } from "../devis/ventes.mjs";
 
 test.use({ storageState: connecte(SESSION_TOKEN_VENTES) });
 
@@ -26,7 +26,7 @@ test.describe("Bons de livraison : modifier un bon existant", () => {
     await etape(page, "Enregistrer les modifications", async () => {
       await continuer(page);
       await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
-      await expect(notification(page, "Bon de livraison mis à jour")).toBeVisible({ timeout: 30_000 });
+      await expect(page).toHaveURL(/\/dashboard\/outils\/bons-de-livraison(\?|$)/, { timeout: 30_000 });
     }, { capture: "ecran" });
     await relu("bl", b, (x) => x?.carrier, "Transporteur en base").toBe("Geodis Messagerie");
     const apres = await enBase("bl", b);
@@ -40,7 +40,7 @@ test.describe("Bons de livraison : modifier un bon existant", () => {
     await page.getByPlaceholder(/^Ex\. Chronopost/).fill("Transport modifié après le devis");
     await continuer(page);
     await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
-    await expect(notification(page, "Bon de livraison mis à jour")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveURL(/\/dashboard\/outils\/bons-de-livraison(\?|$)/, { timeout: 30_000 });
     await relu("bl", b, (x) => x?.carrier, "Modification enregistrée").toBe("Transport modifié après le devis");
     await etape(page, "Prix cachés du devis toujours en base", async () => {
       const apres = await enBase("bl", b);

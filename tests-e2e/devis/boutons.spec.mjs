@@ -253,8 +253,8 @@ test.describe("Devis (propriétaire)", () => {
       "button Modifier vos informations entreprise": { fenetre: "Informations de l'entreprise" },
       "button Modifier vos informations légales": { fenetre: "Informations légales" },
       "button Configurer les coordonnées bancaires": { fenetre: "Coordonnées bancaires" },
-      // Couleur du texte : bouton sans nom (voir « accessibilité »), puis couleurs de l'en-tête.
-      "button ": { fenetre: "(fenêtre sans titre)" },
+      // Bouton sans nom (couleur du texte, voir « accessibilité ») : non cliqué ici, les couleurs nommées le sont.
+      "button ": { parcours: "accessibilité : commandes sans nom des paramètres" },
       "button FFFFFF": { fenetre: "(fenêtre sans titre)" },
       "button 5C50FF": { fenetre: "(fenêtre sans titre)" },
       "button Au centre": { sansEffet: "position du client, visible sur l'aperçu seulement" },
