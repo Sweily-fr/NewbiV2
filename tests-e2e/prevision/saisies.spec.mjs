@@ -29,8 +29,7 @@ async function ouvrirPrevision(page) {
 
 /** Bouton « Modifier » de la ligne d'une saisie (nom affiché dans la liste des saisies). */
 async function modifierSaisie(page, saisie) {
-  const ligne = page.locator("main div").filter({ hasText: saisie.name }).filter({ has: page.getByRole("button", { name: "Modifier" }) }).last();
-  await ligne.getByRole("button", { name: "Modifier" }).click();
+  await page.getByText(saisie.name, { exact: true }).first().locator("xpath=following::button[normalize-space()='Modifier'][1]").click();
   const dialogue = fenetre(page, "Modifier la saisie");
   await expect(dialogue).toBeVisible();
   return dialogue;
@@ -72,6 +71,8 @@ verifierFormulaire({
   valider: (dialogue) => dialogue.getByRole("button", { name: "Ajouter", exact: true }).click(),
   boutonValider: (dialogue) => dialogue.getByRole("button", { name: "Ajouter", exact: true }),
   valeurs: (cas) => ({ nom: `Prévision ${lettres(cas)}`, montant: "250", notes: "" }),
+  // La page affiche des montants négatifs en rouge : les messages se lisent dans la fenêtre.
+  zoneErreurs: (page) => page.getByRole("dialog").last(),
   enregistre: async (v) => (await base()).collection("manualcashflowentries").findOne({ workspaceId: ORG_SAISIE, name: (v.nom || "").trim() || "__aucun__" }),
   champs: {
     Libellé: {
@@ -91,7 +92,8 @@ verifierFormulaire({
       lu: (doc) => doc.amount,
       normaliser: (v) => Number(v.replace(",", ".")),
       refuses: { "à zéro": "0", négatif: "-100" },
-      acceptes: { "avec centimes et virgule (1234,56)": "1234,56" },
+      // Saisie au point décimal : le navigateur des tests (format anglais) ignore la virgule dans un champ numérique.
+      acceptes: { "avec centimes (1234.56)": "1234.56" },
     },
     Commentaire: {
       cle: "notes",
@@ -139,7 +141,7 @@ test.describe("Prévision : chaque action vérifiée en base", () => {
     const dialogue = await modifierSaisie(page, SAISIES_SAISIE.aModifier);
     const montant = dialogue.getByPlaceholder("0,00");
     await montant.fill("");
-    await montant.pressSequentially("95,50");
+    await montant.pressSequentially("95.50");
     await dialogue.getByRole("button", { name: "Enregistrer" }).click();
     await expect(dialogue).toBeHidden({ timeout: 15_000 });
     expect((await entreeEnBase(SAISIES_SAISIE.aModifier)).amount).toBe(95.5);

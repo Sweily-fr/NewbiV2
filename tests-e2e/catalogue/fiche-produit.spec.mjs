@@ -63,7 +63,7 @@ async function remplir(fenetre, v) {
     if (v[cle] !== undefined) await fenetre.getByPlaceholder(indication, { exact: true }).fill(v[cle]);
   }
   if (v.prix !== undefined) {
-    // Saisie au clavier, comme une personne (« 12,50 » avec la virgule française).
+    // Saisie au clavier, comme une personne.
     const prix = fenetre.getByPlaceholder("0.00", { exact: true });
     await prix.fill("");
     if (v.prix) await prix.pressSequentially(v.prix);
@@ -118,7 +118,8 @@ verifierFormulaire({
       sansEspaces: true,
       lu: (doc) => doc.unitPrice,
       refuses: { négatif: "-5" },
-      acceptes: { "avec une virgule (12,50)": "12,50", "nul (produit offert)": "0", "de 1 000 000 €": "1000000" },
+      // Saisie au point décimal : le navigateur des tests (format anglais) ignore la virgule dans un champ numérique.
+      acceptes: { "avec centimes (12.50)": "12.50", "nul (produit offert)": "0", "de 1 000 000 €": "1000000" },
       normaliser: (v) => Number(v.replace(",", ".")),
     },
     "Taux de TVA": {

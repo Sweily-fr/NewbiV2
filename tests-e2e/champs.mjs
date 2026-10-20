@@ -60,9 +60,13 @@ export async function erreursVisibles(page, zone = page) {
  *     enregistrée pour ce champ (par défaut doc[cle]).
  *   combinaisons : { cas: { valeurs: {…}, accepte: true|false } } : situations
  *     réelles qui touchent plusieurs champs (client à l'étranger…)
+ *   zoneErreurs(page) : zone où lire les messages d'erreur (facultatif, toute la page par défaut)
  */
 export function verifierFormulaire(formulaire) {
   const { nom, ouvrir, remplir, valider, valeurs, enregistre, champs } = formulaire;
+  // Zone où chercher les messages d'erreur (par défaut toute la page) : une page qui affiche
+  // déjà du texte rouge (montants négatifs) la limite à la fenêtre du formulaire.
+  const zoneErreurs = formulaire.zoneErreurs || ((page) => page);
   const ferme = formulaire.ferme || (async (zone, _page, timeout = 15_000) => expect(zone).toBeHidden({ timeout }));
 
   async function essayer(page, cas, modifier) {
@@ -85,7 +89,7 @@ export function verifierFormulaire(formulaire) {
         // Souple : la vérification en base dit ensuite si la saisie a été enregistrée quand même.
         let erreurs = [];
         for (const fin = Date.now() + 6_000; Date.now() < fin; ) {
-          erreurs = await erreursVisibles(page, page);
+          erreurs = await erreursVisibles(page, zoneErreurs(page));
           if (erreurs.length) break;
           await page.waitForTimeout(300);
         }
@@ -107,7 +111,7 @@ export function verifierFormulaire(formulaire) {
         // Tant que le formulaire est ouvert, un message d'erreur qui apparaît (même en retard) est le motif de l'échec.
         let derniers = [];
         await expect(async () => {
-          derniers = await erreursVisibles(page, page);
+          derniers = await erreursVisibles(page, zoneErreurs(page));
           expect(derniers, "Messages d'erreur affichés pour une saisie juste").toEqual([]);
           await ferme(zone, page, 1_000);
         }, `Le formulaire ne s'est pas fermé (messages : ${JSON.stringify(derniers)})`).toPass({ timeout: 15_000 });
@@ -142,7 +146,7 @@ export function verifierFormulaire(formulaire) {
           "Un message par champ obligatoire (ou bouton grisé)",
           async () => {
             if (grise) return;
-            const erreurs = await erreursVisibles(page, page);
+            const erreurs = await erreursVisibles(page, zoneErreurs(page));
             expect(erreurs.length, `Messages affichés : ${erreurs.join(" | ") || "aucun"}`).toBeGreaterThan(0);
           },
           { capture: "ecran" },

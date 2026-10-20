@@ -62,7 +62,7 @@ async function choisirCategorie(tiroir, recherche, libelle) {
   await page.getByRole("option", { name: libelle, exact: true }).click();
 }
 
-/** Montant au clavier, comme une personne (« 1234,56 » avec la virgule française). */
+/** Montant au clavier, comme une personne. */
 async function saisirMontant(champ, valeur) {
   await champ.fill("");
   if (valeur) await champ.pressSequentially(valeur);
@@ -129,7 +129,8 @@ verifierFormulaire({
       lu: (doc) => doc.amountTTC,
       normaliser: (v) => Number(v.replace(",", ".")),
       refuses: { négatif: "-50" },
-      acceptes: { "avec centimes et virgule (1234,56)": "1234,56", "de 98 765,43 €": "98765,43" },
+      // Saisie au point décimal : le navigateur des tests (format anglais) ignore la virgule dans un champ numérique.
+      acceptes: { "avec centimes (1234.56)": "1234.56", "de 98 765,43 €": "98765.43" },
     },
     "Référence interne": {
       cle: "reference",
@@ -164,7 +165,7 @@ test.describe("Saisie manuelle : ce qui est enregistré", () => {
   });
 
   test("TTC 105,50 € à 5,5 % : HT 100 € et TVA 5,50 € enregistrés", async ({ page }) => {
-    const doc = await creer(page, { fournisseur: "Fournisseur Taux Réduit", numero: "CALC-55", tva: "5,5% - Taux réduit", ttc: "105,50" });
+    const doc = await creer(page, { fournisseur: "Fournisseur Taux Réduit", numero: "CALC-55", tva: "5,5% - Taux réduit", ttc: "105.50" });
     expect({ ht: doc.amountHT, tva: doc.amountTVA, taux: doc.vatRate, ttc: doc.amountTTC }).toEqual({ ht: 100, tva: 5.5, taux: 5.5, ttc: 105.5 });
   });
 
@@ -174,7 +175,7 @@ test.describe("Saisie manuelle : ce qui est enregistré", () => {
   });
 
   test("Catégorie trouvée sans accent (« electricite ») : sous-catégorie et catégorie large enregistrées", async ({ page }) => {
-    const doc = await creer(page, { fournisseur: "Fournisseur Énergie Pro", numero: "CAT-ELEC", ttc: "78,40", categorie: ["electricite", "Électricité"] });
+    const doc = await creer(page, { fournisseur: "Fournisseur Énergie Pro", numero: "CAT-ELEC", ttc: "78.40", categorie: ["electricite", "Électricité"] });
     expect({ sous: doc.subcategory, large: doc.category }).toEqual({ sous: "electricite", large: "UTILITIES" });
   });
 
@@ -193,7 +194,7 @@ test.describe("Saisie manuelle : ce qui est enregistré", () => {
     await tiroir.getByRole("combobox").nth(1).click();
     await page.getByRole("option", { name: "5,5% - Taux réduit", exact: true }).click();
     await saisirMontant(tiroir.getByRole("spinbutton", { name: "Base HT à 5,5 %" }), "100");
-    await saisirMontant(tiroir.getByRole("spinbutton", { name: "TVA à 5,5 %" }), "5,50");
+    await saisirMontant(tiroir.getByRole("spinbutton", { name: "TVA à 5,5 %" }), "5.50");
     await boutonValider(tiroir).click();
     await expect(tiroir).toBeHidden({ timeout: 15_000 });
     const doc = await factureEnregistree({ numero: "MULTI-TAUX" });

@@ -13,7 +13,8 @@ import { FACTURES_ACHAT, FACTURES_ACHAT_REMPLISSAGE } from "../donnees/lot-achat
 import { connecteAchats } from "../achats-banque.mjs";
 
 const URL = "/dashboard/outils/factures-achat";
-const ouvrirListe = (page) => ouvrir(page, URL, { pret: page.getByRole("row").filter({ hasText: FACTURES_ACHAT.adobe.invoiceNumber }) });
+// Le numéro de facture est une colonne masquée au départ : la ligne se repère par le fournisseur.
+const ouvrirListe = (page) => ouvrir(page, URL, { pret: page.getByRole("row").filter({ hasText: FACTURES_ACHAT.adobe.supplierName }) });
 const tiroir = (f) => (page) => page.getByRole("dialog").filter({ hasText: f.supplierName }).first();
 const ouvrirFiche = (f) => async (page) => {
   await ouvrir(page, `${URL}?id=${f._id.toHexString()}`, { pret: tiroir(f)(page) });

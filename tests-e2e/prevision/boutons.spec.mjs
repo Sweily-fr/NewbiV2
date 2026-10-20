@@ -42,13 +42,22 @@ const ECRITURE = {
   "button Base > Nouveau scénario": { fenetre: "Nouveau scénario" },
   "button Ajouter une prévision": { fenetre: "Nouvelle saisie" },
   "button Exporter": { fenetre: "Exporter la prévision" },
+  // Saisies (« Modifier la saisie ») et récurrence détectée (« Modifier la récurrence ») : même nom, la première ligne est une saisie.
   "button Modifier": { fenetre: "Modifier la saisie" },
   "button Analyser": { parcours: "prevision/securite.spec.mjs : relancer la détection des récurrences (crée des récurrences)" },
+  // Récurrence détectée « Orange Pro » : en faire une prévision, la masquer.
+  "button Ajouter": { fenetre: /^Nouvelle prévision à partir de « Orange Pro »$/ },
+  "button Masquer": { parcours: "prevision/securite.spec.mjs : masquer une récurrence détectée" },
 };
 
 test.describe("Prévision (propriétaire)", () => {
   test.use({ storageState: connecteAchats(SESSION_TOKEN_ACHATS) });
-  verifierBoutons({ test, titre: "Prévision", ouvrir: ouvrirPrevision, boutons: { ...ECRITURE, ...COMMUNS } });
+  verifierBoutons({
+    test,
+    titre: "Prévision",
+    ouvrir: ouvrirPrevision,
+    boutons: { ...ECRITURE, ...COMMUNS, "button Supprimer": { parcours: "prevision/securite.spec.mjs : supprimer une récurrence détectée" } },
+  });
 });
 
 test.describe("Prévision (éditeur)", () => {

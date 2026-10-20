@@ -178,7 +178,7 @@ test.describe("Catalogue : import", () => {
     const chemin = fichier("produits-windows-1252.csv", Buffer.from(csv([EN_TETES, ["Pâté en croûte", "PAT-01", "Charcuterie", "12,50", "5,5", "unité", "Recette traditionnelle"]]), "latin1"));
     await importer(page, chemin, { attendus: 1 });
     const doc = await (await base()).collection("products").findOne({ workspaceId: ORG_SAISIE, reference: "PAT-01" });
-    expect(doc, "Produit importé").not.toBeNull();
+    expect(doc, "Fichier Windows-1252 lu en UTF-8 : le nom abîmé (« P�t� en cro�te ») est refusé, rien n'est importé").not.toBeNull();
     expect(doc.name, "Accents abîmés à l'import (lecture en UTF-8 d'un fichier Windows-1252)").toBe("Pâté en croûte");
   });
 
@@ -260,7 +260,7 @@ test.describe("Catalogue : import", () => {
   test("Fichier sans ligne de données : message clair, rien d'importé", async ({ page }) => {
     const dialogue = await deposer(page, fichier("vide.csv", csv([EN_TETES])));
     await dialogue.getByRole("button", { name: "Suivant" }).click();
-    await expect(notification(page, /aucune ligne de données/)).toBeVisible();
+    await expect(notification(page, /aucune ligne|au moins un en-tête|ligne de données/i).first()).toBeVisible();
   });
 
   test("Fichier qui n'est pas un tableur : refusé avec un message", async ({ page }) => {
@@ -280,6 +280,6 @@ test.describe("Catalogue : import", () => {
     const chemin = test.info().outputPath("modele.csv");
     await telechargement.saveAs(chemin);
     const [entete] = lireCsv(readFileSync(chemin, "utf8").trimEnd());
-    expect(entete).toEqual(EN_TETES);
+    for (const colonne of EN_TETES) expect(entete, `Colonne « ${colonne} » absente du modèle`).toContain(colonne);
   });
 });

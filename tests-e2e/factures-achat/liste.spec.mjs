@@ -25,7 +25,10 @@ const ORG_ACHATS = COMPTES.achats.organisation._id;
 const notification = (page, texte) => page.locator("[data-sonner-toast]").filter({ hasText: texte });
 const enBase = async (doc) => (await base()).collection("purchaseinvoices").findOne({ _id: doc._id });
 const txEnBase = async (doc) => (await base()).collection("transactions").findOne({ _id: doc._id });
-const ligne = (page, f) => page.getByRole("row").filter({ hasText: f.invoiceNumber || f.supplierName });
+// Le numéro de facture est une colonne masquée au départ : une ligne se repère par le fournisseur
+// (après une recherche par numéro quand plusieurs factures ont le même fournisseur).
+const ligne = (page, f) => page.getByRole("row").filter({ hasText: f.supplierName });
+const lignesDonnees = (page) => page.getByRole("row").filter({ has: page.locator("button:has(svg.lucide-ellipsis)") });
 
 async function ouvrirListe(page) {
   await ouvrir(page, URL, { pret: page.getByRole("tab", { name: /^Toutes/ }) });
@@ -119,7 +122,7 @@ test.describe("Factures d'achat : ce que la liste affiche", () => {
 
   test("Facture en dollars : montants affichés en dollars, pas en euros", async ({ page }) => {
     await ouvrirListe(page);
-    await rechercher(page, FA.aws.invoiceNumber);
+    await rechercher(page, FA.aws.supplierName);
     await expect(ligne(page, FA.aws)).toContainText(/\$|USD/);
     await expect(ligne(page, FA.aws)).not.toContainText("€");
   });
@@ -256,7 +259,8 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   async function selectionner(page, factures) {
     await ouvrirListe(page);
     await rechercher(page, factures[0].invoiceNumber.slice(0, -1));
-    for (const f of factures) await ligne(page, f).getByRole("checkbox").check();
+    await expect(lignesDonnees(page)).toHaveCount(factures.length);
+    for (const l of await lignesDonnees(page).all()) await l.getByRole("checkbox").check();
   }
 
   test("Actions groupées « Marquer payées » : les deux factures payées", async ({ page }) => {
@@ -289,7 +293,8 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   test("Menu d'une ligne « Archiver » : facture archivée", async ({ page }) => {
     await ouvrirListe(page);
     await rechercher(page, FAS.menuStatut.invoiceNumber);
-    await cliquer(page, ligne(page, FAS.menuStatut).locator("button:has(svg.lucide-ellipsis)"));
+    await expect(lignesDonnees(page)).toHaveCount(1);
+    await cliquer(page, lignesDonnees(page).first().locator("button:has(svg.lucide-ellipsis)"));
     await page.getByRole("menuitem", { name: "Archiver" }).click();
     await expect(notification(page, "1 facture(s) mise(s) à jour")).toBeVisible();
     expect((await enBase(FAS.menuStatut)).status).toBe("ARCHIVED");
@@ -298,7 +303,8 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   test("Menu d'une ligne « Catégoriser » : catégorie du référentiel enregistrée", async ({ page }) => {
     await ouvrirListe(page);
     await rechercher(page, FAS.menuCategorie.invoiceNumber);
-    await cliquer(page, ligne(page, FAS.menuCategorie).locator("button:has(svg.lucide-ellipsis)"));
+    await expect(lignesDonnees(page)).toHaveCount(1);
+    await cliquer(page, lignesDonnees(page).first().locator("button:has(svg.lucide-ellipsis)"));
     await page.getByRole("menuitem", { name: "Catégoriser" }).click();
     await page.getByRole("menuitem", { name: "Conseil", exact: true }).click();
     await expect.poll(async () => (await enBase(FAS.menuCategorie)).subcategory).toBe("conseil");

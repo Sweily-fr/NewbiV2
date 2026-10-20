@@ -38,7 +38,7 @@ async function ouvrirTiroir(page, t) {
 }
 
 async function rechercher(page, texte) {
-  await page.getByPlaceholder(/Recherchez par description/).fill(texte);
+  await page.getByRole("textbox", { name: "Filter transactions" }).fill(texte);
   await attendreCalme(page);
   await page.waitForTimeout(600);
 }
@@ -81,11 +81,13 @@ test.describe("Transactions : ce que la liste affiche", () => {
     expect(textes.every((t) => /-\d/.test(t)), "Un encaissement figure dans « Justificatif manquant »").toBe(true);
   });
 
-  test("Le solde affiché est la somme des comptes, « Masquer le solde » le cache", async ({ page }) => {
+  test("Le solde affiché est la somme des comptes, « Masquer le solde » le floute", async ({ page }) => {
     await ouvrirListe(page);
-    await expect(page.getByText(/17\s345,67\s€/).first()).toBeVisible();
+    const solde = page.getByText(/17\s345,67\s€/).first();
+    await expect(solde).toBeVisible();
     await page.getByRole("button", { name: "Masquer le solde" }).click();
-    await expect(page.getByText(/17\s345,67\s€/)).toHaveCount(0);
+    await expect(solde).toHaveClass(/blur/);
+    await expect(page.getByRole("button", { name: "Afficher le solde" })).toBeVisible();
   });
 
   test("Choisir le livret : seules ses transactions, son solde", async ({ page }) => {
@@ -304,8 +306,9 @@ test.describe("Transactions : chaque action vérifiée en base", () => {
     await attendreCalme(page);
     await tiroir.getByText(FACTURES_ACHAT_SAISIE.depuisTransaction.invoiceNumber).first().click();
     await expect.poll(async () => (await txEnBase(TS.depuisTransaction)).linkedPurchaseInvoiceIds.map(String)).toEqual([FACTURES_ACHAT_SAISIE.depuisTransaction._id.toHexString()]);
-    const facture = await (await base()).collection("purchaseinvoices").findOne({ _id: FACTURES_ACHAT_SAISIE.depuisTransaction._id });
-    expect(facture.linkedTransactionIds.map(String)).toEqual([TS.depuisTransaction._id.toHexString()]);
+    await expect
+      .poll(async () => (await (await base()).collection("purchaseinvoices").findOne({ _id: FACTURES_ACHAT_SAISIE.depuisTransaction._id })).linkedTransactionIds.map(String), { message: "La facture d'achat ne connaît pas la transaction rattachée" })
+      .toEqual([TS.depuisTransaction._id.toHexString()]);
   });
 
   for (const [nom, t] of [
@@ -322,6 +325,12 @@ test.describe("Transactions : chaque action vérifiée en base", () => {
       await expect.poll(async () => (await txEnBase(t)).receiptFiles.length).toBe(0);
     });
   }
+
+});
+
+test.describe("Transactions : justificatif quand le stockage est injoignable", () => {
+  // Le stockage de fichiers (R2) n'existe pas en test : l'échec de l'envoi est écrit dans la console.
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_SAISIE_ACHATS), erreursConsoleAutorisees: /ATTACH RECEIPT|Cloudflare|ECONNREFUSED|GraphQL Error|upload/i });
 
   test("Justificatif ajouté alors que le stockage est injoignable (test) : l'échec est signalé", async ({ page }) => {
     const tiroir = await ouvrirTiroir(page, TS.aCategoriser);

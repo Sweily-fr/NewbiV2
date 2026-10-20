@@ -89,8 +89,16 @@ test.describe("Catalogue : ce que la liste affiche", () => {
     await expect.soft(ligne(page, PRODUITS.formation.name), "Une TVA à 0 % s'affiche « - » comme si le taux manquait").toContainText(/\b0\s?%/);
   });
 
-  test("Champs personnalisés : une colonne par champ, avec la valeur de chaque produit", async ({ page }) => {
+  test("Champs personnalisés : une colonne par champ (à afficher), avec la valeur de chaque produit", async ({ page }) => {
     await ouvrirCatalogue(page);
+    // Colonnes des champs personnalisés masquées au départ : on les affiche.
+    for (const champ of ["Fournisseur habituel", "Stock"]) {
+      await page.getByRole("button", { name: "Filtres" }).click();
+      await page.getByRole("menuitem", { name: /^Colonnes visibles/ }).click();
+      await page.getByRole("menu").last().getByText(champ, { exact: true }).click();
+      await page.keyboard.press("Escape");
+      await page.keyboard.press("Escape");
+    }
     await expect(page.getByRole("columnheader", { name: "Fournisseur habituel" })).toBeVisible();
     await rechercher(page, PRODUITS.audit.name);
     await expect(ligne(page, PRODUITS.audit.name)).toContainText("Cabinet Martin");
@@ -177,7 +185,7 @@ test.describe("Catalogue : chaque action vérifiée en base", () => {
     const fiche = fenetre(page, "Modifier le produit et/ou service");
     const prix = fiche.getByPlaceholder("0.00", { exact: true });
     await prix.fill("");
-    await prix.pressSequentially("150,75");
+    await prix.pressSequentially("150.75");
     await fiche.getByPlaceholder("Ex: Matériel informatique, Fournitures de bureau...").fill("Prestations premium");
     await fiche.getByRole("button", { name: "Modifier le produit et/ou service" }).click();
     await expect(fiche).toBeHidden({ timeout: 15_000 });
