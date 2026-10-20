@@ -16,13 +16,19 @@ const RACINE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
  */
 export default defineConfig({
   testDir: ".",
-  testMatch: "**/*.spec.mjs",
+  // Le relevé des pages (outil pour écrire les tests) ne tourne que seul, à la demande.
+  ...(process.env.E2E_INVENTAIRE === "1" ? { testMatch: "**/inventaire.spec.mjs" } : { testMatch: "**/*.spec.mjs", testIgnore: "**/inventaire.spec.mjs" }),
   outputDir: path.join(RACINE, DOSSIERS.resultats),
   globalSetup: "./prechauffage.mjs",
   fullyParallel: true,
   // Un test à la fois : les données sont partagées et la machine de CI est
   // modeste (même choix que la suite de l'admin).
   workers: 1,
+  // Aucune seconde tentative : certains tests de sécurité (plafonds d'offre tenus
+  // par l'API) sont déterministes mais peuvent, sous charge, échouer pour une
+  // autre raison puis passer au 2e essai, ce qui masquerait la faille. On préfère
+  // laisser quelques rouges instables (identifiés à la main) plutôt que cela.
+  // La suite est de toute façon rouge tant que les défauts du site ne sont pas corrigés.
   retries: 0,
   forbidOnly: Boolean(process.env.CI),
   timeout: 90_000,
@@ -36,6 +42,8 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     locale: "fr-FR",
+    // « Copier l'e-mail », « Copier le lien » : le presse-papiers doit marcher comme chez un utilisateur.
+    permissions: ["clipboard-read", "clipboard-write"],
     timezoneId: "Europe/Paris",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
