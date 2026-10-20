@@ -35,7 +35,7 @@ async function numeroAffiche(page) {
 
 test.describe("Factures : numérotation continue", () => {
   // Création refusée par l'API (échéance avant l'émission recalée) : le site l'écrit dans la console.
-  test.use({ erreursConsoleAutorisees: /Erreur lors de la sauvegarde de la facture|erreurs de validation/ });
+  test.use({ erreursConsoleAutorisees: /Erreur lors de la sauvegarde de la facture|erreurs de validation|Détails de validation/ });
   test("Nouvelle facture : le numéro proposé suit la séquence de tous les préfixes", async ({ page }) => {
     await ouvrirNouvelle(page);
     const attendu = await prochainNumero();

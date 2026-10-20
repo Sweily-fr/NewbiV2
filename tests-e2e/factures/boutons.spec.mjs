@@ -36,7 +36,8 @@ import {
 
 const EDITEUR_URL = /\/dashboard\/outils\/factures\/[0-9a-f]{24}\/editer$/;
 const AVOIR_URL = /\/dashboard\/outils\/factures\/[0-9a-f]{24}\/avoir\/nouveau$/;
-const PDF = { telechargement: /^facture_F-092026-\d{4}\.pdf$/ };
+// Le PDF est fabriqué dans le navigateur (plusieurs secondes) : vérifié en entier dans parcours.spec.mjs.
+const PDF = { parcours: "parcours.spec.mjs : télécharger le PDF d'une facture" };
 const DEFAUT_EN_TETE = "consultation.spec.mjs : boutons de l'en-tête de la consultation";
 
 const FILTRES = {
