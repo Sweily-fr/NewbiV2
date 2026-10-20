@@ -34,6 +34,27 @@ import {
   LoaderCircle,
 } from "lucide-react";
 
+// Bornes des multiplicateurs (API : de 0 à 5), soit de -100 % à +400 %
+const MIN_PCT = -100;
+const MAX_PCT = 400;
+
+/**
+ * Message d'erreur des pourcentages d'un scénario, null s'ils sont valides.
+ * +500 % (multiplicateur 6) était envoyé tel quel et enregistré.
+ */
+export function scenarioPercentError(incomePct, expensePct) {
+  for (const [label, raw] of [
+    ["entrées", incomePct],
+    ["sorties", expensePct],
+  ]) {
+    const value = parseFloat(String(raw ?? "").replace(",", ".") || "0");
+    if (!Number.isFinite(value) || value < MIN_PCT || value > MAX_PCT) {
+      return `La variation des ${label} doit être comprise entre -100 % et +400 %.`;
+    }
+  }
+  return null;
+}
+
 const formatMultiplier = (v) => {
   const pct = Math.round((v - 1) * 100);
   if (pct === 0) return "=";
@@ -57,6 +78,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
   const [name, setName] = useState("");
   const [incomePct, setIncomePct] = useState("0");
   const [expensePct, setExpensePct] = useState("0");
+  const [percentError, setPercentError] = useState(null);
 
   const activeScenario = scenarios.find((s) => s.id === activeScenarioId);
   const label = activeScenario ? activeScenario.name : "Base";
@@ -66,6 +88,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
     setName("");
     setIncomePct("0");
     setExpensePct("0");
+    setPercentError(null);
     setDialogOpen(true);
   };
 
@@ -74,13 +97,18 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
     setName(scenario.name);
     setIncomePct(String(Math.round((scenario.incomeMultiplier - 1) * 100)));
     setExpensePct(String(Math.round((scenario.expenseMultiplier - 1) * 100)));
+    setPercentError(null);
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
+    if (!name.trim()) return;
+    // Pourcentages hors bornes : refusés avec un message, rien n'est envoyé
+    const error = scenarioPercentError(incomePct, expensePct);
+    setPercentError(error);
+    if (error) return;
     const incomeMultiplier = 1 + parseFloat(incomePct || "0") / 100;
     const expenseMultiplier = 1 + parseFloat(expensePct || "0") / 100;
-    if (!name.trim()) return;
 
     const result = await upsertScenario({
       id: editing?.id,
@@ -268,6 +296,12 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                   </p>
                 </div>
               </div>
+
+              {percentError && (
+                <p className="text-xs text-destructive" role="alert">
+                  {percentError}
+                </p>
+              )}
 
               {/* Footer */}
               <div className="flex items-center justify-between border-t border-border/40 mt-4 px-5 py-3 -mx-5">
