@@ -114,6 +114,16 @@ export const SESSION_TOKEN_COLLAB_COMPTABLE = "e2eSessionTokenNewbiCollabComptab
 export const SESSION_TOKEN_COLLAB_FREELANCE = "e2eSessionTokenNewbiCollabFreelanceUniquement";
 // ── fin du lot collaboration ──
 // ── Lot pilotage ──
+/** Propriétaire de l'organisation « Pilotage » (accueil, analytiques, mise en page), suivie par le cabinet. */
+export const SESSION_TOKEN_PILOTAGE = "e2eSessionTokenNewbiPilotageUniquement";
+/** Éditeur de « Pilotage » ; super admin de « Studio Invitable » (espace libre, invitable par le cabinet). */
+export const SESSION_TOKEN_PILOTAGE_EDITEUR = "e2eSessionTokenNewbiPilotageEditeurUniquement";
+/** Membre (lecture seule) de « Pilotage ». */
+export const SESSION_TOKEN_PILOTAGE_MEMBRE = "e2eSessionTokenNewbiPilotageMembreUniquement";
+/** Cabinet (compte gestionnaire) : Comptable dans « Boulangerie Cliente » et « Pilotage », ses deux clients. */
+export const SESSION_TOKEN_CABINET = "e2eSessionTokenNewbiCabinetUniquement";
+/** Client du cabinet : super admin de « Boulangerie Cliente » (suivie) et de deux espaces libres. */
+export const SESSION_TOKEN_CLIENT_CABINET = "e2eSessionTokenNewbiClientCabinetUniquement";
 // ── fin du lot pilotage ──
 
 /** État de navigateur connecté avec la session donnée (pour `test.use({ storageState })`). */
