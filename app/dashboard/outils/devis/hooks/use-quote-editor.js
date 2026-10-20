@@ -38,6 +38,8 @@ import {
   toAnnexInput,
 } from "@/src/utils/document-annex";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+// Adresse de livraison : mêmes règles que l'API (nom d'entreprise, Cedex…)
+import { VALIDATION_PATTERNS } from "@/src/lib/validation";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -766,7 +768,9 @@ export function useQuoteEditor({
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+            !VALIDATION_PATTERNS.fullName.pattern.test(
+              shippingAddr.fullName.trim(),
+            )
           ) {
             shippingErrors.push("nom complet invalide");
           }
@@ -800,7 +804,7 @@ export function useQuoteEditor({
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+            !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
           ) {
             shippingErrors.push("ville invalide");
           }
@@ -1757,7 +1761,9 @@ export function useQuoteEditor({
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+            !VALIDATION_PATTERNS.fullName.pattern.test(
+              shippingAddr.fullName.trim(),
+            )
           ) {
             shippingErrors.push("nom complet invalide");
           }
@@ -1793,7 +1799,7 @@ export function useQuoteEditor({
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+            !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
           ) {
             shippingErrors.push("ville invalide");
           }
@@ -2137,7 +2143,9 @@ export function useQuoteEditor({
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+            !VALIDATION_PATTERNS.fullName.pattern.test(
+              shippingAddr.fullName.trim(),
+            )
           ) {
             shippingErrors.push("nom complet invalide");
           }
@@ -2173,7 +2181,7 @@ export function useQuoteEditor({
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+            !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
           ) {
             shippingErrors.push("ville invalide");
           }
