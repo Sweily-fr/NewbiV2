@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { toast } from "@/src/components/ui/sonner";
 
 export default function ClientDetailHeader({
   client,
@@ -221,8 +222,13 @@ export default function ClientDetailHeader({
               {client.phone && (
                 <DropdownMenuItem
                   className="cursor-pointer gap-2 text-xs"
-                  onClick={() => {
-                    navigator.clipboard.writeText(client.phone);
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(client.phone);
+                      toast.success("Numéro copié dans le presse-papiers");
+                    } catch {
+                      toast.error("Impossible de copier le numéro");
+                    }
                   }}
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
@@ -237,6 +243,12 @@ export default function ClientDetailHeader({
                   onSelect={(e) => {
                     if (isReadOnly || hasDocuments) {
                       e.preventDefault();
+                      // Le clic ne faisait rien, sans explication
+                      if (hasDocuments && !isReadOnly) {
+                        toast.error(
+                          "Suppression impossible : ce contact est lié à des factures, devis ou bons de commande.",
+                        );
+                      }
                     } else {
                       onDelete();
                     }
