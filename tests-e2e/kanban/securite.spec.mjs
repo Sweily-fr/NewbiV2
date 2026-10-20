@@ -413,50 +413,72 @@ async function ouvrirVueKanban(page, vue) {
   await page.waitForTimeout(800);
 }
 
-/** Ouvre le volet de description de la tâche piégée (la seule du tableau). */
+/**
+ * Ouvre chaque volet de description de la page (icône AlignLeft, rendue par
+ * lucide sous la classe « lucide-text-align-start »). Renvoie le nombre de
+ * volets ouverts : 0 veut dire que le test n'a rien éprouvé.
+ */
 async function ouvrirDescription(page) {
-  const declencheur = page.locator("svg.lucide-align-left").first();
-  if (await declencheur.count()) {
-    await declencheur.click({ timeout: 5_000 }).catch(() => {});
-    await page.waitForTimeout(800);
+  const declencheurs = page.locator("svg.lucide-text-align-start, svg.lucide-align-left");
+  const n = await declencheurs.count();
+  for (let i = 0; i < n; i++) {
+    await declencheurs.nth(i).click({ timeout: 5_000 }).catch(() => {});
+    await page.waitForTimeout(700);
+    await page.keyboard.press("Escape").catch(() => {});
   }
+  return n;
 }
 
-test.describe("Kanban : un texte piégé ne s'exécute jamais (défaut connu)", () => {
-  test.use({
-    storageState: connecte(SESSION_TOKEN_COLLAB),
-    dialoguesAttendus: /code|xss|piég/i,
-  });
+// L'image piégée vise une adresse du site qui n'existe pas (404) : seule l'exécution compte ici.
+const CONSOLE_PIEGE = /x-collab-piege/;
 
-  for (const vue of ["List", "Board", "Gantt"]) {
-    test(`Vue ${vue} : la description piégée s'affiche comme du texte`, async ({ page }) => {
+test.describe("Kanban : un texte piégé ne s'exécute jamais (défaut connu)", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB), erreursConsoleAutorisees: CONSOLE_PIEGE });
+
+  for (const [vue, fichier] of [
+    ["List", "KanbanListView.jsx"],
+    ["Board", "TaskCard.jsx"],
+    ["Gantt", "KanbanGanttView.jsx"],
+  ]) {
+    test(`Vue ${vue} : la description piégée s'affiche comme du texte (${fichier})`, async ({ page }) => {
       await ouvrirVueKanban(page, vue);
-      await etape(page, "Ouvrir la description de la tâche piégée", () => ouvrirDescription(page), { capture: "ecran" });
-      expect(await marqueXss(page), `Le code de la description s'est exécuté (vue ${vue})`).toBeNull();
+      const ouverts = await etape(page, "Ouvrir la description de la tâche piégée", () => ouvrirDescription(page), { capture: "ecran" });
+      expect(ouverts, "Aucun volet de description trouvé : le test n'a rien éprouvé").toBeGreaterThan(0);
+      expect(await marqueXss(page), `Le code de la description s'est exécuté (vue ${vue}, ${fichier} : HTML brut)`).toBeNull();
     });
   }
 
-  test("Modale de la tâche : la description piégée ne s'exécute pas", async ({ page }) => {
+  test("Modale de la tâche : la description piégée ne s'exécute pas (DescriptionEditor.jsx, innerHTML)", async ({ page }) => {
     await ouvrirVueKanban(page, "Board");
     await etape(
       page,
       "Ouvrir la tâche piégée",
       async () => {
-        await page.getByText("texte piégé").first().click({ timeout: 5_000 }).catch(() => {});
+        await page.getByText("texte piégé").first().click({ timeout: 5_000 });
+        await expect(page.getByRole("dialog").last(), "La fenêtre de la tâche ne s'est pas ouverte").toBeVisible({ timeout: 15_000 });
         await page.waitForTimeout(1_000);
       },
       { capture: "ecran" },
     );
-    expect(await marqueXss(page), "Le code de la description s'est exécuté dans la modale").toBeNull();
+    expect(await marqueXss(page), "Le code de la description s'est exécuté dans la fenêtre de la tâche").toBeNull();
+  });
+});
+
+test.describe("Kanban : texte piégé ouvert par le rôle « Membre » (défaut connu)", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_MEMBRE), erreursConsoleAutorisees: CONSOLE_PIEGE });
+  test("Vue Board : la description piégée de l'Éditeur ne s'exécute pas chez le Membre", async ({ page }) => {
+    await ouvrirVueKanban(page, "Board");
+    const ouverts = await etape(page, "Ouvrir la description", () => ouvrirDescription(page), { capture: "ecran" });
+    expect(ouverts, "Aucun volet de description trouvé : le test n'a rien éprouvé").toBeGreaterThan(0);
+    expect(await marqueXss(page), "Le code écrit par l'Éditeur s'est exécuté chez le Membre").toBeNull();
   });
 });
 
 test.describe("Kanban : texte piégé ouvert par un visiteur du lien public (défaut connu)", () => {
   test.use({
     storageState: { cookies: [], origins: [] },
-    // Le temps réel du lien public (graphql-ws) et le chargement peuvent bruiter la console.
-    erreursConsoleAutorisees: /graphql|websocket|ws:|subscription|401|Failed to load/i,
-    dialoguesAttendus: /code|xss|piég/i,
+    // Le temps réel du lien public (graphql-ws) peut bruiter la console ; l'image piégée vise une 404.
+    erreursConsoleAutorisees: /x-collab-piege|graphql|websocket|ws:\/\/|subscription/i,
   });
 
   test("La description piégée ne s'exécute pas sur la page publique", async ({ page }) => {
@@ -470,11 +492,23 @@ test.describe("Kanban : texte piégé ouvert par un visiteur du lien public (dé
       [VISITEUR.cleStockage, VISITEUR.sessionToken],
     );
     await page.goto(`/public/kanban/${PARTAGES.actif.token}`);
-    await page.waitForTimeout(3_000);
+    await etape(
+      page,
+      "Le tableau partagé s'affiche au visiteur",
+      () => expect(page.getByText("Tâche piégée du lien public").first()).toBeVisible({ timeout: 30_000 }),
+      { capture: "ecran" },
+    );
     await ouvrirDescription(page);
-    await page.getByText("Tâche piégée du lien public").first().click({ timeout: 5_000 }).catch(() => {});
-    await page.waitForTimeout(1_500);
-    expect(await marqueXss(page), "Le code de la description s'est exécuté sur le lien public").toBeNull();
+    await etape(
+      page,
+      "Ouvrir la tâche piégée",
+      async () => {
+        await page.getByText("Tâche piégée du lien public").first().click({ timeout: 5_000 }).catch(() => {});
+        await page.waitForTimeout(1_500);
+      },
+      { capture: "ecran" },
+    );
+    expect(await marqueXss(page), "Le code de la description s'est exécuté sur le lien public (page.jsx : HTML brut)").toBeNull();
   });
 });
 

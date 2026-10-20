@@ -126,7 +126,7 @@ export const TACHES = {
   lecture1: tache(1, 1, 1, "Préparer la maquette"),
   lecture2: tache(2, 1, 2, "Développer la page d'accueil"),
   // Tâche piégée : titre et description écrits par l'Éditeur, ouverts par les autres.
-  xss: tache(3, 2, 3, PIEGE, { userId: membre("collabEditeur"), description: PIEGE }),
+  xss: tache(3, 2, 3, PIEGE, { userId: membre("collabEditeur"), description: PIEGE, startDate: DANS(1) }),
   modifier: tache(4, 7, 8, "Tâche à modifier"),
   supprimer: tache(5, 7, 8, "Tâche à supprimer"),
   deplacer: tache(6, 7, 8, "Tâche à déplacer"),
@@ -155,7 +155,7 @@ export const TACHES = {
   partage: tache(14, 8, 9, "Tâche visible sur le lien public", {
     description: "<b>Description riche</b> du lien public",
   }),
-  partageXss: tache(15, 8, 9, "Tâche piégée du lien public", { description: PIEGE }),
+  partageXss: tache(15, 8, 9, "Tâche piégée du lien public", { description: PIEGE, startDate: DANS(1) }),
   intrus: tache(16, 9, 10, "Tâche de l'intrus", { organisation: "intrus" }),
 };
 
