@@ -68,7 +68,16 @@ test.describe("Inscription par e-mail : tous les champs", () => {
       await page.getByPlaceholder("Saisissez votre email").fill(email);
       await page.getByPlaceholder("Saisissez votre mot de passe").fill(mdp);
       await page.getByRole("button", { name: "S'inscrire" }).click();
-      await etape(page, "Un message explique le refus", () => expect(page.getByText(message).first()).toBeVisible(), { capture: "ecran" });
+      await etape(
+        page,
+        "Un message explique le refus",
+        async () => {
+          // Adresse mal formée : le navigateur l'arrête lui-même (champ e-mail natif) et l'explique.
+          const refusNatif = await page.getByPlaceholder("Saisissez votre email").evaluate((e) => !e.validity.valid);
+          if (!refusNatif) await expect(page.getByText(message).first()).toBeVisible();
+        },
+        { capture: "ecran" },
+      );
       await expect(page.getByPlaceholder("Saisissez votre email"), "Le formulaire a disparu").toBeVisible();
       if (email.trim()) expect(await utilisateur({ email: email.trim().toLowerCase() }), "Compte créé malgré le refus").toBeNull();
     });

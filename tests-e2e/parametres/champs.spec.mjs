@@ -19,6 +19,8 @@ import { ouvrirParametres } from "../authentification/outils-auth.mjs";
 test.use({ storageState: connecte(SESSION_TOKEN_CONFIGURATION) });
 
 const ORG = COMPTES.configuration.organisation._id;
+/** SIRET des espaces de test (donnees/base.mjs). */
+const SIRET_ESPACE = COMPTES.configuration.organisation.siret;
 const slug = (cas) => marque(cas).toLowerCase().replace(/\s+/g, "-");
 const egal = (a, b) => String(a ?? "").trim() === String(b ?? "").trim();
 const lireOrg = async () => (await base()).collection("organization").findOne({ _id: ORG });
@@ -186,7 +188,9 @@ verifierFormulaire({
   enregistre: async (v) => {
     const org = await lireOrg();
     const iban = String(v.iban || "").replace(/\s/g, "").toUpperCase();
-    return egal(org.bankIban, iban) && egal(org.bankBic, v.bic) && egal(org.bankName, v.banque) ? org : null;
+    const memes = egal(org.bankIban, iban) && egal(org.bankBic, v.bic) && egal(org.bankName, v.banque);
+    if (!memes) console.log(`[banque] en base : ${JSON.stringify({ iban: org.bankIban, bic: org.bankBic, nom: org.bankName })} ; saisi : ${JSON.stringify({ iban, bic: v.bic, nom: v.banque })}`);
+    return memes ? org : null;
   },
   champs: {
     IBAN: {
@@ -237,9 +241,12 @@ verifierFormulaire({
   valider,
   boutonValider,
   ferme,
+  // Le SIRET reste celui de l'espace : un SIRET modifié est vérifié par le serveur du
+  // site auprès du vrai registre (joignable depuis la CI), qui ne connaît pas un
+  // numéro inventé. Le RCS porte la marque du cas.
   valeurs: (cas) => {
-    const siret = siretDe(cas);
-    return { siret, rcs: `Lyon B ${siret.slice(0, 3)} ${siret.slice(3, 6)} ${siret.slice(6, 9)}`, capital: "5000" };
+    const n = siretDe(cas);
+    return { siret: SIRET_ESPACE, rcs: `Lyon B ${n.slice(1, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)}`, capital: "5000" };
   },
   enregistre: async (v) => {
     const org = await lireOrg();
@@ -251,9 +258,9 @@ verifierFormulaire({
       cle: "siret",
       lu: (doc) => doc.siret,
       normaliser: (v) => v.replace(/\s/g, ""),
-      refuses: { "de 13 chiffres": "8123456789012", "avec une lettre": "8123456789012A" },
-      // Copié depuis un Kbis ou une facture, le SIRET a souvent ses espaces.
-      acceptes: { "avec des espaces (comme sur un Kbis)": "812 345 678 00021" },
+      refuses: { "de 13 chiffres": "9876543210001", "avec une lettre": "98765432100A2" },
+      // Copié depuis un Kbis ou une facture, le SIRET a souvent ses espaces (même numéro).
+      acceptes: { "avec des espaces (comme sur un Kbis)": "987 654 321 00012" },
     },
     "Numéro RCS": {
       cle: "rcs",
