@@ -509,13 +509,14 @@ test.describe("Kanban : texte piégé ouvert par un visiteur du lien public (dé
       () => expect(page.getByText("Tâche piégée du lien public").first()).toBeVisible({ timeout: 30_000 }),
       { capture: "ecran" },
     );
-    await ouvrirDescription(page);
     await etape(
       page,
-      "Ouvrir la tâche piégée",
+      "Ouvrir la tâche piégée (sa description s'affiche en HTML brut)",
       async () => {
-        await page.getByText("Tâche piégée du lien public").first().click({ timeout: 5_000 }).catch(() => {});
-        await page.waitForTimeout(1_500);
+        await page.getByText("Tâche piégée du lien public").first().click({ timeout: 10_000 });
+        // La fenêtre de la tâche rend la description via dangerouslySetInnerHTML.
+        await expect(page.getByRole("dialog").last().getByText("Description").first()).toBeVisible({ timeout: 15_000 });
+        await page.waitForTimeout(1_000);
       },
       { capture: "ecran" },
     );

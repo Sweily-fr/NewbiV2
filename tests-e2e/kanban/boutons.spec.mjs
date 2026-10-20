@@ -104,9 +104,13 @@ test.describe("Kanban (nouveau tableau) : création", () => {
   });
   test.describe("Membre", () => {
     test.use({ storageState: connecte(SESSION_TOKEN_COLLAB_MEMBRE), erreursConsoleAutorisees: APOLLO });
-    test("« Créer le tableau » absent pour un rôle sans création", async ({ page }) => {
-      await ouvrirNouveau(page);
+    test("Page de création refusée au rôle sans création (accès refusé)", async ({ page }) => {
+      await ouvrir(page, "/dashboard/outils/kanban/new");
+      await page.waitForTimeout(1_500);
+      // Le rôle « Membre » ne peut pas créer : la page affiche « accès refusé »,
+      // pas le formulaire ni son bouton de création.
       await expect(page.getByRole("button", { name: "Créer le tableau" })).toHaveCount(0);
+      await expect(page.getByRole("heading", { name: "Créer un nouveau tableau" })).toHaveCount(0);
     });
   });
 });

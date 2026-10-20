@@ -27,11 +27,15 @@ test.describe("Signatures (propriétaire) : liste et actions", () => {
 
   test("Le menu « Actions » d'une signature propose défaut, duplication et suppression", async ({ page }) => {
     await ouvrirSignatures(page);
-    await page.getByRole("button", { name: "Actions" }).first().click();
+    // La signature par défaut grise « Définir par défaut » : on ouvre le menu
+    // d'une signature non par défaut (« Signature à supprimer »).
+    const carte = page.locator("[data-slot=card]").filter({ hasText: SIGNATURES.supprimer.name });
+    await carte.getByRole("button", { name: "Actions" }).click();
     const menu = page.getByRole("menu");
-    for (const item of ["Définir par défaut", "Dupliquer", "Supprimer"]) {
+    for (const item of ["Dupliquer", "Supprimer"]) {
       await expect(menu.getByRole("menuitem", { name: item })).toBeVisible();
     }
+    await expect(menu.getByRole("menuitem", { name: "Définir par défaut" })).toBeVisible();
   });
 });
 
