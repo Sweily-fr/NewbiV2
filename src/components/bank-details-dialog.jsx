@@ -19,6 +19,8 @@ import {
   VALIDATION_PATTERNS,
   sanitizeInput,
   detectInjectionAttempt,
+  getIbanError,
+  normalizeIban,
 } from "@/src/lib/validation";
 
 // Fonction de formatage de l'IBAN avec espaces (pour l'affichage)
@@ -121,6 +123,29 @@ export function BankDetailsDialog({
     });
   };
 
+  // Format, longueur du pays et clé de contrôle de l'IBAN saisi (l'IBAN déjà
+  // enregistré, laissé tel quel, n'est pas recontrôlé). Message ou null.
+  const ibanErrorOf = (value) =>
+    !value || normalizeIban(value) === normalizeIban(organization?.bankIban)
+      ? null
+      : getIbanError(value);
+
+  // BIC et nom de la banque : la saisie transformée repasse par le onChange
+  // de react-hook-form (sinon la valeur n'est prise qu'à la sortie du champ)
+  const bicField = register("bic", {
+    required: hasAnyBankField ? "Le BIC est requis" : false,
+    pattern: {
+      value: VALIDATION_PATTERNS.bic.pattern,
+      message: VALIDATION_PATTERNS.bic.message,
+    },
+    validate: (value) => {
+      if (value && detectInjectionAttempt(value)) {
+        return "Caractères non autorisés détectés";
+      }
+      return true;
+    },
+  });
+
   const onSubmit = async (formData) => {
     try {
       setIsLoading(true);
@@ -148,12 +173,9 @@ export function BankDetailsDialog({
           return;
         }
 
-        if (
-          !VALIDATION_PATTERNS.iban.pattern.test(
-            formData.iban.replace(/\s/g, ""),
-          )
-        ) {
-          toast.error("Format IBAN invalide");
+        const ibanError = ibanErrorOf(formData.iban);
+        if (ibanError) {
+          toast.error(ibanError);
           return;
         }
 
@@ -272,15 +294,11 @@ export function BankDetailsDialog({
                   type="hidden"
                   {...register("iban", {
                     required: hasAnyBankField ? "L'IBAN est requis" : false,
-                    pattern: {
-                      value: VALIDATION_PATTERNS.iban.pattern,
-                      message: VALIDATION_PATTERNS.iban.message,
-                    },
                     validate: (value) => {
                       if (value && detectInjectionAttempt(value)) {
                         return "Caractères non autorisés détectés";
                       }
-                      return true;
+                      return ibanErrorOf(value) || true;
                     },
                   })}
                 />
@@ -306,25 +324,14 @@ export function BankDetailsDialog({
                   id="dialog-bic"
                   placeholder="BNPAFRPP"
                   className="w-full"
-                  {...register("bic", {
-                    required: hasAnyBankField ? "Le BIC est requis" : false,
-                    pattern: {
-                      value: VALIDATION_PATTERNS.bic.pattern,
-                      message: VALIDATION_PATTERNS.bic.message,
-                    },
-                    validate: (value) => {
-                      if (value && detectInjectionAttempt(value)) {
-                        return "Caractères non autorisés détectés";
-                      }
-                      return true;
-                    },
-                  })}
+                  {...bicField}
                   onChange={(e) => {
                     const sanitized = sanitizeInput(
                       e.target.value,
                       "alphanumeric",
                     ).toUpperCase();
                     e.target.value = sanitized;
+                    bicField.onChange(e);
                   }}
                 />
                 {errors.bic && (
@@ -364,10 +371,8 @@ export function BankDetailsDialog({
                       return true;
                     },
                   })}
-                  onChange={(e) => {
-                    const sanitized = sanitizeInput(e.target.value);
-                    e.target.value = sanitized;
-                  }}
+                  // Saisie gardée telle quelle (espaces compris pendant la
+                  // frappe) : les balises sont refusées par le motif
                 />
                 {errors.bankName && (
                   <p className="text-xs text-destructive">

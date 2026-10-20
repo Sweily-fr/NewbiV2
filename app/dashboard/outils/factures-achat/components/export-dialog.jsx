@@ -37,6 +37,7 @@ import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
 import { getCategoryLabel } from "@/lib/category-icons-config";
 import { vatLinesOf } from "@/src/utils/purchase-invoice-vat";
+import { toQuotedCsvCell } from "@/src/utils/spreadsheet-cell";
 
 const toYMD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -135,14 +136,15 @@ export function ExportDialog({
       inv.paymentDate
         ? new Date(inv.paymentDate).toLocaleDateString("fr-FR")
         : "",
-      (inv.notes || "").replace(/"/g, '""'),
+      inv.notes || "",
     ]);
 
     const csvContent =
       "\uFEFF" +
       [
         headers.join(";"),
-        ...rows.map((r) => r.map((c) => `"${c}"`).join(";")),
+        // Texte neutralisé (formules du tableur), guillemets échappés
+        ...rows.map((r) => r.map(toQuotedCsvCell).join(";")),
       ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

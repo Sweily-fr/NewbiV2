@@ -55,6 +55,7 @@ import {
   TransactionTableSkeleton,
 } from "./components/transaction-page-skeleton";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { toCsvCell } from "@/src/utils/spreadsheet-cell";
 
 function GestionDepensesContent() {
   const searchParams = useSearchParams();
@@ -213,13 +214,8 @@ function GestionDepensesContent() {
       headers.join(";"),
       ...data.map((row) =>
         headers
-          .map((h) => {
-            const v = row[h];
-            return typeof v === "string" &&
-              (v.includes(";") || v.includes('"') || v.includes("\n"))
-              ? `"${v.replace(/"/g, '""')}"`
-              : v;
-          })
+          // Texte neutralisé (formules du tableur), guillemets échappés
+          .map((h) => toCsvCell(row[h]))
           .join(";"),
       ),
     ].join("\n");

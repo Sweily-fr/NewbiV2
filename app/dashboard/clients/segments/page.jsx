@@ -40,6 +40,7 @@ import {
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { toast } from "@/src/components/ui/sonner";
 import { MicroscopeIcon } from "@/src/components/icons";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import {
@@ -305,6 +306,19 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
   const handleSubmit = () => {
     if (!name.trim()) return;
     if (rules.length === 0) return;
+    // Une règle qui compare à une valeur sans en avoir ne veut rien dire
+    // (« Ville contient » rien) : même règle que l'API
+    const ruleWithoutValue = rules.some(
+      (r) =>
+        !NO_VALUE_OPERATORS.includes(r.operator) &&
+        (r.value === undefined ||
+          r.value === null ||
+          String(r.value).trim() === ""),
+    );
+    if (ruleWithoutValue) {
+      toast.error("Renseignez une valeur pour chaque règle du segment");
+      return;
+    }
     onSubmit({
       name: name.trim(),
       description: description.trim(),
@@ -756,15 +770,15 @@ function SegmentsContent() {
   const [viewingSegment, setViewingSegment] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  // La fenêtre ne se ferme qu'une fois l'enregistrement réussi : refusée par
+  // l'API, la saisie reste à l'écran pour être corrigée
   const handleCreate = async (input) => {
-    await createSegment(input);
-    setDialogOpen(false);
+    if (await createSegment(input)) setDialogOpen(false);
   };
 
   const handleUpdate = async (input) => {
     if (!editingSegment) return;
-    await updateSegment(editingSegment.id, input);
-    setEditingSegment(null);
+    if (await updateSegment(editingSegment.id, input)) setEditingSegment(null);
   };
 
   const handleDelete = async () => {

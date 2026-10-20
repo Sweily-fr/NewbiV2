@@ -36,6 +36,8 @@ import {
   toAnnexInput,
 } from "@/src/utils/document-annex";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+// Adresse de livraison : mêmes règles que l'API (nom d'entreprise, Cedex…)
+import { VALIDATION_PATTERNS } from "@/src/lib/validation";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -637,10 +639,11 @@ export function usePurchaseOrderEditor({
               itemErrors.push("quantity");
               fields.push("quantity");
             }
+            // Prix à 0 accepté (prestation offerte), comme sur le devis
             if (
               item.unitPrice === undefined ||
               item.unitPrice === null ||
-              item.unitPrice <= 0
+              item.unitPrice < 0
             ) {
               itemErrors.push("unitPrice");
               fields.push("unitPrice");
@@ -758,7 +761,9 @@ export function usePurchaseOrderEditor({
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+            !VALIDATION_PATTERNS.fullName.pattern.test(
+              shippingAddr.fullName.trim(),
+            )
           ) {
             shippingErrors.push("nom complet invalide");
           }
@@ -792,7 +797,7 @@ export function usePurchaseOrderEditor({
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+            !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
           ) {
             shippingErrors.push("ville invalide");
           }
@@ -1580,9 +1585,14 @@ export function usePurchaseOrderEditor({
     }
 
     // Vérifier que tous les articles ont une description, quantité et prix
+    // (un prix à 0, prestation offerte, est un prix renseigné)
     for (let i = 0; i < data.items.length; i++) {
       const item = data.items[i];
-      if (!item.description || !item.quantity || !item.unitPrice) {
+      const hasPrice =
+        item.unitPrice !== undefined &&
+        item.unitPrice !== null &&
+        item.unitPrice !== "";
+      if (!item.description || !item.quantity || !hasPrice) {
         return false;
       }
     }
@@ -1750,7 +1760,9 @@ export function usePurchaseOrderEditor({
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+            !VALIDATION_PATTERNS.fullName.pattern.test(
+              shippingAddr.fullName.trim(),
+            )
           ) {
             shippingErrors.push("nom complet invalide");
           }
@@ -1786,7 +1798,7 @@ export function usePurchaseOrderEditor({
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+            !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
           ) {
             shippingErrors.push("ville invalide");
           }
@@ -2129,7 +2141,9 @@ export function usePurchaseOrderEditor({
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+            !VALIDATION_PATTERNS.fullName.pattern.test(
+              shippingAddr.fullName.trim(),
+            )
           ) {
             shippingErrors.push("nom complet invalide");
           }
@@ -2165,7 +2179,7 @@ export function usePurchaseOrderEditor({
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+            !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
           ) {
             shippingErrors.push("ville invalide");
           }

@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toCsvCell, toHtmlCell } from "@/src/utils/spreadsheet-cell";
 
 /**
  * Filtre les bons de commande selon une plage de dates
@@ -16,25 +17,37 @@ export function filterPurchaseOrdersByDateRange(purchaseOrders, dateRange) {
 
     let poDate;
     let timestamp = po.issueDate;
-    if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+    if (typeof timestamp === "string" && /^\d+$/.test(timestamp)) {
       timestamp = parseInt(timestamp, 10);
     }
 
-    if (typeof timestamp === 'number') {
+    if (typeof timestamp === "number") {
       const asIs = new Date(timestamp);
       const divided = new Date(timestamp / 1000);
       const multiplied = new Date(timestamp * 1000);
 
-      if (!isNaN(asIs.getTime()) && asIs.getFullYear() >= 2020 && asIs.getFullYear() <= 2100) {
+      if (
+        !isNaN(asIs.getTime()) &&
+        asIs.getFullYear() >= 2020 &&
+        asIs.getFullYear() <= 2100
+      ) {
         poDate = asIs;
-      } else if (!isNaN(divided.getTime()) && divided.getFullYear() >= 2020 && divided.getFullYear() <= 2100) {
+      } else if (
+        !isNaN(divided.getTime()) &&
+        divided.getFullYear() >= 2020 &&
+        divided.getFullYear() <= 2100
+      ) {
         poDate = divided;
-      } else if (!isNaN(multiplied.getTime()) && multiplied.getFullYear() >= 2020 && multiplied.getFullYear() <= 2100) {
+      } else if (
+        !isNaN(multiplied.getTime()) &&
+        multiplied.getFullYear() >= 2020 &&
+        multiplied.getFullYear() <= 2100
+      ) {
         poDate = multiplied;
       } else {
         return false;
       }
-    } else if (typeof timestamp === 'string') {
+    } else if (typeof timestamp === "string") {
       poDate = new Date(timestamp);
     } else {
       poDate = new Date(timestamp);
@@ -75,20 +88,32 @@ function convertToDate(dateValue) {
   if (!dateValue) return null;
 
   let timestamp = dateValue;
-  if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+  if (typeof timestamp === "string" && /^\d+$/.test(timestamp)) {
     timestamp = parseInt(timestamp, 10);
   }
 
-  if (typeof timestamp === 'number') {
+  if (typeof timestamp === "number") {
     const asIs = new Date(timestamp);
     const divided = new Date(timestamp / 1000);
     const multiplied = new Date(timestamp * 1000);
 
-    if (!isNaN(asIs.getTime()) && asIs.getFullYear() >= 2020 && asIs.getFullYear() <= 2100) {
+    if (
+      !isNaN(asIs.getTime()) &&
+      asIs.getFullYear() >= 2020 &&
+      asIs.getFullYear() <= 2100
+    ) {
       return asIs;
-    } else if (!isNaN(divided.getTime()) && divided.getFullYear() >= 2020 && divided.getFullYear() <= 2100) {
+    } else if (
+      !isNaN(divided.getTime()) &&
+      divided.getFullYear() >= 2020 &&
+      divided.getFullYear() <= 2100
+    ) {
       return divided;
-    } else if (!isNaN(multiplied.getTime()) && multiplied.getFullYear() >= 2020 && multiplied.getFullYear() <= 2100) {
+    } else if (
+      !isNaN(multiplied.getTime()) &&
+      multiplied.getFullYear() >= 2020 &&
+      multiplied.getFullYear() <= 2100
+    ) {
       return multiplied;
     }
     return null;
@@ -107,11 +132,9 @@ function formatPurchaseOrderForExport(po) {
   const createdAt = convertToDate(po.createdAt);
 
   return {
-    "Numéro": po.prefix
-      ? `${po.prefix}-${po.number}`
-      : (po.number || ""),
+    Numéro: po.prefix ? `${po.prefix}-${po.number}` : po.number || "",
 
-    "Client": po.client?.name || "",
+    Client: po.client?.name || "",
     "Email client": po.client?.email || "",
     "SIRET client": po.client?.siret || "",
     "N° TVA client": po.client?.vatNumber || "",
@@ -130,11 +153,12 @@ function formatPurchaseOrderForExport(po) {
     "Total HT (€)": formatAmount(po.finalTotalHT),
     "Total TVA (€)": formatAmount(po.finalTotalVAT),
     "Total TTC (€)": formatAmount(po.finalTotalTTC),
-    "Remise (%)": po.discountType === "PERCENTAGE" ? formatAmount(po.discount) : "",
+    "Remise (%)":
+      po.discountType === "PERCENTAGE" ? formatAmount(po.discount) : "",
     "Remise (€)": po.discountType === "FIXED" ? formatAmount(po.discount) : "",
     "Montant remise (€)": formatAmount(po.discountAmount),
 
-    "Statut": getStatusLabel(po.status),
+    Statut: getStatusLabel(po.status),
 
     "Adresse client": formatAddress(po.client?.address),
     "Code postal client": po.client?.address?.postalCode || "",
@@ -149,14 +173,14 @@ function formatAddress(address) {
     address.street,
     address.postalCode,
     address.city,
-    address.country
+    address.country,
   ].filter(Boolean);
   return parts.join(", ");
 }
 
 function formatAmount(amount) {
   if (amount === null || amount === undefined || amount === "") return "0.00";
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
   if (isNaN(numAmount)) return "0.00";
   return numAmount.toFixed(2);
 }
@@ -182,12 +206,13 @@ export function exportToCSV(purchaseOrders, dateRange = null) {
 
   if (filtered.length === 0) {
     const total = purchaseOrders.length;
-    const dateInfo = dateRange?.from && dateRange?.to
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
 
     throw new Error(
-      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`
+      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`,
     );
   }
 
@@ -196,18 +221,19 @@ export function exportToCSV(purchaseOrders, dateRange = null) {
   const csvContent = [
     headers.join(";"),
     ...formattedData.map((row) =>
-      headers.map((header) => {
-        const value = row[header] || "";
-        if (value.toString().includes(";") || value.toString().includes('"')) {
-          return `"${value.toString().replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(";")
+      headers
+        .map((header) => {
+          // Texte neutralisé (formules du tableur), guillemets échappés
+          return toCsvCell(row[header] || "");
+        })
+        .join(";"),
     ),
   ].join("\n");
 
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([BOM + csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
   const filename = generateFilename("csv", dateRange);
   downloadBlob(blob, filename);
 }
@@ -222,12 +248,13 @@ export function exportToExcel(purchaseOrders, dateRange = null) {
 
   if (filtered.length === 0) {
     const total = purchaseOrders.length;
-    const dateInfo = dateRange?.from && dateRange?.to
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
 
     throw new Error(
-      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`
+      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`,
     );
   }
 
@@ -270,8 +297,10 @@ export function exportToExcel(purchaseOrders, dateRange = null) {
               .map(
                 (row) =>
                   `<tr>${headers
-                    .map((header) => `<td>${row[header] || ""}</td>`)
-                    .join("")}</tr>`
+                    .map(
+                      (header) => `<td>${toHtmlCell(row[header] || "")}</td>`,
+                    )
+                    .join("")}</tr>`,
               )
               .join("")}
           </tbody>
@@ -295,12 +324,13 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
 
   if (filtered.length === 0) {
     const total = purchaseOrders.length;
-    const dateInfo = dateRange?.from && dateRange?.to
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
 
     throw new Error(
-      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`
+      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`,
     );
   }
 
@@ -314,11 +344,13 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
 
     const dateStr = format(issueDate, "yyyyMMdd");
     const validDateStr = createdAt ? format(createdAt, "yyyyMMdd") : dateStr;
-    const poNumber = sanitizeFECField(po.prefix ? `${po.prefix}-${po.number}` : po.number);
+    const poNumber = sanitizeFECField(
+      po.prefix ? `${po.prefix}-${po.number}` : po.number,
+    );
     const clientName = sanitizeFECField(po.client?.name || "Client inconnu");
     const totalTTC = parseFloat(po.finalTotalTTC) || 0;
 
-    const ecritureNum = `VTE${String(ecritureCounter).padStart(8, '0')}`;
+    const ecritureNum = `VTE${String(ecritureCounter).padStart(8, "0")}`;
 
     entries.push({
       JournalCode: "VTE",
@@ -338,7 +370,7 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
       DateLet: "",
       ValidDate: validDateStr,
       Montantdevise: "",
-      Idevise: ""
+      Idevise: "",
     });
 
     if (po.items && po.items.length > 0) {
@@ -365,10 +397,16 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
         }
 
         itemsByVatRate[vatRate].totalHT += lineHT;
-        itemsByVatRate[vatRate].items.push({ description: item.description, amount: lineHT });
+        itemsByVatRate[vatRate].items.push({
+          description: item.description,
+          amount: lineHT,
+        });
       });
 
-      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce((sum, group) => sum + group.totalHT, 0);
+      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce(
+        (sum, group) => sum + group.totalHT,
+        0,
+      );
       const globalDiscountAmount = parseFloat(po.discountAmount) || 0;
 
       Object.entries(itemsByVatRate).forEach(([vatRate, group]) => {
@@ -376,7 +414,7 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
 
         if (globalDiscountAmount > 0 && totalHTBeforeDiscount > 0) {
           const proportion = group.totalHT / totalHTBeforeDiscount;
-          finalHT = finalHT - (globalDiscountAmount * proportion);
+          finalHT = finalHT - globalDiscountAmount * proportion;
         }
 
         if (finalHT > 0) {
@@ -398,7 +436,7 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
             DateLet: "",
             ValidDate: validDateStr,
             Montantdevise: "",
-            Idevise: ""
+            Idevise: "",
           });
 
           const vatAmount = finalHT * (parseFloat(vatRate) / 100);
@@ -422,7 +460,7 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
               DateLet: "",
               ValidDate: validDateStr,
               Montantdevise: "",
-              Idevise: ""
+              Idevise: "",
             });
           }
         }
@@ -450,7 +488,7 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
           DateLet: "",
           ValidDate: validDateStr,
           Montantdevise: "",
-          Idevise: ""
+          Idevise: "",
         });
       }
 
@@ -473,7 +511,7 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
           DateLet: "",
           ValidDate: validDateStr,
           Montantdevise: "",
-          Idevise: ""
+          Idevise: "",
         });
       }
     }
@@ -482,17 +520,34 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
   });
 
   const headers = [
-    "JournalCode", "JournalLib", "EcritureNum", "EcritureDate", "CompteNum", "CompteLib",
-    "CompAuxNum", "CompAuxLib", "PieceRef", "PieceDate", "EcritureLib", "Debit", "Credit",
-    "EcritureLet", "DateLet", "ValidDate", "Montantdevise", "Idevise"
+    "JournalCode",
+    "JournalLib",
+    "EcritureNum",
+    "EcritureDate",
+    "CompteNum",
+    "CompteLib",
+    "CompAuxNum",
+    "CompAuxLib",
+    "PieceRef",
+    "PieceDate",
+    "EcritureLib",
+    "Debit",
+    "Credit",
+    "EcritureLet",
+    "DateLet",
+    "ValidDate",
+    "Montantdevise",
+    "Idevise",
   ];
 
-  const fecContent = entries.map(entry =>
-    headers.map(h => entry[h] || "").join("|")
-  ).join("\n");
+  const fecContent = entries
+    .map((entry) => headers.map((h) => entry[h] || "").join("|"))
+    .join("\n");
 
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + fecContent], { type: "text/plain;charset=utf-8;" });
+  const blob = new Blob([BOM + fecContent], {
+    type: "text/plain;charset=utf-8;",
+  });
   const filename = generateFilename("txt", dateRange, "FEC");
   downloadBlob(blob, filename);
 }
@@ -541,12 +596,13 @@ export function exportToSage(purchaseOrders, dateRange = null) {
 
   if (filtered.length === 0) {
     const total = purchaseOrders.length;
-    const dateInfo = dateRange?.from && dateRange?.to
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
 
     throw new Error(
-      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`
+      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`,
     );
   }
 
@@ -557,16 +613,26 @@ export function exportToSage(purchaseOrders, dateRange = null) {
     if (!issueDate) return;
 
     const dateStr = format(issueDate, "ddMMyyyy");
-    const poNumber = sanitizeSageField(po.prefix ? `${po.prefix}-${po.number}` : po.number);
+    const poNumber = sanitizeSageField(
+      po.prefix ? `${po.prefix}-${po.number}` : po.number,
+    );
     const clientName = sanitizeSageField(po.client?.name || "Client inconnu");
     const clientCode = sanitizeSageField(po.client?.siret || poNumber);
     const totalTTC = parseFloat(po.finalTotalTTC) || 0;
 
-    entries.push([
-      "VTE", dateStr, "411000", clientCode,
-      sanitizeSageField(`${clientName} - ${poNumber}`),
-      formatFECAmount(totalTTC), formatFECAmount(0), "", poNumber
-    ].join(";"));
+    entries.push(
+      [
+        "VTE",
+        dateStr,
+        "411000",
+        clientCode,
+        sanitizeSageField(`${clientName} - ${poNumber}`),
+        formatFECAmount(totalTTC),
+        formatFECAmount(0),
+        "",
+        poNumber,
+      ].join(";"),
+    );
 
     if (po.items && po.items.length > 0) {
       const itemsByVatRate = {};
@@ -590,31 +656,50 @@ export function exportToSage(purchaseOrders, dateRange = null) {
         itemsByVatRate[vatRate] += lineHT;
       });
 
-      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce((sum, ht) => sum + ht, 0);
+      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce(
+        (sum, ht) => sum + ht,
+        0,
+      );
       const globalDiscountAmount = parseFloat(po.discountAmount) || 0;
 
       Object.entries(itemsByVatRate).forEach(([vatRate, htAmount]) => {
         let finalHT = htAmount;
         if (globalDiscountAmount > 0 && totalHTBeforeDiscount > 0) {
           const proportion = htAmount / totalHTBeforeDiscount;
-          finalHT = finalHT - (globalDiscountAmount * proportion);
+          finalHT = finalHT - globalDiscountAmount * proportion;
         }
 
         if (finalHT > 0) {
-          entries.push([
-            "VTE", dateStr, "706000", "",
-            sanitizeSageField(`${clientName} - TVA ${vatRate}%`),
-            formatFECAmount(0), formatFECAmount(finalHT), "", poNumber
-          ].join(";"));
+          entries.push(
+            [
+              "VTE",
+              dateStr,
+              "706000",
+              "",
+              sanitizeSageField(`${clientName} - TVA ${vatRate}%`),
+              formatFECAmount(0),
+              formatFECAmount(finalHT),
+              "",
+              poNumber,
+            ].join(";"),
+          );
 
           const vatAmount = finalHT * (parseFloat(vatRate) / 100);
           if (vatAmount > 0) {
             const vatAccount = getVATAccount(parseFloat(vatRate));
-            entries.push([
-              "VTE", dateStr, vatAccount, "",
-              sanitizeSageField(`TVA ${vatRate}% - ${poNumber}`),
-              formatFECAmount(0), formatFECAmount(vatAmount), "", poNumber
-            ].join(";"));
+            entries.push(
+              [
+                "VTE",
+                dateStr,
+                vatAccount,
+                "",
+                sanitizeSageField(`TVA ${vatRate}% - ${poNumber}`),
+                formatFECAmount(0),
+                formatFECAmount(vatAmount),
+                "",
+                poNumber,
+              ].join(";"),
+            );
           }
         }
       });
@@ -623,28 +708,47 @@ export function exportToSage(purchaseOrders, dateRange = null) {
       const totalTVA = parseFloat(po.finalTotalVAT) || 0;
 
       if (totalHT > 0) {
-        entries.push([
-          "VTE", dateStr, "706000", "",
-          sanitizeSageField(`Prestation - ${poNumber}`),
-          formatFECAmount(0), formatFECAmount(totalHT), "", poNumber
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            "706000",
+            "",
+            sanitizeSageField(`Prestation - ${poNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalHT),
+            "",
+            poNumber,
+          ].join(";"),
+        );
       }
 
       if (totalTVA > 0) {
-        entries.push([
-          "VTE", dateStr, "445710", "",
-          sanitizeSageField(`TVA - ${poNumber}`),
-          formatFECAmount(0), formatFECAmount(totalTVA), "", poNumber
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            "445710",
+            "",
+            sanitizeSageField(`TVA - ${poNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalTVA),
+            "",
+            poNumber,
+          ].join(";"),
+        );
       }
     }
   });
 
-  const headers = "Journal;Date;Compte;CompteAux;Libellé;Débit;Crédit;Lettrage;Pièce";
+  const headers =
+    "Journal;Date;Compte;CompteAux;Libellé;Débit;Crédit;Lettrage;Pièce";
   const sageContent = [headers, ...entries].join("\n");
 
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + sageContent], { type: "text/plain;charset=utf-8;" });
+  const blob = new Blob([BOM + sageContent], {
+    type: "text/plain;charset=utf-8;",
+  });
   const filename = generateFilename("txt", dateRange, "Sage");
   downloadBlob(blob, filename);
 }
@@ -670,12 +774,13 @@ export function exportToCegid(purchaseOrders, dateRange = null) {
 
   if (filtered.length === 0) {
     const total = purchaseOrders.length;
-    const dateInfo = dateRange?.from && dateRange?.to
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
 
     throw new Error(
-      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`
+      `Aucun bon de commande à exporter ${dateInfo}. ${total} bon(s) de commande au total dans le système.`,
     );
   }
 
@@ -686,16 +791,26 @@ export function exportToCegid(purchaseOrders, dateRange = null) {
     if (!issueDate) return;
 
     const dateStr = format(issueDate, "dd/MM/yyyy");
-    const poNumber = sanitizeCegidField(po.prefix ? `${po.prefix}-${po.number}` : po.number);
+    const poNumber = sanitizeCegidField(
+      po.prefix ? `${po.prefix}-${po.number}` : po.number,
+    );
     const clientName = sanitizeCegidField(po.client?.name || "Client inconnu");
     const clientCode = sanitizeCegidField(po.client?.siret || "");
     const totalTTC = parseFloat(po.finalTotalTTC) || 0;
 
-    entries.push([
-      "VTE", dateStr, poNumber, "411000", clientCode,
-      sanitizeCegidField(`${clientName} - ${poNumber}`),
-      formatFECAmount(totalTTC), formatFECAmount(0), "EUR"
-    ].join(";"));
+    entries.push(
+      [
+        "VTE",
+        dateStr,
+        poNumber,
+        "411000",
+        clientCode,
+        sanitizeCegidField(`${clientName} - ${poNumber}`),
+        formatFECAmount(totalTTC),
+        formatFECAmount(0),
+        "EUR",
+      ].join(";"),
+    );
 
     if (po.items && po.items.length > 0) {
       const itemsByVatRate = {};
@@ -719,31 +834,50 @@ export function exportToCegid(purchaseOrders, dateRange = null) {
         itemsByVatRate[vatRate] += lineHT;
       });
 
-      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce((sum, ht) => sum + ht, 0);
+      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce(
+        (sum, ht) => sum + ht,
+        0,
+      );
       const globalDiscountAmount = parseFloat(po.discountAmount) || 0;
 
       Object.entries(itemsByVatRate).forEach(([vatRate, htAmount]) => {
         let finalHT = htAmount;
         if (globalDiscountAmount > 0 && totalHTBeforeDiscount > 0) {
           const proportion = htAmount / totalHTBeforeDiscount;
-          finalHT = finalHT - (globalDiscountAmount * proportion);
+          finalHT = finalHT - globalDiscountAmount * proportion;
         }
 
         if (finalHT > 0) {
-          entries.push([
-            "VTE", dateStr, poNumber, "706000", "",
-            sanitizeCegidField(`${clientName} - TVA ${vatRate}%`),
-            formatFECAmount(0), formatFECAmount(finalHT), "EUR"
-          ].join(";"));
+          entries.push(
+            [
+              "VTE",
+              dateStr,
+              poNumber,
+              "706000",
+              "",
+              sanitizeCegidField(`${clientName} - TVA ${vatRate}%`),
+              formatFECAmount(0),
+              formatFECAmount(finalHT),
+              "EUR",
+            ].join(";"),
+          );
 
           const vatAmount = finalHT * (parseFloat(vatRate) / 100);
           if (vatAmount > 0) {
             const vatAccount = getVATAccount(parseFloat(vatRate));
-            entries.push([
-              "VTE", dateStr, poNumber, vatAccount, "",
-              sanitizeCegidField(`TVA ${vatRate}% - ${poNumber}`),
-              formatFECAmount(0), formatFECAmount(vatAmount), "EUR"
-            ].join(";"));
+            entries.push(
+              [
+                "VTE",
+                dateStr,
+                poNumber,
+                vatAccount,
+                "",
+                sanitizeCegidField(`TVA ${vatRate}% - ${poNumber}`),
+                formatFECAmount(0),
+                formatFECAmount(vatAmount),
+                "EUR",
+              ].join(";"),
+            );
           }
         }
       });
@@ -752,28 +886,47 @@ export function exportToCegid(purchaseOrders, dateRange = null) {
       const totalTVA = parseFloat(po.finalTotalVAT) || 0;
 
       if (totalHT > 0) {
-        entries.push([
-          "VTE", dateStr, poNumber, "706000", "",
-          sanitizeCegidField(`Prestation - ${poNumber}`),
-          formatFECAmount(0), formatFECAmount(totalHT), "EUR"
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            poNumber,
+            "706000",
+            "",
+            sanitizeCegidField(`Prestation - ${poNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalHT),
+            "EUR",
+          ].join(";"),
+        );
       }
 
       if (totalTVA > 0) {
-        entries.push([
-          "VTE", dateStr, poNumber, "445710", "",
-          sanitizeCegidField(`TVA - ${poNumber}`),
-          formatFECAmount(0), formatFECAmount(totalTVA), "EUR"
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            poNumber,
+            "445710",
+            "",
+            sanitizeCegidField(`TVA - ${poNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalTVA),
+            "EUR",
+          ].join(";"),
+        );
       }
     }
   });
 
-  const headers = "CodeJournal;Date;NumPiece;CompteGeneral;CompteAuxiliaire;Libelle;Debit;Credit;Devise";
+  const headers =
+    "CodeJournal;Date;NumPiece;CompteGeneral;CompteAuxiliaire;Libelle;Debit;Credit;Devise";
   const cegidContent = [headers, ...entries].join("\n");
 
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + cegidContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([BOM + cegidContent], {
+    type: "text/csv;charset=utf-8;",
+  });
   const filename = generateFilename("csv", dateRange, "Cegid");
   downloadBlob(blob, filename);
 }

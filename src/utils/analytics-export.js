@@ -1,4 +1,5 @@
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { toQuotedCsvCell } from "@/src/utils/spreadsheet-cell";
 // xlsx (~800 KB) et jspdf (~400 KB) sont chargés dynamiquement dans les
 // fonctions d'export pour rester hors du chunk de la page analytiques.
 
@@ -226,7 +227,8 @@ export function exportAnalyticsCSV(data, tab, period) {
             const val = row[h];
             if (typeof val === "number")
               return val.toString().replace(".", ",");
-            return `"${(val || "").toString().replace(/"/g, '""')}"`;
+            // Texte neutralisé (formules du tableur), guillemets échappés
+            return toQuotedCsvCell((val || "").toString());
           })
           .join(";"),
       );

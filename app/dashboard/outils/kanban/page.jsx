@@ -116,6 +116,7 @@ import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
 import { useClients } from "@/src/graphql/clientQueries";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { toCsvCell } from "@/src/utils/spreadsheet-cell";
 
 function KanbanPageContent() {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -315,12 +316,8 @@ function KanbanPageContent() {
       headers.join(";"),
       ...rows.map((row) =>
         headers
-          .map((h) => {
-            const v = row[h];
-            return typeof v === "string" && (v.includes(";") || v.includes('"'))
-              ? `"${v.replace(/"/g, '""')}"`
-              : v;
-          })
+          // Texte neutralisé (formules du tableur), guillemets échappés
+          .map((h) => toCsvCell(row[h]))
           .join(";"),
       ),
     ].join("\n");

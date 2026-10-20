@@ -25,6 +25,7 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { useCreateProduct, useUpdateProduct } from "@/src/hooks/useProducts";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { toast } from "@/src/components/ui/sonner";
+import { VALIDATION_PATTERNS, isBlank } from "@/src/lib/validation";
 import { PackagePlusIcon } from "lucide-react";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
 import ProductCustomFieldsForm from "./product-custom-fields-form";
@@ -338,12 +339,15 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                             message:
                               "Le nom ne peut pas dépasser 200 caractères",
                           },
+                          // Même règle que l'API (NAME_REGEX) : vrais noms
+                          // (« Bœuf », « L’Atelier », « n° », « m² »), < et > refusés
                           pattern: {
-                            value:
-                              /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
+                            value: VALIDATION_PATTERNS.companyName.pattern,
                             message:
                               "Le nom contient des caractères non autorisés (< et > sont interdits)",
                           },
+                          validate: (value) =>
+                            !isBlank(value) || "Le nom du produit est requis",
                         })}
                       />
                       {errors.name && (

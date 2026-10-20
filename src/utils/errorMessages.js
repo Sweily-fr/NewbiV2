@@ -209,6 +209,20 @@ function isUserFacingMessage(message) {
 }
 
 /**
+ * Motif d'un refus métier rédigé par l'API pour l'utilisateur (« Le nom doit
+ * contenir au moins 2 caractères »…), ou null quand le message est technique
+ * ou que l'erreur n'est pas un refus métier.
+ */
+export function getUserFacingRefusal(error) {
+  if (!error || typeof error !== "object") return null;
+  const message = error.graphQLErrors?.[0]?.message || error.message || "";
+  return PASSTHROUGH_ERROR_CODES.includes(extractErrorCode(error)) &&
+    isUserFacingMessage(message)
+    ? message
+    : null;
+}
+
+/**
  * Récupère le code d'erreur applicatif. Les appelants passent le plus souvent
  * une ApolloError, qui n'a pas de `code` : il est dans les `extensions` de la
  * première erreur GraphQL (code direct, ou `exception.code` quand Apollo l'a
