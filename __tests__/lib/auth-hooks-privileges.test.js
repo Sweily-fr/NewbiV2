@@ -52,7 +52,7 @@ const memberIds = {
   admin: new ObjectId(),
   viewer: new ObjectId(),
 };
-const state = { plan: "pme", members: [], roles: [] };
+const state = { plan: "pme", members: [], roles: [], organizations: [] };
 
 const same = (a, b) => String(a) === String(b);
 const db = {
@@ -64,17 +64,26 @@ const db = {
       };
     }
     if (name === "member") {
+      const matches = (q) => (m) => {
+        if (q._id && !same(q._id, m._id)) return false;
+        if (q.organizationId && !same(q.organizationId, m.organizationId))
+          return false;
+        if (q.userId?.$in) return q.userId.$in.some((u) => same(u, m.userId));
+        if (q.userId && !same(q.userId, m.userId)) return false;
+        return true;
+      };
       return {
-        findOne: async (q) =>
-          state.members.find((m) => {
-            if (q._id && !same(q._id, m._id)) return false;
-            if (q.organizationId && !same(q.organizationId, m.organizationId))
-              return false;
-            if (q.userId?.$in)
-              return q.userId.$in.some((u) => same(u, m.userId));
-            if (q.userId && !same(q.userId, m.userId)) return false;
-            return true;
-          }) || null,
+        findOne: async (q) => state.members.find(matches(q)) || null,
+        find: (q) => ({
+          toArray: async () => state.members.filter(matches(q)),
+        }),
+      };
+    }
+    if (name === "organization") {
+      return {
+        countDocuments: async (q) =>
+          q._id.$in.filter((id) => state.organizations.some((o) => same(o, id)))
+            .length,
       };
     }
     if (name === "organizationRole") {
@@ -116,6 +125,7 @@ beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
   state.plan = "pme";
+  state.organizations = [ORG];
   state.members = [
     {
       _id: new ObjectId(),
@@ -230,6 +240,17 @@ describe("Plafonds de l'offre tenus par le serveur", () => {
     ).rejects.toMatchObject({
       message: expect.stringMatching(/propre abonnement/),
     });
+  });
+
+  it("adhésion orpheline (espace supprimé) : le premier espace reste permis", async () => {
+    state.organizations = [];
+    getSessionFromCtxMock.mockResolvedValue(sessionOf(users.owner));
+    await expect(
+      beforeSignInHook({
+        path: "/organization/create",
+        body: { name: "Premier", slug: "premier" },
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it("premier espace (aucune adhésion) : permis", async () => {

@@ -166,17 +166,31 @@ async function checkPlanLimits(ctx) {
 
     if (isCreate) {
       const userId = String(session.user.id);
-      const membership = await db.collection("member").findOne(
-        {
-          userId: {
-            $in: ObjectId.isValid(userId)
-              ? [new ObjectId(userId), userId]
-              : [userId],
+      const memberships = await db
+        .collection("member")
+        .find(
+          {
+            userId: {
+              $in: ObjectId.isValid(userId)
+                ? [new ObjectId(userId), userId]
+                : [userId],
+            },
           },
-        },
-        { projection: { _id: 1 } },
-      );
-      if (membership) {
+          { projection: { organizationId: 1 } },
+        )
+        .toArray();
+      // Adhésion à un espace qui existe encore (une adhésion orpheline ne
+      // bloque pas la création du premier espace)
+      const organizationIds = memberships
+        .map((m) => String(m.organizationId))
+        .filter((id) => ObjectId.isValid(id))
+        .map((id) => new ObjectId(id));
+      const existing = organizationIds.length
+        ? await db
+            .collection("organization")
+            .countDocuments({ _id: { $in: organizationIds } }, { limit: 1 })
+        : 0;
+      if (existing > 0) {
         denial =
           "Un nouvel espace se crée avec son propre abonnement, depuis la création d'espace du tableau de bord.";
       }
