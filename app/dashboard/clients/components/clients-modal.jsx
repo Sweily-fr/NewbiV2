@@ -315,8 +315,8 @@ export default function ClientsModal({
       value: VALIDATION_PATTERNS.personName.pattern,
       message: patternMessage,
     },
-    validate: (value) =>
-      !isBlank(value) || requiredMessage || "Le nom ne peut pas être vide",
+    // Obligatoire et rempli d'espaces : refusé comme un champ vide
+    validate: (value) => !requiredMessage || !isBlank(value) || requiredMessage,
   });
   const firstNameRules = personNameRules(
     "Le prénom est requis",
