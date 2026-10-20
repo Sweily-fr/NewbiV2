@@ -180,6 +180,24 @@ const ECRITURES = [
     temoin: () => ["invoices", _id(F.cibleAttente)],
   },
   {
+    nom: "Régime de TVA de la facturation électronique",
+    champ: "updateEInvoicingVatRegime",
+    editeur: "refuse",
+    workspace: true,
+    requete: `mutation($w: ID!) { updateEInvoicingVatRegime(workspaceId: $w, vatRegime: "REEL_NORMAL") }`,
+    variables: (w) => ({ w }),
+    temoin: () => ["organization", { _id: ORG_ID }],
+  },
+  {
+    nom: "Inscription à l'annuaire de la facturation électronique",
+    champ: "registerEInvoicingDirectory",
+    editeur: "refuse",
+    workspace: true,
+    requete: `mutation($w: ID!) { registerEInvoicingDirectory(workspaceId: $w) { __typename } }`,
+    variables: (w) => ({ w }),
+    temoin: () => ["organization", { _id: ORG_ID }],
+  },
+  {
     nom: "Créer un avoir",
     champ: "createCreditNote",
     editeur: "permis",
@@ -515,6 +533,33 @@ test.describe("Factures : une autre entreprise n'atteint rien", () => {
       if (op.workspace) await etape(page, "En-tête de sa propre organisation, organisation des autres en argument", () => refusSansEffet(page, op, "intrus", ORG, { entete: ORG_INTRUS }));
     });
   }
+
+  test("Brouillon de l'intrus qui pointe vers un client des autres : aucune donnée de ce client ne revient", async ({ page }) => {
+    const c = CLIENTS_FACTURES.lumiere;
+    const creer = await appelApi(
+      page,
+      `mutation($w: ID!, $input: CreateInvoiceInput!) { createInvoice(workspaceId: $w, input: $input) { id client { name email address { street } } } }`,
+      {
+        w: ORG_INTRUS,
+        input: {
+          client: { id: id(c), name: "Client de l'intrus", email: "client@intrus.test", type: "COMPANY", address: { street: "1 rue de l'Intrus", city: "Paris", postalCode: "75001", country: "France" } },
+          items: [article("Brouillon de l'intrus")],
+          issueDate: AUJOURDHUI,
+          dueDate: DANS_30,
+          status: "DRAFT",
+        },
+      },
+      { organisation: ORG_INTRUS },
+    );
+    const factureId = creer.data?.createInvoice?.id;
+    const relue = factureId
+      ? await appelApi(page, `query($w: ID!, $id: ID!) { invoice(id: $id, workspaceId: $w) { client { name email address { street city } } } }`, { w: ORG_INTRUS, id: factureId }, { organisation: ORG_INTRUS })
+      : creer;
+    const texte = JSON.stringify([creer.data, relue.data]);
+    expect(texte, "Le nom du client des autres revient à l'intrus").not.toContain(c.name);
+    expect(texte, "L'e-mail du client des autres revient à l'intrus").not.toContain(c.email);
+    expect(texte, "L'adresse du client des autres revient à l'intrus").not.toContain(c.address.street);
+  });
 
   test.describe(() => {
     // Refus attendus de l'API, que le site écrit dans la console.
