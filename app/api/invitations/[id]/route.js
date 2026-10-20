@@ -13,6 +13,14 @@ export async function GET(request, { params }) {
     const { mongoDb } = await import("@/src/lib/mongodb");
     const { ObjectId } = await import("mongodb");
 
+    // Lien tronqué ou mal formé : introuvable, pas une erreur serveur
+    if (!ObjectId.isValid(id)) {
+      return Response.json(
+        { error: "Invitation non trouvée" },
+        { status: 404 },
+      );
+    }
+
     // Récupérer l'invitation directement depuis MongoDB par _id
     const invitation = await mongoDb
       .collection("invitation")
@@ -78,6 +86,11 @@ async function postHandler(request, { params }) {
 
   const { id } = await params;
   const { action } = await request.json();
+
+  // Lien tronqué ou mal formé : introuvable, pas une erreur serveur
+  if (!(await import("mongodb")).ObjectId.isValid(id)) {
+    return Response.json({ error: "Invitation non trouvée" }, { status: 404 });
+  }
 
   console.log(`📋 Invitation ID: ${id}, Action: ${action}`);
 
