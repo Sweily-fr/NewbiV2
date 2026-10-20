@@ -123,6 +123,17 @@ export default function ClientImportDialog({
     }).length;
   }, [transformedClients]);
 
+  // Lignes écartées de l'import, avec leur raison (e-mail invalide, SIRET
+  // manquant…) : sans elles, le bouton annonçait moins de contacts sans dire
+  // pourquoi
+  const rejectedRowErrors = useMemo(
+    () =>
+      transformedClients.flatMap(
+        (client, idx) => validateClientRow(client, idx).errors,
+      ),
+    [transformedClients],
+  );
+
   const importFinished =
     !isImporting &&
     (importResults.successCount > 0 || importResults.errors.length > 0);
@@ -229,7 +240,16 @@ export default function ClientImportDialog({
               workspaceId,
               input: client,
             },
-          }).then(() => ({ idx })),
+          }).then((result) => {
+            // errorPolicy « all » : un refus de l'API (e-mail déjà pris…)
+            // arrive dans result.errors, sans rejet de la promesse
+            if (result?.errors?.length || !result?.data?.createClient) {
+              throw new Error(
+                result?.errors?.[0]?.message || "Contact refusé par le serveur",
+              );
+            }
+            return { idx };
+          }),
         ),
       );
 
@@ -420,18 +440,45 @@ export default function ClientImportDialog({
                   parsedData &&
                   !isImporting &&
                   !importFinished && (
-                    <ImportStepMapping
-                      headers={parsedData.headers}
-                      firstRow={parsedData.rows[0]}
-                      mapping={mapping}
-                      onMappingChange={setMapping}
-                      customFieldMappings={customFieldMappings}
-                      onCustomFieldMappingsChange={setCustomFieldMappings}
-                      onCreateCustomField={
-                        canCreateCustomFields ? handleCreateCustomField : null
-                      }
-                      existingCustomFields={customFields}
-                    />
+                    <>
+                      <ImportStepMapping
+                        headers={parsedData.headers}
+                        firstRow={parsedData.rows[0]}
+                        mapping={mapping}
+                        onMappingChange={setMapping}
+                        customFieldMappings={customFieldMappings}
+                        onCustomFieldMappingsChange={setCustomFieldMappings}
+                        onCreateCustomField={
+                          canCreateCustomFields ? handleCreateCustomField : null
+                        }
+                        existingCustomFields={customFields}
+                      />
+                      {rejectedRowErrors.length > 0 && (
+                        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 p-3">
+                          <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                            {parsedData.rows.length - importableCount} ligne
+                            {parsedData.rows.length - importableCount > 1
+                              ? "s"
+                              : ""}{" "}
+                            écartée
+                            {parsedData.rows.length - importableCount > 1
+                              ? "s"
+                              : ""}{" "}
+                            de l&apos;import
+                          </p>
+                          <ul className="mt-1.5 max-h-[120px] overflow-auto space-y-0.5">
+                            {rejectedRowErrors.map((message, idx) => (
+                              <li
+                                key={idx}
+                                className="text-xs text-amber-700 dark:text-amber-400"
+                              >
+                                {message}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
                   )}
 
                 {/* Import progress */}
