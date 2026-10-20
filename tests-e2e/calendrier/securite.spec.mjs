@@ -42,8 +42,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateEvent",
     requete: `mutation($w: ID,$input: UpdateEventInput!){ updateEvent(workspaceId:$w,input:$input){ success message event{ id } } }`,
-    variables: (w, qui) => ({ w, input: { id: id(EVENEMENTS.modifier), title: `Modifié par ${qui}` } }),
-    temoin: () => ["events", { _id: EVENEMENTS.modifier._id }],
+    variables: (w, qui) => ({ w, input: { id: id(EVENEMENTS.lecture), title: `Modifié par ${qui}` } }),
+    variablesEditeur: (w) => ({ w, input: { id: id(EVENEMENTS.modifierEditeur), title: "Modifié par l'éditeur" } }),
+    temoin: () => ["events", { _id: EVENEMENTS.lecture._id }],
   },
   {
     nom: "Supprimer un événement",
@@ -83,7 +84,7 @@ test.describe("Calendrier : droits du rôle « Éditeur »", () => {
       });
     } else {
       test(`${op.nom} : permis`, async ({ page }) => {
-        const reponse = await appelApi(page, op.requete, op.variables(ORG, "editeur"), { organisation: ORG, delai: 15_000 });
+        const reponse = await appelApi(page, op.requete, (op.variablesEditeur || op.variables)(ORG, "editeur"), { organisation: ORG, delai: 15_000 });
         verifierReussite(reponse, op.champ, op.nom);
       });
     }

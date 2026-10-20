@@ -337,6 +337,7 @@ const evenement = (n, titre, { organisation = "collab", userId, ...champs } = {}
 export const EVENEMENTS = {
   lecture: evenement(1, "Réunion d'équipe"),
   modifier: evenement(2, "Événement à modifier"),
+  modifierEditeur: evenement(6, "Événement modifié par l'Éditeur"),
   supprimer: evenement(3, "Événement à supprimer"),
   // Événement externe (synchronisé) : non modifiable même par le propriétaire.
   externe: evenement(4, "Événement Google", { source: "google", isReadOnly: true, externalEventId: "ext-123" }),
@@ -486,6 +487,7 @@ const document = (n, nom, { organisation = "collab", uploadedBy, folderId = null
 export const DOSSIERS = {
   lecture: dossier(1, "Factures 2026"),
   renommer: dossier(2, "Dossier à renommer"),
+  renommerEditeur: dossier(7, "Dossier renommé par l'Éditeur"),
   supprimer: dossier(3, "Dossier à supprimer"),
   // Cible de l'automatisation et des documents.
   classement: dossier(4, "Dossier de classement"),
@@ -497,8 +499,10 @@ export const DOSSIERS = {
 export const DOCUMENTS = {
   lecture: document(1, "contrat.pdf", { folderId: DOSSIERS.lecture._id, status: "classified" }),
   modifier: document(2, "a-renommer.pdf"),
+  modifierEditeur: document(7, "a-renommer-editeur.pdf"),
   supprimer: document(3, "a-supprimer.pdf"),
   deplacer: document(4, "a-deplacer.pdf"),
+  deplacerEditeur: document(8, "a-deplacer-editeur.pdf"),
   // Document déjà en corbeille : cible de restauration / suppression définitive.
   corbeille: document(5, "en-corbeille.pdf", { trashedAt: DANS(-1), originalFolderId: null }),
   intrus: document(6, "intrus.pdf", { organisation: "intrus" }),
@@ -517,6 +521,14 @@ export const TAGS = {
     _id: oid("tagDocument", 2),
     workspaceId: COLLAB,
     name: "À renommer",
+    color: "#3b82f6",
+    createdAt: MAINTENANT,
+    updatedAt: MAINTENANT,
+  },
+  modifierEditeur: {
+    _id: oid("tagDocument", 4),
+    workspaceId: COLLAB,
+    name: "À renommer (éditeur)",
     color: "#3b82f6",
     createdAt: MAINTENANT,
     updatedAt: MAINTENANT,
@@ -557,7 +569,9 @@ const automatisationDoc = (n, nom, { organisation = "collab", createdBy, folderI
 });
 
 export const AUTOMATISATIONS_DOC = {
+  lecture: automatisationDoc(4, "Automatisation (lecture)"),
   modifier: automatisationDoc(1, "Factures payées vers Classement"),
+  modifierEditeur: automatisationDoc(5, "Automatisation modifiée par l'Éditeur", { triggerType: "QUOTE_SENT" }),
   supprimer: automatisationDoc(2, "Automatisation à supprimer", { triggerType: "QUOTE_ACCEPTED" }),
   intrus: automatisationDoc(3, "Automatisation de l'intrus", {
     organisation: "intrus",

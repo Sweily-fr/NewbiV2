@@ -52,8 +52,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateSharedFolder",
     requete: `mutation($w: ID!,$id: ID!,$input: UpdateSharedFolderInput!){ updateSharedFolder(workspaceId:$w,id:$id,input:$input){ success message folder{ id } } }`,
-    variables: (w, qui) => ({ w, id: id(DOSSIERS.renommer), input: { name: `Renommé par ${qui}` } }),
-    temoin: () => ["sharedfolders", { _id: DOSSIERS.renommer._id }],
+    variables: (w, qui) => ({ w, id: id(DOSSIERS.lecture), input: { name: `Renommé par ${qui}` } }),
+    variablesEditeur: (w) => ({ w, id: id(DOSSIERS.renommerEditeur), input: { name: "Renommé par l'éditeur" } }),
+    temoin: () => ["sharedfolders", { _id: DOSSIERS.lecture._id }],
   },
   {
     nom: "Supprimer un dossier",
@@ -70,8 +71,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateSharedDocument",
     requete: `mutation($w: ID!,$id: ID!,$input: UpdateSharedDocumentInput!){ updateSharedDocument(workspaceId:$w,id:$id,input:$input){ success message } }`,
-    variables: (w, qui) => ({ w, id: id(DOCUMENTS.modifier), input: { name: `renomme-par-${qui}.pdf` } }),
-    temoin: () => ["shareddocuments", { _id: DOCUMENTS.modifier._id }],
+    variables: (w, qui) => ({ w, id: id(DOCUMENTS.lecture), input: { name: `renomme-par-${qui}.pdf` } }),
+    variablesEditeur: (w) => ({ w, id: id(DOCUMENTS.modifierEditeur), input: { name: "renomme-editeur.pdf" } }),
+    temoin: () => ["shareddocuments", { _id: DOCUMENTS.lecture._id }],
   },
   {
     nom: "Supprimer un document",
@@ -88,8 +90,9 @@ const ECRITURES = [
     cible: true,
     champ: "moveSharedDocuments",
     requete: `mutation($w: ID!,$ids: [ID!]!,$f: ID){ moveSharedDocuments(workspaceId:$w,ids:$ids,targetFolderId:$f){ success message } }`,
-    variables: (w) => ({ w, ids: [id(DOCUMENTS.deplacer)], f: id(DOSSIERS.classement) }),
-    temoin: () => ["shareddocuments", { _id: DOCUMENTS.deplacer._id }],
+    variables: (w) => ({ w, ids: [id(DOCUMENTS.lecture)], f: id(DOSSIERS.classement) }),
+    variablesEditeur: (w) => ({ w, ids: [id(DOCUMENTS.deplacerEditeur)], f: id(DOSSIERS.classement) }),
+    temoin: () => ["shareddocuments", { _id: DOCUMENTS.lecture._id }],
   },
   {
     nom: "Renommer une étiquette",
@@ -97,8 +100,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateDocumentTag",
     requete: `mutation($w: ID!,$id: ID!,$n: String){ updateDocumentTag(workspaceId:$w,id:$id,name:$n){ success message } }`,
-    variables: (w, qui) => ({ w, id: id(TAGS.modifier), n: `Étiquette ${qui}` }),
-    temoin: () => ["sharedtags", { _id: TAGS.modifier._id }],
+    variables: (w, qui) => ({ w, id: id(TAGS.lecture), n: `Étiquette ${qui}` }),
+    variablesEditeur: (w) => ({ w, id: id(TAGS.modifierEditeur), n: "Étiquette éditeur" }),
+    temoin: () => ["sharedtags", { _id: TAGS.lecture._id }],
   },
   {
     nom: "Supprimer une étiquette",
@@ -115,8 +119,9 @@ const ECRITURES = [
     cible: true,
     champ: "updateDocumentAutomation",
     requete: `mutation($w: ID!,$id: ID!,$input: UpdateDocumentAutomationInput!){ updateDocumentAutomation(workspaceId:$w,id:$id,input:$input){ id } }`,
-    variables: (w, qui) => ({ w, id: id(AUTOMATISATIONS_DOC.modifier), input: { description: `Modifiée par ${qui}` } }),
-    temoin: () => ["documentautomations", { _id: AUTOMATISATIONS_DOC.modifier._id }],
+    variables: (w, qui) => ({ w, id: id(AUTOMATISATIONS_DOC.lecture), input: { description: `Modifiée par ${qui}` } }),
+    variablesEditeur: (w) => ({ w, id: id(AUTOMATISATIONS_DOC.modifierEditeur), input: { description: "Modifiée par l'éditeur" } }),
+    temoin: () => ["documentautomations", { _id: AUTOMATISATIONS_DOC.lecture._id }],
   },
   {
     nom: "Supprimer une automatisation de documents",
@@ -158,7 +163,7 @@ test.describe("Documents partagés : droits du rôle « Éditeur »", () => {
       });
     } else {
       test(`${op.nom} : permis`, async ({ page }) => {
-        const reponse = await appelApi(page, op.requete, op.variables(ORG, "editeur"), { organisation: ORG, delai: 15_000 });
+        const reponse = await appelApi(page, op.requete, (op.variablesEditeur || op.variables)(ORG, "editeur"), { organisation: ORG, delai: 15_000 });
         verifierReussite(reponse, op.champ, op.nom);
       });
     }
