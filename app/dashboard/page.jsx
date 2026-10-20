@@ -498,12 +498,16 @@ function DashboardContent() {
 
       {/* BankBalanceCard caché — sert uniquement pour le dialog de connexion.
           Monté seulement si le rôle lit les transactions et peut connecter une
-          banque : il interroge les routes bancaires dès son montage. */}
-      {!permissionsPending && canReadBanking && canConnectBank && (
-        <div className="hidden">
-          <BankBalanceCard ref={bankBalanceRef} />
-        </div>
-      )}
+          banque, hors lecture seule (routes bancaires refusées, 402) : il
+          interroge les routes bancaires dès son montage. */}
+      {!permissionsPending &&
+        canReadBanking &&
+        canConnectBank &&
+        !isReadOnly && (
+          <div className="hidden">
+            <BankBalanceCard ref={bankBalanceRef} />
+          </div>
+        )}
 
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
         {!permissionsPending && canReadBanking && <BankReconnectAlert />}

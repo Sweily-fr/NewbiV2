@@ -286,11 +286,12 @@ export function NavSecondary({
   const canManageIntegrations =
     permissionsReady && canDo("integrations", "manage");
   // Réglages e-invoicing lisibles avec les factures ou les applications :
-  // requête coupée sinon (barre latérale montée sur toutes les pages)
+  // requête coupée sinon (barre latérale montée sur toutes les pages), et
+  // lancée une fois les droits connus
   const { settings: eInvoicingSettings, loading: eInvoicingLoading } =
     useEInvoicingSettings({
       skip:
-        permissionsReady && !canRead("invoices") && !canRead("integrations"),
+        !permissionsReady || (!canRead("invoices") && !canRead("integrations")),
     });
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
