@@ -78,12 +78,15 @@ test.describe("Transferts : formulaire du nouveau transfert", () => {
 
   test("« Protection par mot de passe » révèle un champ de mot de passe", async ({ page }) => {
     await ouvrirNouveau(page);
-    const avant = await page.getByPlaceholder("Entrez un mot de passe").count();
-    // Les interrupteurs n'ont pas de nom accessible : on les repère par leur libellé voisin.
-    const ligneMdp = page.locator("div", { has: page.getByText("Protéger par mot de passe", { exact: false }) }).last();
-    await ligneMdp.getByRole("switch").first().click().catch(() => {});
-    await page.waitForTimeout(400);
-    const apres = await page.getByPlaceholder("Entrez un mot de passe").count();
-    expect(apres, "Activer la protection doit révéler un champ de mot de passe").toBeGreaterThanOrEqual(avant);
+    await expect(page.getByPlaceholder("Entrez un mot de passe")).toHaveCount(0);
+    // L'interrupteur n'a pas de nom accessible : on vise la rangée qui porte le
+    // libellé exact « Protection par mot de passe » et un interrupteur.
+    const rangee = page
+      .locator("div")
+      .filter({ has: page.getByText("Protection par mot de passe", { exact: true }) })
+      .filter({ has: page.getByRole("switch") })
+      .last();
+    await rangee.getByRole("switch").click();
+    await expect(page.getByPlaceholder("Entrez un mot de passe")).toBeVisible({ timeout: 5_000 });
   });
 });

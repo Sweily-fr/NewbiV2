@@ -439,6 +439,11 @@ export const TRANSFERTS = {
     accessKey: "e2eclefpayant0000000000000000000",
     isPaymentRequired: true,
     paymentAmount: 10,
+    // Jeton de retour de paiement déjà posé (comme après un départ vers Stripe) :
+    // il voyage dans l'URL de retour, consultable par le destinataire.
+    paymentReturnToken: "e2eJetonRetourPaiementCollab0000",
+    paymentReturnTokenConsumed: false,
+    paymentReturnTokenExpiresAt: DANS(1),
   }),
 };
 

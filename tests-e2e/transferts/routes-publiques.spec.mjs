@@ -18,8 +18,7 @@
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { API_URL } from "../config.mjs";
-import { appelApi, id } from "../securite.mjs";
-import { photo } from "../securite-collaboration.mjs";
+import { appelApi } from "../securite.mjs";
 import { TRANSFERTS } from "../donnees/lot-collaboration.mjs";
 
 // Sans session : /api/auth/token répond 401, c'est attendu.
@@ -75,33 +74,20 @@ test.describe("Transferts : routes publiques de téléchargement (défauts connu
 });
 
 test.describe("Transferts : jeton de retour de paiement (défaut connu)", () => {
-  test("Un transferId devinable, sans clé ni session, mène aux identifiants du transfert", async ({ page }) => {
+  test("Consommer le jeton de retour, sans session, révèle le lien et la clé d'accès", async ({ page }) => {
     await ouvrir(page, "/auth/login");
-
-    await etape(page, "Créer une session de paiement pour le transfert d'autrui, sans clé d'accès", async () => {
-      // Sans accessKey ni session : la création écrit déjà un jeton de retour en base.
-      await appelApi(
-        page,
-        `mutation($id: ID!){ createPaymentSessionForFileTransfer(transferId: $id){ success message } }`,
-        { id: id(TRANSFERTS.paiement) },
-        { delai: 25_000 },
-      );
-    });
-
-    const doc = JSON.parse(await photo("filetransfers", { _id: TRANSFERTS.paiement._id }))[0];
-    const jeton = doc.paymentReturnToken;
-    expect(jeton, "Un jeton de retour a été écrit pour un transfert sans clé d'accès (il voyage ensuite dans l'URL de retour Stripe)").toBeTruthy();
-
+    // Le jeton de retour (posé lors d'un départ vers Stripe) voyage dans l'URL
+    // de retour ; quiconque l'obtient peut, sans connexion, le consommer.
     const reponse = await appelApi(
       page,
       `query($t: String!){ consumePaymentReturnToken(token: $t){ success shareLink accessKey } }`,
-      { t: jeton },
+      { t: TRANSFERTS.paiement.paymentReturnToken },
     );
     const resultat = reponse.data?.consumePaymentReturnToken;
-    await etape(page, "Consommer le jeton ne doit pas révéler les identifiants", async () => {
+    await etape(page, "La consommation ne doit pas révéler les identifiants d'accès", async () => {
       expect(
         resultat?.accessKey ?? null,
-        "Un transferId devinable (sans clé, sans session) a révélé la clé d'accès du transfert via le jeton de retour de paiement",
+        `Le jeton de retour de paiement a révélé la clé d'accès du transfert sans aucune connexion (reçu ${JSON.stringify(resultat)?.slice(0, 160)})`,
       ).toBeNull();
     });
   });

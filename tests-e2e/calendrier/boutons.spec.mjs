@@ -4,7 +4,7 @@
  * les énumérer, on teste la barre d'outils et l'ouverture d'un événement.
  */
 import { test, expect } from "../outils.mjs";
-import { ouvrir, cliquer } from "../navigation.mjs";
+import { ouvrir, cliquer, attendreCalme } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_COLLAB, SESSION_TOKEN_COLLAB_MEMBRE } from "../config.mjs";
 import { EVENEMENTS } from "../donnees/lot-collaboration.mjs";
 
@@ -47,14 +47,22 @@ test.describe("Calendrier (propriétaire) : la barre d'outils agit", () => {
     await cliquer(page, page.getByRole("button", { name: "Aujourd'hui" }));
   });
 
-  test("Cliquer un événement ouvre sa modification ; un événement externe est en lecture", async ({ page }) => {
+  // Vue Agenda : les événements sont listés quel que soit le jour affiché.
+  async function ouvrirAgenda(page) {
     await ouvrirCalendrier(page);
-    // Vue Agenda : les événements sont listés quel que soit le jour affiché.
     await page.getByRole("button", { name: "Mois" }).first().click();
     await page.getByRole("menuitem", { name: /Agenda/ }).click();
+    await attendreCalme(page);
+  }
+
+  test("Cliquer un événement interne ouvre sa modification", async ({ page }) => {
+    await ouvrirAgenda(page);
     await page.getByText(EVENEMENTS.lecture.title, { exact: true }).first().click();
     await expect(page.getByRole("dialog").filter({ hasText: "Modifier l'événement" })).toBeVisible();
-    await page.keyboard.press("Escape");
+  });
+
+  test("Un événement externe s'ouvre en lecture seule", async ({ page }) => {
+    await ouvrirAgenda(page);
     await page.getByText(EVENEMENTS.externe.title, { exact: true }).first().click();
     await expect(page.getByRole("dialog").filter({ hasText: /Détails de l'événement/ })).toBeVisible();
   });
