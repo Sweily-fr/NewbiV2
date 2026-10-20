@@ -259,3 +259,54 @@ export async function verifierPiegeInerte(page) {
   expect(await page.evaluate(() => window.__piege ?? null), "Le code du texte piégé s'est exécuté").toBeNull();
   expect(await page.locator("img[src='x-piege']").count(), "La balise du texte piégé a été créée dans la page").toBe(0);
 }
+
+/** PDF d'une page vide, valide pour l'aperçu (pdf.js). */
+export const PDF_MINIMAL = Buffer.from(
+  "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n",
+);
+
+/**
+ * Les justificatifs vivent sur le stockage de fichiers (R2), injoignable en
+ * test : l'aperçu en serait une erreur 500. Les demandes d'aperçu reçoivent
+ * ici un PDF d'une page, comme si le fichier existait.
+ */
+export async function simulerApercus(page) {
+  await page.route(/\/api\/document-preview\/|\/documents\/imported\//, (route) =>
+    route.fulfill({ status: 200, contentType: "application/pdf", body: PDF_MINIMAL }),
+  );
+}
+
+/** Lecture d'un CSV (séparateur « ; », champs entre guillemets, sauts de ligne dans un champ). */
+export function lireCsv(texte) {
+  const lignes = [];
+  let ligne = [];
+  let champ = "";
+  let guillemets = false;
+  const t = texte.replace(/^﻿/, "");
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (guillemets) {
+      if (c === '"' && t[i + 1] === '"') {
+        champ += '"';
+        i++;
+      } else if (c === '"') guillemets = false;
+      else champ += c;
+    } else if (c === '"') guillemets = true;
+    else if (c === ";") {
+      ligne.push(champ);
+      champ = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && t[i + 1] === "\n") i++;
+      ligne.push(champ);
+      lignes.push(ligne);
+      ligne = [];
+      champ = "";
+    } else champ += c;
+  }
+  if (champ || ligne.length) {
+    ligne.push(champ);
+    lignes.push(ligne);
+  }
+  return lignes;
+}
+

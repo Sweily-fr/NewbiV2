@@ -154,6 +154,7 @@ export const PRODUITS_SAISIE = {
   piege: produit(115, "saisieAchats", { name: "Produit piégé par un membre", reference: "PIE-001", unitPrice: 24 }),
   multiligne: produit(116, "saisieAchats", { name: "Produit description multiligne", reference: "MUL-001", description: "Première ligne\nDeuxième ligne", unitPrice: 25 }),
   formule: produit(117, "saisieAchats", { name: "=HYPERLINK(\"https://piege.example\";\"Cliquez\")", reference: "FOR-001", unitPrice: 26 }),
+  symboles: produit(118, "saisieAchats", { name: "Produit aux symboles", reference: "SYM-001", description: "Prix < 10 € & délai > 2 jours <b>gras</b>", unitPrice: 27 }),
 };
 
 /** Catalogue de plus de 100 produits (offre d'entrée) : « Article 001 » à « Article 105 ». */
@@ -452,6 +453,7 @@ const F = {
   hotel: fournisseur(12, "achats", "Hôtel du Commerce", "OTHER"),
   bureau: fournisseur(13, "achats", "Fournitures Bureau Pro", "OFFICE_SUPPLIES"),
   remplissage: fournisseur(14, "achats", "Papeterie du Centre", "OFFICE_SUPPLIES"),
+  guillemets: fournisseur(15, "achats", 'Boulangerie "Au Bon Pain"', "MEALS"),
 };
 export const FOURNISSEURS = F;
 
@@ -482,6 +484,7 @@ export const FACTURES_ACHAT = {
   leroy: factureAchat(11, "achats", { fournisseur: F.leroy, numero: "LM-99120", emiseIlYa: 10, ttc: 230, statut: "PAID", categorie: "HARDWARE", sousCategorie: "materiel", payeeIlYa: 10, moyen: "CREDIT_CARD" }),
   hotel: factureAchat(12, "achats", { fournisseur: F.hotel, numero: "HDC-2026-301", emiseIlYa: 7, echeanceDans: 20, ttc: 245, taux: 10, statut: "TO_PAY", categorie: "OTHER", sousCategorie: "hotel", notes: "Déplacement salon de Lyon" }),
   bureau: factureAchat(13, "achats", { fournisseur: F.bureau, numero: "FBP-7781", emiseIlYa: 120, ttc: 156, statut: "ARCHIVED", categorie: "OFFICE_SUPPLIES", sousCategorie: "bureau" }),
+  guillemets: factureAchat(14, "achats", { fournisseur: F.guillemets, numero: "BAP-0930", emiseIlYa: 30, ttc: 24.6, taux: 5.5, statut: "PAID", categorie: "MEALS", sousCategorie: "repas", payeeIlYa: 30, moyen: "CREDIT_CARD", notes: 'Commande "réunion" de rentrée' }),
 };
 
 /** Factures de remplissage (anciennes, payées) : 28 factures en tout, deux pages de 25. */
@@ -536,6 +539,7 @@ const FS = {
   justificatif: fournisseur(107, "saisieAchats", "Fournisseur avec justificatif", "OTHER"),
   editeur: fournisseur(108, "saisieAchats", "Fournisseur de l'Éditeur", "OTHER"),
   aFusionner: fournisseur(109, "saisieAchats", "Fournisseur à fusionner", "OTHER"),
+  formule: fournisseur(110, "saisieAchats", '=HYPERLINK("https://piege.example";"Facture")', "OTHER"),
 };
 export const FOURNISSEURS_SAISIE = FS;
 const CBS = COMPTES_BANCAIRES.saisie;
@@ -573,6 +577,7 @@ export const FACTURES_ACHAT_SAISIE = {
   editeurCategorieGroupe: factureAchat(128, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-128", emiseIlYa: 3, ttc: 68, statut: "TO_PROCESS" }),
   editeurRapprocher: factureAchat(129, "saisieAchats", { fournisseur: FS.editeur, numero: "EDI-129", emiseIlYa: 3, ttc: 69, statut: "TO_PAY" }),
   piege: factureAchat(130, "saisieAchats", { fournisseur: FS.editeur, numero: "PIE-130", emiseIlYa: 2, ttc: 70, statut: "TO_PROCESS" }),
+  formule: factureAchat(131, "saisieAchats", { fournisseur: FS.formule, numero: "=1+1", emiseIlYa: 2, ttc: 71, statut: "TO_PROCESS" }),
 };
 
 /** Transactions de « Saisie Achats » : une par action (catégoriser, rapprocher, justificatifs…). */
