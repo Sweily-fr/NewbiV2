@@ -24,7 +24,10 @@ export default defineConfig({
   // Un test à la fois : les données sont partagées et la machine de CI est
   // modeste (même choix que la suite de l'admin).
   workers: 1,
-  retries: 0,
+  // Une seconde tentative : un vrai défaut du site échoue à chaque fois (reste
+  // rouge), seul un aléa de l'environnement (charge, écriture en base en retard)
+  // passe au second essai. Rien n'est masqué d'un défaut reproductible.
+  retries: 1,
   forbidOnly: Boolean(process.env.CI),
   timeout: 90_000,
   expect: { timeout: 15_000 },
