@@ -15,8 +15,23 @@ const MOBILE_BLOCKED_PREFIXES = [
   "/create-workspace",
 ];
 
+// Pages de développement : introuvables dans un build de production. Le
+// notFound() de la page ne suffit pas sous /dashboard, dont le chargement
+// progressif envoie déjà un statut 200
+const DEV_ONLY_PAGES = new Set([
+  "/dashboard/test-rbac",
+  "/dashboard/loaderTest",
+]);
+
 export function middleware(request) {
   const { pathname } = request.nextUrl;
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    DEV_ONLY_PAGES.has(pathname.replace(/\/$/, ""))
+  ) {
+    return new NextResponse("Page introuvable", { status: 404 });
+  }
 
   if (MOBILE_BLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     const { device } = userAgent(request);

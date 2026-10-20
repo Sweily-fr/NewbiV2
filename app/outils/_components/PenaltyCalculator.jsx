@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
@@ -32,14 +32,23 @@ function parseNombre(valeur) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Jour à Paris (AAAA-MM-JJ) : en UTC, entre minuit et 2 h, la date de
+// paiement proposée était la veille (un jour de retard en moins)
 function aujourdhui() {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(
+    new Date(),
+  );
 }
 
 export default function PenaltyCalculator() {
   const [montant, setMontant] = useState("");
   const [echeance, setEcheance] = useState("");
-  const [paiement, setPaiement] = useState(aujourdhui());
+  // Date du jour posée dans le navigateur : la page est pré-rendue à la mise
+  // en ligne du site, une date calculée au rendu serait celle de ce jour-là
+  const [paiement, setPaiement] = useState("");
+  useEffect(() => {
+    setPaiement((current) => current || aujourdhui());
+  }, []);
   const [taux, setTaux] = useState("");
   const [indemnite, setIndemnite] = useState(true);
   const [copie, setCopie] = useState(false);

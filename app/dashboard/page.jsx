@@ -510,7 +510,10 @@ function DashboardContent() {
         )}
 
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
-        {!permissionsPending && canReadBanking && <BankReconnectAlert />}
+        {/* Hors lecture seule : la route du statut bancaire répond 402 */}
+        {!permissionsPending && canReadBanking && !isReadOnly && (
+          <BankReconnectAlert />
+        )}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full mb-2 gap-1 md:gap-0">
           <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},

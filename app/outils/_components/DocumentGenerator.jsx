@@ -46,14 +46,20 @@ const ligneVide = () => ({
   unit: "unité",
 });
 
+// Jour à Paris (AAAA-MM-JJ) : en UTC, entre minuit et 2 h, la date
+// proposée était la veille
+const PARIS_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Paris",
+});
+
 function aujourdhui() {
-  return new Date().toISOString().slice(0, 10);
+  return PARIS_DAY.format(new Date());
 }
 
 function dansNJours(n) {
   const d = new Date();
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return PARIS_DAY.format(d);
 }
 
 function Section({ title, children, className = "" }) {
@@ -148,10 +154,22 @@ export default function DocumentGenerator({ config }) {
   const [doc, setDoc] = useState({
     prefix: `${config.prefix}-${new Date().getFullYear()}`,
     number: "001",
-    issueDate: aujourdhui(),
-    secondDate: dansNJours(config.secondDate.defaultDays),
+    // Posées dans le navigateur (effet ci-dessous)
+    issueDate: "",
+    secondDate: "",
     terms: config.defaultTerms,
   });
+
+  // Dates du jour posées dans le navigateur : la page est pré-rendue à la
+  // mise en ligne du site, des dates calculées au rendu seraient celles de
+  // ce jour-là (dates fausses, erreur d'hydratation)
+  useEffect(() => {
+    setDoc((d) => ({
+      ...d,
+      issueDate: d.issueDate || aujourdhui(),
+      secondDate: d.secondDate || dansNJours(config.secondDate.defaultDays),
+    }));
+  }, [config.secondDate.defaultDays]);
 
   const [items, setItems] = useState([ligneVide()]);
 
