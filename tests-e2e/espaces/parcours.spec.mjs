@@ -164,9 +164,14 @@ test.describe("Espaces : transférer le rôle de super admin", () => {
     await page.getByRole("alertdialog").getByRole("button", { name: "Transférer", exact: true }).click();
     const org = COMPTES_AUTH.transfert.organisation._id;
     await expect.poll(async () => (await (await db()).collection("member").findOne({ _id: idCible("transfert") }))?.role).toBe("owner");
+    // La promotion du nouveau et la rétrogradation de l'ancien ne sont pas atomiques : on attend l'état final.
+    await expect
+      .poll(async () => (await (await db()).collection("member").findOne({ organizationId: org, userId: COMPTES_AUTH.transfert.utilisateur._id }))?.role, {
+        message: "L'ancien super admin n'a pas été rétrogradé",
+      })
+      .not.toBe("owner");
     const ancien = await (await db()).collection("member").findOne({ organizationId: org, userId: COMPTES_AUTH.transfert.utilisateur._id });
     expect(ancien, "L'ancien super admin a perdu l'accès à son espace").not.toBeNull();
-    expect(ancien.role).not.toBe("owner");
     expect(await (await db()).collection("member").countDocuments({ organizationId: org, role: "owner" }), "Un seul super admin par espace").toBe(1);
   });
 });

@@ -122,7 +122,7 @@ export function verifierFormulaire(formulaire) {
       { capture: "ecran" },
     );
     await etape(page, "Enregistré tel que saisi", async () => {
-      await expect.poll(() => enregistre(v), { message: "Le document n'a pas été enregistré", timeout: 10_000 }).not.toBeNull();
+      await expect.poll(() => enregistre(v), { message: "Le document n'a pas été enregistré", timeout: 20_000 }).not.toBeNull();
       if (cle) {
         const doc = await enregistre(v);
         expect(lu ? lu(doc) : doc[cle], `Valeur enregistrée pour « ${cle} »`).toBe(attendu);

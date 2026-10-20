@@ -298,6 +298,8 @@ test.describe("Contacts (éditeur)", () => {
       ...ONGLET_FACTURES(0),
       "tab Notes 1": { navigation: /\?tab=notes$/ },
       ...SECTIONS("Informations de contact", "Voir plus ↓", "Facturation", "Détails"),
+      // Affichée seulement tant qu'un champ personnalisé « sur les documents » existe (d'autres tests en suppriment).
+      "button Sur les documents": { contenu: true, facultatif: true },
     },
   });
 
@@ -361,6 +363,8 @@ test.describe("Contacts (membre, lecture seule)", () => {
       ...ONGLET_FACTURES(0),
       "tab Notes 1": { navigation: /\?tab=notes$/ },
       ...SECTIONS("Informations de contact", "Voir plus ↓", "Facturation", "Détails"),
+      // Affichée seulement tant qu'un champ personnalisé « sur les documents » existe (d'autres tests en suppriment).
+      "button Sur les documents": { contenu: true, facultatif: true },
     },
   });
 

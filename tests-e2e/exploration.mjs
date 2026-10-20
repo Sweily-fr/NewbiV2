@@ -493,7 +493,8 @@ export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test, 
       const trouves = (await elementsActionnables(zone(page))).map((e) => (nomsVariables ? sansCompteur(e) : e));
       const { nonCouverts, disparus } = comparerAuxAttendus(trouves, boutons);
       expect.soft(nonCouverts, "Éléments présents sur la page mais sans test (à décrire)").toEqual([]);
-      expect.soft(disparus, "Éléments décrits mais absents de la page").toEqual([]);
+      // Un élément « facultatif » n'apparaît que selon les données du moment (une section vide est masquée).
+      expect.soft(disparus.filter((c) => !boutons[c]?.facultatif), "Éléments décrits mais absents de la page").toEqual([]);
       for (const e of trouves) {
         const attendu = boutons[cleDecrite(e, boutons)];
         if (!attendu) continue;
@@ -509,6 +510,10 @@ export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test, 
         const role = declencheur.split(" ")[0];
         const nom = declencheur.slice(role.length + 1);
         const el = role === "link" ? await trouverLien(zone(page), nom) : parNom(zone(page), role, nom, { nomsVariables }).first();
+        if (attendu.facultatif) {
+          await el.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
+          test.skip(!(await el.isVisible()), `« ${declencheur} » absent dans l'état actuel de la page (élément facultatif)`);
+        }
         await expect(el, `Élément « ${declencheur} »`).toBeVisible();
         if (!item) {
           const issue = await observer(page, () => el.click({ timeout: 5_000 }), { cible: el });
