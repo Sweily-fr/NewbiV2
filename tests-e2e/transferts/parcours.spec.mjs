@@ -18,14 +18,12 @@ test.describe("Transferts : renommer depuis le tiroir", () => {
   test("Le nouveau titre est enregistré", async ({ page }) => {
     const nouveau = "Transfert renommé œuvre 2026";
     await ouvrirListe(page);
+    // Clic sur la ligne : ouvre le tiroir de détail.
     await page.getByText(TRANSFERTS.renommerUi.title).first().click();
-    const tiroir = page.getByRole("dialog").or(page.locator("[data-slot=sheet-content], [role=complementary]"));
     await attendreCalme(page);
-    await page.getByRole("button", { name: "Renommer le transfert" }).first().click().catch(async () => {
-      // Menu du tiroir : ouvrir puis choisir « Renommer le transfert ».
-      await page.locator("[data-slot=sheet-content] button:has(svg.lucide-ellipsis), main button:has(svg.lucide-ellipsis-vertical)").first().click();
-      await page.getByRole("menuitem", { name: "Renommer le transfert" }).click();
-    });
+    // Menu du tiroir (MoreVertical) puis « Renommer le transfert ».
+    await page.locator("button:has(svg.lucide-ellipsis-vertical)").last().click();
+    await page.getByRole("menuitem", { name: "Renommer le transfert" }).click();
     const fenetre = page.getByRole("dialog").filter({ hasText: "Renommer le transfert" });
     await expect(fenetre).toBeVisible();
     await fenetre.getByPlaceholder("Nom du transfert").fill(nouveau);
