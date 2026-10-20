@@ -58,6 +58,30 @@ export const CLIENTS_VENTES = {
     vatNumber: "FR55555666777",
     address: { fullName: "Cœur d’Artichaut SAS", street: "8 quai de la Fosse", city: "Nantes", postalCode: "44000", country: "France" },
   }),
+  // Nom sans caractère particulier : les parcours ne dépendent pas des règles de nom de l'API.
+  durand: client(6, "ventes", {
+    name: "Fromagerie Durand SARL",
+    email: "contact@durand.test",
+    type: "COMPANY",
+    siret: "88899900000011",
+    vatNumber: "FR88888999000",
+    address: { fullName: "Fromagerie Durand SARL", street: "15 rue du Lac", city: "Annecy", postalCode: "74000", country: "France" },
+  }),
+  // Noms réels refusés par les règles de nom de l'API (« & », chiffres) : tests dédiés.
+  dupont: client(7, "ventes", {
+    name: "Dupont & Fils",
+    email: "contact@dupont-fils.test",
+    type: "COMPANY",
+    siret: "99900011100012",
+    address: { fullName: "Dupont & Fils", street: "3 rue des Artisans", city: "Rennes", postalCode: "35000", country: "France" },
+  }),
+  studio: client(8, "ventes", {
+    name: "Studio 54 Production",
+    email: "contact@studio54.test",
+    type: "COMPANY",
+    siret: "99900022200013",
+    address: { fullName: "Studio 54 Production", street: "54 rue de la Scène", city: "Paris", postalCode: "75011", country: "France" },
+  }),
   freelance: client(4, "freelanceVentes", {
     name: "Atelier Client Freelance",
     email: "contact@client-freelance.test",
@@ -145,7 +169,7 @@ function devis(compte, n, { numero, statut, client: c, lignes, emiseIlYa = 2, va
 
 const L = CLIENTS_VENTES.lumiere;
 const M = CLIENTS_VENTES.martin;
-const C = CLIENTS_VENTES.coeur;
+const C = CLIENTS_VENTES.durand;
 const dv = (n, o) => devis("ventes", n, o);
 
 /** Conditions générales assez longues pour être repérées (rechargement, réenregistrement). */
@@ -199,6 +223,10 @@ export const DEVIS_VENTES = {
   cibleAnnulerSignature: dv(39, { numero: "0030", statut: "PENDING", client: L, lignes: [ligne("Cible annulation de signature", 1, 100)] }),
   cibleRelancerSignature: dv(40, { numero: "0031", statut: "PENDING", client: L, lignes: [ligne("Cible relance de signature", 1, 100)] }),
   cibleCachet: dv(41, { numero: "0032", statut: "PENDING", client: L, lignes: [ligne("Cible cachet", 1, 100)] }),
+  // Clients aux noms réels (« œ », apostrophe typographique « ’ », « & », chiffres) : tests dédiés.
+  coeurAAccepter: dv(42, { numero: "0033", statut: "PENDING", client: CLIENTS_VENTES.coeur, lignes: [ligne("Devis Cœur à accepter", 1, 480)] }),
+  coeurALivrer: dv(43, { numero: "0034", statut: "COMPLETED", client: CLIENTS_VENTES.coeur, lignes: [ligne("Devis Cœur à livrer", 2, 45)] }),
+  dupontAAccepter: dv(44, { numero: "0035", statut: "PENDING", client: CLIENTS_VENTES.dupont, lignes: [ligne("Devis Dupont à accepter", 1, 310)] }),
 };
 
 /** Devis de l'offre d'entrée : demandes de signature au-delà du quota. */
@@ -317,6 +345,9 @@ export const BC_VENTES = {
   pdf: bc(21, { numero: "0016", statut: "CONFIRMED", client: C, lignes: [ligne("Commande à télécharger en PDF", 1, 2222)] }),
   aRepasserBrouillon: bc(22, { numero: "0017", statut: "CONFIRMED", client: C, lignes: [ligne("Commande à repasser en brouillon", 1, 199)] }),
   aConfirmerEditeur: bc(23, { numero: "DRAFT-0006", statut: "DRAFT", client: C, lignes: [ligne("Brouillon de commande à finaliser", 1, 377)] }),
+  coeurAValider: bc(24, { numero: "0018", statut: "CONFIRMED", client: CLIENTS_VENTES.coeur, lignes: [ligne("Commande Cœur à valider", 1, 260)] }),
+  aValiderPanneau: bc(25, { numero: "0019", statut: "CONFIRMED", client: C, lignes: [ligne("Commande à valider depuis le panneau", 1, 333)] }),
+  aExporter: bc(26, { numero: "0020", statut: "VALIDATED", client: C, lignes: [ligne("Commande validée exportée", 2, 210)] }),
 };
 
 export const BC_VOLUME = Array.from({ length: 55 }, (_, i) => {
@@ -399,6 +430,13 @@ export const BL_VENTES = {
   pdf: bl(20, { numero: "0015", statut: "PENDING", client: C, lignes: [["Livraison à télécharger en PDF", 7, 12]], transporteur: "Transport PDF" }),
   consultation: bl(21, { numero: "0016", statut: "SHIPPED", client: C, lignes: [["Livraison consultée par son adresse", 2, 18]], transporteur: "Geodis", suivi: "VE000000021FR" }),
   aAnnulerEditeur: bl(22, { numero: "0017", statut: "PENDING", client: C, lignes: [["Livraison annulée par l'Éditeur", 1, 9]] }),
+  // Prix du devis gardés en base (cachés) pour la facture : modifié dans l'éditeur, il doit les garder.
+  depuisDevis: bl(23, { numero: "0018", statut: "PENDING", client: C, lignes: [["Article du devis livré", 5, 40]], transporteur: "Transport depuis devis" }),
+  coeurAExpedier: bl(24, { numero: "0019", statut: "PENDING", client: CLIENTS_VENTES.coeur, lignes: [["Livraison Cœur à expédier", 1, 30]], transporteur: "Transport Cœur" }),
+  studioAExpedier: bl(25, { numero: "0020", statut: "PENDING", client: CLIENTS_VENTES.studio, lignes: [["Livraison Studio à expédier", 1, 25]], transporteur: "Transport Studio" }),
+  aRepasserBrouillon: bl(26, { numero: "0021", statut: "PENDING", client: C, lignes: [["Livraison à repasser en brouillon", 1, 14]], transporteur: "Transport à repasser" }),
+  aAnnulerExpedie: bl(27, { numero: "0022", statut: "SHIPPED", client: C, lignes: [["Livraison expédiée à annuler", 1, 16]], transporteur: "Transport à annuler" }),
+  aEnvoyer: bl(28, { numero: "0023", statut: "PENDING", client: C, lignes: [["Livraison à envoyer par e-mail", 1, 17]], transporteur: "Transport e-mail" }),
 };
 
 export const BL_VOLUME = Array.from({ length: 55 }, (_, i) => {

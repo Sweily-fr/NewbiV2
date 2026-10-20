@@ -6,7 +6,7 @@
  * (donnees/lot-devis-bc-bl.mjs).
  */
 import { readFileSync } from "node:fs";
-import { test, expect, etape, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
+import { test, expect, etape, fenetre, SELECTEUR_NOTIFICATION_SUCCES } from "../outils.mjs";
 import { attendreCalme, cliquer } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_VENTES } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
@@ -45,13 +45,11 @@ test.describe("Devis : changements de statut depuis le panneau", () => {
     await relu("devis", D.aAccepter, (d) => d?.status, "Statut en base").toBe("COMPLETED");
   });
 
-  test("Refuser le devis : « Annulé » en base", async ({ page }) => {
+  test("Annuler le devis depuis le panneau : « Annulé » en base", async ({ page }) => {
     const p = await ouvrirPanneau(page, "devis", D.aRefuser);
-    await etape(page, "Refuser", async () => {
-      await cliquer(page, p.getByRole("button", { name: /Refuser le devis|Rejeter le devis/ }));
-      const confirmation = page.getByRole("alertdialog");
-      if (await confirmation.isVisible({ timeout: 1_500 }).catch(() => false)) await confirmation.getByRole("button", { name: /Refuser|Rejeter|Confirmer/ }).last().click();
-      await expect(notification(page, /Devis (rejeté|refusé|annulé)/)).toBeVisible();
+    await etape(page, "Annuler le devis", async () => {
+      await cliquer(page, p.getByRole("button", { name: "Annuler le devis" }));
+      await expect(notification(page, "Devis annulé")).toBeVisible();
     }, { capture: "ecran" });
     await relu("devis", D.aRefuser, (d) => d?.status, "Statut en base").toBe("CANCELED");
   });
@@ -151,7 +149,7 @@ test.describe("Devis : envoi par e-mail", () => {
     // Le site doit le dire ; il ne doit pas annoncer « Devis envoyé avec succès ».
     const d = D.aEnvoyer;
     await epingler(page, "devis", d);
-    await actionDeLigne(page, "devis", d, "Envoyer le devis");
+    await cliquer(page, ligneDe(page, "devis", d).locator("button:has(svg.lucide-mail)"));
     const fenetre = page.getByRole("dialog").filter({ hasText: "Envoyer le devis" });
     await expect(fenetre).toBeVisible();
     await etape(page, "Envoyer au client", async () => {
@@ -184,11 +182,14 @@ test.describe("Devis : PDF", () => {
 test.describe("Devis : actions groupées", () => {
   test("Supprimer plusieurs brouillons sélectionnés : tous supprimés", async ({ page }) => {
     await ouvrirListe(page, "devis");
-    await rechercher(page, "devis", "DRAFT-000");
+    await rechercher(page, "devis", "Fromagerie Durand");
+    await page.getByRole("combobox").last().click();
+    await page.getByRole("option", { name: "50" }).click();
+    await attendreCalme(page);
     for (const d of [D.aSupprimerGroupe1, D.aSupprimerGroupe2]) await ligneDe(page, "devis", d).getByRole("checkbox").check();
     await etape(page, "Supprimer la sélection", async () => {
-      await page.getByRole("button", { name: /Supprimer/ }).first().click();
-      const confirmation = page.getByRole("alertdialog");
+      await page.getByRole("button", { name: "Supprimer (2)" }).click();
+      const confirmation = fenetre(page, "Confirmer la suppression");
       await expect(confirmation).toBeVisible();
       await confirmation.getByRole("button", { name: /Supprimer/ }).last().click();
       await attendreCalme(page);

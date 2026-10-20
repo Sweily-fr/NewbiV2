@@ -115,3 +115,15 @@ export async function textePdf(chemin) {
   }
   return { pages: document.numPages, texte: pages.join("\n").replace(/\s+/g, " "), entete: Buffer.from(octets.slice(0, 5)).toString() };
 }
+
+/**
+ * Boutons déjà essayés sur une autre page (même composant, même effet) : ici,
+ * seule leur présence (et leur état grisé) est vérifiée, par le test
+ * « Chaque élément de la page est décrit et testé ». `garder` : clés encore
+ * essayées sur cette page (ce qui lui est propre).
+ */
+export function dejaEssayes(boutons, ou, garder = []) {
+  return Object.fromEntries(
+    Object.entries(boutons).map(([cle, attendu]) => [cle, attendu.desactive || attendu.parcours || garder.includes(cle) ? attendu : { parcours: `essayé sur « ${ou} »` }]),
+  );
+}

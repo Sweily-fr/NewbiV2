@@ -102,6 +102,16 @@ const ECRITURES = [
     temoin: () => devis(D.cibleEnvoyer),
   },
   {
+    nom: "Envoyer un devis par e-mail (envoi réel, avec le PDF)",
+    droit: "send",
+    externe: true,
+    champ: "sendQuoteEmail",
+    cible: true,
+    requete: `mutation($w: ID!, $input: SendDocumentEmailInput!) { sendQuoteEmail(workspaceId: $w, input: $input) { success } }`,
+    variables: (w, qui) => ({ w, input: { documentId: id(D.cibleEnvoyer), emailSubject: `Devis envoyé par ${qui}`, emailBody: "Bonjour", recipientEmail: "destinataire-controle@e2e.test" } }),
+    temoin: () => devis(D.cibleEnvoyer),
+  },
+  {
     nom: "Enregistrer un devis comme modèle",
     droit: "create",
     champ: "saveQuoteAsTemplate",

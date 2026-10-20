@@ -73,6 +73,16 @@ const ECRITURES = [
     temoin: () => bc(B.cibleEnvoyer),
   },
   {
+    nom: "Envoyer un bon de commande par e-mail (envoi réel, avec le PDF)",
+    droit: "send",
+    externe: true,
+    champ: "sendPurchaseOrderEmail",
+    cible: true,
+    requete: `mutation($w: ID!, $input: SendDocumentEmailInput!) { sendPurchaseOrderEmail(workspaceId: $w, input: $input) { success } }`,
+    variables: (w, qui) => ({ w, input: { documentId: id(B.cibleEnvoyer), emailSubject: `Bon envoyé par ${qui}`, emailBody: "Bonjour", recipientEmail: "destinataire-controle@e2e.test" } }),
+    temoin: () => bc(B.cibleEnvoyer),
+  },
+  {
     nom: "Enregistrer un bon de commande comme modèle",
     droit: "create",
     champ: "savePurchaseOrderAsTemplate",

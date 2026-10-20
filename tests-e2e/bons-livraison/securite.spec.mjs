@@ -91,6 +91,16 @@ const ECRITURES = [
     variables: (w) => ({ id: id(B.cibleEnvoyer), w }),
     temoin: () => bl(B.cibleEnvoyer),
   },
+  {
+    nom: "Envoyer un bon de livraison par e-mail (envoi réel, avec le PDF)",
+    droit: "send",
+    externe: true,
+    champ: "sendDeliveryNoteEmail",
+    cible: true,
+    requete: `mutation($w: ID!, $input: SendDocumentEmailInput!) { sendDeliveryNoteEmail(workspaceId: $w, input: $input) { success } }`,
+    variables: (w, qui) => ({ w, input: { documentId: id(B.cibleEnvoyer), emailSubject: `Bon envoyé par ${qui}`, emailBody: "Bonjour", recipientEmail: "destinataire-controle@e2e.test" } }),
+    temoin: () => bl(B.cibleEnvoyer),
+  },
 ];
 
 const LECTURES = [
