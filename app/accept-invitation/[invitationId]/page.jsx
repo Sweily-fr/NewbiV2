@@ -32,6 +32,9 @@ import {
 } from "lucide-react";
 import { predefinedRoleLabel } from "@/src/lib/role-labels";
 
+const INVITATION_NOT_FOUND =
+  "Invitation introuvable : ce lien n'existe pas ou n'est plus valide. Demandez à la personne qui vous a invité de vous en renvoyer un.";
+
 export default function AcceptInvitationPage() {
   const { invitationId } = useParams();
   const { data: session } = useSession();
@@ -55,16 +58,21 @@ export default function AcceptInvitationPage() {
 
   useEffect(() => {
     const fetchInvitation = async () => {
+      // Lien tronqué ou mal formé (l'identifiant fait 24 caractères
+      // hexadécimaux) : inutile d'interroger l'API
+      if (!/^[0-9a-f]{24}$/i.test(String(invitationId))) {
+        setError(INVITATION_NOT_FOUND);
+        setLoading(false);
+        return;
+      }
       try {
         // Récupérer l'invitation via l'API route custom
         const response = await fetch(`/api/invitations/${invitationId}`);
 
-        // Lien inconnu ou mal formé : message compréhensible plutôt que le
-        // code HTTP
+        // Lien inconnu : message compréhensible plutôt que le code HTTP
         if (response.status === 404) {
-          throw new Error(
-            "Invitation introuvable : ce lien n'existe pas ou n'est plus valide. Demandez à la personne qui vous a invité de vous en renvoyer un.",
-          );
+          setError(INVITATION_NOT_FOUND);
+          return;
         }
         if (!response.ok) {
           throw new Error(

@@ -54,6 +54,7 @@ import {
   RotateCcw,
   History,
 } from "lucide-react";
+import { normalizeSearchText } from "@/src/utils/search-text";
 import { GET_CLIENTS } from "@/src/graphql/clientQueries";
 import {
   GET_INVOICES,
@@ -90,6 +91,18 @@ const formatCurrency = (amount) => {
 // Numéro complet d'un document, comme dans les listes : préfixe, tiret, numéro
 const documentReference = (doc) =>
   [doc?.prefix, doc?.number].filter(Boolean).join("-");
+
+// Référence comparée sans espaces, ni majuscules ni accents
+const compactReference = (text) =>
+  normalizeSearchText(text).replace(/\s+/g, "");
+
+// Saisie qui ressemble à un numéro complet (« F-PIL-0101 », sans espace) :
+// le numéro final, et la référence compacte pour vérifier les résultats
+const parseDocumentReference = (query) => {
+  const text = String(query || "").trim();
+  const match = /^(\S+)-(\d+)$/.exec(text);
+  return match ? { number: match[2], compact: compactReference(text) } : null;
+};
 
 const formatRelativeDate = (date) => {
   if (!date) return "";
@@ -385,13 +398,19 @@ export function SearchCommand() {
       const vars = {
         variables: { workspaceId, search: searchQuery, limit: 4 },
       };
+      // Numéro complet (« F-PIL-0101 ») : l'API cherche le numéro seul, la
+      // référence complète est vérifiée à l'affichage
+      const reference = parseDocumentReference(searchQuery);
+      const documentVars = reference
+        ? { variables: { workspaceId, search: reference.number, limit: 8 } }
+        : vars;
       if (canSearchClients) searchClients(vars);
-      if (canSearchInvoices) searchInvoices(vars);
-      if (canSearchQuotes) searchQuotes(vars);
+      if (canSearchInvoices) searchInvoices(documentVars);
+      if (canSearchQuotes) searchQuotes(documentVars);
       if (canSearchProducts) searchProducts(vars);
-      if (canSearchPurchaseOrders) searchPurchaseOrders(vars);
-      if (canSearchCreditNotes) searchCreditNotes(vars);
-      if (canSearchDeliveryNotes) searchDeliveryNotes(vars);
+      if (canSearchPurchaseOrders) searchPurchaseOrders(documentVars);
+      if (canSearchCreditNotes) searchCreditNotes(documentVars);
+      if (canSearchDeliveryNotes) searchDeliveryNotes(documentVars);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -446,23 +465,35 @@ export function SearchCommand() {
   const resultValue = (kind, id) => `${searchQuery} ${kind}-${id}`;
 
   // Extract results (rien pour un type que le rôle ne peut pas lire, même
-  // s'il reste des résultats en cache d'avant un changement de rôle)
+  // s'il reste des résultats en cache d'avant un changement de rôle). Pour
+  // un numéro complet, seuls les documents de cette référence restent.
+  const searchedReference = parseDocumentReference(searchQuery);
+  const byReference = (docs) =>
+    searchedReference
+      ? docs.filter((doc) =>
+          compactReference(documentReference(doc)).includes(
+            searchedReference.compact,
+          ),
+        )
+      : docs;
   const clients = canSearchClients ? clientsData?.clients?.items || [] : [];
   const invoices = canSearchInvoices
-    ? invoicesData?.invoices?.invoices || []
+    ? byReference(invoicesData?.invoices?.invoices || [])
     : [];
-  const quotes = canSearchQuotes ? quotesData?.quotes?.quotes || [] : [];
+  const quotes = canSearchQuotes
+    ? byReference(quotesData?.quotes?.quotes || [])
+    : [];
   const products = canSearchProducts
     ? productsData?.products?.products || []
     : [];
   const purchaseOrders = canSearchPurchaseOrders
-    ? purchaseOrdersData?.purchaseOrders?.purchaseOrders || []
+    ? byReference(purchaseOrdersData?.purchaseOrders?.purchaseOrders || [])
     : [];
   const creditNotes = canSearchCreditNotes
-    ? creditNotesData?.creditNotes?.creditNotes || []
+    ? byReference(creditNotesData?.creditNotes?.creditNotes || [])
     : [];
   const deliveryNotes = canSearchDeliveryNotes
-    ? deliveryNotesData?.deliveryNotes?.deliveryNotes || []
+    ? byReference(deliveryNotesData?.deliveryNotes?.deliveryNotes || [])
     : [];
   // Récents : pas de lien vers une page devenue inaccessible au rôle
   const visibleRecents = recents.filter((item) => canSee(item.url));
