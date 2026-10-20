@@ -347,10 +347,9 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   });
 
   test("Rapprocher une facture de deux virements (acompte et solde) : deux liens", async ({ page }) => {
-    await ouvrirFiche(page, FAS.deuxPaiements);
-    const tiroir = page.getByRole("dialog").last();
     for (const t of [TS.premierPaiement, TS.secondPaiement]) {
-      await attendreCalme(page);
+      // La fiche se ferme après chaque rapprochement : on la rouvre pour le second virement.
+      const tiroir = await ouvrirFiche(page, FAS.deuxPaiements);
       const bouton = tiroir.getByRole("button", { name: /Rechercher une transaction|Rattacher une autre transaction/ }).first();
       await cliquer(page, bouton);
       await tiroir.getByPlaceholder("Libellé, référence, montant...").fill(t.description.split(" ").slice(-1)[0]);
@@ -372,8 +371,10 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   });
 
   test("Montant d'une facture rapprochée : modification refusée avec un message", async ({ page }) => {
-    const tiroir = await ouvrirFiche(page, FAS.rapprocheeMontant);
-    await tiroir.getByRole("button", { name: "Modifier" }).click();
+    const fiche = await ouvrirFiche(page, FAS.rapprocheeMontant);
+    await fiche.getByRole("button", { name: "Modifier" }).click();
+    // En modification, la fenêtre s'appelle « Modifier la facture ».
+    const tiroir = page.getByRole("dialog", { name: "Modifier la facture" });
     const ttc = tiroir.getByPlaceholder("0.00", { exact: true }).first();
     await ttc.fill("");
     await ttc.pressSequentially("99");
@@ -385,8 +386,9 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
   });
 
   test("Catégorie d'une facture rapprochée changée : la transaction prend la même (la facture fait foi)", async ({ page }) => {
-    const tiroir = await ouvrirFiche(page, FAS.rapprocheeCategorie);
-    await tiroir.getByRole("button", { name: "Modifier" }).click();
+    const fiche = await ouvrirFiche(page, FAS.rapprocheeCategorie);
+    await fiche.getByRole("button", { name: "Modifier" }).click();
+    const tiroir = page.getByRole("dialog", { name: "Modifier la facture" });
     await tiroir.getByRole("combobox").nth(1).click();
     await page.getByPlaceholder("Rechercher une catégorie...").fill("telephone");
     await page.getByRole("option", { name: "Téléphone", exact: true }).click();

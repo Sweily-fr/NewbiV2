@@ -286,8 +286,9 @@ test.describe("Transactions : chaque action vérifiée en base", () => {
     const carte = tiroir.locator("div").filter({ hasText: facture.client.name }).filter({ has: page.getByRole("button", { name: "Rapprocher" }) }).last();
     await carte.getByRole("button", { name: "Rapprocher" }).click();
     await expect.poll(async () => (await txEnBase(TS.encaissement)).linkedInvoiceIds.map(String)).toEqual([facture._id.toHexString()]);
+    // La facture est mise à jour juste après la transaction.
+    await expect.poll(async () => (await (await base()).collection("invoices").findOne({ _id: facture._id })).status).toBe("COMPLETED");
     const doc = await (await base()).collection("invoices").findOne({ _id: facture._id });
-    expect(doc.status).toBe("COMPLETED");
     expect(doc.linkedTransactionIds.map(String)).toEqual([TS.encaissement._id.toHexString()]);
   });
 
