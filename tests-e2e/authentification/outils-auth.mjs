@@ -15,10 +15,28 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { expect } from "@playwright/test";
-import { PORT } from "../config.mjs";
+import { BASE_URL, PORT } from "../config.mjs";
 import { ouvrir } from "../navigation.mjs";
 
 const FICHIER_QUOTAS = path.join(os.tmpdir(), `e2e-newbi-quotas-auth-${PORT}.json`);
+
+/**
+ * Visiteur sans session qui a déjà répondu à la bannière des cookies
+ * (« nécessaires seulement ») : sans cela, elle s'ouvre comme une fenêtre
+ * par-dessus les pages publiques.
+ */
+export const SANS_SESSION = {
+  cookies: [],
+  origins: [
+    {
+      origin: BASE_URL,
+      localStorage: [
+        { name: "cookie_consent", value: JSON.stringify({ necessary: true, functional: false, analytics: false, marketing: false }) },
+        { name: "cookie_consent_date", value: "2026-10-01T00:00:00.000Z" },
+      ],
+    },
+  ],
+};
 
 /** Fenêtre (ms) et nombre d'appels permis, par chemin de Better Auth. */
 const QUOTAS = [

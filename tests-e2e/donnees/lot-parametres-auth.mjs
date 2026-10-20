@@ -277,13 +277,42 @@ export const COMPTES_AUTH = {
     organisation: { trialStartDate: DANS(-5).toISOString(), trialEndDate: DANS(25).toISOString(), isTrialActive: true, hasUsedTrial: true },
   }),
   // Désactiver son compte (Paramètres > Compte).
-  desactivation: compte(30, { email: "desactivation@e2e.test", name: "Dora Désactivation", motDePasse: true, espace: "Désactivation Test SASU", sessions: [{ nom: "Desactivation" }] }),
+  // Sans abonnement actif (essai terminé) : avec un abonnement, « Désactiver » est grisé.
+  desactivation: compte(30, {
+    email: "desactivation@e2e.test",
+    name: "Dora Désactivation",
+    motDePasse: true,
+    espace: "Désactivation Test SASU",
+    plan: null,
+    organisation: { trialStartDate: DANS(-45).toISOString(), trialEndDate: DANS(-15).toISOString(), isTrialActive: false, hasUsedTrial: true },
+    sessions: [{ nom: "Desactivation" }],
+  }),
   // Autre compte qui tente de fermer les sessions des autres.
   intrusSessions: compte(31, { email: "intrus-sessions@e2e.test", name: "Ivan Intrus", espace: "Intrus Sessions Test SASU", sessions: [{ nom: "IntrusSessions" }] }),
   // Essais de connexion répétés (mauvais mot de passe) : un compte à part pour ne bloquer personne.
   essaisRepetes: compte(32, { email: "essais-repetes@e2e.test", name: "Rémy Répétés", motDePasse: true, espace: "Essais Répétés Test SASU" }),
   // Délai d'inactivité et durée de session réglés dans Sécurité (le propriétaire change ses propres réglages).
-  reglagesSession: compte(33, { email: "reglages-session@e2e.test", name: "Rose Réglages", espace: "Réglages Session Test SASU", sessions: [{ nom: "ReglagesSession" }] }),
+  reglagesSession: compte(33, {
+    email: "reglages-session@e2e.test",
+    name: "Rose Réglages",
+    espace: "Réglages Session Test SASU",
+    organisation: { sessionSettings: { maxSessions: 3 } },
+    sessions: [{ nom: "ReglagesSession" }],
+  }),
+  // Relancer le tutoriel : il se rouvre ensuite à chaque arrivée sur le tableau de bord.
+  tutoriel: compte(37, { email: "tutoriel@e2e.test", name: "Tina Tutoriel", espace: "Tutoriel Test SASU", sessions: [{ nom: "Tutoriel" }] }),
+  // Réglage « illimité » (0) hérité d'une ancienne version : la liste ne propose que 1, 2 ou 3.
+  securiteHeritee: compte(38, { email: "securite-heritee@e2e.test", name: "Hector Hérité", espace: "Réglage Hérité Test SASU", sessions: [{ nom: "SecuriteHeritee" }] }),
+  // Sessions visées par un autre compte (intrusSessions) : personne d'autre n'y touche.
+  // (numéros 40 à 48 : membres visés, voir MEMBRES_CIBLES)
+  cibleSessions: compte(50, {
+    email: "cible-sessions@e2e.test",
+    name: "Céleste Cible",
+    espace: "Cible Sessions Test SASU",
+    sessions: [{ nom: "CibleSessionsMac" }, { nom: "CibleSessionsIphone", appareil: IPHONE, ip: "10.0.0.50" }],
+  }),
+  // Nom complet modifié depuis Paramètres > Compte.
+  nomComplet: compte(39, { email: "nom-complet@e2e.test", name: "Nora Nom", espace: "Nom Complet Test SASU", sessions: [{ nom: "NomComplet" }] }),
   // Double authentification à activer depuis Paramètres > Sécurité.
   activation2fa: compte(34, { email: "activation-2fa@e2e.test", name: "Axel Activation", motDePasse: true, espace: "Activation 2FA Test SASU", sessions: [{ nom: "Activation2fa" }] }),
   // Super admin qui tente de quitter son espace (refusé : il doit d'abord transférer son rôle).

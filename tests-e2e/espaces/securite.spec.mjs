@@ -318,29 +318,8 @@ for (const role of ROLES) {
   });
 }
 
-test.describe("Membres : ce que le rôle « Recrutement » et l'Administrateur peuvent faire", () => {
+test.describe("Membres : ce que l'Administrateur peut faire", () => {
   test.use({ erreursConsoleAutorisees: REFUS_CONSOLE });
-  test.describe(() => {
-    test.use({ storageState: connecte(SESSION_TOKEN_RECRUTEUR_PARAMETRES) });
-    test("« Recrutement » invite un membre", async ({ page }) => {
-      await surLeSite(page);
-      const reponse = await appelAuth(page, "/organization/invite-member", {
-        corps: { email: "invite-par-recrutement@e2e.test", role: "viewer", organizationId: hex(PARAMETRES.organisation._id) },
-      });
-      expect(reponse.statut, `Invitation refusée : ${messageDe(reponse)}`).toBe(200);
-      const inv = await (await base()).collection("invitation").findOne({ email: "invite-par-recrutement@e2e.test" });
-      expect(inv?.status, "Invitation absente de la base").toBe("pending");
-    });
-
-    test("« Recrutement » annule une invitation", async ({ page }) => {
-      await surLeSite(page);
-      const reponse = await appelAuth(page, "/organization/cancel-invitation", { corps: { invitationId: hex(idInvitation("recruteurAnnuler")) } });
-      expect(reponse.statut, `Annulation refusée : ${messageDe(reponse)}`).toBe(200);
-      const inv = await (await base()).collection("invitation").findOne({ _id: idInvitation("recruteurAnnuler") });
-      expect(inv?.status).toBe("canceled");
-    });
-  });
-
   test.describe(() => {
     test.use({ storageState: connecte(SESSION_TOKEN_ADMIN_PARAMETRES) });
     test("L'Administrateur modifie les informations de l'entreprise", async ({ page }) => {

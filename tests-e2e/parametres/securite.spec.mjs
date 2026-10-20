@@ -157,7 +157,8 @@ test.describe("Paramètres : une autre entreprise n'atteint rien", () => {
         // quand il vise un espace dont il n'est pas membre : la lecture ne doit rien
         // révéler de « Paramètres » (rôles personnalisés, membres).
         expect(JSON.stringify(reponse.data ?? {}), `${nom} : fuite d'un rôle de « Paramètres »`).not.toContain(ROLES_PERSO.recrutement.name);
-        if (champ === "organizationRoles" || champ === "eInvoicingSettings" || champ === "getNotificationPreferences") {
+        // Les préférences de notifications sont celles de l'appelant (aucun espace en jeu).
+        if (champ === "organizationRoles" || champ === "eInvoicingSettings") {
           expect(estVide(valeur), `${nom} : donnée des autres renvoyée à l'intrus`).toBe(true);
         }
       });
