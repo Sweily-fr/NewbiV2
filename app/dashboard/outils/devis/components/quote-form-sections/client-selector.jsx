@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, useMemo } from "react";
 import {
   Search,
   User,
@@ -183,11 +183,17 @@ export default function ClientSelector({
 
   // Use GraphQL hooks. Liste coupée pour un rôle qui ne peut pas lire les
   // clients (FORBIDDEN sinon) : le client du document reste affiché (prop)
-  const { clients, loading } = useClients({
+  const { clients: searchedClients, loading } = useClients({
     search: debouncedQuery,
     limit: 50,
     skip: isReady && !canRead("clients"),
   });
+  // Un contact bloqué est exclu de la création de documents : il n'est pas
+  // proposé (le client déjà choisi sur le document reste affiché)
+  const clients = useMemo(
+    () => (searchedClients || []).filter((client) => !client.isBlocked),
+    [searchedClients],
+  );
   const { createClient, loading: createLoading } = useCreateClient();
 
   const handleInputChange = (e) => {
@@ -469,7 +475,10 @@ export default function ClientSelector({
       return;
     }
 
-    const clientsList = Array.isArray(clients) ? clients : clients?.items || [];
+    // Doublon d'e-mail cherché parmi tous les contacts, bloqués compris
+    const clientsList = Array.isArray(searchedClients)
+      ? searchedClients
+      : searchedClients?.items || [];
     const emailExists = clientsList.some(
       (client) =>
         client.email?.toLowerCase() ===
