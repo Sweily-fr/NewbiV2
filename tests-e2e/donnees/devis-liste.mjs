@@ -6,10 +6,10 @@
 import { CLIENTS, DANS, oid } from "./base.mjs";
 import { documentVente, ligne } from "./documents.mjs";
 
-function devis({ n, numero, statut, emiseIlYa = 0, valideDans = 30, client, lignes, reference = "" }) {
+function devis({ n, numero, statut, emiseIlYa = 0, valideDans = 30, client, lignes, reference = "", creeIlYa = 30 - (n % 100) }) {
   return {
     _id: oid("devis", n),
-    ...documentVente({ compte: "liste", prefixe: "D-092026", numero, statut, emiseIlYa, client, lignes, creeIlYa: 30 - (n % 100) }),
+    ...documentVente({ compte: "liste", prefixe: "D-092026", numero, statut, emiseIlYa, client, lignes, creeIlYa }),
     validUntil: DANS(valideDans),
     projectReference: reference,
     convertedToInvoice: null,
@@ -31,6 +31,9 @@ export const DEVIS_LISTE = {
   annule: devis({ n: 107, numero: "0004", statut: "CANCELED", emiseIlYa: 30, valideDans: 0, client: CLIENTS.delta, lignes: [ligne("Projet abandonné", 1, 500)] }),
   aAccepter: devis({ n: 108, numero: "0005", statut: "PENDING", emiseIlYa: 3, valideDans: 27, client: CLIENTS.delta, lignes: [ligne("Campagne à accepter", 1, 1500)] }),
   aRejeter: devis({ n: 109, numero: "0006", statut: "PENDING", emiseIlYa: 2, valideDans: 28, client: CLIENTS.gamma, lignes: [ligne("Campagne à rejeter", 1, 1700)] }),
+  // Signature qualifiée demandée par l'API sur l'offre PME (quota non atteint) : plus anciens
+  // que les devis ci-dessus, ils restent en page 2 de la liste.
+  qualifiee: devis({ n: 110, numero: "0007", statut: "PENDING", emiseIlYa: 3, valideDans: 27, client: CLIENTS.delta, lignes: [ligne("Signature qualifiée demandée par l'API", 1, 990)], creeIlYa: 45 }),
 };
 
 /** Référence affichée d'un devis (« D-092026-0001 », brouillons compris). */

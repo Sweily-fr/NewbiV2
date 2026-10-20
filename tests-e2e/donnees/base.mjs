@@ -59,6 +59,8 @@ const PREFIXES = {
   modeleBc: "e2e9b",
   factureVentes: "e2e9c",
   blVentes: "e2eaa",
+  devisImporte: "e2e8e",
+  bcImporte: "e2e9d",
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
   // ── fin du lot achats-banque ──

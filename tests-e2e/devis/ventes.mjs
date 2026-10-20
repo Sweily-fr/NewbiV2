@@ -88,3 +88,30 @@ export async function chercherEnBase(collection, filtre) {
 
 /** Notifications (sonner) contenant ce texte. */
 export const notification = (page, texte) => page.locator("[data-sonner-toast]").filter({ hasText: texte });
+
+/** Lance une action qui télécharge un fichier ; renvoie { nom, chemin }. */
+export async function telecharger(page, action, { timeout = 45_000 } = {}) {
+  const [fichier] = await Promise.all([page.waitForEvent("download", { timeout }), action()]);
+  return { nom: fichier.suggestedFilename(), chemin: await fichier.path() };
+}
+
+/** Texte d'un PDF (toutes les pages), lu avec pdfjs comme le fait l'aperçu du site. */
+export async function textePdf(chemin) {
+  const { readFileSync } = await import("node:fs");
+  const path = await import("node:path");
+  const racine = path.resolve("node_modules/pdfjs-dist");
+  const pdfjs = await import(path.join(racine, "legacy/build/pdf.mjs"));
+  const octets = new Uint8Array(readFileSync(chemin));
+  const document = await pdfjs.getDocument({
+    data: octets,
+    disableFontFace: true,
+    isEvalSupported: false,
+    standardFontDataUrl: `${path.join(racine, "standard_fonts")}/`,
+  }).promise;
+  const pages = [];
+  for (let i = 1; i <= document.numPages; i++) {
+    const contenu = await (await document.getPage(i)).getTextContent();
+    pages.push(contenu.items.map((x) => x.str).join(" "));
+  }
+  return { pages: document.numPages, texte: pages.join("\n").replace(/\s+/g, " "), entete: Buffer.from(octets.slice(0, 5)).toString() };
+}

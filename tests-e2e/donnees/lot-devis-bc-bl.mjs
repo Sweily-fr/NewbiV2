@@ -195,6 +195,10 @@ export const DEVIS_VENTES = {
   aRepasserBrouillon: dv(37, { numero: "0028", statut: "PENDING", client: C, lignes: [ligne("Devis à repasser en brouillon", 1, 310)] }),
   // Porte les 150 signatures du mois (offre illimitée), à part des devis consultés.
   signesCeMois: dv(38, { numero: "0029", statut: "COMPLETED", client: C, lignes: [ligne("Devis signés ce mois-ci", 1, 100)] }),
+  // Cibles des signatures en cours (annuler) et en erreur (relancer), du cachet (devis signé).
+  cibleAnnulerSignature: dv(39, { numero: "0030", statut: "PENDING", client: L, lignes: [ligne("Cible annulation de signature", 1, 100)] }),
+  cibleRelancerSignature: dv(40, { numero: "0031", statut: "PENDING", client: L, lignes: [ligne("Cible relance de signature", 1, 100)] }),
+  cibleCachet: dv(41, { numero: "0032", statut: "PENDING", client: L, lignes: [ligne("Cible cachet", 1, 100)] }),
 };
 
 /** Devis de l'offre d'entrée : demandes de signature au-delà du quota. */
@@ -498,6 +502,12 @@ export const SIGNATURES_VOLUME = Array.from({ length: 100 }, (_, i) =>
 export const SIGNATURES_VENTES = Array.from({ length: 150 }, (_, i) =>
   signature("ventes", 401 + i, { document: DEVIS_VENTES.signesCeMois, statut: "DONE" }),
 );
+/** Demandes des contrôles de droits : une en attente (annuler), une en erreur (relancer), une terminée (cachet). */
+export const SIGNATURES_CIBLES = {
+  aAnnuler: signature("ventes", 1, { document: DEVIS_VENTES.cibleAnnulerSignature, statut: "WAIT_SIGN" }),
+  aRelancer: signature("ventes", 2, { document: DEVIS_VENTES.cibleRelancerSignature, statut: "ERROR" }),
+  signee: signature("ventes", 3, { document: DEVIS_VENTES.cibleCachet, statut: "DONE" }),
+};
 
 // --- Modèles de documents ---------------------------------------------------------
 
@@ -526,6 +536,55 @@ export const MODELE_VENTES = {
   updatedAt: DANS(-30),
 };
 
+/** Modèles de l'organisation « Ventes » à supprimer (contrôles de droits). */
+export const MODELE_DEVIS_A_SUPPRIMER = { ...MODELE_VENTES, _id: oid("modeleDevis", 2), name: "Modèle de devis à supprimer" };
+export const MODELE_BC_VENTES = {
+  _id: oid("modeleBc", 1),
+  name: "Modèle de bon de commande à supprimer",
+  description: "",
+  items: articles([ligne("Article du modèle de commande", 1, 90)]),
+  workspaceId: COMPTES.ventes.organisation._id,
+  userId: COMPTES.ventes.utilisateur._id,
+  createdAt: DANS(-30),
+  updatedAt: DANS(-30),
+};
+
+// --- Devis et bons de commande importés (PDF lus par l'OCR) ------------------------
+
+function importe(type, n, { numero, statut = "PENDING_REVIEW", total = 240 }) {
+  const { utilisateur, organisation } = COMPTES.ventes;
+  const devisImporte = type === "devisImporte";
+  return {
+    _id: oid(type, n),
+    workspaceId: organisation._id,
+    importedBy: utilisateur._id,
+    status: statut,
+    [devisImporte ? "originalQuoteNumber" : "originalPurchaseOrderNumber"]: numero,
+    source: "OCR_UPLOAD",
+    vendor: { name: "Fournisseur Importé SAS", address: "3 rue de l'Import", city: "Lille", postalCode: "59000", country: "France", siret: null, vatNumber: null, email: null, phone: null },
+    client: { name: "Ventes Test SASU", address: "1 rue de la Paix", city: "Paris", postalCode: "75001", siret: null, clientNumber: null },
+    [devisImporte ? "quoteDate" : "purchaseOrderDate"]: DANS(-5),
+    validUntil: DANS(25),
+    totalHT: total / 1.2,
+    totalVAT: total - total / 1.2,
+    totalTTC: total,
+    currency: "EUR",
+    items: [{ description: `Ligne importée ${numero}`, quantity: 1, unitPrice: total / 1.2, totalPrice: total, vatRate: 20, productCode: null }],
+    category: "OTHER",
+    paymentMethod: "UNKNOWN",
+    file: { url: "https://fichiers.e2e.invalid/import.pdf", cloudflareKey: `imports/e2e/${numero}.pdf`, originalFileName: `${numero}.pdf`, mimeType: "application/pdf", fileSize: 1024 },
+    ocrData: { extractedText: "", rawData: {}, financialAnalysis: {}, confidence: 0.9, processedAt: DANS(-5) },
+    notes: "",
+    isDuplicate: false,
+    createdAt: DANS(-5),
+    updatedAt: DANS(-5),
+  };
+}
+
+const ROLES_IMPORTES = ["stable", "cibleModifier", "cibleValider", "cibleConvertir", "cibleRejeter", "cibleArchiver", "cibleSupprimer", "cibleSupprimerPlusieurs"];
+export const DEVIS_IMPORTES = Object.fromEntries(ROLES_IMPORTES.map((r, i) => [r, importe("devisImporte", i + 1, { numero: `DEV-IMP-${String(i + 1).padStart(3, "0")}` })]));
+export const BC_IMPORTES = Object.fromEntries(ROLES_IMPORTES.map((r, i) => [r, importe("bcImporte", i + 1, { numero: `BC-IMP-${String(i + 1).padStart(3, "0")}` })]));
+
 /** Documents à écrire en base, par collection : { clients: [...], invoices: [...] }. */
 export function donneesDevisBcBl() {
   return {
@@ -534,7 +593,10 @@ export function donneesDevisBcBl() {
     purchaseorders: [...Object.values(BC_VENTES), ...BC_VOLUME],
     deliverynotes: [...Object.values(BL_VENTES), ...BL_VOLUME],
     invoices: [FACTURE_VENTES],
-    signaturerequests: [...SIGNATURES_FREELANCE, ...SIGNATURES_VOLUME, ...SIGNATURES_VENTES],
-    quotetemplates: [...MODELES_FREELANCE, MODELE_VENTES],
+    signaturerequests: [...SIGNATURES_FREELANCE, ...SIGNATURES_VOLUME, ...SIGNATURES_VENTES, ...Object.values(SIGNATURES_CIBLES)],
+    quotetemplates: [...MODELES_FREELANCE, MODELE_VENTES, MODELE_DEVIS_A_SUPPRIMER],
+    purchaseordertemplates: [MODELE_BC_VENTES],
+    imported_quotes: Object.values(DEVIS_IMPORTES),
+    imported_purchase_orders: Object.values(BC_IMPORTES),
   };
 }
