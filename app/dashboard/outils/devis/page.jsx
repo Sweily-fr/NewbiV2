@@ -103,6 +103,8 @@ function QuotesContent() {
 
   // Récupérer les devis pour l'export
   const { quotes } = useQuotes();
+  // Devis cochés dans la liste : l'export ne porte que sur eux
+  const [selectedQuotes, setSelectedQuotes] = useState([]);
 
   // Soldes agrégés côté serveur (devis créés + importés)
   const {
@@ -148,7 +150,11 @@ function QuotesContent() {
                   Importer
                 </Button>
               )}
-              <QuoteExportButton quotes={quotes} iconOnly={false} />
+              <QuoteExportButton
+                quotes={quotes}
+                selectedRows={selectedQuotes}
+                iconOnly={false}
+              />
               <PermissionButton
                 requiresActiveSubscription
                 resource="quotes"
@@ -241,6 +247,7 @@ function QuotesContent() {
                   triggerImport={triggerImport}
                   onImportTriggered={() => setTriggerImport(false)}
                   onBalancesRefetch={refetchBalances}
+                  onSelectionChange={setSelectedQuotes}
                 />
               </Suspense>
             </div>
