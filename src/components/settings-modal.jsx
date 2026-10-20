@@ -346,8 +346,11 @@ export function SettingsModal({
           : "companyName",
 
         // Informations légales — le SIREN est dérivé des 9 premiers chiffres du SIRET
-        siret: sanitizeInput(formData.legal?.siret || ""),
-        siren: sanitizeInput(formData.legal?.siret || "").substring(0, 9),
+        // (enregistré sans les espaces d'un SIRET copié depuis un Kbis)
+        siret: sanitizeInput(formData.legal?.siret || "").replace(/\s/g, ""),
+        siren: sanitizeInput(formData.legal?.siret || "")
+          .replace(/\s/g, "")
+          .substring(0, 9),
         vatNumber: legalVisibleFields.vatNumber
           ? sanitizeInput(formData.legal?.vatNumber || "")
           : "",
