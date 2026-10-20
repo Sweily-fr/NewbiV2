@@ -361,6 +361,16 @@ export async function inventorier(page, { ouvrir, zone = contenu, problemes = []
  * pour un élément sans nom, son icône (« icône settings2 ») ou son titre.
  */
 function parNom(zone, role, nom, { nomsVariables = false } = {}) {
+  // Noms qui changent avec les données ou le jour : « Brouillons # » (compteur,
+  // « Brouillons 8 »), « (date) » (une date en toutes lettres, « 20 octobre 2026 »).
+  if (nom.endsWith(" #") || nom.includes("(date)")) {
+    const motif = nom
+      .split("(date)")
+      .map((morceau) => morceau.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join(DATE_EN_LETTRES.source)
+      .replace(/ #$/, " \\d+");
+    return zone.getByRole(role, { name: new RegExp(`^${motif}$`) });
+  }
   const icone = /^icône (.+)$/.exec(nom);
   if (icone) return zone.getByRole(role).filter({ has: zone.page().locator(`svg.lucide-${icone[1]}`) });
   const titre = /^titre « (.+) »$/.exec(nom);
@@ -384,9 +394,24 @@ async function trouverLien(zone, motif) {
 /** Clé d'un élément dans la description d'une page : « button Nouveau contact », « link /dashboard/clients/:id ». */
 export const cleElement = (e) => (e.role === "link" ? `link ${e.lien}` : `${e.role} ${e.nom}`);
 
+/**
+ * Clé d'un élément trouvé, rapprochée d'une clé décrite « … # » (nom suivi
+ * d'un compteur variable, ex. « tab Brouillons # » pour « tab Brouillons 8 »).
+ */
+const DATE_EN_LETTRES = /\d{1,2} (?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre) \d{4}/;
+
+function cleDecrite(e, attendus) {
+  const cle = cleElement(e);
+  if (cle in attendus) return cle;
+  for (const variante of [cle.replace(/ \d+$/, " #"), cle.replace(new RegExp(DATE_EN_LETTRES.source, "g"), "(date)")]) {
+    if (variante !== cle && variante in attendus) return variante;
+  }
+  return cle;
+}
+
 /** Les éléments trouvés correspondent exactement à ceux décrits par le test. */
 export function comparerAuxAttendus(trouves, attendus) {
-  const cles = new Set(trouves.map(cleElement));
+  const cles = new Set(trouves.map((e) => cleDecrite(e, attendus)));
   const decrits = new Set(Object.keys(attendus).filter((c) => !c.includes(" > ")));
   return {
     nonCouverts: [...cles].filter((c) => !decrits.has(c)),
@@ -470,7 +495,7 @@ export function verifierBoutons({ titre, ouvrir, zone = contenu, boutons, test, 
       expect.soft(nonCouverts, "Éléments présents sur la page mais sans test (à décrire)").toEqual([]);
       expect.soft(disparus, "Éléments décrits mais absents de la page").toEqual([]);
       for (const e of trouves) {
-        const attendu = boutons[cleElement(e)];
+        const attendu = boutons[cleDecrite(e, boutons)];
         if (!attendu) continue;
         expect.soft(e.desactive, `${cleElement(e)} : ${attendu.desactive ? "doit être grisé" : "ne doit pas être grisé"}`).toBe(Boolean(attendu.desactive));
       }
