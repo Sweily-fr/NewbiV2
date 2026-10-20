@@ -398,6 +398,21 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         return;
       }
 
+      // Préfixe modifié : mêmes règles que le champ (lettres, chiffres et
+      // tirets, 20 caractères au plus), sinon il serait enregistré puis
+      // refusé par l'API à chaque nouvelle facture
+      if (
+        formValues.prefix !== initialValues?.prefix &&
+        !(await form.trigger("prefix"))
+      ) {
+        toast.error(
+          form.getFieldState("prefix").error?.message ||
+            "Le préfixe de facture est invalide",
+        );
+        setIsSaving(false);
+        return;
+      }
+
       // Valider le numéro de facture si un préfixe existant a des documents
       if (formValues.number && hasDocumentsForPrefix) {
         const validation = validateInvoiceNumber(formValues.number);
