@@ -49,10 +49,13 @@ test.describe("Calendrier (propriétaire) : la barre d'outils agit", () => {
 
   test("Cliquer un événement ouvre sa modification ; un événement externe est en lecture", async ({ page }) => {
     await ouvrirCalendrier(page);
-    await page.getByRole("button", { name: new RegExp(EVENEMENTS.lecture.title) }).first().click();
+    // Vue Agenda : les événements sont listés quel que soit le jour affiché.
+    await page.getByRole("button", { name: "Mois" }).first().click();
+    await page.getByRole("menuitem", { name: /Agenda/ }).click();
+    await page.getByText(EVENEMENTS.lecture.title, { exact: true }).first().click();
     await expect(page.getByRole("dialog").filter({ hasText: "Modifier l'événement" })).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: new RegExp(EVENEMENTS.externe.title) }).first().click();
+    await page.getByText(EVENEMENTS.externe.title, { exact: true }).first().click();
     await expect(page.getByRole("dialog").filter({ hasText: /Détails de l'événement/ })).toBeVisible();
   });
 });

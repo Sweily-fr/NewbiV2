@@ -336,9 +336,9 @@ const evenement = (n, titre, { organisation = "collab", userId, ...champs } = {}
 
 export const EVENEMENTS = {
   lecture: evenement(1, "Réunion d'équipe"),
-  modifier: evenement(2, "Événement à modifier"),
-  modifierEditeur: evenement(6, "Événement modifié par l'Éditeur"),
-  supprimer: evenement(3, "Événement à supprimer"),
+  modifier: evenement(2, "Événement à modifier", { start: DANS(2), end: DANS(2) }),
+  modifierEditeur: evenement(6, "Événement modifié par l'Éditeur", { start: DANS(2), end: DANS(2) }),
+  supprimer: evenement(3, "Événement à supprimer", { start: DANS(2), end: DANS(2) }),
   // Événement externe (synchronisé) : non modifiable même par le propriétaire.
   externe: evenement(4, "Événement Google", { source: "google", isReadOnly: true, externalEventId: "ext-123" }),
   intrus: evenement(5, "Événement de l'intrus", { organisation: "intrus" }),
@@ -432,6 +432,30 @@ export const TRANSFERTS = {
     shareLink: "e2ecollabtransfertsupprimerui0000",
     accessKey: "e2eclefsupprimerui000000000000000",
   }),
+  // Transfert payant (cible du contournement par le jeton de retour de paiement).
+  paiement: transfert(9, {
+    title: "Transfert payant",
+    shareLink: "e2ecollabtransfertpayant00000000",
+    accessKey: "e2eclefpayant0000000000000000000",
+    isPaymentRequired: true,
+    paymentAmount: 10,
+  }),
+};
+
+/** Compte Stripe Connect du propriétaire « Collab » : requis pour que la
+ * création d'une session de paiement aille jusqu'à écrire le jeton de retour. */
+export const STRIPE_CONNECT = {
+  collab: {
+    _id: oid("annexeCollab", 20),
+    userId: PROPRIO,
+    organizationId: COLLAB_HEX,
+    accountId: "acct_e2eCollabPaiement",
+    isOnboarded: true,
+    chargesEnabled: true,
+    payoutsEnabled: true,
+    createdAt: MAINTENANT,
+    updatedAt: MAINTENANT,
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -639,6 +663,7 @@ export function donneesCollaboration() {
     userinviteds: [VISITEUR.userInvited],
     events: Object.values(EVENEMENTS),
     filetransfers: Object.values(TRANSFERTS),
+    stripeconnectaccounts: Object.values(STRIPE_CONNECT),
     sharedfolders: [...Object.values(DOSSIERS), DOSSIER_FREELANCE],
     shareddocuments: Object.values(DOCUMENTS),
     sharedtags: Object.values(TAGS),

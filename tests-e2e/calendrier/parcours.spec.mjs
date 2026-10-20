@@ -25,6 +25,14 @@ async function ouvrirNouvelEvenement(page) {
   return panneau;
 }
 
+/** Vue « Agenda » : liste tous les événements (indépendante de la densité d'un jour du mois). */
+async function ouvrirAgenda(page) {
+  await ouvrir(page, "/dashboard/calendar", { pret: page.getByRole("button", { name: "Mois" }) });
+  await page.getByRole("button", { name: "Mois" }).first().click();
+  await page.getByRole("menuitem", { name: /Agenda/ }).click();
+  await attendreCalme(page);
+}
+
 test.describe("Calendrier : création d'un événement", () => {
   test("Un événement avec titre est enregistré", async ({ page }) => {
     const titre = "Point hebdomadaire œuvre à livrer";
@@ -79,8 +87,8 @@ test.describe("Calendrier : création d'un événement", () => {
 test.describe("Calendrier : modification et suppression", () => {
   test("Modifier le titre d'un événement", async ({ page }) => {
     const nouveau = "Réunion décalée à 15 h";
-    await ouvrir(page, "/dashboard/calendar", { pret: page.getByRole("button", { name: new RegExp(EVENEMENTS.modifier.title) }) });
-    await page.getByRole("button", { name: new RegExp(EVENEMENTS.modifier.title) }).first().click();
+    await ouvrirAgenda(page);
+    await page.getByText(EVENEMENTS.modifier.title, { exact: true }).first().click();
     const panneau = page.getByRole("dialog").filter({ hasText: "Modifier l'événement" });
     await expect(panneau).toBeVisible();
     await panneau.getByPlaceholder("Titre de l'événement").fill(nouveau);
@@ -97,8 +105,8 @@ test.describe("Calendrier : modification et suppression", () => {
   });
 
   test("Supprimer un événement", async ({ page }) => {
-    await ouvrir(page, "/dashboard/calendar", { pret: page.getByRole("button", { name: new RegExp(EVENEMENTS.supprimer.title) }) });
-    await page.getByRole("button", { name: new RegExp(EVENEMENTS.supprimer.title) }).first().click();
+    await ouvrirAgenda(page);
+    await page.getByText(EVENEMENTS.supprimer.title, { exact: true }).first().click();
     const panneau = page.getByRole("dialog").filter({ hasText: "Modifier l'événement" });
     await expect(panneau).toBeVisible();
     await etape(
