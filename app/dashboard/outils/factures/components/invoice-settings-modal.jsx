@@ -206,6 +206,10 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
+  // Formulaire rempli avec les valeurs de l'organisation : la vue des
+  // paramètres ne s'affiche qu'ensuite, sinon elle retenait les valeurs par
+  // défaut comme état initial et « Annuler » annonçait des modifications
+  const [formReady, setFormReady] = useState(false);
   const [currentPrefix, setCurrentPrefix] = useState("");
   const [currentAutoNumbering, setCurrentAutoNumbering] = useState(false);
   const { validateInvoiceNumber, hasDocumentsForPrefix } = useInvoiceNumber(
@@ -315,6 +319,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
       setIsLoading(true);
       setDebouncedFormData(null);
       setInitialValues(null);
+      setFormReady(false);
     }
   }, [open]);
 
@@ -355,6 +360,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   useEffect(() => {
     if (initialValues) {
       form.reset(initialValues, { keepDefaultValues: false });
+      setFormReady(true);
     }
   }, [initialValues, form]);
 
@@ -528,7 +534,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
             {/* Settings Form - affiché uniquement quand l'org est chargée pour éviter le flicker */}
             <div className="flex-1 min-h-0 md:mr-2 flex flex-col">
               <div className="flex-1 min-h-0">
-                {isLoading ? (
+                {isLoading || !formReady ? (
                   <div className="flex items-center justify-center h-full">
                     <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                   </div>

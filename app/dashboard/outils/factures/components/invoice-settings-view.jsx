@@ -119,6 +119,8 @@ export default function InvoiceSettingsView({
   // Préfixe / mode pour lesquels le numéro a été synchronisé en dernier.
   const numberSyncedForPrefixRef = useRef(null);
   const lastAutoNumberingRef = useRef(autoNumbering);
+  // Numéro saisi par l'utilisateur (et non rempli d'office par la numérotation)
+  const numberEditedRef = useRef(false);
 
   // Synchroniser le numéro depuis le hook de numérotation.
   // Déps limitées aux données du hook → n'agit qu'une fois la requête résolue
@@ -138,6 +140,12 @@ export default function InvoiceSettingsView({
     const setIfDifferent = () => {
       if (data.number !== formattedNumber) {
         setValue("number", formattedNumber, { shouldValidate: false });
+        // Numéro rempli d'office après l'ouverture : ce n'est pas une
+        // modification de l'utilisateur (« Annuler » annonçait sinon des
+        // modifications non sauvegardées alors que rien n'avait changé)
+        if (initialValuesRef.current && !numberEditedRef.current) {
+          initialValuesRef.current.number = formattedNumber;
+        }
       }
     };
 
@@ -747,6 +755,7 @@ export default function InvoiceSettingsView({
                         canEditNumber
                           ? (e) => {
                               const val = e.target.value.replace(/[^0-9]/g, "");
+                              numberEditedRef.current = true;
                               setValue("number", val, {
                                 shouldValidate: false,
                               });
