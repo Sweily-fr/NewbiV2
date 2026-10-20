@@ -28,7 +28,8 @@ export async function erreursVisibles(page, zone = page) {
         .filter((e) => {
           const r = e.getBoundingClientRect();
           const style = getComputedStyle(e);
-          return r.width > 0 && r.height > 0 && style.visibility !== "hidden" && e.textContent.trim();
+          // L'astérisque rouge d'un champ obligatoire n'est pas un message d'erreur.
+          return r.width > 0 && r.height > 0 && style.visibility !== "hidden" && e.textContent.trim() && !/^[*\s]+$/.test(e.textContent);
         })
         .map((e) => e.textContent.replace(/\s+/g, " ").trim()),
     )

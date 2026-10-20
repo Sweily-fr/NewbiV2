@@ -137,6 +137,19 @@ export async function connexionApi(page, email, motDePasse) {
   return appelAuth(page, "/sign-in/email", { corps: { email, password: motDePasse } });
 }
 
+/**
+ * Page d'inscription : elle ne devient jamais « calme » (requêtes répétées),
+ * ouverte avec page.goto puis l'attente de son contenu et de React.
+ */
+export async function ouvrirInscription(page, pret) {
+  await page.goto("/auth/signup");
+  await expect(pret).toBeVisible({ timeout: 45_000 });
+  await expect
+    .poll(() => page.evaluate(() => Object.keys(document.documentElement).some((k) => k.startsWith("__reactFiber"))), { timeout: 45_000 })
+    .toBe(true);
+  await page.waitForTimeout(500);
+}
+
 // --- Fenêtre des Paramètres -------------------------------------------------
 
 export const fenetreParametres = (page) => page.getByRole("dialog", { name: "Paramètres de l'application" });

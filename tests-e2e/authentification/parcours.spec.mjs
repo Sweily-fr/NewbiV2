@@ -16,7 +16,7 @@ import { ouvrir } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { connecte, SECRET } from "../config.mjs";
 import { CODES_SECOURS, COMPTES_AUTH, HACHAGE_MOT_DE_PASSE, JETONS_REINITIALISATION, MOT_DE_PASSE, SECRET_TOTP } from "../donnees/lot-parametres-auth.mjs";
-import { attendreQuota, connexionApi, SANS_SESSION } from "./outils-auth.mjs";
+import { attendreQuota, connexionApi, ouvrirInscription, SANS_SESSION } from "./outils-auth.mjs";
 
 const db = () => base();
 const sessionsDe = async (compte) => (await db()).collection("session").find({ userId: compte.utilisateur._id }).toArray();
@@ -89,11 +89,15 @@ test.describe("Connexion par e-mail", () => {
     expect(await sessionsDe(compte), "Une session a été ouverte pour un compte désactivé").toEqual([]);
   });
 
+  test.describe(() => {
+    // Espace en lecture seule : les comptes bancaires répondent 402 (défaut dédié, lecture-seule.spec.mjs).
+    test.use({ erreursConsoleAutorisees: /status of 40[012]|\/api\/auth\/token/ });
   test("Essai terminé sans abonnement : tableau de bord en lecture seule, sans boucle", async ({ page }) => {
     await seConnecter(page, COMPTES_AUTH.essaiExpire.utilisateur.email, MOT_DE_PASSE);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
     await page.waitForTimeout(3_000);
     await expect(page, "Renvoyé hors du tableau de bord (boucle connexion ↔ inscription)").toHaveURL(/\/dashboard/);
+  });
   });
 
   test("Limite d'une session : les sessions plus anciennes sont fermées, l'utilisateur est prévenu", async ({ page }) => {
@@ -113,7 +117,7 @@ test.describe("Déconnexion", () => {
   test("Depuis le menu du compte : session fermée, retour à la connexion", async ({ page }) => {
     const compte = COMPTES_AUTH.deconnexion;
     await ouvrir(page, "/dashboard");
-    await page.locator("[data-slot=sidebar]").getByRole("button", { name: new RegExp(compte.utilisateur.name) }).last().click();
+    await page.getByRole("button", { name: new RegExp(compte.utilisateur.email.replace(".", "\\.")) }).last().click();
     await page.getByRole("menuitem", { name: "Se déconnecter" }).click();
     await expect(page).toHaveURL(/\/auth\/login/, { timeout: 30_000 });
     expect(await (await db()).collection("session").findOne({ token: compte.token }), "La session est toujours active après la déconnexion").toBeNull();
@@ -234,7 +238,7 @@ test.describe("Vérification de l'e-mail et pages d'information", () => {
   });
 
   test("Inscription : chaque lien de la page mène à une page qui existe", async ({ page }) => {
-    await ouvrir(page, "/auth/signup", { pret: page.getByRole("button", { name: "Continuer avec l'email" }) });
+    await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
     const liens = await page.evaluate(() => [...new Set([...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute("href")))]);
     for (const href of liens) {
       const reponse = await page.request.get(href, { maxRedirects: 0 });

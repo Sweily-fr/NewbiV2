@@ -164,11 +164,12 @@ test.describe("Paramètres : préférences et notifications enregistrées", () =
 
 test.describe("Paramètres : relancer le tutoriel", () => {
   test.use({ storageState: connecte(COMPTES_AUTH.tutoriel.token) });
-  test("Le tutoriel s'ouvre et sera reproposé", async ({ page }) => {
+  // Relance purement locale : rien n'est écrit en base, le tutoriel s'ouvre.
+  test("Le tutoriel s'ouvre, sans toucher au compte", async ({ page }) => {
     await ouvrirParametres(page, "preferences");
     await contenuParametres(page).getByRole("button", { name: "Relancer le tutoriel" }).click();
     await expect(page.getByRole("dialog").filter({ hasText: "Bienvenue sur Newbi" })).toBeVisible();
-    await expect.poll(async () => (await utilisateur(COMPTES_AUTH.tutoriel)).hasCompletedTutorial).toBe(false);
+    expect((await utilisateur(COMPTES_AUTH.tutoriel)).hasCompletedTutorial).toBe(true);
   });
 });
 
@@ -223,9 +224,9 @@ test.describe("Paramètres > Compte : nom, mot de passe, e-mail, téléphone", (
     test("Changer d'adresse e-mail : la demande est réellement prise en compte", async ({ page }) => {
       await ouvrirParametres(page, "user-info");
       await contenuParametres(page).getByRole("button", { name: "Changer d'adresse e-mail" }).click();
-      const fenetre = page.getByRole("dialog", { name: "Changer d'adresse e-mail" });
-      await fenetre.getByRole("textbox", { name: "Nouvelle adresse e-mail*" }).fill("nouvelle-adresse@e2e.test");
-      await fenetre.getByRole("textbox", { name: "Confirmer la nouvelle adresse e-mail*" }).fill("nouvelle-adresse@e2e.test");
+      const fenetre = page.getByRole("dialog").filter({ hasText: "Nouvelle adresse e-mail" });
+      await fenetre.locator("#new-email").fill("nouvelle-adresse@e2e.test");
+      await fenetre.locator("#confirm-email").fill("nouvelle-adresse@e2e.test");
       await fenetre.getByRole("button", { name: "Confirmer" }).click();
       await page.waitForTimeout(2_000);
       const db = await base();
@@ -241,8 +242,8 @@ test.describe("Paramètres > Compte : nom, mot de passe, e-mail, téléphone", (
       test.info().annotations.push({ type: "cause", description: "Better Auth (plugin phoneNumber) refuse phoneNumber dans update-user" });
       await ouvrirParametres(page, "user-info");
       await contenuParametres(page).getByRole("button", { name: "Modifier votre numéro" }).click();
-      const fenetre = page.getByRole("dialog", { name: "Modifier le numéro de téléphone" });
-      await fenetre.getByRole("textbox", { name: "Nouveau numéro de téléphone*" }).fill("+33 6 12 34 56 78");
+      const fenetre = page.getByRole("dialog").filter({ hasText: "Nouveau numéro de téléphone" });
+      await fenetre.locator("#new-phone").fill("+33 6 12 34 56 78");
       await fenetre.getByRole("button", { name: "Modifier", exact: true }).click();
       await expect.poll(async () => (await utilisateur(COMPTES_AUTH.nomComplet)).phoneNumber, { message: "Le numéro n'est pas enregistré" }).toBe("+33 6 12 34 56 78");
     });
@@ -259,12 +260,12 @@ test.describe("Paramètres > Compte : nom, mot de passe, e-mail, téléphone", (
     const fenetreMdp = async (page) => {
       await ouvrirParametres(page, "user-info");
       await contenuParametres(page).getByRole("button", { name: "Modifier le mot de passe" }).click();
-      return page.getByRole("dialog", { name: "Modifier le mot de passe" });
+      return page.getByRole("dialog").filter({ has: page.locator("#current-password") });
     };
     const remplirMdp = async (fenetre, actuel, nouveau, confirmation = nouveau) => {
-      await fenetre.getByLabel("Mot de passe actuel").fill(actuel);
-      await fenetre.getByLabel("Nouveau mot de passe").fill(nouveau);
-      await fenetre.getByLabel(/Confirmer le nouveau mot de passe/).fill(confirmation);
+      await fenetre.locator("#current-password").fill(actuel);
+      await fenetre.locator("#new-password").fill(nouveau);
+      await fenetre.locator("#confirm-password").fill(confirmation);
       // Better Auth : 3 changements de mot de passe par 10 s depuis une même adresse.
       await attendreQuota("/change-password");
       await fenetre.getByRole("button", { name: "Modifier", exact: true }).click();
@@ -303,10 +304,10 @@ test.describe("Paramètres > Compte : nom, mot de passe, e-mail, téléphone", (
     test("Après un changement de mot de passe, les autres sessions sont fermées", async ({ page }) => {
       await ouvrirParametres(page, "user-info");
       await contenuParametres(page).getByRole("button", { name: "Modifier le mot de passe" }).click();
-      const fenetre = page.getByRole("dialog", { name: "Modifier le mot de passe" });
-      await fenetre.getByLabel("Mot de passe actuel").fill(MOT_DE_PASSE);
-      await fenetre.getByLabel("Nouveau mot de passe").fill("Changement-Sessions-2026!");
-      await fenetre.getByLabel(/Confirmer le nouveau mot de passe/).fill("Changement-Sessions-2026!");
+      const fenetre = page.getByRole("dialog").filter({ has: page.locator("#current-password") });
+      await fenetre.locator("#current-password").fill(MOT_DE_PASSE);
+      await fenetre.locator("#new-password").fill("Changement-Sessions-2026!");
+      await fenetre.locator("#confirm-password").fill("Changement-Sessions-2026!");
       await attendreQuota("/change-password");
       await fenetre.getByRole("button", { name: "Modifier", exact: true }).click();
       await expect(succes(page, "Mot de passe modifié avec succès").first()).toBeVisible();
@@ -316,9 +317,11 @@ test.describe("Paramètres > Compte : nom, mot de passe, e-mail, téléphone", (
   });
 
   test.describe(() => {
-    // Une fois le compte désactivé, ses requêtes en cours sont refusées (401) avant le retour à la connexion.
-    test.use({ storageState: connecte(COMPTES_AUTH.desactivation.token), erreursConsoleAutorisees: /401/ });
-    test("Désactiver son compte : compte désactivé, sessions fermées, retour à la connexion", async ({ page }) => {
+    // Une fois le compte désactivé, ses requêtes en cours sont refusées (401) avant le retour à la
+    // connexion ; l'espace, sans abonnement, est en lecture seule (402 des comptes bancaires,
+    // défaut dédié dans lecture-seule.spec.mjs).
+    test.use({ storageState: connecte(COMPTES_AUTH.desactivation.token), erreursConsoleAutorisees: /401|status of 402/ });
+    test("Désactiver son compte : compte désactivé, sessions fermées, retour à la connexion sans erreur serveur", async ({ page }) => {
       await ouvrirParametres(page, "user-info");
       await contenuParametres(page).getByRole("button", { name: "Désactiver", exact: true }).click();
       const fenetre = page.getByRole("dialog").filter({ hasText: "Tapez votre adresse e-mail pour confirmer." });

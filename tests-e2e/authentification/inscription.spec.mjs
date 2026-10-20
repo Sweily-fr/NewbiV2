@@ -10,12 +10,11 @@
  * étape avant chaque test.
  */
 import { test, expect, etape } from "../outils.mjs";
-import { ouvrir } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { connecte } from "../config.mjs";
 import { verifierFormulaire, marque } from "../champs.mjs";
 import { COMPTES_AUTH } from "../donnees/lot-parametres-auth.mjs";
-import { attendreQuota, SANS_SESSION } from "./outils-auth.mjs";
+import { attendreQuota, ouvrirInscription, SANS_SESSION } from "./outils-auth.mjs";
 
 const slug = (cas) => marque(cas).toLowerCase().replace(/\s+/g, "-");
 const utilisateur = async (filtre) => (await base()).collection("user").findOne(filtre);
@@ -35,7 +34,7 @@ test.describe(() => {
   verifierFormulaire({
     nom: "Inscription par e-mail",
     ouvrir: async (page) => {
-      await ouvrir(page, "/auth/signup", { pret: page.getByRole("button", { name: "Continuer avec l'email" }) });
+      await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
       await page.getByRole("button", { name: "Continuer avec l'email" }).click();
       const formulaire = page.locator("form").filter({ has: page.getByPlaceholder("Saisissez votre email") });
       await expect(formulaire).toBeVisible();
@@ -74,7 +73,7 @@ test.describe(() => {
   });
 
   test("Inscription réussie : compte créé à l'étape « Votre entreprise », e-mail à vérifier", async ({ page }) => {
-    await ouvrir(page, "/auth/signup", { pret: page.getByRole("button", { name: "Continuer avec l'email" }) });
+    await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
     await page.getByRole("button", { name: "Continuer avec l'email" }).click();
     await page.getByPlaceholder("Saisissez votre email").fill("nouvelle-inscription@e2e.test");
     await page.getByPlaceholder("Saisissez votre mot de passe").fill("Nouvelle-Inscription-2026!");
@@ -89,7 +88,7 @@ test.describe(() => {
   });
 
   test("Adresse déjà inscrite : refusée avec un message, aucun second compte", async ({ page }) => {
-    await ouvrir(page, "/auth/signup", { pret: page.getByRole("button", { name: "Continuer avec l'email" }) });
+    await ouvrirInscription(page, page.getByRole("button", { name: "Continuer avec l'email" }));
     await page.getByRole("button", { name: "Continuer avec l'email" }).click();
     await page.getByPlaceholder("Saisissez votre email").fill(COMPTES_AUTH.connexion.utilisateur.email);
     await page.getByPlaceholder("Saisissez votre mot de passe").fill("Doublon-Inscription-2026!");
@@ -108,7 +107,7 @@ async function aLEtapeEntreprise(compte) {
 }
 
 async function etapeEntreprise(page) {
-  await ouvrir(page, "/auth/signup", { pret: page.getByPlaceholder(/Nom de l'entreprise, SIRET ou SIREN/) });
+  await ouvrirInscription(page, page.getByPlaceholder(/Nom de l'entreprise, SIRET ou SIREN/));
 }
 
 test.describe("Inscription : étape « Votre entreprise » sans SIRET", () => {

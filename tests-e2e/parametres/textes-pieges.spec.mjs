@@ -9,7 +9,7 @@
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { connecte } from "../config.mjs";
-import { COMPTES_AUTH, ROLES_PERSO } from "../donnees/lot-parametres-auth.mjs";
+import { COMPTES_AUTH, MEMBRES_CIBLES, ROLES_PERSO } from "../donnees/lot-parametres-auth.mjs";
 import { contenuParametres, ouvrirParametres } from "../authentification/outils-auth.mjs";
 
 const marque = (page) => page.evaluate(() => window.__piege ?? null);
@@ -48,6 +48,7 @@ test.describe("Textes piégés vus par le propriétaire", () => {
     await contenuParametres(page).getByRole("row").filter({ hasText: "Piège" }).first().click();
     await expect(contenuParametres(page).getByPlaceholder("Rechercher par nom ou email")).toBeVisible();
     await expect(contenuParametres(page).getByText(COMPTES_AUTH.piegeMembre.utilisateur.email).first()).toBeVisible();
+    await expect(contenuParametres(page).getByText(MEMBRES_CIBLES.piegeRole.email).first(), "Le membre au rôle piégé n'est pas listé").toBeVisible();
     await rienNeSExecute(page, "liste des membres");
   });
 

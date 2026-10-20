@@ -39,7 +39,8 @@ const ferme = async (_zone, page, timeout = 15_000) =>
 async function remplir(zone, champs, v) {
   for (const [cle, nom] of Object.entries(champs)) {
     if (v[cle] === undefined) continue;
-    await zone.getByRole(nom.role || "textbox", { name: nom.nom || nom, exact: true }).fill(v[cle]);
+    const champ = nom.indication ? zone.getByPlaceholder(nom.indication, { exact: true }) : zone.getByRole(nom.role || "textbox", { name: nom.nom || nom, exact: true });
+    await champ.fill(v[cle]);
   }
 }
 
@@ -164,11 +165,16 @@ verifierFormulaire({
 
 // --- Coordonnées bancaires --------------------------------------------------------
 
-const CHAMPS_BANQUE = { iban: "IBAN", bic: "BIC/SWIFT", banque: "Nom de la banque" };
+// Les libellés prennent un « * » dès qu'un champ bancaire est rempli : repérés par leur indication.
+const CHAMPS_BANQUE = {
+  iban: { indication: "FR76 1234 5678 9012 3456 7890 123" },
+  bic: { indication: "BNPAFRPP" },
+  banque: { indication: "BNP Paribas" },
+};
 
 verifierFormulaire({
   nom: "Paramètres > Coordonnées bancaires",
-  ouvrir: (page) => ouvrirParametres(page, "coordonnees-bancaires", { pret: (z) => z.getByRole("textbox", { name: "IBAN", exact: true }) }),
+  ouvrir: (page) => ouvrirParametres(page, "coordonnees-bancaires", { pret: (z) => z.getByPlaceholder("FR76 1234 5678 9012 3456 7890 123") }),
   remplir: (zone, v) => remplir(zone, CHAMPS_BANQUE, v),
   valider,
   boutonValider,
@@ -231,9 +237,9 @@ verifierFormulaire({
     return egal(org.siret, String(v.siret).replace(/\s/g, "")) && egal(org.rcs, v.rcs) && egal(org.capitalSocial, v.capital) ? org : null;
   },
   champs: {
+    // Le SIRET n'est pas bloquant dans les paramètres (exigé avant le premier document).
     "Numéro SIRET": {
       cle: "siret",
-      obligatoire: true,
       lu: (doc) => doc.siret,
       normaliser: (v) => v.replace(/\s/g, ""),
       refuses: { "de 13 chiffres": "8123456789012", "avec une lettre": "8123456789012A" },

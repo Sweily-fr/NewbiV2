@@ -10,9 +10,9 @@ import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { COMPTES, oid } from "../donnees/base.mjs";
-import { connecte, SESSION_TOKEN_EQUIPE } from "../config.mjs";
+import { connecte, SESSION_TOKEN_EQUIPE, SESSION_TOKEN_GESTION_EQUIPE } from "../config.mjs";
 import { COMPTES_AUTH, INVITATIONS, MEMBRES_CIBLES, ROLES_PERSO } from "../donnees/lot-parametres-auth.mjs";
-import { contenuParametres, ouvrirParametres, SANS_SESSION } from "../authentification/outils-auth.mjs";
+import { appelSite, contenuParametres, ouvrirParametres, SANS_SESSION } from "../authentification/outils-auth.mjs";
 
 const EQUIPE = COMPTES.equipe;
 const idInvitation = (cle) => oid("invitationAuth", INVITATIONS[cle].n);
@@ -132,6 +132,23 @@ test.describe("Espaces : le propriétaire gère les membres d'« Équipe »", ()
   });
 });
 
+test.describe("Espaces : le rôle « Gestion d'équipe » gère les membres à l'écran", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_GESTION_EQUIPE) });
+  // Le rôle a « Changer le rôle » et « Retirer » sur la page Membres (le serveur
+  // les accepte, voir securite.spec.mjs) ; le menu d'une ligne dépend pourtant du
+  // droit de modifier les informations de l'entreprise.
+  test("Le menu d'un membre propose « Changer le rôle » et « Retirer de l'espace »", async ({ page }) => {
+    const zone = await ouvrirMembres(page, EQUIPE.organisation.name);
+    const ligne = zone.getByRole("row").filter({ hasText: MEMBRES_CIBLES.intrus.name });
+    await expect(ligne.first()).toBeVisible();
+    const menu = ligne.first().locator("button:has(svg.lucide-ellipsis), button:has(svg.lucide-more-horizontal)");
+    await expect(menu, "Aucun menu sur la ligne d'un membre : le rôle ne peut ni changer un rôle ni retirer un membre à l'écran").toHaveCount(1);
+    await menu.click();
+    await expect(page.getByRole("menuitem", { name: "Changer le rôle" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Retirer de l'espace" })).toBeVisible();
+  });
+});
+
 test.describe("Espaces : transférer le rôle de super admin", () => {
   test.use({ storageState: connecte(COMPTES_AUTH.transfert.token) });
   test("Le membre choisi devient super admin, l'ancien garde l'accès", async ({ page }) => {
@@ -151,20 +168,29 @@ test.describe("Espaces : transférer le rôle de super admin", () => {
 test.describe("Espaces : ouvrir son invitation", () => {
   test.describe(() => {
     test.use({ storageState: connecte(COMPTES_AUTH.invite.token) });
-    test("L'invité connecté accepte : il devient membre d'« Équipe »", async ({ page }) => {
-      await ouvrir(page, `/accept-invitation/${idInvitation("acceptee").toHexString()}`, { pret: page.getByRole("button", { name: "Accepter l'invitation" }) });
-      await expect(page.getByText(EQUIPE.organisation.name).first()).toBeVisible();
-      await page.getByRole("button", { name: "Accepter l'invitation" }).click();
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+
+    // La page lit invitation.email, que la route ne renvoie plus (données minimales
+    // avant connexion) : « Cannot read properties of undefined (reading 'toLowerCase') ».
+    test("Invité connecté : la page de son invitation s'affiche (sans erreur)", async ({ page }) => {
+      await ouvrir(page, `/accept-invitation/${idInvitation("acceptee").toHexString()}`);
+      await expect(page.getByRole("button", { name: "Accepter l'invitation" }), "La page de l'invitation ne s'affiche pas : « Une erreur est survenue »").toBeVisible();
+    });
+
+    // Même action que le bouton « Accepter l'invitation » (route appelée par la page).
+    test("Accepter (route de la page) : l'invité devient membre d'« Équipe »", async ({ page }) => {
+      await ouvrir(page, "/mentions-legales");
+      const r = await appelSite(page, `/api/invitations/${idInvitation("acceptee").toHexString()}`, { methode: "POST", corps: { action: "accept" } });
+      expect(r.statut, `Acceptation refusée : ${JSON.stringify(r.corps).slice(0, 200)}`).toBe(200);
       const membre = await (await db()).collection("member").findOne({ organizationId: EQUIPE.organisation._id, userId: COMPTES_AUTH.invite.utilisateur._id });
       expect(membre?.role, "L'invité n'est pas membre après avoir accepté").toBe("viewer");
       expect((await (await db()).collection("invitation").findOne({ _id: idInvitation("acceptee") }))?.status).toBe("accepted");
     });
 
-    test("L'invité refuse une invitation : elle est close, il n'est pas membre", async ({ page }) => {
-      await ouvrir(page, `/accept-invitation/${idInvitation("aRefuser").toHexString()}`, { pret: page.getByRole("button", { name: "Refuser" }) });
-      await page.getByRole("button", { name: "Refuser" }).click();
-      await expect.poll(async () => (await (await db()).collection("invitation").findOne({ _id: idInvitation("aRefuser") }))?.status).toBe("rejected");
+    test("Refuser (route de la page) : l'invitation est close, il n'est pas membre", async ({ page }) => {
+      await ouvrir(page, "/mentions-legales");
+      const r = await appelSite(page, `/api/invitations/${idInvitation("aRefuser").toHexString()}`, { methode: "POST", corps: { action: "reject" } });
+      expect(r.statut, `Refus impossible : ${JSON.stringify(r.corps).slice(0, 200)}`).toBe(200);
+      expect((await (await db()).collection("invitation").findOne({ _id: idInvitation("aRefuser") }))?.status).toBe("rejected");
       expect(await (await db()).collection("member").findOne({ organizationId: COMPTES.configuration.organisation._id, userId: COMPTES_AUTH.invite.utilisateur._id })).toBeNull();
     });
   });
@@ -172,10 +198,11 @@ test.describe("Espaces : ouvrir son invitation", () => {
   test.describe(() => {
     // Refus attendu de la route d'acceptation (403), écrit dans la console.
     test.use({ storageState: connecte(COMPTES_AUTH.inviteAutre.token), erreursConsoleAutorisees: /status of 403/ });
-    test("Un autre compte connecté ne peut pas accepter l'invitation : message clair, pas membre", async ({ page }) => {
-      await ouvrir(page, `/accept-invitation/${idInvitation("autreDestinataire").toHexString()}`, { pret: page.getByRole("button", { name: "Accepter l'invitation" }) });
-      await page.getByRole("button", { name: "Accepter l'invitation" }).click();
-      await etape(page, "Un message explique le refus", () => expect(page.getByText(/adress|destin|autre compte|e-mail|email/i).first()).toBeVisible(), { capture: "ecran" });
+    test("Un autre compte connecté ne peut pas accepter l'invitation : refus explicite, pas membre", async ({ page }) => {
+      await ouvrir(page, "/mentions-legales");
+      const r = await appelSite(page, `/api/invitations/${idInvitation("autreDestinataire").toHexString()}`, { methode: "POST", corps: { action: "accept" } });
+      expect(r.statut).toBe(403);
+      expect(JSON.stringify(r.corps)).toMatch(/adresse|destin|e-mail|email/i);
       expect(await (await db()).collection("member").findOne({ organizationId: EQUIPE.organisation._id, userId: COMPTES_AUTH.inviteAutre.utilisateur._id })).toBeNull();
       expect((await (await db()).collection("invitation").findOne({ _id: idInvitation("autreDestinataire") }))?.status).toBe("pending");
     });
@@ -183,21 +210,25 @@ test.describe("Espaces : ouvrir son invitation", () => {
 
   test.describe(() => {
     test.use({ storageState: SANS_SESSION });
-    test("Invitation expirée : la page le dit", async ({ page }) => {
+    test("Invitation expirée : la page le dit au lieu de proposer de créer un compte", async ({ page }) => {
       await page.goto(`/accept-invitation/${idInvitation("expiree").toHexString()}`);
-      await expect(page.getByText(/expir/i).first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+      await etape(page, "L'expiration est annoncée", () => expect(page.getByText(/expir/i).first(), "La page propose « Créer mon compte » pour une invitation expirée").toBeVisible(), { capture: "ecran" });
     });
 
-    test("Invitation annulée : la page le dit", async ({ page }) => {
+    test("Invitation annulée : la page dit qu'elle n'est plus utilisable", async ({ page }) => {
       await page.goto(`/accept-invitation/${idInvitation("annulee").toHexString()}`);
-      await expect(page.getByText(/annul|n'est plus valide|plus disponible/i).first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/déjà été traitée|annul|n'est plus valide/i).first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole("button", { name: /Créer mon compte|Accepter/ })).toHaveCount(0);
     });
 
     test.describe(() => {
-      test.use({ erreursConsoleAutorisees: /status of 404/ });
-      test("Invitation inconnue : la page le dit", async ({ page }) => {
+      // Réponse 404 attendue (invitation inconnue), écrite dans la console par la page.
+      test.use({ erreursConsoleAutorisees: /status of 404|Erreur 404/ });
+      test("Invitation inconnue : un message compréhensible, pas « Erreur 404: Not Found »", async ({ page }) => {
         await page.goto(`/accept-invitation/${"e2e1e".padEnd(24, "f")}`);
-        await expect(page.getByText(/introuvable|n'existe pas|non trouvée|invalide/i).first()).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByText(/Erreur/).first()).toBeVisible({ timeout: 30_000 });
+        await etape(page, "Message compréhensible", () => expect(page.getByText(/introuvable|n'existe pas|n'est plus valide|invalide/i).first(), "Seul un message technique s'affiche (« Erreur 404: Not Found »)").toBeVisible(), { capture: "ecran" });
       });
     });
 
@@ -209,13 +240,14 @@ test.describe("Espaces : ouvrir son invitation", () => {
 
     // L'API ne renvoie plus l'e-mail de l'invitation (données minimales avant connexion) :
     // la redirection construit alors « email=undefined ».
-    test("« Se connecter pour accepter » : l'adresse transmise n'est pas « undefined »", async ({ page }) => {
-      await ouvrir(page, `/accept-invitation/${idInvitation("nouvelInscrit").toHexString()}`, { pret: page.getByRole("button", { name: "Se connecter pour accepter" }) });
-      await page.getByRole("button", { name: "Se connecter pour accepter" }).click();
+    test("« Créer mon compte » : l'adresse transmise n'est pas « undefined »", async ({ page }) => {
+      await page.goto(`/accept-invitation/${idInvitation("nouvelInscrit").toHexString()}`);
+      const bouton = page.getByRole("button", { name: /Créer mon compte|Se connecter pour accepter/ });
+      await expect(bouton).toBeVisible({ timeout: 30_000 });
+      await bouton.click();
       await expect(page).toHaveURL(/\/auth\/(signup|login)/, { timeout: 30_000 });
-      expect(page.url(), "L'adresse de la page de connexion porte « email=undefined »").not.toContain("email=undefined");
+      expect(page.url(), "L'adresse de la page d'inscription porte « email=undefined »").not.toContain("email=undefined");
       await expect(page.locator("input[value='undefined']"), "Un champ est prérempli avec « undefined »").toHaveCount(0);
     });
   });
 });
-

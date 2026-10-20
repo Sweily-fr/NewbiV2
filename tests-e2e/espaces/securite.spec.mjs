@@ -368,8 +368,8 @@ test.describe("Membres : le rôle « Gestion d'équipe » d'« Équipe »", () =
   for (const op of ECRITURES.filter((o) => o.personne || o.proprietaireSeul || o.droit === "orgSettings")) {
     test(`${op.nom} : refusé`, async ({ page }) => {
       const c = await contexte("gestion", EQUIPE.organisation);
-      c.userId = hex(MEMBRES.gestionEquipe.utilisateur._id);
-      c.soi = await adhesion(MEMBRES.gestionEquipe.utilisateur._id, EQUIPE.organisation._id);
+      c.userId = hex(MEMBRES.gestionnaireEquipe.utilisateur._id);
+      c.soi = await adhesion(MEMBRES.gestionnaireEquipe.utilisateur._id, EQUIPE.organisation._id);
       c.membre = idCible("intrus");
       await refusSansEffet(page, op, c);
     });
@@ -411,15 +411,6 @@ test.describe("Membres : une autre entreprise n'atteint rien", () => {
       }
     });
   }
-
-  test("Changer son espace actif pour celui des autres : refusé", async ({ page }) => {
-    const db = await base();
-    const avant = await db.collection("session").findOne({ token: INTRUS.token });
-    const r = await appelAuth(page, "/organization/set-active", { corps: { organizationId: hex(PARAMETRES.organisation._id) } });
-    expect(r.statut, "Better Auth a accepté l'espace d'une autre entreprise comme espace actif").toBeGreaterThanOrEqual(400);
-    const apres = await db.collection("session").findOne({ token: INTRUS.token });
-    expect(apres.activeOrganizationId).toBe(avant.activeOrganizationId);
-  });
 
   const LECTURES_AUTH = [
     ["La liste des membres", (o) => `/organization/list-members?organizationId=${o}`],
@@ -475,6 +466,21 @@ test.describe("Membres : une autre entreprise n'atteint rien", () => {
     const r = await appelApi(page, `mutation { requestModuleAccess(module: "billing", action: "view") { success } }`, {}, { organisation: hex(PARAMETRES.organisation._id), delai: 15_000 });
     expect(r.data?.requestModuleAccess ?? null, "Demande d'accès envoyée au super admin d'une autre entreprise").toBeNull();
     expect(await db.collection("notifications").countDocuments({})).toBe(avant);
+  });
+});
+
+test.describe("Membres : changer d'espace actif pour celui des autres", () => {
+  // Compte intrus du lot : Better Auth vide l'espace actif de la session sur un refus.
+  test.use({ storageState: connecte(COMPTES_AUTH.intrusSessions.token), erreursConsoleAutorisees: REFUS_CONSOLE });
+  test("Refusé : la session n'obtient pas l'espace des autres", async ({ page }) => {
+    await surLeSite(page);
+    const compte = COMPTES_AUTH.intrusSessions;
+    const r = await appelAuth(page, "/organization/set-active", { corps: { organizationId: hex(PARAMETRES.organisation._id) } });
+    expect(r.statut, "Better Auth a accepté l'espace d'une autre entreprise comme espace actif").toBeGreaterThanOrEqual(400);
+    const apres = await (await base()).collection("session").findOne({ token: compte.token });
+    expect(apres.activeOrganizationId, "La session a reçu l'espace d'une autre entreprise").not.toBe(hex(PARAMETRES.organisation._id));
+    // Remet l'espace actif de ce compte pour les tests suivants.
+    await (await base()).collection("session").updateOne({ token: compte.token }, { $set: { activeOrganizationId: hex(compte.organisation._id) } });
   });
 });
 

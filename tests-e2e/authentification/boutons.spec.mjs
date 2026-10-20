@@ -10,7 +10,7 @@ import { test } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { verifierBoutons } from "../exploration.mjs";
 import { COMPTES_AUTH, MOT_DE_PASSE } from "../donnees/lot-parametres-auth.mjs";
-import { connexionApi, SANS_SESSION } from "./outils-auth.mjs";
+import { connexionApi, ouvrirInscription, SANS_SESSION } from "./outils-auth.mjs";
 
 const corps = (page) => page.locator("body");
 const page_ = (url, pret) => async (page) => ouvrir(page, url, { pret: pret(page) });
@@ -55,7 +55,7 @@ test.describe("Pages publiques de l'authentification", () => {
   verifierBoutons({
     test,
     titre: "Inscription",
-    ouvrir: page_("/auth/signup", (p) => p.getByRole("button", { name: "Continuer avec l'email" })),
+    ouvrir: (p) => ouvrirInscription(p, p.getByRole("button", { name: "Continuer avec l'email" })),
     zone: corps,
     boutons: {
       "button Continuer avec Google": { parcours: "non testable : Google injoignable dans les tests" },

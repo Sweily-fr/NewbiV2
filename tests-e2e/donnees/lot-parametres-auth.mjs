@@ -88,7 +88,8 @@ export const ROLES_PERSO = {
     _id: oid("roleEspaceAuth", 5),
     organisation: () => COMPTES_AUTH.piegeProprietaire.organisation._id,
     role: "role_e2e2c0000000000000000005",
-    name: `Rôle ${piege("role").slice(0, 28)}`,
+    // 40 caractères au plus (limite de l'API) : un piège court mais exécutable.
+    name: "Rôle <img src=x onerror=alert(1)>",
     description: `Description ${piege("role-description")}`,
     actions: { invoices: ["view"], team: ["view"] },
     permission: {},
@@ -225,6 +226,7 @@ export const COMPTES_AUTH = {
     espace: "Essai Expiré Test SASU",
     plan: null,
     organisation: { trialStartDate: DANS(-45).toISOString(), trialEndDate: DANS(-15).toISOString(), isTrialActive: false, hasUsedTrial: true },
+    sessions: [{ nom: "EssaiExpire" }],
   }),
   // Inscription commencée (étape « Votre entreprise ») : sans SIRET, avec SIRET, formes juridiques.
   inscriptionSansSiret: compte(22, {
@@ -340,8 +342,11 @@ export const MEMBRES_CIBLES = {
   parametres: { n: 45, de: () => COMPTES.parametres.organisation._id, role: "viewer", email: "cible-parametres@e2e.test", name: "Zoé Cible" },
   // « Transfert » : reçoit le rôle de super admin.
   transfert: { n: 46, de: () => COMPTES_AUTH.transfert.organisation._id, role: "admin", email: "cible-transfert@e2e.test", name: "Tristan Reprise" },
-  // « Piège » : le membre au nom piégé (compte avec session, voir COMPTES_AUTH.piegeMembre).
-  piege: { n: 47, de: () => COMPTES_AUTH.piegeProprietaire.organisation._id, role: "role_e2e2c0000000000000000005", compte: "piegeMembre" },
+  // « Piège » : le membre au nom piégé (compte avec session, voir COMPTES_AUTH.piegeMembre),
+  // rôle « Membre » (lecture partout) pour que le tableau de bord se charge sans refus.
+  piege: { n: 47, de: () => COMPTES_AUTH.piegeProprietaire.organisation._id, role: "viewer", compte: "piegeMembre" },
+  // « Piège » : un membre au rôle personnalisé piégé, affiché dans la liste des membres.
+  piegeRole: { n: 49, de: () => COMPTES_AUTH.piegeProprietaire.organisation._id, role: "role_e2e2c0000000000000000005", email: "membre-role-piege@e2e.test", name: "Paul Rôlepiégé" },
   // « Équipe » : le rôle « Rôle à supprimer » est porté par un membre, réaffecté à la suppression.
   roleSupprime: { n: 48, de: () => COMPTES.equipe.organisation._id, role: "role_e2e2c0000000000000000004", email: "cible-role-supprime@e2e.test", name: "Sven Supprimé" },
 };
@@ -367,8 +372,6 @@ export const INVITATIONS = {
   aRefuser: { n: 11, org: () => COMPTES.configuration.organisation._id, email: "invite@e2e.test", role: "viewer", de: () => COMPTES.configuration.utilisateur._id },
   // Invitation à renvoyer depuis la liste d'« Équipe ».
   renvoyer: { n: 12, org: () => COMPTES.equipe.organisation._id, email: "invitation-renvoyer@e2e.test", role: "viewer", de: () => COMPTES.equipe.utilisateur._id },
-  // « Paramètres » : annulée par le rôle « Recrutement » (qui a le droit d'inviter).
-  recruteurAnnuler: { n: 13, org: () => COMPTES.parametres.organisation._id, email: "invitation-recruteur-annuler@e2e.test", role: "viewer", de: () => COMPTES.parametres.utilisateur._id },
 };
 
 /**

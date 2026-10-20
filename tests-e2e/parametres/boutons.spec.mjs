@@ -63,8 +63,8 @@ const NOTIFICATIONS = {
   "tab Préférences": { etat: /\[selected\]/ },
 };
 const PREFERENCES = {
-  // Relancer le tutoriel le rouvre à chaque arrivée sur le tableau de bord : compte à part.
-  "button Relancer le tutoriel": { parcours: "parcours.spec.mjs : relancer le tutoriel" },
+  // Relance locale (rien en base) : le tutoriel s'ouvre.
+  "button Relancer le tutoriel": { fenetre: "Bienvenue sur Newbi" },
   "button Annuler": FERMER,
   // Cartes de thème : le bouton radio est sous son étiquette, on clique l'étiquette.
   "radio Claire Claire": { parcours: "parcours.spec.mjs : thème et mode daltonien" },
