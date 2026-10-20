@@ -23,8 +23,12 @@ const EUR = getNumberFormat("fr-FR", {
   currency: "EUR",
 });
 
+// « 1 200 », « 1 200,50 » (espaces de milliers, y compris insécables) :
+// lus comme des nombres, pas coupés au premier espace
 function parseNombre(valeur) {
-  const n = Number.parseFloat(String(valeur).replace(",", "."));
+  const n = Number.parseFloat(
+    String(valeur).replace(/\s/g, "").replace(",", "."),
+  );
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -43,7 +47,8 @@ export default function PenaltyCalculator() {
   const resultat = useMemo(() => {
     const montantTTC = parseNombre(montant);
     const tauxAnnuel = parseNombre(taux);
-    if (!montantTTC || !echeance || !paiement) return null;
+    // Un montant négatif ne donne pas de montant dû
+    if (!(montantTTC > 0) || !echeance || !paiement) return null;
 
     const fin = new Date(`${paiement}T00:00:00`);
     const debut = new Date(`${echeance}T00:00:00`);

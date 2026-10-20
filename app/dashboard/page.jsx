@@ -920,6 +920,7 @@ function DashboardContent() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
+                              aria-label="Connecter un compte bancaire"
                               onClick={() =>
                                 bankBalanceRef.current?.openConnectModal()
                               }

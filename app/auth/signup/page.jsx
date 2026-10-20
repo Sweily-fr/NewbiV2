@@ -1208,15 +1208,12 @@ function SignUpPageContent() {
               <>
                 <p className="text-[13px] text-muted-foreground">
                   En vous inscrivant, vous acceptez nos{" "}
-                  <Link
-                    href="/mentions-legales"
-                    className="text-foreground hover:underline"
-                  >
+                  <Link href="/cgv" className="text-foreground hover:underline">
                     Conditions générales
                   </Link>{" "}
                   et notre{" "}
                   <Link
-                    href="/politique-confidentialite"
+                    href="/politique-de-confidentialite"
                     className="text-foreground hover:underline"
                   >
                     Politique de confidentialité

@@ -91,7 +91,7 @@ const applyOpacityToColor = (color, opacity) => {
   return color;
 };
 
-const UniversalPreviewPDF = ({
+const UniversalPreviewPDFContent = ({
   data,
   type = "invoice",
   isMobile = false,
@@ -107,6 +107,9 @@ const UniversalPreviewPDF = ({
   // utilisateur Newbi qui teste le générateur voit le logo de SA société
   // apparaître sur un document censé être vierge.
   ignoreOrganization = false,
+  // Espace de la personne connectée (useWorkspace), fourni par
+  // UniversalPreviewPDF sauf pour les générateurs publics
+  liveOrganization = null,
 }) => {
   // Calculer le montant marché HT (total à 100% sans avancement) pour les factures de situation
   const calculateMontantMarcheHT = () => {
@@ -144,7 +147,6 @@ const UniversalPreviewPDF = ({
 
   const montantMarcheHT = calculateMontantMarcheHT();
   const { data: session } = useSession();
-  const { organization: liveOrganization } = useWorkspace();
   const organization = ignoreOrganization ? null : liveOrganization;
   const documentRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -2885,5 +2887,21 @@ const UniversalPreviewPDF = ({
     </div>
   );
 };
+
+const UniversalPreviewPDFWithWorkspace = (props) => {
+  const { organization } = useWorkspace();
+  return (
+    <UniversalPreviewPDFContent {...props} liveOrganization={organization} />
+  );
+};
+
+// Générateurs publics (ignoreOrganization) : l'espace n'est pas lu du tout,
+// donc aucune requête d'organisation pour un visiteur (refusée, 401)
+const UniversalPreviewPDF = (props) =>
+  props.ignoreOrganization ? (
+    <UniversalPreviewPDFContent {...props} />
+  ) : (
+    <UniversalPreviewPDFWithWorkspace {...props} />
+  );
 
 export default UniversalPreviewPDF;

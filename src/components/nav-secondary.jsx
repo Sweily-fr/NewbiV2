@@ -392,6 +392,13 @@ export function NavSecondary({
             <SidebarMenuButton
               className="mb-1 cursor-pointer"
               tooltip="Notifications"
+              // Barre repliée, le nombre est affiché hors du bouton : il
+              // reste annoncé avec lui par les lecteurs d'écran
+              aria-label={
+                notificationCount > 0
+                  ? `Notifications (${notificationCount} non lue${notificationCount > 1 ? "s" : ""})`
+                  : "Notifications"
+              }
               onClick={() => {
                 if (onOpenNotifications) onOpenNotifications();
                 handleLinkClick();

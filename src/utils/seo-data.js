@@ -474,7 +474,7 @@ export const seoData = {
       name: "Politique de Confidentialité",
       description:
         "Politique de confidentialité et protection des données personnelles de Newbi",
-      url: `${baseUrl}/politique-confidentialite`,
+      url: `${baseUrl}/politique-de-confidentialite`,
     },
   },
 
