@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
+import { sanitizeRichText } from "@/src/utils/sanitize-html";
 
 const descriptionToolbarItems = [
   { icon: Bold, tooltip: "Gras", command: "bold" },
@@ -106,7 +107,8 @@ export const DescriptionEditor = forwardRef(function DescriptionEditor(
 
   useEffect(() => {
     if (editorRef.current && value !== lastSavedRef.current) {
-      editorRef.current.innerHTML = value || "";
+      // Contenu enregistré : nettoyé avant d'entrer dans la page
+      editorRef.current.innerHTML = sanitizeRichText(value);
       lastSavedRef.current = value || "";
       const text = editorRef.current.textContent || "";
       setIsEmpty(text.trim().length === 0);
