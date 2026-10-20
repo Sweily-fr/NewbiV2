@@ -1,16 +1,18 @@
 /**
- * Transferts : routes publiques (sans connexion) de l'API. Défauts connus à
- * prouver par des tests dédiés (restent rouges jusqu'à correction) :
+ * Transferts : routes publiques (sans connexion) de l'API. Le point 1 est un
+ * défaut prouvé par des tests dédiés (rouges jusqu'à correction) ; le point 2
+ * est un contrôle qui doit passer :
  *
  *  1. Injection d'opérateurs NoSQL dans les routes REST de téléchargement
  *     (/file-transfer/download-file, /download-all) : les paramètres de
  *     requête bruts entrent dans FileTransfer.findOne({ shareLink, accessKey })
  *     (fileTransferController.js). `shareLink[$ne]=x&accessKey[$ne]=y` atteint
  *     le transfert d'un autre utilisateur sans connaître son lien ni sa clé.
- *  2. Jeton de retour de paiement : createPaymentSessionForFileTransfer
- *     accepte un transferId sans clé d'accès ni connexion et écrit un jeton ;
- *     consumePaymentReturnToken révèle alors le shareLink et l'accessKey du
- *     transfert. Un identifiant devinable mène ainsi aux identifiants d'accès.
+ *  2. Jeton de retour de paiement : un jeton inconnu, expiré ou déjà
+ *     consommé ne doit rien révéler (tests qui passent). La chaîne complète
+ *     (obtenir un jeton valide sans payer ni connaître la clé d'accès) passe par
+ *     Stripe : elle n'est pas testable en CI. Qu'un jeton valide ramène au
+ *     transfert est le comportement voulu pour la personne qui vient de payer.
  *
  * validatePayment (3e route) n'est pas éprouvée : elle appelle Stripe avant
  * la recherche, injoignable en CI.
@@ -73,22 +75,21 @@ test.describe("Transferts : routes publiques de téléchargement (défauts connu
   });
 });
 
-test.describe("Transferts : jeton de retour de paiement (défaut connu)", () => {
-  test("Consommer le jeton de retour, sans session, révèle le lien et la clé d'accès", async ({ page }) => {
-    await ouvrir(page, "/auth/login");
-    // Le jeton de retour (posé lors d'un départ vers Stripe) voyage dans l'URL
-    // de retour ; quiconque l'obtient peut, sans connexion, le consommer.
-    const reponse = await appelApi(
-      page,
-      `query($t: String!){ consumePaymentReturnToken(token: $t){ success shareLink accessKey } }`,
-      { t: TRANSFERTS.paiement.paymentReturnToken },
-    );
-    const resultat = reponse.data?.consumePaymentReturnToken;
-    await etape(page, "La consommation ne doit pas révéler les identifiants d'accès", async () => {
-      expect(
-        resultat?.accessKey ?? null,
-        `Le jeton de retour de paiement a révélé la clé d'accès du transfert sans aucune connexion (reçu ${JSON.stringify(resultat)?.slice(0, 160)})`,
-      ).toBeNull();
+test.describe("Transferts : un jeton de retour de paiement non valide ne révèle rien", () => {
+  const CONSOMMER = `query($t: String!){ consumePaymentReturnToken(token: $t){ success message shareLink accessKey } }`;
+
+  for (const [cas, jeton] of [
+    ["inconnu", "e2eJetonRetourPaiementInconnu000"],
+    ["expiré", TRANSFERTS.paiement.paymentReturnToken],
+    ["déjà consommé", TRANSFERTS.paiementConsomme.paymentReturnToken],
+  ]) {
+    test(`Jeton ${cas} : ni lien ni clé d'accès`, async ({ page }) => {
+      await ouvrir(page, "/auth/login");
+      const reponse = await appelApi(page, CONSOMMER, { t: jeton });
+      const resultat = reponse.data?.consumePaymentReturnToken;
+      expect(resultat?.success, `Un jeton ${cas} a été accepté`).not.toBe(true);
+      expect(resultat?.shareLink ?? null, `Un jeton ${cas} a révélé le lien du transfert`).toBeNull();
+      expect(resultat?.accessKey ?? null, `Un jeton ${cas} a révélé la clé d'accès du transfert`).toBeNull();
     });
-  });
+  }
 });

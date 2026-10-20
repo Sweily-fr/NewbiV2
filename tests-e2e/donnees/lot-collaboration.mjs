@@ -439,28 +439,22 @@ export const TRANSFERTS = {
     accessKey: "e2eclefpayant0000000000000000000",
     isPaymentRequired: true,
     paymentAmount: 10,
-    // Jeton de retour de paiement déjà posé (comme après un départ vers Stripe) :
-    // il voyage dans l'URL de retour, consultable par le destinataire.
-    paymentReturnToken: "e2eJetonRetourPaiementCollab0000",
+    // Jeton de retour de paiement EXPIRÉ : il ne doit plus rien révéler.
+    paymentReturnToken: "e2eJetonRetourPaiementExpire0000",
     paymentReturnTokenConsumed: false,
+    paymentReturnTokenExpiresAt: DANS(-1),
+  }),
+  // Jeton de retour de paiement DÉJÀ CONSOMMÉ : il ne doit plus rien révéler.
+  paiementConsomme: transfert(10, {
+    title: "Transfert payant (jeton consommé)",
+    shareLink: "e2ecollabtransfertconsomme000000",
+    accessKey: "e2eclefconsomme00000000000000000",
+    isPaymentRequired: true,
+    paymentAmount: 10,
+    paymentReturnToken: "e2eJetonRetourPaiementConsomme00",
+    paymentReturnTokenConsumed: true,
     paymentReturnTokenExpiresAt: DANS(1),
   }),
-};
-
-/** Compte Stripe Connect du propriétaire « Collab » : requis pour que la
- * création d'une session de paiement aille jusqu'à écrire le jeton de retour. */
-export const STRIPE_CONNECT = {
-  collab: {
-    _id: oid("annexeCollab", 20),
-    userId: PROPRIO,
-    organizationId: COLLAB_HEX,
-    accountId: "acct_e2eCollabPaiement",
-    isOnboarded: true,
-    chargesEnabled: true,
-    payoutsEnabled: true,
-    createdAt: MAINTENANT,
-    updatedAt: MAINTENANT,
-  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -668,7 +662,6 @@ export function donneesCollaboration() {
     userinviteds: [VISITEUR.userInvited],
     events: Object.values(EVENEMENTS),
     filetransfers: Object.values(TRANSFERTS),
-    stripeconnectaccounts: Object.values(STRIPE_CONNECT),
     sharedfolders: [...Object.values(DOSSIERS), DOSSIER_FREELANCE],
     shareddocuments: Object.values(DOCUMENTS),
     sharedtags: Object.values(TAGS),
