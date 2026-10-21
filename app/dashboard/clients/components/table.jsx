@@ -1822,6 +1822,7 @@ function RowActions({
           {canDeleteClients && <DropdownMenuSeparator />}
           {canDeleteClients && (
             <DropdownMenuItem
+              aria-disabled={client.hasDocuments ? true : undefined}
               className={
                 client.hasDocuments
                   ? "opacity-50 cursor-not-allowed"
