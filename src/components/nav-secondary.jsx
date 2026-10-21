@@ -394,10 +394,11 @@ export function NavSecondary({
               className="mb-1 cursor-pointer"
               tooltip="Notifications"
               // Barre repliée, le nombre est affiché hors du bouton : il
-              // reste annoncé avec lui par les lecteurs d'écran
+              // reste annoncé avec lui par les lecteurs d'écran (même nom
+              // que barre dépliée, « Notifications 2 »)
               aria-label={
                 notificationCount > 0
-                  ? `Notifications (${notificationCount} non lue${notificationCount > 1 ? "s" : ""})`
+                  ? `Notifications ${notificationCount}`
                   : "Notifications"
               }
               onClick={() => {
