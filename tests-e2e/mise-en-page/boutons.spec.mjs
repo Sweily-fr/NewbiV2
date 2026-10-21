@@ -36,6 +36,8 @@ test.describe("Mise en page (propriétaire de « Pilotage »)", () => {
     titre: "Barre latérale",
     ouvrir: ouvrirAccueil,
     zone: barreLaterale,
+    // « Notifications 2 » : le nombre de non lues fait partie du nom du bouton.
+    nomsVariables: true,
     boutons: {
       "button NewBi Logo": { menu: ["Pilotage Test SASU", "Paramètres du compte", "Paramètres de l'espace", "Inviter des membres", "Collaborateurs", "Nouvel espace", "Déconnexion"] },
       "button NewBi Logo > Paramètres du compte": { fenetre: PARAMETRES },
