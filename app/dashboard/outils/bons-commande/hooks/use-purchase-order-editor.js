@@ -1702,10 +1702,11 @@ export function usePurchaseOrderEditor({
               priceValue === null ||
               priceValue === "" ||
               isNaN(parseFloat(priceValue)) ||
-              parseFloat(priceValue) <= 0;
+              // Prix à 0 accepté (prestation offerte), comme sur le devis
+              parseFloat(priceValue) < 0;
 
             if (isInvalid) {
-              itemErrors.push("prix unitaire doit être > 0€");
+              itemErrors.push("prix unitaire invalide");
               fields.push("unitPrice");
             }
 
@@ -2083,10 +2084,11 @@ export function usePurchaseOrderEditor({
               priceValue === null ||
               priceValue === "" ||
               isNaN(parseFloat(priceValue)) ||
-              parseFloat(priceValue) <= 0;
+              // Prix à 0 accepté (prestation offerte), comme sur le devis
+              parseFloat(priceValue) < 0;
 
             if (isInvalid) {
-              itemErrors.push("prix unitaire doit être > 0€");
+              itemErrors.push("prix unitaire invalide");
               fields.push("unitPrice");
             }
 

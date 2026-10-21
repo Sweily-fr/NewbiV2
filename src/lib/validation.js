@@ -288,8 +288,16 @@ export const VALIDATION_PATTERNS = {
 export const ITEM_DESCRIPTION_PATTERN =
   /^[\p{L}\p{M}\p{N}\p{P}\p{S}\p{Z}\t\n\r\u00AD\u200B-\u200D\u2060\uFEFF]+$/u;
 
+// Nom d'un article de facture : l'éditeur de factures n'acceptait que les
+// lettres latines, les chiffres et la ponctuation ASCII (plus $ + =). Les vrais
+// noms passent désormais (lettres de tous les alphabets, « œ », accents
+// combinés, apostrophe typographique, guillemets, « n° », « m² ») ; les autres
+// symboles (« € », émojis…) restent refusés comme avant.
+export const INVOICE_ITEM_NAME_PATTERN =
+  /^[\p{L}\p{M}\p{N}\p{P}\s$+=°\u00AD\u200B-\u200D\u2060\uFEFF]+$/u;
+
 /**
- * Nom de l'article (2 caractères au moins, mêmes caractères que l'API) et
+ * Nom de l'article d'une facture (2 caractères au moins) et
  * détails (500 caractères au plus) : contrôlés sur ce que l'utilisateur
  * saisit, pas sur une ligne reprise telle quelle du document existant
  * (`original`), enregistrée avant ces règles. Renvoie [{ field, message }].
@@ -303,7 +311,7 @@ export function getItemTextErrors(item, original) {
         field: "description",
         message: "nom de l'article trop court (2 caractères minimum)",
       });
-    } else if (!ITEM_DESCRIPTION_PATTERN.test(description)) {
+    } else if (!INVOICE_ITEM_NAME_PATTERN.test(description)) {
       errors.push({
         field: "description",
         message: "description contient des caractères non autorisés",
