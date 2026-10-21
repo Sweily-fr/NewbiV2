@@ -38,8 +38,8 @@ test.describe("Accueil (propriétaire)", () => {
     boutons: {
       ...COMMUNS,
       ...CREATIONS,
-      // Bouton « + » du cadre Solde, sans nom : voir le test d'accessibilité ci-dessous
-      "button ": { parcours: "boutons.spec.mjs : le bouton « + » du solde a un nom" },
+      // Bouton « + » du cadre Solde : voir le test d'accessibilité ci-dessous
+      "button Connecter un compte bancaire": { parcours: "boutons.spec.mjs : le bouton « + » du solde a un nom" },
     },
   });
 
