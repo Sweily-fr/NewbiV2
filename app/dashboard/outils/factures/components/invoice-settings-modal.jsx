@@ -400,15 +400,12 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
 
       // Préfixe modifié : mêmes règles que le champ (lettres, chiffres et
       // tirets, 20 caractères au plus), sinon il serait enregistré puis
-      // refusé par l'API à chaque nouvelle facture
+      // refusé par l'API à chaque nouvelle facture. Le motif s'affiche sous
+      // le champ et dans la liste des erreurs en haut des paramètres.
       if (
         formValues.prefix !== initialValues?.prefix &&
         !(await form.trigger("prefix"))
       ) {
-        toast.error(
-          form.getFieldState("prefix").error?.message ||
-            "Le préfixe de facture est invalide",
-        );
         setIsSaving(false);
         return;
       }

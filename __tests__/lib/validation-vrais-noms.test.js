@@ -200,6 +200,19 @@ describe("Article d'un document : nom et détails", () => {
     ).toEqual([]);
   });
 
+  it("symboles hors des vrais noms (« € », émojis) : toujours refusés sur une facture", () => {
+    expect(
+      getItemTextErrors({
+        description: "Forfait 100 € (cas erreur caractère)",
+      }),
+    ).toEqual([expect.objectContaining({ field: "description" })]);
+    expect(
+      getItemTextErrors({
+        description: "Lot n° 12 de pavés, 25 m², « Sérénité »",
+      }),
+    ).toEqual([]);
+  });
+
   it("ligne reprise telle quelle d'un document existant : pas de nouveau refus", () => {
     const ancienne = { description: "X", details: "d".repeat(800) };
     expect(getItemTextErrors({ ...ancienne }, ancienne)).toEqual([]);
