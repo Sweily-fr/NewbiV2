@@ -12,6 +12,7 @@ const longDate = (value) =>
         day: "numeric",
         month: "long",
         year: "numeric",
+        timeZone: "Europe/Paris",
       })
     : null;
 
