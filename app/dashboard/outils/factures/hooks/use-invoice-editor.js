@@ -39,6 +39,10 @@ import {
   toAnnexInput,
 } from "@/src/utils/document-annex";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+import {
+  clampIssueDate,
+  issueDateShiftMessage,
+} from "../utils/issue-date-clamp";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1593,6 +1597,27 @@ export function useInvoiceEditor({
     setValue,
   ]);
 
+  // Report de la date d'émission à la dernière facture émise (numérotation
+  // chronologique) : formulaire mis à jour et utilisateur prévenu
+  const applyIssueDateClamp = useCallback(
+    (input) => {
+      if (!latestIssueDate || !input.issueDate) return input;
+      const latestLocal = formatCalendarDate(new Date(latestIssueDate));
+      const { input: clamped, shiftedFrom } = clampIssueDate(
+        input,
+        latestLocal,
+      );
+      if (!shiftedFrom) return input;
+      setValue("issueDate", clamped.issueDate, { shouldDirty: false });
+      if (clamped.dueDate !== input.dueDate) {
+        setValue("dueDate", clamped.dueDate, { shouldDirty: false });
+      }
+      toast.warning(issueDateShiftMessage(latestLocal));
+      return clamped;
+    },
+    [latestIssueDate, setValue],
+  );
+
   // Pré-remplir la date d'émission avec max(aujourd'hui, date de la dernière facture)
   // pour éviter l'erreur de validation backend "date antérieure à la dernière facture"
   // Ajuste aussi la date d'échéance pour rester cohérente (>= issueDate)
@@ -2194,32 +2219,7 @@ export function useInvoiceEditor({
 
       // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
       // et ajuster dueDate pour qu'elle reste >= issueDate
-      if (latestIssueDate && input.issueDate) {
-        const latestLocal = formatCalendarDate(new Date(latestIssueDate));
-        if (input.issueDate < latestLocal) {
-          const oldIssue = input.issueDate;
-          input = { ...input, issueDate: latestLocal };
-          setValue("issueDate", latestLocal, { shouldDirty: false });
-
-          if (input.dueDate) {
-            if (input.dueDate < latestLocal) {
-              // Préserver l'écart initial (ou 30 jours par défaut)
-              const diffDays = Math.max(
-                0,
-                Math.round(
-                  (new Date(input.dueDate) - new Date(oldIssue)) /
-                    (1000 * 60 * 60 * 24),
-                ),
-              );
-              const newDue = new Date(latestLocal);
-              newDue.setDate(newDue.getDate() + (diffDays || 30));
-              const newDueStr = formatLocalDate(newDue);
-              input = { ...input, dueDate: newDueStr };
-              setValue("dueDate", newDueStr, { shouldDirty: false });
-            }
-          }
-        }
-      }
+      input = applyIssueDateClamp(input);
 
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {
@@ -2331,6 +2331,7 @@ export function useInvoiceEditor({
     reset,
     handleError,
     organization,
+    applyIssueDateClamp,
   ]);
 
   // Submit handler (validate and send)
@@ -2618,14 +2619,10 @@ export function useInvoiceEditor({
       let input = transformFormDataToInput(dataToTransform, previousStatus);
 
       // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
-      // pour éviter l'erreur backend "date antérieure à la dernière facture"
-      if (latestIssueDate && input.issueDate) {
-        const latestLocal = formatCalendarDate(new Date(latestIssueDate));
-        if (input.issueDate < latestLocal) {
-          input = { ...input, issueDate: latestLocal };
-          setValue("issueDate", latestLocal, { shouldDirty: false });
-        }
-      }
+      // pour éviter l'erreur backend "date antérieure à la dernière facture",
+      // l'échéance suivant la date d'émission (elle restait avant et faisait
+      // échouer la création), et l'utilisateur est prévenu du report
+      input = applyIssueDateClamp(input);
 
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {
@@ -2772,6 +2769,7 @@ export function useInvoiceEditor({
     existingInvoice?.status,
     handleError,
     organization,
+    applyIssueDateClamp,
   ]);
 
   // Fonction pour sauvegarder les paramètres dans l'organisation
