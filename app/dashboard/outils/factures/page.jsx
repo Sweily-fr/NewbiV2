@@ -248,6 +248,7 @@ function InvoicesContent() {
                   variant="outline"
                   size="icon"
                   onClick={() => setIsAutoReminderOpen(true)}
+                  aria-label="Relances automatiques"
                 >
                   <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
@@ -257,6 +258,7 @@ function InvoicesContent() {
                   variant="outline"
                   size="icon"
                   onClick={() => setIsSettingsOpen(true)}
+                  aria-label="Paramètres des factures"
                 >
                   <Settings className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>

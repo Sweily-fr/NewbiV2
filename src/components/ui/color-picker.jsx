@@ -91,6 +91,9 @@ export function ColorPicker({
   sideOffset = 0,
   sideOffsetVw,
   inline = false,
+  // Nom lu par les lecteurs d'écran (« Couleur du texte ») : le bouton
+  // n'affiche que le code de la couleur (« 000000 »)
+  label,
 }) {
   // Convertir HEX en HSV pour initialisation
   const getInitialHsv = (hexColor) => {
@@ -582,8 +585,7 @@ export function ColorPicker({
             top: `${cursorPosition.y}%`,
             transform: "translate(-50%, -50%)",
             backgroundColor: currentColor,
-            boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)",
           }}
         />
       </div>
@@ -684,6 +686,7 @@ export function ColorPicker({
           variant="outline"
           className={`h-8 px-2 justify-start gap-2 ${className}`}
           onClick={() => setIsOpen(!isOpen)}
+          aria-label={label ? `${label} : ${currentColor.slice(1)}` : undefined}
         >
           <div
             className="w-4 h-4 rounded border border-gray-300"
@@ -706,6 +709,7 @@ export function ColorPicker({
         <Button
           variant="outline"
           className={`h-8 px-2 justify-start gap-2 ${className}`}
+          aria-label={label ? `${label} : ${currentColor.slice(1)}` : undefined}
         >
           <div
             className="w-4 h-4 rounded border border-gray-300"

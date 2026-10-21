@@ -137,6 +137,7 @@ function QuotesContent() {
                   variant="outline"
                   size="icon"
                   onClick={() => setIsSettingsOpen(true)}
+                  aria-label="Paramètres des devis"
                 >
                   <Settings className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>

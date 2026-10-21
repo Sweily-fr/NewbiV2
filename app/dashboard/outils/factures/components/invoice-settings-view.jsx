@@ -596,6 +596,7 @@ export default function InvoiceSettingsView({
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="show-bank-details"
+                    aria-label="Afficher les coordonnées bancaires"
                     checked={data.showBankDetails || false}
                     onCheckedChange={(checked) => {
                       setValue("showBankDetails", checked, {
@@ -644,6 +645,7 @@ export default function InvoiceSettingsView({
                   checked={autoNumbering}
                   onCheckedChange={handleAutoNumberingChange}
                   className="data-[state=checked]:bg-[#5b4fff]"
+                  aria-label="Numérotation séquentielle continue"
                 />
               </div>
 
@@ -852,6 +854,7 @@ export default function InvoiceSettingsView({
                   </Label>
                   <ColorPicker
                     className="w-full"
+                    label="Couleur du texte"
                     color={data.appearance?.textColor || "#000000"}
                     onChange={(color) => {
                       setValue("appearance.textColor", color, {
@@ -871,6 +874,7 @@ export default function InvoiceSettingsView({
                   </Label>
                   <ColorPicker
                     className="w-full"
+                    label="Couleur des titres du tableau"
                     color={data.appearance?.headerTextColor || "#ffffff"}
                     onChange={(color) => {
                       setValue("appearance.headerTextColor", color, {
@@ -891,6 +895,7 @@ export default function InvoiceSettingsView({
                 </Label>
                 <ColorPicker
                   className="w-full"
+                  label="Couleur de fond du tableau"
                   color={data.appearance?.headerBgColor || "#5b50FF"}
                   onChange={(color) => {
                     setValue("appearance.headerBgColor", color, {
