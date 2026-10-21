@@ -143,6 +143,7 @@ export default function InvoiceTable({
   triggerImport,
   onImportTriggered,
   onFilteredDataChange,
+  onSelectionChange,
   onBalancesRefetch,
 }) {
   // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
@@ -380,6 +381,14 @@ export default function InvoiceTable({
       onFilteredDataChange(rows.map((row) => row.original));
     }
   }, [table, onFilteredDataChange, filterKey, dataLength, statsSignature]);
+
+  // Factures cochées : l'export de la page n'exporte qu'elles (il exportait
+  // toute la liste, la sélection ne lui était pas transmise)
+  const selectionKey = selectedRows.map((invoice) => invoice.id).join("|");
+  useEffect(() => {
+    onSelectionChange?.(selectedRows);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onSelectionChange, selectionKey]);
 
   // Gérer le changement de tab
   const handleTabChange = (value) => {

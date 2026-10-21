@@ -190,6 +190,25 @@ export default function QuoteSidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signatureStatus?.status]);
 
+  // Échap ferme le panneau (clavier, lecteur d'écran), sauf quand une
+  // fenêtre, un menu ou une liste ouverts par-dessus se referment d'abord
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (
+        document.querySelector(
+          '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]',
+        )
+      ) {
+        return;
+      }
+      onClose?.();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!initialQuote) return null;
 
   // Utiliser les données complètes si disponibles, sinon les données initiales

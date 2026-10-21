@@ -36,6 +36,16 @@ import {
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import {
   useMarkInvoiceAsPaid,
   useChangeInvoiceStatus,
   useDeleteInvoice,
@@ -78,6 +88,9 @@ export default function InvoiceRowActions({
   // OPTIMISÉ: Suppression de isSidebarOpen - géré au niveau du tableau pour éviter les re-renders
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // Action irréversible du menu en attente de confirmation : « cancel »
+  // (annuler la facture) ou « delete » (supprimer le brouillon)
+  const [confirmAction, setConfirmAction] = useState(null);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   const router = useRouter();
   // Créer un document demande des informations d'entreprise complètes
@@ -478,7 +491,7 @@ export default function InvoiceRowActions({
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={handleCancel}
+                      onClick={() => setConfirmAction("cancel")}
                       className="text-red-600 focus:text-red-600"
                       disabled={isReadOnly}
                     >
@@ -507,7 +520,7 @@ export default function InvoiceRowActions({
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={handleDelete}
+                        onClick={() => setConfirmAction("delete")}
                         className="text-red-600 focus:text-red-600"
                         disabled={isReadOnly}
                       >
@@ -532,6 +545,72 @@ export default function InvoiceRowActions({
           </DropdownMenu>
         </ButtonGroup>
       </div>
+
+      {/* Confirmation des actions irréversibles du menu (comme le panneau) */}
+      <AlertDialog
+        open={confirmAction === "cancel"}
+        onOpenChange={(open) => {
+          if (!open && !changingStatus) setConfirmAction(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Annuler la facture&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Une fois la facture annulée, son
+              statut ne pourra plus être modifié. Voulez-vous vraiment
+              l&apos;annuler&nbsp;?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={changingStatus}>
+              Retour
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                await handleCancel();
+                setConfirmAction(null);
+              }}
+              disabled={changingStatus}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Confirmer l&apos;annulation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={confirmAction === "delete"}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setConfirmAction(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le brouillon&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ce brouillon sera définitivement supprimé. Cette action est
+              irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                await handleDelete();
+                setConfirmAction(null);
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Sidebar pour desktop - DÉPLACÉE AU NIVEAU DU TABLEAU pour éviter les re-renders */}
 

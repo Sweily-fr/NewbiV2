@@ -132,6 +132,7 @@ export default function QuoteTable({
   triggerImport,
   onImportTriggered,
   onBalancesRefetch,
+  onSelectionChange,
 }) {
   // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
   // (les deux l'étaient, l'un masqué en CSS).
@@ -240,6 +241,15 @@ export default function QuoteTable({
     onRequestSignature: setSignatureQuote,
     onOpenSidebar: setSidebarQuote,
   });
+
+  // Devis cochés : l'export de la page n'exporte qu'eux (il exportait tous
+  // les devis, la sélection ne lui était pas transmise). Les devis importés
+  // (analyse de PDF) ne font pas partie de l'export.
+  const selectionKey = selectedRows.map((quote) => quote.id).join("|");
+  useEffect(() => {
+    onSelectionChange?.(selectedRows.filter((q) => q._type !== "imported"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onSelectionChange, selectionKey]);
 
   // État pour les tabs de filtre rapide
   const [activeTab, setActiveTab] = useState("all");

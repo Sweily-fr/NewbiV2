@@ -999,8 +999,14 @@ function DashboardContent() {
                   s'affichent sans attendre de compte bancaire. */}
                 {showBillingMonth && (
                   <Card className="shadow-xs">
+                    {/* Les ventes et achats du mois viennent des factures,
+                      pas du compte bancaire : sans compte, le cadre reste
+                      affiché dès que le mois a des données de facturation */}
                     {canReadBanking &&
-                    (filteredBankAccounts || []).length === 0 ? (
+                    (filteredBankAccounts || []).length === 0 &&
+                    billingMonth &&
+                    !monthSales.total &&
+                    !monthPurchases.total ? (
                       <CardContent className="p-0">
                         <TableEmptyState
                           icon={DocumentText2Icon}

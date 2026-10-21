@@ -474,9 +474,10 @@ export const CREATE_INVOICE_FROM_DELIVERY_NOTE = gql`
 // ==================== HOOKS PERSONNALISÉS ====================
 
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useAllPagesQuery } from "@/src/hooks/useAllPagesQuery";
 
 // Hook pour récupérer le dernier préfixe de bon de livraison
 export const useLastDeliveryNotePrefix = () => {
@@ -498,29 +499,25 @@ export const useLastDeliveryNotePrefix = () => {
   );
 };
 
-// Hook pour récupérer la liste des bons de livraison
+// Liste des bons de livraison : toute la liste de l'organisation (la première page
+// s'affiche aussitôt, le reste suit) : onglets, recherche et exports sont
+// calculés sur elle.
 export const useDeliveryNotes = (filters = {}) => {
   const {
     workspaceId,
     loading: workspaceLoading,
     error: workspaceError,
   } = useRequiredWorkspace();
-  const [page, setPage] = useState(1);
-  const limit = 50;
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(
+  const { data, loading, error, refetch } = useAllPagesQuery(
     GET_DELIVERY_NOTES,
     {
-      variables: {
-        workspaceId,
-        ...filters,
-        page,
-        limit,
-      },
+      variables: { workspaceId, ...filters },
       skip: !workspaceId,
       errorPolicy: "all",
       fetchPolicy: "cache-and-network",
     },
+    { field: "deliveryNotes", listField: "deliveryNotes" },
   );
 
   const deliveryNotes = useMemo(
@@ -530,31 +527,6 @@ export const useDeliveryNotes = (filters = {}) => {
   const totalCount = data?.deliveryNotes?.totalCount || 0;
   const hasNextPage = data?.deliveryNotes?.hasNextPage || false;
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !loading) {
-      fetchMore({
-        variables: { page: page + 1 },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) return prev;
-          setPage(page + 1);
-          return {
-            deliveryNotes: {
-              ...fetchMoreResult.deliveryNotes,
-              deliveryNotes: [
-                ...prev.deliveryNotes.deliveryNotes,
-                ...fetchMoreResult.deliveryNotes.deliveryNotes,
-              ],
-            },
-          };
-        },
-      });
-    }
-  }, [hasNextPage, loading, fetchMore, page]);
-
-  const resetPage = useCallback(() => {
-    setPage(1);
-  }, []);
-
   return {
     deliveryNotes,
     totalCount,
@@ -562,9 +534,7 @@ export const useDeliveryNotes = (filters = {}) => {
     loading:
       (workspaceLoading && !workspaceId) || (loading && !deliveryNotes.length),
     error: error || workspaceError,
-    loadMore,
     refetch,
-    resetPage,
   };
 };
 
@@ -735,7 +705,10 @@ export const useDeleteDeliveryNote = () => {
 
   const [deleteMutation, { loading }] = useMutation(DELETE_DELIVERY_NOTE, {
     onError: (error) => {
-      console.error("Erreur lors de la suppression du bon de livraison:", error);
+      console.error(
+        "Erreur lors de la suppression du bon de livraison:",
+        error,
+      );
       toast.error(
         error.message || "Erreur lors de la suppression du bon de livraison",
       );
@@ -958,8 +931,7 @@ export const DELIVERY_NOTE_STATUS_COLORS = {
 // Référence affichée d'un bon de livraison (BL-202609-0001, ou « Brouillon »)
 export const formatDeliveryNoteReference = (dn) => {
   if (!dn) return "";
-  if (dn.status === DELIVERY_NOTE_STATUS.DRAFT || !dn.number) return "Brouillon";
-  return dn.prefix
-    ? `${dn.prefix.replace(/-$/, "")}-${dn.number}`
-    : dn.number;
+  if (dn.status === DELIVERY_NOTE_STATUS.DRAFT || !dn.number)
+    return "Brouillon";
+  return dn.prefix ? `${dn.prefix.replace(/-$/, "")}-${dn.number}` : dn.number;
 };

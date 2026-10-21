@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toCsvCell, toHtmlCell } from "@/src/utils/spreadsheet-cell";
 
 /**
  * Filtre les factures selon une plage de dates
@@ -330,15 +331,8 @@ export function exportToCSV(invoices, dateRange = null) {
     ...formattedData.map((row) =>
       headers
         .map((header) => {
-          const value = row[header] || "";
-          // Échapper les guillemets et entourer de guillemets si nécessaire
-          if (
-            value.toString().includes(";") ||
-            value.toString().includes('"')
-          ) {
-            return `"${value.toString().replace(/"/g, '""')}"`;
-          }
-          return value;
+          // Texte neutralisé (formules du tableur), guillemets échappés
+          return toCsvCell(row[header] || "");
         })
         .join(";"),
     ),
@@ -421,7 +415,9 @@ export function exportToExcel(invoices, dateRange = null) {
               .map(
                 (row) =>
                   `<tr>${headers
-                    .map((header) => `<td>${row[header] || ""}</td>`)
+                    .map(
+                      (header) => `<td>${toHtmlCell(row[header] || "")}</td>`,
+                    )
                     .join("")}</tr>`,
               )
               .join("")}
@@ -463,17 +459,62 @@ function normalizeInvoiceForAccounting(invoice) {
 }
 
 /**
- * Exporte les factures au format FEC (Fichier des Écritures Comptables)
- * Format légal obligatoire pour l'administration fiscale française
- * Version conforme avec détail des lignes de facture
+ * Les 18 champs du FEC, dans l'ordre de l'article A47 A-1 du LPF : la
+ * première ligne du fichier porte leurs noms.
+ */
+export const FEC_FIELDS = [
+  "JournalCode",
+  "JournalLib",
+  "EcritureNum",
+  "EcritureDate",
+  "CompteNum",
+  "CompteLib",
+  "CompAuxNum",
+  "CompAuxLib",
+  "PieceRef",
+  "PieceDate",
+  "EcritureLib",
+  "Debit",
+  "Credit",
+  "EcritureLet",
+  "DateLet",
+  "ValidDate",
+  "Montantdevise",
+  "Idevise",
+];
+
+/**
+ * Nom du fichier FEC : SirenFECAAAAMMJJ.txt (art. A47 A-1 du LPF), daté de
+ * la clôture de la période exportée (fin de la plage choisie, sinon le jour
+ * de l'export).
+ * @param {String} siren - SIREN de l'entreprise (ou son SIRET)
+ * @param {Object} dateRange - Plage de dates (optionnel)
+ * @param {Date} now - Date du jour (tests)
+ */
+export function fecFilename(siren, dateRange = null, now = new Date()) {
+  const closing = dateRange?.to ? new Date(dateRange.to) : now;
+  const sirenDigits = String(siren || "")
+    .replace(/\D/g, "")
+    .slice(0, 9);
+  return `${sirenDigits}FEC${format(closing, "yyyyMMdd")}.txt`;
+}
+
+/**
+ * Contenu du FEC (Fichier des Écritures Comptables) des factures, détail
+ * des lignes compris. Les brouillons ne sont pas des écritures comptables :
+ * ils sont écartés.
  * @param {Array} invoices - Liste des factures
  * @param {Object} dateRange - Plage de dates (optionnel)
+ * @returns {String} - Texte du fichier (sans BOM)
  */
-export function exportToFEC(invoices, dateRange = null) {
+export function buildFECContent(invoices, dateRange = null) {
+  const issuedInvoices = invoices.filter(
+    (invoice) => invoice._type === "imported" || invoice.status !== "DRAFT",
+  );
   // Filtrer par date si nécessaire
   const filteredInvoices = dateRange
-    ? filterInvoicesByDateRange(invoices, dateRange)
-    : invoices;
+    ? filterInvoicesByDateRange(issuedInvoices, dateRange)
+    : issuedInvoices;
 
   if (filteredInvoices.length === 0) {
     const totalInvoices = invoices.length;
@@ -696,33 +737,24 @@ export function exportToFEC(invoices, dateRange = null) {
     ecritureCounter++;
   });
 
-  // Créer le contenu FEC
-  // IMPORTANT : Le FEC ne doit PAS avoir de ligne d'en-tête selon la norme
-  const headers = [
-    "JournalCode",
-    "JournalLib",
-    "EcritureNum",
-    "EcritureDate",
-    "CompteNum",
-    "CompteLib",
-    "CompAuxNum",
-    "CompAuxLib",
-    "PieceRef",
-    "PieceDate",
-    "EcritureLib",
-    "Debit",
-    "Credit",
-    "EcritureLet",
-    "DateLet",
-    "ValidDate",
-    "Montantdevise",
-    "Idevise",
-  ];
+  // Première ligne : le nom des 18 champs (la norme l'exige), puis une
+  // ligne par écriture
+  return [
+    FEC_FIELDS.join("|"),
+    ...entries.map((entry) => FEC_FIELDS.map((h) => entry[h] || "").join("|")),
+  ].join("\n");
+}
 
-  // Générer les lignes sans en-tête
-  const fecContent = entries
-    .map((entry) => headers.map((h) => entry[h] || "").join("|"))
-    .join("\n");
+/**
+ * Exporte les factures au format FEC (Fichier des Écritures Comptables)
+ * Format légal obligatoire pour l'administration fiscale française
+ * @param {Array} invoices - Liste des factures
+ * @param {Object} dateRange - Plage de dates (optionnel)
+ * @param {Object} options
+ * @param {String} options.siren - SIREN de l'entreprise (nom du fichier)
+ */
+export function exportToFEC(invoices, dateRange = null, { siren = "" } = {}) {
+  const fecContent = buildFECContent(invoices, dateRange);
 
   // Ajouter le BOM UTF-8
   const BOM = "\uFEFF";
@@ -731,8 +763,7 @@ export function exportToFEC(invoices, dateRange = null) {
   });
 
   // Télécharger le fichier
-  const filename = generateFilename("txt", dateRange, "FEC");
-  downloadBlob(blob, filename);
+  downloadBlob(blob, fecFilename(siren, dateRange));
 }
 
 /**
@@ -766,9 +797,9 @@ function sanitizeFECField(value, maxLength = 255) {
  * @returns {String} - Montant formaté
  */
 function formatFECAmount(amount) {
-  if (!amount || amount === 0) return "0.00";
-  // Gérer les montants négatifs (pour les avoirs)
-  return amount.toFixed(2);
+  // Virgule décimale (norme du FEC) ; montants négatifs gardés (avoirs)
+  if (!amount || amount === 0) return "0,00";
+  return amount.toFixed(2).replace(".", ",");
 }
 
 /**

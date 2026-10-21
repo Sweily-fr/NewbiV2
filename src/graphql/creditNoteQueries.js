@@ -1,6 +1,7 @@
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useAllPagesQuery } from "@/src/hooks/useAllPagesQuery";
 import { throwIfMutationErrors } from "./mutationErrors";
 
 // ==================== FRAGMENTS ====================
@@ -362,8 +363,13 @@ export function useCreditNote(id) {
   };
 }
 
+// Liste des avoirs : toute la liste de l'organisation (l'API n'en renvoyait
+// que 10 sans limite). Avec une limite (ex. limit: 1 pour un compteur), la
+// page demandée seule.
 export function useCreditNotes(filters = {}, { skip = false } = {}) {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
+  const { limit, ...listFilters } = filters;
+  const onePage = limit !== undefined;
 
   const {
     data,
@@ -371,15 +377,23 @@ export function useCreditNotes(filters = {}, { skip = false } = {}) {
     error,
     refetch,
     fetchMore,
-  } = useQuery(GET_CREDIT_NOTES, {
-    variables: {
-      workspaceId,
-      ...filters,
+  } = useAllPagesQuery(
+    GET_CREDIT_NOTES,
+    {
+      variables: {
+        workspaceId,
+        ...listFilters,
+      },
+      // skip : rôle sans accès aux avoirs
+      skip: !workspaceId || skip,
+      fetchPolicy: "cache-and-network",
     },
-    // skip : rôle sans accès aux avoirs
-    skip: !workspaceId || skip,
-    fetchPolicy: "cache-and-network",
-  });
+    {
+      field: "creditNotes",
+      listField: "creditNotes",
+      ...(onePage ? { firstPageSize: limit, allPages: false } : {}),
+    },
+  );
 
   return {
     creditNotes: data?.creditNotes?.creditNotes || [],

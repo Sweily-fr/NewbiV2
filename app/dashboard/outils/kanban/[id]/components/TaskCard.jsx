@@ -75,6 +75,7 @@ import { useTaskViewers } from "../hooks/useTaskPresence";
 import { TaskViewersAvatars, PRESENCE_RING_CLASS } from "./TaskViewers";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import { sanitizeRichText } from "@/src/utils/sanitize-html";
 
 // Choisit la pièce jointe à afficher en couverture de carte :
 // une image en priorité, sinon la première vidéo.
@@ -109,7 +110,9 @@ function DescriptionPopover({ description }) {
           {/<[a-z][\s\S]*>/i.test(description) ? (
             <div
               className="text-sm text-muted-foreground break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-              dangerouslySetInnerHTML={{ __html: description }}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeRichText(description),
+              }}
             />
           ) : (
             <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words line-clamp-8">

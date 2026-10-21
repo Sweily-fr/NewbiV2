@@ -108,3 +108,79 @@ describe("filterInvoicesByDateRange — range bounds", () => {
     expect(out).toEqual([]);
   });
 });
+
+describe("FEC (art. A47 A-1 du LPF)", () => {
+  const facture = (overrides = {}) => ({
+    prefix: "F-092026",
+    number: "0024",
+    status: "PENDING",
+    issueDate: new Date("2026-10-20T10:00:00Z").getTime(),
+    createdAt: new Date("2026-10-20T10:00:00Z").getTime(),
+    finalTotalHT: 700,
+    finalTotalVAT: 140,
+    finalTotalTTC: 840,
+    client: { name: "Boulangerie Lumière SARL", siret: "55566677700011" },
+    items: [
+      { description: "Conseil", quantity: 1, unitPrice: 700, vatRate: 20 },
+    ],
+    ...overrides,
+  });
+
+  it("première ligne : le nom des 18 champs", async () => {
+    const { buildFECContent, FEC_FIELDS } =
+      await import("@/src/utils/invoice-export");
+    const [premiere] = buildFECContent([facture()]).split("\n");
+    expect(FEC_FIELDS).toHaveLength(18);
+    expect(premiere).toBe(
+      "JournalCode|JournalLib|EcritureNum|EcritureDate|CompteNum|CompteLib|CompAuxNum|CompAuxLib|PieceRef|PieceDate|EcritureLib|Debit|Credit|EcritureLet|DateLet|ValidDate|Montantdevise|Idevise",
+    );
+  });
+
+  it("les brouillons ne sont pas des écritures comptables", async () => {
+    const { buildFECContent } = await import("@/src/utils/invoice-export");
+    const texte = buildFECContent([
+      facture(),
+      facture({ number: "DRAFT-0101", status: "DRAFT" }),
+    ]);
+    expect(texte).toContain("F-092026-0024");
+    expect(texte).not.toContain("DRAFT-0101");
+  });
+
+  it("sans facture émise : refus explicite", async () => {
+    const { buildFECContent } = await import("@/src/utils/invoice-export");
+    expect(() =>
+      buildFECContent([facture({ number: "DRAFT-1", status: "DRAFT" })]),
+    ).toThrow(/Aucune facture à exporter/);
+  });
+
+  it("montants à la virgule décimale", async () => {
+    const { buildFECContent } = await import("@/src/utils/invoice-export");
+    const lignes = buildFECContent([facture()])
+      .split("\n")
+      .filter((l) => l.startsWith("VTE"));
+    const montants = lignes.flatMap((l) => l.split("|").slice(11, 13));
+    expect(montants).toEqual([
+      "840,00",
+      "0,00",
+      "0,00",
+      "700,00",
+      "0,00",
+      "140,00",
+    ]);
+  });
+
+  it("nom du fichier : SirenFECAAAAMMJJ.txt", async () => {
+    const { fecFilename } = await import("@/src/utils/invoice-export");
+    const jour = new Date(2026, 9, 21);
+    expect(fecFilename("98765432100012", null, jour)).toBe(
+      "987654321FEC20261021.txt",
+    );
+    expect(
+      fecFilename(
+        "987654321",
+        { from: new Date(2026, 0, 1), to: new Date(2026, 11, 31) },
+        jour,
+      ),
+    ).toBe("987654321FEC20261231.txt");
+  });
+});

@@ -347,6 +347,54 @@ export async function getModuleActionsForMemberships(
   return result;
 }
 
+const ACCOUNT_MODULES = Object.keys(MODULE_CATALOG).filter(
+  (moduleKey) => MODULE_CATALOG[moduleKey].account,
+);
+
+/**
+ * Pouvoirs d'un rôle sur le compte (membres, informations de l'entreprise,
+ * applications, abonnement) : ses actions sur ces pages hors « Voir », sous
+ * la forme « page.action ». Rôle prédéfini, ajusté ou personnalisé de
+ * l'espace ; plusieurs rôles séparés par des virgules = union. Sert à
+ * refuser qu'un membre attribue un rôle plus élevé que le sien.
+ */
+export async function getRoleAccountPowers(db, { organizationId, role }) {
+  const roles = String(role || "")
+    .toLowerCase()
+    .split(",")
+    .map((r) => r.trim())
+    .filter(Boolean);
+  const powers = new Set();
+  const add = (moduleKey, actions) => {
+    for (const action of actions) {
+      if (action !== "view") powers.add(`${moduleKey}.${action}`);
+    }
+  };
+  if (roles.includes("owner")) {
+    for (const moduleKey of ACCOUNT_MODULES) {
+      add(moduleKey, moduleActionKeys(moduleKey));
+    }
+    return powers;
+  }
+
+  const { ObjectId } = await import("mongodb");
+  const orgId = toObjectId(ObjectId, organizationId);
+  const stored =
+    orgId && roles.length
+      ? await db
+          .collection("organizationRole")
+          .find({ organizationId: orgId, role: { $in: roles } })
+          .toArray()
+      : [];
+  const byRole = new Map(stored.map((d) => [String(d.role).toLowerCase(), d]));
+  for (const r of roles) {
+    for (const moduleKey of ACCOUNT_MODULES) {
+      add(moduleKey, roleModuleActions(r, byRole.get(r), moduleKey));
+    }
+  }
+  return powers;
+}
+
 export function isOwnerRole(role) {
   return String(role || "")
     .toLowerCase()

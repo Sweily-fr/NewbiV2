@@ -494,9 +494,10 @@ export const SEND_PURCHASE_ORDER = gql`
 // ==================== HOOKS PERSONNALISÉS ====================
 
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useAllPagesQuery } from "@/src/hooks/useAllPagesQuery";
 
 // Hook pour récupérer le dernier préfixe de bon de commande
 export const useLastPurchaseOrderPrefix = () => {
@@ -518,29 +519,25 @@ export const useLastPurchaseOrderPrefix = () => {
   );
 };
 
-// Hook pour récupérer la liste des bons de commande
+// Liste des bons de commande : toute la liste de l'organisation (la première page
+// s'affiche aussitôt, le reste suit) : onglets, recherche et exports sont
+// calculés sur elle.
 export const usePurchaseOrders = (filters = {}) => {
   const {
     workspaceId,
     loading: workspaceLoading,
     error: workspaceError,
   } = useRequiredWorkspace();
-  const [page, setPage] = useState(1);
-  const limit = 50;
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(
+  const { data, loading, error, refetch } = useAllPagesQuery(
     GET_PURCHASE_ORDERS,
     {
-      variables: {
-        workspaceId,
-        ...filters,
-        page,
-        limit,
-      },
+      variables: { workspaceId, ...filters },
       skip: !workspaceId,
       errorPolicy: "all",
       fetchPolicy: "cache-and-network",
     },
+    { field: "purchaseOrders", listField: "purchaseOrders" },
   );
 
   const purchaseOrders = useMemo(
@@ -550,33 +547,6 @@ export const usePurchaseOrders = (filters = {}) => {
   const totalCount = data?.purchaseOrders?.totalCount || 0;
   const hasNextPage = data?.purchaseOrders?.hasNextPage || false;
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !loading) {
-      fetchMore({
-        variables: {
-          page: page + 1,
-        },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) return prev;
-          setPage(page + 1);
-          return {
-            purchaseOrders: {
-              ...fetchMoreResult.purchaseOrders,
-              purchaseOrders: [
-                ...prev.purchaseOrders.purchaseOrders,
-                ...fetchMoreResult.purchaseOrders.purchaseOrders,
-              ],
-            },
-          };
-        },
-      });
-    }
-  }, [hasNextPage, loading, fetchMore, page]);
-
-  const resetPage = useCallback(() => {
-    setPage(1);
-  }, []);
-
   return {
     purchaseOrders,
     totalCount,
@@ -584,9 +554,7 @@ export const usePurchaseOrders = (filters = {}) => {
     loading:
       (workspaceLoading && !workspaceId) || (loading && !purchaseOrders.length),
     error: error || workspaceError,
-    loadMore,
     refetch,
-    resetPage,
   };
 };
 

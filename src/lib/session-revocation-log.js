@@ -7,6 +7,8 @@
  *   - max_sessions_limit : limite de sessions simultanées (enforce-session-limit)
  *   - inactivity_cleanup : nettoyage des sessions inactives (check-session-limit)
  *   - revoke_all_others  : bouton « Déconnexion globale » / manage-devices
+ *   - password_change    : mot de passe changé ou réinitialisé
+ *                          (revoke-sessions-after-password)
  *
  * Les tokens ne sont jamais stockés en clair : préfixe de 8 caractères
  * uniquement, suffisant pour corréler avec une session donnée.
@@ -35,7 +37,7 @@ const sessionSummary = (s) => ({
  * Écriture best-effort : ne lève jamais, ne bloque jamais le flux appelant.
  *
  * @param {Object} entry
- * @param {string} entry.mechanism - max_sessions_limit | inactivity_cleanup | revoke_all_others
+ * @param {string} entry.mechanism - max_sessions_limit | inactivity_cleanup | revoke_all_others | password_change
  * @param {string} [entry.trigger] - contexte de l'appelant (login_session_create,
  *   login_check_route, settings_update_max_sessions, user_action…)
  * @param {*} entry.userId - id du user concerné

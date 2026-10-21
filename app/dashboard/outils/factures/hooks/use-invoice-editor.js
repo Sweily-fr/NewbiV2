@@ -39,6 +39,10 @@ import {
   toAnnexInput,
 } from "@/src/utils/document-annex";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+import {
+  clampIssueDate,
+  issueDateShiftMessage,
+} from "../utils/issue-date-clamp";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1593,6 +1597,27 @@ export function useInvoiceEditor({
     setValue,
   ]);
 
+  // Report de la date d'émission à la dernière facture émise (numérotation
+  // chronologique) : formulaire mis à jour et utilisateur prévenu
+  const applyIssueDateClamp = useCallback(
+    (input) => {
+      if (!latestIssueDate || !input.issueDate) return input;
+      const latestLocal = formatCalendarDate(new Date(latestIssueDate));
+      const { input: clamped, shiftedFrom } = clampIssueDate(
+        input,
+        latestLocal,
+      );
+      if (!shiftedFrom) return input;
+      setValue("issueDate", clamped.issueDate, { shouldDirty: false });
+      if (clamped.dueDate !== input.dueDate) {
+        setValue("dueDate", clamped.dueDate, { shouldDirty: false });
+      }
+      toast.warning(issueDateShiftMessage(latestLocal));
+      return clamped;
+    },
+    [latestIssueDate, setValue],
+  );
+
   // Pré-remplir la date d'émission avec max(aujourd'hui, date de la dernière facture)
   // pour éviter l'erreur de validation backend "date antérieure à la dernière facture"
   // Ajuste aussi la date d'échéance pour rester cohérente (>= issueDate)
@@ -1775,6 +1800,65 @@ export function useInvoiceEditor({
           if (q.escompte != null) setValue("escompte", q.escompte);
         } catch {
           sessionStorage.removeItem("quoteInvoiceData");
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
+  // Pré-remplissage depuis « Dupliquer » de la consultation d'une facture
+  // (via sessionStorage, comme la conversion d'un devis)
+  useEffect(() => {
+    if (mode === "create" && isFormInitialized) {
+      const duplicateData = sessionStorage.getItem("duplicateInvoiceData");
+      if (duplicateData) {
+        try {
+          const d = JSON.parse(duplicateData);
+          sessionStorage.removeItem("duplicateInvoiceData");
+
+          if (d.client) setValue("client", d.client);
+          if (d.items?.length > 0) {
+            setValue(
+              "items",
+              d.items.map((item) => ({
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate ?? 0,
+                unit: item.unit || "",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "",
+                vatExemptionText: item.vatExemptionText || "",
+                progressPercentage: item.progressPercentage ?? 100,
+                ...pickLinkFields(item),
+                ...pickItemImage(item),
+              })),
+            );
+          }
+          if (d.discount != null) setValue("discount", d.discount);
+          if (d.discountType) setValue("discountType", d.discountType);
+          if (d.customFields?.length > 0) {
+            setValue(
+              "customFields",
+              d.customFields.map((cf) => ({
+                name: cf.key || cf.name || "",
+                value: cf.value || "",
+              })),
+            );
+          }
+          if (d.shipping) setValue("shipping", d.shipping);
+          if (d.isReverseCharge != null)
+            setValue("isReverseCharge", d.isReverseCharge);
+          if (d.isVatExempt != null) setValue("isVatExempt", d.isVatExempt);
+          if (d.retenueGarantie != null)
+            setValue("retenueGarantie", d.retenueGarantie);
+          if (d.escompte != null) setValue("escompte", d.escompte);
+          if (d.headerNotes) setValue("headerNotes", d.headerNotes);
+          if (d.footerNotes) setValue("footerNotes", d.footerNotes);
+          if (d.termsAndConditions)
+            setValue("termsAndConditions", d.termsAndConditions);
+        } catch {
+          sessionStorage.removeItem("duplicateInvoiceData");
         }
       }
     }
@@ -2135,32 +2219,7 @@ export function useInvoiceEditor({
 
       // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
       // et ajuster dueDate pour qu'elle reste >= issueDate
-      if (latestIssueDate && input.issueDate) {
-        const latestLocal = formatCalendarDate(new Date(latestIssueDate));
-        if (input.issueDate < latestLocal) {
-          const oldIssue = input.issueDate;
-          input = { ...input, issueDate: latestLocal };
-          setValue("issueDate", latestLocal, { shouldDirty: false });
-
-          if (input.dueDate) {
-            if (input.dueDate < latestLocal) {
-              // Préserver l'écart initial (ou 30 jours par défaut)
-              const diffDays = Math.max(
-                0,
-                Math.round(
-                  (new Date(input.dueDate) - new Date(oldIssue)) /
-                    (1000 * 60 * 60 * 24),
-                ),
-              );
-              const newDue = new Date(latestLocal);
-              newDue.setDate(newDue.getDate() + (diffDays || 30));
-              const newDueStr = formatLocalDate(newDue);
-              input = { ...input, dueDate: newDueStr };
-              setValue("dueDate", newDueStr, { shouldDirty: false });
-            }
-          }
-        }
-      }
+      input = applyIssueDateClamp(input);
 
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {
@@ -2272,6 +2331,7 @@ export function useInvoiceEditor({
     reset,
     handleError,
     organization,
+    applyIssueDateClamp,
   ]);
 
   // Submit handler (validate and send)
@@ -2559,14 +2619,10 @@ export function useInvoiceEditor({
       let input = transformFormDataToInput(dataToTransform, previousStatus);
 
       // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
-      // pour éviter l'erreur backend "date antérieure à la dernière facture"
-      if (latestIssueDate && input.issueDate) {
-        const latestLocal = formatCalendarDate(new Date(latestIssueDate));
-        if (input.issueDate < latestLocal) {
-          input = { ...input, issueDate: latestLocal };
-          setValue("issueDate", latestLocal, { shouldDirty: false });
-        }
-      }
+      // pour éviter l'erreur backend "date antérieure à la dernière facture",
+      // l'échéance suivant la date d'émission (elle restait avant et faisait
+      // échouer la création), et l'utilisateur est prévenu du report
+      input = applyIssueDateClamp(input);
 
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {
@@ -2713,6 +2769,7 @@ export function useInvoiceEditor({
     existingInvoice?.status,
     handleError,
     organization,
+    applyIssueDateClamp,
   ]);
 
   // Fonction pour sauvegarder les paramètres dans l'organisation

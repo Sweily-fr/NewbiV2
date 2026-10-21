@@ -169,7 +169,7 @@ export default function QuoteSettingsView({
     perPrefixHook.hasDocumentsForPrefix,
     autoNumbering,
     data.number,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  ]);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
@@ -613,6 +613,7 @@ export default function QuoteSettingsView({
                   checked={autoNumbering}
                   onCheckedChange={handleAutoNumberingChange}
                   className="data-[state=checked]:bg-[#5b4fff]"
+                  aria-label="Numérotation séquentielle continue"
                 />
               </div>
 
@@ -809,6 +810,7 @@ export default function QuoteSettingsView({
                   </Label>
                   <ColorPicker
                     className="w-full"
+                    label="Couleur du texte"
                     color={data.appearance?.textColor || "#000000"}
                     onChange={(color) => {
                       setValue("appearance.textColor", color, {
@@ -829,6 +831,7 @@ export default function QuoteSettingsView({
                   </Label>
                   <ColorPicker
                     className="w-full"
+                    label="Couleur des titres du tableau"
                     color={data.appearance?.headerTextColor || "#ffffff"}
                     onChange={(color) => {
                       setValue("appearance.headerTextColor", color, {
@@ -850,6 +853,7 @@ export default function QuoteSettingsView({
                 </Label>
                 <ColorPicker
                   className="w-full"
+                  label="Couleur de fond du tableau"
                   color={data.appearance?.headerBgColor || "#5b50FF"}
                   onChange={(color) => {
                     setValue("appearance.headerBgColor", color, {
@@ -1035,7 +1039,9 @@ export default function QuoteSettingsView({
               {/* Annexe PDF ajoutée à la fin du document */}
               <DocumentAnnexField
                 documentType={isPurchaseOrder ? "purchaseOrder" : "quote"}
-                ofDocumentLabel={isPurchaseOrder ? "du bon de commande" : "du devis"}
+                ofDocumentLabel={
+                  isPurchaseOrder ? "du bon de commande" : "du devis"
+                }
                 canEdit={canEdit}
               />
 

@@ -217,6 +217,13 @@ describe("exportToCSV (purchase orders)", () => {
     expect(text).toContain("Annulé");
   });
 
+  it("écrit « Validé » pour un bon validé, jamais le code VALIDATED", async () => {
+    exportToCSV([samplePO({ status: "VALIDATED" })]);
+    const text = await createObjectURLMock.mock.calls[0][0].text();
+    expect(text).toContain(";Validé;");
+    expect(text).not.toContain("VALIDATED");
+  });
+
   it("formats client type into French label", async () => {
     exportToCSV([
       samplePO({ client: { ...samplePO().client, type: "INDIVIDUAL" } }),
