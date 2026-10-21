@@ -168,7 +168,7 @@ export async function inviteExistingClient({
     );
     throw new ManagedClientError(
       429,
-      `Ce client a refusé votre invitation. Vous pourrez l'inviter à nouveau à partir du ${again.toLocaleDateString("fr-FR")}.`,
+      `Ce client a refusé votre invitation. Vous pourrez l'inviter à nouveau à partir du ${again.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}.`,
     );
   }
 

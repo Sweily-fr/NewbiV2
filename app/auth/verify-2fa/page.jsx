@@ -20,33 +20,12 @@ import {
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
-
-const REDIRECT_ROUTE_MAP = {
-  dashboard: "/dashboard",
-  outils: "/dashboard",
-  kanban: "/dashboard/outils/kanban",
-  calendar: "/dashboard/calendar",
-  factures: "/dashboard/outils/factures",
-  devis: "/dashboard/outils/devis",
-  clients: "/dashboard/clients",
-  transactions: "/dashboard/outils/transactions",
-  depenses: "/dashboard/outils/transactions",
-  signatures: "/dashboard/outils/signatures-mail",
-  transferts: "/dashboard/outils/transferts-fichiers",
-  "documents-partages": "/dashboard/outils/documents-partages",
-  catalogues: "/dashboard/catalogues",
-  collaborateurs: "/dashboard/collaborateurs",
-  analytics: "/dashboard/analytics",
-  favoris: "/dashboard/favoris",
-};
+import { startupPagePath } from "@/src/lib/startup-page";
 
 async function resolvePostLoginPath() {
   try {
     const { data: session } = await authClient.getSession();
-    const userRedirectPage = session?.user?.redirect_after_login;
-    if (userRedirectPage && userRedirectPage !== "last-page") {
-      return REDIRECT_ROUTE_MAP[userRedirectPage] || "/dashboard";
-    }
+    return startupPagePath(session?.user?.redirect_after_login);
   } catch (err) {
     console.error("[2FA] Erreur récupération session pour redirection:", err);
   }
