@@ -240,7 +240,16 @@ export default function ClientImportDialog({
               workspaceId,
               input: client,
             },
-          }).then(() => ({ idx })),
+          }).then((result) => {
+            // errorPolicy « all » : un refus de l'API (e-mail déjà pris…)
+            // arrive dans result.errors, sans rejet de la promesse
+            if (result?.errors?.length || !result?.data?.createClient) {
+              throw new Error(
+                result?.errors?.[0]?.message || "Contact refusé par le serveur",
+              );
+            }
+            return { idx };
+          }),
         ),
       );
 
