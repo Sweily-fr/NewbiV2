@@ -443,5 +443,12 @@
       "injonction-de-payer-procedure-facture-impayee",
       "tva-sur-les-debits-ou-encaissements"
     ]
+  },
+  {
+    "date": "2026-10-21",
+    "articles": [
+      "facture-dieteticien-nutritionniste",
+      "alternatives-freebe"
+    ]
   }
 ]
