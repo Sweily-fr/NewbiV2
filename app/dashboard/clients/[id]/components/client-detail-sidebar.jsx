@@ -13,6 +13,8 @@ import {
   User,
   Phone,
   Mail,
+  Briefcase,
+  Users,
   Building2,
   Tag,
   MapPin,
@@ -333,6 +335,23 @@ export default function ClientDetailSidebar({
             </div>
             {showMore && (
               <>
+                {/* Contact principal : fonction, service et localisation
+                    saisis sur la fiche */}
+                <InfoRow
+                  icon={Briefcase}
+                  label="Fonction"
+                  value={client.contactFunction}
+                />
+                <InfoRow
+                  icon={Users}
+                  label="Service"
+                  value={client.contactDepartment}
+                />
+                <InfoRow
+                  icon={MapPin}
+                  label="Localisation"
+                  value={client.contactLocation}
+                />
                 <InfoRow
                   icon={MapPin}
                   label="Adresse"

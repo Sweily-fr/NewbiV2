@@ -37,6 +37,7 @@ import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
 import { getCategoryLabel } from "@/lib/category-icons-config";
 import { vatLinesOf } from "@/src/utils/purchase-invoice-vat";
+import { toQuotedCsvCell } from "@/src/utils/spreadsheet-cell";
 
 const toYMD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -50,6 +51,14 @@ const STATUS_LABELS = {
   PAID: "Payée",
   OVERDUE: "En retard",
   ARCHIVED: "Archivée",
+};
+
+// Montant d'une colonne de l'export : « 120.00 » pour une facture en euros,
+// « 120.00 USD » sinon (une facture en dollars était lue comme 120 €)
+export const formatExportAmount = (amount, currency) => {
+  const value = (Number(amount) || 0).toFixed(2);
+  const code = String(currency || "EUR").toUpperCase();
+  return code === "EUR" ? value : `${value} ${code}`;
 };
 
 // « 20 % : 35.36 HT / 7.07 TVA ; 10 % : 80.00 HT / 8.00 TVA » : une entrée
@@ -125,24 +134,25 @@ export function ExportDialog({
       inv.invoiceNumber || "",
       inv.issueDate ? new Date(inv.issueDate).toLocaleDateString("fr-FR") : "",
       inv.dueDate ? new Date(inv.dueDate).toLocaleDateString("fr-FR") : "",
-      inv.amountHT?.toFixed(2) || "0.00",
-      inv.amountTVA?.toFixed(2) || "0.00",
+      formatExportAmount(inv.amountHT, inv.currency),
+      formatExportAmount(inv.amountTVA, inv.currency),
       formatVatDetail(inv),
-      inv.amountTTC?.toFixed(2) || "0.00",
+      formatExportAmount(inv.amountTTC, inv.currency),
       getCategoryLabel(inv.subcategory || inv.category) || "",
       STATUS_LABELS[inv.status] || inv.status || "",
       inv.paymentMethod || "",
       inv.paymentDate
         ? new Date(inv.paymentDate).toLocaleDateString("fr-FR")
         : "",
-      (inv.notes || "").replace(/"/g, '""'),
+      inv.notes || "",
     ]);
 
     const csvContent =
       "\uFEFF" +
       [
         headers.join(";"),
-        ...rows.map((r) => r.map((c) => `"${c}"`).join(";")),
+        // Texte neutralisé (formules du tableur), guillemets échappés
+        ...rows.map((r) => r.map(toQuotedCsvCell).join(";")),
       ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

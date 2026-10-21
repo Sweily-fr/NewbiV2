@@ -20,6 +20,7 @@ import { fr } from "date-fns/locale";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { looksLikeHtml, sanitizeRichText } from "@/src/utils/sanitize-html";
 
 // Module des documents cités dans l'activité (e-mails envoyés)
 const DOCUMENT_TYPE_MODULES = {
@@ -443,13 +444,13 @@ export default function ClientActivityTab({ client }) {
                                     item.description !==
                                       "a modifié une note" && (
                                       <div className="mt-2 rounded-lg border border-[#eeeff1] dark:border-[#232323] p-3">
-                                        {/<[a-z][\s\S]*>/i.test(
-                                          item.description,
-                                        ) ? (
+                                        {looksLikeHtml(item.description) ? (
                                           <div
                                             className="text-sm text-[#1a1a1a] dark:text-foreground line-clamp-4 leading-relaxed [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] dark:border-[#232323] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
                                             dangerouslySetInnerHTML={{
-                                              __html: item.description,
+                                              __html: sanitizeRichText(
+                                                item.description,
+                                              ),
                                             }}
                                           />
                                         ) : (

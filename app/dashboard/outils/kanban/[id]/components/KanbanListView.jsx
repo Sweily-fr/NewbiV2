@@ -78,6 +78,7 @@ import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
 import { calculateTaskAmount, formatTaskAmount } from "./taskAmount";
 import { toast } from "sonner";
 import { createSearchMatcher, matchesSearch } from "@/src/utils/search-text";
+import { sanitizeRichText } from "@/src/utils/sanitize-html";
 
 function formatDate(dateString) {
   if (!dateString) return "";
@@ -109,7 +110,9 @@ function DescriptionHoverPopover({ description }) {
           {/<[a-z][\s\S]*>/i.test(description) ? (
             <div
               className="text-sm text-muted-foreground break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-              dangerouslySetInnerHTML={{ __html: description }}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeRichText(description),
+              }}
             />
           ) : (
             <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words line-clamp-8">

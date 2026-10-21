@@ -2162,11 +2162,14 @@ export function PurchaseInvoiceDetailDrawer({
                             String(
                               tx.reconciliationStatus || "",
                             ).toLowerCase() === "matched";
+                          // Bouton : la transaction se choisit aussi au
+                          // clavier et avec un lecteur d'écran
                           return (
-                            <div
+                            <button
+                              type="button"
                               key={tx.id}
                               className={cn(
-                                "p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors",
+                                "block w-full text-left p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
                                 tx.score >= 80 &&
                                   "border-[#5a50ff]/30 bg-[#5a50ff]/5",
                               )}
@@ -2174,22 +2177,22 @@ export function PurchaseInvoiceDetailDrawer({
                                 !reconcileLoading && handleReconcile(tx.id)
                               }
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">
+                              <span className="flex items-center justify-between gap-2">
+                                <span className="flex-1 min-w-0">
+                                  <span className="block text-sm font-medium truncate">
                                     {formatAmount(
                                       Math.abs(tx.amount),
                                       tx.currency,
                                     )}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate">
+                                  </span>
+                                  <span className="block text-xs text-muted-foreground truncate">
                                     {tx.description || "Transaction"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  </span>
+                                  <span className="block text-xs text-muted-foreground">
                                     {formatDate(tx.date)}
-                                  </p>
-                                </div>
-                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  </span>
+                                </span>
+                                <span className="flex flex-col items-end gap-1 shrink-0">
                                   {tx.score >= 80 && (
                                     <span className="text-xs px-2 py-0.5 rounded-full bg-[#5a50ff]/10 text-[#5a50ff] border border-[#5a50ff]/30">
                                       Correspondance
@@ -2200,9 +2203,9 @@ export function PurchaseInvoiceDetailDrawer({
                                       Déjà rapprochée
                                     </span>
                                   )}
-                                </div>
-                              </div>
-                            </div>
+                                </span>
+                              </span>
+                            </button>
                           );
                         })}
                       </div>

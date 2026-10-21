@@ -337,12 +337,15 @@ export default function TransactionTable({
   const id = useId();
 
   // Onglet initial déduit de l'URL (?filter=... depuis le dashboard).
-  // "unmatched" (lien "Rapprochements à faire") → onglet "À rapprocher".
+  // "unmatched" (lien "Rapprochements à faire") → onglet "À rapprocher",
+  // "missing_receipts" (lien "Justificatifs manquants") → "Justificatif
+  // manquant".
   const FILTER_TO_TAB = {
     unmatched: "toReconcile",
     toReconcile: "toReconcile",
     lastMonth: "lastMonth",
     missingReceipt: "missingReceipt",
+    missing_receipts: "missingReceipt",
   };
   const resolvedInitialTab = FILTER_TO_TAB[initialTab] || "all";
   const [columnFilters, setColumnFilters] = useState([]);

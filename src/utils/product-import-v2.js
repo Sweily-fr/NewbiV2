@@ -126,6 +126,28 @@ export function autoDetectProductMapping(fileHeaders) {
 
 // ─── Row Transformation ───────────────────────────────────────
 
+/**
+ * Nombre saisi dans un tableur : « 1 234,56 » (espaces, y compris
+ * insécables, en séparateur de milliers), « 3,20 », « 1200.50 » (export
+ * Newbi), « 1.234,56 ». parseFloat seul lisait « 1 234,56 » comme 1.
+ * NaN si la valeur n'est pas un nombre (« dix », « 12 abc »).
+ */
+export function parseImportNumber(value) {
+  if (value === null || value === undefined) return NaN;
+  let text = String(value).replace(/\s/g, '').replace(/€|%/g, '');
+  if (!text) return NaN;
+  if (text.includes(',') && text.includes('.')) {
+    // Le dernier séparateur est la décimale, l'autre sépare les milliers
+    text = text.lastIndexOf(',') > text.lastIndexOf('.')
+      ? text.replace(/\./g, '').replace(',', '.')
+      : text.replace(/,/g, '');
+  } else {
+    text = text.replace(',', '.');
+  }
+  if (!/^-?\d+(\.\d+)?$/.test(text)) return NaN;
+  return parseFloat(text);
+}
+
 export function transformRowToProduct(row, headers, mapping, customFieldMappings = []) {
   const getValue = (fieldKey) => {
     const idx = mapping[fieldKey];
@@ -133,10 +155,7 @@ export function transformRowToProduct(row, headers, mapping, customFieldMappings
     return row[idx]?.trim() || '';
   };
 
-  const parseNumber = (value) => {
-    if (!value) return NaN;
-    return parseFloat(value.replace(',', '.'));
-  };
+  const parseNumber = parseImportNumber;
 
   const name = getValue('name');
   const reference = getValue('reference');

@@ -139,6 +139,9 @@ export const UPDATE_CLIENT = gql`
       blockedAt
       blockedReason
       hasDocuments
+      # Écrit dans le cache des requêtes GET_CLIENT et GET_CLIENTS, qui le
+      # lisent : sans lui, Apollo signalait un champ manquant
+      invoiceCount
       notes {
         id
         content

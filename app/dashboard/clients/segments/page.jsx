@@ -855,8 +855,18 @@ function SegmentsContent() {
             {segments.map((segment) => (
               <div
                 key={segment.id}
-                className="group rounded-lg border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-colors cursor-pointer p-4"
+                // Ouvrable au clavier : la carte prend le focus, Entrée ou
+                // Espace l'ouvre (le menu « … » garde son propre bouton)
+                tabIndex={0}
+                className="group rounded-lg border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-colors cursor-pointer p-4 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 onClick={() => setViewingSegment(segment)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setViewingSegment(segment);
+                  }
+                }}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2 min-w-0">

@@ -9,7 +9,11 @@ import {
   ASSIGN_CLIENT_MEMBERS,
 } from "../graphql/mutations/clients";
 import { capture } from "@/src/lib/analytics";
-import { GET_CLIENTS, GET_CLIENT } from "../graphql/queries/clients";
+import {
+  GET_CLIENTS,
+  GET_CLIENTS_BY_TYPES,
+  GET_CLIENT,
+} from "../graphql/queries/clients";
 import { GET_CLIENT_LISTS } from "../graphql/queries/clientLists";
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "./useWorkspace";
@@ -52,16 +56,19 @@ export const useClients = (
   page = 1,
   limit = 10,
   search = "",
-  { skip = false, searchExact = false } = {},
+  { skip = false, searchExact = false, types = [] } = {},
 ) => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
+  // Filtre « Type » appliqué par l'API (tous les contacts, pas seulement la
+  // page affichée) ; sans filtre, la requête habituelle
+  const hasTypes = Array.isArray(types) && types.length > 0;
 
   const {
     data,
     loading: queryLoading,
     error,
     refetch,
-  } = useQuery(GET_CLIENTS, {
+  } = useQuery(hasTypes ? GET_CLIENTS_BY_TYPES : GET_CLIENTS, {
     // searchExact (bouton « Aa ») envoyé seulement s'il est coché avec une
     // saisie : la clé de cache de la recherche par défaut reste inchangée
     // (relue par les mises à jour du cache des mutations)
@@ -71,6 +78,7 @@ export const useClients = (
       limit,
       search,
       ...(search && searchExact ? { searchExact: true } : {}),
+      ...(hasTypes ? { types } : {}),
     },
     // skip : clients fournis par l'appelant, ou rôle sans accès aux clients
     skip: !workspaceId || skip,

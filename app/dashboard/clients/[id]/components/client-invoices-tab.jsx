@@ -177,8 +177,10 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
                 }}
               >
                 <td className="py-3.5 px-4 text-sm font-medium text-[#242529] dark:text-foreground">
-                  {invoice.prefix}
-                  {invoice.number}
+                  {/* Préfixe, tiret, numéro, comme la liste des factures */}
+                  {invoice.prefix
+                    ? `${invoice.prefix}-${invoice.number}`
+                    : invoice.number}
                 </td>
                 <td className="py-3.5 px-4 text-sm text-[#242529] dark:text-foreground">
                   {safeFormatDate(invoice.issueDate)}

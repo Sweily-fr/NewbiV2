@@ -44,6 +44,7 @@ import { GET_ORGANIZATION_MEMBERS } from "@/src/graphql/kanbanQueries";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import { looksLikeHtml, sanitizeRichText } from "@/src/utils/sanitize-html";
 
 const toolbarItems = [
   { icon: Bold, tooltip: "Gras", command: "bold" },
@@ -228,7 +229,7 @@ function NoteComposer({
 
   useEffect(() => {
     if (editorRef.current && initialContent) {
-      editorRef.current.innerHTML = initialContent;
+      editorRef.current.innerHTML = sanitizeRichText(initialContent);
       setIsEmpty(false);
     }
   }, [initialContent]);
@@ -558,7 +559,8 @@ export default function ClientNotesTab({
     }
   };
 
-  const isHtml = (str) => /<[a-z][\s\S]*>/i.test(str);
+  // HTML (balises ou texte échappé par l'éditeur) ou texte simple
+  const isHtml = looksLikeHtml;
 
   return (
     <div className="flex flex-col h-full">
@@ -693,7 +695,9 @@ export default function ClientNotesTab({
                         {isHtml(note.content) ? (
                           <div
                             className="text-sm mt-1.5 leading-relaxed [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] dark:border-[#232323] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
-                            dangerouslySetInnerHTML={{ __html: note.content }}
+                            dangerouslySetInnerHTML={{
+                              __html: sanitizeRichText(note.content),
+                            }}
                           />
                         ) : (
                           <p className="text-sm whitespace-pre-wrap mt-1.5 leading-relaxed">

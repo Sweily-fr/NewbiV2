@@ -22,6 +22,7 @@
  * n'importe quel composant (server ou client) sans casser le bundle.
  */
 import { WHATSAPP_CONTACT_URL } from "@/src/lib/whatsapp";
+import { PLAN_LIMITS } from "@/src/lib/plan-limits";
 
 export const PLANS_DISPLAY = [
   {
@@ -296,6 +297,20 @@ export const PLAN_FEATURES_SECTIONS = [
     ],
   },
 ];
+
+/**
+ * Offre à proposer quand une limite est atteinte : la moins chère dont la
+ * limite dépasse la limite actuelle (-1 = illimité). Pour les 5 champs
+ * personnalisés de Freelance, c'est TPE (le message proposait Entreprise).
+ * null si aucune offre ne la lève.
+ */
+export function upgradePlanNameFor(limitKey, currentLimit) {
+  const plan = PLANS_DISPLAY.find(({ key }) => {
+    const limit = PLAN_LIMITS[key]?.[limitKey];
+    return limit === -1 || (typeof limit === "number" && limit > currentLimit);
+  });
+  return plan?.displayName ?? null;
+}
 
 /**
  * Récupère la définition d'affichage d'un plan par sa clé technique.
