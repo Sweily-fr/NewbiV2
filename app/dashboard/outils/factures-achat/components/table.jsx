@@ -99,6 +99,7 @@ import {
   getCategoryLabel,
 } from "@/lib/category-icons-config";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useScrollTopOnChange } from "@/src/hooks/useScrollTopOnChange";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { createSearchMatcher } from "@/src/utils/search-text";
 import { SearchExactToggle } from "@/src/components/search-exact-toggle";
@@ -162,6 +163,14 @@ export default function PurchaseInvoiceTable({
   );
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
   const [activeTab, setActiveTab] = useState("all");
+
+  // Changement de page ou d'onglet : la liste repart du haut
+  const desktopScrollRef = useRef(null);
+  useScrollTopOnChange(desktopScrollRef, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    activeTab,
+  ]);
   const [statusFilters, setStatusFilters] = useState([]);
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [dateRange, setDateRange] = useState({ from: null, to: null });
@@ -446,7 +455,10 @@ export default function PurchaseInvoiceTable({
     <>
       {/* Desktop View */}
       {!isMobileLayout && (
-        <div className="hidden md:flex md:flex-col flex-1 min-h-0 min-w-0">
+        <div
+          ref={desktopScrollRef}
+          className="hidden md:flex md:flex-col flex-1 min-h-0 min-w-0"
+        >
           {/* Toolbar: Search + Bulk Actions */}
           <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
             <div className="flex items-center gap-2">
