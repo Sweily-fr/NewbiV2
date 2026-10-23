@@ -242,7 +242,7 @@ function GestionDepensesContent() {
   return (
     <>
       {/* Desktop Layout - Full height avec scroll uniquement sur le tableau */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-hidden">
         <div className="px-4 sm:px-6 pt-4 sm:pt-6 empty:hidden">
           <BankReconnectAlert />
         </div>
@@ -419,7 +419,7 @@ function GestionDepensesContent() {
       </div>
 
       {/* Mobile Layout - Style Notion */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+      <div className="md:hidden flex flex-col h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-hidden">
         <div className="px-4 pt-4 empty:hidden flex-shrink-0">
           <BankReconnectAlert />
         </div>

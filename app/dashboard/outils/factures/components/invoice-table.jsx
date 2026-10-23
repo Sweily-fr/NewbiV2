@@ -123,6 +123,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { DocumentText2Icon } from "@/src/components/icons";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useScrollTopOnChange } from "@/src/hooks/useScrollTopOnChange";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 
@@ -346,6 +347,14 @@ export default function InvoiceTable({
     recurrencesBySource,
     onManageRecurrence: openRecurrenceForInvoice,
   });
+
+  // Changement de page ou d'onglet : la liste repart du haut
+  const desktopScrollRef = useRef(null);
+  useScrollTopOnChange(desktopScrollRef, [
+    table.getState().pagination.pageIndex,
+    table.getState().pagination.pageSize,
+    activeTab,
+  ]);
 
   // Notifier le parent des données filtrées pour les KPIs
   const filterKey = JSON.stringify({
@@ -800,6 +809,7 @@ export default function InvoiceTable({
       {/* Table body - Desktop */}
       {!isMobileLayout && (
         <div
+          ref={desktopScrollRef}
           className={cn(
             "hidden md:flex md:flex-col flex-1",
             isSideView && "md:hidden",

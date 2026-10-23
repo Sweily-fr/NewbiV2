@@ -91,6 +91,7 @@ import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { ClipboardImportIcon } from "@/src/components/icons";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useScrollTopOnChange } from "@/src/hooks/useScrollTopOnChange";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function PurchaseOrderTable({
@@ -190,6 +191,14 @@ export default function PurchaseOrderTable({
 
   // État pour les tabs de filtre rapide
   const [activeTab, setActiveTab] = useState("all");
+
+  // Changement de page ou d'onglet : la liste repart du haut
+  const desktopScrollRef = useRef(null);
+  useScrollTopOnChange(desktopScrollRef, [
+    table.getState().pagination.pageIndex,
+    table.getState().pagination.pageSize,
+    activeTab,
+  ]);
 
   const handleTabChange = (value) => {
     setActiveTab(value);
@@ -555,7 +564,10 @@ export default function PurchaseOrderTable({
 
       {/* Table body - Desktop */}
       {!isMobileLayout && (
-        <div className="hidden md:flex md:flex-col flex-1">
+        <div
+          ref={desktopScrollRef}
+          className="hidden md:flex md:flex-col flex-1"
+        >
           <table className="w-full table-fixed">
             <tbody>
               {loading && !purchaseOrders?.length ? (
