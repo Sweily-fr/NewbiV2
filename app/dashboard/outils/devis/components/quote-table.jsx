@@ -115,6 +115,7 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useScrollTopOnChange } from "@/src/hooks/useScrollTopOnChange";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
@@ -243,6 +244,14 @@ export default function QuoteTable({
 
   // État pour les tabs de filtre rapide
   const [activeTab, setActiveTab] = useState("all");
+
+  // Changement de page ou d'onglet : la liste repart du haut
+  const desktopScrollRef = useRef(null);
+  useScrollTopOnChange(desktopScrollRef, [
+    table.getState().pagination.pageIndex,
+    table.getState().pagination.pageSize,
+    activeTab,
+  ]);
 
   // Gérer le changement de tab
   const handleTabChange = (value) => {
@@ -721,7 +730,10 @@ export default function QuoteTable({
 
       {/* Table body - Desktop */}
       {!isMobileLayout && (
-        <div className="hidden md:flex md:flex-col flex-1">
+        <div
+          ref={desktopScrollRef}
+          className="hidden md:flex md:flex-col flex-1"
+        >
           <table className="w-full table-fixed">
             <tbody>
               {loading && !quotes?.length ? (
