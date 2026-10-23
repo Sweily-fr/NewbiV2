@@ -26,6 +26,7 @@ import {
   useAddExpenseFile,
 } from "@/src/hooks/useExpenses";
 import { useUpdateTransaction } from "@/src/hooks/useTransactions";
+import { useScrollTopOnChange } from "@/src/hooks/useScrollTopOnChange";
 import { useTransactionsPage } from "@/src/hooks/useTransactionsPage";
 import { useApolloClient, useLazyQuery, useMutation } from "@apollo/client";
 import {
@@ -366,6 +367,14 @@ export default function TransactionTable({
 
   // Onglet actif (partagé desktop/mobile) : prédicats calculés côté serveur
   const [activeTab, setActiveTab] = useState(resolvedInitialTab);
+
+  // Changement de page ou d'onglet : la liste repart du haut
+  const desktopScrollRef = useRef(null);
+  useScrollTopOnChange(desktopScrollRef, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    activeTab,
+  ]);
 
   // Tout changement de filtre/recherche/onglet ramène à la première page
   const resetToFirstPage = useCallback(() => {
@@ -1739,7 +1748,7 @@ export default function TransactionTable({
           </table>
         </div>
         {/* Body scrollable */}
-        <div className="flex-1 overflow-auto">
+        <div ref={desktopScrollRef} className="flex-1 overflow-auto">
           <table className="w-full table-fixed">
             <tbody>
               {loading && transactions.length === 0 ? (

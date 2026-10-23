@@ -123,7 +123,7 @@ function QuotesContent() {
     <>
       {/* Desktop Layout */}
       {!isMobile && (
-        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-hidden">
           {/* Header - Fixe */}
           <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
             <div>
@@ -252,7 +252,7 @@ function QuotesContent() {
 
       {/* Mobile Layout */}
       {isMobile && (
-        <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+        <div className="md:hidden flex flex-col h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-hidden">
           {/* Header */}
           <div className="px-4 py-6 flex-shrink-0">
             <div className="flex items-start justify-between">

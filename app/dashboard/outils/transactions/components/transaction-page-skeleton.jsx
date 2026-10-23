@@ -9,7 +9,7 @@ export function TransactionsPageSkeleton() {
   return (
     <>
       {/* Desktop */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-hidden">
         {/* Header : solde + oeil + sélecteur de compte + export */}
         <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
           <div className="flex items-center gap-3">
@@ -25,7 +25,7 @@ export function TransactionsPageSkeleton() {
       </div>
 
       {/* Mobile */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+      <div className="md:hidden flex flex-col h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-hidden">
         {/* Header : solde + oeil + sélecteur de compte */}
         <div className="px-4 py-6 flex-shrink-0">
           <div className="flex items-center gap-2">

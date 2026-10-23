@@ -91,7 +91,7 @@ function DeliveryNotesContent() {
     <>
       {/* Desktop */}
       {!isMobile && (
-        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-hidden">
           <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
             <div>
               <h1 className="text-2xl font-medium mb-2">Bons de livraison</h1>

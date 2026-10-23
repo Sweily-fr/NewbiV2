@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useState, Suspense } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  Suspense,
+} from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
@@ -94,6 +100,32 @@ function DashboardContent({ children }) {
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
+
+  // Zone de défilement du contenu : chaque nouvelle page repart du haut
+  // (Next ne remet en haut que la fenêtre, pas ce conteneur)
+  const contentScrollRef = useRef(null);
+  useEffect(() => {
+    if (contentScrollRef.current) contentScrollRef.current.scrollTop = 0;
+  }, [pathname]);
+
+  // Hauteur réelle des bandeaux (essai, lecture seule, gestionnaire) :
+  // les pages en hauteur fixe la retirent via --dashboard-banners-h pour
+  // ne pas dépasser de l'écran (sinon double barre de défilement)
+  const bannersRef = useRef(null);
+  useEffect(() => {
+    const el = bannersRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const root = document.documentElement;
+    const update = () =>
+      root.style.setProperty("--dashboard-banners-h", `${el.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--dashboard-banners-h");
+    };
+  }, []);
 
   // Lien vers un onglet des paramètres (ex. ?parametres=roles dans une
   // demande d'accès) : ouvre la fenêtre sur cet onglet puis retire le
@@ -289,26 +321,31 @@ function DashboardContent({ children }) {
         />
         <SidebarInset>
           <SiteHeader />
-          <GestionnaireBanner />
-          {/* Espace gestionnaire : l'abonnement de l'espace actif (souvent
+          <div ref={bannersRef} className="flex-shrink-0">
+            <GestionnaireBanner />
+            {/* Espace gestionnaire : l'abonnement de l'espace actif (souvent
               le dossier d'un client) n'y a pas de sens */}
-          {!isGestionnairePath(pathname) && (
-            <>
-              <SubscriptionReadOnlyBanner
-                onSubscribe={() => {
-                  setSettingsInitialTab("subscription");
-                  setSettingsModalOpen(true);
-                }}
-              />
-              <TrialBanner
-                onSubscribe={() => {
-                  setSettingsInitialTab("subscription");
-                  setSettingsModalOpen(true);
-                }}
-              />
-            </>
-          )}
-          <div className="flex flex-1 flex-col overflow-y-auto">
+            {!isGestionnairePath(pathname) && (
+              <>
+                <SubscriptionReadOnlyBanner
+                  onSubscribe={() => {
+                    setSettingsInitialTab("subscription");
+                    setSettingsModalOpen(true);
+                  }}
+                />
+                <TrialBanner
+                  onSubscribe={() => {
+                    setSettingsInitialTab("subscription");
+                    setSettingsModalOpen(true);
+                  }}
+                />
+              </>
+            )}
+          </div>
+          <div
+            ref={contentScrollRef}
+            className="flex flex-1 flex-col overflow-y-auto"
+          >
             <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
               <SessionGateProvider>
                 <ModuleRouteGuard>{children}</ModuleRouteGuard>
