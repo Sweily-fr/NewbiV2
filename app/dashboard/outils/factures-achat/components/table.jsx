@@ -406,6 +406,9 @@ export default function PurchaseInvoiceTable({
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
+    // Le rechargement de la liste (après un enregistrement depuis le tiroir)
+    // ne doit pas renvoyer en page 1 : le retour au début est géré plus bas
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -414,6 +417,29 @@ export default function PurchaseInvoiceTable({
     globalFilterFn: multiColumnFilterFn,
     getRowId: (row) => row.id,
   });
+
+  // Recherche, filtres, onglet ou tri modifiés : retour en page 1
+  useEffect(() => {
+    setPagination((p) => (p.pageIndex === 0 ? p : { ...p, pageIndex: 0 }));
+  }, [
+    globalFilter,
+    searchExact,
+    columnFilters,
+    statusFilters,
+    categoryFilters,
+    dateRange,
+    activeTab,
+    sorting,
+  ]);
+
+  // Page devenue vide (suppression des dernières factures de la page) :
+  // on se cale sur la dernière page existante
+  const pageCount = table.getPageCount();
+  useEffect(() => {
+    if (loading || pagination.pageIndex === 0) return;
+    if (pagination.pageIndex < pageCount) return;
+    setPagination((p) => ({ ...p, pageIndex: Math.max(pageCount - 1, 0) }));
+  }, [loading, pageCount, pagination.pageIndex]);
 
   // Liste mobile : même recherche que le tableau, appliquée à la main
   const mobileSearchMatch = useMemo(
