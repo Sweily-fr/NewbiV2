@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { format, isSameDay, isSameMonth } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { hexToRgb, tint, truncateToWidth } from "./gantt-export";
 import { countHiddenByDay, layoutWeek } from "./kanban-calendar";
@@ -16,7 +16,6 @@ const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
  * @param {string} params.boardTitle - Titre du tableau kanban
  * @param {string} params.periodLabel - Libellé de la période (« octobre 2026 »)
  * @param {"month"|"week"} params.mode - Mode affiché
- * @param {Date} params.anchorDate - Date de référence (mois affiché)
  * @param {Array<{ start: Date, end: Date, days: Date[] }>} params.weeks - Semaines affichées
  * @param {Array} params.items - Tâches datées ({ task, start, end }), triées comme la vue
  * @param {Function} [params.resolveMemberName] - Nom d'un membre assigné
@@ -25,7 +24,6 @@ export function exportCalendarPDF({
   boardTitle,
   periodLabel,
   mode,
-  anchorDate,
   weeks,
   items,
   resolveMemberName = () => null,
@@ -176,7 +174,8 @@ export function exportCalendarPDF({
     // Cadres des jours
     week.days.forEach((day, i) => {
       const x = margin + i * colW;
-      const isOutside = !isWeekMode && !isSameMonth(day, anchorDate);
+      // Jours des mois voisins : cases vides, comme à l'écran
+      const isOutside = day < week.visible.start || day > week.visible.end;
       if (isOutside) {
         pdf.setFillColor(241, 245, 249); // slate-100
         pdf.rect(x, rowY, colW, rowH, "F");
@@ -188,13 +187,11 @@ export function exportCalendarPDF({
       pdf.setLineWidth(0.2);
       pdf.rect(x, rowY, colW, rowH);
 
-      if (!isWeekMode) {
+      if (!isWeekMode && !isOutside) {
         pdf.setFontSize(7);
         if (isSameDay(day, today)) {
           const p = hexToRgb(PRIMARY);
           pdf.setTextColor(p.r, p.g, p.b);
-        } else if (isOutside) {
-          pdf.setTextColor(148, 163, 184);
         } else {
           pdf.setTextColor(51, 65, 85);
         }

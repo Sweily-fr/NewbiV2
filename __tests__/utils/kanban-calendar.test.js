@@ -9,7 +9,7 @@ import {
   layoutWeek,
   parseDayKey,
   resizeTaskDates,
-  resizeTaskDatesBy,
+  resizeTaskDatesFromHandle,
   sameTaskDates,
   shiftTaskDates,
 } from "@/src/utils/kanban-calendar";
@@ -85,6 +85,26 @@ describe("buildCalendarWeeks", () => {
     expect(weeks).toHaveLength(1);
     expect(weeks[0].start).toEqual(local(2026, 10, 26));
     expect(weeks[0].end).toEqual(local(2026, 11, 1));
+    expect(weeks[0].visible).toEqual({
+      start: local(2026, 10, 26),
+      end: local(2026, 11, 1),
+    });
+  });
+
+  it("limite les jours affichés au mois en mode mois", () => {
+    const weeks = buildCalendarWeeks(local(2026, 10, 15, 14), "month");
+    expect(weeks[0].visible).toEqual({
+      start: local(2026, 10, 1),
+      end: local(2026, 10, 4),
+    });
+    expect(weeks[2].visible).toEqual({
+      start: local(2026, 10, 12),
+      end: local(2026, 10, 18),
+    });
+    expect(weeks[4].visible).toEqual({
+      start: local(2026, 10, 26),
+      end: local(2026, 10, 31),
+    });
   });
 });
 
@@ -122,6 +142,25 @@ describe("layoutWeek", () => {
     ]);
     expect(segments).toHaveLength(0);
     expect(laneCount).toBe(0);
+  });
+
+  it("coupe les tâches aux jours du mois affichés", () => {
+    // Dernière semaine d'octobre 2026 : le dimanche 1er novembre est masqué
+    const lastWeek = {
+      ...week,
+      visible: { start: local(2026, 10, 26), end: local(2026, 10, 31) },
+    };
+    const { segments } = layoutWeek(lastWeek, [
+      item("chevauche", [2026, 10, 30], [2026, 11, 3]),
+      item("novembre", [2026, 11, 1], [2026, 11, 1]),
+    ]);
+    expect(segments).toHaveLength(1);
+    expect(segments[0]).toMatchObject({
+      startCol: 4,
+      endCol: 5,
+      continuesBefore: false,
+      continuesAfter: true,
+    });
   });
 });
 
@@ -241,36 +280,64 @@ describe("resizeTaskDates", () => {
   });
 });
 
-describe("resizeTaskDatesBy", () => {
-  // Du mercredi 28 octobre au mercredi 4 novembre : coupée au dimanche 1er
+describe("resizeTaskDatesFromHandle", () => {
+  // Du mercredi 28 octobre au mercredi 4 novembre : coupée au samedi 31 en
+  // vue mois d'octobre
   const dates = {
     startDate: iso(2026, 10, 28, 9),
     dueDate: iso(2026, 11, 4, 18),
   };
 
-  it("prolonge l'échéance depuis le bord coupé en fin de semaine", () => {
-    expect(resizeTaskDatesBy(dates, "end", 3)).toEqual({
-      startDate: dates.startDate,
-      dueDate: iso(2026, 11, 7, 18),
-    });
+  it("pose l'échéance sur le jour visé depuis le bord coupé", () => {
+    expect(
+      resizeTaskDatesFromHandle(
+        dates,
+        "end",
+        local(2026, 10, 31),
+        local(2026, 11, 9),
+      ),
+    ).toEqual({ startDate: dates.startDate, dueDate: iso(2026, 11, 9, 18) });
   });
 
-  it("avance le début depuis le bord coupé en début de semaine", () => {
-    expect(resizeTaskDatesBy(dates, "start", -2)).toEqual({
-      startDate: iso(2026, 10, 26, 9),
-      dueDate: dates.dueDate,
-    });
+  it("pose le début sur le jour visé depuis le bord coupé", () => {
+    expect(
+      resizeTaskDatesFromHandle(
+        dates,
+        "start",
+        local(2026, 11, 1),
+        local(2026, 10, 20),
+      ),
+    ).toEqual({ startDate: iso(2026, 10, 20, 9), dueDate: dates.dueDate });
   });
 
-  it("raccourcit sans passer l'autre borne", () => {
-    expect(resizeTaskDatesBy(dates, "end", -20).dueDate).toBe(
-      iso(2026, 10, 28, 18),
-    );
+  it("ne change rien tant que la poignée reste sur son jour", () => {
+    expect(
+      resizeTaskDatesFromHandle(
+        dates,
+        "end",
+        local(2026, 10, 31, 10),
+        local(2026, 10, 31, 16),
+      ),
+    ).toBeNull();
+    expect(
+      resizeTaskDatesFromHandle(
+        {},
+        "end",
+        local(2026, 10, 1),
+        local(2026, 10, 2),
+      ),
+    ).toBeNull();
   });
 
-  it("renvoie null sans déplacement ou sans date", () => {
-    expect(resizeTaskDatesBy(dates, "end", 0)).toBeNull();
-    expect(resizeTaskDatesBy({}, "end", 2)).toBeNull();
+  it("ne passe pas l'autre borne", () => {
+    expect(
+      resizeTaskDatesFromHandle(
+        dates,
+        "end",
+        local(2026, 10, 31),
+        local(2026, 10, 10),
+      ).dueDate,
+    ).toBe(iso(2026, 10, 28, 18));
   });
 });
 
