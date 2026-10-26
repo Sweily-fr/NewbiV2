@@ -218,6 +218,19 @@ export function resizeTaskDates(dates, edge, targetDay) {
 }
 
 /**
+ * Étire une tâche de `deltaDays` jours par un de ses bords. Sert aussi aux
+ * bords coupés en fin ou début de semaine : la poignée saisie au bord de la
+ * ligne déplace la vraie borne de la tâche du même nombre de jours.
+ * @returns {{ startDate: string|null, dueDate: string|null } | null} null si rien ne change
+ */
+export function resizeTaskDatesBy(dates, edge, deltaDays) {
+  const range = getTaskDayRange(dates);
+  if (!range || deltaDays === 0) return null;
+  const edgeDay = edge === "start" ? range.start : range.end;
+  return resizeTaskDates(dates, edge, addDays(edgeDay, deltaDays));
+}
+
+/**
  * Dates d'une tâche posée sur un jour (création au clic, ou tâche « Sans
  * date » déposée sur le calendrier) : début 9 h, échéance 18 h.
  */
