@@ -9,6 +9,7 @@ import {
   layoutWeek,
   parseDayKey,
   resizeTaskDates,
+  resizeTaskDatesBy,
   sameTaskDates,
   shiftTaskDates,
 } from "@/src/utils/kanban-calendar";
@@ -237,6 +238,39 @@ describe("resizeTaskDates", () => {
       startDate: iso(2026, 10, 6, 9),
       dueDate: iso(2026, 10, 8, 18),
     });
+  });
+});
+
+describe("resizeTaskDatesBy", () => {
+  // Du mercredi 28 octobre au mercredi 4 novembre : coupée au dimanche 1er
+  const dates = {
+    startDate: iso(2026, 10, 28, 9),
+    dueDate: iso(2026, 11, 4, 18),
+  };
+
+  it("prolonge l'échéance depuis le bord coupé en fin de semaine", () => {
+    expect(resizeTaskDatesBy(dates, "end", 3)).toEqual({
+      startDate: dates.startDate,
+      dueDate: iso(2026, 11, 7, 18),
+    });
+  });
+
+  it("avance le début depuis le bord coupé en début de semaine", () => {
+    expect(resizeTaskDatesBy(dates, "start", -2)).toEqual({
+      startDate: iso(2026, 10, 26, 9),
+      dueDate: dates.dueDate,
+    });
+  });
+
+  it("raccourcit sans passer l'autre borne", () => {
+    expect(resizeTaskDatesBy(dates, "end", -20).dueDate).toBe(
+      iso(2026, 10, 28, 18),
+    );
+  });
+
+  it("renvoie null sans déplacement ou sans date", () => {
+    expect(resizeTaskDatesBy(dates, "end", 0)).toBeNull();
+    expect(resizeTaskDatesBy({}, "end", 2)).toBeNull();
   });
 });
 
