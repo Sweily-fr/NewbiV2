@@ -22,7 +22,7 @@ const subscribeToNothing = () => () => {};
  * Skeleton UNIQUE de la page d'un tableau Kanban, rendu par les loading.jsx
  * (kanban/ et kanban/[id]/) et par l'état de chargement de la page : un seul
  * placeholder du début à la fin, celui de la vue ouverte par défaut
- * (Board, List ou Gantt, lue dans localStorage comme useViewMode).
+ * (Board, List, Gantt ou Calendrier, lue dans localStorage comme useViewMode).
  *
  * La vue est lue pendant le rendu via useSyncExternalStore : en navigation
  * client elle est connue dès le premier affichage (pas de skeleton Board
@@ -47,12 +47,13 @@ export function KanbanPageSkeleton({ boardId }) {
       {viewMode === "board" && <KanbanBoardBodySkeleton />}
       {viewMode === "list" && <KanbanListBodySkeleton />}
       {viewMode === "gantt" && <KanbanGanttBodySkeleton />}
+      {viewMode === "calendar" && <KanbanCalendarBodySkeleton />}
     </div>
   );
 }
 
 /**
- * En-tête commun aux trois vues : titre du projet, onglets et actions
+ * En-tête commun aux quatre vues : titre du projet, onglets et actions
  */
 function KanbanHeaderSkeleton() {
   return (
@@ -64,11 +65,12 @@ function KanbanHeaderSkeleton() {
 
       {/* Tabs et boutons d'action */}
       <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
-        {/* Tabs: List, Board, Gantt */}
+        {/* Tabs: List, Board, Gantt, Calendrier */}
         <div className="flex items-center gap-1">
           <Skeleton className="h-9 w-20 rounded-md" />
           <Skeleton className="h-9 w-16 rounded-md" />
           <Skeleton className="h-9 w-20 rounded-md" />
+          <Skeleton className="h-9 w-24 rounded-md" />
         </div>
 
         {/* Boutons d'action */}
@@ -293,6 +295,61 @@ function KanbanGanttBodySkeleton() {
                 <Skeleton className="h-6 w-full rounded-md" />
               </div>
             </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Corps de la vue Calendrier : contrôles, jours de la semaine puis grille du mois
+ */
+function KanbanCalendarBodySkeleton() {
+  return (
+    <div className="flex-1 overflow-hidden flex flex-col">
+      {/* Navigation et mode */}
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-7 w-32 rounded-md" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-7 w-24 rounded-md" />
+          <Skeleton className="h-7 w-28 rounded-md" />
+        </div>
+      </div>
+
+      {/* Jours de la semaine */}
+      <div className="grid grid-cols-7 border-y">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-8 px-2 flex items-center border-r last:border-r-0"
+          >
+            <Skeleton className="h-3 w-8" />
+          </div>
+        ))}
+      </div>
+
+      {/* Semaines */}
+      <div className="flex-1 grid grid-rows-5">
+        {[0, 1, 2, 3, 4].map((week) => (
+          <div key={week} className="grid grid-cols-7 border-b last:border-b-0">
+            {Array.from({ length: 7 }).map((_, day) => (
+              <div
+                key={day}
+                className="border-r last:border-r-0 p-1.5 space-y-1.5"
+              >
+                <Skeleton className="h-4 w-5 rounded-full" />
+                {(week * 7 + day) % 3 === 0 && (
+                  <Skeleton className="h-5 w-full rounded-md" />
+                )}
+                {(week * 7 + day) % 5 === 1 && (
+                  <Skeleton className="h-5 w-3/4 rounded-md" />
+                )}
+              </div>
+            ))}
           </div>
         ))}
       </div>
