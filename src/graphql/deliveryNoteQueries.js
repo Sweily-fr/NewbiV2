@@ -146,6 +146,11 @@ export const DELIVERY_NOTE_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
   }
 `;
@@ -232,6 +237,11 @@ export const DELIVERY_NOTE_LIST_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
   }
 `;
@@ -735,7 +745,10 @@ export const useDeleteDeliveryNote = () => {
 
   const [deleteMutation, { loading }] = useMutation(DELETE_DELIVERY_NOTE, {
     onError: (error) => {
-      console.error("Erreur lors de la suppression du bon de livraison:", error);
+      console.error(
+        "Erreur lors de la suppression du bon de livraison:",
+        error,
+      );
       toast.error(
         error.message || "Erreur lors de la suppression du bon de livraison",
       );
@@ -958,8 +971,7 @@ export const DELIVERY_NOTE_STATUS_COLORS = {
 // Référence affichée d'un bon de livraison (BL-202609-0001, ou « Brouillon »)
 export const formatDeliveryNoteReference = (dn) => {
   if (!dn) return "";
-  if (dn.status === DELIVERY_NOTE_STATUS.DRAFT || !dn.number) return "Brouillon";
-  return dn.prefix
-    ? `${dn.prefix.replace(/-$/, "")}-${dn.number}`
-    : dn.number;
+  if (dn.status === DELIVERY_NOTE_STATUS.DRAFT || !dn.number)
+    return "Brouillon";
+  return dn.prefix ? `${dn.prefix.replace(/-$/, "")}-${dn.number}` : dn.number;
 };

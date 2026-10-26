@@ -104,6 +104,11 @@ export const EMAIL_TRACKING_UPDATED_SUBSCRIPTION = gql`
         emailOpenCount
         emailClickedAt
         emailClickCount
+        deliveryStatus
+        deliveredAt
+        deliveryFailedAt
+        deliveryFailureReason
+        recipientEmail
       }
     }
   }
