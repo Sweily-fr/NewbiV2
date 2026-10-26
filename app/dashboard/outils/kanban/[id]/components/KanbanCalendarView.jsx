@@ -2,6 +2,7 @@ import React, {
   useState,
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
   useCallback,
 } from "react";
@@ -73,14 +74,13 @@ const WEEK_LANE_H = 50;
 const MIN_MONTH_ROW_H = 112;
 // Déplacement (px) au-delà duquel un appui devient un glisser-déposer
 const DRAG_THRESHOLD = 5;
-// Pendant un glisser-déposer : bande (px) au bord de la grille en mode
-// semaine, attente avant de changer de période, puis cadence de défilement
-const NAV_EDGE_ZONE = 24;
-const NAV_DELAY = 500;
-const NAV_REPEAT = 700;
+// Pendant un glisser-déposer, maintien sur une zone de la barre de période
+// avant de changer de période (jauge affichée), puis cadence si on y reste
+const NAV_DELAY = 700;
+const NAV_REPEAT = 900;
 
-// Cible sous le pointeur : flèche de navigation, case vide d'un mois voisin,
-// jour de la grille, ou volet « Sans date »
+// Cible sous le pointeur : zone de la barre de période, case vide d'un mois
+// voisin, jour de la grille, ou volet « Sans date »
 function getPointTarget(x, y) {
   for (const el of document.elementsFromPoint(x, y)) {
     if (el.dataset?.calendarNav) {
@@ -382,10 +382,20 @@ export function KanbanCalendarView({
     );
   };
   const goToToday = () => setAnchorDate(new Date());
-  // Flèches mises en avant pendant un glisser-déposer : les survoler change
-  // de période
-  const navHintClass =
-    "bg-[#5b50ff]/10 text-[#5b50ff] ring-1 ring-[#5b50ff]/40 hover:bg-[#5b50ff]/15";
+
+  // Libellés de la période précédente / suivante (barre de période)
+  const adjacentPeriodLabel = (dir) => {
+    const sign = dir === "next" ? 1 : -1;
+    if (isWeekMode) {
+      return `semaine du ${format(addDays(weeks[0].start, 7 * sign), "d MMM", { locale: fr })}`;
+    }
+    const month = addMonths(anchorDate, sign);
+    return format(
+      month,
+      month.getFullYear() === anchorDate.getFullYear() ? "MMMM" : "MMMM yyyy",
+      { locale: fr },
+    );
+  };
 
   const periodLabel = isWeekMode
     ? `${format(weeks[0].start, "d MMM", { locale: fr })} - ${format(
@@ -452,59 +462,52 @@ export function KanbanCalendarView({
   // --- Glisser-déposer (pointeur) ---
 
   // Changement de période pendant un glisser-déposer (pour étirer ou
-  // déplacer une tâche au-delà de la période) :
-  // - survol d'une flèche, ou pointeur poussé contre le bord gauche / droit
-  //   de la grille en mode semaine : défilement continu ;
-  // - mode mois : case vide d'un mois voisin, ou pointeur sorti de la grille
-  //   au-delà du premier / dernier jour : un seul changement de mois
+  // déplacer une tâche au-delà de la période) : uniquement par les zones de
+  // la barre de période, sous la grille. Le maintien sur une zone remplit
+  // une jauge, puis change de période ; en restant dessus, on continue.
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
-  const monthBoundsRef = useRef({});
-  monthBoundsRef.current = {
-    first: dayKey(weeks[0].visible.start),
-    last: dayKey(weeks[weeks.length - 1].visible.end),
-  };
-  const navRef = useRef({ key: null, timer: null });
+  const navRef = useRef({ dir: null, timer: null });
   const lastPointerRef = useRef(null);
+  const bubbleRef = useRef(null); // Bulle de date qui suit le pointeur
 
-  const setNavDirection = useCallback((nav) => {
+  const setNavDirection = useCallback((dir) => {
     const state = navRef.current;
-    const key = nav ? `${nav.dir}:${nav.repeat}` : null;
-    if (state.key === key) return;
+    if (state.dir === dir) return;
     clearTimeout(state.timer);
-    state.key = key;
+    state.dir = dir;
     state.timer = null;
-    if (!nav) return;
+    if (!dir) return;
     const step = () => {
-      const sign = nav.dir === "next" ? 1 : -1;
+      const sign = dir === "next" ? 1 : -1;
       setAnchorDate((prev) =>
         viewModeRef.current === "week"
           ? addDays(prev, 7 * sign)
           : addMonths(prev, sign),
       );
-      state.timer = nav.repeat ? setTimeout(step, NAV_REPEAT) : null;
+      // Jauge relancée pour la période d'après
+      setDrag((prev) =>
+        prev ? { ...prev, navTick: (prev.navTick || 0) + 1 } : prev,
+      );
+      state.timer = setTimeout(step, NAV_REPEAT);
     };
     state.timer = setTimeout(step, NAV_DELAY);
   }, []);
 
-  const getNavDirection = useCallback((x, y, target, isOutsideGrid) => {
-    if (target?.nav) return { dir: target.nav, repeat: true };
-    if (target?.unscheduled) return null;
-    const rect = bodyRef.current?.getBoundingClientRect();
-    if (!rect) return null;
-    if (viewModeRef.current === "week") {
-      if (y < rect.top || y > rect.bottom) return null;
-      if (x <= rect.left + NAV_EDGE_ZONE) return { dir: "prev", repeat: true };
-      if (x >= rect.right - NAV_EDGE_ZONE) return { dir: "next", repeat: true };
-      return null;
-    }
-    if (target?.outside) return { dir: target.outside, repeat: false };
-    if (isOutsideGrid && target?.dayKey) {
-      const { first, last } = monthBoundsRef.current;
-      if (target.dayKey === last) return { dir: "next", repeat: false };
-      if (target.dayKey === first) return { dir: "prev", repeat: false };
-    }
-    return null;
+  // Bulle sous le curseur, à droite ; au-dessus / à gauche près des bords de
+  // la fenêtre (barre de période en bas, volet à droite)
+  const positionBubble = useCallback((x, y) => {
+    const el = bubbleRef.current;
+    if (!el) return;
+    const left =
+      x + 16 + el.offsetWidth > window.innerWidth
+        ? x - 16 - el.offsetWidth
+        : x + 16;
+    const top =
+      y + 18 + el.offsetHeight > window.innerHeight
+        ? y - 12 - el.offsetHeight
+        : y + 18;
+    el.style.transform = `translate(${left}px, ${top}px)`;
   }, []);
 
   // Pointeur sorti de la grille (au-delà du dimanche, au-dessus des jours…) :
@@ -530,43 +533,60 @@ export function KanbanCalendarView({
   }, [setNavDirection]);
 
   // Recalcule l'aperçu pour la position du pointeur (aussi après un
-  // changement de période, le pointeur n'ayant pas bougé : la navigation
-  // n'est alors pas réévaluée, pour ne pas enchaîner les mois)
+  // changement de période, le pointeur n'ayant pas bougé)
   const updateDragTarget = useCallback(
-    (x, y, { afterNavigation = false } = {}) => {
+    (x, y) => {
       const current = dragRef.current;
       if (!current?.active) return;
       lastPointerRef.current = { x, y };
-      const rawTarget = getPointTarget(x, y);
-      const target = rawTarget || getClampedTarget(x, y);
-      if (!afterNavigation) {
-        setNavDirection(getNavDirection(x, y, target, !rawTarget));
+      positionBubble(x, y);
+      const target = getPointTarget(x, y) || getClampedTarget(x, y);
+      const navDir = target?.nav ?? null;
+      setNavDirection(navDir);
+      const navChanged = current.navDir !== navDir;
+      current.navDir = navDir;
+      // Sur une zone de la barre ou une case vide : l'aperçu reste où il était
+      const targetKey =
+        target?.nav || target?.outside
+          ? current.targetKey
+          : (target?.key ?? null);
+      if (current.targetKey === targetKey && current.started && !navChanged) {
+        return;
       }
-      // Au-dessus d'une flèche ou d'une case vide : l'aperçu reste où il était
-      if (target?.nav || target?.outside) return;
-      const targetKey = target?.key ?? null;
-      if (current.targetKey === targetKey && current.started) return;
+      if (current.targetKey !== targetKey || !current.started) {
+        current.previewDates = getPreviewDates(current, target);
+      }
       current.started = true;
       current.targetKey = targetKey;
-      current.previewDates = getPreviewDates(current, target);
-      setDrag({
+      setDrag((prev) => ({
         taskId: current.task.id,
         kind: current.kind,
+        original: current.dates,
         dates: current.previewDates,
         overUnscheduled: !!target?.unscheduled,
-      });
+        navDir,
+        navTick: navChanged ? 0 : (prev?.navTick ?? 0),
+      }));
     },
-    [getClampedTarget, getNavDirection, setNavDirection],
+    [getClampedTarget, positionBubble, setNavDirection],
   );
 
   useEffect(() => {
     const pointer = lastPointerRef.current;
     if (!pointer || !dragRef.current?.active) return;
     const frame = requestAnimationFrame(() =>
-      updateDragTarget(pointer.x, pointer.y, { afterNavigation: true }),
+      updateDragTarget(pointer.x, pointer.y),
     );
     return () => cancelAnimationFrame(frame);
   }, [anchorDate, updateDragTarget]);
+
+  // Bulle affichée au premier rendu du glisser-déposer : la placer tout de
+  // suite sous le pointeur (ensuite elle suit sans nouveau rendu)
+  const isDragging = !!drag;
+  useLayoutEffect(() => {
+    const pointer = lastPointerRef.current;
+    if (isDragging && pointer) positionBubble(pointer.x, pointer.y);
+  }, [isDragging, positionBubble]);
 
   const handlePointerMove = useCallback(
     (e) => {
@@ -887,6 +907,35 @@ export function KanbanCalendarView({
 
   const today = new Date();
 
+  // Contenu de la bulle de glisser-déposer
+  const dragBubble = useMemo(() => {
+    if (!drag) return null;
+    if (drag.overUnscheduled) {
+      return {
+        title:
+          drag.kind === "schedule" ? "Reste sans date" : "Retirer les dates",
+      };
+    }
+    const dates =
+      drag.dates || (drag.kind === "schedule" ? null : drag.original);
+    const range = dates ? getTaskDayRange(dates) : null;
+    if (!range) return { title: "Déposez la tâche sur un jour" };
+    const fmt = (day) => format(day, "EEE d MMM", { locale: fr });
+    const days = differenceInCalendarDays(range.end, range.start) + 1;
+    const duration = `${days} jour${days > 1 ? "s" : ""}`;
+    if (drag.kind === "start") {
+      return { title: `Début : ${fmt(range.start)}`, detail: duration };
+    }
+    if (drag.kind === "end") {
+      return { title: `Échéance : ${fmt(range.end)}`, detail: duration };
+    }
+    const span =
+      days > 1 ? `${fmt(range.start)} → ${fmt(range.end)}` : fmt(range.start);
+    return drag.kind === "schedule"
+      ? { title: `Planifier : ${span}` }
+      : { title: span, detail: days > 1 ? duration : null };
+  }, [drag]);
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex h-full flex-col bg-background">
@@ -898,8 +947,7 @@ export function KanbanCalendarView({
                 variant="ghost"
                 size="icon"
                 onClick={goToPrevious}
-                data-calendar-nav="prev"
-                className={cn("h-7 w-7", drag && navHintClass)}
+                className="h-7 w-7"
                 aria-label={
                   isWeekMode ? "Semaine précédente" : "Mois précédent"
                 }
@@ -918,8 +966,7 @@ export function KanbanCalendarView({
                 variant="ghost"
                 size="icon"
                 onClick={goToNext}
-                data-calendar-nav="next"
-                className={cn("h-7 w-7", drag && navHintClass)}
+                className="h-7 w-7"
                 aria-label={isWeekMode ? "Semaine suivante" : "Mois suivant"}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -969,18 +1016,6 @@ export function KanbanCalendarView({
 
         <div className="flex flex-1 min-h-0 border-t border-border">
           <div className="relative flex flex-1 min-w-0 flex-col">
-            {/* Mode semaine, pendant un glisser-déposer : pousser contre un
-                bord passe à la semaine précédente / suivante */}
-            {drag && isWeekMode && (
-              <>
-                <div className="pointer-events-none absolute left-0 top-8 bottom-0 z-[5] flex w-6 items-center justify-center bg-gradient-to-r from-[#5b50ff]/15 to-transparent">
-                  <ChevronLeft className="h-4 w-4 text-[#5b50ff]/70" />
-                </div>
-                <div className="pointer-events-none absolute right-0 top-8 bottom-0 z-[5] flex w-6 items-center justify-center bg-gradient-to-l from-[#5b50ff]/15 to-transparent">
-                  <ChevronRight className="h-4 w-4 text-[#5b50ff]/70" />
-                </div>
-              </>
-            )}
             {/* Jours de la semaine */}
             <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
               {(isWeekMode ? weeks[0].days : WEEKDAY_LABELS).map(
@@ -1032,48 +1067,19 @@ export function KanbanCalendarView({
                     <div className="absolute inset-0 grid grid-cols-7">
                       {week.days.map((day, dayIndex) => {
                         const key = dayKey(day);
-                        // Mode mois : jours des mois voisins = cases vides,
-                        // qui font changer de mois pendant un glisser-déposer
+                        // Mode mois : jours des mois voisins = cases vides
+                        // (pendant un glisser-déposer, l'aperçu y reste sur
+                        // le dernier jour visé)
                         if (
                           day < week.visible.start ||
                           day > week.visible.end
                         ) {
-                          const side =
-                            day < week.visible.start ? "prev" : "next";
-                          // Repère sur la case collée au mois seulement
-                          const showHint =
-                            drag &&
-                            dayKey(addDays(day, side === "next" ? -1 : 1)) ===
-                              dayKey(
-                                side === "next"
-                                  ? week.visible.end
-                                  : week.visible.start,
-                              );
                           return (
                             <div
                               key={key}
-                              data-calendar-outside={side}
-                              className="relative flex items-center justify-center border-r border-border bg-muted/30 last:border-r-0"
-                            >
-                              {showHint && (
-                                <span className="pointer-events-none flex items-center gap-1 text-[11px] font-medium text-[#5b50ff]/70">
-                                  {side === "prev" && (
-                                    <ChevronLeft className="h-3.5 w-3.5" />
-                                  )}
-                                  {format(
-                                    addMonths(
-                                      anchorDate,
-                                      side === "next" ? 1 : -1,
-                                    ),
-                                    "MMMM",
-                                    { locale: fr },
-                                  )}
-                                  {side === "next" && (
-                                    <ChevronRight className="h-3.5 w-3.5" />
-                                  )}
-                                </span>
-                              )}
-                            </div>
+                              data-calendar-outside=""
+                              className="border-r border-border bg-muted/30 last:border-r-0"
+                            />
                           );
                         }
                         const isToday = isSameDay(day, today);
@@ -1200,6 +1206,61 @@ export function KanbanCalendarView({
                 );
               })}
             </div>
+
+            {/* Barre de période : navigation, et pendant un glisser-déposer,
+                zones à maintenir pour passer à la période précédente /
+                suivante */}
+            <div className="grid flex-shrink-0 grid-cols-2 gap-2 border-t border-border p-2">
+              {["prev", "next"].map((dir) => {
+                const label = adjacentPeriodLabel(dir);
+                const isHovered = drag?.navDir === dir;
+                const Icon = dir === "next" ? ChevronRight : ChevronLeft;
+                return (
+                  <button
+                    key={dir}
+                    type="button"
+                    data-calendar-nav={dir}
+                    onClick={dir === "next" ? goToNext : goToPrevious}
+                    className={cn(
+                      "relative flex h-9 items-center gap-1.5 overflow-hidden rounded-md px-3 text-xs transition-colors cursor-pointer",
+                      dir === "next" ? "justify-end" : "justify-start",
+                      drag
+                        ? cn(
+                            "border border-dashed font-medium text-[#5b50ff]",
+                            isHovered
+                              ? "border-[#5b50ff] bg-[#5b50ff]/10"
+                              : "border-[#5b50ff]/40 bg-[#5b50ff]/5",
+                          )
+                        : "border border-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+                    )}
+                  >
+                    {/* Jauge de maintien avant le changement de période */}
+                    {isHovered && (
+                      <span
+                        key={drag.navTick}
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none absolute inset-0 bg-[#5b50ff]/15",
+                          dir === "next" ? "origin-left" : "origin-right",
+                        )}
+                        style={{
+                          animation: `kanban-calendar-gauge ${drag.navTick ? NAV_REPEAT : NAV_DELAY}ms linear forwards`,
+                        }}
+                      />
+                    )}
+                    {dir === "prev" && <Icon className="relative h-4 w-4" />}
+                    <span className="relative truncate">
+                      {drag
+                        ? dir === "next"
+                          ? `Maintenez ici pour aller ${isWeekMode ? "à la" : "en"} ${label}`
+                          : `Maintenez ici pour revenir ${isWeekMode ? "à la" : "en"} ${label}`
+                        : label.charAt(0).toUpperCase() + label.slice(1)}
+                    </span>
+                    {dir === "next" && <Icon className="relative h-4 w-4" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Volet des tâches sans date (cible de dépôt pour retirer les dates) */}
@@ -1239,6 +1300,34 @@ export function KanbanCalendarView({
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes kanban-calendar-gauge {
+          from { transform: scaleX(0); }
+          to { transform: scaleX(1); }
+        }
+      `}</style>
+
+      {/* Bulle qui suit le pointeur : ce que le dépôt va enregistrer */}
+      {dragBubble && (
+        <div
+          ref={bubbleRef}
+          aria-hidden="true"
+          className="pointer-events-none fixed left-0 top-0 z-[60] rounded-lg bg-[#1a1a1a] px-2.5 py-1.5 text-white shadow-lg dark:bg-white dark:text-[#1a1a1a]"
+        >
+          <div className="text-xs font-medium whitespace-nowrap">
+            {dragBubble.title}
+          </div>
+          {dragBubble.detail && (
+            <div className="text-[11px] whitespace-nowrap opacity-70">
+              {dragBubble.detail}
+            </div>
+          )}
+          <div className="mt-0.5 text-[10px] whitespace-nowrap opacity-50">
+            Échap pour annuler
+          </div>
+        </div>
+      )}
     </TooltipProvider>
   );
 }
