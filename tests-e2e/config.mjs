@@ -36,6 +36,98 @@ export const SESSION_TOKEN = "e2eSessionTokenNewbiLocalUniquement";
 export const SESSION_TOKEN_LISTE = "e2eSessionTokenNewbiListeUniquement";
 /** Session du compte de l'organisation « Avoirs » (factures à créditer). */
 export const SESSION_TOKEN_AVOIRS = "e2eSessionTokenNewbiAvoirsUniquement";
+/** Session du propriétaire de l'organisation « Clients » (contacts, listes, segments). */
+export const SESSION_TOKEN_CLIENTS = "e2eSessionTokenNewbiClientsUniquement";
+/** Membre de l'organisation « Clients » avec le rôle « Membre » (lecture seule partout). */
+export const SESSION_TOKEN_LECTEUR = "e2eSessionTokenNewbiLecteurUniquement";
+/** Membre de l'organisation « Clients » avec le rôle « Éditeur » (rien supprimer). */
+export const SESSION_TOKEN_EDITEUR = "e2eSessionTokenNewbiEditeurUniquement";
+/** Propriétaire d'une autre organisation, qui tente d'atteindre les données des autres. */
+export const SESSION_TOKEN_INTRUS = "e2eSessionTokenNewbiIntrusUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée (« freelance ») : ses plafonds. */
+export const SESSION_TOKEN_FREELANCE = "e2eSessionTokenNewbiFreelanceUniquement";
+/** Propriétaire de l'organisation « Réglages » : tests qui changent la configuration (champs, import…). */
+export const SESSION_TOKEN_REGLAGES = "e2eSessionTokenNewbiReglagesUniquement";
+// Sessions propres à un lot : entre ses deux repères (une chaîne unique par compte).
+// ── Lot factures ──
+/** Propriétaire de l'organisation « Factures » (factures et avoirs dans chaque état). */
+export const SESSION_TOKEN_FACTURES = "e2eSessionTokenNewbiFacturesUniquement";
+/** « Éditeur » de l'organisation « Factures » (crée, modifie, envoie ; ni suppression ni annulation). */
+export const SESSION_TOKEN_FACTURES_EDITEUR = "e2eSessionTokenNewbiFacturesEditeurUniquement";
+/** « Membre » de l'organisation « Factures » (lecture seule). */
+export const SESSION_TOKEN_FACTURES_LECTEUR = "e2eSessionTokenNewbiFacturesLecteurUniquement";
+/** Propriétaire de l'organisation « Réglages Factures » (paramètres, relances, numérotation continue). */
+export const SESSION_TOKEN_FACTURES_REGLAGES = "e2eSessionTokenNewbiFacturesReglagesUniquement";
+/** Propriétaire de l'organisation « Offre Factures » (offre d'entrée : plafonds des factures). */
+export const SESSION_TOKEN_FACTURES_OFFRE = "e2eSessionTokenNewbiFacturesOffreUniquement";
+// ── fin du lot factures ──
+// ── Lot devis-bc-bl ──
+/** Propriétaire de l'organisation « Ventes » (offre Entreprise) : devis, bons de commande et de livraison par rôle. */
+export const SESSION_TOKEN_VENTES = "e2eSessionTokenNewbiVentesUniquement";
+/** Membre « Membre » (lecture seule) de l'organisation « Ventes ». */
+export const SESSION_TOKEN_VENTES_LECTEUR = "e2eSessionTokenNewbiVentesLecteurUniquement";
+/** Membre « Éditeur » de l'organisation « Ventes ». */
+export const SESSION_TOKEN_VENTES_EDITEUR = "e2eSessionTokenNewbiVentesEditeurUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée, pour les plafonds des devis (signatures, modèles). */
+export const SESSION_TOKEN_FREELANCE_VENTES = "e2eSessionTokenNewbiFreelanceVentesUniquement";
+/** Propriétaire de l'organisation « Volume » (offre PME) : plus de 50 documents, quota de signatures atteint. */
+export const SESSION_TOKEN_VOLUME = "e2eSessionTokenNewbiVolumeUniquement";
+// ── fin du lot devis-bc-bl ──
+// ── Lot achats-banque ──
+/** Propriétaire de l'organisation « Achats » (catalogue, factures d'achat, transactions, prévision de référence : jamais modifiés par les tests). */
+export const SESSION_TOKEN_ACHATS = "e2eSessionTokenNewbiAchatsUniquement";
+/** « Éditeur » de l'organisation « Achats » (et de « Saisie Achats » pour les écritures permises). */
+export const SESSION_TOKEN_EDITEUR_ACHATS = "e2eSessionTokenNewbiEditeurAchatsUniquement";
+/** « Membre » (lecture seule) de l'organisation « Achats ». */
+export const SESSION_TOKEN_LECTEUR_ACHATS = "e2eSessionTokenNewbiLecteurAchatsUniquement";
+/** Propriétaire de l'organisation « Saisie Achats » : créations, modifications, suppressions. */
+export const SESSION_TOKEN_SAISIE_ACHATS = "e2eSessionTokenNewbiSaisieAchatsUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée, pour les plafonds du lot. */
+export const SESSION_TOKEN_FREELANCE_ACHATS = "e2eSessionTokenNewbiFreelanceAchatsUniquement";
+// ── fin du lot achats-banque ──
+// ── Lot parametres-auth ──
+/** Propriétaire de « Paramètres » (un membre de chaque rôle, rien n'y change). */
+export const SESSION_TOKEN_PARAMETRES = "e2eSessionTokenNewbiParametresUniquement";
+/** Propriétaire de « Configuration » (formulaires de l'entreprise, réglages de session). */
+export const SESSION_TOKEN_CONFIGURATION = "e2eSessionTokenNewbiConfigurationUniquement";
+/** Propriétaire d'« Équipe » (invitations, rôles, retraits). */
+export const SESSION_TOKEN_EQUIPE = "e2eSessionTokenNewbiEquipeUniquement";
+/** Membres de « Paramètres », un par rôle. */
+export const SESSION_TOKEN_ADMIN_PARAMETRES = "e2eSessionTokenNewbiAdminParametresUniquement";
+export const SESSION_TOKEN_EDITEUR_PARAMETRES = "e2eSessionTokenNewbiEditeurParametresUniquement";
+export const SESSION_TOKEN_MEMBRE_PARAMETRES = "e2eSessionTokenNewbiMembreParametresUniquement";
+export const SESSION_TOKEN_COMPTABLE_PARAMETRES = "e2eSessionTokenNewbiComptableParametresUniquement";
+export const SESSION_TOKEN_RECRUTEUR_PARAMETRES = "e2eSessionTokenNewbiRecruteurParametresUniquement";
+/** Membre d'« Équipe » au rôle personnalisé « Gestion d'équipe ». */
+export const SESSION_TOKEN_GESTION_EQUIPE = "e2eSessionTokenNewbiGestionEquipeUniquement";
+// ── fin du lot parametres-auth ──
+// ── Lot collaboration ──
+/** Propriétaire de l'organisation « Collab » (kanban, calendrier, transferts, documents partagés, signatures). */
+export const SESSION_TOKEN_COLLAB = "e2eSessionTokenNewbiCollabUniquement";
+/** Membre de « Collab » avec le rôle « Membre » (lecture seule). */
+export const SESSION_TOKEN_COLLAB_MEMBRE = "e2eSessionTokenNewbiCollabMembreUniquement";
+/** Membre de « Collab » avec le rôle « Éditeur » (crée et modifie, ne supprime pas). */
+export const SESSION_TOKEN_COLLAB_EDITEUR = "e2eSessionTokenNewbiCollabEditeurUniquement";
+/** Membre de « Collab » avec le rôle « Comptable » (kanban et signatures fermés). */
+export const SESSION_TOKEN_COLLAB_COMPTABLE = "e2eSessionTokenNewbiCollabComptableUniquement";
+/** Propriétaire d'une organisation sur l'offre d'entrée : plafonds du lot (automatisations, transferts). */
+export const SESSION_TOKEN_COLLAB_FREELANCE = "e2eSessionTokenNewbiCollabFreelanceUniquement";
+// ── fin du lot collaboration ──
+// ── Lot pilotage ──
+/** Propriétaire de l'organisation « Pilotage » (accueil, analytiques, mise en page), suivie par le cabinet. */
+export const SESSION_TOKEN_PILOTAGE = "e2eSessionTokenNewbiPilotageUniquement";
+/** Éditeur de « Pilotage » ; super admin de « Studio Invitable » (espace libre, invitable par le cabinet). */
+export const SESSION_TOKEN_PILOTAGE_EDITEUR = "e2eSessionTokenNewbiPilotageEditeurUniquement";
+/** Membre (lecture seule) de « Pilotage ». */
+export const SESSION_TOKEN_PILOTAGE_MEMBRE = "e2eSessionTokenNewbiPilotageMembreUniquement";
+/** Cabinet (compte gestionnaire) : Comptable dans « Boulangerie Cliente » et « Pilotage », ses deux clients. */
+export const SESSION_TOKEN_CABINET = "e2eSessionTokenNewbiCabinetUniquement";
+/** Client du cabinet : super admin de « Boulangerie Cliente » (suivie) et de deux espaces libres. */
+export const SESSION_TOKEN_CLIENT_CABINET = "e2eSessionTokenNewbiClientCabinetUniquement";
+// ── fin du lot pilotage ──
+
+/** État de navigateur connecté avec la session donnée (pour `test.use({ storageState })`). */
+export const connecte = (token) => ({ cookies: [sessionCookie(token)], origins: [] });
 
 /** Cookie de session Better Auth signé comme le fait better-call (HMAC SHA-256). */
 export function sessionCookie(token = SESSION_TOKEN) {

@@ -12,7 +12,22 @@
  * de l'API au pluriel.
  */
 import { ObjectId } from "mongodb";
-import { SESSION_TOKEN, SESSION_TOKEN_AVOIRS, SESSION_TOKEN_LISTE } from "../config.mjs";
+import {
+  SESSION_TOKEN,
+  SESSION_TOKEN_AVOIRS,
+  SESSION_TOKEN_CLIENTS,
+  SESSION_TOKEN_EDITEUR,
+  SESSION_TOKEN_FREELANCE,
+  SESSION_TOKEN_INTRUS,
+  SESSION_TOKEN_LECTEUR,
+  SESSION_TOKEN_LISTE,
+  SESSION_TOKEN_REGLAGES,
+  SESSION_TOKEN_VENTES,
+  SESSION_TOKEN_VENTES_LECTEUR,
+  SESSION_TOKEN_VENTES_EDITEUR,
+  SESSION_TOKEN_FREELANCE_VENTES,
+  SESSION_TOKEN_VOLUME,
+} from "../config.mjs";
 
 // Préfixe hexadécimal par type : un id de test se reconnaît d'un coup d'œil.
 const PREFIXES = {
@@ -27,10 +42,99 @@ const PREFIXES = {
   bonCommande: "e2e9",
   bonLivraison: "e2ea",
   avoir: "e2eb",
+  listeClients: "e2ec",
+  segment: "e2ed",
+  champClient: "e2ee",
+  automatisation: "e2ef",
+  // Chaque lot ajoute ses types entre ses deux repères, avec ses seuls préfixes
+  // réservés (un préfixe de 4 caractères prolongé par une lettre, jamais par un chiffre).
+  // ── Lot factures (e2e4a à e2e4f, e2eba à e2ebf) ──
+  clientFactures: "e2e4a",
+  factureLot: "e2e4b",
+  recurrence: "e2e4c",
+  modeleFacture: "e2e4d",
+  importee: "e2e4e",
+  diversFactures: "e2e4f",
+  avoirLot: "e2eba",
+  // ── fin du lot factures ──
+  // ── Lot devis-bc-bl (e2e8a à e2e8f, e2e9a à e2e9f, e2eaa à e2eaf) ──
+  clientVentes: "e2e8a",
+  devisVentes: "e2e8b",
+  signatureVentes: "e2e8c",
+  modeleDevis: "e2e8d",
+  bcVentes: "e2e9a",
+  modeleBc: "e2e9b",
+  factureVentes: "e2e9c",
+  blVentes: "e2eaa",
+  devisImporte: "e2e8e",
+  bcImporte: "e2e9d",
+  // ── fin du lot devis-bc-bl ──
+  // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
+  produit: "e2e0a",
+  factureAchat: "e2e0b",
+  transactionBancaire: "e2e0c",
+  compteBancaire: "e2e0d",
+  fournisseur: "e2e0e",
+  champProduit: "e2e0f",
+  saisiePrevision: "e2eca",
+  scenarioPrevision: "e2ecb",
+  factureVenteAchats: "e2ecc",
+  fichierAchats: "e2ecd",
+  membreAchats: "e2ece",
+  clientAchats: "e2ecf",
+  // ── fin du lot achats-banque ──
+  // ── Lot parametres-auth (e2e1a à e2e1f, e2e2a à e2e2f) ──
+  // Comptes semés par donnees/lot-parametres-auth.mjs (connexion par
+  // formulaire, double authentification, mot de passe, appareils…) : chacun
+  // a son mot de passe ou ses sessions, qu'un test change ou révoque sans
+  // toucher aux autres comptes.
+  utilisateurAuth: "e2e1a",
+  // Collection `account` de Better Auth (mot de passe haché).
+  compteAuth: "e2e1b",
+  sessionAuth: "e2e1c",
+  membreAuth: "e2e1d",
+  invitationAuth: "e2e1e",
+  deuxFacteursAuth: "e2e1f",
+  espaceAuth: "e2e2a",
+  abonnementAuth: "e2e2b",
+  roleEspaceAuth: "e2e2c",
+  verificationAuth: "e2e2d",
+  // ── fin du lot parametres-auth ──
+  // ── Lot collaboration (e2e5a à e2e5f, e2e6a à e2e6f) ──
+  tableau: "e2e5a",
+  colonne: "e2e5b",
+  tache: "e2e5c",
+  evenement: "e2e5d",
+  transfert: "e2e5e",
+  partageTableau: "e2e5f",
+  dossierPartage: "e2e6a",
+  documentPartage: "e2e6b",
+  tagDocument: "e2e6c",
+  automatisationDocument: "e2e6d",
+  signatureMail: "e2e6e",
+  // Sous-documents et données annexes (commentaires, étiquettes, codes de visiteur…).
+  annexeCollab: "e2e6f",
+  // ── fin du lot collaboration ──
+  // ── Lot pilotage (e2e7a à e2e7f, e2eda à e2edf) ──
+  pilFacture: "e2e7a",
+  pilDevis: "e2e7b",
+  pilAchat: "e2e7c",
+  pilTransaction: "e2e7d",
+  pilCompteBancaire: "e2e7e",
+  pilImportee: "e2e7f",
+  pilClient: "e2eda",
+  pilAvoir: "e2edb",
+  pilGestion: "e2edc",
+  pilMembre: "e2edd",
+  pilAbonnement: "e2ede",
+  pilDivers: "e2edf",
+  // ── fin du lot pilotage ──
 };
 
 export function oid(type, n) {
-  return new ObjectId(PREFIXES[type] + String(n).padStart(20, "0"));
+  const prefixe = PREFIXES[type];
+  if (!prefixe) throw new Error(`[e2e] type d'identifiant inconnu : ${type}`);
+  return new ObjectId(prefixe + String(n).padStart(24 - prefixe.length, "0"));
 }
 
 export const MAINTENANT = new Date();
@@ -72,6 +176,321 @@ export const COMPTES = {
     organisation: organisation(3, "Avoirs Test SASU"),
     token: SESSION_TOKEN_AVOIRS,
   },
+  // Contacts, listes, segments et champs personnalisés (voir clients.mjs).
+  clients: {
+    utilisateur: { _id: oid("utilisateur", 4), email: "clients@e2e.test", name: "Morgan Clients" },
+    organisation: organisation(4, "Clients Test SASU"),
+    token: SESSION_TOKEN_CLIENTS,
+  },
+  // Une autre entreprise : ses tests vérifient qu'elle n'atteint jamais les
+  // données des autres organisations, ni à l'écran ni par l'API.
+  intrus: {
+    utilisateur: { _id: oid("utilisateur", 5), email: "intrus@e2e.test", name: "Sacha Intrus" },
+    organisation: organisation(5, "Intrus Test SASU"),
+    token: SESSION_TOKEN_INTRUS,
+  },
+  // Offre d'entrée : ses plafonds (champs personnalisés, segments…) doivent
+  // tenir aussi face à un appel direct à l'API (voir clients/offre.spec.mjs).
+  freelance: {
+    utilisateur: { _id: oid("utilisateur", 8), email: "freelance@e2e.test", name: "Robin Freelance" },
+    organisation: organisation(6, "Freelance Test EI"),
+    token: SESSION_TOKEN_FREELANCE,
+    plan: "freelance",
+  },
+  // Configuration de l'espace (champs personnalisés, import, automatisations,
+  // paramètres) : ses changements ne touchent aucun autre test.
+  reglages: {
+    utilisateur: { _id: oid("utilisateur", 9), email: "reglages@e2e.test", name: "Charlie Réglages" },
+    organisation: organisation(7, "Réglages Test SASU"),
+    token: SESSION_TOKEN_REGLAGES,
+  },
+  // Comptes propres à un lot : entre ses deux repères, avec ses numéros réservés.
+  // ── Lot factures (organisations et utilisateurs 10 à 14) ──
+  // Factures et avoirs dans chaque état, consultés par trois rôles (voir
+  // MEMBRES) : propriétaire, « Éditeur » et « Membre » (donnees/lot-factures.mjs).
+  factures: {
+    utilisateur: { _id: oid("utilisateur", 10), email: "factures@e2e.test", name: "Fanny Factures" },
+    organisation: organisation(10, "Factures Test SASU"),
+    token: "e2eSessionTokenNewbiFacturesUniquement",
+  },
+  // Paramètres des factures, relances automatiques, numérotation continue et
+  // grand nombre de factures : ses réglages ne touchent aucun autre compte.
+  facturesReglages: {
+    utilisateur: { _id: oid("utilisateur", 13), email: "factures-reglages@e2e.test", name: "Régis Réglages" },
+    organisation: { ...organisation(11, "Réglages Factures Test SASU"), invoiceAutoNumbering: true },
+    token: "e2eSessionTokenNewbiFacturesReglagesUniquement",
+  },
+  // Offre d'entrée réservée aux factures : ses plafonds (modèles, exports)
+  // sans gêner le compte « freelance » des autres fonctionnalités.
+  facturesOffre: {
+    utilisateur: { _id: oid("utilisateur", 14), email: "factures-offre@e2e.test", name: "Odile Offre" },
+    // En franchise en base de TVA : mention « TVA non applicable, art. 293 B du CGI ».
+    organisation: { ...organisation(12, "Offre Factures Test EI"), vatFranchise: true },
+    token: "e2eSessionTokenNewbiFacturesOffreUniquement",
+    plan: "freelance",
+  },
+  // ── fin du lot factures ──
+  // ── Lot devis-bc-bl (organisations et utilisateurs 15 à 19) ──
+  // Devis, bons de commande et de livraison vus par chaque rôle (membres
+  // « Membre » et « Éditeur » ci-dessous), cibles des contrôles de droits et
+  // des parcours qui modifient. Offre Entreprise : signatures illimitées.
+  ventes: {
+    utilisateur: { _id: oid("utilisateur", 15), email: "ventes@e2e.test", name: "Valentin Ventes" },
+    organisation: organisation(15, "Ventes Test SASU"),
+    token: SESSION_TOKEN_VENTES,
+    plan: "entreprise",
+  },
+  // Offre d'entrée : quota de signatures (10 par mois), modèles de documents (10).
+  freelanceVentes: {
+    utilisateur: { _id: oid("utilisateur", 16), email: "freelance-ventes@e2e.test", name: "Fanny Freelance" },
+    organisation: organisation(16, "Freelance Ventes Test EI"),
+    token: SESSION_TOKEN_FREELANCE_VENTES,
+    plan: "freelance",
+  },
+  // Offre PME : plus de 50 devis, bons de commande et de livraison, quota de
+  // signatures du mois atteint (100), numérotation continue des devis.
+  volume: {
+    utilisateur: { _id: oid("utilisateur", 17), email: "volume@e2e.test", name: "Victor Volume" },
+    organisation: { ...organisation(17, "Volume Test SAS"), quoteAutoNumbering: true },
+    token: SESSION_TOKEN_VOLUME,
+  },
+  // ── fin du lot devis-bc-bl ──
+  // ── Lot achats-banque (organisations et utilisateurs 20 à 24) ──
+  // Jetons : mêmes chaînes que SESSION_TOKEN_*_ACHATS de config.mjs (repères du lot).
+  // « Achats » : catalogue, factures d'achat, transactions et prévision de
+  // référence, que les tests ne modifient jamais (boutons, affichage, filtres).
+  achats: {
+    utilisateur: { _id: oid("utilisateur", 20), email: "achats@e2e.test", name: "Sam Achats" },
+    organisation: organisation(20, "Achats Test SASU"),
+    token: "e2eSessionTokenNewbiAchatsUniquement",
+  },
+  // « Saisie Achats » : créations, modifications et suppressions (une donnée par action).
+  saisieAchats: {
+    utilisateur: { _id: oid("utilisateur", 23), email: "saisie-achats@e2e.test", name: "Noa Saisie" },
+    organisation: organisation(23, "Saisie Achats Test SASU"),
+    token: "e2eSessionTokenNewbiSaisieAchatsUniquement",
+  },
+  // Offre d'entrée : plafonds du catalogue, et un catalogue de plus de 100 produits.
+  freelanceAchats: {
+    utilisateur: { _id: oid("utilisateur", 24), email: "freelance-achats@e2e.test", name: "Lior Freelance" },
+    organisation: organisation(24, "Achats Freelance Test EI"),
+    token: "e2eSessionTokenNewbiFreelanceAchatsUniquement",
+    plan: "freelance",
+  },
+  // ── fin du lot achats-banque ──
+  // ── Lot parametres-auth (organisations et utilisateurs 25 à 34) ──
+  // « Paramètres » : un membre de chaque rôle, des invitations en attente et
+  // un rôle personnalisé (voir lot-parametres-auth.mjs). Les tests y lisent
+  // et y sont refusés : rien n'y change, la page reste la même pour tous.
+  parametres: {
+    utilisateur: { _id: oid("utilisateur", 25), email: "parametres@e2e.test", name: "Noa Paramètres" },
+    organisation: organisation(25, "Paramètres Test SASU"),
+    token: "e2eSessionTokenNewbiParametresUniquement",
+  },
+  // « Configuration » : les formulaires de l'entreprise (générale, banque,
+  // informations légales) et les réglages de session y enregistrent.
+  configuration: {
+    utilisateur: { _id: oid("utilisateur", 26), email: "configuration@e2e.test", name: "Sam Configuration" },
+    organisation: organisation(26, "Configuration Test SASU"),
+    token: "e2eSessionTokenNewbiConfigurationUniquement",
+  },
+  // « Équipe » : invitations, changements de rôle, retraits et rôles
+  // personnalisés créés par les tests (un membre ou une invitation par action).
+  equipe: {
+    utilisateur: { _id: oid("utilisateur", 27), email: "equipe@e2e.test", name: "Ali Équipe" },
+    organisation: organisation(27, "Équipe Test SASU"),
+    token: "e2eSessionTokenNewbiEquipeUniquement",
+  },
+  // ── fin du lot parametres-auth ──
+  // ── Lot collaboration (organisations et utilisateurs 35 à 39) ──
+  // Kanban, calendrier, transferts, documents partagés, signatures (voir lot-collaboration.mjs).
+  // Jetons : mêmes valeurs que SESSION_TOKEN_COLLAB* de config.mjs.
+  collab: {
+    utilisateur: { _id: oid("utilisateur", 35), email: "collab@e2e.test", name: "Noa Collab" },
+    organisation: organisation(35, "Collab Test SASU"),
+    token: "e2eSessionTokenNewbiCollabUniquement",
+  },
+  // Offre d'entrée : plafonds du lot (automatisations de documents, taille des transferts).
+  collabFreelance: {
+    utilisateur: { _id: oid("utilisateur", 36), email: "collab-freelance@e2e.test", name: "Ilan Freelance" },
+    organisation: organisation(36, "Collab Freelance EI"),
+    token: "e2eSessionTokenNewbiCollabFreelanceUniquement",
+    plan: "freelance",
+  },
+  // ── fin du lot collaboration ──
+  // ── Lot pilotage (organisations et utilisateurs 40 à 44) ──
+  // Accueil, analytiques et mise en page : documents, banque et achats du
+  // mois (voir lot-pilotage.mjs). Suivie par le cabinet (client « Pilotage »).
+  pilotage: {
+    utilisateur: { _id: oid("utilisateur", 40), email: "pilotage@e2e.test", name: "Noé Pilotage" },
+    organisation: organisation(40, "Pilotage Test SASU"),
+    // = SESSION_TOKEN_PILOTAGE (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageUniquement",
+  },
+  // Client du cabinet : super admin de « Boulangerie Cliente » (suivie, plus
+  // de 50 factures) et de deux espaces libres, à confier par invitation.
+  clientCabinet: {
+    utilisateur: { _id: oid("utilisateur", 44), email: "client-cabinet@e2e.test", name: "Bastien Boulanger" },
+    organisation: organisation(41, "Boulangerie Cliente SARL"),
+    // = SESSION_TOKEN_CLIENT_CABINET (config.mjs)
+    token: "e2eSessionTokenNewbiClientCabinetUniquement",
+  },
+  // ── fin du lot pilotage ──
+};
+
+/**
+ * Membres invités dans l'organisation d'un autre compte, avec un rôle
+ * limité : leurs tests vérifient qu'aucune action interdite n'est possible,
+ * ni à l'écran ni par l'API.
+ */
+export const MEMBRES = {
+  lecteur: {
+    utilisateur: { _id: oid("utilisateur", 6), email: "lecteur@e2e.test", name: "Lou Lecteur" },
+    de: "clients",
+    role: "viewer",
+    token: SESSION_TOKEN_LECTEUR,
+  },
+  editeur: {
+    utilisateur: { _id: oid("utilisateur", 7), email: "editeur@e2e.test", name: "Eden Éditeur" },
+    de: "clients",
+    role: "member",
+    token: SESSION_TOKEN_EDITEUR,
+  },
+  // Membres propres à un lot : entre ses deux repères.
+  // ── Lot factures (utilisateurs 10 à 14) ──
+  facturesEditeur: {
+    utilisateur: { _id: oid("utilisateur", 11), email: "factures-editeur@e2e.test", name: "Élise Éditrice" },
+    de: "factures",
+    role: "member",
+    token: "e2eSessionTokenNewbiFacturesEditeurUniquement",
+  },
+  facturesLecteur: {
+    utilisateur: { _id: oid("utilisateur", 12), email: "factures-lecteur@e2e.test", name: "Louis Lecteur" },
+    de: "factures",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiFacturesLecteurUniquement",
+  },
+  // ── fin du lot factures ──
+  // ── Lot devis-bc-bl (utilisateurs 15 à 19) ──
+  ventesLecteur: {
+    utilisateur: { _id: oid("utilisateur", 18), email: "ventes-lecteur@e2e.test", name: "Léa Lectrice" },
+    de: "ventes",
+    role: "viewer",
+    token: SESSION_TOKEN_VENTES_LECTEUR,
+  },
+  ventesEditeur: {
+    utilisateur: { _id: oid("utilisateur", 19), email: "ventes-editeur@e2e.test", name: "Élio Éditeur" },
+    de: "ventes",
+    role: "member",
+    token: SESSION_TOKEN_VENTES_EDITEUR,
+  },
+  // ── fin du lot devis-bc-bl ──
+  // ── Lot achats-banque (utilisateurs 20 à 24) ──
+  // L'Éditeur est aussi membre de « Saisie Achats » (lot-achats-banque.mjs) : ses
+  // écritures permises y vont, la référence « Achats » ne bouge jamais.
+  editeurAchats: {
+    utilisateur: { _id: oid("utilisateur", 21), email: "editeur-achats@e2e.test", name: "Eli Éditeur" },
+    de: "achats",
+    role: "member",
+    token: "e2eSessionTokenNewbiEditeurAchatsUniquement",
+  },
+  lecteurAchats: {
+    utilisateur: { _id: oid("utilisateur", 22), email: "lecteur-achats@e2e.test", name: "Lou Membre" },
+    de: "achats",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiLecteurAchatsUniquement",
+  },
+  // ── fin du lot achats-banque ──
+  // ── Lot parametres-auth (utilisateurs 25 à 34) ──
+  // Un membre par rôle dans « Paramètres » (Administrateur, Éditeur, Membre,
+  // Comptable, rôle personnalisé « Recrutement »), un dans « Équipe » avec un
+  // rôle personnalisé qui peut inviter et changer les rôles.
+  adminParametres: {
+    utilisateur: { _id: oid("utilisateur", 28), email: "admin-parametres@e2e.test", name: "Ada Administratrice" },
+    de: "parametres",
+    role: "admin",
+    token: "e2eSessionTokenNewbiAdminParametresUniquement",
+  },
+  editeurParametres: {
+    utilisateur: { _id: oid("utilisateur", 29), email: "editeur-parametres@e2e.test", name: "Élio Éditeur" },
+    de: "parametres",
+    role: "member",
+    token: "e2eSessionTokenNewbiEditeurParametresUniquement",
+  },
+  membreParametres: {
+    utilisateur: { _id: oid("utilisateur", 30), email: "membre-parametres@e2e.test", name: "Mia Membre" },
+    de: "parametres",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiMembreParametresUniquement",
+  },
+  comptableParametres: {
+    utilisateur: { _id: oid("utilisateur", 31), email: "comptable-parametres@e2e.test", name: "Côme Comptable" },
+    de: "parametres",
+    role: "accountant",
+    token: "e2eSessionTokenNewbiComptableParametresUniquement",
+  },
+  // Rôle personnalisé « Recrutement » (voir lot-parametres-auth.mjs) : voir
+  // et inviter des membres, rien d'autre.
+  recruteurParametres: {
+    utilisateur: { _id: oid("utilisateur", 32), email: "recruteur-parametres@e2e.test", name: "Rémi Recruteur" },
+    de: "parametres",
+    role: "role_e2e2c0000000000000000001",
+    token: "e2eSessionTokenNewbiRecruteurParametresUniquement",
+  },
+  // Rôle personnalisé « Gestion d'équipe » d'« Équipe » : inviter, changer
+  // les rôles et retirer des membres, sans le reste.
+  gestionnaireEquipe: {
+    utilisateur: { _id: oid("utilisateur", 33), email: "gestion-equipe@e2e.test", name: "Gaël Gestion" },
+    de: "equipe",
+    role: "role_e2e2c0000000000000000002",
+    token: "e2eSessionTokenNewbiGestionEquipeUniquement",
+  },
+  // ── fin du lot parametres-auth ──
+  // ── Lot collaboration (utilisateurs 35 à 39) ──
+  collabMembre: {
+    utilisateur: { _id: oid("utilisateur", 37), email: "collab-membre@e2e.test", name: "Lina Membre" },
+    de: "collab",
+    role: "viewer",
+    token: "e2eSessionTokenNewbiCollabMembreUniquement",
+  },
+  collabEditeur: {
+    utilisateur: { _id: oid("utilisateur", 38), email: "collab-editeur@e2e.test", name: "Enzo Éditeur" },
+    de: "collab",
+    role: "member",
+    token: "e2eSessionTokenNewbiCollabEditeurUniquement",
+  },
+  collabComptable: {
+    utilisateur: { _id: oid("utilisateur", 39), email: "collab-comptable@e2e.test", name: "Jade Comptable" },
+    de: "collab",
+    role: "accountant",
+    token: "e2eSessionTokenNewbiCollabComptableUniquement",
+  },
+  // ── fin du lot collaboration ──
+  // ── Lot pilotage (utilisateurs 40 à 44) ──
+  pilotageEditeur: {
+    utilisateur: { _id: oid("utilisateur", 41), email: "pilotage-editeur@e2e.test", name: "Léa Éditrice" },
+    de: "pilotage",
+    role: "member",
+    // = SESSION_TOKEN_PILOTAGE_EDITEUR (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageEditeurUniquement",
+  },
+  pilotageMembre: {
+    utilisateur: { _id: oid("utilisateur", 42), email: "pilotage-membre@e2e.test", name: "Sam Lecteur" },
+    de: "pilotage",
+    role: "viewer",
+    // = SESSION_TOKEN_PILOTAGE_MEMBRE (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageMembreUniquement",
+  },
+  // Compte gestionnaire (cabinet) : Comptable chez ses clients, session
+  // ouverte dans « Boulangerie Cliente » (comptes gestionnaires : lot-pilotage.mjs).
+  cabinet: {
+    utilisateur: { _id: oid("utilisateur", 43), email: "cabinet@e2e.test", name: "Claire Comptable" },
+    de: "clientCabinet",
+    role: "accountant",
+    // = SESSION_TOKEN_CABINET (config.mjs)
+    token: "e2eSessionTokenNewbiCabinetUniquement",
+  },
+  // ── fin du lot pilotage ──
 };
 
 // Compatibilité : le compte « Atelier » est le compte par défaut des tests.
@@ -144,22 +563,36 @@ export const CLIENTS = {
   },
 };
 
+const utilisateurPret = (utilisateur) => ({
+  ...utilisateur,
+  emailVerified: true,
+  role: "member",
+  isActive: true,
+  isDisabled: false,
+  hasSeenOnboarding: true,
+  onboardingStep: "completed",
+  hasCompletedTutorial: true,
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+});
+
+const session = (n, token, utilisateur, organisation) => ({
+  _id: oid("session", n),
+  token,
+  userId: utilisateur._id,
+  activeOrganizationId: organisation._id.toHexString(),
+  expiresAt: DANS(30),
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+  ipAddress: "127.0.0.1",
+  userAgent: "playwright-e2e",
+});
+
 export function socle() {
   const docs = { user: [], organization: [], member: [], subscription: [], session: [], clients: [] };
-  Object.values(COMPTES).forEach(({ utilisateur, organisation: org, token }, i) => {
+  Object.values(COMPTES).forEach(({ utilisateur, organisation: org, token, plan = "pme" }, i) => {
     const n = i + 1;
-    docs.user.push({
-      ...utilisateur,
-      emailVerified: true,
-      role: "member",
-      isActive: true,
-      isDisabled: false,
-      hasSeenOnboarding: true,
-      onboardingStep: "completed",
-      hasCompletedTutorial: true,
-      createdAt: MAINTENANT,
-      updatedAt: MAINTENANT,
-    });
+    docs.user.push(utilisateurPret(utilisateur));
     docs.organization.push({
       ...org,
       logo: null,
@@ -174,24 +607,22 @@ export function socle() {
     docs.subscription.push({
       _id: oid("abonnement", n),
       referenceId: org._id.toHexString(),
-      plan: "pme",
+      plan,
       status: "active",
       periodStart: DANS(-1),
       periodEnd: DANS(30),
       createdAt: MAINTENANT,
       updatedAt: MAINTENANT,
     });
-    docs.session.push({
-      _id: oid("session", n),
-      token,
-      userId: utilisateur._id,
-      activeOrganizationId: org._id.toHexString(),
-      expiresAt: DANS(30),
-      createdAt: MAINTENANT,
-      updatedAt: MAINTENANT,
-      ipAddress: "127.0.0.1",
-      userAgent: "playwright-e2e",
-    });
+    docs.session.push(session(n, token, utilisateur, org));
+  });
+  // Membres invités : pas d'organisation à eux, une session dans celle qui les invite.
+  Object.values(MEMBRES).forEach(({ utilisateur, de, role, token }, i) => {
+    const n = 100 + i;
+    const org = COMPTES[de].organisation;
+    docs.user.push(utilisateurPret(utilisateur));
+    docs.member.push({ _id: oid("membre", n), userId: utilisateur._id, organizationId: org._id, role, createdAt: MAINTENANT });
+    docs.session.push(session(n, token, utilisateur, org));
   });
   for (const { organisation: cleOrg, ...c } of Object.values(CLIENTS)) {
     const compte = COMPTES[cleOrg];

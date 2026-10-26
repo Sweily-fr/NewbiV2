@@ -6,7 +6,9 @@ mémoire (replica set), API lancée sans crons, services externes coupés
 dans le navigateur. Rien ne touche la prod.
 
 Ils se lancent depuis l'admin (**admin.newbi.fr/tests/newbi**, workflow
-`.github/workflows/tests-e2e.yml`) ou en local.
+`.github/workflows/tests-e2e.yml`), en local, et d'office sur chaque PR vers
+`main` (release ou hotfix) avec l'API de `main` : dernier filet avant la prod.
+Ces lancements apparaissent aussi dans l'admin (« Par : PR #n »).
 
 ## Ce qui est testé
 
@@ -24,6 +26,59 @@ Un dossier par fonctionnalité ; l'admin range le rapport de la même façon
 `socle.spec.mjs` vérifie que le compte de test est connecté. Chaque page est
 contrôlée d'office (`outils.mjs`) : erreur JavaScript ou console, réponse 500,
 « undefined » / « NaN » affichés, appel vers l'extérieur.
+
+## Tester une fonctionnalité de bout en bout
+
+Chaque fonctionnalité a son dossier (ex. `clients/`) et quatre familles de tests,
+sur le modèle de `clients/` :
+
+1. **Tous les boutons** (`boutons.spec.mjs`, `verifierBoutons` de `exploration.mjs`) :
+   chaque page est décrite élément par élément (`"button Nouveau contact": { fenetre:
+"Ajouter un client" }`, `"button Exporter > CSV": { telechargement: /\.csv$/ }`…), un
+   test par élément, et un test « Chaque élément de la page est décrit et testé » qui
+   échoue si un bouton apparaît sans description (ou disparaît). Une page par rôle :
+   propriétaire, Éditeur, Membre (lecture seule). Les éléments sans nom sont repérés
+   par leur icône (`icône settings2`). Une action qui modifie les données dès le clic
+   renvoie à son parcours (`{ parcours: "…" }`).
+2. **Tous les champs** (`verifierFormulaire` de `champs.mjs`) : un formulaire décrit
+   une fois (ouvrir, remplir, valider, retrouver en base) et, par champ, les valeurs
+   refusées et les valeurs réelles acceptées (accents, « n° », noms étrangers…).
+   Un test par cas : refus avec message (ou bouton grisé) et rien en base, ou
+   enregistrement exact.
+3. **Les parcours** : chaque action vérifiée en base (créer, modifier, supprimer,
+   statuts, actions groupées, export dont le contenu du fichier, import de vrais
+   fichiers…), avec une donnée de départ par action (`donnees/<fonctionnalité>.mjs`).
+4. **La sécurité** (`securite.spec.mjs`, `appelApi` et `verifierRefus` de
+   `securite.mjs`) : chaque opération GraphQL de la fonctionnalité appelée
+   directement avec la session du navigateur : Membre (tout refusé), Éditeur (ce que
+   son rôle permet), intrus d'une autre organisation (refus, et « introuvable » en
+   visant les données des autres), visiteur sans session ; la base ne doit pas bouger
+   quand c'est refusé. Plus un texte piégé (`<img onerror>`) écrit par un membre et
+   ouvert par un autre, et les plafonds de l'offre d'entrée (`offre.spec.mjs`) tenus
+   aussi par l'API.
+
+Un défaut trouvé garde **un test dédié, rouge** jusqu'à sa correction ; les tests
+voisins ne doivent pas en dépendre (ex. ordre comparé sans les majuscules, la
+réécriture des noms ayant son propre test).
+
+**Relevé des pages** (`inventaire.spec.mjs`, entrée « inventaire » du workflow) :
+pour une page, chaque élément est essayé et ce qu'il fait est écrit en JSON (fenêtres
+ouvertes et leurs champs, menus, navigations, téléchargements, erreurs). C'est le
+point de départ pour décrire une page. Relevé ciblé : entrée « filtre » (ex.
+`Relevé des contacts`).
+
+**Comptes de test** (`donnees/base.mjs`) : une organisation par usage (« Atelier »
+créations, « Liste », « Avoirs », « Clients », « Réglages » configuration,
+« Freelance » offre d'entrée, « Intrus » autre entreprise) et des membres invités
+« Membre » et « Éditeur » de « Clients ». `connecte(TOKEN)` pour `test.use`.
+
+**Surveillance** (`outils.mjs`) : toute erreur JavaScript, erreur de console,
+réponse 500 ou boîte de dialogue fait échouer le test ; `erreursConsoleAutorisees`
+et `dialoguesAttendus` (un motif) pour les cas voulus, toujours expliqués.
+
+**Lancer une partie sur GitHub** : workflow « Tests E2E », entrées `fichiers`
+(ex. `clients`), `filtre`, `machines`, `inventaire`. Les tests sont répartis sur
+plusieurs machines et rassemblés en un rapport (vidéo de chaque test).
 
 ## Ajouter un cas
 

@@ -52,6 +52,11 @@ const VIDE = "";
 // Adresse où rien n'écoute : un service mal coupé échoue tout de suite au lieu
 // de joindre Internet.
 const NULLE_PART = "http://127.0.0.1:9";
+// Adresse publique des fichiers (images d'icônes, logos…) : en https comme
+// en prod, sinon la politique de sécurité du site bloque l'image et le
+// signale dans la console ; domaine réservé qui n'existe pas, et le
+// navigateur des tests coupe de toute façon tout appel vers l'extérieur.
+const PUBLIC_NULLE_PART = "https://fichiers.e2e.invalid";
 
 const communs = {
   ...process.env,
@@ -71,7 +76,7 @@ const communs = {
   R2_API_URL: NULLE_PART,
   R2_ACCESS_KEY_ID: "e2e",
   R2_SECRET_ACCESS_KEY: "e2e",
-  R2_PUBLIC_URL: NULLE_PART,
+  R2_PUBLIC_URL: PUBLIC_NULLE_PART,
   AWS_S3_API_URL: NULLE_PART,
   AWS_ACCESS_KEY_ID: "e2e",
   AWS_SECRET_ACCESS_KEY: "e2e",
@@ -85,7 +90,7 @@ const communs = {
     [
       "USER_IMAGE", "PROFILE_IMAGE", "COMPANY_IMAGE", "IMPORTED_INVOICES", "RECEIPTS", "SHARED_DOCUMENTS",
       "ICONS", "KANBAN", "OCR", "SIGNATURE", "TRANSFER",
-    ].flatMap((nom) => [[`${nom}_BUCKET`, `e2e-${nom.toLowerCase()}`], [`${nom}_URL`, NULLE_PART]]),
+    ].flatMap((nom) => [[`${nom}_BUCKET`, `e2e-${nom.toLowerCase()}`], [`${nom}_URL`, PUBLIC_NULLE_PART]]),
   ),
   ...Object.fromEntries(
     ["INVOICES", "QUOTES", "CREDIT_NOTES", "PURCHASE_ORDERS", "DELIVERY_NOTES", "DOCUMENT_ANNEXES"].map((nom) => [

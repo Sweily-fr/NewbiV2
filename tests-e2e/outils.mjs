@@ -5,6 +5,7 @@
  */
 import { test as base, expect } from "@playwright/test";
 import { suivreRequetes } from "./navigation.mjs";
+import { brancherAnnuaire } from "./donnees/annuaire.mjs";
 
 // Seuls le site et l'API de test sont joignables : Google Ads (balise en dur),
 // analytics, recherche d'entreprises de l'État… reçoivent une réponse vide.
@@ -25,14 +26,22 @@ const ERREURS_ATTENDUES = [/404 \S*\/api\/document-preview\//];
 
 export const test = base.extend({
   erreursConsoleAutorisees: [[], { option: true }],
+  // Fenêtres natives voulues par le site (ex. « URL du lien : ») : le test y répond lui-même.
+  dialoguesAttendus: [[], { option: true }],
   surveillance: [
-    async ({ page, erreursConsoleAutorisees }, use, testInfo) => {
+    async ({ page, erreursConsoleAutorisees: autorisees, dialoguesAttendus: attendus }, use, testInfo) => {
+      // Un motif seul ou une liste (test.use lit un tableau comme « valeur, options » : préférer un motif).
+      const erreursConsoleAutorisees = [].concat(autorisees || []);
+      const dialoguesAttendus = [].concat(attendus || []);
       const problemes = [];
       suivreRequetes(page);
       await page.route(
         (url) => !LOCAL.has(url.hostname) && url.protocol.startsWith("http"),
         (route) => route.fulfill({ status: 204, body: "" }),
       );
+      // Recherche d'entreprise : annuaire simulé (le site interroge sinon
+      // l'annuaire officiel sur Internet, depuis son serveur).
+      await brancherAnnuaire(page);
       // Adresses des réponses en erreur : la console dit seulement « Failed to
       // load resource », sans dire laquelle.
       const introuvables = [];
@@ -51,6 +60,13 @@ export const test = base.extend({
         if (res.status() >= 500) problemes.push(`Erreur serveur ${res.status()} : ${res.url()}`);
       });
       page.on("dialog", (dialog) => {
+        // « Quitter sans enregistrer ? » quand un test quitte un éditeur
+        // modifié : comportement voulu, on quitte.
+        if (dialog.type() === "beforeunload") {
+          dialog.accept().catch(() => {});
+          return;
+        }
+        if (dialoguesAttendus.some((re) => re.test(dialog.message()))) return;
         problemes.push(`Boîte de dialogue inattendue : ${dialog.message()}`);
         dialog.dismiss().catch(() => {});
       });
@@ -67,6 +83,18 @@ export const test = base.extend({
 });
 
 export { expect };
+
+/**
+ * Notifications (sonner) du site : faites sur mesure, sans attribut de type ;
+ * une erreur porte l'icône d'alerte rouge, un succès l'icône verte.
+ */
+export const SELECTEUR_NOTIFICATION_ERREUR = "[data-sonner-toast]:has(svg.text-red-500), [data-sonner-toast][data-type=error]";
+/** Notifications de succès (icône verte des notifications sur mesure du site). */
+export const SELECTEUR_NOTIFICATION_SUCCES = "[data-sonner-toast]:has(svg.text-green-600), [data-sonner-toast][data-type=success]";
+export const notificationsErreur = (page) => page.locator(SELECTEUR_NOTIFICATION_ERREUR);
+
+/** Fenêtre (dialogue ou alerte) par son titre : le site emploie les deux pour une même action. */
+export const fenetre = (page, titre) => page.getByRole("alertdialog", { name: titre }).or(page.getByRole("dialog", { name: titre }));
 
 /**
  * Captures pour la page « Tests » de l'admin (E2E_CAPTURES=1, en CI) : en

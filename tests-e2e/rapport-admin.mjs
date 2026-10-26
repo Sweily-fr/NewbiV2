@@ -3,7 +3,7 @@
  * Écrit dans `rapport-admin/` :
  *   - resultats.json : le lancement, chaque test, ses étapes et ses erreurs ;
  *   - captures/*.jpg : les captures prises par `etape()` et la fixture ;
- *   - videos/*.webm : la vidéo des tests en échec (video: "retain-on-failure").
+ *   - videos/*.webm : la vidéo de chaque test (video: "on" quand ce rapport est demandé).
  * La CI le publie tel quel comme artefact GitHub, que l'admin lit ensuite.
  * Format lu par src/lib/tests-e2e.js : le faire évoluer des deux côtés.
  */
@@ -33,7 +33,9 @@ function erreursDe(step) {
 export default class RapportAdmin {
   constructor({ dossier = "rapport-admin" } = {}) {
     this.dossier = path.resolve(dossier);
-    this.tests = [];
+    // Une entrée par test, par son id : une nouvelle tentative (retries) remplace la précédente,
+    // donc on garde le résultat final (un test instable redevenu vert n'apparaît pas rouge).
+    this.parId = new Map();
     this.numeroCapture = 0;
   }
 
@@ -80,7 +82,7 @@ export default class RapportAdmin {
         };
       });
 
-    this.tests.push({
+    this.parId.set(test.id, {
       id: test.id,
       fichier: path.relative(this.racine, test.location.file),
       ligne: test.location.line,
@@ -98,7 +100,8 @@ export default class RapportAdmin {
   }
 
   onEnd(result) {
-    const compter = (...statuts) => this.tests.filter((t) => statuts.includes(t.statut)).length;
+    const tests = [...this.parId.values()];
+    const compter = (...statuts) => tests.filter((t) => statuts.includes(t.statut)).length;
     const rapport = {
       version: VERSION_RAPPORT,
       debut: this.debut.toISOString(),
@@ -107,12 +110,12 @@ export default class RapportAdmin {
       commit: process.env.GITHUB_SHA || null,
       declenchePar: process.env.E2E_DECLENCHE_PAR || null,
       totaux: {
-        tests: this.tests.length,
+        tests: tests.length,
         reussis: compter("passed"),
         echecs: compter("failed", "timedOut", "interrupted"),
         sautes: compter("skipped"),
       },
-      tests: this.tests,
+      tests,
     };
     writeFileSync(path.join(this.dossier, "resultats.json"), JSON.stringify(rapport));
   }

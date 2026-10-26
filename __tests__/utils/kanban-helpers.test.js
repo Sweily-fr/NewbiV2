@@ -105,6 +105,16 @@ describe("stripHtml", () => {
   it("handles nested HTML", () => {
     expect(stripHtml("<div><span><em>nested</em></span></div>")).toBe("nested");
   });
+
+  it("lit le texte sans créer d'élément dans la page (image piégée inerte)", () => {
+    const createElement = vi.spyOn(document, "createElement");
+    expect(
+      stripHtml('<img src="x" onerror="window.__piege = 1">Détail <b>gras</b>'),
+    ).toBe("Détail gras");
+    expect(createElement).not.toHaveBeenCalled();
+    expect(window.__piege).toBeUndefined();
+    createElement.mockRestore();
+  });
 });
 
 describe("getTasksByColumn", () => {

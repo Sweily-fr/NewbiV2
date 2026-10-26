@@ -24,6 +24,7 @@ import { toast } from "@/src/components/ui/sonner";
 import TableUser from "./table";
 import ClientsModal from "./clients-modal";
 import { useGoToCreation } from "@/src/components/company-info-gate";
+import { toQuotedCsvCell } from "@/src/utils/spreadsheet-cell";
 
 // Composant pour afficher les listes communes
 function CommonListsDisplay({
@@ -208,7 +209,8 @@ export default function ClientsTable({
       c.siret || "",
     ]);
     const csv = [headers, ...rows]
-      .map((r) => r.map((v) => `"${v}"`).join(","))
+      // Texte neutralisé (formules du tableur), guillemets échappés
+      .map((r) => r.map(toQuotedCsvCell).join(","))
       .join("\n");
     const blob = new Blob(["\uFEFF" + csv], {
       type: "text/csv;charset=utf-8;",
