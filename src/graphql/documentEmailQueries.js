@@ -1,4 +1,4 @@
-import { gql, useMutation, useSubscription } from "@apollo/client";
+import { gql, useMutation, useQuery, useSubscription } from "@apollo/client";
 
 // Mutation pour envoyer une facture par email
 export const SEND_INVOICE_EMAIL = gql`
@@ -124,5 +124,86 @@ export function useEmailTrackingSubscription({ workspaceId, onUpdate }) {
         onUpdate?.(data.data.emailTrackingUpdated);
       }
     },
+  });
+}
+
+const DOCUMENT_EMAIL_LOG_FRAGMENT = gql`
+  fragment DocumentEmailLogFields on DocumentEmailLog {
+    id
+    workspaceId
+    documentType
+    documentId
+    documentNumber
+    originalInvoiceId
+    sentAt
+    senderEmail
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+    attachments {
+      filename
+      size
+      isDocument
+    }
+    deliveryStatus
+    deliveredAt
+    deliveryFailedAt
+    deliveryFailureReason
+    openedAt
+  }
+`;
+
+// Envoi tel que le client l'a reçu (lien du reçu à l'émetteur). Lu dans
+// l'espace de l'envoi, même si un autre espace est actif.
+export const GET_DOCUMENT_EMAIL_LOG = gql`
+  query DocumentEmailLog($id: ID!) {
+    documentEmailLog(id: $id) {
+      ...DocumentEmailLogFields
+      workspaceName
+      html
+    }
+  }
+  ${DOCUMENT_EMAIL_LOG_FRAGMENT}
+`;
+
+// Envois d'un document, du plus récent au plus ancien
+export const GET_DOCUMENT_EMAIL_LOGS = gql`
+  query DocumentEmailLogs(
+    $workspaceId: ID!
+    $documentType: String!
+    $documentId: ID!
+  ) {
+    documentEmailLogs(
+      workspaceId: $workspaceId
+      documentType: $documentType
+      documentId: $documentId
+    ) {
+      ...DocumentEmailLogFields
+    }
+  }
+  ${DOCUMENT_EMAIL_LOG_FRAGMENT}
+`;
+
+export function useDocumentEmailLog(id) {
+  return useQuery(GET_DOCUMENT_EMAIL_LOG, {
+    variables: { id },
+    skip: !id,
+    fetchPolicy: "cache-and-network",
+  });
+}
+
+export function useDocumentEmailLogs({
+  workspaceId,
+  documentType,
+  documentId,
+  skip = false,
+}) {
+  return useQuery(GET_DOCUMENT_EMAIL_LOGS, {
+    variables: { workspaceId, documentType, documentId },
+    skip: skip || !workspaceId || !documentId,
+    fetchPolicy: "cache-and-network",
   });
 }
