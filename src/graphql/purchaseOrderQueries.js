@@ -171,6 +171,11 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
   }
 `;
@@ -317,6 +322,11 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
   }
 `;

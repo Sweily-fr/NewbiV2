@@ -182,6 +182,11 @@ export const INVOICE_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
     recurrenceOrigin {
       recurrenceId
@@ -306,6 +311,11 @@ export const INVOICE_LIST_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
     recurrenceOrigin {
       recurrenceId
