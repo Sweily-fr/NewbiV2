@@ -57,11 +57,13 @@ export function getTaskDayRange(dates) {
 }
 
 /**
- * Semaines affichées : le mois civil complété jusqu'aux lundis/dimanches qui
- * l'encadrent (mode mois), ou la semaine de la date de référence.
+ * Semaines affichées : les semaines (lundi → dimanche) du mois civil (mode
+ * mois), ou la semaine de la date de référence. `visible` borne les jours
+ * réellement affichés : en mode mois, ceux du mois seulement (les cases des
+ * mois voisins restent vides).
  * @param {Date} anchorDate
  * @param {"month"|"week"} mode
- * @returns {Array<{ start: Date, end: Date, days: Date[] }>}
+ * @returns {Array<{ start: Date, end: Date, days: Date[], visible: { start: Date, end: Date } }>}
  */
 export function buildCalendarWeeks(anchorDate, mode = "month") {
   const rangeStart =
@@ -74,13 +76,24 @@ export function buildCalendarWeeks(anchorDate, mode = "month") {
       : endOfWeek(endOfMonth(anchorDate), WEEK_OPTIONS);
 
   const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
+  const monthStart = startOfMonth(anchorDate);
+  const monthEnd = startOfDay(endOfMonth(anchorDate));
   const weeks = [];
   for (let i = 0; i < days.length; i += 7) {
     const weekDays = days.slice(i, i + 7);
+    const start = weekDays[0];
+    const end = weekDays[weekDays.length - 1];
     weeks.push({
-      start: weekDays[0],
-      end: weekDays[weekDays.length - 1],
+      start,
+      end,
       days: weekDays,
+      visible:
+        mode === "week"
+          ? { start, end }
+          : {
+              start: start < monthStart ? monthStart : start,
+              end: end > monthEnd ? monthEnd : end,
+            },
     });
   }
   return weeks;
@@ -103,22 +116,27 @@ export function compareCalendarItems(a, b) {
 /**
  * Découpe les tâches d'une semaine en segments et leur attribue une ligne
  * (« lane ») : chaque segment prend la première ligne libre sur toute sa
- * largeur, comme les agendas.
- * @param {{ start: Date, end: Date }} week
+ * largeur, comme les agendas. Les segments sont coupés aux jours visibles
+ * (`week.visible`, toute la semaine par défaut).
+ * @param {{ start: Date, end: Date, visible?: { start: Date, end: Date } }} week
  * @param {Array<{ id: string, start: Date, end: Date }>} items - triés par compareCalendarItems
  * @returns {{ segments: Array<{ item, startCol: number, endCol: number, lane: number, continuesBefore: boolean, continuesAfter: boolean }>, laneCount: number }}
  */
 export function layoutWeek(week, items) {
+  const visible = week.visible || week;
   const laneEnds = []; // dernière colonne occupée par ligne
   const segments = [];
 
   items.forEach((item) => {
-    if (item.end < week.start || item.start > week.end) return;
-    const startCol = Math.max(
-      0,
-      differenceInCalendarDays(item.start, week.start),
+    if (item.end < visible.start || item.start > visible.end) return;
+    const startCol = differenceInCalendarDays(
+      item.start < visible.start ? visible.start : item.start,
+      week.start,
     );
-    const endCol = Math.min(6, differenceInCalendarDays(item.end, week.start));
+    const endCol = differenceInCalendarDays(
+      item.end > visible.end ? visible.end : item.end,
+      week.start,
+    );
 
     let lane = laneEnds.findIndex((lastCol) => lastCol < startCol);
     if (lane === -1) {
@@ -133,8 +151,8 @@ export function layoutWeek(week, items) {
       startCol,
       endCol,
       lane,
-      continuesBefore: item.start < week.start,
-      continuesAfter: item.end > week.end,
+      continuesBefore: item.start < visible.start,
+      continuesAfter: item.end > visible.end,
     });
   });
 
@@ -218,16 +236,15 @@ export function resizeTaskDates(dates, edge, targetDay) {
 }
 
 /**
- * Étire une tâche de `deltaDays` jours par un de ses bords. Sert aussi aux
- * bords coupés en fin ou début de semaine : la poignée saisie au bord de la
- * ligne déplace la vraie borne de la tâche du même nombre de jours.
- * @returns {{ startDate: string|null, dueDate: string|null } | null} null si rien ne change
+ * Étirement par une poignée saisie le jour `anchorDay` et lâchée le jour
+ * `targetDay` : la borne (début ou échéance) se pose sur le jour visé, y
+ * compris depuis un bord coupé en fin de semaine ou de mois.
+ * @returns {{ startDate: string|null, dueDate: string|null } | null} null si la poignée n'a pas changé de jour
  */
-export function resizeTaskDatesBy(dates, edge, deltaDays) {
-  const range = getTaskDayRange(dates);
-  if (!range || deltaDays === 0) return null;
-  const edgeDay = edge === "start" ? range.start : range.end;
-  return resizeTaskDates(dates, edge, addDays(edgeDay, deltaDays));
+export function resizeTaskDatesFromHandle(dates, edge, anchorDay, targetDay) {
+  if (!getTaskDayRange(dates)) return null;
+  if (differenceInCalendarDays(targetDay, anchorDay) === 0) return null;
+  return resizeTaskDates(dates, edge, targetDay);
 }
 
 /**
