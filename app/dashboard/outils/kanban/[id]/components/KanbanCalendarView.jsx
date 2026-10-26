@@ -58,7 +58,7 @@ import {
   getTaskDayRange,
   layoutWeek,
   parseDayKey,
-  resizeTaskDates,
+  resizeTaskDatesBy,
   sameTaskDates,
   shiftTaskDates,
 } from "@/src/utils/kanban-calendar";
@@ -74,10 +74,22 @@ const WEEK_LANE_H = 50;
 const MIN_MONTH_ROW_H = 112;
 // Déplacement (px) au-delà duquel un appui devient un glisser-déposer
 const DRAG_THRESHOLD = 5;
+// Pendant un glisser-déposer : bande (px) au bord de la grille en mode
+// semaine, attente avant de changer de période, puis cadence de défilement
+const NAV_EDGE_ZONE = 24;
+const NAV_DELAY = 500;
+const NAV_REPEAT = 700;
 
-// Cible sous le pointeur : un jour de la grille, ou le volet « Sans date »
+// Cible sous le pointeur : flèche de navigation, jour de la grille, ou volet
+// « Sans date »
 function getPointTarget(x, y) {
   for (const el of document.elementsFromPoint(x, y)) {
+    if (el.dataset?.calendarNav) {
+      return {
+        key: `nav-${el.dataset.calendarNav}`,
+        nav: el.dataset.calendarNav,
+      };
+    }
     if (el.dataset?.calendarUnscheduled !== undefined) {
       return { key: "unscheduled", unscheduled: true };
     }
@@ -96,11 +108,13 @@ function getPreviewDates(drag, target) {
   }
   const day = parseDayKey(target.dayKey);
   if (drag.kind === "schedule") return dayTaskDates(day);
-  if (drag.kind === "start" || drag.kind === "end") {
-    return resizeTaskDates(drag.dates, drag.kind, day);
-  }
   if (!drag.anchorKey) return null;
+  // Écart entre le jour saisi et le jour visé : vaut aussi pour une poignée
+  // prise au bord coupé d'une semaine, qui déplace la vraie borne
   const delta = differenceInCalendarDays(day, parseDayKey(drag.anchorKey));
+  if (drag.kind === "start" || drag.kind === "end") {
+    return resizeTaskDatesBy(drag.dates, drag.kind, delta);
+  }
   return delta === 0 ? null : shiftTaskDates(drag.dates, delta);
 }
 
@@ -363,6 +377,10 @@ export function KanbanCalendarView({
     );
   };
   const goToToday = () => setAnchorDate(new Date());
+  // Flèches mises en avant pendant un glisser-déposer : les survoler change
+  // de période
+  const navHintClass =
+    "bg-[#5b50ff]/10 text-[#5b50ff] ring-1 ring-[#5b50ff]/40 hover:bg-[#5b50ff]/15";
 
   const periodLabel = isWeekMode
     ? `${format(weeks[0].start, "d MMM", { locale: fr })} - ${format(
@@ -428,41 +446,121 @@ export function KanbanCalendarView({
 
   // --- Glisser-déposer (pointeur) ---
 
+  // Changement de période pendant un glisser-déposer : survol d'une flèche,
+  // ou pointeur poussé contre le bord gauche / droit de la grille en mode
+  // semaine (pour étirer ou déplacer une tâche au-delà de la période)
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
+  const navRef = useRef({ dir: null, timer: null });
+  const lastPointerRef = useRef(null);
+
+  const setNavDirection = useCallback((dir) => {
+    const nav = navRef.current;
+    if (nav.dir === dir) return;
+    clearTimeout(nav.timer);
+    nav.dir = dir;
+    nav.timer = null;
+    if (!dir) return;
+    const step = () => {
+      const sign = dir === "next" ? 1 : -1;
+      setAnchorDate((prev) =>
+        viewModeRef.current === "week"
+          ? addDays(prev, 7 * sign)
+          : addMonths(prev, sign),
+      );
+      nav.timer = setTimeout(step, NAV_REPEAT);
+    };
+    nav.timer = setTimeout(step, NAV_DELAY);
+  }, []);
+
+  const getNavDirection = useCallback((x, y, target) => {
+    if (target?.nav) return target.nav;
+    if (viewModeRef.current !== "week" || target?.unscheduled) return null;
+    const rect = bodyRef.current?.getBoundingClientRect();
+    if (!rect || y < rect.top || y > rect.bottom) return null;
+    if (x <= rect.left + NAV_EDGE_ZONE) return "prev";
+    if (x >= rect.right - NAV_EDGE_ZONE) return "next";
+    return null;
+  }, []);
+
+  // Pointeur sorti de la grille (au-delà du dimanche, au-dessus des jours…) :
+  // jour le plus proche, pour que l'aperçu reste collé au bord au lieu de
+  // revenir à sa place d'origine
+  const getClampedTarget = useCallback((x, y) => {
+    const rect = bodyRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return null;
+    const target = getPointTarget(
+      Math.min(Math.max(x, rect.left + 2), rect.right - 2),
+      Math.min(Math.max(y, rect.top + 2), rect.bottom - 2),
+    );
+    return target?.dayKey ? target : null;
+  }, []);
+
   const endDrag = useCallback(() => {
     dragRef.current = null;
+    lastPointerRef.current = null;
+    setNavDirection(null);
     setDrag(null);
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
-  }, []);
+  }, [setNavDirection]);
 
-  const handlePointerMove = useCallback((e) => {
-    const current = dragRef.current;
-    if (!current) return;
-    if (!current.active) {
-      const distance = Math.hypot(
-        e.clientX - current.startX,
-        e.clientY - current.startY,
-      );
-      if (distance < DRAG_THRESHOLD) return;
-      current.active = true;
-      document.body.style.cursor =
-        current.kind === "move" || current.kind === "schedule"
-          ? "grabbing"
-          : "ew-resize";
-      document.body.style.userSelect = "none";
-    }
-    const target = getPointTarget(e.clientX, e.clientY);
-    const targetKey = target?.key ?? null;
-    if (current.targetKey === targetKey && current.started) return;
-    current.started = true;
-    current.targetKey = targetKey;
-    setDrag({
-      taskId: current.task.id,
-      kind: current.kind,
-      dates: getPreviewDates(current, target),
-      overUnscheduled: !!target?.unscheduled,
-    });
-  }, []);
+  // Recalcule l'aperçu pour la position du pointeur (aussi après un
+  // changement de période, le pointeur n'ayant pas bougé)
+  const updateDragTarget = useCallback(
+    (x, y) => {
+      const current = dragRef.current;
+      if (!current?.active) return;
+      lastPointerRef.current = { x, y };
+      const target = getPointTarget(x, y) || getClampedTarget(x, y);
+      setNavDirection(getNavDirection(x, y, target));
+      // Au-dessus d'une flèche : l'aperçu reste où il était
+      if (target?.nav) return;
+      const targetKey = target?.key ?? null;
+      if (current.targetKey === targetKey && current.started) return;
+      current.started = true;
+      current.targetKey = targetKey;
+      current.previewDates = getPreviewDates(current, target);
+      setDrag({
+        taskId: current.task.id,
+        kind: current.kind,
+        dates: current.previewDates,
+        overUnscheduled: !!target?.unscheduled,
+      });
+    },
+    [getClampedTarget, getNavDirection, setNavDirection],
+  );
+
+  useEffect(() => {
+    const pointer = lastPointerRef.current;
+    if (!pointer || !dragRef.current?.active) return;
+    const frame = requestAnimationFrame(() =>
+      updateDragTarget(pointer.x, pointer.y),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [anchorDate, updateDragTarget]);
+
+  const handlePointerMove = useCallback(
+    (e) => {
+      const current = dragRef.current;
+      if (!current) return;
+      if (!current.active) {
+        const distance = Math.hypot(
+          e.clientX - current.startX,
+          e.clientY - current.startY,
+        );
+        if (distance < DRAG_THRESHOLD) return;
+        current.active = true;
+        document.body.style.cursor =
+          current.kind === "move" || current.kind === "schedule"
+            ? "grabbing"
+            : "ew-resize";
+        document.body.style.userSelect = "none";
+      }
+      updateDragTarget(e.clientX, e.clientY);
+    },
+    [updateDragTarget],
+  );
 
   const stopListening = useRef(() => {});
 
@@ -477,17 +575,15 @@ export function KanbanCalendarView({
         setTimeout(() => {
           justDraggedRef.current = false;
         }, 100);
-        const finalDates = getPreviewDates(
-          current,
-          getPointTarget(e.clientX, e.clientY),
-        );
+        updateDragTarget(e.clientX, e.clientY);
+        const finalDates = current.previewDates;
         if (finalDates && !sameTaskDates(finalDates, current.dates)) {
           commitTaskDates(current.task, finalDates);
         }
       }
       endDrag();
     },
-    [commitTaskDates, endDrag],
+    [commitTaskDates, endDrag, updateDragTarget],
   );
 
   const handleKeyDown = useCallback(
@@ -512,7 +608,13 @@ export function KanbanCalendarView({
   };
 
   // Nettoyage si la vue se démonte pendant un glisser-déposer
-  useEffect(() => () => stopListening.current(), []);
+  useEffect(
+    () => () => {
+      stopListening.current();
+      clearTimeout(navRef.current.timer);
+    },
+    [],
+  );
 
   const startDrag = (e, task, kind) => {
     if (!canDrag || e.button !== 0) return;
@@ -672,8 +774,9 @@ export function KanbanCalendarView({
               </span>
             )}
 
-            {/* Poignées : étirer le début / l'échéance */}
-            {canDrag && !continuesBefore && (
+            {/* Poignées : étirer le début / l'échéance, y compris depuis un
+                bord coupé en début ou fin de semaine */}
+            {canDrag && (
               <span
                 aria-hidden="true"
                 className="absolute inset-y-0 left-0 z-[2] w-1.5 cursor-ew-resize opacity-0 transition-opacity group-hover/chip:opacity-100"
@@ -682,7 +785,7 @@ export function KanbanCalendarView({
                 onClick={(e) => e.stopPropagation()}
               />
             )}
-            {canDrag && !continuesAfter && (
+            {canDrag && (
               <span
                 aria-hidden="true"
                 className="absolute inset-y-0 right-0 z-[2] w-1.5 cursor-ew-resize opacity-0 transition-opacity group-hover/chip:opacity-100"
@@ -768,7 +871,8 @@ export function KanbanCalendarView({
                 variant="ghost"
                 size="icon"
                 onClick={goToPrevious}
-                className="h-7 w-7"
+                data-calendar-nav="prev"
+                className={cn("h-7 w-7", drag && navHintClass)}
                 aria-label={
                   isWeekMode ? "Semaine précédente" : "Mois précédent"
                 }
@@ -787,7 +891,8 @@ export function KanbanCalendarView({
                 variant="ghost"
                 size="icon"
                 onClick={goToNext}
-                className="h-7 w-7"
+                data-calendar-nav="next"
+                className={cn("h-7 w-7", drag && navHintClass)}
                 aria-label={isWeekMode ? "Semaine suivante" : "Mois suivant"}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -836,7 +941,19 @@ export function KanbanCalendarView({
         </div>
 
         <div className="flex flex-1 min-h-0 border-t border-border">
-          <div className="flex flex-1 min-w-0 flex-col">
+          <div className="relative flex flex-1 min-w-0 flex-col">
+            {/* Mode semaine, pendant un glisser-déposer : pousser contre un
+                bord passe à la semaine précédente / suivante */}
+            {drag && isWeekMode && (
+              <>
+                <div className="pointer-events-none absolute left-0 top-8 bottom-0 z-[5] flex w-6 items-center justify-center bg-gradient-to-r from-[#5b50ff]/15 to-transparent">
+                  <ChevronLeft className="h-4 w-4 text-[#5b50ff]/70" />
+                </div>
+                <div className="pointer-events-none absolute right-0 top-8 bottom-0 z-[5] flex w-6 items-center justify-center bg-gradient-to-l from-[#5b50ff]/15 to-transparent">
+                  <ChevronRight className="h-4 w-4 text-[#5b50ff]/70" />
+                </div>
+              </>
+            )}
             {/* Jours de la semaine */}
             <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
               {(isWeekMode ? weeks[0].days : WEEKDAY_LABELS).map(
