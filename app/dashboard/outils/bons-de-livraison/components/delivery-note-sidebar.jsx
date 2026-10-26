@@ -18,6 +18,7 @@ import {
 import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
+import { DocumentEmailHistory } from "@/src/components/document-email-history";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -620,6 +621,14 @@ export default function DeliveryNoteSidebar({
               </div>
             </>
           )}
+
+          {/* Envois par e-mail : historique et aperçu de chaque e-mail */}
+          <DocumentEmailHistory
+            documentType="deliveryNote"
+            documentId={deliveryNote.id}
+            enabled={Boolean(deliveryNote.emailTracking?.emailSentAt)}
+            onNavigate={onClose}
+          />
         </div>
 
         {/* Actions (masquées si le rôle ne permet aucune action) */}

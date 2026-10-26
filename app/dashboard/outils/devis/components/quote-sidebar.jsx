@@ -25,6 +25,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
+import { DocumentEmailHistory } from "@/src/components/document-email-history";
 import {
   Dialog,
   DialogContent,
@@ -920,6 +921,14 @@ export default function QuoteSidebar({
               <LinkedInvoicesList quote={quote} />
             </>
           )}
+
+          {/* Envois par e-mail : historique et aperçu de chaque e-mail */}
+          <DocumentEmailHistory
+            documentType="quote"
+            documentId={quote.id}
+            enabled={Boolean(quote.emailTracking?.emailSentAt)}
+            onNavigate={onClose}
+          />
         </div>
 
         {/* Action Buttons (pied masqué si le rôle ne permet aucune action,

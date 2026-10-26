@@ -24,6 +24,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
+import { DocumentEmailHistory } from "@/src/components/document-email-history";
 import {
   Dialog,
   DialogContent,
@@ -824,6 +825,14 @@ export default function PurchaseOrderSidebar({
                 </div>
               </>
             )}
+
+          {/* Envois par e-mail : historique et aperçu de chaque e-mail */}
+          <DocumentEmailHistory
+            documentType="purchaseOrder"
+            documentId={purchaseOrder.id}
+            enabled={Boolean(purchaseOrder.emailTracking?.emailSentAt)}
+            onNavigate={onClose}
+          />
         </div>
 
         {/* Action Buttons (masqués si le rôle ne permet aucune action) */}
