@@ -15,7 +15,7 @@ import { fr } from "date-fns/locale";
 
 const PRIMARY = "#5b50ff";
 
-function hexToRgb(hex) {
+export function hexToRgb(hex) {
   const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
   if (!match) return { r: 148, g: 163, b: 184 }; // slate-400 par défaut
   return {
@@ -26,7 +26,7 @@ function hexToRgb(hex) {
 }
 
 // Éclaircit une couleur vers le blanc (factor 0 = couleur pure, 1 = blanc)
-function tint({ r, g, b }, factor) {
+export function tint({ r, g, b }, factor) {
   return {
     r: Math.round(r + (255 - r) * factor),
     g: Math.round(g + (255 - g) * factor),
@@ -34,7 +34,7 @@ function tint({ r, g, b }, factor) {
   };
 }
 
-function truncateToWidth(pdf, text, maxWidth) {
+export function truncateToWidth(pdf, text, maxWidth) {
   if (pdf.getTextWidth(text) <= maxWidth) return text;
   let truncated = text;
   while (
