@@ -6,6 +6,7 @@ import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
 
 import { getBorderRadiusClasses, getEventHexStyles } from "./index";
 import { ExternalEventBadge } from "./external-event-badge";
+import { LinkedEventItem } from "./linked-event-item";
 import { SyncBadge } from "./sync-badge";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
 import { cn } from "@/src/lib/utils";
@@ -134,6 +135,18 @@ export const EventItem = memo(function EventItem({
   const durationMinutes = useMemo(() => {
     return differenceInMinutes(displayEnd, displayStart);
   }, [displayStart, displayEnd]);
+
+  // Échéance d'une autre page (facture, devis, tâche…) : rendu dédié
+  if (event.linked) {
+    return (
+      <LinkedEventItem
+        item={event.linked}
+        view={view}
+        onClick={onClick}
+        className={className}
+      />
+    );
+  }
 
   const getEventTime = () => {
     if (event.allDay) return "Toute la journée";
