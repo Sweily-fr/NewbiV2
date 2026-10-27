@@ -2,24 +2,32 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Paperclip } from "lucide-react";
+import { ArrowLeft, Check, FileText, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useDocumentEmailLog } from "@/src/graphql/documentEmailQueries";
 import {
   EMAIL_LOG_DOCUMENT_LABELS,
   emailLogDocumentUrl,
-  emailLogTracking,
   formatAttachmentSize,
-  formatEmailLogDate,
 } from "@/src/utils/document-email-log";
+import { cn } from "@/src/lib/utils";
 import { EmailSentPageSkeleton } from "../components/email-sent-page-skeleton";
 
+const OPEN_DOCUMENT_LABELS = {
+  invoice: "Ouvrir la facture",
+  quote: "Ouvrir le devis",
+  creditNote: "Ouvrir l'avoir",
+  purchaseOrder: "Ouvrir le bon de commande",
+  deliveryNote: "Ouvrir le bon de livraison",
+};
+
 /**
- * E-mail tel que le client l'a reçu, ouvert depuis le reçu d'envoi ou
- * l'historique d'un document. Le HTML est conservé sans pixel ni liens de
- * suivi : l'afficher ne marque pas le document « Ouvert ».
+ * E-mail tel que le client l'a reçu, ouvert depuis le reçu d'envoi, le menu
+ * d'actions ou l'historique d'un document. Présenté comme dans une
+ * messagerie : enveloppe, parcours de l'envoi, pièces jointes, puis l'e-mail
+ * à taille réelle. Le HTML est conservé sans pixel ni liens de suivi :
+ * l'afficher ne marque pas le document « Ouvert ».
  */
 export default function EmailSentPage() {
   const router = useRouter();
@@ -48,7 +56,7 @@ export default function EmailSentPage() {
   // reste lisible, mais son document demande de changer d'espace
   const sameWorkspace = log.workspaceId === workspaceId;
   const documentLabel = EMAIL_LOG_DOCUMENT_LABELS[log.documentType] || "";
-  const extraAttachments = log.attachments.filter((att) => !att.isDocument);
+  const hasExtraAttachments = log.attachments.some((att) => !att.isDocument);
 
   const goBack = () => {
     // Ouvert depuis le reçu (nouvel onglet) : pas de page précédente
@@ -60,222 +68,276 @@ export default function EmailSentPage() {
   };
 
   return (
-    // Écran large : la page tient dans la hauteur de la fenêtre, l'e-mail est
-    // réduit pour tenir dans son cadre (pas de défilement de la page)
-    <div className="flex flex-col gap-4 p-4 md:p-6 md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] md:overflow-hidden">
-      <div className="flex flex-wrap items-start justify-between gap-4 shrink-0">
-        <div className="flex items-start gap-3 min-w-0">
+    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 md:py-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={goBack}
             aria-label="Retour"
+            className="-ml-2 shrink-0"
           >
             <ArrowLeft className="size-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold">E-mail envoyé</h1>
+            <h1 className="text-2xl font-medium">E-mail envoyé</h1>
             <p className="text-sm text-muted-foreground">
-              {documentLabel} {log.documentNumber} · envoyé le{" "}
-              {formatEmailLogDate(log.sentAt)}
+              {documentLabel} {log.documentNumber} · le {formatDay(log.sentAt)}{" "}
+              à {formatTime(log.sentAt)}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <EmailTrackingStatus emailTracking={emailLogTracking(log)} />
-          {sameWorkspace && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(documentUrl)}
-            >
-              Ouvrir le document
-            </Button>
-          )}
-        </div>
+        {sameWorkspace && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(documentUrl)}
+          >
+            {OPEN_DOCUMENT_LABELS[log.documentType] || "Ouvrir le document"}
+          </Button>
+        )}
       </div>
 
-      {log.deliveryStatus === "FAILED" && (
-        <div className="shrink-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm dark:border-red-900/50 dark:bg-red-950/20">
-          <p className="font-medium text-red-700 dark:text-red-400">
-            Cet e-mail n&apos;a pas été remis à {log.to}
-          </p>
-          <p className="mt-1 text-red-700/80 dark:text-red-400/80">
-            {log.deliveryFailureReason ? `${log.deliveryFailureReason}. ` : ""}
-            Vérifiez l&apos;adresse puis renvoyez le document.
-          </p>
-        </div>
-      )}
-
       {!sameWorkspace && (
-        <p className="shrink-0 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Envoyé depuis l&apos;espace {log.workspaceName || "d'origine"} :
           changez d&apos;espace pour ouvrir le document.
         </p>
       )}
 
-      <div className="flex flex-col gap-4 md:flex-row md:flex-1 md:min-h-0">
-        <dl className="grid grid-cols-[96px_minmax(0,1fr)] content-start gap-x-3 gap-y-2.5 rounded-lg border p-4 text-sm md:w-[340px] md:shrink-0 md:overflow-y-auto">
-          <DetailRow label="De" value={log.from} />
-          {log.replyTo && <DetailRow label="Répondre à" value={log.replyTo} />}
-          <DetailRow label="À" value={log.to} />
-          {log.cc.length > 0 && <DetailRow label="Cc" value={log.cc} />}
-          {log.bcc.length > 0 && <DetailRow label="Cci" value={log.bcc} />}
-          <DetailRow label="Objet" value={log.subject} />
-          {log.senderEmail && (
-            <DetailRow label="Envoyé par" value={log.senderEmail} />
-          )}
-          {log.deliveredAt && (
-            <DetailRow
-              label="Remis le"
-              value={formatEmailLogDate(log.deliveredAt)}
-            />
-          )}
-          {log.openedAt && (
-            <DetailRow
-              label="Ouvert le"
-              value={formatEmailLogDate(log.openedAt)}
-            />
-          )}
-          {log.attachments.length > 0 && (
-            <>
-              <dt className="text-muted-foreground">Pièces jointes</dt>
-              <dd className="min-w-0 space-y-1">
-                {log.attachments.map((att, index) => (
-                  <p
-                    key={`${att.filename}-${index}`}
-                    className="flex items-center gap-1.5 min-w-0"
-                  >
-                    <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{att.filename}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatAttachmentSize(att.size)}
-                    </span>
-                  </p>
-                ))}
-                {extraAttachments.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Les fichiers ajoutés à l&apos;envoi ne sont pas conservés,
-                    seul leur nom est affiché.
-                  </p>
-                )}
-              </dd>
-            </>
-          )}
-        </dl>
+      <div className="overflow-hidden rounded-xl border bg-card">
+        {/* Enveloppe */}
+        <div className="space-y-3 p-5">
+          <p className="text-base font-medium break-words">{log.subject}</p>
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
+            <EnvelopeRow label="De" value={log.from} />
+            <EnvelopeRow label="À" value={log.to} />
+            {log.cc.length > 0 && <EnvelopeRow label="Cc" value={log.cc} />}
+            {log.bcc.length > 0 && <EnvelopeRow label="Cci" value={log.bcc} />}
+            {log.replyTo && (
+              <EnvelopeRow label="Répondre à" value={log.replyTo} />
+            )}
+          </dl>
+        </div>
 
-        <EmailFrame html={log.html} />
+        {/* Parcours de l'envoi */}
+        <div className="space-y-3 border-t px-5 py-4">
+          <DeliverySteps log={log} />
+          {log.deliveryStatus === "FAILED" && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
+              Non remis à {log.to}
+              {log.deliveryFailureReason
+                ? ` : ${log.deliveryFailureReason}`
+                : ""}
+              . Vérifiez l&apos;adresse puis renvoyez le document.
+            </p>
+          )}
+          {log.senderEmail && (
+            <p className="text-xs text-muted-foreground">
+              Envoyé depuis Newbi par {log.senderEmail}
+            </p>
+          )}
+        </div>
+
+        {/* Pièces jointes */}
+        {log.attachments.length > 0 && (
+          <div className="space-y-2 border-t px-5 py-4">
+            <div className="flex flex-wrap gap-2">
+              {log.attachments.map((att, index) => (
+                <span
+                  key={`${att.filename}-${index}`}
+                  className="inline-flex max-w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
+                >
+                  <FileText className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{att.filename}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {formatAttachmentSize(att.size)}
+                  </span>
+                </span>
+              ))}
+            </div>
+            {hasExtraAttachments && (
+              <p className="text-xs text-muted-foreground">
+                Les fichiers ajoutés à l&apos;envoi ne sont pas conservés, seul
+                leur nom est affiché.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* L'e-mail, à taille réelle */}
+        <div className="border-t">
+          <EmailFrame html={log.html} />
+        </div>
       </div>
     </div>
   );
 }
 
-function DetailRow({ label, value }) {
+function EnvelopeRow({ label, value }) {
   const values = Array.isArray(value) ? value : [value];
   return (
     <>
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words">
-        {values.map((item, index) => (
-          <span key={index} className="block">
-            {item || "-"}
-          </span>
-        ))}
-      </dd>
+      <dd className="min-w-0 break-words">{values.join(", ")}</dd>
     </>
   );
 }
 
-// En dessous, l'e-mail devient illisible : son cadre défile plutôt
-const MIN_EMAIL_SCALE = 0.5;
+/**
+ * Envoyé → Remis → Ouvert. Un rejet arrête le parcours à la remise ; une
+ * ouverture sans remise reçue (événement perdu) vaut remise.
+ */
+function DeliverySteps({ log }) {
+  const failed = log.deliveryStatus === "FAILED";
+  const delivered = !failed && Boolean(log.deliveredAt || log.openedAt);
+  const steps = [
+    { label: "Envoyé", state: "done", at: log.sentAt },
+    failed
+      ? { label: "Non remis", state: "failed", at: log.deliveryFailedAt }
+      : delivered
+        ? { label: "Remis", state: "done", at: log.deliveredAt }
+        : {
+            label: "Remis",
+            state: "pending",
+            note:
+              log.deliveryStatus === "DELAYED"
+                ? "Retardé, nouvel essai"
+                : "En cours",
+          },
+    // Rejeté : le client n'a rien reçu, pas d'ouverture à attendre
+    !failed && {
+      label: "Ouvert",
+      state: log.openedAt ? "done" : "pending",
+      at: log.openedAt,
+      note: "Pas encore",
+    },
+  ].filter(Boolean);
+
+  return (
+    <ol className="flex items-start">
+      {steps.map((step, index) => (
+        <li
+          key={step.label}
+          className={cn("flex items-start", index > 0 && "flex-1")}
+        >
+          {index > 0 && (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "mx-3 mt-2.5 h-px flex-1",
+                step.state === "done" ? "bg-[#5b4fff]" : "bg-border",
+              )}
+            />
+          )}
+          <div className="flex items-start gap-2">
+            <StepIcon state={step.state} />
+            <div className="leading-tight">
+              <p
+                className={cn(
+                  "text-sm font-medium",
+                  step.state === "pending" && "text-muted-foreground",
+                  step.state === "failed" && "text-red-600 dark:text-red-400",
+                )}
+              >
+                {step.label}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {step.at ? formatStepTime(step.at, log.sentAt) : step.note}
+              </p>
+            </div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function StepIcon({ state }) {
+  if (state === "done") {
+    return (
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#5b4fff] text-white">
+        <Check className="size-3" strokeWidth={3} />
+      </span>
+    );
+  }
+  if (state === "failed") {
+    return (
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
+        <X className="size-3" strokeWidth={3} />
+      </span>
+    );
+  }
+  return (
+    <span className="size-5 shrink-0 rounded-full border-2 border-dashed border-muted-foreground/30" />
+  );
+}
+
+function formatDay(value) {
+  return new Date(value).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatTime(value) {
+  return new Date(value).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// L'heure seule le jour de l'envoi, la date en plus les jours suivants
+function formatStepTime(value, sentAt) {
+  const sameDay =
+    new Date(value).toDateString() === new Date(sentAt).toDateString();
+  if (sameDay) return formatTime(value);
+  const day = new Date(value).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+  return `${day} à ${formatTime(value)}`;
+}
 
 /**
  * E-mail dans un cadre isolé : pas de script (sandbox sans allow-scripts),
  * styles de l'e-mail sans effet sur la page. allow-same-origin sert seulement
- * à mesurer le contenu.
- *
- * Écran large : l'e-mail est réduit pour tenir entier dans la hauteur
- * disponible (comme l'aperçu d'un PDF). Mobile : taille réelle, la page
- * défile.
+ * à mesurer le contenu, affiché en entier sans barre de défilement propre.
  */
 function EmailFrame({ html }) {
-  const containerRef = useRef(null);
   const frameRef = useRef(null);
-  const [layout, setLayout] = useState({
-    scale: 1,
-    width: null,
-    height: 640,
-  });
+  const [height, setHeight] = useState(640);
 
   const fitContent = useCallback(() => {
-    const container = containerRef.current;
     const doc = frameRef.current?.contentDocument;
-    if (!container || !doc?.documentElement) return;
-
+    if (!doc?.documentElement) return;
     // Hauteur propre du contenu (scrollHeight vaut au moins celle du cadre)
     const contentHeight = Math.ceil(
       doc.documentElement.getBoundingClientRect().height,
     );
-    if (!contentHeight) return;
-    const fitToPage = window.matchMedia("(min-width: 768px)").matches;
-    const scale = fitToPage
-      ? Math.max(
-          MIN_EMAIL_SCALE,
-          Math.min(1, container.clientHeight / contentHeight),
-        )
-      : 1;
-    // Cadre élargi d'autant qu'il est réduit : l'e-mail occupe toute la
-    // largeur visible et reste centré
-    const width = container.clientWidth / scale;
-
-    setLayout((prev) =>
-      prev.scale === scale &&
-      prev.width === width &&
-      prev.height === contentHeight
-        ? prev
-        : { scale, width, height: contentHeight },
-    );
+    if (contentHeight) setHeight(contentHeight);
   }, []);
 
+  // Une largeur différente (fenêtre, mobile) change la hauteur de l'e-mail
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return undefined;
+    const frame = frameRef.current;
+    if (!frame) return undefined;
     const observer = new ResizeObserver(fitContent);
-    observer.observe(container);
+    observer.observe(frame);
     return () => observer.disconnect();
   }, [fitContent]);
 
-  // La largeur du cadre change la mise en page de l'e-mail : seconde mesure
-  useEffect(() => {
-    fitContent();
-  }, [layout.width, fitContent]);
-
   return (
-    <div
-      ref={containerRef}
-      className="overflow-x-hidden overflow-y-auto rounded-lg border bg-[#fafafa] md:flex-1 md:min-h-0"
-    >
-      {/* La réduction ne change pas l'encombrement du cadre : on coupe ce
-          qui dépasse de sa taille réduite */}
-      <div
-        className="overflow-hidden"
-        style={{ height: layout.height * layout.scale }}
-      >
-        <iframe
-          ref={frameRef}
-          title="E-mail reçu par le client"
-          srcDoc={html || ""}
-          sandbox="allow-same-origin"
-          onLoad={fitContent}
-          className="block border-0"
-          style={{
-            width: layout.width ?? "100%",
-            height: layout.height,
-            transform: `scale(${layout.scale})`,
-            transformOrigin: "top left",
-          }}
-        />
-      </div>
-    </div>
+    <iframe
+      ref={frameRef}
+      title="E-mail reçu par le client"
+      srcDoc={html || ""}
+      sandbox="allow-same-origin"
+      onLoad={fitContent}
+      className="block w-full border-0 bg-[#fafafa]"
+      style={{ height }}
+    />
   );
 }
