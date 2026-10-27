@@ -56,7 +56,8 @@ export default function EmailSentPage() {
   // reste lisible, mais son document demande de changer d'espace
   const sameWorkspace = log.workspaceId === workspaceId;
   const documentLabel = EMAIL_LOG_DOCUMENT_LABELS[log.documentType] || "";
-  const hasExtraAttachments = log.attachments.some((att) => !att.isDocument);
+  // Envois antérieurs à la conservation des fichiers ajoutés à la main
+  const hasLostAttachments = log.attachments.some((att) => !att.available);
 
   const goBack = () => {
     // Ouvert depuis le reçu (nouvel onglet) : pas de page précédente
@@ -153,23 +154,52 @@ export default function EmailSentPage() {
             <section className="space-y-3 p-5">
               <SectionTitle>Pièces jointes</SectionTitle>
               <ul className="space-y-2">
-                {log.attachments.map((att, index) => (
-                  <li
-                    key={`${att.filename}-${index}`}
-                    className="flex min-w-0 items-center gap-2 text-sm"
-                  >
-                    <FileText className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{att.filename}</span>
-                    <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-                      {formatAttachmentSize(att.size)}
-                    </span>
-                  </li>
-                ))}
+                {log.attachments.map((att, index) => {
+                  const content = (
+                    <>
+                      <FileText className="size-4 shrink-0 text-muted-foreground" />
+                      <span
+                        className={cn(
+                          "truncate",
+                          att.available && "group-hover:underline",
+                        )}
+                      >
+                        {att.filename}
+                      </span>
+                      <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                        {formatAttachmentSize(att.size)}
+                      </span>
+                    </>
+                  );
+                  return (
+                    <li key={`${att.filename}-${index}`}>
+                      {att.available ? (
+                        <a
+                          href={attachmentUrl(log, att, index)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={
+                            att.isDocument
+                              ? "Ouvrir le PDF actuel du document"
+                              : "Ouvrir le fichier envoyé"
+                          }
+                          className="group flex min-w-0 items-center gap-2 text-sm"
+                        >
+                          {content}
+                        </a>
+                      ) : (
+                        <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                          {content}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
-              {hasExtraAttachments && (
+              {hasLostAttachments && (
                 <p className="text-xs text-muted-foreground">
-                  Les fichiers ajoutés à l&apos;envoi ne sont pas conservés,
-                  seul leur nom est affiché.
+                  Les fichiers ajoutés aux envois plus anciens n&apos;ont pas
+                  été conservés : seul leur nom est affiché.
                 </p>
               )}
             </section>
@@ -178,6 +208,17 @@ export default function EmailSentPage() {
       </div>
     </div>
   );
+}
+
+/**
+ * Fichier servi par le proxy du site (session transmise à l'API, droits
+ * vérifiés sur le document) : le PDF archivé du document, ou le fichier
+ * ajouté à la main conservé avec l'envoi (repéré par sa place dans la liste).
+ */
+function attachmentUrl(log, attachment, index) {
+  return attachment.isDocument
+    ? `/api/document-preview/${log.documentType}/${log.documentId}`
+    : `/api/document-preview/emailAttachment/${log.id}?index=${index}`;
 }
 
 function SectionTitle({ children }) {
