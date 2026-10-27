@@ -65,8 +65,13 @@ const LOG = {
   subject: "Facture F-2026-000042",
   html: "<html><body><p>Bonjour, voici votre facture.</p></body></html>",
   attachments: [
-    { filename: "F-2026-000042.pdf", size: 52000, isDocument: true },
-    { filename: "cgv.pdf", size: 1200, isDocument: false },
+    {
+      filename: "F-2026-000042.pdf",
+      size: 52000,
+      isDocument: true,
+      available: true,
+    },
+    { filename: "cgv.pdf", size: 1200, isDocument: false, available: true },
   ],
   deliveryStatus: "DELIVERED",
   deliveredAt: "2026-10-26T09:12:04.000Z",
@@ -110,13 +115,44 @@ describe("page d'un e-mail envoyé", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("cgv.pdf")).toBeInTheDocument();
     expect(
-      screen.getByText(/ne sont pas conservés, seul leur nom est affiché/),
-    ).toBeInTheDocument();
+      screen.queryByText(/n'ont pas été conservés/),
+    ).not.toBeInTheDocument();
 
     const frame = container.querySelector("iframe");
     expect(frame.getAttribute("srcdoc")).toContain("voici votre facture");
     // Pas de script dans l'e-mail affiché
     expect(frame.getAttribute("sandbox")).toBe("allow-same-origin");
+  });
+
+  it("ouvre les pièces jointes dans un nouvel onglet, via le proxy du site", () => {
+    renderPage();
+
+    const pdf = screen.getByText("F-2026-000042.pdf").closest("a");
+    expect(pdf.getAttribute("href")).toBe(
+      "/api/document-preview/invoice/inv-1",
+    );
+    expect(pdf.getAttribute("target")).toBe("_blank");
+    expect(pdf.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(screen.getByText("cgv.pdf").closest("a").getAttribute("href")).toBe(
+      "/api/document-preview/emailAttachment/log-1?index=1",
+    );
+  });
+
+  it("fichier ajouté à un envoi plus ancien : nom seulement", () => {
+    queries.log = {
+      ...LOG,
+      attachments: [
+        LOG.attachments[0],
+        { ...LOG.attachments[1], available: false },
+      ],
+    };
+
+    renderPage();
+
+    expect(screen.getByText("cgv.pdf").closest("a")).toBeNull();
+    expect(
+      screen.getByText(/envois plus anciens n'ont pas été conservés/),
+    ).toBeInTheDocument();
   });
 
   it("ouvre le document de l'espace actif", () => {

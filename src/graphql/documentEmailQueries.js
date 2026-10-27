@@ -147,6 +147,7 @@ const DOCUMENT_EMAIL_LOG_FRAGMENT = gql`
       filename
       size
       isDocument
+      available
     }
     deliveryStatus
     deliveredAt
