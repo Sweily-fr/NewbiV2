@@ -101,8 +101,13 @@ describe("page d'un e-mail envoyé", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("compta@test.fr")).toBeInTheDocument();
     expect(screen.getByText("Facture F-2026-000042")).toBeInTheDocument();
+    // Parcours : envoyé, remis, pas encore ouvert
     expect(screen.getByText("Envoyé")).toBeInTheDocument();
-    expect(screen.getByText("Remis le")).toBeInTheDocument();
+    expect(screen.getByText("Remis")).toBeInTheDocument();
+    expect(screen.getByText("Pas encore")).toBeInTheDocument();
+    expect(
+      screen.getByText("Envoyé depuis Newbi par emetteur@test.fr"),
+    ).toBeInTheDocument();
     expect(screen.getByText("cgv.pdf")).toBeInTheDocument();
     expect(
       screen.getByText(/ne sont pas conservés, seul leur nom est affiché/),
@@ -117,7 +122,7 @@ describe("page d'un e-mail envoyé", () => {
   it("ouvre le document de l'espace actif", () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "Ouvrir le document" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir la facture" }));
 
     expect(push).toHaveBeenCalledWith("/dashboard/outils/factures?id=inv-1");
   });
@@ -128,7 +133,7 @@ describe("page d'un e-mail envoyé", () => {
     renderPage();
 
     expect(
-      screen.queryByRole("button", { name: "Ouvrir le document" }),
+      screen.queryByRole("button", { name: "Ouvrir la facture" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(/Envoyé depuis l'espace Espace A/),
@@ -145,12 +150,29 @@ describe("page d'un e-mail envoyé", () => {
 
     renderPage();
 
+    expect(screen.getByText("Non remis")).toBeInTheDocument();
     expect(
-      screen.getByText("Cet e-mail n'a pas été remis à client@test.fr"),
+      screen.getByText(
+        /^Non remis à client@test\.fr : L'adresse e-mail n'existe pas\. Vérifiez l'adresse/,
+      ),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/L'adresse e-mail n'existe pas\. Vérifiez l'adresse/),
-    ).toBeInTheDocument();
+    // Rien reçu : pas d'ouverture à attendre
+    expect(screen.queryByText("Ouvert")).not.toBeInTheDocument();
+  });
+
+  it("ouverture sans remise reçue : la remise est déduite", () => {
+    queries.log = {
+      ...LOG,
+      deliveryStatus: "SENT",
+      deliveredAt: null,
+      openedAt: "2026-10-26T09:30:00.000Z",
+    };
+
+    renderPage();
+
+    expect(screen.queryByText("En cours")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pas encore")).not.toBeInTheDocument();
+    expect(screen.getByText("Ouvert")).toBeInTheDocument();
   });
 
   it("envoi introuvable ou inaccessible", () => {
