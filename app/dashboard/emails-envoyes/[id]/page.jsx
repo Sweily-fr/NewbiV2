@@ -2,10 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, FileText, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  X,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { useDocumentEmailLog } from "@/src/graphql/documentEmailQueries";
+import {
+  useDocumentEmailLog,
+  useDocumentEmailLogs,
+} from "@/src/graphql/documentEmailQueries";
 import {
   EMAIL_LOG_DOCUMENT_LABELS,
   emailLogDocumentUrl,
@@ -27,14 +37,31 @@ const OPEN_DOCUMENT_LABELS = {
  * d'actions ou l'historique d'un document : l'e-mail à taille réelle, et à
  * côté l'enveloppe, le parcours de l'envoi et les pièces jointes. Le HTML est
  * conservé sans pixel ni liens de suivi : l'afficher ne marque pas le
- * document « Ouvert ».
+ * document « Ouvert ». Un document envoyé plusieurs fois propose ses autres
+ * envois (Envoi 1, Envoi 2…) sans quitter la page.
  */
 export default function EmailSentPage() {
   const router = useRouter();
   const { id } = useParams();
   const { workspaceId } = useRequiredWorkspace();
-  const { data, loading, error } = useDocumentEmailLog(id);
-  const log = data?.documentEmailLog;
+  const [selectedId, setSelectedId] = useState(id);
+  const { data, previousData, loading, error } =
+    useDocumentEmailLog(selectedId);
+  // Pendant le chargement d'un autre envoi, le précédent reste affiché
+  const log =
+    data?.documentEmailLog ??
+    (loading ? previousData?.documentEmailLog : undefined);
+  const switching = loading && !data?.documentEmailLog;
+
+  // Envois du même document, lus dans l'espace actif (seul espace où la
+  // liste est autorisée) ; du plus ancien au plus récent pour la numérotation
+  const { data: sendsData } = useDocumentEmailLogs({
+    workspaceId,
+    documentType: log?.documentType,
+    documentId: log?.documentId,
+    skip: !log || log.workspaceId !== workspaceId,
+  });
+  const sends = [...(sendsData?.documentEmailLogs || [])].reverse();
 
   if (loading && !log) return <EmailSentPageSkeleton />;
 
@@ -107,9 +134,23 @@ export default function EmailSentPage() {
         </p>
       )}
 
+      {sends.length > 1 && (
+        <SendSwitcher
+          sends={sends}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
+      )}
+
       {/* Écran large : l'e-mail à gauche, ses informations à droite (restent
           visibles pendant la lecture). Mobile : informations d'abord. */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+      <div
+        aria-busy={switching || undefined}
+        className={cn(
+          "flex flex-col gap-6 transition-opacity lg:flex-row lg:items-start",
+          switching && "opacity-60",
+        )}
+      >
         <div className="min-w-0 flex-1 overflow-hidden rounded-xl border">
           <EmailFrame html={log.html} />
         </div>
@@ -207,6 +248,85 @@ export default function EmailSentPage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+/**
+ * Envois successifs du document, du premier au dernier : un clic ou les
+ * flèches affichent un autre envoi. La liste défile quand elle déborde.
+ */
+function SendSwitcher({ sends, selectedId, onSelect }) {
+  const listRef = useRef(null);
+  const index = sends.findIndex((send) => send.id === selectedId);
+
+  // L'envoi affiché reste visible dans une longue liste
+  useEffect(() => {
+    listRef.current
+      ?.querySelector('[aria-current="true"]')
+      ?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [selectedId]);
+
+  return (
+    <nav aria-label="Envois de ce document" className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0"
+        aria-label="Envoi précédent"
+        disabled={index <= 0}
+        onClick={() => onSelect(sends[index - 1].id)}
+      >
+        <ChevronLeft className="size-4" />
+      </Button>
+      <div
+        ref={listRef}
+        className="flex min-w-0 gap-1.5 overflow-x-auto p-0.5 scrollbar-hide"
+      >
+        {sends.map((send, position) => {
+          const active = send.id === selectedId;
+          const failed = send.deliveryStatus === "FAILED";
+          return (
+            <button
+              key={send.id}
+              type="button"
+              aria-current={active ? "true" : undefined}
+              title={`À ${send.to}`}
+              onClick={() => onSelect(send.id)}
+              className={cn(
+                "flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-shadow",
+                active
+                  ? "bg-[#fbfbfb] text-[#242529] shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:bg-[#1a1a1a] dark:text-foreground dark:shadow-[inset_0_0_0_1px_#232323]"
+                  : "text-[#606164] hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:text-muted-foreground dark:hover:shadow-[inset_0_0_0_1px_#232323]",
+              )}
+            >
+              {failed && (
+                <span
+                  aria-hidden="true"
+                  className="size-1.5 shrink-0 rounded-full bg-red-500"
+                />
+              )}
+              <span className={cn(active && "font-medium")}>
+                Envoi {position + 1}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatSendDate(send.sentAt)}
+              </span>
+              {failed && <span className="sr-only">(non remis)</span>}
+            </button>
+          );
+        })}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0"
+        aria-label="Envoi suivant"
+        disabled={index === -1 || index >= sends.length - 1}
+        onClick={() => onSelect(sends[index + 1].id)}
+      >
+        <ChevronRight className="size-4" />
+      </Button>
+    </nav>
   );
 }
 
@@ -341,6 +461,15 @@ function formatTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+// « 27 oct. · 14:32 » : plusieurs envois le même jour se distinguent
+function formatSendDate(value) {
+  const day = new Date(value).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+  return `${day} · ${formatTime(value)}`;
 }
 
 // L'heure seule le jour de l'envoi, la date en plus les jours suivants

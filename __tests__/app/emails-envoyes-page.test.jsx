@@ -12,16 +12,24 @@ vi.mock("@/src/hooks/useWorkspace", () => ({
   useRequiredWorkspace: () => workspace,
 }));
 
-const queries = vi.hoisted(() => ({ log: null, logs: [], error: null }));
+const queries = vi.hoisted(() => ({
+  log: null,
+  logs: [],
+  logsById: {},
+  error: null,
+}));
 vi.mock("@/src/graphql/documentEmailQueries", () => ({
   GET_DOCUMENT_EMAIL_LOGS: "GET_DOCUMENT_EMAIL_LOGS",
-  useDocumentEmailLog: () => ({
-    data: queries.log ? { documentEmailLog: queries.log } : undefined,
-    loading: false,
-    error: queries.error,
-  }),
-  useDocumentEmailLogs: () => ({
-    data: { documentEmailLogs: queries.logs },
+  useDocumentEmailLog: (id) => {
+    const log = queries.logsById[id] || queries.log;
+    return {
+      data: log ? { documentEmailLog: log } : undefined,
+      loading: false,
+      error: queries.error,
+    };
+  },
+  useDocumentEmailLogs: ({ skip } = {}) => ({
+    data: skip ? undefined : { documentEmailLogs: queries.logs },
   }),
 }));
 
@@ -93,6 +101,7 @@ beforeEach(() => {
   workspace.workspaceId = "org-a";
   queries.log = { ...LOG };
   queries.logs = [];
+  queries.logsById = {};
   queries.error = null;
 });
 
@@ -209,6 +218,74 @@ describe("page d'un e-mail envoyé", () => {
     expect(screen.queryByText("En cours")).not.toBeInTheDocument();
     expect(screen.queryByText("Pas encore")).not.toBeInTheDocument();
     expect(screen.getByText("Ouvert")).toBeInTheDocument();
+  });
+
+  it("document envoyé plusieurs fois : un onglet par envoi, du premier au dernier", () => {
+    const second = {
+      ...LOG,
+      id: "log-2",
+      sentAt: "2026-10-26T10:05:00.000Z",
+      to: "corrigee@test.fr",
+      deliveryStatus: "FAILED",
+    };
+    const third = {
+      ...LOG,
+      id: "log-3",
+      sentAt: "2026-10-27T08:00:00.000Z",
+      to: "derniere@test.fr",
+    };
+    // L'API renvoie le plus récent d'abord
+    queries.logs = [third, second, LOG];
+    queries.logsById = { "log-2": second, "log-3": third };
+
+    renderPage();
+
+    const tabs = screen
+      .getByRole("navigation", { name: "Envois de ce document" })
+      .querySelectorAll("button[title]");
+    expect([...tabs].map((tab) => tab.textContent)).toEqual([
+      expect.stringMatching(/^Envoi 1/),
+      expect.stringMatching(/^Envoi 2.*\(non remis\)$/),
+      expect.stringMatching(/^Envoi 3/),
+    ]);
+    // Ouvert sur le premier envoi (lien du reçu)
+    expect(
+      screen
+        .getByText("Envoi 1")
+        .closest("button")
+        .getAttribute("aria-current"),
+    ).toBe("true");
+    expect(
+      screen.getByRole("button", { name: "Envoi précédent" }),
+    ).toBeDisabled();
+
+    fireEvent.click(screen.getByText("Envoi 3"));
+    expect(screen.getByText("derniere@test.fr")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Envoi suivant" }),
+    ).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Envoi précédent" }));
+    expect(screen.getByText("corrigee@test.fr")).toBeInTheDocument();
+    expect(screen.getByText("Non remis")).toBeInTheDocument();
+    // Pas de nouvelle page : on reste sur l'envoi ouvert
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("un seul envoi, ou envoi d'un autre espace : pas de sélecteur", () => {
+    queries.logs = [LOG];
+    const { unmount } = renderPage();
+    expect(
+      screen.queryByRole("navigation", { name: "Envois de ce document" }),
+    ).not.toBeInTheDocument();
+    unmount();
+
+    workspace.workspaceId = "org-b";
+    queries.logs = [{ ...LOG, id: "log-2" }, LOG];
+    renderPage();
+    expect(
+      screen.queryByRole("navigation", { name: "Envois de ce document" }),
+    ).not.toBeInTheDocument();
   });
 
   it("envoi introuvable ou inaccessible", () => {
