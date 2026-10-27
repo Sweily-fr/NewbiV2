@@ -443,6 +443,9 @@ export const CREATE_TASK = gql`
       columnId
       position
       userId
+      # Demandés par GET_BOARD : la tâche créée y est ajoutée dans le cache
+      claudeWorkingSince
+      claudeCodingSince
       createdAt
       updatedAt
       tags {

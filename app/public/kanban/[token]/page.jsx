@@ -86,6 +86,7 @@ import {
   Search,
   X,
   GanttChart,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Users,
@@ -118,6 +119,8 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TimerDisplay } from "@/app/dashboard/outils/kanban/[id]/components/TimerDisplay";
+import { KanbanCalendarView } from "@/app/dashboard/outils/kanban/[id]/components/KanbanCalendarView";
+import { BoardMembersLookupContext } from "@/src/hooks/useAssignedMembersInfo";
 import { createSearchMatcher } from "@/src/utils/search-text";
 import { sanitizeRichText } from "@/src/utils/sanitize-html";
 
@@ -4121,6 +4124,20 @@ export default function PublicKanbanPage({ params }) {
     [boardData?.columns],
   );
 
+  // Vue calendrier : même accès aux tâches et aux membres que les vues
+  // connectées
+  const getPublicTasksByColumn = useCallback(
+    (columnId) => filteredTasksByColumn[columnId] || [],
+    [filteredTasksByColumn],
+  );
+  const publicMembersLookup = useMemo(() => {
+    const map = new Map();
+    (boardData?.members || []).forEach((member) => {
+      if (member?.id) map.set(String(member.id), member);
+    });
+    return map;
+  }, [boardData?.members]);
+
   const toggleColumnCollapse = (columnId) => {
     setCollapsedColumns((prev) => ({ ...prev, [columnId]: !prev[columnId] }));
   };
@@ -4272,6 +4289,13 @@ export default function PublicKanbanPage({ params }) {
                     <GanttChart className="h-4 w-4" />
                     <span>Gantt</span>
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="calendar"
+                    className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hidden md:inline-flex hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    <span>Calendrier</span>
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -4354,6 +4378,21 @@ export default function PublicKanbanPage({ params }) {
                 tasksByColumn={filteredTasksByColumn}
                 onEditTask={setSelectedTask}
               />
+            ) : viewMode === "calendar" ? (
+              // Membres fournis par le tableau public : pas de requête
+              // usersInfo (réservée aux membres connectés)
+              <BoardMembersLookupContext.Provider value={publicMembersLookup}>
+                <div className="h-[calc(100vh-9rem)] -mx-4">
+                  <KanbanCalendarView
+                    columns={columns}
+                    getTasksByColumn={getPublicTasksByColumn}
+                    onEditTask={setSelectedTask}
+                    boardTitle={boardData?.title}
+                    readOnly
+                    canCreate={false}
+                  />
+                </div>
+              </BoardMembersLookupContext.Provider>
             ) : (
               <PublicGanttView
                 columns={columns}

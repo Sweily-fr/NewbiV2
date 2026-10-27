@@ -177,6 +177,62 @@ const GanttViewIcon = ({ className }) => (
     />
   </svg>
 );
+
+const CalendarViewIcon = ({ className }) => (
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect x="1" y="2" width="14" height="3" rx="1" fill="#2BA67A" />
+    <rect
+      x="1"
+      y="6.5"
+      width="4"
+      height="3"
+      rx="0.75"
+      fill="#2BA67A"
+      opacity="0.6"
+    />
+    <rect
+      x="6"
+      y="6.5"
+      width="4"
+      height="3"
+      rx="0.75"
+      fill="#2BA67A"
+      opacity="0.6"
+    />
+    <rect
+      x="11"
+      y="6.5"
+      width="4"
+      height="3"
+      rx="0.75"
+      fill="#2BA67A"
+      opacity="0.6"
+    />
+    <rect
+      x="1"
+      y="11"
+      width="4"
+      height="3"
+      rx="0.75"
+      fill="#2BA67A"
+      opacity="0.35"
+    />
+    <rect
+      x="6"
+      y="11"
+      width="4"
+      height="3"
+      rx="0.75"
+      fill="#2BA67A"
+      opacity="0.35"
+    />
+  </svg>
+);
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import {
   Tabs,
@@ -214,6 +270,7 @@ import { ColumnModal } from "./components/ColumnModal";
 import { DeleteConfirmation } from "./components/DeleteConfirmation";
 import { KanbanListView } from "./components/KanbanListView";
 import { KanbanGanttView } from "./components/KanbanGanttView";
+import { KanbanCalendarView } from "./components/KanbanCalendarView";
 import { MemberFilterButton } from "./components/MemberFilterButton";
 import { ShareBoardDialog } from "./components/ShareBoardDialog";
 import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
@@ -747,6 +804,7 @@ function KanbanBoardPageContent({ params }) {
     isBoard,
     isList,
     isGantt,
+    isCalendar,
     isReady: isViewModeReady,
   } = useViewMode(id);
 
@@ -758,13 +816,16 @@ function KanbanBoardPageContent({ params }) {
     board: false,
     list: false,
     gantt: false,
+    calendar: false,
   });
   if (isBoard) everActivatedViewsRef.current.board = true;
   if (isList) everActivatedViewsRef.current.list = true;
   if (isGantt) everActivatedViewsRef.current.gantt = true;
+  if (isCalendar) everActivatedViewsRef.current.calendar = true;
   const everBoard = everActivatedViewsRef.current.board;
   const everList = everActivatedViewsRef.current.list;
   const everGantt = everActivatedViewsRef.current.gantt;
+  const everCalendar = everActivatedViewsRef.current.calendar;
 
   // Hooks
   const {
@@ -1815,6 +1876,13 @@ function KanbanBoardPageContent({ params }) {
                     <GanttViewIcon className="h-4 w-4" />
                     Gantt
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="calendar"
+                    className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
+                  >
+                    <CalendarViewIcon className="h-4 w-4" />
+                    Calendrier
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -1974,35 +2042,35 @@ function KanbanBoardPageContent({ params }) {
             </div>
           )}
 
-          {/* Contrôles pour la vue liste */}
-          {isList &&
-            (collapsedColumnsCount > 0 || billableTasks.length > 0) && (
-              <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
-                {billableTasks.length > 0 && (
-                  <>
-                    {canCreateInvoice && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => setShowConvertModal(true)}
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span className="hidden lg:inline">
-                          Convertir en facture
-                        </span>
-                      </Button>
-                    )}
-                    <span className="text-sm font-medium whitespace-nowrap">
-                      Dossier à{" "}
-                      <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
-                        {formatCurrency(projectTotalPrice)}
+          {/* Contrôles pour les vues liste et calendrier */}
+          {((isList && collapsedColumnsCount > 0) ||
+            ((isList || isCalendar) && billableTasks.length > 0)) && (
+            <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
+              {billableTasks.length > 0 && (
+                <>
+                  {canCreateInvoice && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setShowConvertModal(true)}
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span className="hidden lg:inline">
+                        Convertir en facture
                       </span>
+                    </Button>
+                  )}
+                  <span className="text-sm font-medium whitespace-nowrap">
+                    Dossier à{" "}
+                    <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
+                      {formatCurrency(projectTotalPrice)}
                     </span>
-                  </>
-                )}
-              </div>
-            )}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Gantt — gardé monté après 1er passage, juste caché si inactif */}
           {everGantt && (
@@ -2029,6 +2097,28 @@ function KanbanBoardPageContent({ params }) {
 
           {/* Board Content - Zone scrollable pour les colonnes */}
           <div className="flex-1 overflow-hidden">
+            {/* Calendrier — gardé monté après 1er passage */}
+            {everCalendar && (
+              <div
+                className="h-full"
+                style={{ display: isCalendar ? undefined : "none" }}
+              >
+                <KanbanCalendarView
+                  columns={localColumns}
+                  getTasksByColumn={getLocalTasksByColumn}
+                  filterTasks={filterTasks}
+                  onEditTask={handleOpenEditTaskModal}
+                  onAddTask={openAddTaskModal}
+                  updateTask={updateTask}
+                  workspaceId={workspaceId}
+                  boardTitle={board?.title}
+                  readOnly={!canEditKanban}
+                  canCreate={canCreateKanban}
+                  canExport={canExportKanban}
+                />
+              </div>
+            )}
+
             {/* List — gardée montée après 1er passage */}
             {everList && (
               <div
