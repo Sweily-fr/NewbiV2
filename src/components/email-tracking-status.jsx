@@ -10,8 +10,6 @@ import { cn } from "@/src/lib/utils";
 const BADGE_CLASSES = {
   notSent: "bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400",
   sent: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
-  delivered:
-    "bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
   opened:
     "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
   clicked: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
@@ -41,16 +39,12 @@ function TrackingBadge({ variant, label, children }) {
 /**
  * Composant d'affichage du statut de tracking d'email
  *
- * 6 états :
+ * 5 états :
  * - Non envoyé : badge gris
- * - Envoyé, pas encore remis : badge orange
- * - Remis au serveur du destinataire, non ouvert : badge violet
+ * - Envoyé, non ouvert : badge orange (remis ou non au serveur du client)
  * - Ouvert : badge vert
  * - Cliqué : badge bleu
  * - Rejeté par le serveur du destinataire : badge rouge
- *
- * La remise (deliveryStatus) n'existe que pour les envois suivis : un envoi
- * plus ancien passe directement d'« Envoyé » à « Ouvert ».
  */
 export function EmailTrackingStatus({ emailTracking }) {
   // Pas de tracking = non envoyé
@@ -63,11 +57,6 @@ export function EmailTrackingStatus({ emailTracking }) {
   }
 
   const sentDate = formatTrackingDate(emailTracking.emailSentAt);
-  const deliveredLine = emailTracking.deliveredAt ? (
-    <p className="text-violet-300">
-      Remis le {formatTrackingDate(emailTracking.deliveredAt)}
-    </p>
-  ) : null;
 
   // Rejeté : le client n'a pas reçu l'email, même s'il a été ouvert depuis
   // une adresse en copie
@@ -93,26 +82,10 @@ export function EmailTrackingStatus({ emailTracking }) {
 
   // Envoyé mais pas ouvert
   if (!emailTracking.emailOpenedAt) {
-    if (emailTracking.deliveryStatus === "DELIVERED") {
-      return (
-        <TrackingBadge variant="delivered" label="Remis">
-          <p>Envoyé le {sentDate}</p>
-          {deliveredLine}
-          <p className="text-gray-400">Non ouvert</p>
-        </TrackingBadge>
-      );
-    }
-
     return (
       <TrackingBadge variant="sent" label="Envoyé">
         <p>Envoyé le {sentDate}</p>
-        <p className="text-gray-400">
-          {emailTracking.deliveryStatus === "DELAYED"
-            ? "Remise retardée, nouvel essai en cours"
-            : emailTracking.deliveryStatus === "SENT"
-              ? "Remise en cours"
-              : "Non ouvert"}
-        </p>
+        <p className="text-gray-400">Non ouvert</p>
       </TrackingBadge>
     );
   }
@@ -125,7 +98,6 @@ export function EmailTrackingStatus({ emailTracking }) {
     return (
       <TrackingBadge variant="clicked" label="Consulté">
         <p>Envoyé le {sentDate}</p>
-        {deliveredLine}
         <p className="text-emerald-400">
           Ouvert le {formatTrackingDate(emailTracking.emailOpenedAt)}
         </p>
@@ -144,7 +116,6 @@ export function EmailTrackingStatus({ emailTracking }) {
   return (
     <TrackingBadge variant="opened" label="Ouvert">
       <p>Envoyé le {sentDate}</p>
-      {deliveredLine}
       <p className="text-emerald-400">
         Ouvert le {openedDate}
         {openCount > 1 && ` (${openCount} fois)`}

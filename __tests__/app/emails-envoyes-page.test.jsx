@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -14,6 +14,7 @@ vi.mock("@/src/hooks/useWorkspace", () => ({
 
 const queries = vi.hoisted(() => ({ log: null, logs: [], error: null }));
 vi.mock("@/src/graphql/documentEmailQueries", () => ({
+  GET_DOCUMENT_EMAIL_LOGS: "GET_DOCUMENT_EMAIL_LOGS",
   useDocumentEmailLog: () => ({
     data: queries.log ? { documentEmailLog: queries.log } : undefined,
     loading: false,
@@ -24,9 +25,26 @@ vi.mock("@/src/graphql/documentEmailQueries", () => ({
   }),
 }));
 
+const apollo = vi.hoisted(() => ({ query: vi.fn() }));
+vi.mock("@apollo/client", async (importOriginal) => ({
+  ...(await importOriginal()),
+  useApolloClient: () => apollo,
+}));
+
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock("@/src/components/ui/sonner", () => ({
+  toast: { error: toastError, success: vi.fn() },
+}));
+
 import { TooltipProvider } from "@/src/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 import EmailSentPage from "@/app/dashboard/emails-envoyes/[id]/page";
 import { DocumentEmailHistory } from "@/src/components/document-email-history";
+import { SentEmailMenuItem } from "@/src/components/sent-email-menu-item";
 import { emailLogDocumentUrl } from "@/src/utils/document-email-log";
 
 const LOG = {
@@ -83,7 +101,8 @@ describe("page d'un e-mail envoyé", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("compta@test.fr")).toBeInTheDocument();
     expect(screen.getByText("Facture F-2026-000042")).toBeInTheDocument();
-    expect(screen.getByText("Remis")).toBeInTheDocument();
+    expect(screen.getByText("Envoyé")).toBeInTheDocument();
+    expect(screen.getByText("Remis le")).toBeInTheDocument();
     expect(screen.getByText("cgv.pdf")).toBeInTheDocument();
     expect(
       screen.getByText(/ne sont pas conservés, seul leur nom est affiché/),
@@ -176,6 +195,67 @@ describe("historique des envois d'un document", () => {
       <DocumentEmailHistory documentType="invoice" documentId="inv-1" />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("« Voir l'e-mail envoyé » du menu d'actions", () => {
+  function renderMenuItem(document) {
+    return render(
+      <DropdownMenu open>
+        <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <SentEmailMenuItem documentType="quote" document={document} />
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+  }
+
+  it("absent pour un document jamais envoyé ou envoyé avant l'historique", () => {
+    renderMenuItem({ id: "q-1", emailTracking: { emailSentAt: LOG.sentAt } });
+    expect(screen.queryByText("Voir l'e-mail envoyé")).not.toBeInTheDocument();
+  });
+
+  it("ouvre le dernier envoi du document", async () => {
+    apollo.query.mockResolvedValue({
+      data: { documentEmailLogs: [{ id: "log-9" }, { id: "log-1" }] },
+    });
+    renderMenuItem({
+      id: "q-1",
+      emailTracking: { emailSentAt: LOG.sentAt, deliveryStatus: "DELIVERED" },
+    });
+
+    fireEvent.click(screen.getByText("Voir l'e-mail envoyé"));
+
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/dashboard/emails-envoyes/log-9"),
+    );
+    expect(apollo.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: {
+          workspaceId: "org-a",
+          documentType: "quote",
+          documentId: "q-1",
+        },
+        fetchPolicy: "network-only",
+      }),
+    );
+  });
+
+  it("prévient quand l'envoi n'a pas d'aperçu", async () => {
+    apollo.query.mockResolvedValue({ data: { documentEmailLogs: [] } });
+    renderMenuItem({
+      id: "q-1",
+      emailTracking: { emailSentAt: LOG.sentAt, deliveryStatus: "SENT" },
+    });
+
+    fireEvent.click(screen.getByText("Voir l'e-mail envoyé"));
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith(
+        "Aucun aperçu disponible pour cet envoi",
+      ),
+    );
+    expect(push).not.toHaveBeenCalled();
   });
 });
 

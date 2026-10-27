@@ -60,8 +60,10 @@ export default function EmailSentPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 md:py-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    // Écran large : la page tient dans la hauteur de la fenêtre, l'e-mail est
+    // réduit pour tenir dans son cadre (pas de défilement de la page)
+    <div className="flex flex-col gap-4 p-4 md:p-6 md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] md:overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-4 shrink-0">
         <div className="flex items-start gap-3 min-w-0">
           <Button
             variant="ghost"
@@ -94,7 +96,7 @@ export default function EmailSentPage() {
       </div>
 
       {log.deliveryStatus === "FAILED" && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm dark:border-red-900/50 dark:bg-red-950/20">
+        <div className="shrink-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm dark:border-red-900/50 dark:bg-red-950/20">
           <p className="font-medium text-red-700 dark:text-red-400">
             Cet e-mail n&apos;a pas été remis à {log.to}
           </p>
@@ -106,14 +108,14 @@ export default function EmailSentPage() {
       )}
 
       {!sameWorkspace && (
-        <p className="text-sm text-muted-foreground">
+        <p className="shrink-0 text-sm text-muted-foreground">
           Envoyé depuis l&apos;espace {log.workspaceName || "d'origine"} :
           changez d&apos;espace pour ouvrir le document.
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-        <dl className="space-y-4 text-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:flex-1 md:min-h-0">
+        <dl className="grid grid-cols-[96px_minmax(0,1fr)] content-start gap-x-3 gap-y-2.5 rounded-lg border p-4 text-sm md:w-[340px] md:shrink-0 md:overflow-y-auto">
           <DetailRow label="De" value={log.from} />
           {log.replyTo && <DetailRow label="Répondre à" value={log.replyTo} />}
           <DetailRow label="À" value={log.to} />
@@ -136,15 +138,13 @@ export default function EmailSentPage() {
             />
           )}
           {log.attachments.length > 0 && (
-            <div className="space-y-1.5">
-              <dt className="text-xs text-muted-foreground uppercase tracking-wide">
-                Pièces jointes
-              </dt>
-              <dd className="space-y-1">
+            <>
+              <dt className="text-muted-foreground">Pièces jointes</dt>
+              <dd className="min-w-0 space-y-1">
                 {log.attachments.map((att, index) => (
                   <p
                     key={`${att.filename}-${index}`}
-                    className="flex items-center gap-2 min-w-0"
+                    className="flex items-center gap-1.5 min-w-0"
                   >
                     <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{att.filename}</span>
@@ -153,14 +153,14 @@ export default function EmailSentPage() {
                     </span>
                   </p>
                 ))}
+                {extraAttachments.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Les fichiers ajoutés à l&apos;envoi ne sont pas conservés,
+                    seul leur nom est affiché.
+                  </p>
+                )}
               </dd>
-              {extraAttachments.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Les fichiers ajoutés à l&apos;envoi ne sont pas conservés,
-                  seul leur nom est affiché.
-                </p>
-              )}
-            </div>
+            </>
           )}
         </dl>
 
@@ -173,51 +173,109 @@ export default function EmailSentPage() {
 function DetailRow({ label, value }) {
   const values = Array.isArray(value) ? value : [value];
   return (
-    <div className="space-y-1">
-      <dt className="text-xs text-muted-foreground uppercase tracking-wide">
-        {label}
-      </dt>
-      {values.map((item, index) => (
-        <dd key={index} className="break-words">
-          {item || "-"}
-        </dd>
-      ))}
-    </div>
+    <>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 break-words">
+        {values.map((item, index) => (
+          <span key={index} className="block">
+            {item || "-"}
+          </span>
+        ))}
+      </dd>
+    </>
   );
 }
+
+// En dessous, l'e-mail devient illisible : son cadre défile plutôt
+const MIN_EMAIL_SCALE = 0.5;
 
 /**
  * E-mail dans un cadre isolé : pas de script (sandbox sans allow-scripts),
  * styles de l'e-mail sans effet sur la page. allow-same-origin sert seulement
- * à lire la hauteur du contenu pour éviter une double barre de défilement.
+ * à mesurer le contenu.
+ *
+ * Écran large : l'e-mail est réduit pour tenir entier dans la hauteur
+ * disponible (comme l'aperçu d'un PDF). Mobile : taille réelle, la page
+ * défile.
  */
 function EmailFrame({ html }) {
+  const containerRef = useRef(null);
   const frameRef = useRef(null);
-  const [height, setHeight] = useState(640);
+  const [layout, setLayout] = useState({
+    scale: 1,
+    width: null,
+    height: 640,
+  });
 
   const fitContent = useCallback(() => {
+    const container = containerRef.current;
     const doc = frameRef.current?.contentDocument;
-    if (doc?.documentElement) {
-      setHeight(doc.documentElement.scrollHeight);
-    }
+    if (!container || !doc?.documentElement) return;
+
+    // Hauteur propre du contenu (scrollHeight vaut au moins celle du cadre)
+    const contentHeight = Math.ceil(
+      doc.documentElement.getBoundingClientRect().height,
+    );
+    if (!contentHeight) return;
+    const fitToPage = window.matchMedia("(min-width: 768px)").matches;
+    const scale = fitToPage
+      ? Math.max(
+          MIN_EMAIL_SCALE,
+          Math.min(1, container.clientHeight / contentHeight),
+        )
+      : 1;
+    // Cadre élargi d'autant qu'il est réduit : l'e-mail occupe toute la
+    // largeur visible et reste centré
+    const width = container.clientWidth / scale;
+
+    setLayout((prev) =>
+      prev.scale === scale &&
+      prev.width === width &&
+      prev.height === contentHeight
+        ? prev
+        : { scale, width, height: contentHeight },
+    );
   }, []);
 
   useEffect(() => {
-    window.addEventListener("resize", fitContent);
-    return () => window.removeEventListener("resize", fitContent);
+    const container = containerRef.current;
+    if (!container) return undefined;
+    const observer = new ResizeObserver(fitContent);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, [fitContent]);
 
+  // La largeur du cadre change la mise en page de l'e-mail : seconde mesure
+  useEffect(() => {
+    fitContent();
+  }, [layout.width, fitContent]);
+
   return (
-    <div className="overflow-hidden rounded-lg border bg-[#fafafa]">
-      <iframe
-        ref={frameRef}
-        title="E-mail reçu par le client"
-        srcDoc={html || ""}
-        sandbox="allow-same-origin"
-        onLoad={fitContent}
-        className="block w-full border-0"
-        style={{ height }}
-      />
+    <div
+      ref={containerRef}
+      className="overflow-x-hidden overflow-y-auto rounded-lg border bg-[#fafafa] md:flex-1 md:min-h-0"
+    >
+      {/* La réduction ne change pas l'encombrement du cadre : on coupe ce
+          qui dépasse de sa taille réduite */}
+      <div
+        className="overflow-hidden"
+        style={{ height: layout.height * layout.scale }}
+      >
+        <iframe
+          ref={frameRef}
+          title="E-mail reçu par le client"
+          srcDoc={html || ""}
+          sandbox="allow-same-origin"
+          onLoad={fitContent}
+          className="block border-0"
+          style={{
+            width: layout.width ?? "100%",
+            height: layout.height,
+            transform: `scale(${layout.scale})`,
+            transformOrigin: "top left",
+          }}
+        />
+      </div>
     </div>
   );
 }
