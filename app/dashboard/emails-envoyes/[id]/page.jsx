@@ -24,10 +24,10 @@ const OPEN_DOCUMENT_LABELS = {
 
 /**
  * E-mail tel que le client l'a reçu, ouvert depuis le reçu d'envoi, le menu
- * d'actions ou l'historique d'un document. Présenté comme dans une
- * messagerie : enveloppe, parcours de l'envoi, pièces jointes, puis l'e-mail
- * à taille réelle. Le HTML est conservé sans pixel ni liens de suivi :
- * l'afficher ne marque pas le document « Ouvert ».
+ * d'actions ou l'historique d'un document : l'e-mail à taille réelle, et à
+ * côté l'enveloppe, le parcours de l'envoi et les pièces jointes. Le HTML est
+ * conservé sans pixel ni liens de suivi : l'afficher ne marque pas le
+ * document « Ouvert ».
  */
 export default function EmailSentPage() {
   const router = useRouter();
@@ -68,7 +68,7 @@ export default function EmailSentPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 md:py-8">
+    <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-2">
           <Button
@@ -106,72 +106,85 @@ export default function EmailSentPage() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-xl border bg-card">
-        {/* Enveloppe */}
-        <div className="space-y-3 p-5">
-          <p className="text-base font-medium break-words">{log.subject}</p>
-          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
-            <EnvelopeRow label="De" value={log.from} />
-            <EnvelopeRow label="À" value={log.to} />
-            {log.cc.length > 0 && <EnvelopeRow label="Cc" value={log.cc} />}
-            {log.bcc.length > 0 && <EnvelopeRow label="Cci" value={log.bcc} />}
-            {log.replyTo && (
-              <EnvelopeRow label="Répondre à" value={log.replyTo} />
-            )}
-          </dl>
-        </div>
-
-        {/* Parcours de l'envoi */}
-        <div className="space-y-3 border-t px-5 py-4">
-          <DeliverySteps log={log} />
-          {log.deliveryStatus === "FAILED" && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
-              Non remis à {log.to}
-              {log.deliveryFailureReason
-                ? ` : ${log.deliveryFailureReason}`
-                : ""}
-              . Vérifiez l&apos;adresse puis renvoyez le document.
-            </p>
-          )}
-          {log.senderEmail && (
-            <p className="text-xs text-muted-foreground">
-              Envoyé depuis Newbi par {log.senderEmail}
-            </p>
-          )}
-        </div>
-
-        {/* Pièces jointes */}
-        {log.attachments.length > 0 && (
-          <div className="space-y-2 border-t px-5 py-4">
-            <div className="flex flex-wrap gap-2">
-              {log.attachments.map((att, index) => (
-                <span
-                  key={`${att.filename}-${index}`}
-                  className="inline-flex max-w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
-                >
-                  <FileText className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate">{att.filename}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatAttachmentSize(att.size)}
-                  </span>
-                </span>
-              ))}
-            </div>
-            {hasExtraAttachments && (
-              <p className="text-xs text-muted-foreground">
-                Les fichiers ajoutés à l&apos;envoi ne sont pas conservés, seul
-                leur nom est affiché.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* L'e-mail, à taille réelle */}
-        <div className="border-t">
+      {/* Écran large : l'e-mail à gauche, ses informations à droite (restent
+          visibles pendant la lecture). Mobile : informations d'abord. */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="min-w-0 flex-1 overflow-hidden rounded-xl border">
           <EmailFrame html={log.html} />
         </div>
+
+        <aside className="order-first divide-y rounded-xl border bg-card lg:order-none lg:sticky lg:top-6 lg:w-[340px] lg:shrink-0">
+          <section className="space-y-3 p-5">
+            <SectionTitle>Envoi</SectionTitle>
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
+              <EnvelopeRow label="Objet" value={log.subject} />
+              <EnvelopeRow label="De" value={log.from} />
+              <EnvelopeRow label="À" value={log.to} />
+              {log.cc.length > 0 && <EnvelopeRow label="Cc" value={log.cc} />}
+              {log.bcc.length > 0 && (
+                <EnvelopeRow label="Cci" value={log.bcc} />
+              )}
+              {log.replyTo && (
+                <EnvelopeRow label="Répondre à" value={log.replyTo} />
+              )}
+            </dl>
+          </section>
+
+          <section className="space-y-3 p-5">
+            <SectionTitle>Suivi</SectionTitle>
+            <DeliverySteps log={log} />
+            {log.deliveryStatus === "FAILED" && (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
+                Non remis à {log.to}
+                {log.deliveryFailureReason
+                  ? ` : ${log.deliveryFailureReason}`
+                  : ""}
+                . Vérifiez l&apos;adresse puis renvoyez le document.
+              </p>
+            )}
+            {log.senderEmail && (
+              <p className="text-xs text-muted-foreground">
+                Envoyé depuis Newbi par {log.senderEmail}
+              </p>
+            )}
+          </section>
+
+          {log.attachments.length > 0 && (
+            <section className="space-y-3 p-5">
+              <SectionTitle>Pièces jointes</SectionTitle>
+              <ul className="space-y-2">
+                {log.attachments.map((att, index) => (
+                  <li
+                    key={`${att.filename}-${index}`}
+                    className="flex min-w-0 items-center gap-2 text-sm"
+                  >
+                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{att.filename}</span>
+                    <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                      {formatAttachmentSize(att.size)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {hasExtraAttachments && (
+                <p className="text-xs text-muted-foreground">
+                  Les fichiers ajoutés à l&apos;envoi ne sont pas conservés,
+                  seul leur nom est affiché.
+                </p>
+              )}
+            </section>
+          )}
+        </aside>
       </div>
     </div>
+  );
+}
+
+function SectionTitle({ children }) {
+  return (
+    <h2 className="text-xs font-normal uppercase tracking-wide text-muted-foreground">
+      {children}
+    </h2>
   );
 }
 
@@ -216,40 +229,40 @@ function DeliverySteps({ log }) {
   ].filter(Boolean);
 
   return (
-    <ol className="flex items-start">
-      {steps.map((step, index) => (
-        <li
-          key={step.label}
-          className={cn("flex items-start", index > 0 && "flex-1")}
-        >
-          {index > 0 && (
-            <span
-              aria-hidden="true"
-              className={cn(
-                "mx-3 mt-2.5 h-px flex-1",
-                step.state === "done" ? "bg-[#5b4fff]" : "bg-border",
-              )}
-            />
-          )}
-          <div className="flex items-start gap-2">
-            <StepIcon state={step.state} />
-            <div className="leading-tight">
-              <p
+    <ol>
+      {steps.map((step, index) => {
+        const next = steps[index + 1];
+        return (
+          <li
+            key={step.label}
+            className="relative flex items-center gap-3 pb-4 last:pb-0"
+          >
+            {/* Trait vers l'étape suivante, coloré une fois atteinte */}
+            {next && (
+              <span
+                aria-hidden="true"
                 className={cn(
-                  "text-sm font-medium",
-                  step.state === "pending" && "text-muted-foreground",
-                  step.state === "failed" && "text-red-600 dark:text-red-400",
+                  "absolute left-[9px] top-6 bottom-1 w-0.5 rounded-full",
+                  next.state === "done" ? "bg-[#5b4fff]" : "bg-border",
                 )}
-              >
-                {step.label}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {step.at ? formatStepTime(step.at, log.sentAt) : step.note}
-              </p>
-            </div>
-          </div>
-        </li>
-      ))}
+              />
+            )}
+            <StepIcon state={step.state} />
+            <p
+              className={cn(
+                "text-sm font-medium",
+                step.state === "pending" && "text-muted-foreground",
+                step.state === "failed" && "text-red-600 dark:text-red-400",
+              )}
+            >
+              {step.label}
+            </p>
+            <p className="ml-auto text-xs text-muted-foreground">
+              {step.at ? formatStepTime(step.at, log.sentAt) : step.note}
+            </p>
+          </li>
+        );
+      })}
     </ol>
   );
 }
