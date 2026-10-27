@@ -196,6 +196,11 @@ export const QUOTE_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
   }
 `;
@@ -321,6 +326,11 @@ export const QUOTE_LIST_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+      deliveryStatus
+      deliveredAt
+      deliveryFailedAt
+      deliveryFailureReason
+      recipientEmail
     }
   }
 `;

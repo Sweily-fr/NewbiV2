@@ -26,6 +26,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
+import { DocumentEmailHistory } from "@/src/components/document-email-history";
 import {
   Dialog,
   DialogContent,
@@ -1791,6 +1792,14 @@ export default function InvoiceSidebar({
                 </div>
               </>
             )}
+
+          {/* Envois par e-mail : historique et aperçu de chaque e-mail */}
+          <DocumentEmailHistory
+            documentType="invoice"
+            documentId={invoice.id}
+            enabled={Boolean(invoice.emailTracking?.emailSentAt)}
+            onNavigate={onClose}
+          />
 
           {/* Preview Thumbnail */}
           {/* <div className="space-y-3">
