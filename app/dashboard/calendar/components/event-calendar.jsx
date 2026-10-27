@@ -36,10 +36,23 @@ import {
 } from "./index";
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
 import { CalendarSyncButton } from "./calendar-sync-button";
+import { CalendarSourcesBar } from "./calendar-sources-bar";
 import { ColorLegend } from "./color-legend";
+import { LinkedItemSheet } from "./linked-item-sheet";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useCalendarLinkedItems } from "@/src/hooks/useCalendarLinkedItems";
+import { dateToDay } from "@/src/utils/recurrenceDays";
+import {
+  EVENTS_SOURCE,
+  isPlainInvoiceDueEvent,
+  linkedItemToEvent,
+  periodNames,
+  summarizeLinkedItems,
+  summaryRange,
+  visibleRange,
+} from "@/src/utils/calendar-linked-items";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +60,19 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+
+// Sources masquées par l'utilisateur, gardées dans ce navigateur
+const HIDDEN_SOURCES_KEY = "newbi:calendar:hidden-sources";
+const NO_HIDDEN_SOURCES = new Set();
+
+function readHiddenSources() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(HIDDEN_SOURCES_KEY));
+    return new Set(Array.isArray(stored) ? stored : []);
+  } catch {
+    return new Set();
+  }
+}
 
 export function EventCalendar({
   events = [],
@@ -60,6 +86,79 @@ export function EventCalendar({
   const [view, setView] = useState(initialView);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  // Échéance d'une autre page ouverte dans sa fiche
+  const [selectedLinkedItem, setSelectedLinkedItem] = useState(null);
+  const [hiddenSources, setHiddenSources] = useState(() => new Set());
+
+  // Lu après le premier rendu : le rendu serveur ne connaît pas le stockage
+  useEffect(() => {
+    setHiddenSources(readHiddenSources());
+  }, []);
+
+  const toggleSource = useCallback((key) => {
+    setHiddenSources((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem(HIDDEN_SOURCES_KEY, JSON.stringify([...next]));
+      } catch {
+        // Stockage indisponible (navigation privée) : choix non retenu
+      }
+      return next;
+    });
+  }, []);
+
+  // Échéances des autres pages sur les jours affichés
+  const range = useMemo(
+    () => visibleRange(view, currentDate, AgendaDaysToShow),
+    [view, currentDate],
+  );
+  const {
+    items: linkedItems,
+    kinds: linkedKinds,
+    loading: linkedLoading,
+    unavailable: linkedUnavailable,
+  } = useCalendarLinkedItems(range);
+
+  // Sans barre des sources (aucune autre page visible), rien n'est masqué :
+  // un choix d'avant ne doit pas cacher les événements sans moyen de revenir
+  const activeHiddenSources =
+    linkedLoading || linkedKinds.length > 0 ? hiddenSources : NO_HIDDEN_SOURCES;
+
+  const displayedEvents = useMemo(() => {
+    const ownEvents = activeHiddenSources.has(EVENTS_SOURCE)
+      ? []
+      : linkedUnavailable
+        ? events
+        : // Copies des échéances de factures : remplacées par l'échéance
+          // relue dans la facture (statut à jour)
+          events.filter((event) => !isPlainInvoiceDueEvent(event));
+    const linkedEvents = linkedItems
+      .filter((item) => !activeHiddenSources.has(item.kind))
+      .map(linkedItemToEvent);
+    return linkedEvents.length ? [...ownEvents, ...linkedEvents] : ownEvents;
+  }, [events, linkedItems, linkedUnavailable, activeHiddenSources]);
+
+  // Totaux de la barre des sources (le mois en vue mois)
+  const period = useMemo(() => {
+    const bounds = summaryRange(view, currentDate, AgendaDaysToShow);
+    return { ...bounds, ...periodNames(view, currentDate, AgendaDaysToShow) };
+  }, [view, currentDate]);
+  const linkedSummary = useMemo(
+    () => summarizeLinkedItems(linkedItems, period),
+    [linkedItems, period],
+  );
+  const periodEventsCount = useMemo(
+    () =>
+      events.filter(
+        (event) =>
+          (linkedUnavailable || !isPlainInvoiceDueEvent(event)) &&
+          dateToDay(new Date(event.start)) <= period.to &&
+          dateToDay(new Date(event.end)) >= period.from,
+      ).length,
+    [events, linkedUnavailable, period],
+  );
 
   // Add keyboard shortcuts for view switching
   useEffect(() => {
@@ -68,6 +167,7 @@ export function EventCalendar({
       // or if the event dialog is open
       if (
         isEventDialogOpen ||
+        selectedLinkedItem ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         (e.target instanceof HTMLElement && e.target.isContentEditable)
@@ -96,7 +196,7 @@ export function EventCalendar({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isEventDialogOpen]);
+  }, [isEventDialogOpen, selectedLinkedItem]);
 
   const handlePrevious = () => {
     if (view === "mois") {
@@ -134,6 +234,10 @@ export function EventCalendar({
   // et forçait un re-render complet de la grille (recalcul des positions +
   // remontage des ~672 cellules de drop) → latence visible.
   const handleEventSelect = useCallback((event) => {
+    if (event.linked) {
+      setSelectedLinkedItem(event.linked);
+      return;
+    }
     setSelectedEvent(event);
     setIsEventDialogOpen(true);
   }, []);
@@ -217,6 +321,8 @@ export function EventCalendar({
 
   const handleEventUpdate = useCallback(
     (updatedEvent) => {
+      // Échéances des autres pages : jamais déplacées depuis le calendrier
+      if (updatedEvent.linked) return;
       // Block drag-and-drop for read-only events
       if (updatedEvent.isReadOnly) {
         toast.info("Les événements externes ne peuvent pas être déplacés");
@@ -372,13 +478,23 @@ export function EventCalendar({
           </div>
         </div>
 
+        <CalendarSourcesBar
+          kinds={linkedKinds}
+          hiddenSources={hiddenSources}
+          onToggle={toggleSource}
+          summary={linkedSummary}
+          eventsCount={periodEventsCount}
+          period={period}
+          loading={linkedLoading}
+        />
+
         <ColorLegend canEdit={canEditEvents} />
 
         <div className="flex flex-1 flex-col">
           {view === "mois" && (
             <MonthView
               currentDate={currentDate}
-              events={events}
+              events={displayedEvents}
               onEventSelect={handleEventSelect}
               onEventCreate={handleEventCreate}
             />
@@ -386,7 +502,7 @@ export function EventCalendar({
           {view === "semaine" && (
             <WeekView
               currentDate={currentDate}
-              events={events}
+              events={displayedEvents}
               onEventSelect={handleEventSelect}
               onEventCreate={handleEventCreate}
             />
@@ -394,7 +510,7 @@ export function EventCalendar({
           {view === "jour" && (
             <DayView
               currentDate={currentDate}
-              events={events}
+              events={displayedEvents}
               onEventSelect={handleEventSelect}
               onEventCreate={handleEventCreate}
             />
@@ -402,7 +518,7 @@ export function EventCalendar({
           {view === "agenda" && (
             <AgendaView
               currentDate={currentDate}
-              events={events}
+              events={displayedEvents}
               onEventSelect={handleEventSelect}
             />
           )}
@@ -420,6 +536,11 @@ export function EventCalendar({
           canEdit={selectedEvent?.id ? canEditEvents : canCreateEvents}
           canDelete={canDeleteEvents}
           canEditLabels={canEditEvents}
+        />
+
+        <LinkedItemSheet
+          item={selectedLinkedItem}
+          onClose={() => setSelectedLinkedItem(null)}
         />
       </CalendarDndProvider>
     </div>

@@ -47,7 +47,8 @@ export const DraggableEvent = memo(function DraggableEvent({
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: `${event.id}-${view}`,
-      disabled: dragDisabled,
+      // Échéances des autres pages : leur date se change dans le document
+      disabled: dragDisabled || !!event.linked,
       data: {
         event,
         view,
@@ -116,7 +117,7 @@ export const DraggableEvent = memo(function DraggableEvent({
         if (elementRef) elementRef.current = node;
       }}
       style={style}
-      className={dragDisabled ? undefined : "touch-none"}
+      className={dragDisabled || event.linked ? undefined : "touch-none"}
     >
       <EventItem
         event={event}
