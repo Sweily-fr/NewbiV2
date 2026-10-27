@@ -11,6 +11,7 @@ import {
   resizeTaskDates,
   resizeTaskDatesFromHandle,
   sameTaskDates,
+  shiftDayByPeriods,
   shiftTaskDates,
 } from "@/src/utils/kanban-calendar";
 
@@ -364,6 +365,32 @@ describe("sameTaskDates", () => {
         { dueDate: iso(2026, 10, 6) },
       ),
     ).toBe(false);
+  });
+});
+
+describe("shiftDayByPeriods", () => {
+  it("recule ou avance d'un mois civil, même jour", () => {
+    expect(shiftDayByPeriods(local(2026, 10, 27), "month", -1)).toEqual(
+      local(2026, 9, 27),
+    );
+    expect(shiftDayByPeriods(local(2026, 12, 15), "month", 1)).toEqual(
+      local(2027, 1, 15),
+    );
+  });
+
+  it("ramène le 31 au dernier jour d'un mois plus court, sans le perdre", () => {
+    const day = local(2026, 10, 31);
+    expect(shiftDayByPeriods(day, "month", -1)).toEqual(local(2026, 9, 30));
+    expect(shiftDayByPeriods(day, "month", -2)).toEqual(local(2026, 8, 31));
+  });
+
+  it("compte des semaines entières en mode semaine", () => {
+    expect(shiftDayByPeriods(local(2026, 10, 27), "week", -1)).toEqual(
+      local(2026, 10, 20),
+    );
+    expect(shiftDayByPeriods(local(2026, 10, 27), "week", 2)).toEqual(
+      local(2026, 11, 10),
+    );
   });
 });
 

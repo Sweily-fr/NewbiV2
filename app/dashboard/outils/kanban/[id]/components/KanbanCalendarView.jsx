@@ -60,6 +60,7 @@ import {
   parseDayKey,
   resizeTaskDatesFromHandle,
   sameTaskDates,
+  shiftDayByPeriods,
   shiftTaskDates,
 } from "@/src/utils/kanban-calendar";
 
@@ -89,11 +90,9 @@ function getPointTarget(x, y) {
         nav: el.dataset.calendarNav,
       };
     }
-    if (el.dataset?.calendarOutside) {
-      return {
-        key: `outside-${el.dataset.calendarOutside}`,
-        outside: el.dataset.calendarOutside,
-      };
+    // Attribut vide (data-calendar-outside="") : tester sa présence
+    if (el.dataset?.calendarOutside !== undefined) {
+      return { key: "outside", outside: true };
     }
     if (el.dataset?.calendarUnscheduled !== undefined) {
       return { key: "unscheduled", unscheduled: true };
@@ -480,14 +479,33 @@ export function KanbanCalendarView({
     if (!dir) return;
     const step = () => {
       const sign = dir === "next" ? 1 : -1;
-      setAnchorDate((prev) =>
-        viewModeRef.current === "week"
-          ? addDays(prev, 7 * sign)
-          : addMonths(prev, sign),
-      );
+      const mode = viewModeRef.current;
+      setAnchorDate((prev) => shiftDayByPeriods(prev, mode, sign));
+      // La tâche suit la période : elle passe sur le même jour du mois (ou
+      // de la semaine) affiché, et y reste si on lâche sur la barre
+      const current = dragRef.current;
+      if (current?.navBaseKey) {
+        current.navOffset += sign;
+        current.targetKey = dayKey(
+          shiftDayByPeriods(
+            parseDayKey(current.navBaseKey),
+            mode,
+            current.navOffset,
+          ),
+        );
+        current.previewDates = getPreviewDates(current, {
+          dayKey: current.targetKey,
+        });
+      }
       // Jauge relancée pour la période d'après
       setDrag((prev) =>
-        prev ? { ...prev, navTick: (prev.navTick || 0) + 1 } : prev,
+        prev
+          ? {
+              ...prev,
+              dates: current ? current.previewDates : prev.dates,
+              navTick: (prev.navTick || 0) + 1,
+            }
+          : prev,
       );
       state.timer = setTimeout(step, NAV_REPEAT);
     };
@@ -545,7 +563,13 @@ export function KanbanCalendarView({
       setNavDirection(navDir);
       const navChanged = current.navDir !== navDir;
       current.navDir = navDir;
+      // Jour de départ des changements de période (voir setNavDirection)
+      if (target?.dayKey) {
+        current.navBaseKey = target.dayKey;
+        current.navOffset = 0;
+      }
       // Sur une zone de la barre ou une case vide : l'aperçu reste où il était
+      // (la barre le décale ensuite d'une période à chaque changement)
       const targetKey =
         target?.nav || target?.outside
           ? current.targetKey
@@ -669,6 +693,7 @@ export function KanbanCalendarView({
     // Les poignées ne déclenchent pas le déplacement de la tâche
     if (kind === "start" || kind === "end") e.stopPropagation();
     stopListening.current();
+    const anchorKey = getPointTarget(e.clientX, e.clientY)?.dayKey ?? null;
     dragRef.current = {
       task,
       kind,
@@ -676,7 +701,9 @@ export function KanbanCalendarView({
         startDate: getDisplayDates(task).startDate || null,
         dueDate: getDisplayDates(task).dueDate || null,
       },
-      anchorKey: getPointTarget(e.clientX, e.clientY)?.dayKey ?? null,
+      anchorKey,
+      navBaseKey: anchorKey,
+      navOffset: 0,
       startX: e.clientX,
       startY: e.clientY,
       active: false,
