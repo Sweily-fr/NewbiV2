@@ -1,5 +1,6 @@
 import {
   addDays,
+  addMonths,
   differenceInCalendarDays,
   eachDayOfInterval,
   endOfMonth,
@@ -97,6 +98,19 @@ export function buildCalendarWeeks(anchorDate, mode = "month") {
     });
   }
   return weeks;
+}
+
+/**
+ * Même jour `count` périodes plus tôt (négatif) ou plus tard : semaines
+ * entières, ou mois civils (le 31 devient le dernier jour d'un mois plus
+ * court). Toujours calculé depuis le jour de départ, pour que le 31 octobre
+ * reculé de deux mois redonne le 31 août et pas le 30.
+ * @param {Date} day
+ * @param {"month"|"week"} mode
+ * @param {number} count
+ */
+export function shiftDayByPeriods(day, mode, count) {
+  return mode === "week" ? addDays(day, 7 * count) : addMonths(day, count);
 }
 
 /**
