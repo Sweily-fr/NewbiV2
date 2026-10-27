@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import { SentEmailMenuItem } from "@/src/components/sent-email-menu-item";
 import {
   useChangeQuoteStatus,
   useDeleteQuote,
@@ -427,6 +428,7 @@ export default function QuoteRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
+              <SentEmailMenuItem documentType="quote" document={quote} />
               {canCreateQuotes && (
                 <DropdownMenuItem
                   onClick={(e) => {

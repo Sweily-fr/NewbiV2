@@ -25,13 +25,14 @@ describe("EmailTrackingStatus - remise de l'email", () => {
     expect(screen.getByText("Envoyé")).toBeInTheDocument();
   });
 
-  it("passe à « Remis » une fois l'email remis au serveur du client", () => {
+  it("reste « Envoyé » une fois l'email remis (suivi inchangé)", () => {
     renderStatus({
       emailSentAt: SENT_AT,
       deliveryStatus: "DELIVERED",
       deliveredAt: "2026-10-26T09:00:04.000Z",
     });
-    expect(screen.getByText("Remis")).toBeInTheDocument();
+    expect(screen.getByText("Envoyé")).toBeInTheDocument();
+    expect(screen.queryByText("Remis")).not.toBeInTheDocument();
   });
 
   it("affiche « Ouvert » quand le client a ouvert l'email remis", () => {
