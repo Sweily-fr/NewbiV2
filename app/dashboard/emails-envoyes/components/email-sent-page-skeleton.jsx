@@ -1,13 +1,14 @@
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 // Skeleton de la page d'un e-mail envoyé. Reprend la structure de la page
-// (en-tête, détails de l'envoi à gauche, e-mail à droite) pour que la
-// transition loading.jsx → page soit invisible.
+// (en-tête, détails de l'envoi à gauche, e-mail à droite, hauteur de la
+// fenêtre sur écran large) pour que la transition loading.jsx → page soit
+// invisible.
 export function EmailSentPageSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6 md:py-6">
+    <div className="flex flex-col gap-4 p-4 md:p-6 md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] md:overflow-hidden">
       {/* En-tête */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 shrink-0">
         <div className="flex items-start gap-3">
           <Skeleton className="h-9 w-9 rounded-md" />
           <div className="space-y-2">
@@ -21,19 +22,19 @@ export function EmailSentPageSkeleton() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+      <div className="flex flex-col gap-4 md:flex-row md:flex-1 md:min-h-0">
         {/* Détails de l'envoi */}
-        <div className="space-y-4">
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] content-start gap-x-3 gap-y-3 rounded-lg border p-4 md:w-[340px] md:shrink-0">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="space-y-1.5">
-              <Skeleton className="h-3 w-20" />
+            <div key={index} className="contents">
+              <Skeleton className="h-4 w-16" />
               <Skeleton className="h-4 w-full" />
             </div>
           ))}
         </div>
 
         {/* E-mail */}
-        <Skeleton className="h-[640px] w-full rounded-lg" />
+        <Skeleton className="h-[640px] w-full rounded-lg md:h-auto md:flex-1 md:min-h-0" />
       </div>
     </div>
   );

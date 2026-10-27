@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import { SentEmailMenuItem } from "@/src/components/sent-email-menu-item";
 import {
   useChangeDeliveryNoteStatus,
   useDeleteDeliveryNote,
@@ -196,6 +197,10 @@ export default function DeliveryNoteRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
+              <SentEmailMenuItem
+                documentType="deliveryNote"
+                document={deliveryNote}
+              />
               {/* Un BL émis reste modifiable tant qu'il n'est pas livré */}
               {canEditDeliveryNotes && (isDraft || isPending || isShipped) && (
                 <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>

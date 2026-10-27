@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import { SentEmailMenuItem } from "@/src/components/sent-email-menu-item";
 import {
   useMarkInvoiceAsPaid,
   useChangeInvoiceStatus,
@@ -378,6 +379,7 @@ export default function InvoiceRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
+              <SentEmailMenuItem documentType="invoice" document={invoice} />
               {canCreateInvoices && (
                 <DropdownMenuItem
                   disabled={isReadOnly}

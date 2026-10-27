@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import { SentEmailMenuItem } from "@/src/components/sent-email-menu-item";
 import {
   useChangePurchaseOrderStatus,
   useDeletePurchaseOrder,
@@ -293,6 +294,10 @@ export default function PurchaseOrderRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
+              <SentEmailMenuItem
+                documentType="purchaseOrder"
+                document={purchaseOrder}
+              />
               {canCreatePurchaseOrders && (
                 <DropdownMenuItem
                   onClick={(e) => {
