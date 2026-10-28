@@ -578,3 +578,187 @@ export function embedSnippet(publicUrl) {
   const separator = String(publicUrl).includes("?") ? "&" : "?";
   return `<iframe src="${publicUrl}${separator}embed=1" title="Prise de rendez-vous" style="width:100%;min-height:720px;border:0" loading="lazy"></iframe>`;
 }
+
+// --- Types de rendez-vous (tiroir de création / édition) -------------------
+
+export const DURATION_PRESETS = [15, 30, 45, 60, 90, 120];
+
+// Préavis minimum proposé (minutes)
+export const MIN_NOTICE_OPTIONS = [0, 60, 120, 240, 720, 1440, 2880];
+
+// Couleurs proposées pour les types et la page (teintes du calendrier)
+export const BOOKING_COLORS = [
+  "#5a50ff",
+  "#2a78d6",
+  "#1baf7a",
+  "#eda100",
+  "#eb6834",
+  "#e87ba4",
+  "#9f2a85",
+  "#64748b",
+];
+
+/** Fournisseurs d'agenda connectés et actifs (google, microsoft, apple). */
+export function activeCalendarProviders(connections) {
+  return new Set(
+    (connections || [])
+      .filter((connection) => connection.status === "active")
+      .map((connection) => connection.provider),
+  );
+}
+
+/**
+ * Lieux proposés à la création d'un type : Meet seulement avec un agenda
+ * Google actif, Teams avec un agenda Microsoft actif (lien généré avec le
+ * compte de l'utilisateur).
+ */
+export function locationOptions(connections) {
+  const providers = activeCalendarProviders(connections);
+  return [
+    {
+      kind: "GOOGLE_MEET",
+      available: providers.has("google"),
+      hint: "Lien Meet créé avec votre agenda Google",
+    },
+    {
+      kind: "TEAMS",
+      available: providers.has("microsoft"),
+      hint: "Lien Teams créé avec votre compte Microsoft",
+    },
+    {
+      kind: "CUSTOM_LINK",
+      available: true,
+      hint: "Votre propre lien de visio",
+    },
+    { kind: "PHONE", available: true, hint: "Vous appelez l'invité" },
+    { kind: "IN_PERSON", available: true, hint: "À une adresse" },
+  ];
+}
+
+/** Lieu par défaut, comme l'API : Meet, sinon Teams, sinon téléphone. */
+export function defaultLocationKind(connections) {
+  const providers = activeCalendarProviders(connections);
+  if (providers.has("google")) return "GOOGLE_MEET";
+  if (providers.has("microsoft")) return "TEAMS";
+  return "PHONE";
+}
+
+/** Type existant (ou nouveau) → valeurs du formulaire. */
+export function appointmentTypeToForm(type, { connections } = {}) {
+  return {
+    name: type?.name || "",
+    slug: type?.slug || "",
+    description: type?.description || "",
+    durationMinutes: type?.durationMinutes ?? 30,
+    slotIntervalMinutes: type?.slotIntervalMinutes ?? 30,
+    locationKind: type?.location?.kind || defaultLocationKind(connections),
+    locationValue: type?.location?.value || "",
+    bufferBeforeMinutes: type?.bufferBeforeMinutes ?? 0,
+    bufferAfterMinutes: type?.bufferAfterMinutes ?? 0,
+    minNoticeMinutes: type?.minNoticeMinutes ?? 240,
+    maxDaysAhead: type?.maxDaysAhead ?? 60,
+    maxPerDay: type?.maxPerDay ?? null,
+    color: type?.color || BOOKING_COLORS[0],
+    isActive: type?.isActive ?? true,
+    requirePhone: type?.requirePhone ?? false,
+  };
+}
+
+const inRange = (value, min, max) =>
+  Number.isInteger(value) && value >= min && value <= max;
+
+/** Erreurs du formulaire de type, champ par champ ({} si tout est bon). */
+export function appointmentTypeFormErrors(form) {
+  const errors = {};
+  const name = String(form.name || "").trim();
+  if (!name) errors.name = "Donnez un nom à ce rendez-vous";
+  else if (name.length > 120) errors.name = "120 caractères au maximum";
+
+  if (!isValidBookingSlug(form.slug))
+    errors.slug = "3 à 40 caractères : lettres minuscules, chiffres et tirets";
+
+  if (String(form.description || "").length > 1000)
+    errors.description = "1000 caractères au maximum";
+
+  if (!inRange(form.durationMinutes, 5, 480))
+    errors.durationMinutes = "Entre 5 et 480 minutes";
+
+  if (!SLOT_INTERVAL_OPTIONS.includes(form.slotIntervalMinutes))
+    errors.slotIntervalMinutes = "Intervalle invalide";
+
+  const value = String(form.locationValue || "").trim();
+  if (form.locationKind === "CUSTOM_LINK") {
+    let valid = false;
+    try {
+      valid = new URL(value).protocol === "https:";
+    } catch {
+      valid = false;
+    }
+    if (!valid) errors.locationValue = "Indiquez un lien complet en https://";
+  }
+  if (form.locationKind === "IN_PERSON" && !value)
+    errors.locationValue = "Indiquez l'adresse du rendez-vous";
+
+  if (!inRange(form.bufferBeforeMinutes, 0, 240))
+    errors.bufferBeforeMinutes = "Entre 0 et 240 minutes";
+  if (!inRange(form.bufferAfterMinutes, 0, 240))
+    errors.bufferAfterMinutes = "Entre 0 et 240 minutes";
+  if (!inRange(form.minNoticeMinutes, 0, 525600))
+    errors.minNoticeMinutes = "Préavis invalide";
+  if (!inRange(form.maxDaysAhead, 1, 365))
+    errors.maxDaysAhead = "Entre 1 et 365 jours";
+  if (form.maxPerDay !== null && !inRange(form.maxPerDay, 1, 100))
+    errors.maxPerDay = "Entre 1 et 100, ou laissez vide";
+
+  return errors;
+}
+
+/** Formulaire → AppointmentTypeInput de l'API. */
+export function appointmentTypeFormToInput(form) {
+  const kind = form.locationKind;
+  const value = String(form.locationValue || "").trim();
+  return {
+    name: String(form.name || "").trim(),
+    slug: form.slug,
+    description: String(form.description || "").trim() || null,
+    durationMinutes: form.durationMinutes,
+    slotIntervalMinutes: form.slotIntervalMinutes,
+    location: {
+      kind,
+      // Meet, Teams et téléphone : rien à saisir
+      value: kind === "CUSTOM_LINK" || kind === "IN_PERSON" ? value : null,
+    },
+    bufferBeforeMinutes: form.bufferBeforeMinutes,
+    bufferAfterMinutes: form.bufferAfterMinutes,
+    minNoticeMinutes: form.minNoticeMinutes,
+    maxDaysAhead: form.maxDaysAhead,
+    maxPerDay: form.maxPerDay,
+    color: form.color,
+    isActive: form.isActive,
+    // Rendez-vous par téléphone : le numéro de l'invité est indispensable
+    requirePhone: kind === "PHONE" ? true : Boolean(form.requirePhone),
+  };
+}
+
+/** Adresse de type libre à côté de celles déjà prises sur la page. */
+export function uniqueTypeSlug(name, takenSlugs = []) {
+  const base = slugifyBookingName(name) || "rendez-vous";
+  const taken = new Set(takenSlugs);
+  if (!taken.has(base)) return base;
+  for (let i = 2; i < 100; i += 1) {
+    const suffix = `-${i}`;
+    const candidate = `${base.slice(0, 40 - suffix.length).replace(/-+$/, "")}${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return base;
+}
+
+/** « 4 h », « 1 jour », « 2 jours » : préavis lisible. */
+export function noticeLabel(minutes) {
+  if (!minutes) return "Aucun";
+  if (minutes % 1440 === 0) {
+    const days = minutes / 1440;
+    return `${days} jour${days > 1 ? "s" : ""}`;
+  }
+  return durationLabel(minutes);
+}

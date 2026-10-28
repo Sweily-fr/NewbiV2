@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
   addDaysToKey,
+  appointmentTypeFormErrors,
+  appointmentTypeFormToInput,
+  appointmentTypeToForm,
+  defaultLocationKind,
+  locationOptions,
+  noticeLabel,
+  uniqueTypeSlug,
   bookingListVariables,
   buildBookingPayload,
   dayKeyInZone,
@@ -395,5 +402,124 @@ describe("tableau de bord", () => {
     expect(embedSnippet("https://www.newbi.fr/rdv/elodie-martin")).toContain(
       'src="https://www.newbi.fr/rdv/elodie-martin?embed=1"',
     );
+  });
+});
+
+describe("formulaire d'un type de rendez-vous", () => {
+  const google = { provider: "google", status: "active" };
+  const microsoft = { provider: "microsoft", status: "expired" };
+
+  it("lieux selon les agendas connectés et actifs", () => {
+    const options = Object.fromEntries(
+      locationOptions([google, microsoft]).map((o) => [o.kind, o.available]),
+    );
+    expect(options).toEqual({
+      GOOGLE_MEET: true,
+      TEAMS: false,
+      CUSTOM_LINK: true,
+      PHONE: true,
+      IN_PERSON: true,
+    });
+    expect(defaultLocationKind([google])).toBe("GOOGLE_MEET");
+    expect(
+      defaultLocationKind([{ provider: "microsoft", status: "active" }]),
+    ).toBe("TEAMS");
+    expect(defaultLocationKind([microsoft])).toBe("PHONE");
+  });
+
+  it("valeurs par défaut d'un nouveau type", () => {
+    const form = appointmentTypeToForm(null, { connections: [] });
+    expect(form).toMatchObject({
+      durationMinutes: 30,
+      slotIntervalMinutes: 30,
+      locationKind: "PHONE",
+      minNoticeMinutes: 240,
+      maxDaysAhead: 60,
+      maxPerDay: null,
+      isActive: true,
+    });
+  });
+
+  it("erreurs : nom, adresse, lieu, bornes", () => {
+    const form = {
+      ...appointmentTypeToForm(null),
+      name: "Découverte",
+      slug: "decouverte",
+    };
+    expect(appointmentTypeFormErrors(form)).toEqual({});
+    expect(
+      appointmentTypeFormErrors({ ...form, name: " ", slug: "x" }),
+    ).toMatchObject({
+      name: "Donnez un nom à ce rendez-vous",
+      slug: "3 à 40 caractères : lettres minuscules, chiffres et tirets",
+    });
+    expect(
+      appointmentTypeFormErrors({
+        ...form,
+        locationKind: "CUSTOM_LINK",
+        locationValue: "http://zoom.us/j/1",
+      }).locationValue,
+    ).toBe("Indiquez un lien complet en https://");
+    expect(
+      appointmentTypeFormErrors({ ...form, locationKind: "IN_PERSON" })
+        .locationValue,
+    ).toBe("Indiquez l'adresse du rendez-vous");
+    expect(
+      appointmentTypeFormErrors({
+        ...form,
+        durationMinutes: 600,
+        bufferAfterMinutes: -5,
+        maxDaysAhead: 0,
+        maxPerDay: 0,
+      }),
+    ).toMatchObject({
+      durationMinutes: "Entre 5 et 480 minutes",
+      bufferAfterMinutes: "Entre 0 et 240 minutes",
+      maxDaysAhead: "Entre 1 et 365 jours",
+      maxPerDay: "Entre 1 et 100, ou laissez vide",
+    });
+  });
+
+  it("entrée de l'API : valeur du lieu seulement si utile, téléphone exigé par appel", () => {
+    const form = {
+      ...appointmentTypeToForm(null),
+      name: " Appel découverte ",
+      slug: "appel-decouverte",
+      locationKind: "PHONE",
+      locationValue: "reste d'une saisie",
+    };
+    expect(appointmentTypeFormToInput(form)).toMatchObject({
+      name: "Appel découverte",
+      description: null,
+      location: { kind: "PHONE", value: null },
+      requirePhone: true,
+    });
+    expect(
+      appointmentTypeFormToInput({
+        ...form,
+        locationKind: "IN_PERSON",
+        locationValue: " 12 rue de la Paix, Paris ",
+      }).location,
+    ).toEqual({ kind: "IN_PERSON", value: "12 rue de la Paix, Paris" });
+  });
+
+  it("adresse de type unique sur la page", () => {
+    expect(uniqueTypeSlug("Rendez-vous de 30 min", [])).toBe(
+      "rendez-vous-de-30-min",
+    );
+    expect(
+      uniqueTypeSlug("Rendez-vous de 30 min", [
+        "rendez-vous-de-30-min",
+        "rendez-vous-de-30-min-2",
+      ]),
+    ).toBe("rendez-vous-de-30-min-3");
+    expect(uniqueTypeSlug("!", [])).toBe("rendez-vous");
+  });
+
+  it("préavis lisible", () => {
+    expect(noticeLabel(0)).toBe("Aucun");
+    expect(noticeLabel(240)).toBe("4 h");
+    expect(noticeLabel(1440)).toBe("1 jour");
+    expect(noticeLabel(2880)).toBe("2 jours");
   });
 });
