@@ -2,8 +2,9 @@ import { NextResponse, userAgent } from "next/server";
 
 // L'app n'est pas utilisable sur téléphone : ces préfixes sont redirigés vers
 // /mobile-non-disponible quand l'appareil est un mobile (User-Agent).
-// Le site public, /auth et surtout les liens de transfert (/transfer/*)
-// restent accessibles sur mobile.
+// Le site public, /auth et surtout les liens de transfert (/transfer/*) et
+// les pages de prise de rendez-vous (/rdv/*, sans compte) restent
+// accessibles sur mobile : le matcher ci-dessous ne les couvre pas.
 //
 // NOTE : ce fichier doit rester compatible edge runtime — pas d'import de
 // mongodb, Better Auth ou tout module Node (stream, fs, …). La vérification

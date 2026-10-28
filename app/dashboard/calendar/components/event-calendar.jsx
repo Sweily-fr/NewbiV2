@@ -42,6 +42,10 @@ import { CalendarSyncButton } from "./calendar-sync-button";
 import { CalendarFiltersButton } from "./calendar-filters";
 import { ColorLegend } from "./color-legend";
 import { LinkedItemSheet } from "./linked-item-sheet";
+import {
+  AppointmentEventSheet,
+  isAppointmentEvent,
+} from "./appointment-event-sheet";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -102,6 +106,8 @@ export function EventCalendar({
   const [selectedEvent, setSelectedEvent] = useState(null);
   // Échéance d'une autre page ouverte dans sa fiche
   const [selectedLinkedItem, setSelectedLinkedItem] = useState(null);
+  // Rendez-vous pris en ligne ouvert dans sa fiche (lecture seule)
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [hiddenSources, setHiddenSources] = useState(() => new Set());
   const [myTasksOnly, setMyTasksOnly] = useState(false);
 
@@ -254,6 +260,7 @@ export function EventCalendar({
       if (
         isEventDialogOpen ||
         selectedLinkedItem ||
+        selectedAppointment ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         (e.target instanceof HTMLElement && e.target.isContentEditable)
@@ -282,7 +289,7 @@ export function EventCalendar({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isEventDialogOpen, selectedLinkedItem]);
+  }, [isEventDialogOpen, selectedLinkedItem, selectedAppointment]);
 
   const handlePrevious = () => {
     if (view === "mois") {
@@ -322,6 +329,10 @@ export function EventCalendar({
   const handleEventSelect = useCallback((event) => {
     if (event.linked) {
       setSelectedLinkedItem(event.linked);
+      return;
+    }
+    if (isAppointmentEvent(event)) {
+      setSelectedAppointment(event);
       return;
     }
     setSelectedEvent(event);
@@ -579,7 +590,11 @@ export function EventCalendar({
       }
       // Block drag-and-drop for read-only events
       if (updatedEvent.isReadOnly) {
-        toast.info("Les événements externes ne peuvent pas être déplacés");
+        toast.info(
+          isAppointmentEvent(updatedEvent)
+            ? "Gérez ce rendez-vous depuis Communication > Prise de rendez-vous."
+            : "Les événements externes ne peuvent pas être déplacés",
+        );
         return;
       }
       if (!canEditEvents) {
@@ -804,6 +819,11 @@ export function EventCalendar({
           item={selectedLinkedItem}
           onClose={() => setSelectedLinkedItem(null)}
           actions={sheetActions}
+        />
+
+        <AppointmentEventSheet
+          event={selectedAppointment}
+          onClose={() => setSelectedAppointment(null)}
         />
       </CalendarDndProvider>
     </div>

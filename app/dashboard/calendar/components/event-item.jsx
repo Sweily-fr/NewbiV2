@@ -3,6 +3,7 @@
 import { memo, useMemo } from "react";
 // Types removed for JavaScript compatibility
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
+import { CalendarCheck } from "lucide-react";
 
 import { getBorderRadiusClasses, getEventHexStyles } from "./index";
 import { ExternalEventBadge } from "./external-event-badge";
@@ -17,6 +18,24 @@ import { cn } from "@/src/lib/utils";
 const formatTimeWithOptionalMinutes = (date) => {
   return format(date, getMinutes(date) === 0 ? "H'h'" : "H:mm");
 };
+
+// Rendez-vous pris en ligne : icône devant le titre, libellé lu par les
+// lecteurs d'écran (ou affiché dans la vue agenda)
+function AppointmentMark({ event, showLabel = false }) {
+  if (event.type !== "APPOINTMENT") return null;
+  return (
+    <>
+      <CalendarCheck className="size-3 shrink-0" aria-hidden="true" />
+      {showLabel ? (
+        <span className="shrink-0 rounded bg-current/10 px-1 text-[10px] font-medium">
+          Rendez-vous
+        </span>
+      ) : (
+        <span className="sr-only">Rendez-vous : </span>
+      )}
+    </>
+  );
+}
 
 // EventWrapper props converted to JSDoc
 /**
@@ -180,6 +199,7 @@ export const EventItem = memo(function EventItem({
       >
         {children || (
           <span className="flex w-full items-center gap-1 truncate">
+            <AppointmentMark event={event} />
             <span className="truncate">
               {!event.allDay && (
                 <span className="truncate font-normal opacity-70 sm:text-[11px]">
@@ -228,6 +248,7 @@ export const EventItem = memo(function EventItem({
       >
         {durationMinutes < 45 ? (
           <div className="flex w-full items-center gap-1 truncate">
+            <AppointmentMark event={event} />
             <span className="truncate">
               {event.title}{" "}
               {showTime && (
@@ -249,6 +270,7 @@ export const EventItem = memo(function EventItem({
         ) : (
           <>
             <div className="flex w-full items-center gap-1 truncate">
+              <AppointmentMark event={event} />
               <span className="truncate font-medium">{event.title}</span>
               <SyncBadge count={syncCount} className="shrink-0" />
               {event.assignedMembersInfo?.length > 0 && (
@@ -287,6 +309,7 @@ export const EventItem = memo(function EventItem({
       {...dndAttributes}
     >
       <div className="flex items-center gap-1.5 text-sm font-medium">
+        <AppointmentMark event={event} showLabel />
         {event.title}
         <SyncBadge count={syncCount} />
         <ExternalEventBadge source={event.source} />

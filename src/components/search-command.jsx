@@ -40,6 +40,7 @@ import {
   UserCog,
   Workflow,
   Calendar,
+  CalendarCheck,
   Share2,
   Upload,
   Loader2,
@@ -1143,6 +1144,20 @@ export function SearchCommand() {
                         <Mail className="size-3.5" />
                       </IconWrapper>
                       <span>Signatures de mail</span>
+                    </CommandItem>
+                  )}
+                  {canList("/dashboard/outils/rendez-vous") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/rendez-vous"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <CalendarCheck className="size-3.5" />
+                      </IconWrapper>
+                      <span>Prise de rendez-vous</span>
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/documents-partages") && (

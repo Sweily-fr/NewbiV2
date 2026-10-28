@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Link2, ChevronRight, Loader2, Plus, CheckCircle2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -89,6 +90,13 @@ export function CalendarConnectionsPanel({ canManage = true }) {
   const [showAppleDialog, setShowAppleDialog] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [connecting, setConnecting] = useState(null);
+  // ?agendas=1 (lien « Connecter un agenda » de la prise de rendez-vous) :
+  // panneau ouvert à l'arrivée
+  const searchParams = useSearchParams();
+  const openRequested = searchParams?.get("agendas") === "1";
+  useEffect(() => {
+    if (openRequested && canManage) setIsOpen(true);
+  }, [openRequested, canManage]);
   const { data: sessionData } = useSession();
   const isReady = !!sessionData?.user;
   // Espace actif : l'API y vérifie le droit « Modifier » du calendrier

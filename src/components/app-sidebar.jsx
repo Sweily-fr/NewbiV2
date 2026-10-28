@@ -36,6 +36,7 @@ import {
   MicroscopeIcon,
   SlashIcon,
   BrushIcon,
+  CalendarTickIcon,
   DocumentCloudIcon,
   DocumentTextIcon,
   SendIcon,
@@ -209,6 +210,12 @@ const data = {
       url: "/dashboard/outils/signatures-mail",
       isPro: false,
       icon: BrushIcon,
+    },
+    {
+      title: "Prise de rendez-vous",
+      url: "/dashboard/outils/rendez-vous",
+      isPro: false,
+      icon: CalendarTickIcon,
     },
   ],
   navSecondary: [

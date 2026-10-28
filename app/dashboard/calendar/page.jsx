@@ -8,6 +8,7 @@ import { CalendarPageSkeleton } from "./components/calendar-page-skeleton";
 import { EventCalendar } from "./components";
 import { useEvents, useEventOperations } from "@/src/hooks/useEvents";
 import { toast } from "@/src/components/ui/sonner";
+import { APPOINTMENT_COLOR } from "@/src/utils/booking";
 
 export default function Component() {
   // Récupération des événements depuis la base de données
@@ -55,27 +56,33 @@ export default function Component() {
     }
 
     // Transformer les événements de la BDD au format attendu par le calendrier
-    const transformed = dbEvents.map((event) => ({
-      id: event.id,
-      title: event.title,
-      description: event.description,
-      start: new Date(event.start),
-      end: new Date(event.end),
-      allDay: event.allDay,
-      color: event.color,
-      location: event.location,
-      type: event.type,
-      invoiceId: event.invoiceId,
-      invoice: event.invoice,
-      source: event.source || "newbi",
-      visibility: event.visibility || "workspace",
-      isReadOnly: event.isReadOnly || false,
-      externalEventId: event.externalEventId,
-      externalCalendarLinks: event.externalCalendarLinks || [],
-      assignedMembers: event.assignedMembers || [],
-      assignedMembersInfo: event.assignedMembersInfo || [],
-      emailReminder: event.emailReminder || null,
-    }));
+    const transformed = dbEvents.map((event) => {
+      // Rendez-vous pris en ligne : couleur dédiée, géré depuis la prise
+      // de rendez-vous (ni déplacé ni modifié ici, l'API refuse aussi)
+      const isAppointment = event.type === "APPOINTMENT";
+      return {
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        start: new Date(event.start),
+        end: new Date(event.end),
+        allDay: event.allDay,
+        color: isAppointment ? APPOINTMENT_COLOR : event.color,
+        location: event.location,
+        type: event.type,
+        bookingId: event.bookingId || null,
+        invoiceId: event.invoiceId,
+        invoice: event.invoice,
+        source: event.source || "newbi",
+        visibility: event.visibility || "workspace",
+        isReadOnly: isAppointment || event.isReadOnly || false,
+        externalEventId: event.externalEventId,
+        externalCalendarLinks: event.externalCalendarLinks || [],
+        assignedMembers: event.assignedMembers || [],
+        assignedMembersInfo: event.assignedMembersInfo || [],
+        emailReminder: event.emailReminder || null,
+      };
+    });
 
     return transformed;
   }, [dbEvents, loading]);
@@ -112,7 +119,11 @@ export default function Component() {
   const handleEventUpdate = async (updatedEvent) => {
     // Ne pas permettre la mise à jour des événements en lecture seule
     if (updatedEvent.isReadOnly) {
-      toast.error("Les événements externes ne peuvent pas être modifiés");
+      toast.error(
+        updatedEvent.type === "APPOINTMENT"
+          ? "Gérez ce rendez-vous depuis Communication > Prise de rendez-vous."
+          : "Les événements externes ne peuvent pas être modifiés",
+      );
       return;
     }
 

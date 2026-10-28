@@ -119,6 +119,12 @@ const cspValue = [
   "form-action 'self'",
 ].join("; ");
 
+// Pages publiques de prise de rendez-vous (/rdv/…) : intégrables en iframe
+// sur le site des clients (?embed=1). Seules ces pages autorisent tout
+// parent (frame-ancestors *) et n'envoient pas X-Frame-Options ; le reste du
+// site garde DENY. Jamais indexées.
+const bookingCspValue = `${cspValue}; frame-ancestors *`;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Dossier de build isolable via NEXT_DIST_DIR. Deux processus Next qui
@@ -200,6 +206,28 @@ const nextConfig = {
   },
 
   async headers() {
+    const securityHeaders = [
+      {
+        key: "X-Content-Type-Options",
+        value: "nosniff",
+      },
+      {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+      },
+      {
+        key: "X-XSS-Protection",
+        value: "1; mode=block",
+      },
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=()",
+      },
+    ];
     return [
       {
         // Autoriser l'iframe same-origin pour la prévisualisation de fichiers
@@ -235,36 +263,36 @@ const nextConfig = {
         ],
       },
       {
+        // Tout le site sauf les deux proxys ci-dessus et /rdv (ci-dessous) :
+        // une règle plus loin ne peut pas retirer X-Frame-Options, seulement
+        // le remplacer, d'où l'exclusion plutôt qu'une surcharge
         source:
-          "/((?!api/shared-documents/preview-file|api/document-preview).*)",
+          "/((?!api/shared-documents/preview-file|api/document-preview|rdv(?:/|$)).*)",
         headers: [
           {
             key: "X-Frame-Options",
             value: "DENY",
           },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
-          },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
+          ...securityHeaders,
           {
             key: cspHeaderKey,
             value: cspValue,
+          },
+        ],
+      },
+      {
+        // Prise de rendez-vous : mêmes en-têtes sans X-Frame-Options, CSP
+        // avec frame-ancestors * (intégration en iframe), pas d'indexation
+        source: "/rdv/:path*",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "X-Robots-Tag",
+            value: "noindex, nofollow",
+          },
+          {
+            key: cspHeaderKey,
+            value: bookingCspValue,
           },
         ],
       },
