@@ -24,6 +24,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/transferts-fichiers", "fileTransfers"],
   ["/dashboard/outils/documents-partages", "sharedDocuments"],
   ["/dashboard/outils/signatures-mail", "signatures"],
+  ["/dashboard/outils/rendez-vous", "appointments"],
 ];
 
 // Avoirs : pages sous une facture (/factures/<id>/avoir/…)

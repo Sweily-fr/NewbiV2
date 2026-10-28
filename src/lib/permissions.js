@@ -74,6 +74,7 @@ export const statement = {
   sharedDocuments: ["view", "create", "edit", "delete", "download"],
   kanban: ["view", "create", "edit", "delete", "assign"],
   signatures: ["view", "create", "edit", "delete", "set-default"],
+  appointments: ["view", "create", "edit", "delete"],
   calendar: ["view", "create", "edit", "delete"],
 
   // ========================================
@@ -162,6 +163,7 @@ export const owner = ac.newRole({
   sharedDocuments: ["view", "create", "edit", "delete", "download"],
   kanban: ["view", "create", "edit", "delete", "assign"],
   signatures: ["view", "create", "edit", "delete", "set-default"],
+  appointments: ["view", "create", "edit", "delete"],
   calendar: ["view", "create", "edit", "delete"],
 
   // Rapports - Accès complet
@@ -243,6 +245,7 @@ export const admin = ac.newRole({
   sharedDocuments: ["view", "create", "edit", "delete", "download"],
   kanban: ["view", "create", "edit", "delete", "assign"],
   signatures: ["view", "create", "edit", "delete", "set-default"],
+  appointments: ["view", "create", "edit", "delete"],
   calendar: ["view", "create", "edit", "delete"],
 
   // Rapports - Accès complet
@@ -288,6 +291,8 @@ export const member = ac.newRole({
   // Signatures de mail : documents personnels, chacun supprime les siennes
   // (l'API filtre toutes les suppressions sur l'auteur)
   signatures: ["view", "create", "edit", "delete", "set-default"],
+  // Prise de rendez-vous : sa propre page, ses types et ses rendez-vous
+  appointments: ["view", "create", "edit", "delete"],
   calendar: ["view", "create", "edit"],
 
   // Rapports - Lecture + export
@@ -327,6 +332,7 @@ export const viewer = ac.newRole({
   fileTransfers: ["view", "download"],
   kanban: ["view"],
   signatures: ["view"],
+  appointments: ["view"],
   calendar: ["view"],
 
   // Rapports - Lecture seule
@@ -372,6 +378,7 @@ export const accountant = ac.newRole({
   // Gestion - Lecture seule
   team: ["view"],
   auditLog: ["view"], // Peut voir l'audit
-  // Pas d'accès aux outils (kanban, transferts, signatures, calendar)
+  // Pas d'accès aux outils (kanban, transferts, signatures, rendez-vous,
+  // calendar)
   // Pas d'accès: orgSettings, integrations, billing
 });
