@@ -122,6 +122,8 @@ export function bookingErrorText(error) {
       return "Certaines informations sont à corriger.";
     case "NOT_FOUND":
       return "Cette page de réservation n'est pas disponible.";
+    case "NOT_ALLOWED":
+      return "Ce rendez-vous ne peut plus être modifié : il est passé ou déjà annulé.";
     case "UNAVAILABLE":
       return "La réservation n'a pas pu aboutir. Contactez directement votre interlocuteur.";
     case "NETWORK":

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
+  bookingValidationOutcome,
   locationKindLabel,
   longDateLabel,
   timeRangeLabel,
@@ -156,6 +157,12 @@ export function ManageBookingView({ token, embed = false }) {
   const { booking } = state;
   const page = booking.page || {};
 
+  // Rendez-vous passé ou annulé entre-temps (NOT_ALLOWED) : état relu
+  const refreshBooking = () =>
+    fetchManagedBooking(token)
+      .then((data) => setState({ status: "ready", booking: data }))
+      .catch(() => {});
+
   const startReschedule = async () => {
     setActionError("");
     setNotice(null);
@@ -197,6 +204,10 @@ export function ManageBookingView({ token, embed = false }) {
       });
     } catch (error) {
       setActionError(bookingErrorText(error));
+      if (error?.code === "NOT_ALLOWED") {
+        setMode("view");
+        refreshBooking();
+      }
     } finally {
       setBusy(false);
     }
@@ -226,14 +237,22 @@ export function ManageBookingView({ token, embed = false }) {
     } catch (error) {
       turnstileRef.current?.reset();
       setTurnstileToken("");
-      if (error?.code === "SLOT_TAKEN" || error?.code === "VALIDATION") {
+      const outcome =
+        error?.code === "VALIDATION"
+          ? bookingValidationOutcome(error.fields)
+          : null;
+      if (error?.code === "SLOT_TAKEN" || outcome?.slotInvalid) {
         setSlot(null);
         setReloadKey((key) => key + 1);
         setMode("reschedule");
         setNotice({ tone: "warning", text: SLOT_TAKEN_NOTICE });
         return;
       }
-      setActionError(bookingErrorText(error));
+      if (error?.code === "NOT_ALLOWED") {
+        setMode("view");
+        refreshBooking();
+      }
+      setActionError(outcome ? outcome.message : bookingErrorText(error));
     } finally {
       setBusy(false);
     }

@@ -2,7 +2,7 @@
 // sans compte, jamais indexées (aussi X-Robots-Tag dans next.config.js),
 // absentes du sitemap. Intégrables en iframe avec ?embed=1.
 export const metadata = {
-  title: "Prise de rendez-vous",
+  title: "Prendre rendez-vous",
   robots: { index: false, follow: false },
 };
 

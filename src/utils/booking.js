@@ -10,6 +10,14 @@
 export const BOOKING_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
 
 export const DEFAULT_TIME_ZONE = "Europe/Paris";
+
+// Couleur des rendez-vous dans le Calendrier (prune). Validée par le script
+// dataviz (daltonisme deutan/protan/tritan) contre Encaissements #1baf7a,
+// Paiements #eb6834, Devis #6250d6, Récurrences #eda100 et Tâches #2a78d6 :
+// écart CVD >= 13 et vision normale >= 17, en clair comme en sombre, sans
+// bleu ni violet voisin. Une seule teinte pour les deux thèmes (les
+// événements du calendrier n'ont qu'une couleur).
+export const APPOINTMENT_COLOR = "#9f2a85";
 export const DEFAULT_ACCENT_COLOR = "#5a50ff";
 
 export const LOCATION_KIND_LABELS = {
@@ -469,6 +477,23 @@ export function mapApiFieldErrors(fields) {
   return errors;
 }
 
+/**
+ * Refus 400 VALIDATION de l'API : erreurs des champs du formulaire, et
+ * message général (anti-robot refusé, créneau invalide…). Les clés de
+ * l'API sont à plat : start, firstName, lastName, email, phone, message,
+ * timezone, turnstileToken.
+ */
+export function bookingValidationOutcome(fields) {
+  const { turnstileToken, start, timezone, ...inputs } =
+    mapApiFieldErrors(fields);
+  let message = "Certaines informations sont à corriger.";
+  if (turnstileToken) message = turnstileToken;
+  else if (start)
+    message = "Ce créneau n'est plus réservable. Choisissez-en un autre.";
+  else if (!Object.keys(inputs).length && timezone) message = timezone;
+  return { inputs, message, slotInvalid: Boolean(start) };
+}
+
 // --- Ajout à un agenda ----------------------------------------------------
 
 // 2026-11-03T09:00:00.000Z → 20261103T090000Z
@@ -761,4 +786,69 @@ export function noticeLabel(minutes) {
     return `${days} jour${days > 1 ? "s" : ""}`;
   }
   return durationLabel(minutes);
+}
+
+// --- Disponibilités (éditeur hebdomadaire) --------------------------------
+
+const DEFAULT_DAY_INTERVALS = [
+  { start: "09:00", end: "12:00" },
+  { start: "14:00", end: "18:00" },
+];
+
+/**
+ * Disponibilités de l'API → les 7 jours de l'éditeur, lundi d'abord
+ * (jour sans plage = fermé).
+ */
+export function availabilityToDraft(availability) {
+  const byDay = new Map(
+    (availability || []).map((day) => [day.dayOfWeek, day.intervals || []]),
+  );
+  return WEEK_DAYS.map(({ dayOfWeek }) => {
+    const intervals = sortIntervals(byDay.get(dayOfWeek) || []);
+    return { dayOfWeek, enabled: intervals.length > 0, intervals };
+  });
+}
+
+/** Éditeur → AvailabilityDayInput (jours ouverts seulement, plages triées). */
+export function draftToAvailability(draft) {
+  return draft
+    .filter((day) => day.enabled && day.intervals.length > 0)
+    .map((day) => ({
+      dayOfWeek: day.dayOfWeek,
+      intervals: sortIntervals(day.intervals),
+    }));
+}
+
+/** Plages proposées quand on rouvre un jour fermé. */
+export function defaultDayIntervals() {
+  return DEFAULT_DAY_INTERVALS.map((interval) => ({ ...interval }));
+}
+
+/** Exceptions triées par date, plages triées (forme de l'API). */
+export function normalizeOverrides(overrides) {
+  return [...(overrides || [])]
+    .map((override) => ({
+      date: override.date,
+      intervals: sortIntervals(override.intervals),
+    }))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+/** Première erreur de l'éditeur (jours puis exceptions), ou null. */
+export function availabilityDraftError(draft, overrides) {
+  for (const day of draft) {
+    if (!day.enabled) continue;
+    const error = intervalsError(day.intervals);
+    if (error) {
+      const label = WEEK_DAYS.find((d) => d.dayOfWeek === day.dayOfWeek)?.label;
+      return `${label} : ${error.charAt(0).toLowerCase()}${error.slice(1)}`;
+    }
+  }
+  for (const override of overrides || []) {
+    const error = intervalsError(override.intervals);
+    if (error) {
+      return `${dayKeyLabel(override.date)} : ${error.charAt(0).toLowerCase()}${error.slice(1)}`;
+    }
+  }
+  return null;
 }

@@ -24,7 +24,10 @@ const firstOfMonth = (key) => keyToLocalDate(`${key.slice(0, 7)}-01`);
 
 // Jour de la grille : plein à la couleur d'accent s'il est choisi, teinté
 // s'il a des créneaux, grisé sinon
-function SlotDayButton({ day, modifiers, className, ...props }) {
+function SlotDayButton({ modifiers, className, ...rest }) {
+  // `day` (objet de react-day-picker) ne doit pas finir en attribut HTML
+  const props = { ...rest };
+  delete props.day;
   const ref = useRef(null);
   useEffect(() => {
     if (modifiers.focused) ref.current?.focus();

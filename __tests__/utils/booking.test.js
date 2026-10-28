@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   addDaysToKey,
+  availabilityDraftError,
+  availabilityToDraft,
+  bookingValidationOutcome,
+  defaultDayIntervals,
+  draftToAvailability,
+  normalizeOverrides,
   appointmentTypeFormErrors,
   appointmentTypeFormToInput,
   appointmentTypeToForm,
@@ -521,5 +527,101 @@ describe("formulaire d'un type de rendez-vous", () => {
     expect(noticeLabel(240)).toBe("4 h");
     expect(noticeLabel(1440)).toBe("1 jour");
     expect(noticeLabel(2880)).toBe("2 jours");
+  });
+});
+
+describe("éditeur des disponibilités", () => {
+  it("API → 7 jours lundi d'abord, et retour", () => {
+    const draft = availabilityToDraft([
+      {
+        dayOfWeek: 2,
+        intervals: [
+          { start: "14:00", end: "18:00" },
+          { start: "09:00", end: "12:00" },
+        ],
+      },
+      { dayOfWeek: 7, intervals: [] },
+    ]);
+    expect(draft.map((d) => d.dayOfWeek)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(draft[0].enabled).toBe(false);
+    expect(draft[1]).toEqual({
+      dayOfWeek: 2,
+      enabled: true,
+      intervals: [
+        { start: "09:00", end: "12:00" },
+        { start: "14:00", end: "18:00" },
+      ],
+    });
+    expect(draft[6].enabled).toBe(false);
+
+    draft[2] = {
+      dayOfWeek: 3,
+      enabled: true,
+      intervals: defaultDayIntervals(),
+    };
+    // Jour coché sans plage : pas envoyé
+    draft[3] = { dayOfWeek: 4, enabled: true, intervals: [] };
+    expect(draftToAvailability(draft).map((d) => d.dayOfWeek)).toEqual([2, 3]);
+  });
+
+  it("exceptions triées, erreurs nommées par jour", () => {
+    expect(
+      normalizeOverrides([
+        { date: "2026-12-24", intervals: [] },
+        { date: "2026-11-11", intervals: [] },
+      ]).map((o) => o.date),
+    ).toEqual(["2026-11-11", "2026-12-24"]);
+    const draft = availabilityToDraft([
+      { dayOfWeek: 1, intervals: [{ start: "12:00", end: "09:00" }] },
+    ]);
+    expect(availabilityDraftError(draft, [])).toBe(
+      "Lundi : la fin doit être après le début",
+    );
+    expect(
+      availabilityDraftError(availabilityToDraft([]), [
+        {
+          date: "2026-11-03",
+          intervals: [
+            { start: "09:00", end: "11:00" },
+            { start: "10:00", end: "12:00" },
+          ],
+        },
+      ]),
+    ).toBe("Mardi 3 novembre : les plages se chevauchent");
+    expect(availabilityDraftError(availabilityToDraft([]), [])).toBeNull();
+  });
+});
+
+describe("refus VALIDATION de l'API", () => {
+  it("anti-robot refusé : message général, aucun champ en erreur", () => {
+    expect(
+      bookingValidationOutcome({
+        turnstileToken: "Vérification anti-robot échouée. Veuillez réessayer.",
+      }),
+    ).toEqual({
+      inputs: {},
+      message: "Vérification anti-robot échouée. Veuillez réessayer.",
+      slotInvalid: false,
+    });
+  });
+
+  it("créneau invalide et champs du formulaire", () => {
+    const outcome = bookingValidationOutcome({
+      start: "Créneau invalide.",
+      email: "Adresse e-mail invalide.",
+    });
+    expect(outcome.slotInvalid).toBe(true);
+    expect(outcome.inputs).toEqual({ email: "Adresse e-mail invalide." });
+    expect(outcome.message).toBe(
+      "Ce créneau n'est plus réservable. Choisissez-en un autre.",
+    );
+    expect(
+      bookingValidationOutcome({ phone: "Numéro de téléphone invalide." })
+        .message,
+    ).toBe("Certaines informations sont à corriger.");
+    expect(
+      bookingValidationOutcome({ timezone: "Fuseau horaire invalide." })
+        .message,
+    ).toBe("Fuseau horaire invalide.");
   });
 });

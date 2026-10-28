@@ -8,8 +8,8 @@ import {
   BOOKING_FORM_LIMITS,
   buildBookingPayload,
   isPhoneRequired,
+  bookingValidationOutcome,
   longDateLabel,
-  mapApiFieldErrors,
   timeRangeLabel,
   timeZoneLabel,
   validateBookingForm,
@@ -149,13 +149,9 @@ export function BookingForm({
         return;
       }
       if (error?.code === "VALIDATION") {
-        const fieldErrors = mapApiFieldErrors(error.fields);
-        setErrors(fieldErrors);
-        setFormError(
-          Object.keys(fieldErrors).length
-            ? bookingErrorText(error)
-            : "Ce créneau n'est plus réservable. Choisissez-en un autre.",
-        );
+        const outcome = bookingValidationOutcome(error.fields);
+        setErrors(outcome.inputs);
+        setFormError(outcome.message);
         return;
       }
       setFormError(bookingErrorText(error));
