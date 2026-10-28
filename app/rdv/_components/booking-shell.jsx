@@ -124,8 +124,13 @@ export function OrganizerAvatar({ src, name, accentColor, size = 56 }) {
   return (
     <span
       aria-hidden="true"
-      className="flex shrink-0 items-center justify-center rounded-full text-base font-medium text-white"
-      style={{ width: size, height: size, backgroundColor: accent }}
+      className="flex shrink-0 items-center justify-center rounded-full text-base font-medium"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: accent,
+        color: readableTextColor(accent),
+      }}
     >
       {initials || "?"}
     </span>

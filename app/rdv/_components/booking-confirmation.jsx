@@ -73,11 +73,11 @@ export function BookingConfirmation({ result, guestEmail, guestTimeZone }) {
         </h1>
         {guestEmail && (
           <p className="text-sm text-gray-500">
-            Un e-mail de confirmation a été envoyé à{" "}
-            <span className="font-medium break-all text-gray-700">
+            Un e-mail de confirmation a été envoyé à
+            {/* Adresse sur sa propre ligne : coupée seulement si trop longue */}
+            <span className="block font-medium [overflow-wrap:anywhere] text-gray-700">
               {guestEmail}
             </span>
-            .
           </p>
         )}
       </div>
