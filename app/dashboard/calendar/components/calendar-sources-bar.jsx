@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { CircleAlert, TrendingDown, TrendingUp } from "lucide-react";
+import { CircleAlert, TrendingDown, TrendingUp, UserRound } from "lucide-react";
 
 import {
   Tooltip,
@@ -17,6 +17,24 @@ import {
 import { LINKED_SOURCE_META } from "./linked-sources";
 
 const MONEY_KINDS = new Set(["INVOICE", "PURCHASE_INVOICE"]);
+
+// Valeur affichée dans la pastille
+function chipValue(kind, stats) {
+  if (MONEY_KINDS.has(kind)) return euros(stats.openAmount);
+  if (kind === "FORECAST") {
+    const net = stats.incomeAmount - stats.expenseAmount;
+    return `${net > 0 ? "+ " : net < 0 ? "- " : ""}${euros(Math.abs(net))}`;
+  }
+  return String(stats.openCount);
+}
+
+// Compteur rouge : retards, envois en échec, relances sans adresse
+const chipAlertCount = (kind, stats) =>
+  kind === "REMINDER"
+    ? stats.overdueCount + stats.noEmailCount
+    : kind === "FORECAST" || kind === "FILE_TRANSFER"
+      ? 0
+      : stats.overdueCount;
 
 const plural = (count, one, many) => (count > 1 ? many : one);
 const euros = (amount) => formatLinkedAmount(amount, "EUR", { compact: true });
@@ -58,6 +76,42 @@ function tooltipLines(kind, stats) {
     case "RECURRING_INVOICE":
       return [
         `${openCount} ${plural(openCount, "facture prévue", "factures prévues")} · ${euros(stats.openAmount)}`,
+      ];
+    case "FORECAST":
+      return [
+        `${stats.incomeCount} ${plural(stats.incomeCount, "rentrée prévue", "rentrées prévues")} · + ${euros(stats.incomeAmount)}`,
+        `${stats.expenseCount} ${plural(stats.expenseCount, "sortie prévue", "sorties prévues")} · - ${euros(stats.expenseAmount)}`,
+        "Récurrences détectées et saisies de la page Prévision",
+      ];
+    case "REMINDER":
+      return [
+        `${openCount} ${plural(openCount, "relance prévue", "relances prévues")}`,
+        stats.noEmailCount > 0 && {
+          alert: true,
+          text: `dont ${stats.noEmailCount} sans adresse e-mail`,
+        },
+        doneCount > 0 &&
+          `${doneCount} ${plural(doneCount, "envoyée", "envoyées")}`,
+        overdueCount > 0 && {
+          alert: true,
+          text: `${overdueCount} en échec`,
+        },
+      ];
+    case "DELIVERY":
+      return [
+        `${openCount} ${plural(openCount, "livraison prévue", "livraisons prévues")}`,
+        overdueCount > 0 && {
+          alert: true,
+          text: `dont ${overdueCount} en retard`,
+        },
+        doneCount > 0 &&
+          `${doneCount} ${plural(doneCount, "livrée", "livrées")}`,
+      ];
+    case "FILE_TRANSFER":
+      return [
+        `${openCount} ${plural(openCount, "lien expire", "liens expirent")}`,
+        doneCount > 0 &&
+          `${doneCount} déjà ${plural(doneCount, "expiré", "expirés")}`,
       ];
     case "TASK":
       return [
@@ -184,9 +238,15 @@ export const CalendarSourcesBar = memo(function CalendarSourcesBar({
   eventsCount,
   period,
   loading,
+  // Faux quand la bande de trésorerie affiche le solde au jour le jour
+  showBalance: balanceAllowed = true,
+  // « Mes tâches » : seulement les tâches dont on est membre assigné
+  myTasksOnly = false,
+  onToggleMyTasks,
 }) {
   const allowed = LINKED_KINDS.filter((kind) => kinds.includes(kind));
   const showBalance =
+    balanceAllowed &&
     !loading &&
     allowed.includes("INVOICE") &&
     allowed.includes("PURCHASE_INVOICE");
@@ -198,7 +258,7 @@ export const CalendarSourcesBar = memo(function CalendarSourcesBar({
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-2 pb-2 sm:px-4">
-      <div className="-mx-1 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] sm:w-auto sm:flex-1 [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-1 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] sm:w-auto sm:flex-1 lg:flex-wrap lg:overflow-visible [&::-webkit-scrollbar]:hidden">
         <SourceChip
           sourceKey={EVENTS_SOURCE}
           active={!hiddenSources.has(EVENTS_SOURCE)}
@@ -223,23 +283,43 @@ export const CalendarSourcesBar = memo(function CalendarSourcesBar({
           ))}
         {allowed.map((kind) => {
           const stats = summary.byKind[kind];
-          return (
+          const chip = (
             <SourceChip
               key={kind}
               sourceKey={kind}
               active={!hiddenSources.has(kind)}
               onToggle={onToggle}
-              value={
-                MONEY_KINDS.has(kind)
-                  ? euros(stats.openAmount)
-                  : String(stats.openCount)
-              }
-              alertCount={stats.overdueCount}
+              value={chipValue(kind, stats)}
+              alertCount={chipAlertCount(kind, stats)}
               lines={tooltipLines(kind, stats)}
               periodTitle={period.title}
               loading={loading}
             />
           );
+          if (kind !== "TASK" || !onToggleMyTasks) return chip;
+          return [
+            chip,
+            <button
+              key="my-tasks"
+              type="button"
+              aria-pressed={myTasksOnly}
+              onClick={onToggleMyTasks}
+              title={
+                myTasksOnly
+                  ? "Afficher toutes les tâches"
+                  : "Afficher seulement les tâches qui vous sont assignées"
+              }
+              className={cn(
+                "focus-visible:ring-ring/50 -ml-0.5 inline-flex h-8 shrink-0 items-center gap-1 rounded-full border px-2.5 text-xs transition outline-none focus-visible:ring-[3px]",
+                myTasksOnly
+                  ? "border-[#2a78d6]/40 bg-[#2a78d6]/10 text-[#2a78d6] dark:border-[#3987e5]/50 dark:bg-[#3987e5]/15 dark:text-[#3987e5]"
+                  : "border-border/70 text-muted-foreground hover:bg-muted/40",
+              )}
+            >
+              <UserRound className="size-3.5" aria-hidden="true" />
+              Les miennes
+            </button>,
+          ];
         })}
       </div>
 
