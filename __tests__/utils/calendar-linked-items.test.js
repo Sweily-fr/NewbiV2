@@ -3,11 +3,13 @@ import {
   formatLinkedAmount,
   isPlainInvoiceDueEvent,
   linkedItemHref,
+  linkedReminderDraft,
   linkedItemToEvent,
   periodNames,
   relativeDayLabel,
   summarizeLinkedItems,
   summaryRange,
+  treasuryByDay,
   visibleRange,
 } from "@/src/utils/calendar-linked-items";
 
@@ -157,6 +159,104 @@ describe("linkedItemHref", () => {
         sourceInvoiceId: "f9",
       }),
     ).toBe("/dashboard/outils/factures?id=f9");
+    expect(linkedItemHref({ kind: "REMINDER", entityId: "f2" })).toBe(
+      "/dashboard/outils/factures?id=f2",
+    );
+    expect(
+      linkedItemHref({
+        kind: "DELIVERY",
+        entityId: "b1",
+        documentKind: "DELIVERY_NOTE",
+      }),
+    ).toBe("/dashboard/outils/bons-de-livraison?id=b1");
+    expect(
+      linkedItemHref({
+        kind: "DELIVERY",
+        entityId: "c1",
+        documentKind: "PURCHASE_ORDER",
+      }),
+    ).toBe("/dashboard/outils/bons-commande?id=c1");
+    expect(linkedItemHref({ kind: "FORECAST", entityId: "p1" })).toBe(
+      "/dashboard/outils/prevision",
+    );
+    expect(linkedItemHref({ kind: "FILE_TRANSFER", entityId: "t1" })).toBe(
+      "/dashboard/outils/transferts-fichiers",
+    );
+  });
+});
+
+describe("prévisions et relances dans les totaux", () => {
+  it("rentrées et sorties séparées, relances sans adresse comptées", () => {
+    const { byKind, balance } = summarizeLinkedItems(
+      [
+        item("FORECAST", "2026-11-05", "UPCOMING", 1100, {
+          flowType: "EXPENSE",
+        }),
+        item("FORECAST", "2026-11-20", "UPCOMING", 2000, {
+          flowType: "INCOME",
+        }),
+        item("REMINDER", "2026-11-09", "UPCOMING", 480, {
+          reminderStatus: "NO_EMAIL",
+        }),
+        item("REMINDER", "2026-11-12", "OVERDUE", 480, {
+          reminderStatus: "FAILED",
+        }),
+      ],
+      { from: "2026-11-01", to: "2026-11-30" },
+    );
+
+    expect(byKind.FORECAST).toMatchObject({
+      incomeAmount: 2000,
+      expenseAmount: 1100,
+      incomeCount: 1,
+      expenseCount: 1,
+    });
+    expect(byKind.REMINDER).toMatchObject({
+      noEmailCount: 1,
+      overdueCount: 1,
+    });
+    // Le solde de repli ne compte que les factures
+    expect(balance).toBe(0);
+  });
+});
+
+describe("linkedReminderDraft", () => {
+  it("titre d'action et rappel de l'échéance", () => {
+    const draft = linkedReminderDraft(
+      item("INVOICE", "2026-11-15", "UPCOMING", 1200, {
+        counterparty: "Atelier Lumière",
+        reference: "F-202610-0001",
+      }),
+    );
+
+    expect(draft.title).toBe("Relancer Atelier Lumière (F-202610-0001)");
+    expect(draft.description.replace(/\s/g, " ")).toBe(
+      "Échéance de paiement le dimanche 15 novembre 2026 · 1 200,00 €",
+    );
+    expect(
+      linkedReminderDraft(
+        item("PURCHASE_INVOICE", "2026-11-15", "UPCOMING", 59.99, {
+          counterparty: "OVH",
+        }),
+      ).title,
+    ).toBe("Payer OVH");
+    expect(
+      linkedReminderDraft({ ...item("TASK", "2026-11-15", "UPCOMING") }).title,
+    ).toBe("Suivre « Titre »");
+  });
+});
+
+describe("treasuryByDay", () => {
+  it("indexe le solde prévu par jour", () => {
+    const map = treasuryByDay({
+      days: [
+        { day: "2026-10-28", balance: 100 },
+        { day: "2026-10-29", balance: -20 },
+      ],
+    });
+
+    expect(map.get("2026-10-29").balance).toBe(-20);
+    expect(treasuryByDay(null).size).toBe(0);
   });
 });
 

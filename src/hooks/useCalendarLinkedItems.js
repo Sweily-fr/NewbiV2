@@ -1,6 +1,9 @@
 import { useRef } from "react";
 import { useQuery } from "@apollo/client";
-import { GET_CALENDAR_LINKED_ITEMS } from "@/src/graphql/queries/calendarLinkedItems";
+import {
+  GET_CALENDAR_LINKED_ITEMS,
+  GET_CALENDAR_TREASURY,
+} from "@/src/graphql/queries/calendarLinkedItems";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 const EMPTY = [];
@@ -50,4 +53,36 @@ export function useCalendarLinkedItems({ from, to, skip = false }) {
     unavailable: !!error && !result,
     refetch,
   };
+}
+
+/**
+ * Trésorerie au jour le jour sur [from, to] : solde actuel, solde prévu en
+ * fin de journée, point bas, retards hors projection. null sans accès à la
+ * page Prévision ou Analytiques (l'API le décide).
+ */
+export function useCalendarTreasury({ from, to, skip = false }) {
+  const { workspaceId } = useWorkspace();
+
+  const { data, loading } = useQuery(GET_CALENDAR_TREASURY, {
+    variables: { workspaceId, from, to },
+    skip: skip || !workspaceId || !from || !to,
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+    errorPolicy: "all",
+  });
+
+  // Même principe que les échéances : la période précédente reste affichée
+  // pendant le chargement, jamais celle d'un autre espace
+  const lastRef = useRef(null);
+  if (data && "calendarTreasury" in data) {
+    lastRef.current = { workspaceId, treasury: data.calendarTreasury };
+  }
+  const treasury =
+    data && "calendarTreasury" in data
+      ? data.calendarTreasury
+      : lastRef.current?.workspaceId === workspaceId
+        ? lastRef.current.treasury
+        : null;
+
+  return { treasury, loading: loading && !data };
 }

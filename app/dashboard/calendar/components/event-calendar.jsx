@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useApolloClient, useMutation } from "@apollo/client";
 import {
   addDays,
+  differenceInCalendarDays,
   addMonths,
   addWeeks,
   endOfWeek,
@@ -37,20 +39,37 @@ import {
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
 import { CalendarSyncButton } from "./calendar-sync-button";
 import { CalendarSourcesBar } from "./calendar-sources-bar";
+import {
+  CalendarTreasuryStrip,
+  TreasuryDayBadge,
+} from "./calendar-treasury-strip";
 import { ColorLegend } from "./color-legend";
 import { LinkedItemSheet } from "./linked-item-sheet";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { useCalendarLinkedItems } from "@/src/hooks/useCalendarLinkedItems";
-import { dateToDay } from "@/src/utils/recurrenceDays";
+import {
+  useCalendarLinkedItems,
+  useCalendarTreasury,
+} from "@/src/hooks/useCalendarLinkedItems";
+import { dateToDay, dayToDate } from "@/src/utils/recurrenceDays";
+import { shiftTaskDates } from "@/src/utils/kanban-calendar";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { useMarkInvoiceAsPaid } from "@/src/graphql/invoiceQueries";
+import { useMarkAsPaid as useMarkPurchaseInvoiceAsPaid } from "@/src/hooks/usePurchaseInvoices";
+import { SEND_INVOICE_REMINDER_NOW } from "@/src/graphql/invoiceReminderQueries";
+import { UPDATE_TASK } from "@/src/graphql/kanbanQueries";
+import { useSession } from "@/src/lib/auth-client";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   EVENTS_SOURCE,
   isPlainInvoiceDueEvent,
   linkedItemToEvent,
+  linkedReminderDraft,
   periodNames,
   summarizeLinkedItems,
   summaryRange,
+  treasuryByDay,
   visibleRange,
 } from "@/src/utils/calendar-linked-items";
 import {
@@ -63,6 +82,8 @@ import {
 
 // Sources masquées par l'utilisateur, gardées dans ce navigateur
 const HIDDEN_SOURCES_KEY = "newbi:calendar:hidden-sources";
+// « Mes tâches seulement », gardé dans ce navigateur
+const MY_TASKS_KEY = "newbi:calendar:my-tasks";
 const NO_HIDDEN_SOURCES = new Set();
 
 function readHiddenSources() {
@@ -89,10 +110,44 @@ export function EventCalendar({
   // Échéance d'une autre page ouverte dans sa fiche
   const [selectedLinkedItem, setSelectedLinkedItem] = useState(null);
   const [hiddenSources, setHiddenSources] = useState(() => new Set());
+  const [myTasksOnly, setMyTasksOnly] = useState(false);
+
+  // Droits du rôle sur le calendrier (tout autorisé tant que la grille
+  // n'est pas chargée, l'API refuse de toute façon)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canCreateEvents = !permissionsReady || canDo("calendar", "create");
+  // Modifier, glisser-déposer, étiquettes et synchronisation = « edit »
+  const canEditEvents = !permissionsReady || canDo("calendar", "edit");
+  const canDeleteEvents = !permissionsReady || canDo("calendar", "delete");
+  // Échéances des autres pages : chaque action suit le droit de sa page
+  const canEditTasks = !permissionsReady || canDo("kanban", "edit");
+  const canMarkInvoicePaid = !permissionsReady || canDo("invoices", "markPaid");
+  const canMarkPurchasePaid =
+    !permissionsReady || canDo("purchaseInvoices", "markPaid");
+  const canSendInvoices = !permissionsReady || canDo("invoices", "send");
+
+  const { data: sessionData } = useSession();
+  const currentUserId = sessionData?.user?.id;
 
   // Lu après le premier rendu : le rendu serveur ne connaît pas le stockage
   useEffect(() => {
     setHiddenSources(readHiddenSources());
+    try {
+      setMyTasksOnly(localStorage.getItem(MY_TASKS_KEY) === "1");
+    } catch {
+      // Stockage indisponible : toutes les tâches
+    }
+  }, []);
+
+  const toggleMyTasks = useCallback(() => {
+    setMyTasksOnly((previous) => {
+      try {
+        localStorage.setItem(MY_TASKS_KEY, previous ? "0" : "1");
+      } catch {
+        // Stockage indisponible (navigation privée) : choix non retenu
+      }
+      return !previous;
+    });
   }, []);
 
   const toggleSource = useCallback((key) => {
@@ -120,6 +175,34 @@ export function EventCalendar({
     loading: linkedLoading,
     unavailable: linkedUnavailable,
   } = useCalendarLinkedItems(range);
+  // Solde prévu jour par jour (null sans accès à Prévision ou Analytiques)
+  const { treasury } = useCalendarTreasury(range);
+  const treasuryDays = useMemo(() => treasuryByDay(treasury), [treasury]);
+  const renderTreasuryBadge = useCallback(
+    (day) => {
+      const key = dateToDay(day);
+      const treasuryDay = treasuryDays.get(key);
+      return treasuryDay ? (
+        <TreasuryDayBadge day={key} balance={treasuryDay.balance} />
+      ) : null;
+    },
+    [treasuryDays],
+  );
+
+  // « Mes tâches » : seulement les tâches dont on est membre assigné
+  const visibleLinkedItems = useMemo(
+    () =>
+      myTasksOnly && currentUserId
+        ? linkedItems.filter(
+            (item) =>
+              item.kind !== "TASK" ||
+              (item.assignedMembersInfo || []).some(
+                (member) => member.userId === currentUserId,
+              ),
+          )
+        : linkedItems,
+    [linkedItems, myTasksOnly, currentUserId],
+  );
 
   // Sans barre des sources (aucune autre page visible), rien n'est masqué :
   // un choix d'avant ne doit pas cacher les événements sans moyen de revenir
@@ -134,11 +217,22 @@ export function EventCalendar({
         : // Copies des échéances de factures : remplacées par l'échéance
           // relue dans la facture (statut à jour)
           events.filter((event) => !isPlainInvoiceDueEvent(event));
-    const linkedEvents = linkedItems
+    const linkedEvents = visibleLinkedItems
       .filter((item) => !activeHiddenSources.has(item.kind))
-      .map(linkedItemToEvent);
+      .map((item) => ({
+        ...linkedItemToEvent(item),
+        // Seules les tâches se déplacent (leur échéance change), avec le
+        // droit de modifier les projets
+        linkedDraggable: item.kind === "TASK" && canEditTasks,
+      }));
     return linkedEvents.length ? [...ownEvents, ...linkedEvents] : ownEvents;
-  }, [events, linkedItems, linkedUnavailable, activeHiddenSources]);
+  }, [
+    events,
+    visibleLinkedItems,
+    linkedUnavailable,
+    activeHiddenSources,
+    canEditTasks,
+  ]);
 
   // Totaux de la barre des sources (le mois en vue mois)
   const period = useMemo(() => {
@@ -146,8 +240,8 @@ export function EventCalendar({
     return { ...bounds, ...periodNames(view, currentDate, AgendaDaysToShow) };
   }, [view, currentDate]);
   const linkedSummary = useMemo(
-    () => summarizeLinkedItems(linkedItems, period),
-    [linkedItems, period],
+    () => summarizeLinkedItems(visibleLinkedItems, period),
+    [visibleLinkedItems, period],
   );
   const periodEventsCount = useMemo(
     () =>
@@ -242,14 +336,6 @@ export function EventCalendar({
     setIsEventDialogOpen(true);
   }, []);
 
-  // Droits du rôle sur le calendrier (tout autorisé tant que la grille
-  // n'est pas chargée, l'API refuse de toute façon)
-  const { canDo, isReady: permissionsReady } = useMyPermissions();
-  const canCreateEvents = !permissionsReady || canDo("calendar", "create");
-  // Modifier, glisser-déposer, étiquettes et synchronisation = « edit »
-  const canEditEvents = !permissionsReady || canDo("calendar", "edit");
-  const canDeleteEvents = !permissionsReady || canDo("calendar", "delete");
-
   const handleEventCreate = useCallback(
     (startTime) => {
       if (!canCreateEvents) return;
@@ -319,10 +405,186 @@ export function EventCalendar({
     [events, onEventDelete],
   );
 
+  // --- Échéances des autres pages : actions ---
+  const apolloClient = useApolloClient();
+  const { workspaceId } = useWorkspace();
+  const { markAsPaid: markInvoicePaid } = useMarkInvoiceAsPaid();
+  const { markAsPaid: markPurchasePaid } = useMarkPurchaseInvoiceAsPaid();
+  const [sendReminderNow] = useMutation(SEND_INVOICE_REMINDER_NOW);
+  const [updateTaskMutation] = useMutation(UPDATE_TASK);
+
+  // Mise à jour immédiate d'une échéance dans le cache (la grille, les
+  // totaux et la fiche suivent), puis relecture des échéances et du solde
+  const patchLinkedItem = useCallback(
+    (item, fields) => {
+      const cacheId = apolloClient.cache.identify({
+        __typename: "CalendarLinkedItem",
+        id: item.id,
+      });
+      if (cacheId) {
+        apolloClient.cache.modify({
+          id: cacheId,
+          fields: Object.fromEntries(
+            Object.entries(fields).map(([key, value]) => [key, () => value]),
+          ),
+        });
+      }
+      setSelectedLinkedItem((current) =>
+        current?.id === item.id ? { ...current, ...fields } : current,
+      );
+    },
+    [apolloClient],
+  );
+  const refreshLinked = useCallback(
+    () =>
+      apolloClient.refetchQueries({
+        include: ["GetCalendarLinkedItems", "GetCalendarTreasury"],
+      }),
+    [apolloClient],
+  );
+
+  const handleMarkPaid = useCallback(
+    async (item) => {
+      if (item.kind === "INVOICE" || item.kind === "REMINDER") {
+        try {
+          await markInvoicePaid(item.entityId, formatLocalDate());
+          toast.success("Facture marquée comme payée");
+        } catch {
+          toast.error("Erreur lors du marquage comme payée");
+          return;
+        }
+        if (item.kind === "INVOICE") {
+          patchLinkedItem(item, { state: "DONE", documentStatus: "COMPLETED" });
+        } else {
+          // Facture payée : ses relances à venir n'auront pas lieu
+          setSelectedLinkedItem(null);
+        }
+      } else {
+        // Le hook des achats affiche lui-même le message
+        const marked = await markPurchasePaid(
+          item.entityId,
+          new Date().toISOString(),
+        ).catch(() => null);
+        if (!marked) return;
+        patchLinkedItem(item, { state: "DONE", documentStatus: "PAID" });
+      }
+      refreshLinked();
+    },
+    [markInvoicePaid, markPurchasePaid, patchLinkedItem, refreshLinked],
+  );
+
+  const handleSendReminder = useCallback(
+    async (item) => {
+      try {
+        const { data } = await sendReminderNow({
+          variables: { invoiceId: item.entityId, workspaceId },
+        });
+        const result = data?.sendInvoiceReminderNow;
+        if (result?.success) {
+          toast.success(result.message);
+          refreshLinked();
+        } else {
+          toast.error(result?.message || "L'envoi du rappel a échoué.");
+        }
+      } catch (error) {
+        toast.error(error.message || "L'envoi du rappel a échoué.");
+      }
+    },
+    [sendReminderNow, workspaceId, refreshLinked],
+  );
+
+  // « Me rappeler » : nouvel événement pré-rempli, la veille de l'échéance
+  // à 9 h si elle est à venir, sinon demain à 9 h
+  const handleRemindMe = useCallback((item) => {
+    const draft = linkedReminderDraft(item);
+    const tomorrow = addDays(new Date(), 1);
+    const dayBefore = addDays(dayToDate(item.day), -1);
+    const start = new Date(dayBefore > tomorrow ? dayBefore : tomorrow);
+    start.setHours(9, 0, 0, 0);
+    setSelectedLinkedItem(null);
+    setSelectedEvent({
+      id: "",
+      title: draft.title,
+      description: draft.description,
+      start,
+      end: addHoursToDate(start, 1),
+      allDay: false,
+    });
+    setIsEventDialogOpen(true);
+  }, []);
+
+  const sheetActions = useMemo(
+    () => ({
+      canMarkPaid: (item) =>
+        item.kind === "PURCHASE_INVOICE"
+          ? canMarkPurchasePaid
+          : canMarkInvoicePaid,
+      onMarkPaid: handleMarkPaid,
+      canSendReminder: () => canSendInvoices,
+      onSendReminder: handleSendReminder,
+      canRemindMe: canCreateEvents,
+      onRemindMe: handleRemindMe,
+    }),
+    [
+      canMarkInvoicePaid,
+      canMarkPurchasePaid,
+      canSendInvoices,
+      canCreateEvents,
+      handleMarkPaid,
+      handleSendReminder,
+      handleRemindMe,
+    ],
+  );
+
+  // Tâche lâchée sur un autre jour : début et échéance décalés d'autant,
+  // heures gardées (comme la vue Calendrier des projets)
+  const moveLinkedTask = useCallback(
+    async (item, newStart) => {
+      const delta = differenceInCalendarDays(newStart, dayToDate(item.day));
+      if (!delta) return;
+      const previous = {
+        day: item.day,
+        startDate: item.startDate,
+        dueDate: item.dueDate,
+        state: item.state,
+      };
+      const dates = shiftTaskDates(
+        { startDate: item.startDate, dueDate: item.dueDate },
+        delta,
+      );
+      const day = dateToDay(newStart);
+      const today = dateToDay(new Date());
+      patchLinkedItem(item, {
+        ...dates,
+        day,
+        state:
+          item.state === "DONE" ? "DONE" : day < today ? "OVERDUE" : "UPCOMING",
+      });
+      try {
+        await updateTaskMutation({
+          variables: { input: { id: item.entityId, ...dates }, workspaceId },
+        });
+        toast.success(
+          `Tâche « ${item.title} » déplacée au ${format(newStart, "EEEE d MMMM", { locale: fr })}`,
+        );
+        refreshLinked();
+      } catch (error) {
+        patchLinkedItem(item, previous);
+        toast.error(error.message || "La tâche n'a pas pu être déplacée");
+      }
+    },
+    [patchLinkedItem, updateTaskMutation, workspaceId, refreshLinked],
+  );
+
   const handleEventUpdate = useCallback(
     (updatedEvent) => {
-      // Échéances des autres pages : jamais déplacées depuis le calendrier
-      if (updatedEvent.linked) return;
+      // Échéances des autres pages : seules les tâches se déplacent
+      if (updatedEvent.linked) {
+        if (updatedEvent.linkedDraggable) {
+          moveLinkedTask(updatedEvent.linked, new Date(updatedEvent.start));
+        }
+        return;
+      }
       // Block drag-and-drop for read-only events
       if (updatedEvent.isReadOnly) {
         toast.info("Les événements externes ne peuvent pas être déplacés");
@@ -340,7 +602,7 @@ export function EventCalendar({
         `Événement "${updatedEvent.title}" déplacé — ${format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr })}`,
       );
     },
-    [onEventUpdate, canEditEvents],
+    [onEventUpdate, canEditEvents, moveLinkedTask],
   );
 
   const viewTitle = useMemo(() => {
@@ -486,7 +748,12 @@ export function EventCalendar({
           eventsCount={periodEventsCount}
           period={period}
           loading={linkedLoading}
+          showBalance={!treasury}
+          myTasksOnly={myTasksOnly}
+          onToggleMyTasks={currentUserId ? toggleMyTasks : undefined}
         />
+
+        <CalendarTreasuryStrip treasury={treasury} period={period} />
 
         <ColorLegend canEdit={canEditEvents} />
 
@@ -497,6 +764,9 @@ export function EventCalendar({
               events={displayedEvents}
               onEventSelect={handleEventSelect}
               onEventCreate={handleEventCreate}
+              renderDayBadge={
+                treasury?.hasBankAccounts ? renderTreasuryBadge : undefined
+              }
             />
           )}
           {view === "semaine" && (
@@ -541,6 +811,7 @@ export function EventCalendar({
         <LinkedItemSheet
           item={selectedLinkedItem}
           onClose={() => setSelectedLinkedItem(null)}
+          actions={sheetActions}
         />
       </CalendarDndProvider>
     </div>

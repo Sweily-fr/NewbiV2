@@ -47,6 +47,9 @@ export const MonthView = React.memo(function MonthView({
   events,
   onEventSelect,
   onEventCreate,
+  // Facultatif : contenu affiché à côté du numéro du jour (solde prévu
+  // négatif ce jour-là, par exemple)
+  renderDayBadge,
 }) {
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
@@ -165,8 +168,11 @@ export const MonthView = React.memo(function MonthView({
                       onEventCreate(startTime);
                     }}
                   >
-                    <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm">
-                      {format(day, "d")}
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm">
+                        {format(day, "d")}
+                      </div>
+                      {renderDayBadge?.(day)}
                     </div>
                     <div
                       ref={isReferenceCell ? contentRef : null}
