@@ -29,9 +29,10 @@ import {
   getSocialAccountName,
 } from "@/app/dashboard/outils/kanban/[id]/components/social/SocialNetworkIcon";
 
-// Rouvre la fiche « Réseaux sociaux » des applications au retour de la
-// connexion (lu par ApplicationsSection)
-export const SOCIAL_APP_ID = "reseaux-sociaux";
+// Identifiant de l'application (même valeur que SOCIAL_NETWORKS_APP_ID côté
+// API : la désinstaller déconnecte les comptes). La fiche se rouvre au
+// retour de la connexion (lu par ApplicationsSection).
+export const SOCIAL_APP_ID = "social-networks";
 export const PENDING_SETTINGS_APP_KEY = "newbi:settings-open-app";
 
 const PLATFORM_HINTS = {

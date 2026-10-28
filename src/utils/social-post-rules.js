@@ -634,6 +634,10 @@ export function getSocialConnectErrorMessage(code, platform) {
       return "Connexion momentanément indisponible, contactez le support Newbi.";
     case "account_mismatch":
       return `Ce compte ${label} ne correspond pas à celui attendu. Reconnectez le bon compte.`;
+    case "forbidden":
+      return "Votre rôle ne permet pas de connecter un réseau social.";
+    case "invalid_state":
+      return "Le lien de connexion a expiré. Recommencez la connexion.";
     default:
       return `La connexion à ${label} a échoué. Réessayez.`;
   }
@@ -655,12 +659,11 @@ export function buildComposerReturnTo(pathname) {
 /**
  * Chemin de retour après une connexion lancée depuis les paramètres : la
  * page courante, paramètres rouverts sur les applications. L'API n'accepte
- * que des chemins qui commencent par « /dashboard/ » : depuis l'accueil
- * (« /dashboard »), on revient sur « /dashboard/ ».
+ * que « /dashboard » et les chemins en dessous.
  */
 export function buildSettingsReturnTo(pathname) {
   const path = SAFE_DASHBOARD_PATH.test(pathname || "")
     ? pathname
-    : "/dashboard/";
+    : "/dashboard";
   return `${path}?openSettings=true&settingsTab=applications`;
 }

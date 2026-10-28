@@ -348,6 +348,9 @@ describe("connexion des comptes", () => {
     expect(getSocialConnectErrorMessage("payment_required", "twitter")).toBe(
       "Connexion momentanément indisponible, contactez le support Newbi.",
     );
+    expect(getSocialConnectErrorMessage("invalid_state", "tiktok")).toBe(
+      "Le lien de connexion a expiré. Recommencez la connexion.",
+    );
     expect(getSocialConnectErrorMessage("nouveau_code", "twitter")).toBe(
       "La connexion à X a échoué. Réessayez.",
     );
@@ -361,7 +364,7 @@ describe("connexion des comptes", () => {
       "/dashboard/outils/kanban?socialPost=new",
     );
     expect(buildSettingsReturnTo("/dashboard")).toBe(
-      "/dashboard/?openSettings=true&settingsTab=applications",
+      "/dashboard?openSettings=true&settingsTab=applications",
     );
     expect(buildSettingsReturnTo("/dashboard/outils/factures")).toBe(
       "/dashboard/outils/factures?openSettings=true&settingsTab=applications",
