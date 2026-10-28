@@ -165,13 +165,7 @@ export function summarizeLinkedItems(items, { from, to }) {
     }
   }
 
-  return {
-    byKind,
-    // Encaissements attendus moins paiements à faire (factures non réglées
-    // de la période). Les récurrences n'y entrent pas : la facture émise
-    // ce jour-là sera payée plus tard, à son échéance.
-    balance: byKind.INVOICE.openAmount - byKind.PURCHASE_INVOICE.openAmount,
-  };
+  return { byKind };
 }
 
 /**
@@ -280,15 +274,6 @@ export function periodNames(view, currentDate, agendaDays = 30) {
       };
     }
   }
-}
-
-/**
- * Trésorerie indexée par jour (AAAA-MM-JJ) pour les cases du mois.
- */
-export function treasuryByDay(treasury) {
-  const map = new Map();
-  for (const day of treasury?.days || []) map.set(day.day, day);
-  return map;
 }
 
 const longDate = (day) =>

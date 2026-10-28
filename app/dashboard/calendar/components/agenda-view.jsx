@@ -37,7 +37,7 @@ export const AgendaView = memo(function AgendaView({
   );
 
   return (
-    <div className="border-border/70 border-t px-4">
+    <div className="border-border/70 min-h-0 flex-1 overflow-y-auto border-t px-4">
       {!hasEvents ? (
         <div className="flex min-h-[70svh] flex-col items-center justify-center py-16 text-center">
           <RiCalendarEventLine

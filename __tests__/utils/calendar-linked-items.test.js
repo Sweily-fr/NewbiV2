@@ -9,7 +9,6 @@ import {
   relativeDayLabel,
   summarizeLinkedItems,
   summaryRange,
-  treasuryByDay,
   visibleRange,
 } from "@/src/utils/calendar-linked-items";
 
@@ -111,8 +110,8 @@ describe("summarizeLinkedItems", () => {
     item("RECURRING_INVOICE", "2026-10-29", "UPCOMING", 500),
   ];
 
-  it("totaux par source et solde des échéances non réglées", () => {
-    const { byKind, balance } = summarizeLinkedItems(items, {
+  it("totaux par source, devises étrangères à part", () => {
+    const { byKind } = summarizeLinkedItems(items, {
       from: "2026-10-01",
       to: "2026-10-31",
     });
@@ -133,8 +132,6 @@ describe("summarizeLinkedItems", () => {
       foreignCount: 1,
     });
     expect(byKind.TASK).toMatchObject({ openCount: 2, overdueCount: 1 });
-    // Récurrences hors solde : payées plus tard, à leur échéance
-    expect(balance).toBe(1700);
   });
 });
 
@@ -187,7 +184,7 @@ describe("linkedItemHref", () => {
 
 describe("prévisions et relances dans les totaux", () => {
   it("rentrées et sorties séparées, relances sans adresse comptées", () => {
-    const { byKind, balance } = summarizeLinkedItems(
+    const { byKind } = summarizeLinkedItems(
       [
         item("FORECAST", "2026-11-05", "UPCOMING", 1100, {
           flowType: "EXPENSE",
@@ -215,8 +212,6 @@ describe("prévisions et relances dans les totaux", () => {
       noEmailCount: 1,
       overdueCount: 1,
     });
-    // Le solde de repli ne compte que les factures
-    expect(balance).toBe(0);
   });
 });
 
@@ -243,20 +238,6 @@ describe("linkedReminderDraft", () => {
     expect(
       linkedReminderDraft({ ...item("TASK", "2026-11-15", "UPCOMING") }).title,
     ).toBe("Suivre « Titre »");
-  });
-});
-
-describe("treasuryByDay", () => {
-  it("indexe le solde prévu par jour", () => {
-    const map = treasuryByDay({
-      days: [
-        { day: "2026-10-28", balance: 100 },
-        { day: "2026-10-29", balance: -20 },
-      ],
-    });
-
-    expect(map.get("2026-10-29").balance).toBe(-20);
-    expect(treasuryByDay(null).size).toBe(0);
   });
 });
 

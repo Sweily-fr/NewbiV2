@@ -52,28 +52,3 @@ export const GET_CALENDAR_LINKED_ITEMS = gql`
     }
   }
 `;
-
-// Trésorerie au jour le jour : solde actuel puis solde prévu en fin de
-// journée (null sans accès à la page Prévision ou Analytiques)
-export const GET_CALENDAR_TREASURY = gql`
-  query GetCalendarTreasury($workspaceId: ID, $from: String!, $to: String!) {
-    calendarTreasury(workspaceId: $workspaceId, from: $from, to: $to) {
-      today
-      currentBalance
-      hasBankAccounts
-      sources
-      overdueIncome
-      overdueExpense
-      lowest {
-        day
-        balance
-      }
-      days {
-        day
-        income
-        expense
-        balance
-      }
-    }
-  }
-`;
