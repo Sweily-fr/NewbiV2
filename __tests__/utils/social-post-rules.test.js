@@ -125,6 +125,7 @@ describe("validateSocialPost", () => {
     const errors = validateSocialPost({ ...base, content: "   " });
     expect(errors[0]).toEqual({
       field: "content",
+      code: "empty",
       message: "Écrivez un texte ou ajoutez une image.",
     });
     expect(
@@ -145,6 +146,7 @@ describe("validateSocialPost", () => {
     expect(errors).toEqual([
       {
         field: "content",
+        code: "text_too_long",
         message: "Le texte dépasse la limite de X (281 / 280).",
       },
     ]);
@@ -159,6 +161,7 @@ describe("validateSocialPost", () => {
     expect(errors).toEqual([
       {
         field: "media",
+        code: "image_required",
         message: "Instagram et TikTok demandent au moins une image.",
       },
     ]);
@@ -187,8 +190,10 @@ describe("validateSocialPost", () => {
       ],
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0].field).toBe("media");
-    expect(errors[0].message).toContain("image 2");
+    expect(errors[0].code).toBe("instagram_ratio");
+    expect(errors[0].message).toBe(
+      "Image 2 trop allongée pour Instagram : recadrez-la entre le format portrait 9:16 et le format paysage 1,91:1.",
+    );
   });
 
   it("date : au moins 5 minutes dans le futur, au plus un an", () => {

@@ -255,7 +255,7 @@ function formatPositions(positions) {
  * @param {string|null} [input.scheduledFor] ISO UTC
  * @param {Date} [input.now]
  * @param {{ privacyLevel?: string, consentGiven?: boolean, canPostMore?: boolean }} [input.tiktok]
- * @returns {Array<{ field: "accounts"|"content"|"media"|"when"|"tiktok", message: string }>}
+ * @returns {Array<{ field: "accounts"|"content"|"media"|"when"|"tiktok", code: string, message: string }>}
  */
 export function validateSocialPost({
   platforms = [],
@@ -274,6 +274,7 @@ export function validateSocialPost({
   if (count === 0) {
     errors.push({
       field: "accounts",
+      code: "no_account",
       message: "Choisissez au moins un compte.",
     });
   }
@@ -284,6 +285,7 @@ export function validateSocialPost({
   if (!hasText && imageCount === 0) {
     errors.push({
       field: "content",
+      code: "empty",
       message: "Écrivez un texte ou ajoutez une image.",
     });
   }
@@ -292,6 +294,7 @@ export function validateSocialPost({
   if (textLimit?.over) {
     errors.push({
       field: "content",
+      code: "text_too_long",
       message: `Le texte dépasse la limite de ${textLimit.label} (${textLimit.count} / ${textLimit.max}).`,
     });
   }
@@ -301,6 +304,7 @@ export function validateSocialPost({
     if (imageCount > max) {
       errors.push({
         field: "media",
+        code: "too_many_images",
         message: `${label} accepte ${max} images au maximum.`,
       });
     }
@@ -311,6 +315,7 @@ export function validateSocialPost({
     const labels = joinLabels(requiring.map(getPlatformLabel));
     errors.push({
       field: "media",
+      code: "image_required",
       message: `${labels} ${requiring.length > 1 ? "demandent" : "demande"} au moins une image.`,
     });
   }
@@ -322,7 +327,11 @@ export function validateSocialPost({
     if (invalid.length > 0) {
       errors.push({
         field: "media",
-        message: `Instagram accepte les images du format portrait 9:16 au format paysage 1,91:1. Recadrez l'${formatPositions(invalid)}.`,
+        code: "instagram_ratio",
+        message:
+          invalid.length === 1
+            ? `Image ${invalid[0]} trop allongée pour Instagram : recadrez-la entre le format portrait 9:16 et le format paysage 1,91:1.`
+            : `Images ${joinLabels(invalid.map(String))} trop allongées pour Instagram : recadrez-les entre le format portrait 9:16 et le format paysage 1,91:1.`,
       });
     }
   }
@@ -334,6 +343,7 @@ export function validateSocialPost({
     if (invalid.length > 0) {
       errors.push({
         field: "media",
+        code: "linkedin_size",
         message: `LinkedIn demande des images d'au moins 552 × 276 pixels (${formatPositions(invalid)}).`,
       });
     }
@@ -344,17 +354,20 @@ export function validateSocialPost({
     if (!when || Number.isNaN(when.getTime())) {
       errors.push({
         field: "when",
+        code: "when_missing",
         message: "Choisissez la date et l'heure de publication.",
       });
     } else if (when.getTime() < now.getTime() + MIN_SCHEDULE_DELAY_MS) {
       errors.push({
         field: "when",
+        code: "when_too_soon",
         message:
           "La date de publication doit être au moins 5 minutes dans le futur.",
       });
     } else if (when.getTime() > now.getTime() + MAX_SCHEDULE_DELAY_MS) {
       errors.push({
         field: "when",
+        code: "when_too_far",
         message: "La date de publication ne peut pas dépasser un an.",
       });
     }
@@ -364,6 +377,7 @@ export function validateSocialPost({
     if (tiktok.canPostMore === false) {
       errors.push({
         field: "tiktok",
+        code: "tiktok_quota",
         message:
           "Ce compte TikTok ne peut plus publier pour le moment. Réessayez plus tard.",
       });
@@ -371,12 +385,14 @@ export function validateSocialPost({
     if (!tiktok.privacyLevel) {
       errors.push({
         field: "tiktok",
+        code: "tiktok_privacy",
         message: "Choisissez qui peut voir le post sur TikTok.",
       });
     }
     if (!tiktok.consentGiven) {
       errors.push({
         field: "tiktok",
+        code: "tiktok_consent",
         message:
           "Acceptez la confirmation d'utilisation de la musique de TikTok.",
       });
