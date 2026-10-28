@@ -2,31 +2,66 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Paperclip } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  X,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { useDocumentEmailLog } from "@/src/graphql/documentEmailQueries";
+import {
+  useDocumentEmailLog,
+  useDocumentEmailLogs,
+} from "@/src/graphql/documentEmailQueries";
 import {
   EMAIL_LOG_DOCUMENT_LABELS,
   emailLogDocumentUrl,
-  emailLogTracking,
   formatAttachmentSize,
-  formatEmailLogDate,
 } from "@/src/utils/document-email-log";
+import { cn } from "@/src/lib/utils";
 import { EmailSentPageSkeleton } from "../components/email-sent-page-skeleton";
 
+const OPEN_DOCUMENT_LABELS = {
+  invoice: "Ouvrir la facture",
+  quote: "Ouvrir le devis",
+  creditNote: "Ouvrir l'avoir",
+  purchaseOrder: "Ouvrir le bon de commande",
+  deliveryNote: "Ouvrir le bon de livraison",
+};
+
 /**
- * E-mail tel que le client l'a reçu, ouvert depuis le reçu d'envoi ou
- * l'historique d'un document. Le HTML est conservé sans pixel ni liens de
- * suivi : l'afficher ne marque pas le document « Ouvert ».
+ * E-mail tel que le client l'a reçu, ouvert depuis le reçu d'envoi, le menu
+ * d'actions ou l'historique d'un document : l'e-mail à taille réelle, et à
+ * côté l'enveloppe, le parcours de l'envoi et les pièces jointes. Le HTML est
+ * conservé sans pixel ni liens de suivi : l'afficher ne marque pas le
+ * document « Ouvert ». Un document envoyé plusieurs fois propose ses autres
+ * envois (Envoi 1, Envoi 2…) sans quitter la page.
  */
 export default function EmailSentPage() {
   const router = useRouter();
   const { id } = useParams();
   const { workspaceId } = useRequiredWorkspace();
-  const { data, loading, error } = useDocumentEmailLog(id);
-  const log = data?.documentEmailLog;
+  const [selectedId, setSelectedId] = useState(id);
+  const { data, previousData, loading, error } =
+    useDocumentEmailLog(selectedId);
+  // Pendant le chargement d'un autre envoi, le précédent reste affiché
+  const log =
+    data?.documentEmailLog ??
+    (loading ? previousData?.documentEmailLog : undefined);
+  const switching = loading && !data?.documentEmailLog;
+
+  // Envois du même document, lus dans l'espace actif (seul espace où la
+  // liste est autorisée) ; du plus ancien au plus récent pour la numérotation
+  const { data: sendsData } = useDocumentEmailLogs({
+    workspaceId,
+    documentType: log?.documentType,
+    documentId: log?.documentId,
+    skip: !log || log.workspaceId !== workspaceId,
+  });
+  const sends = [...(sendsData?.documentEmailLogs || [])].reverse();
 
   if (loading && !log) return <EmailSentPageSkeleton />;
 
@@ -48,7 +83,8 @@ export default function EmailSentPage() {
   // reste lisible, mais son document demande de changer d'espace
   const sameWorkspace = log.workspaceId === workspaceId;
   const documentLabel = EMAIL_LOG_DOCUMENT_LABELS[log.documentType] || "";
-  const extraAttachments = log.attachments.filter((att) => !att.isDocument);
+  // Envois antérieurs à la conservation des fichiers ajoutés à la main
+  const hasLostAttachments = log.attachments.some((att) => !att.available);
 
   const goBack = () => {
     // Ouvert depuis le reçu (nouvel onglet) : pas de page précédente
@@ -60,222 +96,431 @@ export default function EmailSentPage() {
   };
 
   return (
-    // Écran large : la page tient dans la hauteur de la fenêtre, l'e-mail est
-    // réduit pour tenir dans son cadre (pas de défilement de la page)
-    <div className="flex flex-col gap-4 p-4 md:p-6 md:h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] md:overflow-hidden">
-      <div className="flex flex-wrap items-start justify-between gap-4 shrink-0">
-        <div className="flex items-start gap-3 min-w-0">
+    <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={goBack}
             aria-label="Retour"
+            className="-ml-2 shrink-0"
           >
             <ArrowLeft className="size-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold">E-mail envoyé</h1>
+            <h1 className="text-2xl font-medium">E-mail envoyé</h1>
             <p className="text-sm text-muted-foreground">
-              {documentLabel} {log.documentNumber} · envoyé le{" "}
-              {formatEmailLogDate(log.sentAt)}
+              {documentLabel} {log.documentNumber} · le {formatDay(log.sentAt)}{" "}
+              à {formatTime(log.sentAt)}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <EmailTrackingStatus emailTracking={emailLogTracking(log)} />
-          {sameWorkspace && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(documentUrl)}
-            >
-              Ouvrir le document
-            </Button>
-          )}
-        </div>
+        {sameWorkspace && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(documentUrl)}
+          >
+            {OPEN_DOCUMENT_LABELS[log.documentType] || "Ouvrir le document"}
+          </Button>
+        )}
       </div>
 
-      {log.deliveryStatus === "FAILED" && (
-        <div className="shrink-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm dark:border-red-900/50 dark:bg-red-950/20">
-          <p className="font-medium text-red-700 dark:text-red-400">
-            Cet e-mail n&apos;a pas été remis à {log.to}
-          </p>
-          <p className="mt-1 text-red-700/80 dark:text-red-400/80">
-            {log.deliveryFailureReason ? `${log.deliveryFailureReason}. ` : ""}
-            Vérifiez l&apos;adresse puis renvoyez le document.
-          </p>
-        </div>
-      )}
-
       {!sameWorkspace && (
-        <p className="shrink-0 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Envoyé depuis l&apos;espace {log.workspaceName || "d'origine"} :
           changez d&apos;espace pour ouvrir le document.
         </p>
       )}
 
-      <div className="flex flex-col gap-4 md:flex-row md:flex-1 md:min-h-0">
-        <dl className="grid grid-cols-[96px_minmax(0,1fr)] content-start gap-x-3 gap-y-2.5 rounded-lg border p-4 text-sm md:w-[340px] md:shrink-0 md:overflow-y-auto">
-          <DetailRow label="De" value={log.from} />
-          {log.replyTo && <DetailRow label="Répondre à" value={log.replyTo} />}
-          <DetailRow label="À" value={log.to} />
-          {log.cc.length > 0 && <DetailRow label="Cc" value={log.cc} />}
-          {log.bcc.length > 0 && <DetailRow label="Cci" value={log.bcc} />}
-          <DetailRow label="Objet" value={log.subject} />
-          {log.senderEmail && (
-            <DetailRow label="Envoyé par" value={log.senderEmail} />
-          )}
-          {log.deliveredAt && (
-            <DetailRow
-              label="Remis le"
-              value={formatEmailLogDate(log.deliveredAt)}
-            />
-          )}
-          {log.openedAt && (
-            <DetailRow
-              label="Ouvert le"
-              value={formatEmailLogDate(log.openedAt)}
-            />
-          )}
-          {log.attachments.length > 0 && (
-            <>
-              <dt className="text-muted-foreground">Pièces jointes</dt>
-              <dd className="min-w-0 space-y-1">
-                {log.attachments.map((att, index) => (
-                  <p
-                    key={`${att.filename}-${index}`}
-                    className="flex items-center gap-1.5 min-w-0"
-                  >
-                    <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{att.filename}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatAttachmentSize(att.size)}
-                    </span>
-                  </p>
-                ))}
-                {extraAttachments.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Les fichiers ajoutés à l&apos;envoi ne sont pas conservés,
-                    seul leur nom est affiché.
-                  </p>
-                )}
-              </dd>
-            </>
-          )}
-        </dl>
+      {sends.length > 1 && (
+        <SendSwitcher
+          sends={sends}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
+      )}
 
-        <EmailFrame html={log.html} />
+      {/* Écran large : l'e-mail à gauche, ses informations à droite (restent
+          visibles pendant la lecture). Mobile : informations d'abord. */}
+      <div
+        aria-busy={switching || undefined}
+        className={cn(
+          "flex flex-col gap-6 transition-opacity lg:flex-row lg:items-start",
+          switching && "opacity-60",
+        )}
+      >
+        <div className="min-w-0 flex-1 overflow-hidden rounded-xl border">
+          <EmailFrame html={log.html} />
+        </div>
+
+        <aside className="order-first divide-y rounded-xl border bg-card lg:order-none lg:sticky lg:top-6 lg:w-[340px] lg:shrink-0">
+          <section className="space-y-3 p-5">
+            <SectionTitle>Envoi</SectionTitle>
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
+              <EnvelopeRow label="Objet" value={log.subject} />
+              <EnvelopeRow label="De" value={log.from} />
+              <EnvelopeRow label="À" value={log.to} />
+              {log.cc.length > 0 && <EnvelopeRow label="Cc" value={log.cc} />}
+              {log.bcc.length > 0 && (
+                <EnvelopeRow label="Cci" value={log.bcc} />
+              )}
+              {log.replyTo && (
+                <EnvelopeRow label="Répondre à" value={log.replyTo} />
+              )}
+            </dl>
+          </section>
+
+          <section className="space-y-3 p-5">
+            <SectionTitle>Suivi</SectionTitle>
+            <DeliverySteps log={log} />
+            {log.deliveryStatus === "FAILED" && (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
+                Non remis à {log.to}
+                {log.deliveryFailureReason
+                  ? ` : ${log.deliveryFailureReason}`
+                  : ""}
+                . Vérifiez l&apos;adresse puis renvoyez le document.
+              </p>
+            )}
+            {log.senderEmail && (
+              <p className="text-xs text-muted-foreground">
+                Envoyé depuis Newbi par {log.senderEmail}
+              </p>
+            )}
+          </section>
+
+          {log.attachments.length > 0 && (
+            <section className="space-y-3 p-5">
+              <SectionTitle>Pièces jointes</SectionTitle>
+              <ul className="space-y-2">
+                {log.attachments.map((att, index) => {
+                  const content = (
+                    <>
+                      <FileText className="size-4 shrink-0 text-muted-foreground" />
+                      <span
+                        className={cn(
+                          "truncate",
+                          att.available && "group-hover:underline",
+                        )}
+                      >
+                        {att.filename}
+                      </span>
+                      <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                        {formatAttachmentSize(att.size)}
+                      </span>
+                    </>
+                  );
+                  return (
+                    <li key={`${att.filename}-${index}`}>
+                      {att.available ? (
+                        <a
+                          href={attachmentUrl(log, att, index)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={
+                            att.isDocument
+                              ? "Ouvrir le PDF actuel du document"
+                              : "Ouvrir le fichier envoyé"
+                          }
+                          className="group flex min-w-0 items-center gap-2 text-sm"
+                        >
+                          {content}
+                        </a>
+                      ) : (
+                        <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                          {content}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {hasLostAttachments && (
+                <p className="text-xs text-muted-foreground">
+                  Les fichiers ajoutés aux envois plus anciens n&apos;ont pas
+                  été conservés : seul leur nom est affiché.
+                </p>
+              )}
+            </section>
+          )}
+        </aside>
       </div>
     </div>
   );
 }
 
-function DetailRow({ label, value }) {
+/**
+ * Envois successifs du document, du premier au dernier : un clic ou les
+ * flèches affichent un autre envoi. La liste défile quand elle déborde.
+ */
+function SendSwitcher({ sends, selectedId, onSelect }) {
+  const listRef = useRef(null);
+  const index = sends.findIndex((send) => send.id === selectedId);
+
+  // L'envoi affiché reste visible dans une longue liste
+  useEffect(() => {
+    listRef.current
+      ?.querySelector('[aria-current="true"]')
+      ?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [selectedId]);
+
+  return (
+    <nav aria-label="Envois de ce document" className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0"
+        aria-label="Envoi précédent"
+        disabled={index <= 0}
+        onClick={() => onSelect(sends[index - 1].id)}
+      >
+        <ChevronLeft className="size-4" />
+      </Button>
+      <div
+        ref={listRef}
+        className="flex min-w-0 gap-1.5 overflow-x-auto p-0.5 scrollbar-hide"
+      >
+        {sends.map((send, position) => {
+          const active = send.id === selectedId;
+          const failed = send.deliveryStatus === "FAILED";
+          return (
+            <button
+              key={send.id}
+              type="button"
+              aria-current={active ? "true" : undefined}
+              title={`À ${send.to}`}
+              onClick={() => onSelect(send.id)}
+              className={cn(
+                "flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-shadow",
+                active
+                  ? "bg-[#fbfbfb] text-[#242529] shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:bg-[#1a1a1a] dark:text-foreground dark:shadow-[inset_0_0_0_1px_#232323]"
+                  : "text-[#606164] hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:text-muted-foreground dark:hover:shadow-[inset_0_0_0_1px_#232323]",
+              )}
+            >
+              {failed && (
+                <span
+                  aria-hidden="true"
+                  className="size-1.5 shrink-0 rounded-full bg-red-500"
+                />
+              )}
+              <span className={cn(active && "font-medium")}>
+                Envoi {position + 1}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatSendDate(send.sentAt)}
+              </span>
+              {failed && <span className="sr-only">(non remis)</span>}
+            </button>
+          );
+        })}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0"
+        aria-label="Envoi suivant"
+        disabled={index === -1 || index >= sends.length - 1}
+        onClick={() => onSelect(sends[index + 1].id)}
+      >
+        <ChevronRight className="size-4" />
+      </Button>
+    </nav>
+  );
+}
+
+/**
+ * Fichier servi par le proxy du site (session transmise à l'API, droits
+ * vérifiés sur le document) : le PDF archivé du document, ou le fichier
+ * ajouté à la main conservé avec l'envoi (repéré par sa place dans la liste).
+ */
+function attachmentUrl(log, attachment, index) {
+  return attachment.isDocument
+    ? `/api/document-preview/${log.documentType}/${log.documentId}`
+    : `/api/document-preview/emailAttachment/${log.id}?index=${index}`;
+}
+
+function SectionTitle({ children }) {
+  return (
+    <h2 className="text-xs font-normal uppercase tracking-wide text-muted-foreground">
+      {children}
+    </h2>
+  );
+}
+
+function EnvelopeRow({ label, value }) {
   const values = Array.isArray(value) ? value : [value];
   return (
     <>
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words">
-        {values.map((item, index) => (
-          <span key={index} className="block">
-            {item || "-"}
-          </span>
-        ))}
-      </dd>
+      <dd className="min-w-0 break-words">{values.join(", ")}</dd>
     </>
   );
 }
 
-// En dessous, l'e-mail devient illisible : son cadre défile plutôt
-const MIN_EMAIL_SCALE = 0.5;
+/**
+ * Envoyé → Remis → Ouvert. Un rejet arrête le parcours à la remise ; une
+ * ouverture sans remise reçue (événement perdu) vaut remise.
+ */
+function DeliverySteps({ log }) {
+  const failed = log.deliveryStatus === "FAILED";
+  const delivered = !failed && Boolean(log.deliveredAt || log.openedAt);
+  const steps = [
+    { label: "Envoyé", state: "done", at: log.sentAt },
+    failed
+      ? { label: "Non remis", state: "failed", at: log.deliveryFailedAt }
+      : delivered
+        ? { label: "Remis", state: "done", at: log.deliveredAt }
+        : {
+            label: "Remis",
+            state: "pending",
+            note:
+              log.deliveryStatus === "DELAYED"
+                ? "Retardé, nouvel essai"
+                : "En cours",
+          },
+    // Rejeté : le client n'a rien reçu, pas d'ouverture à attendre
+    !failed && {
+      label: "Ouvert",
+      state: log.openedAt ? "done" : "pending",
+      at: log.openedAt,
+      note: "Pas encore",
+    },
+  ].filter(Boolean);
+
+  return (
+    <ol>
+      {steps.map((step, index) => {
+        const next = steps[index + 1];
+        return (
+          <li
+            key={step.label}
+            className="relative flex items-center gap-3 pb-4 last:pb-0"
+          >
+            {/* Trait vers l'étape suivante, coloré une fois atteinte */}
+            {next && (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute left-[9px] top-6 bottom-1 w-0.5 rounded-full",
+                  next.state === "done" ? "bg-[#5b4fff]" : "bg-border",
+                )}
+              />
+            )}
+            <StepIcon state={step.state} />
+            <p
+              className={cn(
+                "text-sm font-medium",
+                step.state === "pending" && "text-muted-foreground",
+                step.state === "failed" && "text-red-600 dark:text-red-400",
+              )}
+            >
+              {step.label}
+            </p>
+            <p className="ml-auto text-xs text-muted-foreground">
+              {step.at ? formatStepTime(step.at, log.sentAt) : step.note}
+            </p>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function StepIcon({ state }) {
+  if (state === "done") {
+    return (
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#5b4fff] text-white">
+        <Check className="size-3" strokeWidth={3} />
+      </span>
+    );
+  }
+  if (state === "failed") {
+    return (
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
+        <X className="size-3" strokeWidth={3} />
+      </span>
+    );
+  }
+  return (
+    <span className="size-5 shrink-0 rounded-full border-2 border-dashed border-muted-foreground/30" />
+  );
+}
+
+function formatDay(value) {
+  return new Date(value).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatTime(value) {
+  return new Date(value).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// « 27 oct. · 14:32 » : plusieurs envois le même jour se distinguent
+function formatSendDate(value) {
+  const day = new Date(value).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+  return `${day} · ${formatTime(value)}`;
+}
+
+// L'heure seule le jour de l'envoi, la date en plus les jours suivants
+function formatStepTime(value, sentAt) {
+  const sameDay =
+    new Date(value).toDateString() === new Date(sentAt).toDateString();
+  if (sameDay) return formatTime(value);
+  const day = new Date(value).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+  return `${day} à ${formatTime(value)}`;
+}
 
 /**
  * E-mail dans un cadre isolé : pas de script (sandbox sans allow-scripts),
  * styles de l'e-mail sans effet sur la page. allow-same-origin sert seulement
- * à mesurer le contenu.
- *
- * Écran large : l'e-mail est réduit pour tenir entier dans la hauteur
- * disponible (comme l'aperçu d'un PDF). Mobile : taille réelle, la page
- * défile.
+ * à mesurer le contenu, affiché en entier sans barre de défilement propre.
  */
 function EmailFrame({ html }) {
-  const containerRef = useRef(null);
   const frameRef = useRef(null);
-  const [layout, setLayout] = useState({
-    scale: 1,
-    width: null,
-    height: 640,
-  });
+  const [height, setHeight] = useState(640);
 
   const fitContent = useCallback(() => {
-    const container = containerRef.current;
     const doc = frameRef.current?.contentDocument;
-    if (!container || !doc?.documentElement) return;
-
+    if (!doc?.documentElement) return;
     // Hauteur propre du contenu (scrollHeight vaut au moins celle du cadre)
     const contentHeight = Math.ceil(
       doc.documentElement.getBoundingClientRect().height,
     );
-    if (!contentHeight) return;
-    const fitToPage = window.matchMedia("(min-width: 768px)").matches;
-    const scale = fitToPage
-      ? Math.max(
-          MIN_EMAIL_SCALE,
-          Math.min(1, container.clientHeight / contentHeight),
-        )
-      : 1;
-    // Cadre élargi d'autant qu'il est réduit : l'e-mail occupe toute la
-    // largeur visible et reste centré
-    const width = container.clientWidth / scale;
-
-    setLayout((prev) =>
-      prev.scale === scale &&
-      prev.width === width &&
-      prev.height === contentHeight
-        ? prev
-        : { scale, width, height: contentHeight },
-    );
+    if (contentHeight) setHeight(contentHeight);
   }, []);
 
+  // Une largeur différente (fenêtre, mobile) change la hauteur de l'e-mail
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return undefined;
+    const frame = frameRef.current;
+    if (!frame) return undefined;
     const observer = new ResizeObserver(fitContent);
-    observer.observe(container);
+    observer.observe(frame);
     return () => observer.disconnect();
   }, [fitContent]);
 
-  // La largeur du cadre change la mise en page de l'e-mail : seconde mesure
-  useEffect(() => {
-    fitContent();
-  }, [layout.width, fitContent]);
-
   return (
-    <div
-      ref={containerRef}
-      className="overflow-x-hidden overflow-y-auto rounded-lg border bg-[#fafafa] md:flex-1 md:min-h-0"
-    >
-      {/* La réduction ne change pas l'encombrement du cadre : on coupe ce
-          qui dépasse de sa taille réduite */}
-      <div
-        className="overflow-hidden"
-        style={{ height: layout.height * layout.scale }}
-      >
-        <iframe
-          ref={frameRef}
-          title="E-mail reçu par le client"
-          srcDoc={html || ""}
-          sandbox="allow-same-origin"
-          onLoad={fitContent}
-          className="block border-0"
-          style={{
-            width: layout.width ?? "100%",
-            height: layout.height,
-            transform: `scale(${layout.scale})`,
-            transformOrigin: "top left",
-          }}
-        />
-      </div>
-    </div>
+    <iframe
+      ref={frameRef}
+      title="E-mail reçu par le client"
+      srcDoc={html || ""}
+      sandbox="allow-same-origin"
+      onLoad={fitContent}
+      className="block w-full border-0 bg-[#fafafa]"
+      style={{ height }}
+    />
   );
 }

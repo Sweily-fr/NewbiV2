@@ -47,6 +47,10 @@ const UPSTREAM_PATHS = {
   // sélection via ?fileId=<id>, ou ?index=<n> pour les anciens justificatifs
   // sans identifiant Mongo.
   transaction: (id) => `/documents/imported/transaction/${id}/file`,
+  // Fichiers ajoutés à la main à un e-mail de document (id = envoi),
+  // sélection via ?index=<n>. Formats non affichables servis en
+  // téléchargement par l'API.
+  emailAttachment: (id) => `/documents/email-logs/${id}/attachment`,
 };
 
 const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
@@ -124,6 +128,11 @@ export async function GET(request, { params }) {
     }
     if (response.headers.get("Content-Length")) {
       headers.set("Content-Length", response.headers.get("Content-Length"));
+    }
+    // Fichier choisi par l'utilisateur, servi sur l'origine du site : le
+    // navigateur s'en tient au type annoncé par l'API (jamais de HTML deviné)
+    if (type === "emailAttachment") {
+      headers.set("X-Content-Type-Options", "nosniff");
     }
     // Document nominatif servi sous session : jamais de cache partagé
     // (private). Les documents dont l'archive est réécrite sous la même URL

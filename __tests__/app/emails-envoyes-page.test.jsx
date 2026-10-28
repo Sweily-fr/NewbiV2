@@ -12,16 +12,24 @@ vi.mock("@/src/hooks/useWorkspace", () => ({
   useRequiredWorkspace: () => workspace,
 }));
 
-const queries = vi.hoisted(() => ({ log: null, logs: [], error: null }));
+const queries = vi.hoisted(() => ({
+  log: null,
+  logs: [],
+  logsById: {},
+  error: null,
+}));
 vi.mock("@/src/graphql/documentEmailQueries", () => ({
   GET_DOCUMENT_EMAIL_LOGS: "GET_DOCUMENT_EMAIL_LOGS",
-  useDocumentEmailLog: () => ({
-    data: queries.log ? { documentEmailLog: queries.log } : undefined,
-    loading: false,
-    error: queries.error,
-  }),
-  useDocumentEmailLogs: () => ({
-    data: { documentEmailLogs: queries.logs },
+  useDocumentEmailLog: (id) => {
+    const log = queries.logsById[id] || queries.log;
+    return {
+      data: log ? { documentEmailLog: log } : undefined,
+      loading: false,
+      error: queries.error,
+    };
+  },
+  useDocumentEmailLogs: ({ skip } = {}) => ({
+    data: skip ? undefined : { documentEmailLogs: queries.logs },
   }),
 }));
 
@@ -65,8 +73,13 @@ const LOG = {
   subject: "Facture F-2026-000042",
   html: "<html><body><p>Bonjour, voici votre facture.</p></body></html>",
   attachments: [
-    { filename: "F-2026-000042.pdf", size: 52000, isDocument: true },
-    { filename: "cgv.pdf", size: 1200, isDocument: false },
+    {
+      filename: "F-2026-000042.pdf",
+      size: 52000,
+      isDocument: true,
+      available: true,
+    },
+    { filename: "cgv.pdf", size: 1200, isDocument: false, available: true },
   ],
   deliveryStatus: "DELIVERED",
   deliveredAt: "2026-10-26T09:12:04.000Z",
@@ -88,6 +101,7 @@ beforeEach(() => {
   workspace.workspaceId = "org-a";
   queries.log = { ...LOG };
   queries.logs = [];
+  queries.logsById = {};
   queries.error = null;
 });
 
@@ -101,12 +115,17 @@ describe("page d'un e-mail envoyé", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("compta@test.fr")).toBeInTheDocument();
     expect(screen.getByText("Facture F-2026-000042")).toBeInTheDocument();
+    // Parcours : envoyé, remis, pas encore ouvert
     expect(screen.getByText("Envoyé")).toBeInTheDocument();
-    expect(screen.getByText("Remis le")).toBeInTheDocument();
+    expect(screen.getByText("Remis")).toBeInTheDocument();
+    expect(screen.getByText("Pas encore")).toBeInTheDocument();
+    expect(
+      screen.getByText("Envoyé depuis Newbi par emetteur@test.fr"),
+    ).toBeInTheDocument();
     expect(screen.getByText("cgv.pdf")).toBeInTheDocument();
     expect(
-      screen.getByText(/ne sont pas conservés, seul leur nom est affiché/),
-    ).toBeInTheDocument();
+      screen.queryByText(/n'ont pas été conservés/),
+    ).not.toBeInTheDocument();
 
     const frame = container.querySelector("iframe");
     expect(frame.getAttribute("srcdoc")).toContain("voici votre facture");
@@ -114,10 +133,41 @@ describe("page d'un e-mail envoyé", () => {
     expect(frame.getAttribute("sandbox")).toBe("allow-same-origin");
   });
 
+  it("ouvre les pièces jointes dans un nouvel onglet, via le proxy du site", () => {
+    renderPage();
+
+    const pdf = screen.getByText("F-2026-000042.pdf").closest("a");
+    expect(pdf.getAttribute("href")).toBe(
+      "/api/document-preview/invoice/inv-1",
+    );
+    expect(pdf.getAttribute("target")).toBe("_blank");
+    expect(pdf.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(screen.getByText("cgv.pdf").closest("a").getAttribute("href")).toBe(
+      "/api/document-preview/emailAttachment/log-1?index=1",
+    );
+  });
+
+  it("fichier ajouté à un envoi plus ancien : nom seulement", () => {
+    queries.log = {
+      ...LOG,
+      attachments: [
+        LOG.attachments[0],
+        { ...LOG.attachments[1], available: false },
+      ],
+    };
+
+    renderPage();
+
+    expect(screen.getByText("cgv.pdf").closest("a")).toBeNull();
+    expect(
+      screen.getByText(/envois plus anciens n'ont pas été conservés/),
+    ).toBeInTheDocument();
+  });
+
   it("ouvre le document de l'espace actif", () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "Ouvrir le document" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir la facture" }));
 
     expect(push).toHaveBeenCalledWith("/dashboard/outils/factures?id=inv-1");
   });
@@ -128,7 +178,7 @@ describe("page d'un e-mail envoyé", () => {
     renderPage();
 
     expect(
-      screen.queryByRole("button", { name: "Ouvrir le document" }),
+      screen.queryByRole("button", { name: "Ouvrir la facture" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(/Envoyé depuis l'espace Espace A/),
@@ -145,12 +195,97 @@ describe("page d'un e-mail envoyé", () => {
 
     renderPage();
 
+    expect(screen.getByText("Non remis")).toBeInTheDocument();
     expect(
-      screen.getByText("Cet e-mail n'a pas été remis à client@test.fr"),
+      screen.getByText(
+        /^Non remis à client@test\.fr : L'adresse e-mail n'existe pas\. Vérifiez l'adresse/,
+      ),
     ).toBeInTheDocument();
+    // Rien reçu : pas d'ouverture à attendre
+    expect(screen.queryByText("Ouvert")).not.toBeInTheDocument();
+  });
+
+  it("ouverture sans remise reçue : la remise est déduite", () => {
+    queries.log = {
+      ...LOG,
+      deliveryStatus: "SENT",
+      deliveredAt: null,
+      openedAt: "2026-10-26T09:30:00.000Z",
+    };
+
+    renderPage();
+
+    expect(screen.queryByText("En cours")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pas encore")).not.toBeInTheDocument();
+    expect(screen.getByText("Ouvert")).toBeInTheDocument();
+  });
+
+  it("document envoyé plusieurs fois : un onglet par envoi, du premier au dernier", () => {
+    const second = {
+      ...LOG,
+      id: "log-2",
+      sentAt: "2026-10-26T10:05:00.000Z",
+      to: "corrigee@test.fr",
+      deliveryStatus: "FAILED",
+    };
+    const third = {
+      ...LOG,
+      id: "log-3",
+      sentAt: "2026-10-27T08:00:00.000Z",
+      to: "derniere@test.fr",
+    };
+    // L'API renvoie le plus récent d'abord
+    queries.logs = [third, second, LOG];
+    queries.logsById = { "log-2": second, "log-3": third };
+
+    renderPage();
+
+    const tabs = screen
+      .getByRole("navigation", { name: "Envois de ce document" })
+      .querySelectorAll("button[title]");
+    expect([...tabs].map((tab) => tab.textContent)).toEqual([
+      expect.stringMatching(/^Envoi 1/),
+      expect.stringMatching(/^Envoi 2.*\(non remis\)$/),
+      expect.stringMatching(/^Envoi 3/),
+    ]);
+    // Ouvert sur le premier envoi (lien du reçu)
     expect(
-      screen.getByText(/L'adresse e-mail n'existe pas\. Vérifiez l'adresse/),
-    ).toBeInTheDocument();
+      screen
+        .getByText("Envoi 1")
+        .closest("button")
+        .getAttribute("aria-current"),
+    ).toBe("true");
+    expect(
+      screen.getByRole("button", { name: "Envoi précédent" }),
+    ).toBeDisabled();
+
+    fireEvent.click(screen.getByText("Envoi 3"));
+    expect(screen.getByText("derniere@test.fr")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Envoi suivant" }),
+    ).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Envoi précédent" }));
+    expect(screen.getByText("corrigee@test.fr")).toBeInTheDocument();
+    expect(screen.getByText("Non remis")).toBeInTheDocument();
+    // Pas de nouvelle page : on reste sur l'envoi ouvert
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("un seul envoi, ou envoi d'un autre espace : pas de sélecteur", () => {
+    queries.logs = [LOG];
+    const { unmount } = renderPage();
+    expect(
+      screen.queryByRole("navigation", { name: "Envois de ce document" }),
+    ).not.toBeInTheDocument();
+    unmount();
+
+    workspace.workspaceId = "org-b";
+    queries.logs = [{ ...LOG, id: "log-2" }, LOG];
+    renderPage();
+    expect(
+      screen.queryByRole("navigation", { name: "Envois de ce document" }),
+    ).not.toBeInTheDocument();
   });
 
   it("envoi introuvable ou inaccessible", () => {
