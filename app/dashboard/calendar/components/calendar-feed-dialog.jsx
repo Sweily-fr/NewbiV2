@@ -131,8 +131,8 @@ export function CalendarFeedDialog() {
             title="Recevoir le calendrier ailleurs"
           >
             <CalendarArrowUp className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden xl:inline">Ajouter à mon agenda</span>
-            <span className="sr-only xl:hidden">
+            <span className="hidden 2xl:inline">Ajouter à mon agenda</span>
+            <span className="sr-only 2xl:hidden">
               Recevoir le calendrier ailleurs
             </span>
           </Button>
