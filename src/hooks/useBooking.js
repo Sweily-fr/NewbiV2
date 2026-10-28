@@ -5,6 +5,7 @@ import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   BOOKING_SLUG_AVAILABLE,
   GET_APPOINTMENT_TYPES,
+  GET_BOOKING,
   GET_BOOKINGS,
   GET_MY_BOOKING_PAGE,
 } from "@/src/graphql/queries/booking";
@@ -104,15 +105,32 @@ export function useBookings(
   };
 }
 
+/** Une réservation par son identifiant (fiche ouverte depuis un lien). */
+export function useBooking(id, { skip = false } = {}) {
+  const { workspaceId } = useWorkspace();
+  const { data, loading, error } = useQuery(GET_BOOKING, {
+    variables: { id, workspaceId },
+    skip: skip || !workspaceId || !id,
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+  });
+  return {
+    booking: data?.booking || null,
+    loading: loading && !data,
+    error,
+  };
+}
+
 /**
  * Réservation liée à un événement du Calendrier (fiche « Rendez-vous ») :
- * cherchée parmi les réservations confirmées à venir ou passées selon la
- * date de l'événement. L'événement ne porte que son identifiant, la
- * réservation porte `eventId`.
+ * par `bookingId` porté par l'événement ; à défaut, cherchée parmi les
+ * réservations confirmées à venir ou passées par `eventId`.
  */
 export function useBookingForEvent(event, { skip = false } = {}) {
   const { workspaceId } = useWorkspace();
   const eventId = event?.id || null;
+  const bookingId = event?.bookingId || null;
+  const direct = useBooking(bookingId, { skip: skip || !bookingId });
   const upcoming = event?.end ? new Date(event.end) >= new Date() : true;
   const { data, loading, error } = useQuery(GET_BOOKINGS, {
     variables: {
@@ -122,10 +140,11 @@ export function useBookingForEvent(event, { skip = false } = {}) {
       limit: 100,
       offset: 0,
     },
-    skip: skip || !workspaceId || !eventId,
+    skip: skip || Boolean(bookingId) || !workspaceId || !eventId,
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
   });
+  if (bookingId) return direct;
   const booking =
     (data?.bookings?.items || EMPTY).find((item) => item.eventId === eventId) ||
     null;
