@@ -20,7 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { format, parse, addYears } from "date-fns";
+import { format, parse } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as ShadcnCalendar } from "@/src/components/ui/calendar";
 import {
@@ -44,6 +44,7 @@ import {
   describeRegistryFill,
 } from "@/src/lib/company-registry";
 import { LEGAL_FORM_GROUPS } from "@/src/lib/legal-forms";
+import { defaultFiscalYearEnd } from "@/src/utils/fiscalYear";
 
 const ALL_TAX_REGIMES = [
   { value: "reel-normal", label: "Régime réel normal" },
@@ -113,6 +114,14 @@ const VAT_MODES = [
   { value: "encaissements", label: "Sur les encaissements" },
 ];
 
+// Micro-entrepreneur : périodicité des déclarations de chiffre d'affaires
+// à l'Urssaf, choisie auprès d'elle (calendrier des échéances fiscales)
+const MICRO_REGIMES = ["micro-entreprise", "micro-bic", "micro-bnc"];
+const MICRO_DECLARATION_FREQUENCIES = [
+  { value: "mensuel", label: "Mensuelle" },
+  { value: "trimestriel", label: "Trimestrielle" },
+];
+
 const RequiredLabel = ({ htmlFor, children, isRequired, tooltip }) => (
   <div className="flex items-center gap-2">
     <Label
@@ -168,6 +177,11 @@ export function InformationsLegalesSection({
   const selectedVatRegime = watchedValues.legal?.vatRegime || "";
   const selectedVatFrequency = watchedValues.legal?.vatFrequency || "";
   const selectedVatMode = watchedValues.legal?.vatMode || "";
+  const selectedMicroFrequency =
+    watchedValues.legal?.microDeclarationFrequency || "";
+  const isMicroEntrepreneur =
+    ["EI", "Auto-entrepreneur"].includes(selectedLegalForm) &&
+    MICRO_REGIMES.includes(selectedRegime);
 
   const handleVatSubjectChange = (checked) => {
     setValue("legal.isVatSubject", checked, { shouldDirty: true });
@@ -268,6 +282,10 @@ export function InformationsLegalesSection({
     setValue("legal.regime", value === "none" ? "" : value, {
       shouldDirty: true,
     });
+  };
+
+  const handleMicroFrequencyChange = (value) => {
+    setValue("legal.microDeclarationFrequency", value, { shouldDirty: true });
   };
 
   const handleCategoryChange = (value) => {
@@ -629,6 +647,40 @@ export function InformationsLegalesSection({
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Micro-entrepreneur : périodicité Urssaf */}
+              {isMicroEntrepreneur && (
+                <div className="flex flex-col gap-1">
+                  <RequiredLabel
+                    htmlFor="microDeclarationFrequency"
+                    tooltip="Périodicité choisie auprès de l'Urssaf pour déclarer votre chiffre d'affaires. Elle place vos déclarations dans le calendrier."
+                  >
+                    Déclaration du chiffre d&apos;affaires (Urssaf)
+                  </RequiredLabel>
+                  <Select
+                    value={selectedMicroFrequency}
+                    onValueChange={handleMicroFrequencyChange}
+                    disabled={!canManageOrgSettings}
+                  >
+                    <SelectTrigger
+                      id="microDeclarationFrequency"
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Sélectionnez la périodicité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MICRO_DECLARATION_FREQUENCIES.map((frequency) => (
+                        <SelectItem
+                          key={frequency.value}
+                          value={frequency.value}
+                        >
+                          {frequency.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -885,7 +937,7 @@ export function InformationsLegalesSection({
                             format(date, "yyyy-MM-dd"),
                             { shouldDirty: true },
                           );
-                          const endDate = addYears(date, 1);
+                          const endDate = defaultFiscalYearEnd(date);
                           setValue(
                             "legal.fiscalYearEndDate",
                             format(endDate, "yyyy-MM-dd"),

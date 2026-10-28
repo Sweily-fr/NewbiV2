@@ -21,6 +21,7 @@ import {
   formatLinkedAmount,
 } from "@/src/utils/calendar-linked-items";
 import { LINKED_SOURCE_META } from "./linked-sources";
+import { FiscalSetupMenuItem } from "./fiscal-setup-hint";
 
 const MONEY_KINDS = new Set(["INVOICE", "PURCHASE_INVOICE"]);
 
@@ -110,6 +111,13 @@ function tooltipLines(kind, stats) {
         },
         doneCount > 0 &&
           `${doneCount} ${plural(doneCount, "terminée", "terminées")}`,
+      ];
+    case "FISCAL":
+      return [
+        `${openCount} ${plural(openCount, "échéance à venir", "échéances à venir")}`,
+        doneCount > 0 &&
+          `${doneCount} ${plural(doneCount, "date passée", "dates passées")}`,
+        "Impôts, TVA et Urssaf, selon vos informations légales",
       ];
     default:
       return [];
@@ -210,6 +218,7 @@ export const CalendarFiltersButton = memo(function CalendarFiltersButton({
   loading,
   myTasksOnly = false,
   onToggleMyTasks,
+  fiscalSetup = null,
 }) {
   const allowed = LINKED_KINDS.filter((kind) => kinds.includes(kind));
   // Aucune autre page visible (rôle, ou API sans la requête) : rien à
@@ -283,6 +292,10 @@ export const CalendarFiltersButton = memo(function CalendarFiltersButton({
             />
           );
         })}
+        {/* Sous la source Fiscal : informations légales à compléter */}
+        {!loading && allowed.includes("FISCAL") && (
+          <FiscalSetupMenuItem setup={fiscalSetup} />
+        )}
         {canFilterMine && (
           <>
             <DropdownMenuSeparator />

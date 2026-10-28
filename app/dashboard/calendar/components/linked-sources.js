@@ -6,6 +6,8 @@ import {
   ChartSpline,
   CloudUpload,
   FileText,
+  History,
+  Landmark,
   Repeat,
   SquareCheckBig,
   Truck,
@@ -185,6 +187,37 @@ export const LINKED_SOURCE_META = {
       DONE: "Expiré",
     },
   },
+  // Échéances fiscales calculées : teinte neutre (encre), ni le rouge du
+  // retard ni le vert du réglé, à l'opposé de l'ardoise des prévisions.
+  // Validée par le script dataviz contre les neuf autres sources et le gris
+  // des événements, en clair et en sombre.
+  FISCAL: {
+    label: "Fiscal",
+    noun: "Échéance fiscale",
+    description: "Impôts, TVA et cotisations sociales",
+    openLabel: "Voir la page officielle",
+    icon: Landmark,
+    hex: "#1e293b",
+    dot: "bg-[#1e293b] dark:bg-[#e2e8f0]",
+    iconClass: "text-[#1e293b] dark:text-[#e2e8f0]",
+    accent: "bg-[#1e293b] dark:bg-[#e2e8f0]",
+    tint: "bg-[#1e293b]/10 dark:bg-[#e2e8f0]/10",
+    // Date passée : on ne sait pas si la démarche est faite, ni coche ni
+    // badge vert
+    doneIcon: History,
+    neutralDone: true,
+    states: {
+      UPCOMING: "À venir",
+      OVERDUE: "À venir",
+      DONE: "Date passée",
+    },
+  },
+};
+
+// Démarche attendue pour une échéance fiscale (documentStatus)
+export const FISCAL_ACTION_LABELS = {
+  DECLARATION_PAYMENT: "Déclarer et payer",
+  PAYMENT: "Payer",
 };
 
 export const PRIORITY_LABELS = {

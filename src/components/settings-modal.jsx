@@ -168,6 +168,7 @@ export function SettingsModal({
         vatMode: "",
         fiscalYearStartDate: "",
         fiscalYearEndDate: "",
+        microDeclarationFrequency: "",
       },
     },
   });
@@ -233,6 +234,7 @@ export function SettingsModal({
       vatMode: org.vatMode || "",
       fiscalYearStartDate: org.fiscalYearStartDate || "",
       fiscalYearEndDate: org.fiscalYearEndDate || "",
+      microDeclarationFrequency: org.microDeclarationFrequency || "",
     },
   });
 
@@ -382,6 +384,10 @@ export function SettingsModal({
           : "",
         fiscalYearStartDate: formData.legal?.fiscalYearStartDate || "",
         fiscalYearEndDate: formData.legal?.fiscalYearEndDate || "",
+        // Gardée telle quelle quand le champ est masqué (régime changé) :
+        // rien n'est effacé sans action de l'utilisateur
+        microDeclarationFrequency:
+          formData.legal?.microDeclarationFrequency || "",
       };
 
       // Sauvegarder via Better Auth

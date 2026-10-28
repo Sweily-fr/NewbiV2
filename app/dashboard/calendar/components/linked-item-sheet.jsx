@@ -10,6 +10,7 @@ import {
   Check,
   CircleAlert,
   Clock,
+  ExternalLink,
   Info,
   Loader2,
   Send,
@@ -30,11 +31,13 @@ import { cn } from "@/src/lib/utils";
 import { dayToDate } from "@/src/utils/recurrenceDays";
 import {
   formatLinkedAmount,
+  linkedItemExternalUrl,
   linkedItemHref,
   relativeDayLabel,
 } from "@/src/utils/calendar-linked-items";
 import { formatRecurrenceFrequency } from "@/src/graphql/invoiceRecurrenceQueries";
 import {
+  FISCAL_ACTION_LABELS,
   LINKED_SOURCE_META,
   PRIORITY_LABELS,
   linkedKindDetail,
@@ -51,6 +54,7 @@ const DATE_LABELS = {
   REMINDER: "Envoi",
   DELIVERY: "Livraison prévue",
   FILE_TRANSFER: "Expiration",
+  FISCAL: "Date limite",
 };
 
 const COUNTERPARTY_LABELS = {
@@ -61,6 +65,7 @@ const COUNTERPARTY_LABELS = {
   REMINDER: "Client",
   DELIVERY: "Client",
   FILE_TRANSFER: "Destinataire",
+  FISCAL: "Organisme",
 };
 
 // Montants TTC des documents ; une prévision ou un paiement de transfert
@@ -77,12 +82,15 @@ const TTC_KINDS = new Set([
 const REFERENCE_LABELS = {
   RECURRING_INVOICE: "Facture modèle",
   REMINDER: "Facture",
+  FISCAL: "Période",
 };
 
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
 // Conseil affiché sous les détails selon la source et l'état
 function hintFor(item, longDate) {
+  // Échéance fiscale : règle appliquée et conditions, venues de l'API
+  if (item.kind === "FISCAL") return item.note || null;
   switch (`${item.kind}:${item.state}`) {
     case "INVOICE:OVERDUE":
       return `Le paiement était attendu le ${longDate}. Relancez le client, ou marquez la facture payée si le règlement est arrivé.`;
@@ -126,8 +134,11 @@ function StateBadge({ item, label }) {
   // Une relance qui ne pourra pas partir est signalée comme un retard
   const isOverdue =
     item.state === "OVERDUE" || item.reminderStatus === "NO_EMAIL";
-  const isDone = item.state === "DONE";
-  const Icon = isOverdue ? CircleAlert : isDone ? Check : Clock;
+  const meta = LINKED_SOURCE_META[item.kind];
+  // Échéance fiscale passée : badge neutre, rien ne dit qu'elle est réglée
+  const isDone = item.state === "DONE" && !meta?.neutralDone;
+  const PastIcon = item.state === "DONE" && meta?.doneIcon;
+  const Icon = isOverdue ? CircleAlert : isDone ? Check : PastIcon || Clock;
   return (
     <span
       className={cn(
@@ -141,6 +152,15 @@ function StateBadge({ item, label }) {
     >
       <Icon className="size-3" aria-hidden="true" />
       {label}
+    </span>
+  );
+}
+
+// Précision sur une échéance fiscale, sans couleur d'état
+function MentionBadge({ children }) {
+  return (
+    <span className="text-muted-foreground inline-flex items-center rounded-full border border-dashed px-2 py-0.5 text-xs">
+      {children}
     </span>
   );
 }
@@ -304,6 +324,7 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
     item.kind === "FORECAST" ? (item.flowType === "EXPENSE" ? "- " : "+ ") : "";
   const detail = linkedKindDetail(item);
   const href = linkedItemHref(item);
+  const externalUrl = linkedItemExternalUrl(item);
   const hint = hintFor(item, longDate);
   const members = item.assignedMembersInfo || [];
   const relative = relativeDayLabel(item.day, item.state);
@@ -384,6 +405,10 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
                 </span>
               </>
             )}
+            {item.isIndicative && <MentionBadge>Date indicative</MentionBadge>}
+            {item.isConditional && (
+              <MentionBadge>Selon votre situation</MentionBadge>
+            )}
           </div>
         </div>
 
@@ -422,6 +447,12 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
               {item.downloadCount || 0}
             </DetailRow>
           )}
+          {item.kind === "FISCAL" &&
+            FISCAL_ACTION_LABELS[item.documentStatus] && (
+              <DetailRow label="Démarche">
+                {FISCAL_ACTION_LABELS[item.documentStatus]}
+              </DetailRow>
+            )}
           {item.kind === "RECURRING_INVOICE" && item.frequency && (
             <DetailRow label="Rythme">
               {capitalize(
@@ -494,6 +525,19 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
                 {meta.openLabel}
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
+            </Button>
+          )}
+          {externalUrl && (
+            <Button
+              asChild
+              size="sm"
+              className="w-full gap-1.5 bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+            >
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+                {meta.openLabel}
+                <ExternalLink className="size-3.5" aria-hidden="true" />
+                <span className="sr-only">(nouvel onglet)</span>
+              </a>
             </Button>
           )}
         </div>

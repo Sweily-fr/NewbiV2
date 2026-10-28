@@ -76,6 +76,8 @@ export const LinkedEventItem = memo(function LinkedEventItem({
   const isAlert = item.state === "OVERDUE" || noEmail;
   const AlertIcon = noEmail ? MailWarning : CircleAlert;
   const isDone = item.state === "DONE";
+  // Échéance fiscale passée : horloge plutôt que coche (rien n'est vérifié)
+  const DoneIcon = meta.doneIcon || Check;
   const stateLabel = linkedStateLabel(item);
   const amount = signedAmount(item, { compact: true });
   const members = item.assignedMembersInfo || [];
@@ -124,7 +126,14 @@ export const LinkedEventItem = memo(function LinkedEventItem({
           <span className="flex items-center gap-1.5 text-sm font-medium">
             <span className="truncate">{item.title}</span>
             {item.reference && (
-              <span className="text-muted-foreground shrink-0 truncate text-xs font-normal">
+              <span
+                className={cn(
+                  "text-muted-foreground truncate text-xs font-normal",
+                  // Période d'une échéance fiscale, parfois longue : elle
+                  // cède la place au titre au lieu de l'écraser
+                  item.kind === "FISCAL" ? "min-w-0" : "shrink-0",
+                )}
+              >
                 {item.reference}
               </span>
             )}
@@ -209,7 +218,7 @@ export const LinkedEventItem = memo(function LinkedEventItem({
         <AlertIcon className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
       )}
       {isDone && (
-        <Check className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
+        <DoneIcon className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
       )}
       <span className="min-w-0 truncate">{item.title}</span>
       {item.kind === "REMINDER" && (
@@ -230,7 +239,10 @@ export const LinkedEventItem = memo(function LinkedEventItem({
         />
       )}
       {isDone && (
-        <Check className="size-3 shrink-0 max-sm:hidden" aria-hidden="true" />
+        <DoneIcon
+          className="size-3 shrink-0 max-sm:hidden"
+          aria-hidden="true"
+        />
       )}
       {(amount || members.length > 0) && (
         <span className="ml-auto flex shrink-0 items-center gap-1 pl-1">
@@ -282,11 +294,12 @@ function StateText({ item, stateLabel }) {
     );
   }
   if (item.state === "DONE") {
+    const DoneIcon = LINKED_SOURCE_META[item.kind]?.doneIcon || Check;
     return (
       <>
         <Dot />
         <span className="flex shrink-0 items-center gap-1">
-          <Check className="size-3" aria-hidden="true" />
+          <DoneIcon className="size-3" aria-hidden="true" />
           {stateLabel}
         </span>
       </>

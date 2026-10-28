@@ -1782,6 +1782,14 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Micro-entrepreneur : périodicité des déclarations de chiffre
+        // d'affaires à l'Urssaf (« mensuel » ou « trimestriel »), lue par le
+        // calendrier des échéances fiscales
+        microDeclarationFrequency: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Address information (flattened)
         addressStreet: {
           type: "string",

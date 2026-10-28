@@ -27,6 +27,7 @@ export const LINKED_KINDS = [
   "DELIVERY",
   "TASK",
   "FILE_TRANSFER",
+  "FISCAL",
 ];
 
 // Clé des événements du calendrier dans la barre des sources
@@ -326,6 +327,13 @@ export function linkedReminderDraft(item) {
         title: `Vérifier : ${item.title}`,
         description: details("Mouvement prévu"),
       };
+    case "FISCAL":
+      return {
+        title: `Préparer : ${item.title}${ref}`,
+        description: details(
+          item.isIndicative ? "Date limite indicative" : "Date limite",
+        ),
+      };
     case "TASK":
     default:
       return {
@@ -333,4 +341,32 @@ export function linkedReminderDraft(item) {
         description: details("Échéance"),
       };
   }
+}
+
+/**
+ * Échéance fiscale : page officielle à ouvrir dans un nouvel onglet. Seules
+ * les adresses https sont gardées (lien externe affiché tel quel).
+ */
+export function linkedItemExternalUrl(item) {
+  if (item?.kind !== "FISCAL" || typeof item.infoUrl !== "string") return null;
+  try {
+    const url = new URL(item.infoUrl);
+    return url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Échéances fiscales masquées faute d'informations légales, sans doublon
+ * (« TVA », « Impôt sur les sociétés »…). Liste vide quand rien ne manque.
+ */
+export function fiscalMissingConcerns(setup) {
+  const concerns = [];
+  for (const missing of setup?.missing || []) {
+    for (const concern of missing.concerns || []) {
+      if (!concerns.includes(concern)) concerns.push(concern);
+    }
+  }
+  return concerns;
 }

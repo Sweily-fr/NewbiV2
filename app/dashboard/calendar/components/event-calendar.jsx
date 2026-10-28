@@ -178,6 +178,7 @@ export function EventCalendar({
     kinds: linkedKinds,
     loading: linkedLoading,
     unavailable: linkedUnavailable,
+    fiscalSetup: linkedFiscalSetup,
   } = useCalendarLinkedItems(range);
 
   // « Mes tâches » : seulement les tâches dont on est membre assigné
@@ -700,6 +701,7 @@ export function EventCalendar({
               loading={linkedLoading}
               myTasksOnly={myTasksOnly}
               onToggleMyTasks={currentUserId ? toggleMyTasks : undefined}
+              fiscalSetup={linkedFiscalSetup}
             />
             <ColorLegend canEdit={canEditEvents} />
             {/* Synchronisation et connexions : action « edit » */}

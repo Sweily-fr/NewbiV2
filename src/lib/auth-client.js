@@ -71,6 +71,7 @@ export const authClient = createAuthClient({
             vatMode: { type: "string" },
             fiscalYearStartDate: { type: "string" },
             fiscalYearEndDate: { type: "string" },
+            microDeclarationFrequency: { type: "string" },
             // Address information (flattened)
             addressStreet: { type: "string" },
             addressCity: { type: "string" },
