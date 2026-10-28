@@ -5,6 +5,7 @@ import {
   linkedItemExternalUrl,
   linkedItemHref,
   linkedItemToEvent,
+  linkedReminderDraft,
   summarizeLinkedItems,
 } from "@/src/utils/calendar-linked-items";
 import {
@@ -43,7 +44,7 @@ describe("source Fiscal", () => {
   });
 
   it("totaux : échéances à venir et dates passées, sans montant", () => {
-    const { byKind, balance } = summarizeLinkedItems(
+    const { byKind } = summarizeLinkedItems(
       [
         fiscal("2026-11-19", "UPCOMING"),
         fiscal("2026-12-21", "UPCOMING"),
@@ -60,7 +61,7 @@ describe("source Fiscal", () => {
       doneCount: 1,
       openAmount: 0,
     });
-    expect(balance).toBe(0);
+    expect(byKind.INVOICE.count).toBe(0);
   });
 
   it("événement journée entière en lecture seule, sans lien interne", () => {
@@ -95,6 +96,18 @@ describe("source Fiscal", () => {
         infoUrl: "https://www.impots.gouv.fr/professionnel/tva",
       }),
     ).toBeNull();
+  });
+
+  it("« Me rappeler » : événement de préparation, date limite indicative", () => {
+    expect(linkedReminderDraft(fiscal("2026-11-19", "UPCOMING"))).toEqual({
+      title: "Préparer : Déclaration de TVA (CA3) (Octobre 2026)",
+      description: "Date limite indicative le jeudi 19 novembre 2026",
+    });
+    expect(
+      linkedReminderDraft(
+        fiscal("2026-12-15", "UPCOMING", { isIndicative: false }),
+      ).description,
+    ).toBe("Date limite le mardi 15 décembre 2026");
   });
 
   it("informations manquantes : échéances concernées sans doublon", () => {

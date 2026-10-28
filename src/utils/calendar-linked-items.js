@@ -20,9 +20,13 @@ import { dateToDay, dayToDate } from "@/src/utils/recurrenceDays";
 export const LINKED_KINDS = [
   "INVOICE",
   "PURCHASE_INVOICE",
+  "FORECAST",
   "QUOTE",
+  "REMINDER",
   "RECURRING_INVOICE",
+  "DELIVERY",
   "TASK",
+  "FILE_TRANSFER",
   "FISCAL",
 ];
 
@@ -122,6 +126,13 @@ export function summarizeLinkedItems(items, { from, to }) {
       overdueAmount: 0,
       doneAmount: 0,
       foreignCount: 0,
+      // Prévisions : rentrées et sorties à venir, séparées
+      incomeAmount: 0,
+      expenseAmount: 0,
+      incomeCount: 0,
+      expenseCount: 0,
+      // Relances prévues qui ne pourront pas partir (pas d'adresse e-mail)
+      noEmailCount: 0,
     };
   }
 
@@ -139,6 +150,15 @@ export function summarizeLinkedItems(items, { from, to }) {
     } else {
       stats.openCount += 1;
       stats.openAmount += amount;
+      if (item.flowType === "INCOME") {
+        stats.incomeAmount += amount;
+        stats.incomeCount += 1;
+      }
+      if (item.flowType === "EXPENSE") {
+        stats.expenseAmount += amount;
+        stats.expenseCount += 1;
+      }
+      if (item.reminderStatus === "NO_EMAIL") stats.noEmailCount += 1;
       if (item.state === "OVERDUE") {
         stats.overdueCount += 1;
         stats.overdueAmount += amount;
@@ -146,13 +166,7 @@ export function summarizeLinkedItems(items, { from, to }) {
     }
   }
 
-  return {
-    byKind,
-    // Encaissements attendus moins paiements à faire (factures non réglées
-    // de la période). Les récurrences n'y entrent pas : la facture émise
-    // ce jour-là sera payée plus tard, à son échéance.
-    balance: byKind.INVOICE.openAmount - byKind.PURCHASE_INVOICE.openAmount,
-  };
+  return { byKind };
 }
 
 /**
@@ -174,6 +188,17 @@ export function linkedItemHref(item) {
       return item.boardId
         ? `/dashboard/outils/kanban/${item.boardId}?task=${item.entityId}`
         : "/dashboard/outils/kanban";
+    // La relance ouvre sa facture
+    case "REMINDER":
+      return `/dashboard/outils/factures?id=${item.entityId}`;
+    case "FORECAST":
+      return "/dashboard/outils/prevision";
+    case "DELIVERY":
+      return item.documentKind === "DELIVERY_NOTE"
+        ? `/dashboard/outils/bons-de-livraison?id=${item.entityId}`
+        : `/dashboard/outils/bons-commande?id=${item.entityId}`;
+    case "FILE_TRANSFER":
+      return "/dashboard/outils/transferts-fichiers";
     default:
       return null;
   }
@@ -249,6 +274,72 @@ export function periodNames(view, currentDate, agendaDays = 30) {
         of: /^[aeiouyâàéèêîïôûœ]/i.test(month) ? `d'${month}` : `de ${month}`,
       };
     }
+  }
+}
+
+const longDate = (day) =>
+  format(dayToDate(day), "EEEE d MMMM yyyy", { locale: fr });
+
+/**
+ * Événement proposé par « Me rappeler » depuis la fiche d'une échéance :
+ * titre d'action et rappel de la date et du montant.
+ */
+export function linkedReminderDraft(item) {
+  const who = item.counterparty || item.title;
+  const ref = item.reference ? ` (${item.reference})` : "";
+  const amount = formatLinkedAmount(item.amount, item.currency || "EUR");
+  const details = (label) =>
+    [`${label} le ${longDate(item.day)}`, amount].filter(Boolean).join(" · ");
+  switch (item.kind) {
+    case "INVOICE":
+    case "REMINDER":
+      return {
+        title: `Relancer ${who}${ref}`,
+        description: details("Échéance de paiement"),
+      };
+    case "PURCHASE_INVOICE":
+      return {
+        title: `Payer ${who}${ref}`,
+        description: details("Échéance de paiement"),
+      };
+    case "QUOTE":
+      return {
+        title: `Relancer ${who} pour le devis${ref}`,
+        description: details("Fin de validité"),
+      };
+    case "RECURRING_INVOICE":
+      return {
+        title: `Vérifier la facture récurrente de ${who}`,
+        description: details("Émission prévue"),
+      };
+    case "DELIVERY":
+      return {
+        title: `Préparer la livraison de ${who}${ref}`,
+        description: details("Livraison prévue"),
+      };
+    case "FILE_TRANSFER":
+      return {
+        title: `Transfert « ${item.title} » : prolonger ou relancer`,
+        description: details("Expiration du lien"),
+      };
+    case "FORECAST":
+      return {
+        title: `Vérifier : ${item.title}`,
+        description: details("Mouvement prévu"),
+      };
+    case "FISCAL":
+      return {
+        title: `Préparer : ${item.title}${ref}`,
+        description: details(
+          item.isIndicative ? "Date limite indicative" : "Date limite",
+        ),
+      };
+    case "TASK":
+    default:
+      return {
+        title: `Suivre « ${item.title} »`,
+        description: details("Échéance"),
+      };
   }
 }
 

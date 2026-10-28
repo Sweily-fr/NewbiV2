@@ -3,6 +3,7 @@ import {
   formatLinkedAmount,
   isPlainInvoiceDueEvent,
   linkedItemHref,
+  linkedReminderDraft,
   linkedItemToEvent,
   periodNames,
   relativeDayLabel,
@@ -109,8 +110,8 @@ describe("summarizeLinkedItems", () => {
     item("RECURRING_INVOICE", "2026-10-29", "UPCOMING", 500),
   ];
 
-  it("totaux par source et solde des échéances non réglées", () => {
-    const { byKind, balance } = summarizeLinkedItems(items, {
+  it("totaux par source, devises étrangères à part", () => {
+    const { byKind } = summarizeLinkedItems(items, {
       from: "2026-10-01",
       to: "2026-10-31",
     });
@@ -131,8 +132,6 @@ describe("summarizeLinkedItems", () => {
       foreignCount: 1,
     });
     expect(byKind.TASK).toMatchObject({ openCount: 2, overdueCount: 1 });
-    // Récurrences hors solde : payées plus tard, à leur échéance
-    expect(balance).toBe(1700);
   });
 });
 
@@ -157,6 +156,88 @@ describe("linkedItemHref", () => {
         sourceInvoiceId: "f9",
       }),
     ).toBe("/dashboard/outils/factures?id=f9");
+    expect(linkedItemHref({ kind: "REMINDER", entityId: "f2" })).toBe(
+      "/dashboard/outils/factures?id=f2",
+    );
+    expect(
+      linkedItemHref({
+        kind: "DELIVERY",
+        entityId: "b1",
+        documentKind: "DELIVERY_NOTE",
+      }),
+    ).toBe("/dashboard/outils/bons-de-livraison?id=b1");
+    expect(
+      linkedItemHref({
+        kind: "DELIVERY",
+        entityId: "c1",
+        documentKind: "PURCHASE_ORDER",
+      }),
+    ).toBe("/dashboard/outils/bons-commande?id=c1");
+    expect(linkedItemHref({ kind: "FORECAST", entityId: "p1" })).toBe(
+      "/dashboard/outils/prevision",
+    );
+    expect(linkedItemHref({ kind: "FILE_TRANSFER", entityId: "t1" })).toBe(
+      "/dashboard/outils/transferts-fichiers",
+    );
+  });
+});
+
+describe("prévisions et relances dans les totaux", () => {
+  it("rentrées et sorties séparées, relances sans adresse comptées", () => {
+    const { byKind } = summarizeLinkedItems(
+      [
+        item("FORECAST", "2026-11-05", "UPCOMING", 1100, {
+          flowType: "EXPENSE",
+        }),
+        item("FORECAST", "2026-11-20", "UPCOMING", 2000, {
+          flowType: "INCOME",
+        }),
+        item("REMINDER", "2026-11-09", "UPCOMING", 480, {
+          reminderStatus: "NO_EMAIL",
+        }),
+        item("REMINDER", "2026-11-12", "OVERDUE", 480, {
+          reminderStatus: "FAILED",
+        }),
+      ],
+      { from: "2026-11-01", to: "2026-11-30" },
+    );
+
+    expect(byKind.FORECAST).toMatchObject({
+      incomeAmount: 2000,
+      expenseAmount: 1100,
+      incomeCount: 1,
+      expenseCount: 1,
+    });
+    expect(byKind.REMINDER).toMatchObject({
+      noEmailCount: 1,
+      overdueCount: 1,
+    });
+  });
+});
+
+describe("linkedReminderDraft", () => {
+  it("titre d'action et rappel de l'échéance", () => {
+    const draft = linkedReminderDraft(
+      item("INVOICE", "2026-11-15", "UPCOMING", 1200, {
+        counterparty: "Atelier Lumière",
+        reference: "F-202610-0001",
+      }),
+    );
+
+    expect(draft.title).toBe("Relancer Atelier Lumière (F-202610-0001)");
+    expect(draft.description.replace(/\s/g, " ")).toBe(
+      "Échéance de paiement le dimanche 15 novembre 2026 · 1 200,00 €",
+    );
+    expect(
+      linkedReminderDraft(
+        item("PURCHASE_INVOICE", "2026-11-15", "UPCOMING", 59.99, {
+          counterparty: "OVH",
+        }),
+      ).title,
+    ).toBe("Payer OVH");
+    expect(
+      linkedReminderDraft({ ...item("TASK", "2026-11-15", "UPCOMING") }).title,
+    ).toBe("Suivre « Titre »");
   });
 });
 

@@ -2,8 +2,20 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 
 import { LinkedItemSheet } from "@/app/dashboard/calendar/components/linked-item-sheet";
-import { FiscalSetupHint } from "@/app/dashboard/calendar/components/fiscal-setup-hint";
-import { TooltipProvider } from "@/src/components/ui/tooltip";
+import { FiscalSetupMenuItem } from "@/app/dashboard/calendar/components/fiscal-setup-hint";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+} from "@/src/components/ui/dropdown-menu";
+
+// Ligne du menu « Filtres », rendue menu ouvert
+const inMenu = (setup) => (
+  <DropdownMenu open>
+    <DropdownMenuContent>
+      <FiscalSetupMenuItem setup={setup} />
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
 
 /**
  * Calendrier : fiche d'une échéance fiscale (lien vers la page officielle,
@@ -86,16 +98,16 @@ describe("invitation à compléter les informations légales", () => {
     const listener = vi.fn();
     window.addEventListener("newbi:open-settings", listener);
 
-    render(
-      <TooltipProvider>
-        <FiscalSetupHint setup={setup} />
-      </TooltipProvider>,
+    render(inMenu(setup));
+    const item = screen.getByRole("menuitem", {
+      name: /Compléter les informations légales/,
+    });
+    expect(item).toHaveTextContent("Non affichées : Impôt sur les sociétés.");
+    expect(item).toHaveAttribute(
+      "title",
+      "Renseignez la date de clôture de votre exercice comptable.",
     );
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Compléter les informations légales",
-      }),
-    );
+    fireEvent.click(item);
 
     expect(listener).toHaveBeenCalledTimes(1);
     expect(listener.mock.calls[0][0].detail).toEqual({
@@ -105,13 +117,10 @@ describe("invitation à compléter les informations légales", () => {
   });
 
   it("rien quand toutes les informations sont là", () => {
-    const { container } = render(
-      <TooltipProvider>
-        <FiscalSetupHint setup={{ complete: true, missing: [] }} />
-        <FiscalSetupHint setup={null} />
-      </TooltipProvider>,
-    );
-
-    expect(container).toBeEmptyDOMElement();
+    for (const complete of [{ complete: true, missing: [] }, null]) {
+      const { unmount } = render(inMenu(complete));
+      expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+      unmount();
+    }
   });
 });

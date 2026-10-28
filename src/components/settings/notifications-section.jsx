@@ -35,6 +35,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
+import { CalendarDigestPreference } from "@/src/components/settings/calendar-digest-preference";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import {
   AlertDialog,
@@ -1157,6 +1158,9 @@ export function NotificationsSection({ onClose }) {
                   );
                 },
               )}
+
+              {/* Récap du lundi (réglage lu à part, sans push) */}
+              <CalendarDigestPreference />
             </div>
           )}
         </TabsContent>

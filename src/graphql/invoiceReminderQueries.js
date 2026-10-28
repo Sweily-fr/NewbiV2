@@ -62,3 +62,14 @@ export function useUpdateInvoiceReminderSettings() {
     awaitRefetchQueries: true,
   });
 }
+
+// Rappel de paiement envoyé tout de suite au client (fiche d'une échéance
+// dans le calendrier), avec le modèle des relances automatiques
+export const SEND_INVOICE_REMINDER_NOW = gql`
+  mutation SendInvoiceReminderNow($invoiceId: ID!, $workspaceId: ID) {
+    sendInvoiceReminderNow(invoiceId: $invoiceId, workspaceId: $workspaceId) {
+      success
+      message
+    }
+  }
+`;
