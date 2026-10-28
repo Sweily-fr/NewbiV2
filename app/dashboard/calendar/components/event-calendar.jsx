@@ -37,6 +37,7 @@ import {
   WeekView,
 } from "./index";
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
+import { CalendarFeedDialog } from "./calendar-feed-dialog";
 import { CalendarSyncButton } from "./calendar-sync-button";
 import { CalendarFiltersButton } from "./calendar-filters";
 import { ColorLegend } from "./color-legend";
@@ -704,6 +705,8 @@ export function EventCalendar({
             {/* Synchronisation et connexions : action « edit » */}
             {canEditEvents && <CalendarSyncButton />}
             <CalendarConnectionsPanel canManage={canEditEvents} />
+            {/* Lien d'abonnement (Google, Apple, Outlook) et récap du lundi */}
+            <CalendarFeedDialog />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-1.5 font-normal">
