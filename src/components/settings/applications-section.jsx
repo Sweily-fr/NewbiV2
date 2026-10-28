@@ -18,6 +18,12 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSession } from "@/src/lib/auth-client";
 import { StripeConnectOnboardingModal } from "@/src/components/stripe-connect-onboarding-modal";
+import { useSocialPublishingStatus } from "@/src/hooks/useSocialPublishing";
+import {
+  PENDING_SETTINGS_APP_KEY,
+  SOCIAL_APP_ID,
+  SocialAccountsPanel,
+} from "@/src/components/settings/social-accounts-panel";
 import {
   TabsNew,
   TabsNewList,
@@ -61,6 +67,7 @@ import {
   Loader2,
   Download,
   Trash2,
+  Megaphone,
 } from "lucide-react";
 import { createSearchMatcher } from "@/src/utils/search-text";
 
@@ -79,6 +86,7 @@ const CATEGORIES = [
   { id: "crm", label: "CRM", icon: Headphones },
   { id: "ai", label: "Intelligence artificielle", icon: Sparkles },
   { id: "email", label: "E-mailing", icon: Mail },
+  { id: "marketing", label: "Réseaux sociaux", icon: Megaphone },
   { id: "productivity", label: "Productivité", icon: ClipboardList },
 ];
 
@@ -156,6 +164,19 @@ const APPLICATIONS = [
     website: "https://abby.fr",
     docs: "https://docs.abby.fr",
     support: "https://aide.abby.fr",
+  },
+  {
+    // Masquée tant que l'API n'a pas la publication activée (voir
+    // appsWithStatus) ; les comptes se gèrent dans l'onglet Connexions
+    id: SOCIAL_APP_ID,
+    name: "Réseaux sociaux",
+    author: "Newbi",
+    description:
+      "Programmez vos posts Instagram, Facebook, LinkedIn, X et TikTok depuis vos tableaux : ils partent tout seuls à l'heure choisie.",
+    category: "marketing",
+    logo: "/social/reseaux-sociaux-app.svg",
+    logoBg: "#FFFFFF",
+    verified: true,
   },
   // ── À venir ──
   {
@@ -1875,6 +1896,7 @@ function AppDetailView({
   canManage,
   isReadOnly,
   readOnlyTooltip,
+  workspaceId,
 }) {
   const [isUninstallConfirmOpen, setIsUninstallConfirmOpen] = useState(false);
   // Désinstaller coupe aussi la connexion (cf. resolver uninstallApp) : on le
@@ -1980,9 +2002,11 @@ function AppDetailView({
           <AlertDialogHeader>
             <AlertDialogTitle>Désinstaller {app.name} ?</AlertDialogTitle>
             <AlertDialogDescription>
-              {uninstallDisconnects
-                ? `La connexion à ${app.name} sera coupée : la clé enregistrée sera supprimée et les synchronisations s'arrêteront. Les documents déjà importés sont conservés. Vous pourrez reconnecter ${app.name} en la réinstallant.`
-                : `L'application sera retirée de vos applications. Vous pourrez la réinstaller à tout moment.`}
+              {app.id === SOCIAL_APP_ID && isConnected
+                ? "Les comptes connectés seront déconnectés et les posts programmés annulés. Les posts déjà publiés restent en ligne."
+                : uninstallDisconnects
+                  ? `La connexion à ${app.name} sera coupée : la clé enregistrée sera supprimée et les synchronisations s'arrêteront. Les documents déjà importés sont conservés. Vous pourrez reconnecter ${app.name} en la réinstallant.`
+                  : `L'application sera retirée de vos applications. Vous pourrez la réinstaller à tout moment.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2189,6 +2213,15 @@ function AppDetailView({
               )}
 
               {/* ── Qonto ── */}
+              {app.id === SOCIAL_APP_ID && (
+                <SocialAccountsPanel
+                  workspaceId={workspaceId}
+                  canManage={canManage}
+                  isReadOnly={isReadOnly}
+                  readOnlyTooltip={readOnlyTooltip}
+                />
+              )}
+
               {app.id === "qonto" && qontoActions && (
                 <QontoConnectionPanel
                   app={app}
@@ -2570,6 +2603,10 @@ export function ApplicationsSection() {
     refetchStatus: refetchAbbyStatus,
   } = useAbby(activeOrganization?.id || organizationId);
 
+  // Réseaux sociaux : comptes connectés de l'espace (application masquée si
+  // l'API n'a pas la publication activée)
+  const socialStatus = useSocialPublishingStatus(workspaceId);
+
   // La désinstallation coupe la connexion côté API : on rafraîchit le statut de
   // l'intégration, sinon la carte reste affichée « Connecté » jusqu'au rechargement.
   const handleUninstallApp = async (appId) => {
@@ -2578,6 +2615,7 @@ export function ApplicationsSection() {
       abby: refetchAbbyStatus,
       qonto: refetchQontoStatus,
       pennylane: refetchPennylaneStatus,
+      [SOCIAL_APP_ID]: socialStatus.refetch,
     };
     await refetchByApp[appId]?.();
     return result;
@@ -2622,9 +2660,29 @@ export function ApplicationsSection() {
     }
   }, [refetchStripeStatus]);
 
+  // Retour de la connexion d'un réseau social : rouvrir sa fiche
+  useEffect(() => {
+    let pendingAppId = null;
+    try {
+      pendingAppId = window.sessionStorage.getItem(PENDING_SETTINGS_APP_KEY);
+      if (pendingAppId) {
+        window.sessionStorage.removeItem(PENDING_SETTINGS_APP_KEY);
+      }
+    } catch {
+      pendingAppId = null;
+    }
+    const app = APPLICATIONS.find((a) => a.id === pendingAppId);
+    if (app) {
+      setSelectedApp(app);
+      setView("app-detail");
+    }
+  }, []);
+
   // Enrichir les apps avec le statut de connexion réel + installé depuis BDD
   const appsWithStatus = useMemo(() => {
-    return APPLICATIONS.map((app) => {
+    return APPLICATIONS.filter(
+      (app) => app.id !== SOCIAL_APP_ID || socialStatus.enabled,
+    ).map((app) => {
       const installed = isAppInstalled(app.id);
       if (app.id === "stripe") {
         return {
@@ -2678,9 +2736,25 @@ export function ApplicationsSection() {
             : null,
         };
       }
+      if (app.id === SOCIAL_APP_ID) {
+        // Comptes connectés depuis un tableau : l'application compte comme
+        // installée, sa fiche montre directement les connexions
+        const count = socialStatus.accounts.length;
+        return {
+          ...app,
+          installed: installed || count > 0,
+          connected: count > 0,
+          connectionDetail:
+            count > 0
+              ? `${count} compte${count > 1 ? "s" : ""} connecté${count > 1 ? "s" : ""}`
+              : null,
+        };
+      }
       return { ...app, installed, connected: false };
     });
   }, [
+    socialStatus.enabled,
+    socialStatus.accounts,
     isStripeConnected,
     stripeCanReceive,
     isBankingConnected,
@@ -2833,6 +2907,7 @@ export function ApplicationsSection() {
           canManage={canManageApps}
           isReadOnly={isReadOnly}
           readOnlyTooltip={readOnlyTooltip}
+          workspaceId={workspaceId}
           stripeActions={stripeActions}
           bankingActions={bankingActions}
           pennylaneActions={pennylaneActions}

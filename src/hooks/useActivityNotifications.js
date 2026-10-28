@@ -6,7 +6,7 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { getExternalSource } from "@/src/components/document-source-badge";
-import { FileDown, KeyRound } from "lucide-react";
+import { FileDown, KeyRound, Send } from "lucide-react";
 
 // Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
 // rafraîchir sans recharger la page, par nom d'opération GraphQL.
@@ -135,6 +135,43 @@ export const useActivityNotifications = (options = {}) => {
             ),
         },
       });
+      return;
+    }
+
+    // Post réseaux sociaux publié ou en échec : toast avec un lien vers la
+    // carte du tableau (data.url, adresse complète du front)
+    if (
+      incoming.type === "SOCIAL_POST_PUBLISHED" ||
+      incoming.type === "SOCIAL_POST_FAILED"
+    ) {
+      if (!rememberToasted(incoming.id)) return;
+      apolloClient
+        .refetchQueries({ include: ["GetBoardSocialPosts"] })
+        .catch(() => {});
+      const url = incoming.data?.url;
+      toast.document(
+        incoming.title ||
+          (incoming.type === "SOCIAL_POST_FAILED"
+            ? "La publication a échoué"
+            : "Post publié"),
+        {
+          description: incoming.message,
+          fallbackIcon: Send,
+          action: url
+            ? {
+                label: "Voir",
+                onClick: () => {
+                  try {
+                    const target = new URL(url, window.location.origin);
+                    router.push(target.pathname + target.search);
+                  } catch {
+                    window.location.assign(url);
+                  }
+                },
+              }
+            : undefined,
+        },
+      );
       return;
     }
 

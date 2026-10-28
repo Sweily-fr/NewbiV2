@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <radialGradient id="ig" cx="0.3" cy="1.05" r="1.25">
+      <stop offset="0" stop-color="#FFD776"/>
+      <stop offset="0.25" stop-color="#F3A554"/>
+      <stop offset="0.5" stop-color="#E1306C"/>
+      <stop offset="0.8" stop-color="#C13584"/>
+      <stop offset="1" stop-color="#5B51D8"/>
+    </radialGradient>
+  </defs>
+  <rect width="48" height="48" fill="#fff"/>
+  <g transform="translate(3 3) scale(0.8333)">
+    <rect width="24" height="24" rx="6" fill="url(#ig)"/>
+    <rect x="5.5" y="5.5" width="13" height="13" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/>
+    <circle cx="12" cy="12" r="3.1" fill="none" stroke="#fff" stroke-width="1.8"/>
+    <circle cx="16.1" cy="7.9" r="1.05" fill="#fff"/>
+  </g>
+  <g transform="translate(25 3) scale(0.8333)">
+    <rect width="24" height="24" rx="6" fill="#1877F2"/>
+    <path d="M13.4 21v-6.6h2.2l.35-2.6H13.4v-1.65c0-.75.22-1.27 1.3-1.27H16V6.55a17 17 0 0 0-1.97-.1c-1.95 0-3.29 1.19-3.29 3.38v1.97H8.55v2.6h2.19V21z" fill="#fff"/>
+  </g>
+  <g transform="translate(3 25) scale(0.8333)">
+    <rect width="24" height="24" rx="6" fill="#0A66C2"/>
+    <circle cx="7.6" cy="7.4" r="1.55" fill="#fff"/>
+    <rect x="6.25" y="10" width="2.7" height="8" rx="0.4" fill="#fff"/>
+    <path d="M10.9 10h2.6v1.15c.4-.72 1.36-1.35 2.72-1.35 2.6 0 3.08 1.66 3.08 3.82V18h-2.7v-3.9c0-.94-.02-2.15-1.32-2.15s-1.67 1.02-1.67 2.08V18h-2.7z" fill="#fff"/>
+  </g>
+  <g transform="translate(25 25) scale(0.8333)">
+    <rect width="24" height="24" rx="6" fill="#000"/>
+    <path d="M6.2 6h3.7l2.65 3.75L15.75 6h1.85l-4.2 4.88L18 18h-3.7l-2.9-4.1L7.9 18H6.05l4.5-5.22z" fill="#fff"/>
+  </g>
+</svg>
