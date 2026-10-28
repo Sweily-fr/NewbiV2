@@ -132,10 +132,10 @@ export function ColorLegend({ canEdit = true }) {
             aria-label="Étiquettes"
           >
             <Palette className="h-4 w-4" />
-            <span className="max-lg:hidden">Étiquettes</span>
+            <span className="max-2xl:hidden">Étiquettes</span>
             <ChevronDown
               className={cn(
-                "h-3.5 w-3.5 opacity-60 transition-transform duration-200 max-lg:hidden",
+                "h-3.5 w-3.5 opacity-60 transition-transform duration-200 max-2xl:hidden",
                 isOpen && "rotate-180",
               )}
             />
