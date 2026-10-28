@@ -38,20 +38,13 @@ import {
 } from "./index";
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
 import { CalendarSyncButton } from "./calendar-sync-button";
-import { CalendarSourcesBar } from "./calendar-sources-bar";
-import {
-  CalendarTreasuryStrip,
-  TreasuryDayBadge,
-} from "./calendar-treasury-strip";
+import { CalendarFiltersButton } from "./calendar-filters";
 import { ColorLegend } from "./color-legend";
 import { LinkedItemSheet } from "./linked-item-sheet";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import {
-  useCalendarLinkedItems,
-  useCalendarTreasury,
-} from "@/src/hooks/useCalendarLinkedItems";
+import { useCalendarLinkedItems } from "@/src/hooks/useCalendarLinkedItems";
 import { dateToDay, dayToDate } from "@/src/utils/recurrenceDays";
 import { shiftTaskDates } from "@/src/utils/kanban-calendar";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
@@ -69,7 +62,6 @@ import {
   periodNames,
   summarizeLinkedItems,
   summaryRange,
-  treasuryByDay,
   visibleRange,
 } from "@/src/utils/calendar-linked-items";
 import {
@@ -150,6 +142,17 @@ export function EventCalendar({
     });
   }, []);
 
+  const resetFilters = useCallback(() => {
+    setHiddenSources(new Set());
+    setMyTasksOnly(false);
+    try {
+      localStorage.removeItem(HIDDEN_SOURCES_KEY);
+      localStorage.removeItem(MY_TASKS_KEY);
+    } catch {
+      // Stockage indisponible : rien à effacer
+    }
+  }, []);
+
   const toggleSource = useCallback((key) => {
     setHiddenSources((previous) => {
       const next = new Set(previous);
@@ -175,19 +178,6 @@ export function EventCalendar({
     loading: linkedLoading,
     unavailable: linkedUnavailable,
   } = useCalendarLinkedItems(range);
-  // Solde prévu jour par jour (null sans accès à Prévision ou Analytiques)
-  const { treasury } = useCalendarTreasury(range);
-  const treasuryDays = useMemo(() => treasuryByDay(treasury), [treasury]);
-  const renderTreasuryBadge = useCallback(
-    (day) => {
-      const key = dateToDay(day);
-      const treasuryDay = treasuryDays.get(key);
-      return treasuryDay ? (
-        <TreasuryDayBadge day={key} balance={treasuryDay.balance} />
-      ) : null;
-    },
-    [treasuryDays],
-  );
 
   // « Mes tâches » : seulement les tâches dont on est membre assigné
   const visibleLinkedItems = useMemo(
@@ -414,7 +404,7 @@ export function EventCalendar({
   const [updateTaskMutation] = useMutation(UPDATE_TASK);
 
   // Mise à jour immédiate d'une échéance dans le cache (la grille, les
-  // totaux et la fiche suivent), puis relecture des échéances et du solde
+  // totaux et la fiche suivent), puis relecture des échéances
   const patchLinkedItem = useCallback(
     (item, fields) => {
       const cacheId = apolloClient.cache.identify({
@@ -438,7 +428,7 @@ export function EventCalendar({
   const refreshLinked = useCallback(
     () =>
       apolloClient.refetchQueries({
-        include: ["GetCalendarLinkedItems", "GetCalendarTreasury"],
+        include: ["GetCalendarLinkedItems"],
       }),
     [apolloClient],
   );
@@ -647,7 +637,7 @@ export function EventCalendar({
 
   return (
     <div
-      className="flex flex-col rounded-b-lg has-data-[slot=month-view]:flex-1"
+      className="flex h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] min-h-0 flex-col overflow-hidden rounded-b-lg"
       style={{
         "--event-height": `${EventHeight}px`,
         "--event-gap": `${EventGap}px`,
@@ -661,7 +651,7 @@ export function EventCalendar({
       >
         <div
           className={cn(
-            "flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-4",
+            "flex shrink-0 flex-wrap items-center justify-between gap-2 p-2 sm:px-4 sm:py-3 xl:flex-nowrap",
             className,
           )}
         >
@@ -695,7 +685,22 @@ export function EventCalendar({
               {viewTitle}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          {/* Une seule ligne d'outils ; sur petit écran elle peut passer à la
+              ligne plutôt que déborder */}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <CalendarFiltersButton
+              kinds={linkedKinds}
+              hiddenSources={hiddenSources}
+              onToggle={toggleSource}
+              onReset={resetFilters}
+              summary={linkedSummary}
+              eventsCount={periodEventsCount}
+              period={period}
+              loading={linkedLoading}
+              myTasksOnly={myTasksOnly}
+              onToggleMyTasks={currentUserId ? toggleMyTasks : undefined}
+            />
+            <ColorLegend canEdit={canEditEvents} />
             {/* Synchronisation et connexions : action « edit » */}
             {canEditEvents && <CalendarSyncButton />}
             <CalendarConnectionsPanel canManage={canEditEvents} />
@@ -740,33 +745,15 @@ export function EventCalendar({
           </div>
         </div>
 
-        <CalendarSourcesBar
-          kinds={linkedKinds}
-          hiddenSources={hiddenSources}
-          onToggle={toggleSource}
-          summary={linkedSummary}
-          eventsCount={periodEventsCount}
-          period={period}
-          loading={linkedLoading}
-          showBalance={!treasury}
-          myTasksOnly={myTasksOnly}
-          onToggleMyTasks={currentUserId ? toggleMyTasks : undefined}
-        />
-
-        <CalendarTreasuryStrip treasury={treasury} period={period} />
-
-        <ColorLegend canEdit={canEditEvents} />
-
-        <div className="flex flex-1 flex-col">
+        {/* Les vues prennent la hauteur restante : la grille du mois se
+            partage la place, semaine, jour et agenda défilent à l'intérieur */}
+        <div className="flex min-h-0 flex-1 flex-col">
           {view === "mois" && (
             <MonthView
               currentDate={currentDate}
               events={displayedEvents}
               onEventSelect={handleEventSelect}
               onEventCreate={handleEventCreate}
-              renderDayBadge={
-                treasury?.hasBankAccounts ? renderTreasuryBadge : undefined
-              }
             />
           )}
           {view === "semaine" && (

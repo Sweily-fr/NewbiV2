@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/src/components/ui/collapsible";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -122,82 +122,84 @@ export function ColorLegend({ canEdit = true }) {
 
   return (
     <>
-      <Collapsible
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        className="px-2 sm:px-4"
-      >
-        <div className="flex items-center gap-2">
-          <CollapsibleTrigger asChild>
+      {/* Bouton de l'en-tête : la légende s'ouvre par-dessus le calendrier
+          au lieu d'occuper une ligne (la page tient dans l'écran) */}
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="gap-1.5 font-normal"
+            aria-label="Étiquettes"
+          >
+            <Palette className="h-4 w-4" />
+            <span className="max-lg:hidden">Étiquettes</span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 opacity-60 transition-transform duration-200 max-lg:hidden",
+                isOpen && "rotate-180",
+              )}
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-64 p-2">
+          <p className="text-muted-foreground px-1.5 pt-1 pb-2 text-xs font-medium">
+            Étiquettes de couleur
+          </p>
+          <div className="flex flex-col gap-0.5">
+            {labels.map((entry, index) =>
+              canEdit ? (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    openEditDialog(index);
+                  }}
+                  className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span className="text-xs text-muted-foreground truncate flex-1 text-left">
+                    {entry.label}
+                  </span>
+                  <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                </button>
+              ) : (
+                // Sans « Modifier » : légende en lecture simple
+                <div
+                  key={index}
+                  className="flex items-center gap-2 py-1 px-1.5"
+                >
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span className="text-xs text-muted-foreground truncate flex-1 text-left">
+                    {entry.label}
+                  </span>
+                </div>
+              ),
+            )}
+          </div>
+
+          {canEdit && labels.length < 20 && (
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setIsOpen(false);
+                openAddDialog();
+              }}
+              className="mt-1 w-full justify-start gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
-              <Palette className="h-4 w-4" />
-              <span className="text-sm">Étiquettes</span>
-              <ChevronDown
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform duration-200",
-                  isOpen && "rotate-180",
-                )}
-              />
+              <Plus className="h-3.5 w-3.5" />
+              Ajouter une étiquette
             </Button>
-          </CollapsibleTrigger>
-        </div>
-
-        <CollapsibleContent>
-          <div className="pt-2 pb-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
-              {labels.map((entry, index) =>
-                canEdit ? (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => openEditDialog(index)}
-                    className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    <span
-                      className="h-3 w-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="text-xs text-muted-foreground truncate flex-1 text-left">
-                      {entry.label}
-                    </span>
-                    <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
-                  </button>
-                ) : (
-                  // Sans « Modifier » : légende en lecture simple
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 py-1 px-1.5"
-                  >
-                    <span
-                      className="h-3 w-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="text-xs text-muted-foreground truncate flex-1 text-left">
-                      {entry.label}
-                    </span>
-                  </div>
-                ),
-              )}
-            </div>
-
-            {canEdit && labels.length < 20 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={openAddDialog}
-                className="mt-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Ajouter une étiquette
-              </Button>
-            )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+          )}
+        </PopoverContent>
+      </Popover>
 
       {/* Modal ajout / édition */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
