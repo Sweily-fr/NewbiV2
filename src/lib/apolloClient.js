@@ -558,6 +558,11 @@ const errorLink = onError(
       // Pendant un retry auth, ne pas afficher de toasts réseau
       if (isRetryingAuth || isRedirecting) return;
 
+      // Requête dont l'appelant gère l'échec lui-même. Une requête refusée à
+      // la validation (champ que l'API ne connaît pas encore : HTTP 400)
+      // arrive ici, pas dans graphQLErrors seuls.
+      if (operation.getContext().skipErrorToast) return;
+
       const msg = networkError.message || "";
 
       // Erreurs de chunk stale (deploiement Vercel) : ne pas afficher de toast,
