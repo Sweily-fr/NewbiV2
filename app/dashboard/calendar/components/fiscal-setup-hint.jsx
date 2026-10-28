@@ -20,40 +20,39 @@ function openLegalSettings() {
 }
 
 /**
- * Invitation discrète, à côté de la source « Fiscal », quand des
- * informations légales manquent pour calculer certaines échéances : ces
- * échéances ne sont pas affichées plutôt que devinées.
+ * Invitation discrète, sous les sources, quand des informations légales
+ * manquent pour calculer certaines échéances fiscales : ces échéances ne
+ * sont pas affichées plutôt que devinées. Une ligne à part, pour ne pas
+ * disputer la place des pastilles.
  */
 export function FiscalSetupHint({ setup }) {
   const concerns = fiscalMissingConcerns(setup);
   if (!setup || setup.complete || concerns.length === 0) return null;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={openLegalSettings}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs underline-offset-4 transition outline-none hover:underline focus-visible:ring-[3px]"
-        >
-          <Info className="size-3.5" aria-hidden="true" />
-          Compléter les informations légales
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-72 text-left">
-        <p className="font-medium">Échéances fiscales incomplètes</p>
-        <p className="mt-0.5 text-white/80">
-          Non affichées faute d&apos;informations : {concerns.join(", ")}.
-        </p>
-        {setup.missing.map((missing) => (
-          <p key={missing.code} className="mt-1 text-white/80">
-            {missing.label}
-          </p>
-        ))}
-        <p className="mt-1.5 text-white/50">
-          Cliquer pour ouvrir les informations légales
-        </p>
-      </TooltipContent>
-    </Tooltip>
+    <p className="text-muted-foreground flex w-full flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex cursor-help items-center gap-1.5">
+            <Info className="size-3.5 shrink-0" aria-hidden="true" />
+            Échéances fiscales non affichées : {concerns.join(", ")}.
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="start" className="max-w-80">
+          {setup.missing.map((missing) => (
+            <p key={missing.code} className="text-white/90 [&+p]:mt-1">
+              {missing.label}
+            </p>
+          ))}
+        </TooltipContent>
+      </Tooltip>
+      <button
+        type="button"
+        onClick={openLegalSettings}
+        className="text-foreground focus-visible:ring-ring/50 rounded font-medium underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-[3px]"
+      >
+        Compléter les informations légales
+      </button>
+    </p>
   );
 }

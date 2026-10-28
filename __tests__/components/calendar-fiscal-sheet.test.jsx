@@ -93,7 +93,7 @@ describe("invitation à compléter les informations légales", () => {
     );
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Compléter les informations légales/,
+        name: "Compléter les informations légales",
       }),
     );
 

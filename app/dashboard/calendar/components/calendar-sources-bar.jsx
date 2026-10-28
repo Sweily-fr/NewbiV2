@@ -250,9 +250,6 @@ export const CalendarSourcesBar = memo(function CalendarSourcesBar({
             />
           );
         })}
-        {!loading && allowed.includes("FISCAL") && (
-          <FiscalSetupHint setup={fiscalSetup} />
-        )}
       </div>
 
       {showBalance && (
@@ -293,6 +290,11 @@ export const CalendarSourcesBar = memo(function CalendarSourcesBar({
             </p>
           </TooltipContent>
         </Tooltip>
+      )}
+
+      {/* Ligne à part : l'invitation ne prend pas la place des pastilles */}
+      {!loading && allowed.includes("FISCAL") && (
+        <FiscalSetupHint setup={fiscalSetup} />
       )}
     </div>
   );

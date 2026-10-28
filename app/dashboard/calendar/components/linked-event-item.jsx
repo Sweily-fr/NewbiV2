@@ -69,7 +69,14 @@ export const LinkedEventItem = memo(function LinkedEventItem({
           <span className="flex items-center gap-1.5 text-sm font-medium">
             <span className="truncate">{item.title}</span>
             {item.reference && (
-              <span className="text-muted-foreground shrink-0 truncate text-xs font-normal">
+              <span
+                className={cn(
+                  "text-muted-foreground truncate text-xs font-normal",
+                  // Période d'une échéance fiscale, parfois longue : elle
+                  // cède la place au titre au lieu de l'écraser
+                  item.kind === "FISCAL" ? "min-w-0" : "shrink-0",
+                )}
+              >
                 {item.reference}
               </span>
             )}
