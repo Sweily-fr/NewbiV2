@@ -27,6 +27,8 @@ export const LinkedEventItem = memo(function LinkedEventItem({
   const meta = LINKED_SOURCE_META[item.kind];
   if (!meta) return null;
   const Icon = meta.icon;
+  // Échéance fiscale passée : horloge plutôt que coche (rien n'est vérifié)
+  const DoneIcon = meta.doneIcon || Check;
   const isOverdue = item.state === "OVERDUE";
   const isDone = item.state === "DONE";
   const stateLabel = linkedStateLabel(item);
@@ -138,7 +140,7 @@ export const LinkedEventItem = memo(function LinkedEventItem({
         <CircleAlert className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
       )}
       {isDone && (
-        <Check className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
+        <DoneIcon className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
       )}
       <span className="min-w-0 truncate">{item.title}</span>
       {isOverdue && (
@@ -148,7 +150,10 @@ export const LinkedEventItem = memo(function LinkedEventItem({
         />
       )}
       {isDone && (
-        <Check className="size-3 shrink-0 max-sm:hidden" aria-hidden="true" />
+        <DoneIcon
+          className="size-3 shrink-0 max-sm:hidden"
+          aria-hidden="true"
+        />
       )}
       {(amount || members.length > 0) && (
         <span className="ml-auto flex shrink-0 items-center gap-1 pl-1">
@@ -194,11 +199,12 @@ function StateText({ item, stateLabel }) {
     );
   }
   if (item.state === "DONE") {
+    const DoneIcon = LINKED_SOURCE_META[item.kind]?.doneIcon || Check;
     return (
       <>
         <Dot />
         <span className="flex shrink-0 items-center gap-1">
-          <Check className="size-3" aria-hidden="true" />
+          <DoneIcon className="size-3" aria-hidden="true" />
           {stateLabel}
         </span>
       </>

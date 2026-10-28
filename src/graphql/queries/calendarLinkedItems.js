@@ -7,6 +7,14 @@ export const GET_CALENDAR_LINKED_ITEMS = gql`
     calendarLinkedItems(workspaceId: $workspaceId, from: $from, to: $to) {
       kinds
       truncated
+      fiscalSetup {
+        complete
+        missing {
+          code
+          label
+          concerns
+        }
+      }
       items {
         id
         kind
@@ -29,6 +37,10 @@ export const GET_CALENDAR_LINKED_ITEMS = gql`
         sourceInvoiceId
         frequency
         interval
+        infoUrl
+        isIndicative
+        isConditional
+        note
         assignedMembersInfo {
           id
           userId

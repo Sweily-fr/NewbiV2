@@ -4,7 +4,14 @@ import { useRef } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowRight, Check, CircleAlert, Clock, Info } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  CircleAlert,
+  Clock,
+  ExternalLink,
+  Info,
+} from "lucide-react";
 
 import {
   Sheet,
@@ -21,11 +28,13 @@ import { cn } from "@/src/lib/utils";
 import { dayToDate } from "@/src/utils/recurrenceDays";
 import {
   formatLinkedAmount,
+  linkedItemExternalUrl,
   linkedItemHref,
   relativeDayLabel,
 } from "@/src/utils/calendar-linked-items";
 import { formatRecurrenceFrequency } from "@/src/graphql/invoiceRecurrenceQueries";
 import {
+  FISCAL_ACTION_LABELS,
   LINKED_SOURCE_META,
   PRIORITY_LABELS,
   linkedStateLabel,
@@ -37,6 +46,7 @@ const DATE_LABELS = {
   QUOTE: "Fin de validité",
   RECURRING_INVOICE: "Émission",
   TASK: "Échéance",
+  FISCAL: "Date limite",
 };
 
 const COUNTERPARTY_LABELS = {
@@ -44,12 +54,21 @@ const COUNTERPARTY_LABELS = {
   QUOTE: "Client",
   RECURRING_INVOICE: "Client",
   PURCHASE_INVOICE: "Fournisseur",
+  FISCAL: "Organisme",
+};
+
+// Libellé de la référence quand ce n'est pas un numéro de document
+const REFERENCE_LABELS = {
+  RECURRING_INVOICE: "Facture modèle",
+  FISCAL: "Période",
 };
 
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
 // Conseil affiché sous les détails selon la source et l'état
 function hintFor(item, longDate) {
+  // Échéance fiscale : règle appliquée et conditions, venues de l'API
+  if (item.kind === "FISCAL") return item.note || null;
   switch (`${item.kind}:${item.state}`) {
     case "INVOICE:OVERDUE":
       return `Le paiement était attendu le ${longDate}. Vous pouvez relancer le client depuis la facture.`;
@@ -73,9 +92,12 @@ const OVERDUE_AS_DELAY = new Set(["INVOICE", "PURCHASE_INVOICE", "TASK"]);
 
 function StateBadge({ item, label }) {
   if (!label) return null;
+  const meta = LINKED_SOURCE_META[item.kind];
   const isOverdue = item.state === "OVERDUE";
-  const isDone = item.state === "DONE";
-  const Icon = isOverdue ? CircleAlert : isDone ? Check : Clock;
+  // Échéance fiscale passée : badge neutre, rien ne dit qu'elle est réglée
+  const isDone = item.state === "DONE" && !meta?.neutralDone;
+  const PastIcon = item.state === "DONE" && meta?.doneIcon;
+  const Icon = isOverdue ? CircleAlert : isDone ? Check : PastIcon || Clock;
   return (
     <span
       className={cn(
@@ -89,6 +111,15 @@ function StateBadge({ item, label }) {
     >
       <Icon className="size-3" aria-hidden="true" />
       {label}
+    </span>
+  );
+}
+
+// Précision sur une échéance fiscale, sans couleur d'état
+function MentionBadge({ children }) {
+  return (
+    <span className="text-muted-foreground inline-flex items-center rounded-full border border-dashed px-2 py-0.5 text-xs">
+      {children}
     </span>
   );
 }
@@ -134,6 +165,7 @@ function LinkedItemSheetBody({ item, meta, onClose }) {
   const longDate = format(date, "EEEE d MMMM yyyy", { locale: fr });
   const amount = formatLinkedAmount(item.amount, item.currency || "EUR");
   const href = linkedItemHref(item);
+  const externalUrl = linkedItemExternalUrl(item);
   const hint = hintFor(item, longDate);
   const members = item.assignedMembersInfo || [];
   const relative = relativeDayLabel(item.day, item.state);
@@ -209,6 +241,10 @@ function LinkedItemSheetBody({ item, meta, onClose }) {
                 </span>
               </>
             )}
+            {item.isIndicative && <MentionBadge>Date indicative</MentionBadge>}
+            {item.isConditional && (
+              <MentionBadge>Selon votre situation</MentionBadge>
+            )}
           </div>
         </div>
 
@@ -224,14 +260,16 @@ function LinkedItemSheetBody({ item, meta, onClose }) {
               </DetailRow>
             )}
           {item.kind !== "TASK" && item.reference && (
-            <DetailRow
-              label={
-                item.kind === "RECURRING_INVOICE" ? "Facture modèle" : "Numéro"
-              }
-            >
+            <DetailRow label={REFERENCE_LABELS[item.kind] || "Numéro"}>
               {item.reference}
             </DetailRow>
           )}
+          {item.kind === "FISCAL" &&
+            FISCAL_ACTION_LABELS[item.documentStatus] && (
+              <DetailRow label="Démarche">
+                {FISCAL_ACTION_LABELS[item.documentStatus]}
+              </DetailRow>
+            )}
           {item.kind === "RECURRING_INVOICE" && item.frequency && (
             <DetailRow label="Rythme">
               {capitalize(
@@ -301,6 +339,19 @@ function LinkedItemSheetBody({ item, meta, onClose }) {
                 {meta.openLabel}
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
+            </Button>
+          )}
+          {externalUrl && (
+            <Button
+              asChild
+              size="sm"
+              className="gap-1.5 bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+            >
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+                {meta.openLabel}
+                <ExternalLink className="size-3.5" aria-hidden="true" />
+                <span className="sr-only">(nouvel onglet)</span>
+              </a>
             </Button>
           )}
         </div>

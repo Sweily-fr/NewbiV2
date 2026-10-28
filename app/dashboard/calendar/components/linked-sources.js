@@ -3,6 +3,8 @@ import {
   ArrowUpRight,
   CalendarDays,
   FileText,
+  History,
+  Landmark,
   Repeat,
   SquareCheckBig,
 } from "lucide-react";
@@ -110,6 +112,36 @@ export const LINKED_SOURCE_META = {
       DONE: "Terminée",
     },
   },
+  // Échéances fiscales calculées : teinte neutre (ardoise), ni le rouge du
+  // retard ni le vert du réglé. Validée par le script dataviz : écart
+  // suffisant avec les cinq autres sources et avec le gris des événements.
+  FISCAL: {
+    label: "Fiscal",
+    noun: "Échéance fiscale",
+    description: "Impôts, TVA et cotisations sociales",
+    openLabel: "Voir la page officielle",
+    icon: Landmark,
+    hex: "#334155",
+    dot: "bg-[#334155] dark:bg-[#5f6b7d]",
+    iconClass: "text-[#334155] dark:text-[#5f6b7d]",
+    accent: "bg-[#334155] dark:bg-[#5f6b7d]",
+    tint: "bg-[#334155]/10 dark:bg-[#5f6b7d]/20",
+    // Date passée : on ne sait pas si la démarche est faite, ni coche ni
+    // badge vert
+    doneIcon: History,
+    neutralDone: true,
+    states: {
+      UPCOMING: "À venir",
+      OVERDUE: "À venir",
+      DONE: "Date passée",
+    },
+  },
+};
+
+// Démarche attendue pour une échéance fiscale (documentStatus)
+export const FISCAL_ACTION_LABELS = {
+  DECLARATION_PAYMENT: "Déclarer et payer",
+  PAYMENT: "Payer",
 };
 
 export const PRIORITY_LABELS = {

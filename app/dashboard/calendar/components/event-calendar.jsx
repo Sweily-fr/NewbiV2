@@ -119,6 +119,7 @@ export function EventCalendar({
     kinds: linkedKinds,
     loading: linkedLoading,
     unavailable: linkedUnavailable,
+    fiscalSetup: linkedFiscalSetup,
   } = useCalendarLinkedItems(range);
 
   // Sans barre des sources (aucune autre page visible), rien n'est masqué :
@@ -486,6 +487,7 @@ export function EventCalendar({
           eventsCount={periodEventsCount}
           period={period}
           loading={linkedLoading}
+          fiscalSetup={linkedFiscalSetup}
         />
 
         <ColorLegend canEdit={canEditEvents} />

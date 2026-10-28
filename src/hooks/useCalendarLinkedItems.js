@@ -43,6 +43,8 @@ export function useCalendarLinkedItems({ from, to, skip = false }) {
     items: result?.items || EMPTY,
     kinds: result?.kinds || EMPTY,
     truncated: !!result?.truncated,
+    // Source Fiscal : informations légales manquantes (null sans la source)
+    fiscalSetup: result?.fiscalSetup || null,
     // Vrai tant que la période affichée n'a pas encore ses propres données
     loading: loading && !data?.calendarLinkedItems,
     // Requête en échec (API pas encore à jour…) : le calendrier garde ses
