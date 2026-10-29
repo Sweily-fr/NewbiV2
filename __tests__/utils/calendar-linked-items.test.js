@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
+  ALL_SOURCE_KEYS,
+  APPOINTMENTS_SOURCE,
+  DEFAULT_VIEW,
+  EVENTS_SOURCE,
+  hiddenSourcesForView,
+  matchingView,
   formatLinkedAmount,
   isPlainInvoiceDueEvent,
   linkedItemHref,
@@ -285,5 +291,37 @@ describe("periodNames", () => {
     });
     expect(periodNames("mois", new Date(2026, 7, 3)).of).toBe("d'août");
     expect(periodNames("agenda", TODAY, 30).of).toBe("des 30 jours");
+  });
+});
+
+describe("vues du menu Filtres", () => {
+  it("Essentiel masque les sources secondaires", () => {
+    const hidden = hiddenSourcesForView(DEFAULT_VIEW);
+
+    expect([...hidden].sort()).toEqual(
+      [
+        "DELIVERY",
+        "FILE_TRANSFER",
+        "FORECAST",
+        "RECURRING_INVOICE",
+        "REMINDER",
+      ].sort(),
+    );
+    expect(hiddenSourcesForView("tout").size).toBe(0);
+  });
+
+  it("reconnaît la vue affichée parmi les sources du rôle", () => {
+    expect(
+      matchingView(hiddenSourcesForView("tresorerie"), ALL_SOURCE_KEYS),
+    ).toBe("tresorerie");
+    // Rôle qui ne voit que les événements et les tâches : Essentiel
+    // et Projets montrent la même chose, la première l'emporte
+    expect(
+      matchingView(hiddenSourcesForView("projets"), [EVENTS_SOURCE, "TASK"]),
+    ).toBe("essentiel");
+    // Choix personnalisé
+    const custom = hiddenSourcesForView(DEFAULT_VIEW);
+    custom.add(APPOINTMENTS_SOURCE);
+    expect(matchingView(custom, ALL_SOURCE_KEYS)).toBeNull();
   });
 });

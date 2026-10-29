@@ -30,8 +30,96 @@ export const LINKED_KINDS = [
   "FISCAL",
 ];
 
-// Clé des événements du calendrier dans la barre des sources
+// Clé des événements du calendrier dans le menu Filtres
 export const EVENTS_SOURCE = "EVENTS";
+// Rendez-vous pris en ligne (événements APPOINTMENT), filtrés à part des
+// autres événements
+export const APPOINTMENTS_SOURCE = "APPOINTMENTS";
+
+export const ALL_SOURCE_KEYS = [
+  EVENTS_SOURCE,
+  APPOINTMENTS_SOURCE,
+  ...LINKED_KINDS,
+];
+
+export const isAppointmentEvent = (event) => event?.type === "APPOINTMENT";
+
+/**
+ * Vues toutes prêtes du menu Filtres. « Essentiel » est l'affichage par
+ * défaut : les sources secondaires (prévisions, relances, récurrences,
+ * livraisons, transferts) restent à un clic.
+ */
+export const CALENDAR_VIEWS = [
+  {
+    key: "essentiel",
+    label: "Essentiel",
+    description: "Rendez-vous, factures, devis, tâches et fiscal",
+    sources: [
+      EVENTS_SOURCE,
+      APPOINTMENTS_SOURCE,
+      "INVOICE",
+      "PURCHASE_INVOICE",
+      "QUOTE",
+      "TASK",
+      "FISCAL",
+    ],
+  },
+  {
+    key: "tresorerie",
+    label: "Trésorerie",
+    description: "Encaissements, paiements, prévisions et relances",
+    sources: [
+      "INVOICE",
+      "PURCHASE_INVOICE",
+      "FORECAST",
+      "REMINDER",
+      "RECURRING_INVOICE",
+      "FISCAL",
+    ],
+  },
+  {
+    key: "commercial",
+    label: "Commercial",
+    description: "Rendez-vous, devis, relances et livraisons",
+    sources: [APPOINTMENTS_SOURCE, "QUOTE", "INVOICE", "REMINDER", "DELIVERY"],
+  },
+  {
+    key: "projets",
+    label: "Projets",
+    description: "Événements, tâches, livraisons et transferts",
+    sources: [EVENTS_SOURCE, "TASK", "DELIVERY", "FILE_TRANSFER"],
+  },
+  {
+    key: "tout",
+    label: "Tout",
+    description: "Toutes les sources",
+    sources: ALL_SOURCE_KEYS,
+  },
+];
+
+export const DEFAULT_VIEW = "essentiel";
+
+/** Sources masquées par une vue. */
+export function hiddenSourcesForView(viewKey) {
+  const view =
+    CALENDAR_VIEWS.find((candidate) => candidate.key === viewKey) ||
+    CALENDAR_VIEWS[0];
+  return new Set(ALL_SOURCE_KEYS.filter((key) => !view.sources.includes(key)));
+}
+
+/**
+ * Vue qui correspond à l'affichage, en ne regardant que les sources que le
+ * rôle voit ; null pour un choix personnalisé.
+ */
+export function matchingView(hiddenSources, availableKeys) {
+  return (
+    CALENDAR_VIEWS.find((view) =>
+      availableKeys.every(
+        (key) => view.sources.includes(key) === !hiddenSources.has(key),
+      ),
+    )?.key ?? null
+  );
+}
 
 // Le calendrier commence la semaine le dimanche (vues mois et semaine)
 const WEEK_OPTIONS = { weekStartsOn: 0 };

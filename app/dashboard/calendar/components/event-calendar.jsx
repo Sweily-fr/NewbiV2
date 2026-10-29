@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useApolloClient, useMutation } from "@apollo/client";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   addDays,
   differenceInCalendarDays,
@@ -40,6 +40,7 @@ import { CalendarConnectionsPanel } from "./calendar-connections-panel";
 import { CalendarFeedDialog } from "./calendar-feed-dialog";
 import { CalendarSyncButton } from "./calendar-sync-button";
 import { CalendarFiltersButton } from "./calendar-filters";
+import { CalendarOverdueButton } from "./calendar-overdue-button";
 import { ColorLegend } from "./color-legend";
 import { LinkedItemSheet } from "./linked-item-sheet";
 import {
@@ -49,18 +50,27 @@ import {
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { useCalendarLinkedItems } from "@/src/hooks/useCalendarLinkedItems";
+import {
+  useCalendarLinkedItems,
+  useCalendarOverdueItems,
+} from "@/src/hooks/useCalendarLinkedItems";
 import { dateToDay, dayToDate } from "@/src/utils/recurrenceDays";
 import { shiftTaskDates } from "@/src/utils/kanban-calendar";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { useMarkInvoiceAsPaid } from "@/src/graphql/invoiceQueries";
 import { useMarkAsPaid as useMarkPurchaseInvoiceAsPaid } from "@/src/hooks/usePurchaseInvoices";
 import { SEND_INVOICE_REMINDER_NOW } from "@/src/graphql/invoiceReminderQueries";
-import { UPDATE_TASK } from "@/src/graphql/kanbanQueries";
+import {
+  GET_ORGANIZATION_MEMBERS,
+  UPDATE_TASK,
+} from "@/src/graphql/kanbanQueries";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
+  APPOINTMENTS_SOURCE,
+  DEFAULT_VIEW,
   EVENTS_SOURCE,
+  hiddenSourcesForView,
   isPlainInvoiceDueEvent,
   linkedItemToEvent,
   linkedReminderDraft,
@@ -77,18 +87,29 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 
-// Sources masquées par l'utilisateur, gardées dans ce navigateur
-const HIDDEN_SOURCES_KEY = "newbi:calendar:hidden-sources";
-// « Mes tâches seulement », gardé dans ce navigateur
-const MY_TASKS_KEY = "newbi:calendar:my-tasks";
+// Sources masquées, gardées dans ce navigateur. Sans choix enregistré :
+// vue Essentiel (clé v2 : l'ancienne gardait « tout affiché » par défaut)
+const HIDDEN_SOURCES_KEY = "newbi:calendar:hidden-sources-v2";
+// « Tâches de » : « all » ou l'identifiant d'un membre
+const TASK_ASSIGNEE_KEY = "newbi:calendar:task-assignee";
 const NO_HIDDEN_SOURCES = new Set();
+const NO_MEMBERS = [];
 
 function readHiddenSources() {
   try {
     const stored = JSON.parse(localStorage.getItem(HIDDEN_SOURCES_KEY));
-    return new Set(Array.isArray(stored) ? stored : []);
+    if (Array.isArray(stored)) return new Set(stored);
   } catch {
-    return new Set();
+    // Stockage indisponible ou illisible : vue par défaut
+  }
+  return hiddenSourcesForView(DEFAULT_VIEW);
+}
+
+function storeHiddenSources(hidden) {
+  try {
+    localStorage.setItem(HIDDEN_SOURCES_KEY, JSON.stringify([...hidden]));
+  } catch {
+    // Stockage indisponible (navigation privée) : choix non retenu
   }
 }
 
@@ -108,8 +129,10 @@ export function EventCalendar({
   const [selectedLinkedItem, setSelectedLinkedItem] = useState(null);
   // Rendez-vous pris en ligne ouvert dans sa fiche (lecture seule)
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [hiddenSources, setHiddenSources] = useState(() => new Set());
-  const [myTasksOnly, setMyTasksOnly] = useState(false);
+  const [hiddenSources, setHiddenSources] = useState(() =>
+    hiddenSourcesForView(DEFAULT_VIEW),
+  );
+  const [taskAssignee, setTaskAssignee] = useState("all");
 
   // Droits du rôle sur le calendrier (tout autorisé tant que la grille
   // n'est pas chargée, l'API refuse de toute façon)
@@ -132,32 +155,25 @@ export function EventCalendar({
   useEffect(() => {
     setHiddenSources(readHiddenSources());
     try {
-      setMyTasksOnly(localStorage.getItem(MY_TASKS_KEY) === "1");
+      setTaskAssignee(localStorage.getItem(TASK_ASSIGNEE_KEY) || "all");
     } catch {
-      // Stockage indisponible : toutes les tâches
+      // Stockage indisponible : les tâches de tout le monde
     }
   }, []);
 
-  const toggleMyTasks = useCallback(() => {
-    setMyTasksOnly((previous) => {
-      try {
-        localStorage.setItem(MY_TASKS_KEY, previous ? "0" : "1");
-      } catch {
-        // Stockage indisponible (navigation privée) : choix non retenu
-      }
-      return !previous;
-    });
-  }, []);
-
-  const resetFilters = useCallback(() => {
-    setHiddenSources(new Set());
-    setMyTasksOnly(false);
+  const changeTaskAssignee = useCallback((assignee) => {
+    setTaskAssignee(assignee);
     try {
-      localStorage.removeItem(HIDDEN_SOURCES_KEY);
-      localStorage.removeItem(MY_TASKS_KEY);
+      localStorage.setItem(TASK_ASSIGNEE_KEY, assignee);
     } catch {
-      // Stockage indisponible : rien à effacer
+      // Stockage indisponible (navigation privée) : choix non retenu
     }
+  }, []);
+
+  const selectView = useCallback((viewKey) => {
+    const hidden = hiddenSourcesForView(viewKey);
+    setHiddenSources(hidden);
+    storeHiddenSources(hidden);
   }, []);
 
   const toggleSource = useCallback((key) => {
@@ -165,11 +181,7 @@ export function EventCalendar({
       const next = new Set(previous);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      try {
-        localStorage.setItem(HIDDEN_SOURCES_KEY, JSON.stringify([...next]));
-      } catch {
-        // Stockage indisponible (navigation privée) : choix non retenu
-      }
+      storeHiddenSources(next);
       return next;
     });
   }, []);
@@ -187,19 +199,37 @@ export function EventCalendar({
     fiscalSetup: linkedFiscalSetup,
   } = useCalendarLinkedItems(range);
 
-  // « Mes tâches » : seulement les tâches dont on est membre assigné
+  const { workspaceId } = useWorkspace();
+  const { data: membersData } = useQuery(GET_ORGANIZATION_MEMBERS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-first",
+  });
+  const members = membersData?.organizationMembers || NO_MEMBERS;
+  // Membre retiré de l'espace depuis le choix : toutes les tâches
+  const activeTaskAssignee =
+    taskAssignee !== "all" &&
+    members.some((member) => member.id === taskAssignee)
+      ? taskAssignee
+      : "all";
+
+  // Tout ce qui est en retard, quelle que soit la date
+  const { items: overdueItems, truncated: overdueTruncated } =
+    useCalendarOverdueItems();
+
+  // « Tâches de » : seulement les tâches assignées à ce membre
   const visibleLinkedItems = useMemo(
     () =>
-      myTasksOnly && currentUserId
+      activeTaskAssignee !== "all"
         ? linkedItems.filter(
             (item) =>
               item.kind !== "TASK" ||
               (item.assignedMembersInfo || []).some(
-                (member) => member.userId === currentUserId,
+                (member) => member.userId === activeTaskAssignee,
               ),
           )
         : linkedItems,
-    [linkedItems, myTasksOnly, currentUserId],
+    [linkedItems, activeTaskAssignee],
   );
 
   // Sans barre des sources (aucune autre page visible), rien n'est masqué :
@@ -208,13 +238,15 @@ export function EventCalendar({
     linkedLoading || linkedKinds.length > 0 ? hiddenSources : NO_HIDDEN_SOURCES;
 
   const displayedEvents = useMemo(() => {
-    const ownEvents = activeHiddenSources.has(EVENTS_SOURCE)
-      ? []
-      : linkedUnavailable
-        ? events
-        : // Copies des échéances de factures : remplacées par l'échéance
+    const ownEvents = events.filter((event) =>
+      // Rendez-vous pris en ligne et autres événements : deux sources
+      isAppointmentEvent(event)
+        ? !activeHiddenSources.has(APPOINTMENTS_SOURCE)
+        : !activeHiddenSources.has(EVENTS_SOURCE) &&
+          // Copies des échéances de factures : remplacées par l'échéance
           // relue dans la facture (statut à jour)
-          events.filter((event) => !isPlainInvoiceDueEvent(event));
+          (linkedUnavailable || !isPlainInvoiceDueEvent(event)),
+    );
     const linkedEvents = visibleLinkedItems
       .filter((item) => !activeHiddenSources.has(item.kind))
       .map((item) => ({
@@ -241,16 +273,21 @@ export function EventCalendar({
     () => summarizeLinkedItems(visibleLinkedItems, period),
     [visibleLinkedItems, period],
   );
-  const periodEventsCount = useMemo(
-    () =>
-      events.filter(
-        (event) =>
-          (linkedUnavailable || !isPlainInvoiceDueEvent(event)) &&
-          dateToDay(new Date(event.start)) <= period.to &&
-          dateToDay(new Date(event.end)) >= period.from,
-      ).length,
-    [events, linkedUnavailable, period],
-  );
+  const periodEventCounts = useMemo(() => {
+    const counts = { events: 0, appointments: 0 };
+    for (const event of events) {
+      if (!linkedUnavailable && isPlainInvoiceDueEvent(event)) continue;
+      if (
+        dateToDay(new Date(event.start)) > period.to ||
+        dateToDay(new Date(event.end)) < period.from
+      ) {
+        continue;
+      }
+      if (isAppointmentEvent(event)) counts.appointments += 1;
+      else counts.events += 1;
+    }
+    return counts;
+  }, [events, linkedUnavailable, period]);
 
   // Add keyboard shortcuts for view switching
   useEffect(() => {
@@ -410,7 +447,6 @@ export function EventCalendar({
 
   // --- Échéances des autres pages : actions ---
   const apolloClient = useApolloClient();
-  const { workspaceId } = useWorkspace();
   const { markAsPaid: markInvoicePaid } = useMarkInvoiceAsPaid();
   const { markAsPaid: markPurchasePaid } = useMarkPurchaseInvoiceAsPaid();
   const [sendReminderNow] = useMutation(SEND_INVOICE_REMINDER_NOW);
@@ -441,7 +477,7 @@ export function EventCalendar({
   const refreshLinked = useCallback(
     () =>
       apolloClient.refetchQueries({
-        include: ["GetCalendarLinkedItems"],
+        include: ["GetCalendarLinkedItems", "GetCalendarOverdueItems"],
       }),
     [apolloClient],
   );
@@ -705,18 +741,26 @@ export function EventCalendar({
           {/* Une seule ligne d'outils ; sur petit écran elle peut passer à la
               ligne plutôt que déborder */}
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <CalendarOverdueButton
+              items={overdueItems}
+              truncated={overdueTruncated}
+              onSelect={setSelectedLinkedItem}
+            />
             <CalendarFiltersButton
               kinds={linkedKinds}
               hiddenSources={hiddenSources}
               onToggle={toggleSource}
-              onReset={resetFilters}
+              onSelectView={selectView}
               summary={linkedSummary}
-              eventsCount={periodEventsCount}
+              eventsCount={periodEventCounts.events}
+              appointmentsCount={periodEventCounts.appointments}
               period={period}
               loading={linkedLoading}
-              myTasksOnly={myTasksOnly}
-              onToggleMyTasks={currentUserId ? toggleMyTasks : undefined}
               fiscalSetup={linkedFiscalSetup}
+              members={members}
+              currentUserId={currentUserId}
+              taskAssignee={activeTaskAssignee}
+              onTaskAssigneeChange={changeTaskAssignee}
             />
             <ColorLegend canEdit={canEditEvents} />
             {/* Synchronisation et connexions : action « edit » */}

@@ -1,6 +1,9 @@
 import { useRef } from "react";
 import { useQuery } from "@apollo/client";
-import { GET_CALENDAR_LINKED_ITEMS } from "@/src/graphql/queries/calendarLinkedItems";
+import {
+  GET_CALENDAR_LINKED_ITEMS,
+  GET_CALENDAR_OVERDUE_ITEMS,
+} from "@/src/graphql/queries/calendarLinkedItems";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 const EMPTY = [];
@@ -51,5 +54,27 @@ export function useCalendarLinkedItems({ from, to, skip = false }) {
     // échéances de factures enregistrées comme événements
     unavailable: !!error && !result,
     refetch,
+  };
+}
+
+/**
+ * Tout ce qui est en retard, quelle que soit la date : factures à encaisser
+ * et à payer, devis expirés sans réponse, tâches et livraisons. Requête en
+ * échec (API pas encore à jour) : liste vide, le bouton ne s'affiche pas.
+ */
+export function useCalendarOverdueItems({ skip = false } = {}) {
+  const { workspaceId } = useWorkspace();
+
+  const { data } = useQuery(GET_CALENDAR_OVERDUE_ITEMS, {
+    variables: { workspaceId },
+    skip: skip || !workspaceId,
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+    errorPolicy: "all",
+  });
+
+  return {
+    items: data?.calendarOverdueItems?.items || EMPTY,
+    truncated: !!data?.calendarOverdueItems?.truncated,
   };
 }
