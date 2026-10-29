@@ -219,14 +219,14 @@ describe("validateSocialPost", () => {
     ).toEqual([]);
   });
 
-  it("TikTok : visibilité et consentement obligatoires", () => {
+  it("TikTok : visibilité obligatoire, accord donné par la déclaration du bouton", () => {
     const errors = validateSocialPost({
       ...base,
       platforms: ["tiktok"],
       media: [{ width: 1080, height: 1920 }],
       tiktok: {},
     });
-    expect(errors.map((e) => e.field)).toEqual(["tiktok", "tiktok"]);
+    expect(errors.map((e) => e.code)).toEqual(["tiktok_privacy"]);
     expect(
       validateSocialPost({
         ...base,
@@ -239,6 +239,33 @@ describe("validateSocialPost", () => {
         },
       })[0].message,
     ).toContain("ne peut plus publier");
+  });
+
+  it("TikTok : divulgation du contenu commercial complète, contenu de marque jamais privé", () => {
+    const tiktokPost = (tiktok) =>
+      validateSocialPost({
+        ...base,
+        platforms: ["tiktok"],
+        media: [{ width: 1080, height: 1920 }],
+        tiktok: { privacyLevel: "PUBLIC_TO_EVERYONE", ...tiktok },
+      }).map((e) => e.code);
+    expect(tiktokPost({ commercial: true })).toEqual(["tiktok_commercial"]);
+    expect(tiktokPost({ commercial: true, brandOrganic: true })).toEqual([]);
+    expect(
+      tiktokPost({
+        commercial: true,
+        brandContent: true,
+        privacyLevel: "SELF_ONLY",
+      }),
+    ).toEqual(["tiktok_branded_private"]);
+    // Divulgation désactivée : les cases cochées avant ne comptent plus
+    expect(
+      tiktokPost({
+        commercial: false,
+        brandContent: true,
+        privacyLevel: "SELF_ONLY",
+      }),
+    ).toEqual([]);
   });
 });
 
@@ -355,6 +382,12 @@ describe("connexion des comptes", () => {
     );
     expect(getSocialConnectErrorMessage("nouveau_code", "twitter")).toBe(
       "La connexion à X a échoué. Réessayez.",
+    );
+    expect(getSocialConnectErrorMessage("account_in_use", "instagram")).toBe(
+      "Ce compte Instagram est déjà connecté à un autre espace Newbi. Déconnectez-le de cet espace d'abord.",
+    );
+    expect(getSocialConnectErrorMessage("cancelled", "linkedin")).toBe(
+      "Connexion à LinkedIn annulée.",
     );
   });
 
