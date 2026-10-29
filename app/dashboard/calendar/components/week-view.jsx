@@ -28,6 +28,7 @@ import {
   WeekCellsHeight,
 } from "./index";
 import { EndHour, StartHour } from "./constants";
+import { frenchHolidayName } from "@/src/utils/french-holidays";
 import { cn } from "@/src/lib/utils";
 
 // WeekView props converted to JSDoc
@@ -248,6 +249,11 @@ export const WeekView = React.memo(function WeekView({
             <span className="max-sm:hidden">
               {format(day, "EEE dd", { locale: fr })}
             </span>
+            {frenchHolidayName(day) && (
+              <span className="block truncate px-1 text-[10px] font-normal max-sm:hidden">
+                {frenchHolidayName(day)}
+              </span>
+            )}
           </div>
         ))}
       </div>

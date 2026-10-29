@@ -18,6 +18,8 @@ import {
   parisPartsToIso,
   shouldPollSocialPosts,
   validateSocialPost,
+  getXQuotaNote,
+  isSameParisMonth,
 } from "@/src/utils/social-post-rules";
 
 const NOW = new Date("2026-10-28T10:00:00.000Z");
@@ -409,5 +411,63 @@ describe("connexion des comptes", () => {
     expect(joinLabels(["Instagram", "X", "TikTok"])).toBe(
       "Instagram, X et TikTok",
     );
+  });
+});
+
+describe("limite mensuelle de posts X", () => {
+  const now = new Date("2026-10-29T10:00:00Z");
+  const quota = (remaining, monthlyQuota = 10) => ({
+    plan: "freelance",
+    monthlyQuota,
+    used: monthlyQuota - remaining,
+    remaining,
+    resetsAt: "2026-10-31T23:00:00.000Z",
+  });
+
+  it("compare les mois à l'heure de Paris", () => {
+    // 31 octobre 23:30 UTC = 1er novembre 00:30 à Paris
+    expect(isSameParisMonth("2026-10-31T23:30:00Z", now)).toBe(false);
+    expect(isSameParisMonth("2026-10-31T22:30:00Z", now)).toBe(true);
+    expect(isSameParisMonth(null, now)).toBe(false);
+  });
+
+  it("rien sans compte X ajouté ni compteur", () => {
+    expect(getXQuotaNote({ quota: quota(5), extra: 0, now })).toBeNull();
+    expect(getXQuotaNote({ quota: null, extra: 1, now })).toBeNull();
+  });
+
+  it("posts restants ce mois-ci", () => {
+    expect(getXQuotaNote({ quota: quota(3), extra: 1, now })).toEqual({
+      tone: "muted",
+      message: "X : 3 posts restants ce mois-ci sur 10 avec votre offre.",
+    });
+    expect(getXQuotaNote({ quota: quota(1), extra: 1, now }).message).toBe(
+      "X : 1 post restant ce mois-ci sur 10 avec votre offre.",
+    );
+  });
+
+  it("limite atteinte ou insuffisante : avertissement", () => {
+    expect(getXQuotaNote({ quota: quota(0), extra: 1, now })).toEqual({
+      tone: "warning",
+      message:
+        "Limite de posts X atteinte ce mois-ci (10 avec votre offre). Le compteur repart à zéro le 1er du mois prochain.",
+    });
+    expect(getXQuotaNote({ quota: quota(1), extra: 2, now }).tone).toBe(
+      "warning",
+    );
+  });
+
+  it("autre mois : limite rappelée sans compteur", () => {
+    expect(
+      getXQuotaNote({
+        quota: quota(0),
+        extra: 1,
+        at: "2026-11-05T09:00:00Z",
+        now,
+      }),
+    ).toEqual({
+      tone: "muted",
+      message: "X : 10 posts par mois avec votre offre.",
+    });
   });
 });

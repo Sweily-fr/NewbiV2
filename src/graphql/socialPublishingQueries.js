@@ -65,6 +65,13 @@ export const GET_SOCIAL_PUBLISHING_STATUS = gql`
       accounts {
         ...SocialAccountFields
       }
+      xPostQuota {
+        plan
+        monthlyQuota
+        used
+        remaining
+        resetsAt
+      }
     }
   }
   ${SOCIAL_ACCOUNT_FRAGMENT}

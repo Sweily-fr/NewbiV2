@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { CircleAlert, UserRound } from "lucide-react";
+import { Check, CircleAlert, UserRound, Users } from "lucide-react";
 
 import { SortIcon as ListFilterIcon } from "@/src/components/icons";
 import { Button } from "@/src/components/ui/button";
@@ -14,11 +14,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { cn } from "@/src/lib/utils";
 import {
+  APPOINTMENTS_SOURCE,
+  CALENDAR_VIEWS,
+  DEFAULT_VIEW,
   EVENTS_SOURCE,
   LINKED_KINDS,
   formatLinkedAmount,
+  matchingView,
 } from "@/src/utils/calendar-linked-items";
 import { LINKED_SOURCE_META } from "./linked-sources";
 import { FiscalSetupMenuItem } from "./fiscal-setup-hint";
@@ -200,68 +205,128 @@ function SourceRow({ sourceKey, active, onToggle, value, alertCount, lines }) {
   );
 }
 
+// Ligne à choix unique (vue, personne) : coche à gauche, comme une case
+function ChoiceRow({ selected, onSelect, children }) {
+  return (
+    <DropdownMenuItem
+      onSelect={(event) => {
+        event.preventDefault();
+        onSelect();
+      }}
+      className="cursor-pointer gap-2 py-1.5"
+      aria-checked={selected}
+      role="menuitemradio"
+    >
+      <span className="flex size-4 shrink-0 items-center justify-center">
+        {selected && <Check className="size-4" aria-hidden="true" />}
+      </span>
+      {children}
+    </DropdownMenuItem>
+  );
+}
+
+const firstName = (name) =>
+  String(name || "")
+    .trim()
+    .split(/\s+/)[0] || "";
+
 /**
- * Bouton « Filtres » de l'en-tête du calendrier, comme sur les autres pages :
- * une case par source (événements et échéances des autres pages) avec son
- * total sur la période et ses retards, « Seulement mes tâches », et
- * « Tout afficher ». Le bouton passe en couleur et compte les filtres
- * actifs dès qu'une source est masquée.
+ * Bouton « Filtres » de l'en-tête du calendrier, comme sur les autres pages.
+ * - Vues toutes prêtes (Essentiel par défaut, Trésorerie, Commercial,
+ *   Projets, Tout) ;
+ * - une case par source avec son total sur la période et ses retards ;
+ * - « Tâches de » : tout le monde, moi ou un membre (espaces à plusieurs).
+ * Le bouton reste discret sur la vue Essentiel ; ailleurs il passe en
+ * couleur et affiche la vue (ou « Personnalisé ») et la personne choisie.
  */
 export const CalendarFiltersButton = memo(function CalendarFiltersButton({
   kinds,
   hiddenSources,
   onToggle,
-  onReset,
+  onSelectView,
   summary,
   eventsCount,
+  appointmentsCount,
   period,
   loading,
-  myTasksOnly = false,
-  onToggleMyTasks,
   fiscalSetup = null,
+  members = [],
+  currentUserId = null,
+  taskAssignee = "all",
+  onTaskAssigneeChange,
 }) {
   const allowed = LINKED_KINDS.filter((kind) => kinds.includes(kind));
   // Aucune autre page visible (rôle, ou API sans la requête) : rien à
   // filtrer, pas de bouton
   if (!loading && allowed.length === 0) return null;
 
-  const canFilterMine = allowed.includes("TASK") && !!onToggleMyTasks;
-  const activeCount =
-    [EVENTS_SOURCE, ...allowed].filter((key) => hiddenSources.has(key)).length +
-    (canFilterMine && myTasksOnly ? 1 : 0);
+  const availableKeys = [EVENTS_SOURCE, APPOINTMENTS_SOURCE, ...allowed];
+  const view = matchingView(hiddenSources, availableKeys);
+  const viewLabel = view
+    ? CALENDAR_VIEWS.find((candidate) => candidate.key === view)?.label
+    : "Personnalisé";
+
+  // « Tâches de » seulement à plusieurs : seul, le choix n'a pas de sens
+  const canFilterTasks =
+    allowed.includes("TASK") && !!onTaskAssigneeChange && members.length > 1;
+  const assignee =
+    canFilterTasks && taskAssignee !== "all"
+      ? members.find((member) => member.id === taskAssignee) || null
+      : null;
+  const assigneeLabel = assignee
+    ? assignee.id === currentUserId
+      ? "Mes tâches"
+      : `Tâches de ${firstName(assignee.name)}`
+    : null;
+
+  const isDefault = view === DEFAULT_VIEW && !assignee;
+  const buttonLabel =
+    [view === DEFAULT_VIEW ? null : viewLabel, assigneeLabel]
+      .filter(Boolean)
+      .join(" · ") || "Filtres";
+  // Moi d'abord, puis les autres membres par ordre alphabétique
+  const otherMembers = members
+    .filter((member) => member.id !== currentUserId)
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), "fr"));
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant={activeCount > 0 ? "primary" : "filter"}
-          className="cursor-pointer"
-          aria-label="Filtres"
+          variant={isDefault ? "filter" : "primary"}
+          className="max-w-[220px] cursor-pointer"
+          aria-label={`Filtres : ${buttonLabel}`}
         >
-          <ListFilterIcon className="h-3.5 w-3.5" />
-          <span className="max-sm:hidden">Filtres</span>
-          {activeCount > 0 && (
-            <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0 text-[10px] font-medium">
-              {activeCount}
-            </span>
-          )}
+          <ListFilterIcon className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate max-sm:hidden">{buttonLabel}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-[290px] max-h-[min(560px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto"
+        className="w-[300px] max-h-[min(620px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto"
       >
-        <DropdownMenuItem
-          onClick={onReset}
-          disabled={activeCount === 0}
-          className="cursor-pointer"
-        >
-          Tout afficher
-        </DropdownMenuItem>
+        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+          Vue
+        </DropdownMenuLabel>
+        {CALENDAR_VIEWS.map((candidate) => (
+          <ChoiceRow
+            key={candidate.key}
+            selected={view === candidate.key}
+            onSelect={() => onSelectView(candidate.key)}
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block">{candidate.label}</span>
+              <span className="text-muted-foreground block truncate text-xs">
+                {candidate.description}
+              </span>
+            </span>
+          </ChoiceRow>
+        ))}
+
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-muted-foreground flex items-center justify-between text-xs font-normal">
+        <DropdownMenuLabel className="text-muted-foreground flex items-center justify-between gap-2 text-xs font-normal">
           <span>Afficher dans le calendrier</span>
-          <span>{period.title}</span>
+          <span className="truncate">{period.title}</span>
         </DropdownMenuLabel>
         <SourceRow
           sourceKey={EVENTS_SOURCE}
@@ -270,7 +335,17 @@ export const CalendarFiltersButton = memo(function CalendarFiltersButton({
           value={String(eventsCount)}
           alertCount={0}
           lines={[
-            `${eventsCount} ${plural(eventsCount, "événement", "événements")}, rendez-vous et agendas connectés`,
+            `${eventsCount} ${plural(eventsCount, "événement", "événements")} et agendas connectés`,
+          ]}
+        />
+        <SourceRow
+          sourceKey={APPOINTMENTS_SOURCE}
+          active={!hiddenSources.has(APPOINTMENTS_SOURCE)}
+          onToggle={onToggle}
+          value={String(appointmentsCount)}
+          alertCount={0}
+          lines={[
+            `${appointmentsCount} ${plural(appointmentsCount, "rendez-vous pris en ligne", "rendez-vous pris en ligne")}`,
           ]}
         />
         {loading && allowed.length === 0 && (
@@ -296,20 +371,45 @@ export const CalendarFiltersButton = memo(function CalendarFiltersButton({
         {!loading && allowed.includes("FISCAL") && (
           <FiscalSetupMenuItem setup={fiscalSetup} />
         )}
-        {canFilterMine && (
+
+        {canFilterTasks && (
           <>
             <DropdownMenuSeparator />
-            <FilterRow
-              checked={myTasksOnly}
-              onToggle={onToggleMyTasks}
-              title="Afficher seulement les tâches qui vous sont assignées"
+            <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+              Tâches de
+            </DropdownMenuLabel>
+            <ChoiceRow
+              selected={!assignee}
+              onSelect={() => onTaskAssigneeChange("all")}
             >
-              <UserRound
+              <Users
                 className="text-muted-foreground size-4"
                 aria-hidden="true"
               />
-              <span className="flex-1">Seulement mes tâches</span>
-            </FilterRow>
+              <span className="flex-1">Tout le monde</span>
+            </ChoiceRow>
+            {currentUserId && (
+              <ChoiceRow
+                selected={assignee?.id === currentUserId}
+                onSelect={() => onTaskAssigneeChange(currentUserId)}
+              >
+                <UserRound
+                  className="text-muted-foreground size-4"
+                  aria-hidden="true"
+                />
+                <span className="flex-1">Moi</span>
+              </ChoiceRow>
+            )}
+            {otherMembers.map((member) => (
+              <ChoiceRow
+                key={member.id}
+                selected={assignee?.id === member.id}
+                onSelect={() => onTaskAssigneeChange(member.id)}
+              >
+                <UserAvatar src={member.image} name={member.name} size="xxs" />
+                <span className="min-w-0 flex-1 truncate">{member.name}</span>
+              </ChoiceRow>
+            ))}
           </>
         )}
       </DropdownMenuContent>

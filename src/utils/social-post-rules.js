@@ -495,6 +495,44 @@ export function isoToParisParts(iso) {
   };
 }
 
+/** Même mois civil, heure de Paris */
+export function isSameParisMonth(a, b) {
+  const monthA = isoToParisParts(a).date.slice(0, 7);
+  return !!monthA && monthA === isoToParisParts(b).date.slice(0, 7);
+}
+
+/**
+ * Mention de la limite mensuelle de posts X sous les comptes choisis (chaque
+ * envoi à X est facturé à Sweily). `extra` : envois à X que ce post ajoute ;
+ * `at` : date de publication (ISO, null = maintenant). null : rien à dire.
+ */
+export function getXQuotaNote({ quota, extra, at, now = new Date() }) {
+  if (!quota || !extra || extra <= 0) return null;
+  if (!isSameParisMonth(at || now, now)) {
+    return {
+      tone: "muted",
+      message: `X : ${quota.monthlyQuota} posts par mois avec votre offre.`,
+    };
+  }
+  const s = quota.remaining > 1 ? "s" : "";
+  if (quota.remaining >= extra) {
+    return {
+      tone: "muted",
+      message: `X : ${quota.remaining} post${s} restant${s} ce mois-ci sur ${quota.monthlyQuota} avec votre offre.`,
+    };
+  }
+  if (quota.remaining === 0) {
+    return {
+      tone: "warning",
+      message: `Limite de posts X atteinte ce mois-ci (${quota.monthlyQuota} avec votre offre). Le compteur repart à zéro le 1er du mois prochain.`,
+    };
+  }
+  return {
+    tone: "warning",
+    message: `Il reste ${quota.remaining} post${s} X ce mois-ci (${quota.monthlyQuota} avec votre offre) : retirez un compte X.`,
+  };
+}
+
 /** Programmation proposée par défaut : demain 9:00, heure de Paris */
 export function getDefaultScheduleParts(now = new Date()) {
   const p = zonedParts(now);

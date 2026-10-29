@@ -63,7 +63,9 @@ import {
   getParisToday,
   getPlatformLabel,
   getTextLimit,
+  getXQuotaNote,
   isInstagramRatioValid,
+  isSameParisMonth,
   isoToParisParts,
   joinLabels,
   parisPartsToIso,
@@ -911,6 +913,22 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       tiktokInfo,
     ],
   );
+  // Limite mensuelle de posts X : envois que ce post ajoute au mois visé
+  const xSelected = selectedAccounts.filter(
+    (a) => a.platform === "twitter",
+  ).length;
+  const xAlreadyCounted =
+    isEdit && isSameParisMonth(post.scheduledFor, scheduledFor || new Date())
+      ? (post.targets || []).filter(
+          (t) => t.platform === "twitter" && t.status !== "cancelled",
+        ).length
+      : 0;
+  const xQuotaNote = getXQuotaNote({
+    quota: status?.xPostQuota,
+    extra: xSelected - xAlreadyCounted,
+    at: scheduledFor,
+  });
+
   const errorsFor = (field) =>
     errors
       .filter((e) => e.field === field && isShown(e, attempted))
@@ -1234,6 +1252,21 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                   allowAdd={!isEdit}
                 />
                 <FieldError messages={errorsFor("accounts")} />
+                {xQuotaNote && (
+                  <p
+                    className={cn(
+                      "flex items-start gap-1.5 text-xs",
+                      xQuotaNote.tone === "warning"
+                        ? "text-amber-700 dark:text-amber-400"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {xQuotaNote.tone === "warning" && (
+                      <AlertCircle className="mt-px h-3.5 w-3.5 flex-shrink-0" />
+                    )}
+                    <span>{xQuotaNote.message}</span>
+                  </p>
+                )}
               </section>
 
               {/* 2. Texte */}

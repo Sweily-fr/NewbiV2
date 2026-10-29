@@ -82,6 +82,7 @@ export function useSocialPublishingStatus(workspaceId, { skip = false } = {}) {
       platforms: Array.isArray(status?.platforms)
         ? status.platforms
         : SOCIAL_PLATFORMS,
+      xPostQuota: status?.xPostQuota || null,
       loaded: !!status || (!loading && !!error),
       loading,
       error,
@@ -277,6 +278,8 @@ export function useSocialPostMutations({ boardId, workspaceId }) {
   const [scheduleMutation, { loading: scheduling }] = useMutation(
     SCHEDULE_SOCIAL_POST,
     {
+      // Compteur de posts X du mois
+      refetchQueries: ["GetSocialPublishingStatus"],
       update(cache, { data }) {
         const payload = data?.scheduleSocialPost;
         if (!payload) return;
@@ -293,11 +296,19 @@ export function useSocialPostMutations({ boardId, workspaceId }) {
       },
     },
   );
-  const [updateMutation, { loading: updating }] =
-    useMutation(UPDATE_SOCIAL_POST);
-  const [cancelMutation, { loading: cancelling }] =
-    useMutation(CANCEL_SOCIAL_POST);
-  const [retryMutation, { loading: retrying }] = useMutation(RETRY_SOCIAL_POST);
+  const refetchStatus = { refetchQueries: ["GetSocialPublishingStatus"] };
+  const [updateMutation, { loading: updating }] = useMutation(
+    UPDATE_SOCIAL_POST,
+    refetchStatus,
+  );
+  const [cancelMutation, { loading: cancelling }] = useMutation(
+    CANCEL_SOCIAL_POST,
+    refetchStatus,
+  );
+  const [retryMutation, { loading: retrying }] = useMutation(
+    RETRY_SOCIAL_POST,
+    refetchStatus,
+  );
   const [uploadMutation] = useMutation(UPLOAD_SOCIAL_POST_MEDIA);
 
   const schedule = useCallback(
