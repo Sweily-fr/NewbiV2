@@ -47,6 +47,7 @@ export const SOCIAL_POST_FRAGMENT = gql`
       privacyLevel
       allowComment
       brandOrganic
+      brandContent
     }
     createdBy
     createdAt
@@ -58,6 +59,7 @@ export const GET_SOCIAL_PUBLISHING_STATUS = gql`
   query GetSocialPublishingStatus($workspaceId: ID) {
     socialPublishingStatus(workspaceId: $workspaceId) {
       enabled
+      platforms
       canManageAccounts
       canSchedule
       accounts {
@@ -80,6 +82,7 @@ export const GET_BOARD_SOCIAL_POSTS = gql`
 export const GET_TIKTOK_CREATOR_INFO = gql`
   query GetTikTokCreatorInfo($accountId: ID!, $workspaceId: ID) {
     tiktokCreatorInfo(accountId: $accountId, workspaceId: $workspaceId) {
+      username
       nickname
       canPostMore
       commentDisabled

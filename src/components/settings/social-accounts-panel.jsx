@@ -76,6 +76,12 @@ export function SocialAccountsPanel({
 
   const manage = canManage && status.canManageAccounts;
   const locked = isReadOnly || !!connectingPlatform;
+  // Réseaux connectables, plus ceux où un compte est encore connecté
+  const visiblePlatforms = SOCIAL_PLATFORMS.filter(
+    (platform) =>
+      status.platforms.includes(platform) ||
+      status.accounts.some((account) => account.platform === platform),
+  );
 
   const handleConnect = (platform) => {
     const returnTo = buildSettingsReturnTo(window.location.pathname);
@@ -136,11 +142,14 @@ export function SocialAccountsPanel({
       </div>
 
       <div className="divide-y divide-[#eeeff1] overflow-hidden rounded-xl border border-[#eeeff1] dark:divide-[#232323] dark:border-[#232323]">
-        {SOCIAL_PLATFORMS.map((platform) => {
+        {visiblePlatforms.map((platform) => {
           const accounts = status.accounts.filter(
             (a) => a.platform === platform,
           );
           const label = getPlatformLabel(platform);
+          // Réseau sans fournisseur configuré : comptes listés, pas de
+          // nouvelle connexion
+          const connectable = status.platforms.includes(platform);
           return (
             <div key={platform} className="space-y-2 px-3 py-3">
               <div className="flex items-center justify-between gap-3">
@@ -153,7 +162,7 @@ export function SocialAccountsPanel({
                     </p>
                   </div>
                 </div>
-                {manage && (
+                {manage && connectable && (
                   <Button
                     type="button"
                     variant={accounts.length > 0 ? "ghost" : "outline"}
@@ -192,7 +201,7 @@ export function SocialAccountsPanel({
                   <StatusPill status={account.status} />
                   {manage && (
                     <div className="flex items-center gap-1">
-                      {account.status !== "active" && (
+                      {account.status !== "active" && connectable && (
                         <Button
                           type="button"
                           variant="outline"

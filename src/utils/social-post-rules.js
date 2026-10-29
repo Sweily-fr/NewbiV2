@@ -83,6 +83,8 @@ const RATIO_TOLERANCE = 0.005;
 
 export const TIKTOK_MUSIC_CONFIRMATION_URL =
   "https://www.tiktok.com/legal/page/global/music-usage-confirmation/fr";
+export const TIKTOK_BRANDED_CONTENT_POLICY_URL =
+  "https://www.tiktok.com/legal/page/global/bc-policy/fr";
 
 /** Nom affiché d'un réseau (« X » pour twitter) */
 export function getPlatformLabel(platform) {
@@ -254,7 +256,9 @@ function formatPositions(positions) {
  * @param {boolean} [input.publishNow]
  * @param {string|null} [input.scheduledFor] ISO UTC
  * @param {Date} [input.now]
- * @param {{ privacyLevel?: string, consentGiven?: boolean, canPostMore?: boolean }} [input.tiktok]
+ * @param {{ privacyLevel?: string, canPostMore?: boolean, commercial?: boolean, brandOrganic?: boolean, brandContent?: boolean }} [input.tiktok]
+ *   (l'accord à la confirmation d'utilisation de la musique est donné en
+ *   publiant : phrase de déclaration au-dessus du bouton, exigée par TikTok)
  * @returns {Array<{ field: "accounts"|"content"|"media"|"when"|"tiktok", code: string, message: string }>}
  */
 export function validateSocialPost({
@@ -389,12 +393,26 @@ export function validateSocialPost({
         message: "Choisissez qui peut voir le post sur TikTok.",
       });
     }
-    if (!tiktok.consentGiven) {
+    // Divulgation du contenu commercial (consignes TikTok) : au moins une
+    // case une fois activée, et pas de contenu de marque privé
+    if (tiktok.commercial && !tiktok.brandOrganic && !tiktok.brandContent) {
       errors.push({
         field: "tiktok",
-        code: "tiktok_consent",
+        code: "tiktok_commercial",
         message:
-          "Acceptez la confirmation d'utilisation de la musique de TikTok.",
+          "Indiquez si le post fait la promotion de votre marque, d'un tiers, ou des deux.",
+      });
+    }
+    if (
+      tiktok.commercial &&
+      tiktok.brandContent &&
+      tiktok.privacyLevel === "SELF_ONLY"
+    ) {
+      errors.push({
+        field: "tiktok",
+        code: "tiktok_branded_private",
+        message:
+          "Le contenu de marque ne peut pas être visible par vous seul sur TikTok.",
       });
     }
   }
@@ -636,6 +654,12 @@ export function getSocialConnectErrorMessage(code, platform) {
       return `Ce compte ${label} ne correspond pas à celui attendu. Reconnectez le bon compte.`;
     case "forbidden":
       return "Votre rôle ne permet pas de connecter un réseau social.";
+    case "no_account":
+      return `Aucun compte ${label} n'a été autorisé. Recommencez en choisissant le compte à utiliser.`;
+    case "account_in_use":
+      return `Ce compte ${label} est déjà connecté à un autre espace Newbi. Déconnectez-le de cet espace d'abord.`;
+    case "unavailable":
+      return `La connexion à ${label} n'est pas disponible pour le moment.`;
     case "invalid_state":
       return "Le lien de connexion a expiré. Recommencez la connexion.";
     default:

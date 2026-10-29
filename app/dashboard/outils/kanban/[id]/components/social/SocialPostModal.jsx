@@ -53,6 +53,7 @@ import {
   MAX_UPLOAD_BYTES,
   SOCIAL_PLATFORMS,
   SOCIAL_TIMEZONE,
+  TIKTOK_BRANDED_CONTENT_POLICY_URL,
   TIKTOK_MUSIC_CONFIRMATION_URL,
   buildComposerReturnTo,
   formatParisDateTime,
@@ -140,11 +141,14 @@ function sortAccounts(accounts) {
   );
 }
 
+// Consignes TikTok : confidentialité sans valeur par défaut, interactions
+// et divulgation du contenu commercial désactivées au départ
 const EMPTY_TIKTOK = {
   privacyLevel: "",
   allowComment: false,
+  commercial: false,
   brandOrganic: false,
-  consentGiven: false,
+  brandContent: false,
 };
 
 function FieldError({ messages }) {
@@ -174,10 +178,10 @@ function SectionTitle({ children, htmlFor }) {
 
 // ── Comptes ──────────────────────────────────────────────────────────────
 
-function ConnectNetworkButtons({ onConnect, connectingPlatform }) {
+function ConnectNetworkButtons({ platforms, onConnect, connectingPlatform }) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      {SOCIAL_PLATFORMS.map((platform) => (
+      {platforms.map((platform) => (
         <Button
           key={platform}
           type="button"
@@ -200,6 +204,7 @@ function ConnectNetworkButtons({ onConnect, connectingPlatform }) {
 
 function AccountsPicker({
   accounts,
+  availablePlatforms,
   selectedIds,
   onToggle,
   canManageAccounts,
@@ -207,6 +212,10 @@ function AccountsPicker({
   connectingPlatform,
   allowAdd,
 }) {
+  // Réseaux connectables, dans l'ordre habituel
+  const connectable = SOCIAL_PLATFORMS.filter((platform) =>
+    availablePlatforms.includes(platform),
+  );
   if (accounts.length === 0) {
     return (
       <div className="rounded-xl border border-dashed px-4 py-6 text-center">
@@ -216,13 +225,18 @@ function AccountsPicker({
         <p className="text-sm font-medium">
           Connectez votre premier réseau social
         </p>
-        {canManageAccounts ? (
+        {canManageAccounts && connectable.length === 0 ? (
+          <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+            Aucun réseau n&apos;est disponible pour le moment.
+          </p>
+        ) : canManageAccounts ? (
           <>
             <p className="mx-auto mt-1 mb-4 max-w-sm text-xs text-muted-foreground">
               Votre post partira tout seul à l&apos;heure choisie. La connexion
               se fait en quelques clics, sans créer de compte.
             </p>
             <ConnectNetworkButtons
+              platforms={connectable}
               onConnect={onConnect}
               connectingPlatform={connectingPlatform}
             />
@@ -256,7 +270,7 @@ function AccountsPicker({
                 className="opacity-50"
               />
               <span className="max-w-[140px] truncate">{name}</span>
-              {canManageAccounts ? (
+              {canManageAccounts && connectable.includes(account.platform) ? (
                 <button
                   type="button"
                   onClick={() => onConnect(account.platform)}
@@ -307,7 +321,7 @@ function AccountsPicker({
         );
       })}
 
-      {canManageAccounts && allowAdd && (
+      {canManageAccounts && allowAdd && connectable.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -319,7 +333,7 @@ function AccountsPicker({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
-            {SOCIAL_PLATFORMS.map((platform) => (
+            {connectable.map((platform) => (
               <DropdownMenuItem
                 key={platform}
                 onSelect={() => onConnect(platform)}
@@ -488,7 +502,14 @@ function PostPreview({ accounts, content, media, whenLabel }) {
 
 // ── Options TikTok ───────────────────────────────────────────────────────
 
-function TikTokOptions({ accountId, workspaceId, value, onChange, onInfo }) {
+function TikTokOptions({
+  accountId,
+  accountName,
+  workspaceId,
+  value,
+  onChange,
+  onInfo,
+}) {
   const { info, loading, error, refetch } = useTikTokCreatorInfo(
     accountId,
     workspaceId,
@@ -516,12 +537,28 @@ function TikTokOptions({ accountId, workspaceId, value, onChange, onInfo }) {
     }
   }, [info?.privacyLevels, value.privacyLevel, onChange]);
 
+  // Contenu de marque : jamais visible par soi seul (règle TikTok)
+  const brandedPrivate =
+    value.commercial &&
+    value.brandContent &&
+    value.privacyLevel === "SELF_ONLY";
+  const creatorName = info?.nickname || info?.username || accountName;
+
   return (
     <div className="space-y-3 rounded-xl border p-3">
       <div className="flex items-center gap-2">
         <SocialNetworkIcon platform="tiktok" title="" />
         <span className="text-sm font-medium">Options TikTok</span>
       </div>
+      {creatorName && (
+        <p className="text-xs text-muted-foreground">
+          Publication sur le compte TikTok{" "}
+          <span className="font-medium text-foreground">{creatorName}</span>
+          {info?.username && info.username !== creatorName && (
+            <> (@{info.username})</>
+          )}
+        </p>
+      )}
 
       {loading && !info ? (
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -560,12 +597,32 @@ function TikTokOptions({ accountId, workspaceId, value, onChange, onInfo }) {
               </SelectTrigger>
               <SelectContent>
                 {(info?.privacyLevels || []).map((level) => (
-                  <SelectItem key={level.value} value={level.value}>
+                  <SelectItem
+                    key={level.value}
+                    value={level.value}
+                    disabled={
+                      level.value === "SELF_ONLY" &&
+                      value.commercial &&
+                      value.brandContent
+                    }
+                  >
                     {level.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {value.commercial && value.brandContent && (
+              <p
+                className={cn(
+                  "text-xs",
+                  brandedPrivate
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-muted-foreground",
+                )}
+              >
+                Le contenu de marque ne peut pas être visible par vous seul.
+              </p>
+            )}
           </div>
 
           <label className="flex items-center justify-between gap-3 text-sm">
@@ -584,38 +641,113 @@ function TikTokOptions({ accountId, workspaceId, value, onChange, onInfo }) {
             />
           </label>
 
-          <label className="flex items-center justify-between gap-3 text-sm">
-            <span>Ce post fait la promotion de ma marque</span>
-            <Switch
-              checked={!!value.brandOrganic}
-              onCheckedChange={(brandOrganic) => onChange({ brandOrganic })}
-            />
-          </label>
-
-          <label className="flex items-start gap-2 text-sm">
-            <Checkbox
-              checked={!!value.consentGiven}
-              onCheckedChange={(checked) =>
-                onChange({ consentGiven: checked === true })
-              }
-              className="mt-0.5"
-            />
-            <span>
-              J&apos;accepte la{" "}
-              <a
-                href={TIKTOK_MUSIC_CONFIRMATION_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#5A50FF] underline-offset-2 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                confirmation d&apos;utilisation de la musique de TikTok
-              </a>
-            </span>
-          </label>
+          {/* Divulgation du contenu commercial (consignes TikTok) */}
+          <div className="space-y-2">
+            <label className="flex items-center justify-between gap-3 text-sm">
+              <span>
+                Divulguer le contenu commercial
+                <span className="block text-xs text-muted-foreground">
+                  Indiquez si ce post fait la promotion de votre marque,
+                  d&apos;un tiers, ou des deux.
+                </span>
+              </span>
+              <Switch
+                checked={!!value.commercial}
+                onCheckedChange={(commercial) => onChange({ commercial })}
+              />
+            </label>
+            {value.commercial && (
+              <div className="space-y-2 rounded-lg bg-muted/40 p-2.5">
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={!!value.brandOrganic}
+                    onCheckedChange={(checked) =>
+                      onChange({ brandOrganic: checked === true })
+                    }
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Votre marque
+                    <span className="block text-xs text-muted-foreground">
+                      Vous faites la promotion de vous-même ou de votre
+                      entreprise.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={!!value.brandContent}
+                    onCheckedChange={(checked) =>
+                      onChange({ brandContent: checked === true })
+                    }
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Contenu de marque
+                    <span className="block text-xs text-muted-foreground">
+                      Vous faites la promotion d&apos;une autre marque ou
+                      d&apos;un tiers.
+                    </span>
+                  </span>
+                </label>
+                {value.brandContent ? (
+                  <p className="text-xs text-muted-foreground">
+                    Votre photo sera étiquetée « Partenariat rémunéré ».
+                  </p>
+                ) : value.brandOrganic ? (
+                  <p className="text-xs text-muted-foreground">
+                    Votre photo sera étiquetée « Contenu promotionnel ».
+                  </p>
+                ) : (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Cochez au moins une option, ou désactivez la divulgation.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Déclaration exigée par TikTok au-dessus du bouton de publication : publier
+ * vaut accord (confirmation d'utilisation de la musique, et politique du
+ * contenu de marque si le post en est un).
+ */
+function TikTokDeclaration({ branded }) {
+  const link = (href, label) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-[#5A50FF] underline-offset-2 hover:underline"
+    >
+      {label}
+    </a>
+  );
+  return (
+    <p className="text-xs text-muted-foreground">
+      En publiant, vous acceptez{" "}
+      {branded && (
+        <>
+          la{" "}
+          {link(
+            TIKTOK_BRANDED_CONTENT_POLICY_URL,
+            "politique relative au contenu de marque",
+          )}{" "}
+          et{" "}
+        </>
+      )}
+      la{" "}
+      {link(
+        TIKTOK_MUSIC_CONFIRMATION_URL,
+        "confirmation d'utilisation de la musique",
+      )}{" "}
+      de TikTok.
+    </p>
   );
 }
 
@@ -682,8 +814,11 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           ? {
               privacyLevel: post.tiktokSettings.privacyLevel || "",
               allowComment: !!post.tiktokSettings.allowComment,
+              commercial:
+                !!post.tiktokSettings.brandOrganic ||
+                !!post.tiktokSettings.brandContent,
               brandOrganic: !!post.tiktokSettings.brandOrganic,
-              consentGiven: true,
+              brandContent: !!post.tiktokSettings.brandContent,
             }
           : EMPTY_TIKTOK,
       );
@@ -956,10 +1091,16 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       ? {
           privacyLevel: tiktok.privacyLevel,
           allowComment: !!tiktok.allowComment && !tiktokInfo?.commentDisabled,
-          brandOrganic: !!tiktok.brandOrganic,
-          consentGiven: !!tiktok.consentGiven,
+          brandOrganic: !!tiktok.commercial && !!tiktok.brandOrganic,
+          brandContent: !!tiktok.commercial && !!tiktok.brandContent,
+          // Accord donné en publiant (déclaration au-dessus du bouton)
+          consentGiven: true,
         }
       : undefined;
+    // Consigne TikTok : prévenir que la publication n'est pas immédiate
+    const tiktokDelay = hasTikTok
+      ? " La publication sur TikTok peut prendre quelques minutes."
+      : "";
     try {
       if (isEdit) {
         await mutations.update(post.id, {
@@ -970,7 +1111,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           ...(tiktokSettings ? { tiktokSettings } : {}),
         });
         toast.success("Post modifié", {
-          description: `Publication le ${formatParisDateTime(scheduledFor)}.`,
+          description: `Publication le ${formatParisDateTime(scheduledFor)}.${tiktokDelay}`,
         });
       } else {
         const payload = await mutations.schedule({
@@ -986,7 +1127,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         const result = payload?.post;
         if (whenMode !== "now") {
           toast.success("Post programmé", {
-            description: `Publication le ${formatParisDateTime(result?.scheduledFor || scheduledFor)}.`,
+            description: `Publication le ${formatParisDateTime(result?.scheduledFor || scheduledFor)}.${tiktokDelay}`,
           });
         } else if (result?.status === "published") {
           toast.success("Post publié");
@@ -1010,7 +1151,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           });
         } else {
           toast.success("Publication en cours", {
-            description: "Le statut s'affiche sur la carte du post.",
+            description: `Le statut s'affiche sur la carte du post.${tiktokDelay}`,
           });
         }
       }
@@ -1084,6 +1225,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                 <SectionTitle>Publier sur</SectionTitle>
                 <AccountsPicker
                   accounts={accounts}
+                  availablePlatforms={status?.platforms || SOCIAL_PLATFORMS}
                   selectedIds={selectedIds}
                   onToggle={toggleAccount}
                   canManageAccounts={status?.canManageAccounts}
@@ -1209,6 +1351,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                 <section className="space-y-2">
                   <TikTokOptions
                     accountId={tiktokAccount.id}
+                    accountName={getSocialAccountName(tiktokAccount)}
                     workspaceId={workspaceId}
                     value={tiktok}
                     onChange={patchTiktok}
@@ -1346,7 +1489,19 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+        {hasTikTok && (
+          <div className="border-t px-5 pt-3">
+            <TikTokDeclaration
+              branded={!!tiktok.commercial && !!tiktok.brandContent}
+            />
+          </div>
+        )}
+        <div
+          className={cn(
+            "flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between",
+            !hasTikTok && "border-t",
+          )}
+        >
           <p className="min-h-[1rem] text-xs text-muted-foreground sm:max-w-[55%]">
             {uploading
               ? "Envoi des images en cours…"

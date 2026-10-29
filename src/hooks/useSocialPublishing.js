@@ -18,6 +18,7 @@ import {
 } from "@/src/graphql/socialPublishingQueries";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
 import {
+  SOCIAL_PLATFORMS,
   getPlatformLabel,
   shouldPollSocialPosts,
 } from "@/src/utils/social-post-rules";
@@ -77,6 +78,10 @@ export function useSocialPublishingStatus(workspaceId, { skip = false } = {}) {
       canManageAccounts: !!status?.canManageAccounts,
       canSchedule: !!status?.canSchedule,
       accounts: status?.accounts || EMPTY,
+      // Réseaux connectables par l'espace (fournisseur configuré côté API)
+      platforms: Array.isArray(status?.platforms)
+        ? status.platforms
+        : SOCIAL_PLATFORMS,
       loaded: !!status || (!loading && !!error),
       loading,
       error,
