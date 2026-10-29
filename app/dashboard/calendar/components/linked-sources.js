@@ -2,6 +2,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   BellRing,
+  CalendarCheck,
   CalendarDays,
   ChartSpline,
   CloudUpload,
@@ -12,7 +13,10 @@ import {
   SquareCheckBig,
   Truck,
 } from "lucide-react";
-import { EVENTS_SOURCE } from "@/src/utils/calendar-linked-items";
+import {
+  APPOINTMENTS_SOURCE,
+  EVENTS_SOURCE,
+} from "@/src/utils/calendar-linked-items";
 
 /**
  * Apparence des sources du calendrier. Chaque source a une icône propre et
@@ -29,6 +33,15 @@ export const LINKED_SOURCE_META = {
     iconClass: "text-muted-foreground",
     accent: "bg-muted-foreground/40",
     tint: "bg-muted/60",
+  },
+  // Rendez-vous pris en ligne : même prune que leur fiche (utils/booking)
+  [APPOINTMENTS_SOURCE]: {
+    label: "Rendez-vous",
+    icon: CalendarCheck,
+    dot: "bg-[#9f2a85]",
+    iconClass: "text-[#9f2a85] dark:text-[#d36bbf]",
+    accent: "bg-[#9f2a85]",
+    tint: "bg-[#9f2a85]/10 dark:bg-[#d36bbf]/15",
   },
   INVOICE: {
     label: "Encaissements",

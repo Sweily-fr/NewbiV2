@@ -28,6 +28,7 @@ import {
   useEventVisibility,
 } from "./index";
 import { DefaultStartHour } from "./constants";
+import { frenchHolidayName } from "@/src/utils/french-holidays";
 import {
   Popover,
   PopoverContent,
@@ -167,8 +168,19 @@ export const MonthView = React.memo(function MonthView({
                       onEventCreate(startTime);
                     }}
                   >
-                    <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
-                      {format(day, "d")}
+                    {/* Jour férié : son nom, discret, à côté du numéro */}
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
+                        {format(day, "d")}
+                      </div>
+                      {frenchHolidayName(day) && (
+                        <span
+                          className="text-muted-foreground mt-1 truncate text-[10px] sm:text-xs"
+                          title={`Jour férié : ${frenchHolidayName(day)}`}
+                        >
+                          {frenchHolidayName(day)}
+                        </span>
+                      )}
                     </div>
                     <div
                       ref={isReferenceCell ? contentRef : null}
