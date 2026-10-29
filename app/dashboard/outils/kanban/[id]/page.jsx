@@ -275,6 +275,10 @@ import { MemberFilterButton } from "./components/MemberFilterButton";
 import { ShareBoardDialog } from "./components/ShareBoardDialog";
 import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
+import {
+  SocialPostsProvider,
+  ScheduleSocialPostButton,
+} from "./components/social/SocialPostsProvider";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
 import { KanbanPageSkeleton } from "./components/KanbanPageSkeleton";
 import {
@@ -770,6 +774,18 @@ function ExpandableSearch({
         }}
       />
     </div>
+  );
+}
+
+/**
+ * Contextes partagés par les vues du tableau : présence temps réel sur les
+ * tâches et posts réseaux sociaux (rien si la fonctionnalité est désactivée).
+ */
+function BoardContextProviders({ presenceStore, children, ...social }) {
+  return (
+    <TaskPresenceContext.Provider value={presenceStore}>
+      <SocialPostsProvider {...social}>{children}</SocialPostsProvider>
+    </TaskPresenceContext.Provider>
   );
 }
 
@@ -1587,7 +1603,15 @@ function KanbanBoardPageContent({ params }) {
 
   return (
     <BoardMembersLookupProvider userIds={allBoardUserIds}>
-      <TaskPresenceContext.Provider value={taskPresenceStore}>
+      <BoardContextProviders
+        presenceStore={taskPresenceStore}
+        boardId={id}
+        workspaceId={workspaceId}
+        columns={board?.columns}
+        canCreate={canCreateKanban}
+        canEdit={canEditKanban}
+        isReadOnly={isReadOnly}
+      >
         <div
           key={`kanban-board-${id}`}
           className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
@@ -1994,6 +2018,11 @@ function KanbanBoardPageContent({ params }) {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
+                <ScheduleSocialPostButton
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                />
+
                 {canCreateKanban && (
                   <Button
                     variant="primary"
@@ -2306,7 +2335,7 @@ function KanbanBoardPageContent({ params }) {
             }}
           />
         </div>
-      </TaskPresenceContext.Provider>
+      </BoardContextProviders>
     </BoardMembersLookupProvider>
   );
 }

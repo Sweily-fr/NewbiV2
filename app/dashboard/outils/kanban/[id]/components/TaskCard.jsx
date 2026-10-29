@@ -73,6 +73,7 @@ import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
 import { useTaskFieldMutations } from "../hooks/useTaskFieldMutations";
 import { useTaskViewers } from "../hooks/useTaskPresence";
 import { TaskViewersAvatars, PRESENCE_RING_CLASS } from "./TaskViewers";
+import { SocialPostBadge } from "./social/SocialPostBadge";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
 import { createSearchMatcher } from "@/src/utils/search-text";
 import { sanitizeRichText } from "@/src/utils/sanitize-html";
@@ -736,6 +737,9 @@ const TaskCard = memo(
             <div className="mt-auto pt-2 sm:pt-3 space-y-1.5">
               {/* Ligne 1: Icônes (description, checklist) */}
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {/* Post réseaux sociaux (rien si la carte n'en a pas) */}
+                <SocialPostBadge taskId={task.id} dueDate={task.dueDate} />
+
                 {/* Icône description */}
                 {task.description && (
                   <DescriptionPopover description={task.description} />

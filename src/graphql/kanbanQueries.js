@@ -429,69 +429,88 @@ export const REORDER_COLUMNS = gql`
   }
 `;
 
-export const CREATE_TASK = gql`
-  mutation CreateTask($input: CreateTaskInput!, $workspaceId: ID) {
-    createTask(input: $input, workspaceId: $workspaceId) {
+// Champs renvoyés par une création de tâche : ceux de GET_BOARD (la tâche
+// est ajoutée au cache du tableau) plus les détails de la modale. Partagés
+// avec scheduleSocialPost, qui crée aussi une carte : une sélection
+// différente ferait perdre des champs à l'écriture dans le cache.
+export const CREATED_TASK_FRAGMENT = gql`
+  fragment CreatedTaskFields on Task {
+    id
+    title
+    description
+    status
+    priority
+    startDate
+    dueDate
+    boardId
+    columnId
+    position
+    userId
+    # Demandés par GET_BOARD : la tâche créée y est ajoutée dans le cache
+    claudeWorkingSince
+    claudeCodingSince
+    createdAt
+    updatedAt
+    tags {
+      name
+      className
+      bg
+      text
+      border
+    }
+    checklist {
+      id
+      text
+      completed
+    }
+    assignedMembers
+    linkedTasks {
       id
       title
-      description
+      boardId
+      boardTitle
+      columnId
+      columnTitle
+      columnColor
       status
       priority
-      startDate
       dueDate
-      boardId
-      columnId
-      position
+    }
+    timeTracking {
+      totalSeconds
+      isRunning
+      currentStartTime
+      startedBy {
+        userId
+        userName
+        userImage
+      }
+      entries {
+        id
+        startTime
+        endTime
+        duration
+        isManual
+      }
+      hourlyRate
+      roundingOption
+    }
+    images {
+      id
+      key
+      url
+      fileName
+      fileSize
+      contentType
+      uploadedBy
+      uploadedAt
+    }
+    comments {
+      id
       userId
-      # Demandés par GET_BOARD : la tâche créée y est ajoutée dans le cache
-      claudeWorkingSince
-      claudeCodingSince
-      createdAt
-      updatedAt
-      tags {
-        name
-        className
-        bg
-        text
-        border
-      }
-      checklist {
-        id
-        text
-        completed
-      }
-      assignedMembers
-      linkedTasks {
-        id
-        title
-        boardId
-        boardTitle
-        columnId
-        columnTitle
-        columnColor
-        status
-        priority
-        dueDate
-      }
-      timeTracking {
-        totalSeconds
-        isRunning
-        currentStartTime
-        startedBy {
-          userId
-          userName
-          userImage
-        }
-        entries {
-          id
-          startTime
-          endTime
-          duration
-          isManual
-        }
-        hourlyRate
-        roundingOption
-      }
+      userName
+      userImage
+      content
       images {
         id
         key
@@ -502,39 +521,31 @@ export const CREATE_TASK = gql`
         uploadedBy
         uploadedAt
       }
-      comments {
-        id
-        userId
-        userName
-        userImage
-        content
-        images {
-          id
-          key
-          url
-          fileName
-          fileSize
-          contentType
-          uploadedBy
-          uploadedAt
-        }
-        createdAt
-        updatedAt
-      }
-      activity {
-        id
-        userId
-        userName
-        userImage
-        type
-        field
-        oldValue
-        newValue
-        description
-        createdAt
-      }
+      createdAt
+      updatedAt
+    }
+    activity {
+      id
+      userId
+      userName
+      userImage
+      type
+      field
+      oldValue
+      newValue
+      description
+      createdAt
     }
   }
+`;
+
+export const CREATE_TASK = gql`
+  mutation CreateTask($input: CreateTaskInput!, $workspaceId: ID) {
+    createTask(input: $input, workspaceId: $workspaceId) {
+      ...CreatedTaskFields
+    }
+  }
+  ${CREATED_TASK_FRAGMENT}
 `;
 
 export const UPDATE_TASK = gql`

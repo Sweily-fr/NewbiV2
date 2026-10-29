@@ -96,6 +96,7 @@ import { isCollabDescriptionEnabled } from "./task-modal/collabConfig";
 import { useSession } from "@/src/lib/auth-client";
 import { TaskModalHeader } from "./task-modal/TaskModalHeader";
 import { LinkedTasksField } from "./task-modal/LinkedTasksField";
+import { SocialPostSection } from "./social/SocialPostSection";
 import { computeAutoSaveSignature } from "../hooks/taskFormSignature";
 
 /**
@@ -1814,6 +1815,16 @@ export function TaskModal({
                     />
                   </div>
 
+                  {/* Post réseaux sociaux (rien si la tâche n'en a pas) */}
+                  {isEditing && (
+                    <div className="mb-4 empty:hidden">
+                      <SocialPostSection
+                        taskId={taskId}
+                        dueDate={taskForm.dueDate}
+                      />
+                    </div>
+                  )}
+
                   {/* Description — sous la grille des propriétés */}
                   <div className="space-y-1 border-t border-border/30 pt-4">
                     {!showDescription &&
@@ -2753,6 +2764,16 @@ export function TaskModal({
                         />
                       </div>
                     )
+                  )}
+
+                  {/* Post réseaux sociaux (rien si la tâche n'en a pas) */}
+                  {isEditing && (
+                    <div className="mt-6 empty:hidden">
+                      <SocialPostSection
+                        taskId={taskId}
+                        dueDate={taskForm.dueDate}
+                      />
+                    </div>
                   )}
 
                   {/* Tâches liées (informatif, lien symétrique) */}
