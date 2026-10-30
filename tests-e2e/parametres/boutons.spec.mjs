@@ -16,6 +16,7 @@ import { COMPTES } from "../donnees/base.mjs";
 import { connecte, SESSION_TOKEN_EDITEUR_PARAMETRES, SESSION_TOKEN_MEMBRE_PARAMETRES, SESSION_TOKEN_PARAMETRES } from "../config.mjs";
 import { ROLES_PERSO } from "../donnees/lot-parametres-auth.mjs";
 import { contenuParametres, menuParametres, ouvrirParametres } from "../authentification/outils-auth.mjs";
+import { simulerBanques } from "../accueil/outils-accueil.mjs";
 
 const PARAMETRES = COMPTES.parametres;
 
@@ -31,6 +32,18 @@ async function sessionsReglees() {
 const onglet = (id) => async (page) => {
   await sessionsReglees();
   await ouvrirParametres(page, id);
+};
+
+/**
+ * Comptes bancaires du propriétaire : les comptes sont lus après l'ouverture
+ * de l'onglet, la page est prête une fois la liste affichée (vide pour
+ * « Paramètres », d'où « Connecter une banque »). Liste des banques simulée :
+ * Bridge est injoignable en CI (erreur 500).
+ */
+const comptesBancaires = async (page) => {
+  await simulerBanques(page);
+  await sessionsReglees();
+  await ouvrirParametres(page, "comptes-bancaires", { pret: (contenu) => contenu.getByText("Aucun compte connecté", { exact: true }) });
 };
 
 const FERMER = { parcours: "parcours.spec.mjs : « Annuler » ferme la fenêtre" };
@@ -240,7 +253,7 @@ test.describe("Paramètres (propriétaire)", () => {
     zone: contenuParametres,
     boutons: {
       ...Object.fromEntries(
-        ["Toutes", "Paiement", "Banque", "Comptabilité", "Automatisations", "CRM", "Intelligence artificielle", "E-mailing", "Productivité"].map((c) => [
+        ["Toutes", "Paiement", "Banque", "Comptabilité", "Automatisations", "CRM", "Intelligence artificielle", "E-mailing", "Réseaux sociaux", "Productivité"].map((c) => [
           `button ${c}`,
           { parcours: "parcours.spec.mjs : catégories des applications" },
         ]),
@@ -249,7 +262,13 @@ test.describe("Paramètres (propriétaire)", () => {
     },
   });
 
-  verifierBoutons({ test, titre: "Comptes bancaires", ouvrir: onglet("comptes-bancaires"), zone: contenuParametres, boutons: { "button Annuler": FERMER } });
+  verifierBoutons({
+    test,
+    titre: "Comptes bancaires",
+    ouvrir: comptesBancaires,
+    zone: contenuParametres,
+    boutons: { "button Connecter une banque": { fenetre: "Connecter votre banque" }, "button Annuler": FERMER },
+  });
 
   verifierBoutons({
     test,
