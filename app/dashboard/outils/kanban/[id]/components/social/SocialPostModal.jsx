@@ -1062,6 +1062,8 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   // Envoi de vidéo en cours : { key, controller } (annulé si la vidéo est
   // retirée ou remplacée, ou la fenêtre fermée)
   const videoUploadRef = useRef(null);
+  const openRef = useRef(open);
+  openRef.current = open;
 
   const cancelVideoUpload = useCallback(() => {
     videoUploadRef.current?.controller.abort();
@@ -1225,7 +1227,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       .filter((e) => e.field === field && isShown(e, attempted))
       .map((e) => e.message);
   // Le dépassement de texte s'affiche déjà en rouge dans le compteur
-  const textLimit = getTextLimit(content, platforms);
+  const textLimit = getTextLimit(content, platforms, { video: !!videoItem });
   const contentErrors = errors
     .filter(
       (e) =>
@@ -1420,6 +1422,8 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         previewUrl = null;
       }
       const metadata = previewUrl ? await readVideoMetadata(previewUrl) : null;
+      // Fenêtre fermée pendant la lecture du fichier : rien à envoyer
+      if (!openRef.current) return;
       const durationError = checkVideoFile(file, {
         durationMs: metadata?.durationMs,
       });

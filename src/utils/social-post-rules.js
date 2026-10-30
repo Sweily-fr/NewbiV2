@@ -32,9 +32,13 @@ export const ACCEPTED_IMAGE_TYPES = [
 ];
 
 // Vidéo : une seule par post, jamais avec des photos. Formats et poids
-// acceptés à l'envoi ; le serveur la prépare ensuite (MP4 H.264).
-const KB = 1024;
-const MB = 1024 * KB;
+// acceptés à l'envoi ; le serveur la prépare ensuite (MP4 H.264). Envoi
+// plafonné à 500 Mo binaires, poids par réseau en unités décimales
+// (« 300 Mo » chez Meta), comme l'API.
+const MB = 1024 * 1024;
+const DECIMAL_KB = 1000;
+const DECIMAL_MB = 1000 * 1000;
+const DECIMAL_GB = 1000 * 1000 * 1000;
 export const ACCEPTED_VIDEO_TYPES = [
   "video/mp4",
   "video/quicktime",
@@ -72,7 +76,7 @@ export const PLATFORM_RULES = {
     video: {
       minDurationMs: MIN_VIDEO_DURATION_MS,
       maxDurationMs: MAX_VIDEO_DURATION_MS,
-      maxBytes: 300 * MB,
+      maxBytes: 300 * DECIMAL_MB,
     },
   },
   facebook: {
@@ -80,7 +84,7 @@ export const PLATFORM_RULES = {
     maxLength: 63206,
     maxImages: 10,
     imageRequired: false,
-    video: { maxDurationMs: MAX_VIDEO_DURATION_MS, maxBytes: 1024 * MB },
+    video: { maxDurationMs: MAX_VIDEO_DURATION_MS, maxBytes: DECIMAL_GB },
   },
   linkedin: {
     label: "LinkedIn",
@@ -92,8 +96,8 @@ export const PLATFORM_RULES = {
     video: {
       minDurationMs: MIN_VIDEO_DURATION_MS,
       maxDurationMs: MAX_VIDEO_DURATION_MS,
-      minBytes: 75 * KB,
-      maxBytes: 500 * MB,
+      minBytes: 75 * DECIMAL_KB,
+      maxBytes: 500 * DECIMAL_MB,
     },
   },
   twitter: {
@@ -102,14 +106,19 @@ export const PLATFORM_RULES = {
     maxImages: 4,
     imageRequired: false,
     // Limite des comptes X non Premium
-    video: { maxDurationMs: 140 * 1000, maxBytes: 512 * MB },
+    video: { maxDurationMs: 140 * 1000, maxBytes: 512 * DECIMAL_MB },
   },
   tiktok: {
     label: "TikTok",
     maxLength: 4000,
     maxImages: 35,
     imageRequired: true,
-    video: { minDurationMs: MIN_VIDEO_DURATION_MS, maxBytes: 4096 * MB },
+    // Titre d'une vidéo : 2 200 caractères comptés en UTF-16
+    video: {
+      maxLength: 2200,
+      minDurationMs: MIN_VIDEO_DURATION_MS,
+      maxBytes: 4 * DECIMAL_GB,
+    },
   },
 };
 
@@ -185,10 +194,12 @@ function twitterTextWeight(text) {
 /**
  * Longueur du texte telle que le réseau la compte.
  * X : chaque lien vaut 23 caractères, emoji et CJK comptent double.
+ * Titre d'une vidéo TikTok : unités UTF-16 (un emoji compte souvent deux).
  * Autres réseaux : nombre de caractères (un emoji compte pour un).
  */
-export function countPostLength(text, platform) {
+export function countPostLength(text, platform, { video = false } = {}) {
   const value = text || "";
+  if (platform === "tiktok" && video) return value.length;
   if (platform !== "twitter") return Array.from(value).length;
   let total = 0;
   let lastIndex = 0;
@@ -203,21 +214,23 @@ export function countPostLength(text, platform) {
 
 /**
  * Compteur du réseau le plus contraint parmi ceux choisis : celui à qui il
- * reste le moins de caractères (ex. « 245 / 280 (X) »).
+ * reste le moins de caractères (ex. « 245 / 280 (X) »). `video` : le post
+ * contient une vidéo (titre TikTok limité à 2 200 caractères).
  * @returns {{ platform: string, label: string, count: number, max: number, remaining: number, over: boolean } | null}
  */
-export function getTextLimit(text, platforms) {
+export function getTextLimit(text, platforms, { video = false } = {}) {
   let worst = null;
   for (const platform of uniquePlatforms(platforms)) {
     const rules = PLATFORM_RULES[platform];
-    const count = countPostLength(text, platform);
-    const remaining = rules.maxLength - count;
+    const max = (video && rules.video?.maxLength) || rules.maxLength;
+    const count = countPostLength(text, platform, { video });
+    const remaining = max - count;
     if (!worst || remaining < worst.remaining) {
       worst = {
         platform,
         label: rules.label,
         count,
-        max: rules.maxLength,
+        max,
         remaining,
         over: remaining < 0,
       };
@@ -307,10 +320,10 @@ export function isVideoFile(file) {
  * l'extension), ou null si le format n'est pas accepté.
  */
 export function getVideoContentType(file) {
-  const type = (file?.type || "").toLowerCase();
+  const type = (file?.type || "").toLowerCase().split(";")[0].trim();
   if (ACCEPTED_VIDEO_TYPES.includes(type)) return type;
-  // Type absent ou autre (navigateur sans correspondance) : l'extension
-  // tranche, une vidéo .mkv reste refusée
+  // Type absent ou générique (certains navigateurs) : l'extension tranche
+  if (type && type !== "application/octet-stream") return null;
   return VIDEO_TYPES_BY_EXTENSION[fileExtension(file?.name)] || null;
 }
 
@@ -329,15 +342,14 @@ export function formatVideoDuration(ms, { round = "up" } = {}) {
   return seconds ? `${minutes} min ${pad(seconds)}` : `${minutes} min`;
 }
 
-/** Poids lisible : « 75 Ko », « 300 Mo », « 1 Go », « 1,5 Go » */
+/** Poids lisible en unités décimales : « 75 Ko », « 300 Mo », « 1 Go », « 1,5 Go » */
 export function formatFileSize(bytes) {
   if (!Number.isFinite(bytes) || bytes < 0) return "";
-  if (bytes >= 1024 * MB) {
-    const value = Math.round((bytes / (1024 * MB)) * 10) / 10;
-    return `${String(value).replace(".", ",")} Go`;
-  }
-  if (bytes >= MB) return `${Math.round(bytes / MB)} Mo`;
-  return `${Math.max(1, Math.round(bytes / KB))} Ko`;
+  const format = (value) =>
+    String(Math.round(value * 10) / 10).replace(".", ",");
+  if (bytes >= DECIMAL_GB) return `${format(bytes / DECIMAL_GB)} Go`;
+  if (bytes >= DECIMAL_MB) return `${format(bytes / DECIMAL_MB)} Mo`;
+  return `${Math.max(1, Math.ceil(bytes / DECIMAL_KB))} Ko`;
 }
 
 function globalDurationError(durationMs) {
@@ -417,7 +429,7 @@ export function getVideoErrors(
       } else if (limits.minDurationMs && durationMs < limits.minDurationMs) {
         errors.push({
           code: "video_too_short",
-          message: `${rules.label} accepte des vidéos de ${formatVideoDuration(limits.minDurationMs, { round: "down" })} minimum (cette vidéo dure ${formatVideoDuration(durationMs, { round: "down" })}).`,
+          message: `${rules.label} exige une vidéo d'au moins ${formatVideoDuration(limits.minDurationMs, { round: "down" })}.`,
         });
       }
     }
@@ -503,7 +515,9 @@ export function validateSocialPost({
     });
   }
 
-  const textLimit = getTextLimit(content, selected);
+  const textLimit = getTextLimit(content, selected, {
+    video: videos.length > 0,
+  });
   if (textLimit?.over) {
     errors.push({
       field: "content",
@@ -534,7 +548,7 @@ export function validateSocialPost({
     errors.push({
       field: "media",
       code: "too_many_videos",
-      message: "Un post ne peut contenir qu'une seule vidéo.",
+      message: "Une seule vidéo par post.",
     });
   }
 

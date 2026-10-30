@@ -521,11 +521,11 @@ describe("vidéo", () => {
     expect(formatVideoDuration(2_900, { round: "down" })).toBe("2 s");
   });
 
-  it("poids lisible", () => {
-    expect(formatFileSize(300 * MB)).toBe("300 Mo");
-    expect(formatFileSize(1024 * MB)).toBe("1 Go");
-    expect(formatFileSize(1536 * MB)).toBe("1,5 Go");
-    expect(formatFileSize(75 * 1024)).toBe("75 Ko");
+  it("poids lisible en unités décimales, comme les réseaux", () => {
+    expect(formatFileSize(300_000_000)).toBe("300 Mo");
+    expect(formatFileSize(1_000_000_000)).toBe("1 Go");
+    expect(formatFileSize(1_500_000_000)).toBe("1,5 Go");
+    expect(formatFileSize(75_000)).toBe("75 Ko");
   });
 
   it("formats acceptés : MP4, MOV, M4V, WebM (type ou extension)", () => {
@@ -537,6 +537,10 @@ describe("vidéo", () => {
     expect(getVideoContentType(file("a.webm", ""))).toBe("video/webm");
     expect(getVideoContentType(file("a.mkv", "video/x-matroska"))).toBe(null);
     expect(getVideoContentType(file("a.avi", "video/x-msvideo"))).toBe(null);
+    // Type générique : l'extension tranche
+    expect(getVideoContentType(file("a.mov", "application/octet-stream"))).toBe(
+      "video/quicktime",
+    );
     expect(isVideoFile(file("a.mkv", "video/x-matroska"))).toBe(true);
     expect(isVideoFile(file("a.jpg", "image/jpeg"))).toBe(false);
   });
@@ -627,6 +631,30 @@ describe("vidéo", () => {
         ["instagram"],
       ),
     ).toEqual([]);
+  });
+
+  it("TikTok : titre d'une vidéo limité à 2 200 caractères (UTF-16)", () => {
+    const tiktok = { privacyLevel: "PUBLIC_TO_EVERYONE" };
+    // 1 100 emoji = 1 100 caractères mais 2 200 unités UTF-16
+    const text = "🎉".repeat(1101);
+    expect(
+      codes({
+        platforms: ["tiktok"],
+        content: text,
+        media: [READY_VIDEO],
+        tiktok,
+      }),
+    ).toEqual(["text_too_long"]);
+    expect(getTextLimit(text, ["tiktok"], { video: true })).toMatchObject({
+      max: 2200,
+      count: 2202,
+      over: true,
+    });
+    // Photos : 4 000 caractères
+    expect(getTextLimit(text, ["tiktok"])).toMatchObject({
+      max: 4000,
+      count: 1101,
+    });
   });
 
   it("Instagram : pas de contrôle de format pour une vidéo", () => {
