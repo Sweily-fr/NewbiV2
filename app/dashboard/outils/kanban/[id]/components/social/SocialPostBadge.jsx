@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { Play } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -11,6 +12,7 @@ import {
   formatParisDateTime,
   getPlatformLabel,
   getPostStatusInfo,
+  isVideoMedia,
   joinLabels,
   uniquePlatforms,
 } from "@/src/utils/social-post-rules";
@@ -64,10 +66,12 @@ export const SocialPostBadge = memo(function SocialPostBadge({
     post.status === "scheduled" && dueDate ? dueDate : post.scheduledFor;
   const { label, tone } = getPostStatusInfo(post.status, when);
   const networks = joinLabels(platforms.map(getPlatformLabel));
+  const hasVideo = (post.media || []).some(isVideoMedia);
+  const kind = hasVideo ? "Post vidéo" : "Post";
   const tooltip =
     post.status === "scheduled"
-      ? `Post ${networks} programmé le ${formatParisDateTime(when)}`
-      : `Post ${networks} : ${label.toLowerCase()}`;
+      ? `${kind} ${networks} programmé le ${formatParisDateTime(when)}`
+      : `${kind} ${networks} : ${label.toLowerCase()}`;
 
   let content;
   if (variant === "icon") {
@@ -98,6 +102,14 @@ export const SocialPostBadge = memo(function SocialPostBadge({
           platforms={platforms}
           size={variant === "compact" ? 13 : 14}
         />
+        {hasVideo && (
+          <span
+            className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded bg-muted text-muted-foreground"
+            aria-hidden="true"
+          >
+            <Play className="ml-px h-2.5 w-2.5 fill-current" />
+          </span>
+        )}
         <span
           className={cn(
             "truncate rounded px-1.5 text-[11px] font-medium leading-[18px]",

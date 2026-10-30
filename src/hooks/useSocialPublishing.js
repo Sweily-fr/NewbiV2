@@ -1,20 +1,24 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@apollo/client";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import {
   CANCEL_SOCIAL_POST,
+  COMPLETE_SOCIAL_VIDEO_UPLOAD,
   CONNECT_SOCIAL_ACCOUNT,
   DISCONNECT_SOCIAL_ACCOUNT,
   GET_BOARD_SOCIAL_POSTS,
+  GET_SOCIAL_POST_MEDIA,
   GET_SOCIAL_PUBLISHING_STATUS,
   GET_TIKTOK_CREATOR_INFO,
   REFRESH_SOCIAL_ACCOUNTS,
   RETRY_SOCIAL_POST,
   SCHEDULE_SOCIAL_POST,
+  START_SOCIAL_VIDEO_UPLOAD,
   UPDATE_SOCIAL_POST,
   UPLOAD_SOCIAL_POST_MEDIA,
+  UPLOAD_SOCIAL_VIDEO_CHUNK,
 } from "@/src/graphql/socialPublishingQueries";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
 import {
@@ -22,6 +26,7 @@ import {
   getPlatformLabel,
   shouldPollSocialPosts,
 } from "@/src/utils/social-post-rules";
+import { uploadSocialVideo } from "@/src/utils/social-video-upload";
 
 const POLL_INTERVAL_MS = 60 * 1000;
 const EMPTY = Object.freeze([]);
@@ -310,6 +315,10 @@ export function useSocialPostMutations({ boardId, workspaceId }) {
     refetchStatus,
   );
   const [uploadMutation] = useMutation(UPLOAD_SOCIAL_POST_MEDIA);
+  const [startVideoMutation] = useMutation(START_SOCIAL_VIDEO_UPLOAD);
+  const [uploadChunkMutation] = useMutation(UPLOAD_SOCIAL_VIDEO_CHUNK);
+  const [completeVideoMutation] = useMutation(COMPLETE_SOCIAL_VIDEO_UPLOAD);
+  const client = useApolloClient();
 
   const schedule = useCallback(
     async (input) => {
@@ -359,12 +368,74 @@ export function useSocialPostMutations({ boardId, workspaceId }) {
     [uploadMutation, workspaceId],
   );
 
+  /**
+   * Vidéo : envoi en morceaux puis attente de la préparation. Les erreurs
+   * sont gérées par la fenêtre (pas de toast global, nouveaux essais
+   * compris). Renvoie le média prêt ; rejette avec AbortError si `signal`
+   * est annulé.
+   */
+  const uploadVideo = useCallback(
+    (file, { signal, onProgress, onMedia } = {}) => {
+      const context = (abortSignal) => ({
+        skipErrorToast: true,
+        ...(abortSignal ? { fetchOptions: { signal: abortSignal } } : {}),
+      });
+      return uploadSocialVideo(
+        file,
+        {
+          start: async ({ fileName, size, contentType, signal: s }) => {
+            const { data } = await startVideoMutation({
+              variables: { fileName, size, contentType, workspaceId },
+              context: context(s),
+            });
+            return data?.startSocialVideoUpload || null;
+          },
+          uploadChunk: async ({ mediaId, index, chunk, signal: s }) => {
+            const { data } = await uploadChunkMutation({
+              variables: { mediaId, index, chunk, workspaceId },
+              context: context(s),
+            });
+            if (data?.uploadSocialVideoChunk !== true) {
+              throw new Error("Morceau refusé");
+            }
+            return true;
+          },
+          complete: async ({ mediaId, signal: s }) => {
+            const { data } = await completeVideoMutation({
+              variables: { mediaId, workspaceId },
+              context: context(s),
+            });
+            return data?.completeSocialVideoUpload || null;
+          },
+          fetchMedia: async ({ mediaId, signal: s }) => {
+            const { data } = await client.query({
+              query: GET_SOCIAL_POST_MEDIA,
+              variables: { id: mediaId, workspaceId },
+              fetchPolicy: "network-only",
+              context: context(s),
+            });
+            return data?.socialPostMedia || null;
+          },
+        },
+        { signal, onProgress, onMedia },
+      );
+    },
+    [
+      startVideoMutation,
+      uploadChunkMutation,
+      completeVideoMutation,
+      client,
+      workspaceId,
+    ],
+  );
+
   return {
     schedule,
     update,
     cancel,
     retry,
     upload,
+    uploadVideo,
     scheduling,
     updating,
     cancelling,

@@ -20,9 +20,24 @@ import {
   validateSocialPost,
   getXQuotaNote,
   isSameParisMonth,
+  checkVideoFile,
+  formatFileSize,
+  formatVideoDuration,
+  getVideoContentType,
+  getVideoErrors,
+  isVideoFile,
 } from "@/src/utils/social-post-rules";
 
 const NOW = new Date("2026-10-28T10:00:00.000Z");
+const MB = 1024 * 1024;
+const READY_VIDEO = {
+  kind: "video",
+  status: "ready",
+  width: 1080,
+  height: 1920,
+  durationMs: 45_000,
+  size: 40 * MB,
+};
 const inMinutes = (min) => new Date(NOW.getTime() + min * 60000).toISOString();
 
 const fields = (errors) => errors.map((e) => e.field);
@@ -154,7 +169,7 @@ describe("validateSocialPost", () => {
     ]);
   });
 
-  it("image obligatoire pour Instagram et TikTok", () => {
+  it("image ou vidéo obligatoire pour Instagram et TikTok", () => {
     const errors = validateSocialPost({
       ...base,
       platforms: ["instagram", "tiktok"],
@@ -164,9 +179,20 @@ describe("validateSocialPost", () => {
       {
         field: "media",
         code: "image_required",
-        message: "Instagram et TikTok demandent au moins une image.",
+        message: "Instagram et TikTok exigent une image ou une vidéo.",
       },
     ]);
+    expect(
+      validateSocialPost({ ...base, platforms: ["instagram"] })[0].message,
+    ).toBe("Instagram exige une image ou une vidéo.");
+    // Une vidéo suffit
+    expect(
+      validateSocialPost({
+        ...base,
+        platforms: ["instagram"],
+        media: [READY_VIDEO],
+      }),
+    ).toEqual([]);
   });
 
   it("trop d'images pour X", () => {
@@ -469,5 +495,221 @@ describe("limite mensuelle de posts X", () => {
       tone: "muted",
       message: "X : 10 posts par mois avec votre offre.",
     });
+  });
+});
+
+describe("vidéo", () => {
+  const base = {
+    platforms: ["facebook"],
+    content: "Nouvelle vidéo",
+    scheduledFor: inMinutes(60),
+    now: NOW,
+  };
+  const codes = (input) =>
+    validateSocialPost({ ...base, ...input }).map((e) => e.code);
+  const messages = (input) =>
+    validateSocialPost({ ...base, ...input }).map((e) => e.message);
+  const file = (name, type, size = 10 * MB) => ({ name, type, size });
+
+  it("durée lisible : secondes, minutes et secondes, minutes rondes", () => {
+    expect(formatVideoDuration(45_000)).toBe("45 s");
+    expect(formatVideoDuration(140_000)).toBe("2 min 20");
+    expect(formatVideoDuration(185_000)).toBe("3 min 05");
+    expect(formatVideoDuration(600_000)).toBe("10 min");
+    // Arrondi vers le haut pour une durée trop longue, vers le bas sinon
+    expect(formatVideoDuration(140_400)).toBe("2 min 21");
+    expect(formatVideoDuration(2_900, { round: "down" })).toBe("2 s");
+  });
+
+  it("poids lisible en unités décimales, comme les réseaux", () => {
+    expect(formatFileSize(300_000_000)).toBe("300 Mo");
+    expect(formatFileSize(1_000_000_000)).toBe("1 Go");
+    expect(formatFileSize(1_500_000_000)).toBe("1,5 Go");
+    expect(formatFileSize(75_000)).toBe("75 Ko");
+  });
+
+  it("formats acceptés : MP4, MOV, M4V, WebM (type ou extension)", () => {
+    expect(getVideoContentType(file("a.mp4", "video/mp4"))).toBe("video/mp4");
+    expect(getVideoContentType(file("a.mov", "video/quicktime"))).toBe(
+      "video/quicktime",
+    );
+    expect(getVideoContentType(file("a.M4V", ""))).toBe("video/x-m4v");
+    expect(getVideoContentType(file("a.webm", ""))).toBe("video/webm");
+    expect(getVideoContentType(file("a.mkv", "video/x-matroska"))).toBe(null);
+    expect(getVideoContentType(file("a.avi", "video/x-msvideo"))).toBe(null);
+    // Type générique : l'extension tranche
+    expect(getVideoContentType(file("a.mov", "application/octet-stream"))).toBe(
+      "video/quicktime",
+    );
+    expect(isVideoFile(file("a.mkv", "video/x-matroska"))).toBe(true);
+    expect(isVideoFile(file("a.jpg", "image/jpeg"))).toBe(false);
+  });
+
+  it("contrôles avant l'envoi : format, 500 Mo, 3 secondes à 10 minutes", () => {
+    expect(checkVideoFile(file("a.mp4", "video/mp4"))).toBe(null);
+    expect(checkVideoFile(file("clip.avi", "video/x-msvideo"))).toBe(
+      "« clip.avi » n'est pas une vidéo MP4, MOV, M4V ou WebM.",
+    );
+    expect(checkVideoFile(file("gros.mp4", "video/mp4", 501 * MB))).toBe(
+      "« gros.mp4 » dépasse 500 Mo.",
+    );
+    expect(checkVideoFile(file("vide.mp4", "video/mp4", 0))).toBe(
+      "« vide.mp4 » est vide.",
+    );
+    expect(
+      checkVideoFile(file("a.mp4", "video/mp4"), { durationMs: 2_500 }),
+    ).toBe("La vidéo doit durer au moins 3 secondes (elle dure 2 s).");
+    expect(
+      checkVideoFile(file("a.mp4", "video/mp4"), { durationMs: 750_000 }),
+    ).toBe("La vidéo doit durer 10 minutes au maximum (elle dure 12 min 30).");
+    // Durée illisible par le navigateur : le serveur tranchera
+    expect(
+      checkVideoFile(file("a.mov", "video/quicktime"), { durationMs: null }),
+    ).toBe(null);
+  });
+
+  it("X : 2 min 20 au maximum", () => {
+    expect(
+      messages({
+        platforms: ["twitter"],
+        media: [{ ...READY_VIDEO, durationMs: 185_000 }],
+      }),
+    ).toEqual([
+      "X accepte des vidéos de 2 min 20 au maximum (cette vidéo dure 3 min 05).",
+    ]);
+    expect(
+      codes({
+        platforms: ["twitter"],
+        media: [{ ...READY_VIDEO, durationMs: 140_000 }],
+      }),
+    ).toEqual([]);
+  });
+
+  it("TikTok : durée maximale du compte (creator_info)", () => {
+    const tiktok = {
+      privacyLevel: "PUBLIC_TO_EVERYONE",
+      maxVideoDurationSec: 60,
+    };
+    expect(
+      messages({
+        platforms: ["tiktok"],
+        media: [{ ...READY_VIDEO, durationMs: 90_000 }],
+        tiktok,
+      }),
+    ).toEqual([
+      "TikTok accepte des vidéos de 1 min au maximum pour ce compte (cette vidéo dure 1 min 30).",
+    ]);
+    // Durée maximale inconnue : pas de contrôle
+    expect(
+      codes({
+        platforms: ["tiktok"],
+        media: [{ ...READY_VIDEO, durationMs: 90_000 }],
+        tiktok: { privacyLevel: "PUBLIC_TO_EVERYONE" },
+      }),
+    ).toEqual([]);
+  });
+
+  it("poids après préparation : Instagram 300 Mo, LinkedIn 75 Ko minimum", () => {
+    expect(
+      messages({
+        platforms: ["instagram", "facebook"],
+        media: [{ ...READY_VIDEO, size: 310 * MB }],
+      }),
+    ).toEqual([
+      "La vidéo est trop lourde pour Instagram (300 Mo maximum après préparation).",
+    ]);
+    expect(
+      messages({
+        platforms: ["linkedin"],
+        media: [{ ...READY_VIDEO, size: 50 * 1024 }],
+      }),
+    ).toEqual(["La vidéo est trop légère pour LinkedIn (75 Ko minimum)."]);
+    // Poids de l'original pendant l'envoi : pas encore contrôlé
+    expect(
+      getVideoErrors(
+        { durationMs: 45_000, size: 400 * MB, status: "uploading" },
+        ["instagram"],
+      ),
+    ).toEqual([]);
+  });
+
+  it("TikTok : titre d'une vidéo limité à 2 200 caractères (UTF-16)", () => {
+    const tiktok = { privacyLevel: "PUBLIC_TO_EVERYONE" };
+    // 1 100 emoji = 1 100 caractères mais 2 200 unités UTF-16
+    const text = "🎉".repeat(1101);
+    expect(
+      codes({
+        platforms: ["tiktok"],
+        content: text,
+        media: [READY_VIDEO],
+        tiktok,
+      }),
+    ).toEqual(["text_too_long"]);
+    expect(getTextLimit(text, ["tiktok"], { video: true })).toMatchObject({
+      max: 2200,
+      count: 2202,
+      over: true,
+    });
+    // Photos : 4 000 caractères
+    expect(getTextLimit(text, ["tiktok"])).toMatchObject({
+      max: 4000,
+      count: 1101,
+    });
+  });
+
+  it("Instagram : pas de contrôle de format pour une vidéo", () => {
+    expect(
+      codes({
+        platforms: ["instagram"],
+        media: [{ ...READY_VIDEO, width: 3000, height: 1000 }],
+      }),
+    ).toEqual([]);
+  });
+
+  it("une seule vidéo, jamais avec des photos", () => {
+    expect(
+      codes({
+        media: [READY_VIDEO, { width: 1000, height: 1000 }],
+      }),
+    ).toEqual(["media_mixed"]);
+    expect(codes({ media: [READY_VIDEO, READY_VIDEO] })).toEqual([
+      "too_many_videos",
+    ]);
+  });
+
+  it("vidéo en préparation ou en échec : le post attend", () => {
+    expect(
+      validateSocialPost({
+        ...base,
+        media: [{ kind: "video", status: "processing", durationMs: 45_000 }],
+      }),
+    ).toEqual([
+      {
+        field: "media",
+        code: "video_not_ready",
+        message:
+          "La vidéo est encore en préparation. Patientez quelques instants.",
+      },
+    ]);
+    expect(
+      messages({
+        media: [
+          {
+            kind: "video",
+            status: "failed",
+            errorMessage: "Vidéo illisible ou endommagée.",
+          },
+        ],
+      }),
+    ).toEqual(["Vidéo illisible ou endommagée."]);
+    // Une vidéo en cours d'envoi suffit à Instagram (pas de « exige une
+    // image ou une vidéo » pendant l'envoi)
+    expect(
+      codes({
+        platforms: ["instagram"],
+        content: "",
+        media: [{ kind: "video", status: "uploading" }],
+      }),
+    ).toEqual(["video_not_ready"]);
   });
 });

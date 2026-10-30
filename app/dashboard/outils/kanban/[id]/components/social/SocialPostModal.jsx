@@ -7,6 +7,7 @@ import {
   ArrowRight,
   CalendarClock,
   Check,
+  Film,
   ImagePlus,
   Loader2,
   Plus,
@@ -29,6 +30,11 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { Switch } from "@/src/components/ui/switch";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -50,14 +56,17 @@ import {
 } from "@/src/hooks/useSocialPublishing";
 import {
   ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
   MAX_UPLOAD_BYTES,
   SOCIAL_PLATFORMS,
   SOCIAL_TIMEZONE,
   TIKTOK_BRANDED_CONTENT_POLICY_URL,
   TIKTOK_MUSIC_CONFIRMATION_URL,
   buildComposerReturnTo,
+  checkVideoFile,
   formatParisDateTime,
   formatParisShortDateTime,
+  formatVideoDuration,
   getDefaultScheduleParts,
   getMaxImages,
   getParisToday,
@@ -66,12 +75,20 @@ import {
   getXQuotaNote,
   isInstagramRatioValid,
   isSameParisMonth,
+  isVideoFile,
+  isVideoMedia,
   isoToParisParts,
   joinLabels,
   parisPartsToIso,
   uniquePlatforms,
   validateSocialPost,
 } from "@/src/utils/social-post-rules";
+import {
+  SocialVideoError,
+  VIDEO_UPLOAD_FAILED_MESSAGE,
+  isAbortError,
+  readVideoMetadata,
+} from "@/src/utils/social-video-upload";
 import {
   SocialAccountAvatar,
   SocialNetworkIcon,
@@ -89,10 +106,21 @@ const LIVE_ERROR_CODES = new Set([
   "image_required",
   "instagram_ratio",
   "linkedin_size",
+  "media_mixed",
+  "too_many_videos",
+  "video_failed",
+  "video_too_long",
+  "video_too_short",
+  "video_too_heavy",
+  "video_too_light",
   "when_too_soon",
   "when_too_far",
   "tiktok_quota",
 ]);
+const VIDEO_INPUT_ACCEPT = ACCEPTED_VIDEO_TYPES.join(",");
+const PHOTOS_OR_VIDEO = "un post contient soit des photos, soit une vidéo.";
+const PHOTOS_LOCKED_REASON = `Retirez la vidéo pour ajouter des photos : ${PHOTOS_OR_VIDEO}`;
+const VIDEO_LOCKED_REASON = `Retirez les photos pour ajouter une vidéo : ${PHOTOS_OR_VIDEO}`;
 const isShown = (error, attempted) =>
   attempted || LIVE_ERROR_CODES.has(error.code);
 
@@ -144,14 +172,51 @@ function sortAccounts(accounts) {
 }
 
 // Consignes TikTok : confidentialité sans valeur par défaut, interactions
-// et divulgation du contenu commercial désactivées au départ
+// (commentaires, duos et collages pour une vidéo) et divulgation du contenu
+// commercial désactivées au départ
 const EMPTY_TIKTOK = {
   privacyLevel: "",
   allowComment: false,
+  allowDuet: false,
+  allowStitch: false,
   commercial: false,
   brandOrganic: false,
   brandContent: false,
 };
+
+/** Champs d'un média renvoyé par l'API, sans écraser ce qui est déjà connu */
+function mediaFields(media) {
+  const out = {};
+  for (const field of [
+    "id",
+    "kind",
+    "status",
+    "errorMessage",
+    "url",
+    "thumbnailUrl",
+    "width",
+    "height",
+    "durationMs",
+    "size",
+    "contentType",
+  ]) {
+    const value = media?.[field];
+    if (value !== null && value !== undefined && value !== "") {
+      out[field] = value;
+    }
+  }
+  return out;
+}
+
+/** Média d'un post enregistré (ou d'un brouillon) → élément de la fenêtre */
+function toMediaItem(media) {
+  return {
+    ...mediaFields(media),
+    key: media.id,
+    kind: media.kind || "image",
+    status: media.status || "ready",
+  };
+}
 
 function FieldError({ messages }) {
   if (!messages?.length) return null;
@@ -423,12 +488,161 @@ function MediaTile({
   );
 }
 
+/**
+ * Bouton « Ajouter des photos » / « Ajouter une vidéo ». Grisé quand
+ * l'autre type de média est déjà là : l'info-bulle (et un message au clic,
+ * pour les écrans tactiles) explique pourquoi.
+ */
+function MediaPickerButton({
+  icon: Icon,
+  label,
+  onClick,
+  lockedReason,
+  disabled,
+}) {
+  const button = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={lockedReason ? () => toast.info(lockedReason) : onClick}
+      disabled={disabled}
+      aria-disabled={lockedReason ? true : undefined}
+      className={cn(
+        "flex-1 sm:flex-none",
+        lockedReason && "cursor-not-allowed opacity-50",
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Button>
+  );
+  if (!lockedReason) return button;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        {lockedReason}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/**
+ * Vidéo du post : lecteur une fois prête, progression pendant l'envoi puis
+ * la préparation par le serveur, bouton pour annuler ou retirer.
+ */
+function VideoTile({ item, onRemove, disabled }) {
+  const busy = item.status === "uploading" || item.status === "processing";
+  const failed = item.status === "failed";
+  const ready = item.status === "ready" && !!item.url;
+  const progress = Math.max(0, Math.min(100, Math.round(item.progress || 0)));
+  const duration =
+    item.durationMs > 0 ? formatVideoDuration(item.durationMs) : "";
+
+  return (
+    <div className="w-full space-y-1.5 sm:w-80">
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-lg border bg-black",
+          failed && "ring-2 ring-red-500",
+        )}
+      >
+        {ready ? (
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            poster={item.thumbnailUrl || undefined}
+            src={item.url}
+            aria-label="Vidéo du post"
+            className="aspect-video w-full bg-black object-contain"
+          />
+        ) : item.thumbnailUrl ? (
+          <img
+            src={item.thumbnailUrl}
+            alt=""
+            className="aspect-video w-full object-contain"
+          />
+        ) : item.previewUrl ? (
+          <video
+            muted
+            playsInline
+            preload="metadata"
+            src={item.previewUrl}
+            aria-hidden="true"
+            className="aspect-video w-full object-contain"
+          />
+        ) : (
+          <div className="aspect-video w-full bg-muted" />
+        )}
+        {busy && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 px-6 text-white">
+            {item.status === "uploading" ? (
+              <>
+                <span className="text-sm font-medium tabular-nums">
+                  Envoi {progress} %
+                </span>
+                <div
+                  role="progressbar"
+                  aria-label="Envoi de la vidéo"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progress}
+                  className="h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-white/25"
+                >
+                  <div
+                    className="h-full rounded-full bg-white transition-[width] duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </>
+            ) : (
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Préparation de la vidéo…
+              </span>
+            )}
+          </div>
+        )}
+        {failed && (
+          <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/60 px-4 text-center text-sm text-white">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            Vidéo non préparée
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Film className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">
+            {duration ? `Vidéo de ${duration}` : "Vidéo"}
+          </span>
+        </span>
+        {!disabled && (
+          <button
+            type="button"
+            onClick={() => onRemove(item.key)}
+            className="cursor-pointer font-medium text-foreground hover:underline"
+          >
+            {busy ? "Annuler l'envoi" : "Retirer la vidéo"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Aperçu ───────────────────────────────────────────────────────────────
 
 function PostPreview({ accounts, content, media, whenLabel }) {
   const first = accounts[0] || null;
   const platforms = uniquePlatforms(accounts.map((a) => a.platform));
-  const images = media.filter((m) => m.url || m.previewUrl);
+  const video = media.find(isVideoMedia) || null;
+  const videoSrc = video ? video.url || video.previewUrl : null;
+  const images = media.filter(
+    (m) => !isVideoMedia(m) && (m.url || m.previewUrl),
+  );
   const shown = images.slice(0, 4);
   const extra = images.length - shown.length;
 
@@ -457,6 +671,19 @@ function PostPreview({ accounts, content, media, whenLabel }) {
         <p className="px-3 pb-3 text-sm text-muted-foreground/60">
           Le texte de votre post apparaîtra ici.
         </p>
+      )}
+      {videoSrc && (
+        <video
+          // Nouveau lecteur quand la vidéo préparée remplace le fichier local
+          key={videoSrc}
+          controls
+          playsInline
+          preload="metadata"
+          poster={video.thumbnailUrl || undefined}
+          src={videoSrc}
+          aria-label="Aperçu de la vidéo"
+          className="max-h-[360px] w-full bg-black object-contain"
+        />
       )}
       {shown.length > 0 && (
         <div
@@ -511,6 +738,7 @@ function TikTokOptions({
   value,
   onChange,
   onInfo,
+  isVideo,
 }) {
   const { info, loading, error, refetch } = useTikTokCreatorInfo(
     accountId,
@@ -527,6 +755,16 @@ function TikTokOptions({
       onChange({ allowComment: false });
     }
   }, [info?.commentDisabled, value.allowComment, onChange]);
+
+  // Duos et collages coupés dans TikTok par le créateur : options coupées
+  useEffect(() => {
+    if (info?.duetDisabled && value.allowDuet) onChange({ allowDuet: false });
+  }, [info?.duetDisabled, value.allowDuet, onChange]);
+  useEffect(() => {
+    if (info?.stitchDisabled && value.allowStitch) {
+      onChange({ allowStitch: false });
+    }
+  }, [info?.stitchDisabled, value.allowStitch, onChange]);
 
   // Visibilité choisie qui n'est plus proposée par le compte : à rechoisir
   useEffect(() => {
@@ -643,6 +881,41 @@ function TikTokOptions({
             />
           </label>
 
+          {isVideo && (
+            <>
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>
+                  Autoriser les duos
+                  {info?.duetDisabled && (
+                    <span className="block text-xs text-muted-foreground">
+                      Les duos sont désactivés sur ce compte TikTok.
+                    </span>
+                  )}
+                </span>
+                <Switch
+                  checked={!!value.allowDuet}
+                  onCheckedChange={(allowDuet) => onChange({ allowDuet })}
+                  disabled={!!info?.duetDisabled}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>
+                  Autoriser les collages (Stitch)
+                  {info?.stitchDisabled && (
+                    <span className="block text-xs text-muted-foreground">
+                      Les collages sont désactivés sur ce compte TikTok.
+                    </span>
+                  )}
+                </span>
+                <Switch
+                  checked={!!value.allowStitch}
+                  onCheckedChange={(allowStitch) => onChange({ allowStitch })}
+                  disabled={!!info?.stitchDisabled}
+                />
+              </label>
+            </>
+          )}
+
           {/* Divulgation du contenu commercial (consignes TikTok) */}
           <div className="space-y-2">
             <label className="flex items-center justify-between gap-3 text-sm">
@@ -694,11 +967,11 @@ function TikTokOptions({
                 </label>
                 {value.brandContent ? (
                   <p className="text-xs text-muted-foreground">
-                    Votre photo sera étiquetée « Partenariat rémunéré ».
+                    {`Votre ${isVideo ? "vidéo" : "photo"} sera étiquetée « Partenariat rémunéré ».`}
                   </p>
                 ) : value.brandOrganic ? (
                   <p className="text-xs text-muted-foreground">
-                    Votre photo sera étiquetée « Contenu promotionnel ».
+                    {`Votre ${isVideo ? "vidéo" : "photo"} sera étiquetée « Contenu promotionnel ».`}
                   </p>
                 ) : (
                   <p className="text-xs text-red-600 dark:text-red-400">
@@ -784,7 +1057,22 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const previewUrlsRef = useRef(new Set());
+  // Envoi de vidéo en cours : { key, controller } (annulé si la vidéo est
+  // retirée ou remplacée, ou la fenêtre fermée)
+  const videoUploadRef = useRef(null);
+  const openRef = useRef(open);
+  openRef.current = open;
+
+  const cancelVideoUpload = useCallback(() => {
+    videoUploadRef.current?.controller.abort();
+    videoUploadRef.current = null;
+  }, []);
+  useEffect(() => {
+    if (!open) cancelVideoUpload();
+  }, [open, cancelVideoUpload]);
+  useEffect(() => cancelVideoUpload, [cancelVideoUpload]);
 
   // Initialisation à chaque ouverture
   useEffect(() => {
@@ -798,15 +1086,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         (post.targets || []).map((t) => t.accountId).filter(Boolean),
       );
       setContent(post.content || "");
-      setMedia(
-        (post.media || []).map((m) => ({
-          key: m.id,
-          id: m.id,
-          url: m.url,
-          width: m.width,
-          height: m.height,
-        })),
-      );
+      setMedia((post.media || []).filter((m) => m?.id).map(toMediaItem));
       setWhenMode("schedule");
       setDate(parts.date);
       setTime(parts.time);
@@ -816,6 +1096,8 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           ? {
               privacyLevel: post.tiktokSettings.privacyLevel || "",
               allowComment: !!post.tiktokSettings.allowComment,
+              allowDuet: !!post.tiktokSettings.allowDuet,
+              allowStitch: !!post.tiktokSettings.allowStitch,
               commercial:
                 !!post.tiktokSettings.brandOrganic ||
                 !!post.tiktokSettings.brandContent,
@@ -837,9 +1119,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       );
       setContent(draft.content || "");
       setMedia(
-        (draft.media || [])
-          .filter((m) => m?.id && m?.url)
-          .map((m) => ({ ...m, key: m.id })),
+        (draft.media || []).filter((m) => m?.id && m?.url).map(toMediaItem),
       );
       setWhenMode(draft.whenMode === "now" ? "now" : "schedule");
       setDate(draft.date || defaults.date);
@@ -883,8 +1163,20 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
 
   const scheduledFor =
     whenMode === "schedule" ? parisPartsToIso(date, time) : null;
-  const uploadedMedia = media.filter((m) => m.id && !m.uploading);
-  const uploading = media.some((m) => m.uploading);
+  const videoItem = media.find(isVideoMedia) || null;
+  const imageCount = media.length - (videoItem ? 1 : 0);
+  // Médias prêts à partir avec le post
+  const uploadedMedia = media.filter(
+    (m) => m.id && !m.uploading && (!isVideoMedia(m) || m.status === "ready"),
+  );
+  // Contrôles : la vidéo compte dès son ajout (durée connue, préparation
+  // en cours signalée), les images une fois envoyées
+  const rulesMedia = media.filter(
+    (m) => isVideoMedia(m) || (m.id && !m.uploading),
+  );
+  const videoBusy =
+    videoItem?.status === "uploading" || videoItem?.status === "processing";
+  const uploading = media.some((m) => m.uploading) || videoBusy;
 
   const errors = useMemo(
     () =>
@@ -892,15 +1184,16 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         platforms,
         accountCount: selectedAccounts.length,
         content,
-        media: uploadedMedia,
+        media: rulesMedia,
         publishNow: whenMode === "now",
         scheduledFor,
         tiktok: {
           ...tiktok,
           canPostMore: tiktokInfo ? tiktokInfo.canPostMore : undefined,
+          maxVideoDurationSec: tiktokInfo?.maxVideoPostDurationSec ?? null,
         },
       }),
-    // uploadedMedia dérive de media
+    // rulesMedia dérive de media
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       platforms,
@@ -934,7 +1227,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       .filter((e) => e.field === field && isShown(e, attempted))
       .map((e) => e.message);
   // Le dépassement de texte s'affiche déjà en rouge dans le compteur
-  const textLimit = getTextLimit(content, platforms);
+  const textLimit = getTextLimit(content, platforms, { video: !!videoItem });
   const contentErrors = errors
     .filter(
       (e) =>
@@ -966,12 +1259,29 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     writeDraft(boardId, {
       accountIds: selectedIds,
       content,
-      media: uploadedMedia.map(({ id, url, width, height }) => ({
-        id,
-        url,
-        width,
-        height,
-      })),
+      media: uploadedMedia.map(
+        ({
+          id,
+          kind,
+          status,
+          url,
+          thumbnailUrl,
+          width,
+          height,
+          durationMs,
+          size,
+        }) => ({
+          id,
+          kind,
+          status,
+          url,
+          thumbnailUrl,
+          width,
+          height,
+          durationMs,
+          size,
+        }),
+      ),
       whenMode,
       date,
       time,
@@ -1007,6 +1317,10 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     async (fileList) => {
       const files = Array.from(fileList || []);
       if (files.length === 0) return;
+      if (media.some(isVideoMedia)) {
+        toast.info(PHOTOS_LOCKED_REASON);
+        return;
+      }
       const remaining = maxImages.max - media.length;
       if (remaining <= 0) {
         toast.info(
@@ -1082,10 +1396,117 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         }),
       );
     },
-    [maxImages.label, maxImages.max, media.length, mutations],
+    [maxImages.label, maxImages.max, media, mutations],
+  );
+
+  // Vidéo : contrôles du fichier (format, poids, durée lue sur place), puis
+  // envoi en morceaux et préparation par le serveur. Remplace la vidéo
+  // précédente s'il y en a une.
+  const addVideo = useCallback(
+    async (file) => {
+      if (!file) return;
+      if (media.some((m) => !isVideoMedia(m))) {
+        toast.info(VIDEO_LOCKED_REASON);
+        return;
+      }
+      const fileError = checkVideoFile(file);
+      if (fileError) {
+        toast.error(fileError);
+        return;
+      }
+      let previewUrl = null;
+      try {
+        previewUrl = URL.createObjectURL(file);
+        previewUrlsRef.current.add(previewUrl);
+      } catch {
+        previewUrl = null;
+      }
+      const metadata = previewUrl ? await readVideoMetadata(previewUrl) : null;
+      // Fenêtre fermée pendant la lecture du fichier : rien à envoyer
+      if (!openRef.current) return;
+      const durationError = checkVideoFile(file, {
+        durationMs: metadata?.durationMs,
+      });
+      if (durationError) {
+        toast.error(durationError);
+        return;
+      }
+
+      cancelVideoUpload();
+      const key = newLocalKey();
+      const controller = new AbortController();
+      videoUploadRef.current = { key, controller };
+      setMedia([
+        {
+          key,
+          kind: "video",
+          status: "uploading",
+          progress: 0,
+          previewUrl,
+          durationMs: metadata?.durationMs || null,
+          width: metadata?.width || null,
+          height: metadata?.height || null,
+        },
+      ]);
+      const patch = (changes) =>
+        setMedia((prev) =>
+          prev.map((m) => (m.key === key ? { ...m, ...changes } : m)),
+        );
+
+      try {
+        const ready = await mutations.uploadVideo(file, {
+          signal: controller.signal,
+          onProgress: (progress) => patch({ progress }),
+          onMedia: (uploaded) => patch(mediaFields(uploaded)),
+        });
+        patch({ ...mediaFields(ready), kind: "video", status: "ready" });
+      } catch (error) {
+        if (isAbortError(error) || controller.signal.aborted) return;
+        patch({
+          status: "failed",
+          errorMessage:
+            error instanceof SocialVideoError
+              ? error.message
+              : getApiErrorMessage(error, VIDEO_UPLOAD_FAILED_MESSAGE),
+        });
+      } finally {
+        if (videoUploadRef.current?.key === key) videoUploadRef.current = null;
+      }
+    },
+    [media, mutations, cancelVideoUpload],
+  );
+
+  // Glisser-déposer : une vidéo seule, ou des photos
+  const addDroppedFiles = useCallback(
+    (fileList) => {
+      const files = Array.from(fileList || []);
+      if (files.length === 0) return;
+      const videos = files.filter(isVideoFile);
+      const others = files.filter((file) => !isVideoFile(file));
+      if (videos.length > 0 && others.length === 0) {
+        if (videos.length > 1) {
+          toast.info(
+            "Une seule vidéo par post : seule la première a été ajoutée.",
+          );
+        }
+        addVideo(videos[0]);
+        return;
+      }
+      if (videos.length > 0) {
+        toast.info(
+          "Un post contient soit des photos, soit une vidéo : les vidéos n'ont pas été ajoutées.",
+        );
+      }
+      addFiles(others);
+    },
+    [addFiles, addVideo],
   );
 
   const removeMedia = useCallback((key) => {
+    if (videoUploadRef.current?.key === key) {
+      videoUploadRef.current.controller.abort();
+      videoUploadRef.current = null;
+    }
     setMedia((prev) => prev.filter((m) => m.key !== key));
   }, []);
 
@@ -1109,6 +1530,14 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       ? {
           privacyLevel: tiktok.privacyLevel,
           allowComment: !!tiktok.allowComment && !tiktokInfo?.commentDisabled,
+          // Duos et collages : seulement pour une vidéo (obligatoires alors)
+          ...(videoItem
+            ? {
+                allowDuet: !!tiktok.allowDuet && !tiktokInfo?.duetDisabled,
+                allowStitch:
+                  !!tiktok.allowStitch && !tiktokInfo?.stitchDisabled,
+              }
+            : {}),
           brandOrganic: !!tiktok.commercial && !!tiktok.brandOrganic,
           brandContent: !!tiktok.commercial && !!tiktok.brandContent,
           // Accord donné en publiant (déclaration au-dessus du bouton)
@@ -1116,9 +1545,12 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         }
       : undefined;
     // Consigne TikTok : prévenir que la publication n'est pas immédiate
-    const tiktokDelay = hasTikTok
-      ? " La publication sur TikTok peut prendre quelques minutes."
-      : "";
+    // (une vidéo est traitée par chaque réseau avant d'être en ligne)
+    const tiktokDelay = videoItem
+      ? " La publication d'une vidéo peut prendre quelques minutes."
+      : hasTikTok
+        ? " La publication sur TikTok peut prendre quelques minutes."
+        : "";
     try {
       if (isEdit) {
         await mutations.update(post.id, {
@@ -1304,13 +1736,15 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                 <FieldError messages={contentErrors} />
               </section>
 
-              {/* 3. Images */}
+              {/* 3. Photos ou vidéo */}
               <section className="space-y-2">
                 <div className="flex items-end justify-between gap-3">
-                  <SectionTitle>Images</SectionTitle>
-                  <span className="text-xs text-muted-foreground">
-                    {media.length} / {maxImages.max}
-                  </span>
+                  <SectionTitle>Photos ou vidéo</SectionTitle>
+                  {imageCount > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {imageCount} / {maxImages.max}
+                    </span>
+                  )}
                 </div>
                 <div
                   onDragOver={(e) => {
@@ -1321,47 +1755,64 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                   onDrop={(e) => {
                     e.preventDefault();
                     setDragOver(false);
-                    addFiles(e.dataTransfer?.files);
+                    if (!submitting) addDroppedFiles(e.dataTransfer?.files);
                   }}
                   className={cn(
-                    "rounded-xl border border-dashed p-3 transition-colors",
+                    "space-y-3 rounded-xl border border-dashed p-3 transition-colors",
                     dragOver && "border-[#5A50FF] bg-[#5A50FF]/5",
                   )}
                 >
+                  {videoItem ? (
+                    <VideoTile
+                      item={videoItem}
+                      onRemove={removeMedia}
+                      disabled={submitting}
+                    />
+                  ) : (
+                    media.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {media.map((item, index) => (
+                          <MediaTile
+                            key={item.key}
+                            item={item}
+                            index={index}
+                            count={media.length}
+                            invalidRatio={
+                              instagramChosen &&
+                              !isInstagramRatioValid(item.width, item.height)
+                            }
+                            onRemove={removeMedia}
+                            onMove={moveMedia}
+                            disabled={submitting}
+                          />
+                        ))}
+                      </div>
+                    )
+                  )}
                   <div className="flex flex-wrap gap-2">
-                    {media.map((item, index) => (
-                      <MediaTile
-                        key={item.key}
-                        item={item}
-                        index={index}
-                        count={media.length}
-                        invalidRatio={
-                          instagramChosen &&
-                          !isInstagramRatioValid(item.width, item.height)
-                        }
-                        onRemove={removeMedia}
-                        onMove={moveMedia}
-                        disabled={submitting}
-                      />
-                    ))}
-                    {media.length < maxImages.max && (
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className={cn(
-                          "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border bg-muted/40 text-xs text-muted-foreground hover:bg-muted hover:text-foreground",
-                          media.length === 0
-                            ? "h-20 w-full flex-row gap-2 text-sm"
-                            : "h-20 w-20",
-                        )}
-                      >
-                        <ImagePlus className="h-5 w-5" />
-                        {media.length === 0
-                          ? "Ajouter des images (ou glissez-les ici)"
-                          : "Ajouter"}
-                      </button>
-                    )}
+                    <MediaPickerButton
+                      icon={ImagePlus}
+                      label="Ajouter des photos"
+                      onClick={() => fileInputRef.current?.click()}
+                      lockedReason={videoItem ? PHOTOS_LOCKED_REASON : null}
+                      disabled={submitting || imageCount >= maxImages.max}
+                    />
+                    <MediaPickerButton
+                      icon={Film}
+                      label={
+                        videoItem ? "Remplacer la vidéo" : "Ajouter une vidéo"
+                      }
+                      onClick={() => videoInputRef.current?.click()}
+                      lockedReason={imageCount > 0 ? VIDEO_LOCKED_REASON : null}
+                      disabled={submitting}
+                    />
                   </div>
+                  {media.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Vous pouvez aussi glisser vos fichiers ici. Vidéo : MP4,
+                      MOV ou WebM, 10 minutes et 500 Mo au maximum.
+                    </p>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -1370,8 +1821,20 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                     )}
                     multiple
                     className="hidden"
+                    data-testid="social-post-photo-input"
                     onChange={(e) => {
                       addFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept={VIDEO_INPUT_ACCEPT}
+                    className="hidden"
+                    data-testid="social-post-video-input"
+                    onChange={(e) => {
+                      addVideo(e.target.files?.[0]);
                       e.target.value = "";
                     }}
                   />
@@ -1389,6 +1852,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                     value={tiktok}
                     onChange={patchTiktok}
                     onInfo={setTiktokInfo}
+                    isVideo={!!videoItem}
                   />
                   <FieldError messages={errorsFor("tiktok")} />
                 </section>
@@ -1536,11 +2000,15 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           )}
         >
           <p className="min-h-[1rem] text-xs text-muted-foreground sm:max-w-[55%]">
-            {uploading
-              ? "Envoi des images en cours…"
-              : firstError
-                ? firstError.message
-                : ""}
+            {videoItem?.status === "uploading"
+              ? `Envoi de la vidéo : ${Math.round(videoItem.progress || 0)} %`
+              : videoItem?.status === "processing"
+                ? "Préparation de la vidéo…"
+                : uploading
+                  ? "Envoi des images en cours…"
+                  : firstError
+                    ? firstError.message
+                    : ""}
           </p>
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button
