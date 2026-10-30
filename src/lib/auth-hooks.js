@@ -46,6 +46,22 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
     }
   }
 
+  // ── 1 bis. Connexion web avec Apple sans identifiant configuré ──
+  // La redirection vers Apple ne peut pas être construite (erreur serveur) :
+  // refus expliqué. La connexion de l'application mobile (jeton Apple,
+  // idToken) n'en dépend pas.
+  if (
+    ctx.path === "/sign-in/social" &&
+    ctx.body?.provider === "apple" &&
+    !ctx.body?.idToken &&
+    !process.env.APPLE_CLIENT_ID
+  ) {
+    const { APIError } = await import("better-auth/api");
+    throw new APIError("BAD_REQUEST", {
+      message: "La connexion avec Apple n'est pas disponible pour le moment.",
+    });
+  }
+
   // ── 2. Invitation de membre interdite sans abonnement (essai inclus) ──
   // Pendant l'essai, aucun document `subscription` n'existe (le trial vit sur
   // l'organisation) → on refuse l'invitation. Un plan payant crée un document

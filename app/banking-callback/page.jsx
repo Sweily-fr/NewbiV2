@@ -1,7 +1,7 @@
 import RedirectToApp from "./redirect-to-app";
 
 export const metadata = {
-  title: "Connexion bancaire — Newbi",
+  title: "Connexion bancaire | Newbi",
   robots: "noindex,nofollow",
 };
 

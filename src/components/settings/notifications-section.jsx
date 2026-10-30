@@ -1115,6 +1115,7 @@ export function NotificationsSection({ onClose }) {
                                     Email
                                   </span>
                                   <Switch
+                                    aria-label={`E-mail pour « ${notif.label} »`}
                                     checked={prefs.email}
                                     disabled={savingPreferences}
                                     onCheckedChange={(checked) =>
@@ -1134,6 +1135,7 @@ export function NotificationsSection({ onClose }) {
                                     Push
                                   </span>
                                   <Switch
+                                    aria-label={`Notification push pour « ${notif.label} »`}
                                     checked={prefs.push}
                                     disabled={savingPreferences}
                                     onCheckedChange={(checked) =>

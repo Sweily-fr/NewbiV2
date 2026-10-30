@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { mongoDb } from "@/src/lib/mongodb";
 import { apiError, withErrorHandler } from "@/src/lib/security";
-import { requireAccountManager } from "@/src/lib/gestionnaire-auth";
+import {
+  assertAccountManagerActive,
+  requireAccountManager,
+} from "@/src/lib/gestionnaire-auth";
 import { ManagedClientError } from "@/src/lib/managed-clients";
 import {
   getPayerSwitchPreview,
@@ -56,6 +59,10 @@ async function getHandler(request, { params }) {
  *   retour au client : { status: "done", mode, effectiveAt, … }.
  */
 async function postHandler(request, { params }) {
+  // La session d'abord : sans elle, 401 quel que soit le corps envoyé
+  const { user, manager } = await requireAccountManager(request, {
+    allowSuspended: true,
+  });
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
     return apiError(400, "Requête invalide");
@@ -65,9 +72,7 @@ async function postHandler(request, { params }) {
   }
   // Prendre en charge engage le cabinet : pas s'il est suspendu ; arrêter
   // de payer reste possible
-  const { user, manager } = await requireAccountManager(request, {
-    allowSuspended: body.payer === "client",
-  });
+  if (body.payer === "manager") assertAccountManagerActive(manager);
   const { id } = await params;
   const actor = { type: "manager", userId: user.id, email: user.email };
   const baseUrl =

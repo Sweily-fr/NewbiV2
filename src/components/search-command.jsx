@@ -55,6 +55,7 @@ import {
   RotateCcw,
   History,
 } from "lucide-react";
+import { normalizeSearchText } from "@/src/utils/search-text";
 import { GET_CLIENTS } from "@/src/graphql/clientQueries";
 import {
   GET_INVOICES,
@@ -86,6 +87,22 @@ const formatCurrency = (amount) => {
     style: "currency",
     currency: "EUR",
   }).format(amount);
+};
+
+// Numéro complet d'un document, comme dans les listes : préfixe, tiret, numéro
+const documentReference = (doc) =>
+  [doc?.prefix, doc?.number].filter(Boolean).join("-");
+
+// Référence comparée sans espaces, ni majuscules ni accents
+const compactReference = (text) =>
+  normalizeSearchText(text).replace(/\s+/g, "");
+
+// Saisie qui ressemble à un numéro complet (« F-PIL-0101 », sans espace) :
+// le numéro final, et la référence compacte pour vérifier les résultats
+const parseDocumentReference = (query) => {
+  const text = String(query || "").trim();
+  const match = /^(\S+)-(\d+)$/.exec(text);
+  return match ? { number: match[2], compact: compactReference(text) } : null;
 };
 
 const formatRelativeDate = (date) => {
@@ -382,13 +399,19 @@ export function SearchCommand() {
       const vars = {
         variables: { workspaceId, search: searchQuery, limit: 4 },
       };
+      // Numéro complet (« F-PIL-0101 ») : l'API cherche le numéro seul, la
+      // référence complète est vérifiée à l'affichage
+      const reference = parseDocumentReference(searchQuery);
+      const documentVars = reference
+        ? { variables: { workspaceId, search: reference.number, limit: 8 } }
+        : vars;
       if (canSearchClients) searchClients(vars);
-      if (canSearchInvoices) searchInvoices(vars);
-      if (canSearchQuotes) searchQuotes(vars);
+      if (canSearchInvoices) searchInvoices(documentVars);
+      if (canSearchQuotes) searchQuotes(documentVars);
       if (canSearchProducts) searchProducts(vars);
-      if (canSearchPurchaseOrders) searchPurchaseOrders(vars);
-      if (canSearchCreditNotes) searchCreditNotes(vars);
-      if (canSearchDeliveryNotes) searchDeliveryNotes(vars);
+      if (canSearchPurchaseOrders) searchPurchaseOrders(documentVars);
+      if (canSearchCreditNotes) searchCreditNotes(documentVars);
+      if (canSearchDeliveryNotes) searchDeliveryNotes(documentVars);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -437,24 +460,41 @@ export function SearchCommand() {
     command();
   }, []);
 
+  // Les résultats de l'API sont déjà filtrés par la recherche (sans accents,
+  // numéro complet compris) : leur valeur contient la saisie pour que le
+  // filtre de cmdk ne les masque pas
+  const resultValue = (kind, id) => `${searchQuery} ${kind}-${id}`;
+
   // Extract results (rien pour un type que le rôle ne peut pas lire, même
-  // s'il reste des résultats en cache d'avant un changement de rôle)
+  // s'il reste des résultats en cache d'avant un changement de rôle). Pour
+  // un numéro complet, seuls les documents de cette référence restent.
+  const searchedReference = parseDocumentReference(searchQuery);
+  const byReference = (docs) =>
+    searchedReference
+      ? docs.filter((doc) =>
+          compactReference(documentReference(doc)).includes(
+            searchedReference.compact,
+          ),
+        )
+      : docs;
   const clients = canSearchClients ? clientsData?.clients?.items || [] : [];
   const invoices = canSearchInvoices
-    ? invoicesData?.invoices?.invoices || []
+    ? byReference(invoicesData?.invoices?.invoices || [])
     : [];
-  const quotes = canSearchQuotes ? quotesData?.quotes?.quotes || [] : [];
+  const quotes = canSearchQuotes
+    ? byReference(quotesData?.quotes?.quotes || [])
+    : [];
   const products = canSearchProducts
     ? productsData?.products?.products || []
     : [];
   const purchaseOrders = canSearchPurchaseOrders
-    ? purchaseOrdersData?.purchaseOrders?.purchaseOrders || []
+    ? byReference(purchaseOrdersData?.purchaseOrders?.purchaseOrders || [])
     : [];
   const creditNotes = canSearchCreditNotes
-    ? creditNotesData?.creditNotes?.creditNotes || []
+    ? byReference(creditNotesData?.creditNotes?.creditNotes || [])
     : [];
   const deliveryNotes = canSearchDeliveryNotes
-    ? deliveryNotesData?.deliveryNotes?.deliveryNotes || []
+    ? byReference(deliveryNotesData?.deliveryNotes?.deliveryNotes || [])
     : [];
   // Récents : pas de lien vers une page devenue inaccessible au rôle
   const visibleRecents = recents.filter((item) => canSee(item.url));
@@ -536,6 +576,7 @@ export function SearchCommand() {
                           {clients.map((client) => (
                             <CommandItem
                               key={client.id}
+                              value={resultValue("client", client.id)}
                               onSelect={() =>
                                 runCommand(
                                   () =>
@@ -576,6 +617,7 @@ export function SearchCommand() {
                           {invoices.map((invoice) => (
                             <CommandItem
                               key={invoice.id}
+                              value={resultValue("facture", invoice.id)}
                               onSelect={() =>
                                 runCommand(
                                   () =>
@@ -584,7 +626,7 @@ export function SearchCommand() {
                                     ),
                                   {
                                     id: `inv-${invoice.id}`,
-                                    label: `${invoice.prefix}${invoice.number}`,
+                                    label: documentReference(invoice),
                                     type: "facture",
                                     url: `/dashboard/outils/factures?id=${invoice.id}`,
                                   },
@@ -595,8 +637,7 @@ export function SearchCommand() {
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">
-                                    {invoice.prefix}
-                                    {invoice.number}
+                                    {documentReference(invoice)}
                                   </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {INVOICE_STATUS_LABELS[invoice.status]}
@@ -622,6 +663,7 @@ export function SearchCommand() {
                           {quotes.map((quote) => (
                             <CommandItem
                               key={quote.id}
+                              value={resultValue("devis", quote.id)}
                               onSelect={() =>
                                 runCommand(
                                   () =>
@@ -630,7 +672,7 @@ export function SearchCommand() {
                                     ),
                                   {
                                     id: `quote-${quote.id}`,
-                                    label: `${quote.prefix}${quote.number}`,
+                                    label: documentReference(quote),
                                     type: "devis",
                                     url: `/dashboard/outils/devis?id=${quote.id}`,
                                   },
@@ -641,8 +683,7 @@ export function SearchCommand() {
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">
-                                    {quote.prefix}
-                                    {quote.number}
+                                    {documentReference(quote)}
                                   </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {QUOTE_STATUS_LABELS[quote.status]}
@@ -668,6 +709,7 @@ export function SearchCommand() {
                           {purchaseOrders.map((po) => (
                             <CommandItem
                               key={po.id}
+                              value={resultValue("commande", po.id)}
                               onSelect={() =>
                                 runCommand(
                                   () =>
@@ -676,7 +718,7 @@ export function SearchCommand() {
                                     ),
                                   {
                                     id: `po-${po.id}`,
-                                    label: `${po.prefix}${po.number}`,
+                                    label: documentReference(po),
                                     type: "bon",
                                     url: `/dashboard/outils/bons-commande?id=${po.id}`,
                                   },
@@ -687,8 +729,7 @@ export function SearchCommand() {
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">
-                                    {po.prefix}
-                                    {po.number}
+                                    {documentReference(po)}
                                   </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {PURCHASE_ORDER_STATUS_LABELS[po.status]}
@@ -714,6 +755,7 @@ export function SearchCommand() {
                           {deliveryNotes.map((dn) => (
                             <CommandItem
                               key={dn.id}
+                              value={resultValue("livraison", dn.id)}
                               onSelect={() =>
                                 runCommand(
                                   () =>
@@ -763,6 +805,7 @@ export function SearchCommand() {
                           {creditNotes.map((cn) => (
                             <CommandItem
                               key={cn.id}
+                              value={resultValue("avoir", cn.id)}
                               onSelect={() =>
                                 runCommand(
                                   () =>
@@ -771,7 +814,7 @@ export function SearchCommand() {
                                     ),
                                   {
                                     id: `cn-${cn.id}`,
-                                    label: `${cn.prefix}${cn.number}`,
+                                    label: documentReference(cn),
                                     type: "avoir",
                                     url: `/dashboard/outils/factures?avoir=${cn.id}`,
                                   },
@@ -782,8 +825,7 @@ export function SearchCommand() {
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">
-                                    {cn.prefix}
-                                    {cn.number}
+                                    {documentReference(cn)}
                                   </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {creditNoteStatusLabel(cn.status)}
@@ -809,6 +851,7 @@ export function SearchCommand() {
                           {products.map((product) => (
                             <CommandItem
                               key={product.id}
+                              value={resultValue("produit", product.id)}
                               onSelect={() =>
                                 runCommand(
                                   () =>

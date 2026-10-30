@@ -32,6 +32,9 @@ import {
 } from "lucide-react";
 import { predefinedRoleLabel } from "@/src/lib/role-labels";
 
+const INVITATION_NOT_FOUND =
+  "Invitation introuvable : ce lien n'existe pas ou n'est plus valide. Demandez à la personne qui vous a invité de vous en renvoyer un.";
+
 export default function AcceptInvitationPage() {
   const { invitationId } = useParams();
   const { data: session } = useSession();
@@ -55,12 +58,26 @@ export default function AcceptInvitationPage() {
 
   useEffect(() => {
     const fetchInvitation = async () => {
+      // Lien tronqué ou mal formé (l'identifiant fait 24 caractères
+      // hexadécimaux) : inutile d'interroger l'API
+      if (!/^[0-9a-f]{24}$/i.test(String(invitationId))) {
+        setError(INVITATION_NOT_FOUND);
+        setLoading(false);
+        return;
+      }
       try {
         // Récupérer l'invitation via l'API route custom
         const response = await fetch(`/api/invitations/${invitationId}`);
 
+        // Lien inconnu : message compréhensible plutôt que le code HTTP
+        if (response.status === 404) {
+          setError(INVITATION_NOT_FOUND);
+          return;
+        }
         if (!response.ok) {
-          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+          throw new Error(
+            "Impossible de charger l'invitation pour le moment. Réessayez dans quelques instants.",
+          );
         }
 
         const data = await response.json();
@@ -125,12 +142,17 @@ export default function AcceptInvitationPage() {
   const handleAcceptInvitation = async () => {
     if (!session?.user) {
       // Vérifier si l'utilisateur existe déjà pour décider de la redirection
+      // L'adresse n'est connue que par le lien de l'e-mail (?email=) : sans
+      // elle, la page suivante la demande
+      const emailParam = invitation.email
+        ? `&email=${encodeURIComponent(invitation.email)}`
+        : "";
       if (userExists) {
         // L'utilisateur existe mais n'est pas connecté -> rediriger vers login
-        window.location.href = `/auth/login?invitation=${invitationId}&email=${encodeURIComponent(invitation.email)}`;
+        window.location.href = `/auth/login?invitation=${invitationId}${emailParam}`;
       } else {
         // L'utilisateur n'existe pas -> rediriger vers signup
-        window.location.href = `/auth/signup?invitation=${invitationId}&email=${encodeURIComponent(invitation.email)}`;
+        window.location.href = `/auth/signup?invitation=${invitationId}${emailParam}`;
       }
       return;
     }
@@ -248,6 +270,21 @@ export default function AcceptInvitationPage() {
     );
   }
 
+  // Adresse invitée connue seulement par le lien de l'e-mail : sans elle, on
+  // ne compare pas (la route d'acceptation vérifie le destinataire)
+  const invitedEmail = invitation.email ? invitation.email.toLowerCase() : null;
+  const isWrongAccount = Boolean(
+    session?.user &&
+    invitedEmail &&
+    session.user.email.toLowerCase() !== invitedEmail,
+  );
+  const isExpired = Boolean(
+    invitation.expiresAt && new Date(invitation.expiresAt) < new Date(),
+  );
+  const canAnswer = invitation.status === "pending" && !isExpired;
+  const expiredMessage =
+    "Cette invitation a expiré. Demandez à la personne qui vous a invité de vous en envoyer une nouvelle.";
+
   // ── Passerelle mobile ──────────────────────────────────────────────
   // Sur téléphone, on ne finalise pas l'invitation dans le navigateur : on
   // renvoie vers l'app Newbi via le scheme custom (newbi://), qui fonctionne
@@ -277,7 +314,7 @@ export default function AcceptInvitationPage() {
             </p>
           </div>
 
-          {invitation.status === "pending" ? (
+          {canAnswer ? (
             <div className="w-full space-y-3">
               <a href={appDeepLink} className="block">
                 <Button className="w-full bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer">
@@ -297,7 +334,9 @@ export default function AcceptInvitationPage() {
             <div className="pt-2">
               <CheckCircleIcon className="h-10 w-10 text-gray-400 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">
-                Cette invitation a déjà été traitée.
+                {isExpired && invitation.status === "pending"
+                  ? expiredMessage
+                  : "Cette invitation a déjà été traitée."}
               </p>
             </div>
           )}
@@ -465,34 +504,32 @@ export default function AcceptInvitationPage() {
               .
             </p>
 
-            {invitation.status === "pending" && (
+            {canAnswer && (
               <div className="space-y-3 pt-4">
-                {session?.user &&
-                  session.user.email.toLowerCase() !==
-                    invitation.email.toLowerCase() && (
-                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
-                      <p className="font-medium mb-2">⚠️ Attention</p>
-                      <p className="mb-2">
-                        Cette invitation est destinée à{" "}
-                        <strong>{invitation.email}</strong>
-                      </p>
-                      <p className="mb-3">
-                        Vous êtes connecté avec{" "}
-                        <strong>{session.user.email}</strong>
-                      </p>
-                      <Button
-                        onClick={async () => {
-                          await authClient.signOut();
-                          window.location.reload();
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="w-full bg-white cursor-pointer"
-                      >
-                        Se déconnecter
-                      </Button>
-                    </div>
-                  )}
+                {isWrongAccount && (
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
+                    <p className="font-medium mb-2">⚠️ Attention</p>
+                    <p className="mb-2">
+                      Cette invitation est destinée à{" "}
+                      <strong>{invitation.email}</strong>
+                    </p>
+                    <p className="mb-3">
+                      Vous êtes connecté avec{" "}
+                      <strong>{session.user.email}</strong>
+                    </p>
+                    <Button
+                      onClick={async () => {
+                        await authClient.signOut();
+                        window.location.reload();
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full bg-white cursor-pointer"
+                    >
+                      Se déconnecter
+                    </Button>
+                  </div>
+                )}
 
                 <div className="flex gap-3">
                   <Button
@@ -506,12 +543,7 @@ export default function AcceptInvitationPage() {
 
                   <Button
                     onClick={handleAcceptInvitation}
-                    disabled={
-                      isAccepting ||
-                      (session?.user &&
-                        session.user.email.toLowerCase() !==
-                          invitation.email.toLowerCase())
-                    }
+                    disabled={isAccepting || isWrongAccount}
                     className="bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1"
                   >
                     {isAccepting ? (
@@ -525,8 +557,7 @@ export default function AcceptInvitationPage() {
                       ) : (
                         "Créer mon compte"
                       )
-                    ) : session.user.email.toLowerCase() !==
-                      invitation.email.toLowerCase() ? (
+                    ) : isWrongAccount ? (
                       "Mauvais compte"
                     ) : (
                       "Accepter l'invitation"
@@ -541,6 +572,15 @@ export default function AcceptInvitationPage() {
                       : "Vous serez redirigé vers l'inscription."}
                   </p>
                 )}
+              </div>
+            )}
+
+            {isExpired && invitation.status === "pending" && (
+              <div className="pt-4">
+                <XCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {expiredMessage}
+                </p>
               </div>
             )}
 

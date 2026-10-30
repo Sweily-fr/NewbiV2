@@ -289,7 +289,8 @@ export function PurchaseInvoiceReconciliationToastProvider({ children }) {
   // Toast monté sur toutes les pages : sans lecture des factures d'achat,
   // l'API refuserait les suggestions (FORBIDDEN) à chaque polling
   const { suggestions, linkTransaction } = usePurchaseInvoiceReconciliation({
-    skip: permissionsReady && !canRead("purchaseInvoices"),
+    // Droits attendus : sans lecture des factures d'achat, FORBIDDEN
+    skip: !permissionsReady || !canRead("purchaseInvoices"),
   });
 
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());

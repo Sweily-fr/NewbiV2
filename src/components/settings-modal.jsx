@@ -115,9 +115,8 @@ export function SettingsModal({
   // Réglages lisibles avec les factures ou les applications (FORBIDDEN sinon)
   const { settings: eInvoicingSettings } = useEInvoicingSettings({
     skip:
-      permissionsReady &&
-      !can("invoices", "read") &&
-      !can("integrations", "read"),
+      !permissionsReady ||
+      (!can("invoices", "read") && !can("integrations", "read")),
   });
 
   const formMethods = useForm({

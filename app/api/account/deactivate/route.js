@@ -27,10 +27,23 @@ export async function POST(request) {
       );
     }
 
-    // Désactiver le compte (mettre isActive à false) via MongoDB directement
     const { mongoDb } = await import("@/src/lib/mongodb");
     const usersCollection = mongoDb.collection("user");
 
+    // Invalider TOUTES les sessions de l'utilisateur (multi-device)
+    // signOut only revokes the current session token; deleteMany ensures
+    // all devices are logged out immediately (Principle 5 — isActive effect is immediate)
+    const closeSessions = () =>
+      mongoDb.collection("session").deleteMany({
+        userId: toObjectId(session.user.id),
+      });
+
+    // Sessions fermées AVANT que le compte apparaisse désactivé (jamais un
+    // compte désactivé aux sessions encore ouvertes), puis une seconde fois
+    // après, pour une connexion glissée entre les deux
+    await closeSessions();
+
+    // Désactiver le compte (mettre isActive à false) via MongoDB directement
     await usersCollection.updateOne(
       { _id: new (await import("mongodb")).ObjectId(session.user.id) },
       {
@@ -41,17 +54,23 @@ export async function POST(request) {
       },
     );
 
-    // Invalider TOUTES les sessions de l'utilisateur (multi-device)
-    // signOut only revokes the current session token; deleteMany ensures
-    // all devices are logged out immediately (Principle 5 — isActive effect is immediate)
-    await mongoDb.collection("session").deleteMany({
-      userId: toObjectId(session.user.id),
-    });
+    await closeSessions();
 
-    return NextResponse.json({
+    // Cookies de session effacés dans la réponse : sans eux, le cache de
+    // session du navigateur gardait la page active jusqu'à la redirection, et
+    // ses requêtes (espace actif…) échouaient en erreur serveur
+    const signOut = await auth.api
+      .signOut({ headers: request.headers, asResponse: true })
+      .catch(() => null);
+
+    const response = NextResponse.json({
       success: true,
       message: "Compte désactivé avec succès",
     });
+    for (const cookie of signOut?.headers?.getSetCookie?.() || []) {
+      response.headers.append("set-cookie", cookie);
+    }
+    return response;
   } catch (error) {
     console.error("Erreur lors de la désactivation du compte:", error);
     return NextResponse.json(

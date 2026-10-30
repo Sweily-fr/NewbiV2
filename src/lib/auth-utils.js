@@ -130,6 +130,16 @@ export async function sendVerificationEmail(user, url) {
   });
 }
 
+// Confirmation d'un changement d'adresse e-mail, envoyée à l'adresse actuelle
+export async function sendChangeEmailConfirmation(user, newEmail, url) {
+  await resend.emails.send({
+    to: user.email,
+    subject: "Confirmez le changement de votre adresse e-mail - Newbi",
+    html: emailTemplates.changeEmailConfirmation(url, newEmail),
+    from: "Newbi <noreply@newbi.sweily.fr>",
+  });
+}
+
 // Fonction pour envoyer le CODE de vérification email (OTP) — flux mobile.
 export async function sendVerificationOtpEmail(email, otp) {
   await resend.emails.send({

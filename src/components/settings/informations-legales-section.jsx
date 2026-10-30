@@ -701,6 +701,7 @@ export function InformationsLegalesSection({
                   </p>
                 </div>
                 <Switch
+                  aria-label="Assujetti à la TVA"
                   checked={isVatSubject}
                   onCheckedChange={handleVatSubjectChange}
                   disabled={!canManageOrgSettings}
@@ -858,6 +859,7 @@ export function InformationsLegalesSection({
                     </p>
                   </div>
                   <Switch
+                    aria-label="Franchise en base de TVA"
                     checked={isVatFranchise}
                     onCheckedChange={handleVatFranchiseChange}
                     disabled={!canManageOrgSettings}

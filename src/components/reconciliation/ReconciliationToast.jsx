@@ -323,7 +323,8 @@ export function ReconciliationToastProvider({ children }) {
   const canReconcile = permissionsReady && canDo("banking", "reconcile");
   const router = useRouter();
   // Toast monté sur toutes les pages : sans lecture des transactions, l'API
-  // refuserait reconciliationSuggestions (FORBIDDEN) à chaque polling
+  // refuserait reconciliationSuggestions (FORBIDDEN) à chaque polling ; on
+  // attend les droits pour ne pas partir avant de les connaître
   const {
     suggestions,
     linkTransaction,
@@ -332,7 +333,7 @@ export function ReconciliationToastProvider({ children }) {
     loading,
     error,
   } = useReconciliation({
-    skip: permissionsReady && !canRead("banking"),
+    skip: !permissionsReady || !canRead("banking"),
   });
 
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());

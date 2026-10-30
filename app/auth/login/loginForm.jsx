@@ -16,6 +16,7 @@ import {
 import { TwoFactorModal } from "./components/TwoFactorModal";
 import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 import { capture, identify } from "@/src/lib/analytics";
+import { startupPagePath } from "@/src/lib/startup-page";
 
 // Compte gestionnaire (cabinet) : il arrive sur son espace, la liste de ses
 // clients, plutôt que sur le tableau de bord d'une entreprise
@@ -391,29 +392,7 @@ const LoginForm = () => {
 
           // Rediriger vers la page préférée de l'utilisateur
           // dashboard/layout.jsx redirigera vers /auth/signup si pas d'abonnement
-          const routeMap = {
-            dashboard: "/dashboard",
-            outils: "/dashboard",
-            kanban: "/dashboard/outils/kanban",
-            calendar: "/dashboard/calendar",
-            factures: "/dashboard/outils/factures",
-            devis: "/dashboard/outils/devis",
-            clients: "/dashboard/clients",
-            transactions: "/dashboard/outils/transactions",
-            depenses: "/dashboard/outils/transactions",
-            signatures: "/dashboard/outils/signatures-mail",
-            transferts: "/dashboard/outils/transferts-fichiers",
-            "documents-partages": "/dashboard/outils/documents-partages",
-            catalogues: "/dashboard/catalogues",
-            collaborateurs: "/dashboard/collaborateurs",
-            analytics: "/dashboard/analytics",
-            favoris: "/dashboard/favoris",
-          };
-
-          const redirectPath =
-            userRedirectPage && userRedirectPage !== "last-page"
-              ? routeMap[userRedirectPage] || "/dashboard"
-              : "/dashboard";
+          const redirectPath = startupPagePath(userRedirectPage);
 
           router.push(redirectPath);
         }
@@ -636,29 +615,7 @@ const LoginForm = () => {
           return true;
         }
 
-        const routeMap = {
-          dashboard: "/dashboard",
-          outils: "/dashboard",
-          kanban: "/dashboard/outils/kanban",
-          calendar: "/dashboard/calendar",
-          factures: "/dashboard/outils/factures",
-          devis: "/dashboard/outils/devis",
-          clients: "/dashboard/clients",
-          transactions: "/dashboard/outils/transactions",
-          depenses: "/dashboard/outils/transactions",
-          signatures: "/dashboard/outils/signatures-mail",
-          transferts: "/dashboard/outils/transferts-fichiers",
-          "documents-partages": "/dashboard/outils/documents-partages",
-          catalogues: "/dashboard/catalogues",
-          collaborateurs: "/dashboard/collaborateurs",
-          analytics: "/dashboard/analytics",
-          favoris: "/dashboard/favoris",
-        };
-
-        const redirectPath =
-          userRedirectPage && userRedirectPage !== "last-page"
-            ? routeMap[userRedirectPage] || "/dashboard"
-            : "/dashboard";
+        const redirectPath = startupPagePath(userRedirectPage);
 
         router.push(redirectPath);
       }
