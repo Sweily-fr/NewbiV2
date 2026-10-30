@@ -270,7 +270,7 @@ test.describe("Devis (propriétaire)", () => {
       // Couleurs : ce qu'elles règlent, puis leur code (couleurs de l'organisation « Ventes »).
       "button Couleur du texte (000000)": { fenetre: "(fenêtre sans titre)" },
       "button Couleur des titres du tableau (FFFFFF)": { fenetre: "(fenêtre sans titre)" },
-      "button Couleur de fond du tableau (5C50FF)": { fenetre: "(fenêtre sans titre)" },
+      "button Couleur de fond du tableau (5B50FF)": { fenetre: "(fenêtre sans titre)" },
       "button Au centre": { sansEffet: "position du client, visible sur l'aperçu seulement" },
       "button À droite": { sansEffet: "position du client, visible sur l'aperçu seulement" },
       // Trois listes de suggestions (en-tête, conditions, bas de page) : la première est essayée.
