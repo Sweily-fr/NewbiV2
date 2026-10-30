@@ -11,6 +11,7 @@ import {
   GET_BOARD_SOCIAL_POSTS,
   GET_SOCIAL_POST_MEDIA,
   GET_SOCIAL_PUBLISHING_STATUS,
+  GET_SOCIAL_TRENDING_SOUNDS,
   GET_TIKTOK_CREATOR_INFO,
   REFRESH_SOCIAL_ACCOUNTS,
   RETRY_SOCIAL_POST,
@@ -21,9 +22,12 @@ import {
   UPLOAD_SOCIAL_VIDEO_CHUNK,
 } from "@/src/graphql/socialPublishingQueries";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
+import { throwIfMutationErrors } from "@/src/graphql/mutationErrors";
 import {
   SOCIAL_PLATFORMS,
+  getConnectorLabel,
   getPlatformLabel,
+  normalizeConnectors,
   shouldPollSocialPosts,
 } from "@/src/utils/social-post-rules";
 import { uploadSocialVideo } from "@/src/utils/social-video-upload";
@@ -77,53 +81,65 @@ export function useSocialPublishingStatus(workspaceId, { skip = false } = {}) {
   );
 
   const status = data?.socialPublishingStatus || null;
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    // Réseaux connectables par l'espace (fournisseur configuré côté API)
+    const platforms = Array.isArray(status?.platforms)
+      ? status.platforms
+      : SOCIAL_PLATFORMS;
+    return {
       enabled: !!status?.enabled,
       canManageAccounts: !!status?.canManageAccounts,
       canSchedule: !!status?.canSchedule,
       accounts: status?.accounts || EMPTY,
-      // Réseaux connectables par l'espace (fournisseur configuré côté API)
-      platforms: Array.isArray(status?.platforms)
-        ? status.platforms
-        : SOCIAL_PLATFORMS,
+      platforms,
+      // Façons de connecter chaque réseau (« Instagram », « Instagram via
+      // Facebook »…), une par réseau si l'API ne les donne pas
+      connectors: normalizeConnectors(status?.connectors, platforms),
       xPostQuota: status?.xPostQuota || null,
       loaded: !!status || (!loading && !!error),
       loading,
       error,
       refetch,
-    }),
-    [status, loading, error, refetch],
-  );
+    };
+  }, [status, loading, error, refetch]);
 }
 
 /**
  * Lance la connexion d'un réseau : l'API renvoie l'adresse d'autorisation,
  * le navigateur y part et revient sur `returnTo` (?social_connected=…).
+ * `connector` : clé d'un SocialConnector (« instagram_facebook »…), absente
+ * pour la connexion habituelle du réseau. `connecting` : clé (ou réseau) en
+ * cours de connexion.
  */
 export function useConnectSocialAccount(workspaceId) {
   const [connectMutation] = useMutation(CONNECT_SOCIAL_ACCOUNT);
-  const [connectingPlatform, setConnectingPlatform] = useState(null);
+  const [connecting, setConnecting] = useState(null);
 
   const connect = useCallback(
-    async (platform, returnTo, { beforeRedirect } = {}) => {
+    async (platform, returnTo, { connector, beforeRedirect } = {}) => {
       if (!platform) return;
-      setConnectingPlatform(platform);
+      setConnecting(connector || platform);
       try {
-        const { data } = await connectMutation({
-          variables: { platform, returnTo, workspaceId },
+        const result = await connectMutation({
+          variables: {
+            platform,
+            ...(connector ? { connector } : {}),
+            returnTo,
+            workspaceId,
+          },
         });
-        const url = data?.connectSocialAccount;
+        throwIfMutationErrors(result);
+        const url = result?.data?.connectSocialAccount;
         if (!url) throw new Error("Adresse de connexion absente");
         beforeRedirect?.();
         window.location.href = url;
         // On garde l'indicateur : la page va changer
       } catch (error) {
-        setConnectingPlatform(null);
+        setConnecting(null);
         toast.error(
           getApiErrorMessage(
             error,
-            `Impossible de lancer la connexion à ${getPlatformLabel(platform)}. Réessayez.`,
+            `Impossible de lancer la connexion à ${getConnectorLabel(connector || platform)}. Réessayez.`,
           ),
         );
       }
@@ -131,7 +147,7 @@ export function useConnectSocialAccount(workspaceId) {
     [connectMutation, workspaceId],
   );
 
-  return { connect, connectingPlatform };
+  return { connect, connecting };
 }
 
 /** Déconnexion et actualisation des comptes (Paramètres) */
@@ -154,9 +170,11 @@ export function useSocialAccountActions(workspaceId) {
   const disconnect = useCallback(
     async (account) => {
       try {
-        await disconnectMutation({
-          variables: { accountId: account.id, workspaceId },
-        });
+        throwIfMutationErrors(
+          await disconnectMutation({
+            variables: { accountId: account.id, workspaceId },
+          }),
+        );
         toast.success(
           `Compte ${getPlatformLabel(account.platform)} déconnecté`,
         );
@@ -173,7 +191,9 @@ export function useSocialAccountActions(workspaceId) {
 
   const refresh = useCallback(async () => {
     try {
-      await refreshMutation({ variables: { workspaceId } });
+      throwIfMutationErrors(
+        await refreshMutation({ variables: { workspaceId } }),
+      );
       toast.success("Comptes actualisés");
     } catch (error) {
       toast.error(
@@ -208,6 +228,43 @@ export function useBoardSocialPosts({ boardId, workspaceId, enabled }) {
 
 /** Faut-il activer le rafraîchissement périodique ? (réexport pour la page) */
 export { shouldPollSocialPosts, POLL_INTERVAL_MS };
+
+/**
+ * Sons proposés pour un compte (Instagram via Facebook ou TikTok Business) :
+ * tendances sans `search`, recherche par mot pour Instagram (`kind` "music"
+ * ou "original_sound"). Gardés en cache par (compte, kind, search).
+ */
+export function useSocialTrendingSounds({
+  accountId,
+  workspaceId,
+  search,
+  kind,
+  skip = false,
+}) {
+  const { data, loading, error, refetch } = useQuery(
+    GET_SOCIAL_TRENDING_SOUNDS,
+    {
+      variables: {
+        accountId,
+        ...(search ? { search } : {}),
+        ...(kind ? { kind } : {}),
+        workspaceId,
+      },
+      skip: skip || !accountId || !workspaceId,
+      fetchPolicy: "cache-first",
+      errorPolicy: "all",
+      context: { skipErrorToast: true },
+      notifyOnNetworkStatusChange: true,
+    },
+  );
+  return {
+    sounds: data?.socialTrendingSounds || EMPTY,
+    loaded: !!data?.socialTrendingSounds,
+    loading,
+    error,
+    refetch,
+  };
+}
 
 /** Réglages TikTok du compte (visibilités permises, commentaires, quota) */
 export function useTikTokCreatorInfo(accountId, workspaceId) {
@@ -320,50 +377,57 @@ export function useSocialPostMutations({ boardId, workspaceId }) {
   const [completeVideoMutation] = useMutation(COMPLETE_SOCIAL_VIDEO_UPLOAD);
   const client = useApolloClient();
 
+  // Refus de l'API relancés : avec errorPolicy "all" (défaut des mutations
+  // dans apolloClient.js), ils arrivaient en résultat vide, sans message
   const schedule = useCallback(
     async (input) => {
-      const { data } = await scheduleMutation({
+      const result = await scheduleMutation({
         variables: { input: { boardId, ...input }, workspaceId },
       });
-      return data?.scheduleSocialPost || null;
+      throwIfMutationErrors(result);
+      return result?.data?.scheduleSocialPost || null;
     },
     [scheduleMutation, boardId, workspaceId],
   );
 
   const update = useCallback(
     async (id, input) => {
-      const { data } = await updateMutation({
+      const result = await updateMutation({
         variables: { id, input, workspaceId },
       });
-      return data?.updateSocialPost || null;
+      throwIfMutationErrors(result);
+      return result?.data?.updateSocialPost || null;
     },
     [updateMutation, workspaceId],
   );
 
   const cancel = useCallback(
     async (id) => {
-      const { data } = await cancelMutation({
+      const result = await cancelMutation({
         variables: { id, workspaceId },
       });
-      return data?.cancelSocialPost || null;
+      throwIfMutationErrors(result);
+      return result?.data?.cancelSocialPost || null;
     },
     [cancelMutation, workspaceId],
   );
 
   const retry = useCallback(
     async (id) => {
-      const { data } = await retryMutation({ variables: { id, workspaceId } });
-      return data?.retrySocialPost || null;
+      const result = await retryMutation({ variables: { id, workspaceId } });
+      throwIfMutationErrors(result);
+      return result?.data?.retrySocialPost || null;
     },
     [retryMutation, workspaceId],
   );
 
   const upload = useCallback(
     async (file) => {
-      const { data } = await uploadMutation({
+      const result = await uploadMutation({
         variables: { file, workspaceId },
       });
-      return data?.uploadSocialPostMedia || null;
+      throwIfMutationErrors(result);
+      return result?.data?.uploadSocialPostMedia || null;
     },
     [uploadMutation, workspaceId],
   );

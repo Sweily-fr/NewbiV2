@@ -24,6 +24,9 @@ export const SOCIAL_POST_MEDIA_FRAGMENT = gql`
   }
 `;
 
+// connector : null (connexion habituelle du réseau), "facebook" (Instagram
+// connecté via Facebook) ou "business" (TikTok Business). capabilities : ce
+// que le compte permet (stories, son tendance, brouillon TikTok).
 export const SOCIAL_ACCOUNT_FRAGMENT = gql`
   fragment SocialAccountFields on SocialAccount {
     id
@@ -33,6 +36,25 @@ export const SOCIAL_ACCOUNT_FRAGMENT = gql`
     avatarUrl
     status
     connectedAt
+    connector
+    capabilities {
+      stories
+      sounds
+      drafts
+      draftsNeedReconnect
+    }
+  }
+`;
+
+// Son choisi pour un réseau du post (volumes de 0 à 100)
+export const SOCIAL_POST_SOUND_FRAGMENT = gql`
+  fragment SocialPostSoundFields on SocialPostSound {
+    id
+    title
+    artist
+    coverUrl
+    volume
+    videoVolume
   }
 `;
 
@@ -54,6 +76,8 @@ export const SOCIAL_POST_FRAGMENT = gql`
       platformPostUrl
       errorMessage
       publishedAt
+      deliveredAs
+      storyCount
     }
     scheduledFor
     timezone
@@ -65,12 +89,26 @@ export const SOCIAL_POST_FRAGMENT = gql`
       allowStitch
       brandOrganic
       brandContent
+      mode
+      sound {
+        ...SocialPostSoundFields
+      }
+    }
+    instagramSettings {
+      format
+      sound {
+        ...SocialPostSoundFields
+      }
+    }
+    facebookSettings {
+      format
     }
     createdBy
     createdAt
     updatedAt
   }
   ${SOCIAL_POST_MEDIA_FRAGMENT}
+  ${SOCIAL_POST_SOUND_FRAGMENT}
 `;
 
 export const GET_SOCIAL_PUBLISHING_STATUS = gql`
@@ -82,6 +120,12 @@ export const GET_SOCIAL_PUBLISHING_STATUS = gql`
       canSchedule
       accounts {
         ...SocialAccountFields
+      }
+      connectors {
+        key
+        platform
+        label
+        description
       }
       xPostQuota {
         plan
@@ -122,14 +166,47 @@ export const GET_TIKTOK_CREATOR_INFO = gql`
   }
 `;
 
+// Sons proposés pour un compte (Instagram via Facebook ou TikTok Business) :
+// tendances sans `search`, recherche par mot (Instagram seulement). kind
+// (Instagram) : "music" (défaut) ou "original_sound". previewUrl : extrait
+// temporaire chez le réseau, jamais gardé.
+export const GET_SOCIAL_TRENDING_SOUNDS = gql`
+  query GetSocialTrendingSounds(
+    $accountId: ID!
+    $search: String
+    $kind: String
+    $workspaceId: ID
+  ) {
+    socialTrendingSounds(
+      accountId: $accountId
+      search: $search
+      kind: $kind
+      workspaceId: $workspaceId
+    ) {
+      id
+      title
+      artist
+      coverUrl
+      previewUrl
+      durationMs
+      rank
+      kind
+    }
+  }
+`;
+
+// connector : clé d'un SocialConnector (« instagram_facebook »,
+// « tiktok_business »…), défaut : connexion habituelle du réseau
 export const CONNECT_SOCIAL_ACCOUNT = gql`
   mutation ConnectSocialAccount(
     $platform: String!
+    $connector: String
     $returnTo: String
     $workspaceId: ID
   ) {
     connectSocialAccount(
       platform: $platform
+      connector: $connector
       returnTo: $returnTo
       workspaceId: $workspaceId
     )

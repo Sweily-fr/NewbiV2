@@ -67,6 +67,7 @@ import {
   formatParisDateTime,
   formatParisShortDateTime,
   formatVideoDuration,
+  getAccountConnectorKey,
   getDefaultScheduleParts,
   getMaxImages,
   getParisToday,
@@ -79,6 +80,7 @@ import {
   isVideoMedia,
   isoToParisParts,
   joinLabels,
+  normalizeConnectors,
   parisPartsToIso,
   uniquePlatforms,
   validateSocialPost,
@@ -91,6 +93,7 @@ import {
 } from "@/src/utils/social-video-upload";
 import {
   SocialAccountAvatar,
+  SocialAccountConnectorMention,
   SocialNetworkIcon,
   getSocialAccountName,
 } from "./SocialNetworkIcon";
@@ -245,44 +248,52 @@ function SectionTitle({ children, htmlFor }) {
 
 // ── Comptes ──────────────────────────────────────────────────────────────
 
-function ConnectNetworkButtons({ platforms, onConnect, connectingPlatform }) {
+function ConnectNetworkButtons({ connectors, onConnect, connecting }) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      {platforms.map((platform) => (
-        <Button
-          key={platform}
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onConnect(platform)}
-          disabled={!!connectingPlatform}
-        >
-          {connectingPlatform === platform ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <SocialNetworkIcon platform={platform} title="" />
-          )}
-          {getPlatformLabel(platform)}
-        </Button>
-      ))}
+      {connectors.map((connector) => {
+        const button = (
+          <Button
+            key={connector.key}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onConnect(connector.platform, connector.key)}
+            disabled={!!connecting}
+          >
+            {connecting === connector.key ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <SocialNetworkIcon platform={connector.platform} title="" />
+            )}
+            {connector.label}
+          </Button>
+        );
+        if (!connector.description) return button;
+        return (
+          <Tooltip key={connector.key}>
+            <TooltipTrigger asChild>{button}</TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              {connector.description}
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }
 
 function AccountsPicker({
   accounts,
-  availablePlatforms,
+  connectors,
   selectedIds,
   onToggle,
   canManageAccounts,
   onConnect,
-  connectingPlatform,
+  connecting,
   allowAdd,
 }) {
-  // Réseaux connectables, dans l'ordre habituel
-  const connectable = SOCIAL_PLATFORMS.filter((platform) =>
-    availablePlatforms.includes(platform),
-  );
+  const connectorKeys = new Set(connectors.map((c) => c.key));
   if (accounts.length === 0) {
     return (
       <div className="rounded-xl border border-dashed px-4 py-6 text-center">
@@ -292,7 +303,7 @@ function AccountsPicker({
         <p className="text-sm font-medium">
           Connectez votre premier réseau social
         </p>
-        {canManageAccounts && connectable.length === 0 ? (
+        {canManageAccounts && connectors.length === 0 ? (
           <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
             Aucun réseau n&apos;est disponible pour le moment.
           </p>
@@ -303,9 +314,9 @@ function AccountsPicker({
               se fait en quelques clics, sans créer de compte.
             </p>
             <ConnectNetworkButtons
-              platforms={connectable}
+              connectors={connectors}
               onConnect={onConnect}
-              connectingPlatform={connectingPlatform}
+              connecting={connecting}
             />
           </>
         ) : (
@@ -324,6 +335,8 @@ function AccountsPicker({
         const needsReconnect = account.status !== "active";
         const selected = selectedIds.includes(account.id);
         const name = getSocialAccountName(account);
+        // Reconnexion par le même chemin (« Instagram via Facebook »…)
+        const connectorKey = getAccountConnectorKey(account);
         if (needsReconnect) {
           return (
             <div
@@ -337,14 +350,15 @@ function AccountsPicker({
                 className="opacity-50"
               />
               <span className="max-w-[140px] truncate">{name}</span>
-              {canManageAccounts && connectable.includes(account.platform) ? (
+              <SocialAccountConnectorMention account={account} />
+              {canManageAccounts && connectorKeys.has(connectorKey) ? (
                 <button
                   type="button"
-                  onClick={() => onConnect(account.platform)}
-                  disabled={!!connectingPlatform}
+                  onClick={() => onConnect(account.platform, connectorKey)}
+                  disabled={!!connecting}
                   className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/30 dark:text-amber-300"
                 >
-                  {connectingPlatform === account.platform ? (
+                  {connecting === connectorKey ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <RefreshCw className="h-3 w-3" />
@@ -374,6 +388,7 @@ function AccountsPicker({
           >
             <SocialAccountAvatar account={account} size={24} />
             <span className="max-w-[160px] truncate">{name}</span>
+            <SocialAccountConnectorMention account={account} />
             <span
               className={cn(
                 "flex h-4 w-4 items-center justify-center rounded-full border",
@@ -388,7 +403,7 @@ function AccountsPicker({
         );
       })}
 
-      {canManageAccounts && allowAdd && connectable.length > 0 && (
+      {canManageAccounts && allowAdd && connectors.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -399,16 +414,27 @@ function AccountsPicker({
               Ajouter un compte
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            {connectable.map((platform) => (
+          <DropdownMenuContent align="start" className="w-64">
+            {connectors.map((connector) => (
               <DropdownMenuItem
-                key={platform}
-                onSelect={() => onConnect(platform)}
-                disabled={!!connectingPlatform}
-                className="cursor-pointer gap-2"
+                key={connector.key}
+                onSelect={() => onConnect(connector.platform, connector.key)}
+                disabled={!!connecting}
+                className="cursor-pointer items-start gap-2"
               >
-                <SocialNetworkIcon platform={platform} title="" />
-                {getPlatformLabel(platform)}
+                <SocialNetworkIcon
+                  platform={connector.platform}
+                  title=""
+                  className="mt-0.5"
+                />
+                <span className="min-w-0">
+                  <span className="block">{connector.label}</span>
+                  {connector.description && (
+                    <span className="block text-xs text-muted-foreground">
+                      {connector.description}
+                    </span>
+                  )}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -1042,7 +1068,15 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     () => sortAccounts(status?.accounts),
     [status?.accounts],
   );
-  const { connect, connectingPlatform } = useConnectSocialAccount(workspaceId);
+  // Façons de connecter chaque réseau (déjà normalisées par le hook ; les
+  // simulations des tests n'en donnent pas toujours)
+  const connectors = useMemo(
+    () =>
+      status?.connectors ||
+      normalizeConnectors(null, status?.platforms || SOCIAL_PLATFORMS),
+    [status?.connectors, status?.platforms],
+  );
+  const { connect, connecting } = useConnectSocialAccount(workspaceId);
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [content, setContent] = useState("");
@@ -1302,12 +1336,12 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   ]);
 
   const handleConnect = useCallback(
-    (platform) => {
+    (platform, connector) => {
       const pathname = window.location.pathname;
       const returnTo = isEdit
         ? `${pathname}?task=${encodeURIComponent(post.taskId)}`
         : buildComposerReturnTo(pathname);
-      connect(platform, returnTo, { beforeRedirect: saveDraft });
+      connect(platform, returnTo, { connector, beforeRedirect: saveDraft });
     },
     [connect, isEdit, post?.taskId, saveDraft],
   );
@@ -1675,12 +1709,12 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                 <SectionTitle>Publier sur</SectionTitle>
                 <AccountsPicker
                   accounts={accounts}
-                  availablePlatforms={status?.platforms || SOCIAL_PLATFORMS}
+                  connectors={connectors}
                   selectedIds={selectedIds}
                   onToggle={toggleAccount}
                   canManageAccounts={status?.canManageAccounts}
                   onConnect={handleConnect}
-                  connectingPlatform={connectingPlatform}
+                  connecting={connecting}
                   allowAdd={!isEdit}
                 />
                 <FieldError messages={errorsFor("accounts")} />
