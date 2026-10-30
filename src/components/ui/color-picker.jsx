@@ -151,7 +151,6 @@ export function ColorPicker({
   const [colorFormat, setColorFormat] = useState("HEX"); // HEX, RGB, HSL
   const colorInputRef = useRef(null);
   const pickerRef = useRef(null);
-  const isExternalSync = useRef(false);
 
   // Gérer le changement de couleur depuis l'input natif
   const handleNativeColorChange = (e) => {
@@ -360,7 +359,6 @@ export function ColorPicker({
   React.useEffect(() => {
     const newHex = toHex(color);
     if (newHex !== currentColor) {
-      isExternalSync.current = true;
       setCurrentColor(newHex);
       setHexInput(newHex);
       const hsv = getInitialHsv(newHex);
@@ -506,21 +504,20 @@ export function ColorPicker({
     }
   }, [isDragging, hue]);
 
-  // Recalculer la couleur quand la teinte change (seulement par interaction utilisateur)
-  React.useEffect(() => {
-    // Ne pas recalculer si le changement vient d'une sync externe (prop color)
-    // pour éviter les dérives d'arrondi HSV -> HEX
-    if (isExternalSync.current) {
-      isExternalSync.current = false;
-      return;
-    }
+  // Teinte déplacée au curseur : seule action qui recalcule la couleur depuis
+  // la teinte. Les autres chemins (chargement, saisie, préréglages) posent la
+  // couleur exacte. Un effet sur [hue] la remplaçait par un arrondi HSV, y
+  // compris à l'ouverture : « #5B50FF » devenait « #5C50FF » et s'enregistrait
+  // sans que l'utilisateur ait rien touché.
+  const handleHueChange = (newHue) => {
+    setHue(newHue);
 
     // Calculer saturation et value depuis la position actuelle du curseur
     const saturation = cursorPosition.x / 100;
     const value = 1 - cursorPosition.y / 100;
 
     // Convertir HSV en RGB
-    const [r, g, b] = hsvToRgb(hue, saturation, value);
+    const [r, g, b] = hsvToRgb(newHue, saturation, value);
 
     // Convertir en HEX
     const hex =
@@ -529,7 +526,7 @@ export function ColorPicker({
     setCurrentColor(hex);
     setHexInput(hex);
     onChange(hex);
-  }, [hue]);
+  };
 
   const colorPresets = [
     "#1d1d1b",
@@ -599,7 +596,7 @@ export function ColorPicker({
         min="0"
         max="360"
         value={hue}
-        onChange={(e) => setHue(Number(e.target.value))}
+        onChange={(e) => handleHueChange(Number(e.target.value))}
         className="w-full h-3 rounded-full appearance-none cursor-pointer"
         style={{
           background: `linear-gradient(to right,

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import { ColorPicker } from "@/src/components/ui/color-picker";
 
@@ -56,5 +56,44 @@ describe("ColorPicker - nom du bouton pour les lecteurs d'écran", () => {
     render(<ColorPicker color="#ffffff" onChange={sansEffet} />);
     const bouton = screen.getByRole("button", { name: "FFFFFF" });
     expect(bouton.hasAttribute("aria-label")).toBe(false);
+  });
+});
+
+describe("ColorPicker - la couleur enregistrée n'est jamais modifiée en silence", () => {
+  it("ouvrir le sélecteur ne change pas la couleur (pas d'arrondi HSV)", () => {
+    const onChange = vi.fn();
+    render(
+      <ColorPicker
+        inline
+        label="Couleur de fond du tableau"
+        color="#5b50FF"
+        onChange={onChange}
+      />,
+    );
+    expect(onChange).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", {
+        name: "Couleur de fond du tableau (5B50FF)",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("un préréglage choisi est transmis tel quel, une seule fois", () => {
+    const onChange = vi.fn();
+    render(<ColorPicker inline color="#5b50FF" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "5B50FF" }));
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTitle("#FF3B30"));
+    expect(onChange.mock.calls).toEqual([["#FF3B30"]]);
+  });
+
+  it("déplacer la teinte change la couleur", () => {
+    const onChange = vi.fn();
+    render(<ColorPicker inline color="#5b50FF" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "5B50FF" }));
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "120" } });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0]).toMatch(/^#[0-9A-F]{6}$/);
+    expect(onChange.mock.calls[0][0]).not.toBe("#5B50FF");
   });
 });
