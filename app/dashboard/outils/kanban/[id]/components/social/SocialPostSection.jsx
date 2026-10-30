@@ -5,6 +5,7 @@ import {
   AlertCircle,
   ExternalLink,
   Loader2,
+  Music,
   Pencil,
   Play,
   RotateCcw,
@@ -26,10 +27,14 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { getApiErrorMessage } from "@/src/hooks/useSocialPublishing";
 import {
+  SOUND_PLATFORMS,
   formatParisDateTime,
+  formatSoundLabel,
   formatVideoDuration,
   getPlatformLabel,
+  getPostSound,
   getPostStatusInfo,
+  getTargetFormatLabel,
   getTargetStatusInfo,
   isVideoMedia,
 } from "@/src/utils/social-post-rules";
@@ -143,7 +148,16 @@ export function SocialPostSection({ taskId, dueDate }) {
 
   const when =
     post.status === "scheduled" && dueDate ? dueDate : post.scheduledFor;
-  const statusInfo = getPostStatusInfo(post.status, when);
+  const statusInfo = getPostStatusInfo(post.status, when, post.targets);
+  // Sons choisis, pour les réseaux visés par le post
+  const soundLines = SOUND_PLATFORMS.filter(
+    (platform) =>
+      getPostSound(post, platform) &&
+      (post.targets || []).some((t) => t.platform === platform),
+  ).map((platform) => ({
+    platform,
+    label: formatSoundLabel(getPostSound(post, platform)),
+  }));
   const canAct = social.canEdit && !social.isReadOnly;
   const isScheduled = post.status === "scheduled";
   const canRetry = post.status === "failed" || post.status === "partial";
@@ -185,7 +199,8 @@ export function SocialPostSection({ taskId, dueDate }) {
 
       <ul className="space-y-2">
         {(post.targets || []).map((target, index) => {
-          const info = getTargetStatusInfo(target.status);
+          const info = getTargetStatusInfo(target.status, target);
+          const formatLabel = getTargetFormatLabel(post, target);
           return (
             <li
               key={`${target.accountId || target.platform}-${index}`}
@@ -194,6 +209,11 @@ export function SocialPostSection({ taskId, dueDate }) {
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <SocialNetworkIcon platform={target.platform} />
                 <span className="min-w-0 truncate">{targetName(target)}</span>
+                {formatLabel && (
+                  <span className="rounded border px-1 text-[11px] leading-4 text-muted-foreground">
+                    {formatLabel}
+                  </span>
+                )}
                 <span
                   className={cn("text-xs font-medium", TONE_TEXT[info.tone])}
                 >
@@ -221,6 +241,23 @@ export function SocialPostSection({ taskId, dueDate }) {
           );
         })}
       </ul>
+
+      {soundLines.length > 0 && (
+        <div className="space-y-1">
+          {soundLines.map(({ platform, label }) => (
+            <p
+              key={platform}
+              className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+            >
+              <Music className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">
+                Son {getPlatformLabel(platform)} :{" "}
+                <span className="text-foreground">{label}</span>
+              </span>
+            </p>
+          ))}
+        </div>
+      )}
 
       {canAct && (isScheduled || canRetry) && (
         <div className="flex flex-wrap gap-2">

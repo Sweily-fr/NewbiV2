@@ -12,6 +12,7 @@ import {
   formatParisDateTime,
   getPlatformLabel,
   getPostStatusInfo,
+  getTargetFormatLabel,
   isVideoMedia,
   joinLabels,
   uniquePlatforms,
@@ -64,14 +65,27 @@ export const SocialPostBadge = memo(function SocialPostBadge({
   );
   const when =
     post.status === "scheduled" && dueDate ? dueDate : post.scheduledFor;
-  const { label, tone } = getPostStatusInfo(post.status, when);
-  const networks = joinLabels(platforms.map(getPlatformLabel));
+  const { label, tone } = getPostStatusInfo(post.status, when, post.targets);
+  // Réseaux en story : « Instagram (story) »
+  const storyPlatforms = new Set(
+    (post.targets || [])
+      .filter((t) => getTargetFormatLabel(post, t))
+      .map((t) => t.platform),
+  );
+  const networks = joinLabels(
+    platforms.map((p) =>
+      storyPlatforms.has(p)
+        ? `${getPlatformLabel(p)} (story)`
+        : getPlatformLabel(p),
+    ),
+  );
   const hasVideo = (post.media || []).some(isVideoMedia);
   const kind = hasVideo ? "Post vidéo" : "Post";
   const tooltip =
     post.status === "scheduled"
       ? `${kind} ${networks} programmé le ${formatParisDateTime(when)}`
-      : `${kind} ${networks} : ${label.toLowerCase()}`;
+      : // Minuscule initiale seulement (« envoyé en brouillon TikTok »)
+        `${kind} ${networks} : ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
 
   let content;
   if (variant === "icon") {
