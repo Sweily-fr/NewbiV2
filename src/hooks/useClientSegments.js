@@ -119,8 +119,12 @@ export const useCreateClientSegment = () => {
   );
 
   return {
-    createSegment: (input) =>
-      createSegment({ variables: { workspaceId, input } }),
+    // true si le segment est créé ; false si l'API le refuse (message déjà
+    // affiché par onError) : la fenêtre reste alors ouverte avec la saisie
+    createSegment: async (input) => {
+      const result = await createSegment({ variables: { workspaceId, input } });
+      return !result?.errors && Boolean(result?.data?.createClientSegment);
+    },
     loading,
     error,
   };
@@ -147,8 +151,13 @@ export const useUpdateClientSegment = () => {
   );
 
   return {
-    updateSegment: (id, input) =>
-      updateSegment({ variables: { workspaceId, id, input } }),
+    // true si la modification est enregistrée, false si l'API la refuse
+    updateSegment: async (id, input) => {
+      const result = await updateSegment({
+        variables: { workspaceId, id, input },
+      });
+      return !result?.errors && Boolean(result?.data?.updateClientSegment);
+    },
     loading,
     error,
   };

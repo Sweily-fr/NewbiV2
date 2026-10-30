@@ -502,6 +502,9 @@ export default function EspacesSection() {
               ? "-translate-x-full opacity-0 absolute inset-0 pointer-events-none"
               : "translate-x-0 opacity-100",
           )}
+          // Glissé hors de l'écran : ni clavier ni lecteur d'écran
+          inert={!!selectedOrg}
+          aria-hidden={!!selectedOrg || undefined}
         >
           {/* Header */}
           <div className="flex flex-col mb-0 md:mb-6">
@@ -633,6 +636,8 @@ export default function EspacesSection() {
               ? "translate-x-0 opacity-100"
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none",
           )}
+          inert={!selectedOrg}
+          aria-hidden={!selectedOrg || undefined}
         >
           {/* Header avec bouton retour */}
           <div className="flex flex-col gap-1 mb-6">

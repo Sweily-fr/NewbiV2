@@ -33,3 +33,14 @@ export function formatAxisAmount(value) {
   if (abs >= 1000) return `${AXIS_NUMBER.format(n / 1000)}k`;
   return `${Math.round(n)} €`;
 }
+
+/**
+ * Taux de recouvrement d'un mois : part encaissée de ce qui était dû,
+ * encaissé / (encaissé + impayé échu) × 100, entre 0 et 100 % comme le KPI
+ * de l'API. null sans encaissé ni impayé (rien à afficher).
+ */
+export function recoveryRate(collected, unpaid) {
+  const paid = Number(collected) || 0;
+  const due = paid + (Number(unpaid) || 0);
+  return due > 0 ? (paid / due) * 100 : null;
+}

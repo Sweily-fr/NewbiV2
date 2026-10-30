@@ -42,6 +42,10 @@ import {
   appendAnnexInBrowser,
   uint8ArrayToBase64,
 } from "@/src/utils/document-annex";
+import {
+  assertDocumentEmailSent,
+  documentEmailErrorMessage,
+} from "@/src/utils/document-email-result";
 
 const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la", title: "Envoyer la facture" },
@@ -297,6 +301,7 @@ export function SendDocumentModal({
           variables: { workspaceId, input },
         });
       }
+      assertDocumentEmailSent(result);
 
       // Sauvegarder le template en base de données pour les prochains envois
       if (canSaveTemplate && emailSettings && emailSettings.fromEmail) {
@@ -342,8 +347,9 @@ export function SendDocumentModal({
       onOpenChange(false);
       onSent?.();
     } catch (error) {
-      console.error("Erreur lors de l'envoi:", error);
-      toast.error(error.message || "Erreur lors de l'envoi de l'email");
+      // Échec annoncé à l'utilisateur : avertissement, pas une erreur du site
+      console.warn("Envoi de l'e-mail en échec:", error?.message);
+      toast.error(documentEmailErrorMessage(error));
     } finally {
       setIsSending(false);
     }

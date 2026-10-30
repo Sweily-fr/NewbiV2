@@ -209,8 +209,9 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
         capitalSocial: visibleFields.capital
           ? formData.capitalSocial || ""
           : "",
-        siret: formData.siret || "",
-        siren: (formData.siret || "").substring(0, 9),
+        // Sans les espaces d'un SIRET copié depuis un Kbis
+        siret: (formData.siret || "").replace(/\s/g, ""),
+        siren: (formData.siret || "").replace(/\s/g, "").substring(0, 9),
         rcs: visibleFields.rcs ? formData.rcs || "" : "",
         isVatSubject: formData.isVatSubject || false,
         // Franchise en base : sans objet si assujetti à la TVA

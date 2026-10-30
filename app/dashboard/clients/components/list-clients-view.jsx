@@ -456,7 +456,10 @@ export default function ListClientsView({
             workspaceId={workspaceId}
             clients={clients}
             useProvidedClients={true}
-            lists={[list]}
+            // Toutes les listes de l'espace : « Ajouter à une liste » propose
+            // les autres listes (avec la seule liste ouverte, le menu
+            // n'annonçait « Aucune liste disponible »)
+            lists={allLists?.length ? allLists : [list]}
             onListsUpdated={onListUpdated}
             defaultListId={list.id}
             globalFilter={globalFilter}

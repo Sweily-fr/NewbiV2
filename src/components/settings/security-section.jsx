@@ -69,6 +69,13 @@ export function SecuritySection({
     orgLoadingProp !== undefined ? orgLoadingProp : hookData.loading;
 
   const { data: session, refetch: refetchSession } = useSession();
+  // Appareil utilisé : la session de ce navigateur (les autres se révoquent)
+  const isCurrentDevice = (device) =>
+    Boolean(
+      (session?.session?.id && device.sessionId === session.session.id) ||
+      (session?.session?.token &&
+        device.sessionToken === session.session.token),
+    );
   const { session: user } = useUser();
 
   const [securitySettings, setSecuritySettings] = useState({
@@ -171,7 +178,7 @@ export function SecuritySection({
                 ? "Local"
                 : "Localisation inconnue"),
             createdAt: sessionData.createdAt || sessionData.created,
-            current: true, // Pour l'instant, on considère que c'est la session actuelle
+            sessionId: sessionData.id || null,
             sessionToken:
               sessionData.token || sessionData.sessionToken || sessionData.id,
           };
@@ -341,6 +348,11 @@ export function SecuritySection({
 
   // Fonction pour sauvegarder les paramètres de session
   const handleSessionSettingsChange = async (setting, value) => {
+    // Valeur vide : la liste n'a pas trouvé la valeur enregistrée, rien à
+    // enregistrer (sinon une erreur s'affichait à l'ouverture de l'onglet)
+    if (value === "" || value == null || Number.isNaN(parseFloat(value))) {
+      return;
+    }
     setIsSessionLoading(true);
 
     try {
@@ -416,17 +428,28 @@ export function SecuritySection({
     try {
       const device = devices.find((d) => d.id === deviceId);
 
-      if (device?.current) {
+      if (device && isCurrentDevice(device)) {
         // Session actuelle - déconnexion complète
         await performLogout();
-      } else if (device?.sessionToken) {
-        // Déconnecter une session spécifique avec Better Auth
-        const { error } = await authClient.multiSession.revoke({
-          sessionToken: device.sessionToken,
+      } else if (device?.sessionId || device?.sessionToken) {
+        // Session d'un autre appareil : supprimée côté serveur (multiSession
+        // ne révoque que les comptes ouverts dans ce navigateur)
+        const response = await fetch("/api/revoke-session", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            device.sessionId
+              ? { sessionId: device.sessionId }
+              : { sessionToken: device.sessionToken },
+          ),
         });
 
-        if (error) {
-          console.error("Erreur lors de la révocation de session:", error);
+        if (!response.ok) {
+          console.error(
+            "Erreur lors de la révocation de session:",
+            response.status,
+          );
           toast.error("Erreur lors de la déconnexion de l'appareil");
           return;
         }
@@ -538,6 +561,7 @@ export function SecuritySection({
               </p>
             </div>
             <Switch
+              aria-label="Activer l'authentification à deux facteurs"
               checked={!!session?.user?.twoFactorEnabled}
               onCheckedChange={handle2FAToggle}
               className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
@@ -569,7 +593,10 @@ export function SecuritySection({
                 }
                 disabled={isSessionLoading}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger
+                  className="w-32"
+                  aria-label="Durée de session des utilisateurs"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -605,7 +632,10 @@ export function SecuritySection({
                 }
                 disabled={isSessionLoading}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger
+                  className="w-32"
+                  aria-label="Timeout d'inactivité"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -647,10 +677,20 @@ export function SecuritySection({
                 }
                 disabled={isSessionLoading}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger
+                  className="w-32"
+                  aria-label="Sessions simultanées"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Ancien réglage « Illimité » (0) : affiché tel quel tant
+                      que l'espace ne choisit pas une limite */}
+                  {securitySettings.maxSessions <= 0 && (
+                    <SelectItem value={securitySettings.maxSessions.toString()}>
+                      Illimité
+                    </SelectItem>
+                  )}
                   <SelectItem value="1">1 session</SelectItem>
                   <SelectItem value="2">2 sessions</SelectItem>
                   <SelectItem value="3">3 sessions</SelectItem>
@@ -658,11 +698,11 @@ export function SecuritySection({
               </Select>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {
-                  { 1: "1 session", 2: "2 sessions", 3: "3 sessions" }[
-                    securitySettings.maxSessions.toString()
-                  ]
-                }
+                {securitySettings.maxSessions <= 0
+                  ? "Illimité"
+                  : { 1: "1 session", 2: "2 sessions", 3: "3 sessions" }[
+                      securitySettings.maxSessions.toString()
+                    ]}
               </span>
             )}
           </div>
@@ -761,7 +801,7 @@ export function SecuritySection({
                               <span className="font-normal text-xs">
                                 {device.device}
                               </span>
-                              {device.current && (
+                              {isCurrentDevice(device) && (
                                 <Badge
                                   variant="secondary"
                                   className="text-[8px]"
@@ -789,7 +829,7 @@ export function SecuritySection({
                         <span className="text-xs">{device.location}</span>
                       </TableCell>
                       <TableCell>
-                        {!device.current && (
+                        {!isCurrentDevice(device) && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button

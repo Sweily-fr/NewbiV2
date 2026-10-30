@@ -75,6 +75,9 @@ const FIELD_VALIDATIONS = {
   },
 };
 
+// Message d'erreur du format d'une valeur (e-mail, lien, téléphone), ou null.
+// Repris à l'enregistrement de la fiche : une valeur signalée en rouge ne
+// doit pas être enregistrée quand même.
 function validateFieldValue(fieldType, value) {
   if (!value || value === "") return null;
   
@@ -353,4 +356,4 @@ export default function CustomFieldsForm({ values = {}, onChange, errors = {}, o
   );
 }
 
-export { CustomFieldInput, FIELD_TYPE_ICONS };
+export { CustomFieldInput, FIELD_TYPE_ICONS, validateFieldValue };

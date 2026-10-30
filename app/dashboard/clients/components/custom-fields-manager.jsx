@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
+import { upgradePlanNameFor } from "@/src/lib/plans-display";
 import {
   useClientCustomFields,
   useCreateClientCustomField,
@@ -387,7 +388,9 @@ export default function CustomFieldsManager({ open, onOpenChange }) {
   const customFieldsLimit = planLimits.customFields;
   const isLimitReached =
     customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
-  const nextPlanName = customFieldsLimit <= 3 ? "TPE" : "Entreprise";
+  // Offre qui lève la limite (TPE pour Freelance)
+  const nextPlanName =
+    upgradePlanNameFor("customFields", customFieldsLimit) || "Entreprise";
 
   const handleCreate = async (data) => {
     try {

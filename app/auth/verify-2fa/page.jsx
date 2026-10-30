@@ -20,33 +20,12 @@ import {
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
-
-const REDIRECT_ROUTE_MAP = {
-  dashboard: "/dashboard",
-  outils: "/dashboard",
-  kanban: "/dashboard/outils/kanban",
-  calendar: "/dashboard/calendar",
-  factures: "/dashboard/outils/factures",
-  devis: "/dashboard/outils/devis",
-  clients: "/dashboard/clients",
-  transactions: "/dashboard/outils/transactions",
-  depenses: "/dashboard/outils/transactions",
-  signatures: "/dashboard/outils/signatures-mail",
-  transferts: "/dashboard/outils/transferts-fichiers",
-  "documents-partages": "/dashboard/outils/documents-partages",
-  catalogues: "/dashboard/catalogues",
-  collaborateurs: "/dashboard/collaborateurs",
-  analytics: "/dashboard/analytics",
-  favoris: "/dashboard/favoris",
-};
+import { startupPagePath } from "@/src/lib/startup-page";
 
 async function resolvePostLoginPath() {
   try {
     const { data: session } = await authClient.getSession();
-    const userRedirectPage = session?.user?.redirect_after_login;
-    if (userRedirectPage && userRedirectPage !== "last-page") {
-      return REDIRECT_ROUTE_MAP[userRedirectPage] || "/dashboard";
-    }
+    return startupPagePath(session?.user?.redirect_after_login);
   } catch (err) {
     console.error("[2FA] Erreur récupération session pour redirection:", err);
   }
@@ -62,6 +41,12 @@ export default function Verify2FAPage() {
   const [useEmailOtp, setUseEmailOtp] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  // Page ouverte par un chargement complet (redirection après le mot de
+  // passe) : tant que React n'a pas pris la main, un clic ou une saisie
+  // serait perdu. Les commandes restent grisées jusque-là.
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => setIsHydrated(true), []);
+  const locked = isVerifying || !isHydrated;
 
   // Envoyer l'OTP par email
   const sendEmailOtp = useCallback(async () => {
@@ -342,7 +327,7 @@ export default function Verify2FAPage() {
                             }
                           }}
                           maxLength={6}
-                          disabled={isVerifying}
+                          disabled={locked}
                         />
                       </div>
                     )}
@@ -354,7 +339,7 @@ export default function Verify2FAPage() {
                       id="trust-device"
                       checked={trustDevice}
                       onCheckedChange={setTrustDevice}
-                      disabled={isVerifying}
+                      disabled={locked}
                     />
                     <Label
                       htmlFor="trust-device"
@@ -367,7 +352,7 @@ export default function Verify2FAPage() {
                   {/* Bouton de verification */}
                   <Button
                     onClick={() => handleVerifyCode(code)}
-                    disabled={code.length !== 6 || isVerifying || isSendingOtp}
+                    disabled={code.length !== 6 || locked || isSendingOtp}
                     className="w-1/2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer"
                   >
                     {isVerifying ? (
@@ -391,7 +376,7 @@ export default function Verify2FAPage() {
                           sendEmailOtp();
                         }}
                         className="text-sm text-[#5b4fff] hover:text-[#5b4fff]/80 underline"
-                        disabled={isSendingOtp || isVerifying}
+                        disabled={isSendingOtp || locked}
                       >
                         Renvoyer le code
                       </button>
@@ -412,7 +397,7 @@ export default function Verify2FAPage() {
                           }
                         }}
                         className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
-                        disabled={isVerifying}
+                        disabled={locked}
                       >
                         Recevoir un code par email
                       </button>
@@ -429,7 +414,7 @@ export default function Verify2FAPage() {
                           }
                         }}
                         className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
-                        disabled={isVerifying}
+                        disabled={locked}
                       >
                         Utiliser l'application d'authentification
                       </button>
@@ -443,7 +428,7 @@ export default function Verify2FAPage() {
                         setCode("");
                       }}
                       className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
-                      disabled={isVerifying}
+                      disabled={locked}
                     >
                       Utiliser un code de secours
                     </button>
@@ -461,7 +446,7 @@ export default function Verify2FAPage() {
                         setCode(e.target.value.replace(/\s/g, ""))
                       }
                       placeholder="Entrez votre code de secours"
-                      disabled={isVerifying}
+                      disabled={locked}
                       autoFocus
                       className="flex h-12 w-full rounded-md border border-input bg-transparent px-4 py-2 text-center text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
@@ -477,7 +462,7 @@ export default function Verify2FAPage() {
                       id="trust-device-backup"
                       checked={trustDevice}
                       onCheckedChange={setTrustDevice}
-                      disabled={isVerifying}
+                      disabled={locked}
                     />
                     <Label
                       htmlFor="trust-device-backup"
@@ -490,7 +475,7 @@ export default function Verify2FAPage() {
                   {/* Bouton de verification */}
                   <Button
                     onClick={handleVerifyBackupCode}
-                    disabled={!code || code.length < 10 || isVerifying}
+                    disabled={!code || code.length < 10 || locked}
                     className="w-full bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer"
                   >
                     {isVerifying ? (
@@ -512,7 +497,7 @@ export default function Verify2FAPage() {
                         setCode("");
                       }}
                       className="text-sm text-muted-foreground hover:text-foreground underline"
-                      disabled={isVerifying}
+                      disabled={locked}
                     >
                       Utiliser le code d'authentification
                     </button>

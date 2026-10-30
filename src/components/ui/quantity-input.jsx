@@ -50,32 +50,36 @@ export const QuantityInput = React.forwardRef(
       }
     };
 
+    // Saisie au clavier : toute quantité décimale positive est acceptée, même
+    // sous `min` (un quart d'heure 0,25, une demi-journée 0,5) ; `min` ne
+    // borne que les boutons - et +. « 0 » ou « 0, », le temps de taper
+    // « 0,5 », restent affichés sans être transmis (une quantité nulle serait
+    // ramenée à 1 par le formulaire).
     const handleInputChange = (e) => {
       const inputValue = e.target.value;
       if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
         const normalizedValue = inputValue.replace(",", ".");
-        const numValue =
-          normalizedValue === "" ? 1 : parseFloat(normalizedValue);
+        setDisplayValue(normalizedValue === "" ? "1" : normalizedValue);
         if (
-          numValue >= min ||
-          inputValue === "" ||
-          normalizedValue.endsWith(".")
+          onChange &&
+          parseFloat(normalizedValue) > 0 &&
+          !normalizedValue.endsWith(".")
         ) {
-          setDisplayValue(normalizedValue === "" ? "1" : normalizedValue);
-          if (
-            onChange &&
-            normalizedValue !== "" &&
-            !normalizedValue.endsWith(".")
-          ) {
-            onChange({
-              target: {
-                name,
-                value: normalizedValue === "" ? "1" : normalizedValue,
-              },
-            });
-          }
+          onChange({ target: { name, value: normalizedValue } });
         }
       }
+    };
+
+    // Saisie laissée à 0 : l'affichage revient à la quantité enregistrée
+    const handleBlur = (e) => {
+      if (!(parseFloat(displayValue) > 0)) {
+        setDisplayValue(
+          value !== undefined && value !== null && value !== ""
+            ? String(value)
+            : "1",
+        );
+      }
+      if (onBlur) onBlur(e);
     };
 
     return (
@@ -97,7 +101,7 @@ export const QuantityInput = React.forwardRef(
           name={name}
           value={displayValue}
           onChange={handleInputChange}
-          onBlur={onBlur}
+          onBlur={handleBlur}
           disabled={disabled}
           className="w-full grow bg-transparent px-2 py-1 text-center text-[#242529] dark:text-white tabular-nums font-medium tracking-[-0.01em] text-sm leading-5 outline-none"
           {...props}

@@ -3,6 +3,11 @@ import {
   validateImportFile,
   autoDetectMapping,
   transformRowToClient,
+  validateClientRow,
+  decodeCSVBytes,
+  parseCSVRaw,
+  importRefusalMessage,
+  createClientRefusal,
   CLIENT_FIELD_DEFINITIONS,
   FIELD_GROUPS,
 } from "@/src/utils/client-import";
@@ -115,11 +120,34 @@ describe("transformRowToClient", () => {
     expect(client.address.city).toBe("Paris");
   });
 
-  it("strips empty address entirely when only the default country would remain", () => {
+  it("garde une adresse vide (pays France) quand le fichier n'a pas d'adresse : l'API l'exige", () => {
     const headers = ["Nom"];
     const mapping = autoDetectMapping(headers);
     const client = transformRowToClient(["Acme"], headers, mapping);
-    expect(client.address).toBeUndefined();
+    expect(client.address).toEqual({
+      street: "",
+      city: "",
+      postalCode: "",
+      country: "France",
+    });
+  });
+
+  it("le téléphone du fichier est celui du contact", () => {
+    const headers = ["Type", "Nom", "Email", "Téléphone", "SIRET"];
+    const row = [
+      "Entreprise",
+      "Sans Adresse SARL",
+      "sans-adresse@e2e.test",
+      "0601020304",
+      "12345678900011",
+    ];
+    const client = transformRowToClient(
+      row,
+      headers,
+      autoDetectMapping(headers),
+    );
+    expect(client.phone).toBe("0601020304");
+    expect(client.contacts[0].phone).toBe("0601020304");
   });
 
   it("parses INDIVIDUAL type", () => {
@@ -142,5 +170,146 @@ describe("transformRowToClient", () => {
     const mapping = { name: 5 }; // out of range
     const client = transformRowToClient(["Acme"], headers, mapping);
     expect(client.name).toBe("");
+  });
+});
+
+describe("decodeCSVBytes / parseCSVRaw", () => {
+  const latin1 = (text) => Uint8Array.from(text, (c) => c.charCodeAt(0));
+
+  it("lit l'UTF-8, BOM compris", () => {
+    const bytes = new TextEncoder().encode("\uFEFFNom;Ville\nHélène;Évry");
+    expect(decodeCSVBytes(bytes).replace(/^\uFEFF/, "")).toBe(
+      "Nom;Ville\nHélène;Évry",
+    );
+  });
+
+  it("lit un fichier Windows-1252 (CSV d'Excel) sans abîmer les accents", () => {
+    expect(decodeCSVBytes(latin1("Société Générale de Façades;Évry"))).toBe(
+      "Société Générale de Façades;Évry",
+    );
+  });
+
+  it("parseCSVRaw : en-têtes et lignes d'un CSV Windows-1252", async () => {
+    const file = new File(
+      [latin1("Nom;Ville\r\nPâté en croûte;Évry")],
+      "contacts.csv",
+    );
+    const { headers, rows } = await parseCSVRaw(file);
+    expect(headers).toEqual(["Nom", "Ville"]);
+    expect(rows).toEqual([["Pâté en croûte", "Évry"]]);
+  });
+
+  it("parseCSVRaw : un fichier sans ligne de données est refusé avec un message", async () => {
+    const file = new File([new TextEncoder().encode("Nom;Ville")], "vide.csv");
+    await expect(parseCSVRaw(file)).rejects.toThrow(
+      "Le fichier doit contenir au moins un en-tête et une ligne de données.",
+    );
+  });
+});
+
+describe("validateClientRow", () => {
+  it("explique pourquoi une ligne est écartée", () => {
+    expect(
+      validateClientRow(
+        { name: "Email faux SARL", email: "pas-un-email", type: "INDIVIDUAL" },
+        1,
+      ).errors,
+    ).toEqual(['Ligne 2 : Email invalide "pas-un-email".']);
+    expect(
+      validateClientRow({ name: "Sans SIRET SARL", type: "COMPANY" }, 2).errors,
+    ).toEqual([
+      "Ligne 3 : Le SIREN/SIRET est obligatoire pour une entreprise.",
+    ]);
+  });
+});
+
+describe("importRefusalMessage", () => {
+  it("un contact déjà présent (même e-mail) est signalé avec l'e-mail en cause", () => {
+    expect(
+      importRefusalMessage([
+        {
+          message: "Un client avec ce email existe déjà",
+          extensions: {
+            code: "ALREADY_EXISTS",
+            details: {
+              resource: "client",
+              field: "email",
+              value: "deja-la@e2e.test",
+            },
+          },
+        },
+      ]),
+    ).toBe("Un contact avec l'e-mail deja-la@e2e.test existe déjà.");
+    expect(
+      importRefusalMessage([
+        {
+          message: "x",
+          extensions: { code: "ALREADY_EXISTS", details: { field: "email" } },
+        },
+      ]),
+    ).toBe("Un contact avec cet e-mail existe déjà.");
+  });
+
+  it("les autres refus gardent le message de l'API", () => {
+    expect(
+      importRefusalMessage([
+        {
+          message:
+            "Le SIREN/SIRET est obligatoire pour une entreprise française",
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        },
+      ]),
+    ).toBe("Le SIREN/SIRET est obligatoire pour une entreprise française");
+  });
+
+  it("sans erreur détaillée (réponse vide), un message générique", () => {
+    expect(importRefusalMessage(undefined)).toBe(
+      "Contact refusé par le serveur.",
+    );
+    expect(importRefusalMessage([])).toBe("Contact refusé par le serveur.");
+  });
+});
+
+describe("createClientRefusal", () => {
+  const refus = {
+    message: "Un client avec ce email existe déjà",
+    path: ["createClient"],
+    extensions: { code: "ALREADY_EXISTS" },
+  };
+
+  it("contact créé, sans erreur : pas de refus", () => {
+    expect(
+      createClientRefusal({ data: { createClient: { id: "c1" } } }),
+    ).toBeNull();
+  });
+
+  it("erreur de la mutation : refusé avec cette erreur", () => {
+    expect(
+      createClientRefusal({ data: { createClient: null }, errors: [refus] }),
+    ).toEqual([refus]);
+  });
+
+  it("erreur de la requête, sans chemin : refusé", () => {
+    const erreur = { message: "Variable invalide" };
+    expect(createClientRefusal({ errors: [erreur] })).toEqual([erreur]);
+  });
+
+  it("erreur d'un champ du contact renvoyé : le contact est bien créé", () => {
+    const champ = {
+      message: "Échec du champ",
+      path: ["createClient", "hasDocuments"],
+    };
+    expect(createClientRefusal({ data: null, errors: [champ] })).toBeNull();
+    expect(
+      createClientRefusal({
+        data: { createClient: { id: "c1" } },
+        errors: [champ],
+      }),
+    ).toBeNull();
+  });
+
+  it("ni contact ni erreur : refusé sans détail", () => {
+    expect(createClientRefusal({ data: { createClient: null } })).toEqual([]);
+    expect(importRefusalMessage([])).toBe("Contact refusé par le serveur.");
   });
 });

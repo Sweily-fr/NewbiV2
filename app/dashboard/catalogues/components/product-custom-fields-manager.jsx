@@ -5,6 +5,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
+import { upgradePlanNameFor } from "@/src/lib/plans-display";
 import {
   useProductCustomFields,
   useCreateProductCustomField,
@@ -399,7 +400,9 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
   const customFieldsLimit = planLimits.customFields;
   const isLimitReached =
     customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
-  const nextPlanName = customFieldsLimit <= 3 ? "TPE" : "Entreprise";
+  // Offre qui lève la limite (TPE pour Freelance)
+  const nextPlanName =
+    upgradePlanNameFor("customFields", customFieldsLimit) || "Entreprise";
 
   const handleCreate = async (data) => {
     try {

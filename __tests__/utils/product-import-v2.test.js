@@ -7,6 +7,7 @@ import {
   validateProductRow,
   generateProductTemplate,
   downloadProductErrorsCSV,
+  parseImportNumber,
 } from "@/src/utils/product-import-v2";
 
 // ─── PRODUCT_FIELD_DEFINITIONS ───────────────────────────────────────────────
@@ -305,5 +306,28 @@ describe("generateProductTemplate / downloadProductErrorsCSV", () => {
     const blob = createObjectURLMock.mock.calls[0][0];
     const text = await blob.text();
     expect(text).toContain("just a string");
+  });
+});
+
+describe("parseImportNumber", () => {
+  it("lit un séparateur de milliers (espace, espace insécable, point)", () => {
+    expect(parseImportNumber("1 234,56")).toBe(1234.56);
+    expect(parseImportNumber("1\u00a0234,56")).toBe(1234.56);
+    expect(parseImportNumber("1\u202f234,56")).toBe(1234.56);
+    expect(parseImportNumber("1.234,56")).toBe(1234.56);
+    expect(parseImportNumber("1,234.56")).toBe(1234.56);
+  });
+
+  it("lit la virgule et le point décimaux (export Newbi)", () => {
+    expect(parseImportNumber("3,20")).toBe(3.2);
+    expect(parseImportNumber("1200.50")).toBe(1200.5);
+    expect(parseImportNumber("5,5")).toBe(5.5);
+    expect(parseImportNumber("20")).toBe(20);
+  });
+
+  it("refuse ce qui n'est pas un nombre", () => {
+    expect(parseImportNumber("dix")).toBeNaN();
+    expect(parseImportNumber("12 abc")).toBeNaN();
+    expect(parseImportNumber("")).toBeNaN();
   });
 });

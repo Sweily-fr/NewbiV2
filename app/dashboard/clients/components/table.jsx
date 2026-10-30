@@ -538,14 +538,34 @@ export default function TableClients({
   }, [externalSelectedTypes]);
 
   // Utilisation du hook pour récupérer les clients ou utilisation des clients passés en props
+  // Filtre « Type » appliqué par l'API : il porte sur tous les contacts, pas
+  // seulement sur la page affichée. Clé stable (le tableau reçu peut être
+  // recréé à chaque rendu du parent)
+  const selectedTypesKey = (externalSelectedTypes || []).join(",");
+  const serverTypes = useMemo(
+    () => (selectedTypesKey ? selectedTypesKey.split(",") : []),
+    [selectedTypesKey],
+  );
+
   const hookResult = useClients(
     pagination.pageIndex + 1,
     pagination.pageSize,
     debouncedGlobalFilter,
     // Pas de requête si les clients sont fournis (vue d'une liste) ou si le
     // rôle ne peut pas lire les clients
-    { skip: useProvidedClients || !canOpenClients, searchExact },
+    {
+      skip: useProvidedClients || !canOpenClients,
+      searchExact,
+      types: serverTypes,
+    },
   );
+
+  // Changement du filtre « Type » : retour à la première page
+  useEffect(() => {
+    setPagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
+  }, [selectedTypesKey]);
 
   const {
     clients: hookClients,
@@ -1492,6 +1512,13 @@ function RowActions({
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [blockReason, setBlockReason] = useState("");
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
+  // Infobulle « Ce contact est lié à des factures… » : description de
+  // « Supprimer » pour les lecteurs d'écran (aria-describedby)
+  const deleteReasonId = useId();
+  const showDeleteReason = (element) => {
+    const rect = element.getBoundingClientRect();
+    setShowDeleteTooltip({ top: rect.bottom + 6, left: rect.right });
+  };
   const [addingToList, setAddingToList] = useState(false);
   const [removingFromList, setRemovingFromList] = useState(false);
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
@@ -1633,6 +1660,9 @@ function RowActions({
       <DropdownMenu
         onOpenChange={(open) => {
           if (open) requestLists();
+          // Menu fermé (Échap, clic ailleurs) pendant que « Supprimer »
+          // avait le focus : l'infobulle ne reste pas affichée
+          else setShowDeleteTooltip(null);
         }}
       >
         <DropdownMenuTrigger asChild>
@@ -1802,6 +1832,16 @@ function RowActions({
           {canDeleteClients && <DropdownMenuSeparator />}
           {canDeleteClients && (
             <DropdownMenuItem
+              // Contact lié à des documents : l'action est annoncée
+              // indisponible (aria-disabled), pas seulement grisée à l'œil.
+              // Pas de `disabled` Radix : l'élément serait sauté au clavier
+              // et sans survol, donc sans la raison affichée dans l'infobulle
+              aria-disabled={client.hasDocuments || undefined}
+              aria-describedby={
+                client.hasDocuments && showDeleteTooltip
+                  ? deleteReasonId
+                  : undefined
+              }
               className={
                 client.hasDocuments
                   ? "opacity-50 cursor-not-allowed"
@@ -1815,15 +1855,14 @@ function RowActions({
                 }
               }}
               onMouseEnter={(e) => {
-                if (client.hasDocuments) {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setShowDeleteTooltip({
-                    top: rect.bottom + 6,
-                    left: rect.right,
-                  });
-                }
+                if (client.hasDocuments) showDeleteReason(e.currentTarget);
               }}
               onMouseLeave={() => setShowDeleteTooltip(null)}
+              // Au clavier, la raison s'affiche quand l'élément prend le focus
+              onFocus={(e) => {
+                if (client.hasDocuments) showDeleteReason(e.currentTarget);
+              }}
+              onBlur={() => setShowDeleteTooltip(null)}
               variant="destructive"
             >
               <span>Supprimer</span>
@@ -1927,6 +1966,8 @@ function RowActions({
       {showDeleteTooltip &&
         ReactDOM.createPortal(
           <div
+            id={deleteReasonId}
+            role="tooltip"
             className="fixed z-[9999] w-[260px] rounded-md px-3 py-1.5 text-xs text-white whitespace-normal animate-in fade-in-0 zoom-in-95"
             style={{
               backgroundColor: "#202020",

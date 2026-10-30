@@ -16,7 +16,7 @@ import ProductExportButton from "./components/product-export-button";
 import ProductCustomFieldsManager from "./components/product-custom-fields-manager";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CataloguesPageSkeleton } from "./components/catalogues-page-skeleton";
-import { useProducts } from "@/src/hooks/useProducts";
+import { useCatalogueProducts } from "@/src/hooks/useProducts";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 
 function CataloguesContent() {
@@ -41,8 +41,8 @@ function CataloguesContent() {
   const canExportProducts = !isReady || canDo("products", "export");
   const canManageCustomFields = !isReady || canDo("products", "customFields");
 
-  // Récupérer les produits pour l'export
-  const { products: allProducts, refetch } = useProducts(1, 100, "");
+  // Récupérer les produits pour l'export (tout le catalogue, comme le tableau)
+  const { products: allProducts, refetch } = useCatalogueProducts();
 
   // Produits actuellement sélectionnés dans le tableau (utilisé pour l'export sélectif)
   const selectedProducts = useMemo(

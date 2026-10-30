@@ -18,7 +18,11 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
-import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import {
+  hasChartValues,
+  formatAxisAmount,
+  recoveryRate,
+} from "./analytics-chart-utils";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
@@ -118,9 +122,8 @@ export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
         monthLabel: formatMonthLabel(m.month),
         collectedTTC: collected,
         unpaidTTC: unpaid,
-        // Taux de recouvrement = encaissé / impayé × 100
-        // (si impayé == 0, null pour éviter la division par zéro)
-        recoveryRate: unpaid > 0 ? (collected / unpaid) * 100 : null,
+        // Taux de recouvrement = encaissé / (encaissé + impayé) × 100
+        recoveryRate: recoveryRate(collected, unpaid),
       };
     });
   }, [monthlyCollection]);

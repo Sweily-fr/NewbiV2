@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   hasChartValues,
   formatAxisAmount,
+  recoveryRate,
 } from "@/app/dashboard/outils/analytiques/components/analytics-chart-utils";
 
 describe("hasChartValues", () => {
@@ -41,5 +42,19 @@ describe("formatAxisAmount", () => {
     expect(formatAxisAmount(12000)).toBe("12k");
     expect(formatAxisAmount(-2500)).toBe("-2,5k");
     expect(formatAxisAmount(1500000)).toBe("1,5M");
+  });
+});
+
+describe("recoveryRate", () => {
+  it("part encaissée de ce qui était dû, jamais plus de 100 %", () => {
+    // L'ancien calcul (encaissé / impayé) donnait 400 %
+    expect(recoveryRate(800, 200)).toBe(80);
+    expect(recoveryRate(500, 0)).toBe(100);
+    expect(recoveryRate(0, 300)).toBe(0);
+  });
+
+  it("sans encaissé ni impayé : rien à afficher", () => {
+    expect(recoveryRate(0, 0)).toBeNull();
+    expect(recoveryRate(undefined, null)).toBeNull();
   });
 });

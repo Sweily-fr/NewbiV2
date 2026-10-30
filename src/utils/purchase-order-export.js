@@ -186,9 +186,11 @@ function formatAmount(amount) {
 }
 
 function getStatusLabel(status) {
+  // « Validé » manquait : un bon validé sortait en code (« VALIDATED »)
   const labels = {
     DRAFT: "Brouillon",
     CONFIRMED: "Confirmé",
+    VALIDATED: "Validé",
     IN_PROGRESS: "En cours",
     DELIVERED: "Livré",
     CANCELED: "Annulé",

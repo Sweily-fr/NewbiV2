@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   ERROR_MESSAGES,
   getErrorMessage,
+  getUserFacingRefusal,
   showErrorToast,
   isCriticalError,
   requiresUserAction,
@@ -256,5 +257,30 @@ describe("requiresUserAction", () => {
   it("returns false for regular errors", () => {
     expect(requiresUserAction("some error")).toBe(false);
     expect(requiresUserAction(new Error("network failure"))).toBe(false);
+  });
+});
+
+describe("getUserFacingRefusal", () => {
+  const refus = (message, code = "VALIDATION_ERROR") => ({
+    message,
+    graphQLErrors: [{ message, extensions: { code } }],
+  });
+
+  it("renvoie le motif rédigé par l'API pour un refus métier", () => {
+    expect(
+      getUserFacingRefusal(refus("Le nom doit contenir au moins 2 caractères")),
+    ).toBe("Le nom doit contenir au moins 2 caractères");
+  });
+
+  it("ignore un message technique ou une erreur qui n'est pas un refus", () => {
+    expect(
+      getUserFacingRefusal(
+        refus("Cannot read properties of null (reading 'createClientList')"),
+      ),
+    ).toBeNull();
+    expect(
+      getUserFacingRefusal(refus("Erreur interne", "INTERNAL_ERROR")),
+    ).toBeNull();
+    expect(getUserFacingRefusal(null)).toBeNull();
   });
 });

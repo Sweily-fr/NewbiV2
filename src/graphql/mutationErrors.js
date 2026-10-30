@@ -15,3 +15,14 @@ export function throwIfMutationErrors(result) {
   error.validationDetails = firstError.extensions?.details || null;
   throw error;
 }
+
+/**
+ * Message d'un refus de l'API, sans l'enveloppe technique « Erreur lors de
+ * la vérification des permissions: » que le contrôle des droits ajoute aux
+ * erreurs levées par un résolveur (« Format d'email invalide »).
+ */
+export function apiRefusalMessage(error) {
+  return (error?.message || "")
+    .replace(/^Erreur lors de la vérification des permissions:\s*/, "")
+    .trim();
+}

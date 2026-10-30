@@ -855,7 +855,8 @@ export default function EnhancedInvoiceForm({
               <Button
                 variant="outline"
                 onClick={() => {
-                  if (hasUserChanges) {
+                  // Consultation (lecture seule) : rien à perdre, on quitte
+                  if (hasUserChanges && !readOnly) {
                     setShowCancelDialog(true);
                   } else if (onLeave) {
                     onLeave();

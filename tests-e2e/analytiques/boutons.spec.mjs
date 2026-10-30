@@ -47,7 +47,7 @@ test.describe("Pilotage (propriétaire)", () => {
       "button Respecter les majuscules et les accents": { etat: /\[pressed\]/ },
       "tab Plan Comptable (PCG)": { sansEffet: "onglet unique, déjà affiché" },
       "combobox icône chevron-down": {
-        options: ["Tous", "Incomes", "Taxes", "Misc.", "Home", "Shopping", "Health", "Bank", "Transport", "Business", "Education", "Food", "Entertainment", "Bills", "Transfers", "… 16 en tout"],
+        options: ["Tous", "Revenus", "Impôts et taxes", "Divers", "Logement", "Achats", "Santé", "Banque", "Transport", "Activité professionnelle", "Éducation", "Alimentation", "Loisirs", "Factures et abonnements", "Virements", "… 16 en tout"],
       },
     },
   });

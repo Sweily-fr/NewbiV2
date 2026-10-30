@@ -15,7 +15,6 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import {
-  ArrowUpDown,
   FileText,
   Clock,
   CheckCircle,
@@ -24,6 +23,7 @@ import {
   Upload,
 } from "lucide-react";
 import { DocumentSourceBadge } from "@/src/components/document-source-badge";
+import { SortableColumnHeader } from "@/src/components/sortable-column-header";
 import { dateSortingFn } from "@/src/lib/document-dates";
 import { cn } from "@/src/lib/utils";
 import {
@@ -39,6 +39,7 @@ import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVi
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import { amountSearchTexts } from "@/src/utils/search-amount";
 
 // Custom filter functions
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -119,29 +120,6 @@ const formatDateForSearch = (dateValue) => {
   }
 };
 
-// Formater le montant pour la recherche (supprime les espaces et convertit la virgule en point)
-const formatAmountForSearch = (amount) => {
-  if (amount === null || amount === undefined || isNaN(amount)) return [];
-
-  // Convertir en nombre si ce n'est pas déjà le cas
-  const numAmount = typeof amount === "number" ? amount : parseFloat(amount);
-  if (isNaN(numAmount)) return [];
-
-  // Formater avec 2 décimales et sans séparateur de milliers
-  const formattedWithComma = numAmount.toFixed(2).replace(/\.?0+$/, ""); // Enlève les zéros inutiles
-
-  // Retourner différents formats pour la recherche
-  return [
-    formattedWithComma, // Format avec virgule (ex: "1234,56")
-    formattedWithComma.replace(",", "."), // Format avec point (ex: "1234.56")
-    formattedWithComma.replace(",", ""), // Format sans séparateur (ex: "123456")
-    Math.floor(numAmount).toString(), // Partie entière (ex: "1234")
-    numAmount.toString(), // Représentation brute
-  ].filter(
-    (value, index, self) => value && self.indexOf(value) === index, // Supprimer les doublons
-  );
-};
-
 // Recherche globale, sans accents ni majuscules sauf si le bouton « Aa » est
 // coché. Le filtre global vaut { query, exact } ; resolveFilterValue prépare
 // la comparaison (match) une seule fois par saisie.
@@ -158,9 +136,8 @@ const memoizedMultiColumnFilter = (row, columnId, match) => {
     QUOTE_STATUS_LABELS[quote.status], // Statut traduit
     ...(quote.issueDate ? formatDateForSearch(quote.issueDate) : []), // Dates d'émission
     ...(quote.validUntil ? formatDateForSearch(quote.validUntil) : []), // Dates de validité
-    ...(quote.finalTotalTTC !== undefined && quote.finalTotalTTC !== null
-      ? formatAmountForSearch(quote.finalTotalTTC)
-      : []), // Montant TTC
+    // Montant TTC, aussi tel qu'affiché (« 840,00 »)
+    ...amountSearchTexts(quote.finalTotalTTC),
   ].filter(Boolean);
 
   // Vérifier si le terme de recherche correspond à l'un des éléments
@@ -309,13 +286,7 @@ export function useQuoteTable({
         id: "client",
         accessorKey: "client.name",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Client
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </div>
+          <SortableColumnHeader column={column}>Client</SortableColumnHeader>
         ),
         meta: {
           label: "Client",
@@ -375,13 +346,7 @@ export function useQuoteTable({
       {
         accessorKey: "projectReference",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Référence
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </div>
+          <SortableColumnHeader column={column}>Référence</SortableColumnHeader>
         ),
         meta: {
           label: "Référence",
@@ -407,15 +372,9 @@ export function useQuoteTable({
         sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-            >
+            <SortableColumnHeader column={column}>
               Date d&apos;émission
-              <ArrowUpDown className="ml-2 h-3 w-3" />
-            </div>
+            </SortableColumnHeader>
           </div>
         ),
         meta: {
@@ -433,15 +392,9 @@ export function useQuoteTable({
         sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-            >
+            <SortableColumnHeader column={column}>
               Date de validité
-              <ArrowUpDown className="ml-2 h-3 w-3" />
-            </div>
+            </SortableColumnHeader>
           </div>
         ),
         meta: {
@@ -532,13 +485,7 @@ export function useQuoteTable({
       {
         accessorKey: "status",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Statut
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </div>
+          <SortableColumnHeader column={column}>Statut</SortableColumnHeader>
         ),
         meta: {
           label: "Statut",
@@ -656,13 +603,9 @@ export function useQuoteTable({
       {
         accessorKey: "finalTotalHT",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+          <SortableColumnHeader column={column}>
             Montant HT
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </div>
+          </SortableColumnHeader>
         ),
         meta: {
           label: "Montant HT",
@@ -686,13 +629,7 @@ export function useQuoteTable({
       {
         accessorKey: "finalTotalVAT",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            TVA
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </div>
+          <SortableColumnHeader column={column}>TVA</SortableColumnHeader>
         ),
         meta: {
           label: "TVA",
@@ -716,13 +653,9 @@ export function useQuoteTable({
       {
         accessorKey: "finalTotalTTC",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+          <SortableColumnHeader column={column}>
             Montant TTC
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </div>
+          </SortableColumnHeader>
         ),
         meta: {
           label: "Montant TTC",
