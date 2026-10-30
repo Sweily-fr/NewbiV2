@@ -97,14 +97,14 @@ test.describe("Paramètres : la fenêtre et ses onglets", () => {
       ["Intelligence artificielle", "OpenAI", "HubSpot"],
       ["E-mailing", "Mailchimp", "OpenAI"],
       // Application « Réseaux sociaux » masquée par le serveur de test (publication
-      // sur les réseaux non configurée) : la catégorie écarte les autres applications.
-      ["Réseaux sociaux", null, "Mailchimp"],
+      // sur les réseaux non configurée) : la catégorie vide le dit.
+      ["Réseaux sociaux", "Aucune application trouvée.", "Mailchimp"],
       ["Productivité", "Notion", "Mailchimp"],
       ["Toutes", "Stripe", null],
     ]) {
       await etape(page, `Catégorie « ${categorie} »`, async () => {
         await contenu.getByRole("button", { name: categorie, exact: true }).click();
-        if (presente) await expect(contenu.getByText(presente, { exact: true }).first()).toBeVisible();
+        await expect(contenu.getByText(presente, { exact: true }).first()).toBeVisible();
         if (absente) await expect(contenu.getByText(absente, { exact: true })).toHaveCount(0);
       });
     }
