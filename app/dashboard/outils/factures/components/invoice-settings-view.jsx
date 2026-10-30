@@ -231,9 +231,10 @@ export default function InvoiceSettingsView({
   const hasAnyFinalizedInvoice = globalHook.hasDocumentsForPrefix;
 
   // Activation de la séquence continue : confirmation requise si des factures
-  // existent déjà (la numérotation doit rester chronologique).
+  // existent déjà (la numérotation doit rester chronologique), et tant que
+  // la réponse n'est pas connue (un clic rapide ne doit pas l'esquiver).
   const handleAutoNumberingChange = (checked) => {
-    if (checked && hasAnyFinalizedInvoice) {
+    if (checked && (hasAnyFinalizedInvoice || globalHook.isLoading)) {
       setShowAutoNumberingConfirm(true);
       return;
     }

@@ -229,9 +229,10 @@ export default function QuoteSettingsView({
   const hasAnyFinalizedDocument = globalHook.hasDocumentsForPrefix;
 
   // Activation de la séquence continue : confirmation requise si des documents
-  // existent déjà (la numérotation doit rester chronologique).
+  // existent déjà (la numérotation doit rester chronologique), et tant que
+  // la réponse n'est pas connue (un clic rapide ne doit pas l'esquiver).
   const handleAutoNumberingChange = (checked) => {
-    if (checked && hasAnyFinalizedDocument) {
+    if (checked && (hasAnyFinalizedDocument || globalHook.isLoading)) {
       setShowAutoNumberingConfirm(true);
       return;
     }
