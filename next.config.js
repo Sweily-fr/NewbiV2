@@ -65,6 +65,17 @@ const apiOrigins = [
   ),
 ];
 
+// Lecture des vidéos servies par l'API (aperçus des transferts, vidéos des
+// posts réseaux sociaux /social-media/<id>.mp4) : origines http(s) de l'API
+// seulement (prod en dur, staging-api.newbi.fr via NEXT_PUBLIC_API_URL sur
+// staging) et l'API locale en dev (http://localhost:4000).
+const mediaApiOrigins = [
+  ...new Set([
+    ...apiOrigins.filter((origin) => /^https?:\/\//.test(origin)),
+    ...(isDev ? ["http://localhost:4000"] : []),
+  ]),
+];
+
 // CSP stricte en prod, Report-Only en dev (les violations restent visibles en
 // console sans gêner le développement). Policy validée le 30/07/2026 par
 // balayage Playwright : 16 pages publiques + 19 pages dashboard authentifiées,
@@ -102,10 +113,12 @@ const cspValue = [
   `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net https://ad.doubleclick.net https://*.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
   // Vidéos : couvertures et pièces jointes des tâches kanban servies par le
   // bucket R2 public (KANBAN_URL, *.r2.dev), aperçus vidéo des transferts de
-  // fichiers via l'API (/api/files/preview) et blob: pour les entrées de ZIP
-  // décompressées côté navigateur. Sans media-src, <video> retombe sur
-  // default-src 'self' et la vidéo est bloquée en prod (ticket du 17/09/2026).
-  `media-src 'self' blob: https://*.r2.dev ${apiOrigins.join(" ")}`,
+  // fichiers via l'API (/api/files/preview), vidéos des posts réseaux sociaux
+  // (/social-media/<id>.mp4 sur l'API) et blob: pour les entrées de ZIP
+  // décompressées et les vidéos choisies avant leur envoi. Sans media-src,
+  // <video> retombe sur default-src 'self' et la vidéo est bloquée en prod
+  // (ticket du 17/09/2026).
+  `media-src 'self' blob: https://*.r2.dev ${mediaApiOrigins.join(" ")}`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr

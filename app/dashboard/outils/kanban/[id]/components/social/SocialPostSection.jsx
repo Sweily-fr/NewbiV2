@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Loader2,
   Pencil,
+  Play,
   RotateCcw,
   Send,
   XCircle,
@@ -26,9 +27,11 @@ import { cn } from "@/src/lib/utils";
 import { getApiErrorMessage } from "@/src/hooks/useSocialPublishing";
 import {
   formatParisDateTime,
+  formatVideoDuration,
   getPlatformLabel,
   getPostStatusInfo,
   getTargetStatusInfo,
+  isVideoMedia,
 } from "@/src/utils/social-post-rules";
 import { SocialNetworkIcon } from "./SocialNetworkIcon";
 import { useSocialPublishing, useTaskSocialPost } from "./SocialPostsProvider";
@@ -45,6 +48,84 @@ const TONE_TEXT = {
 function targetName(target) {
   if (target.username) return `@${target.username.replace(/^@/, "")}`;
   return target.displayName || getPlatformLabel(target.platform);
+}
+
+const MAX_THUMBNAILS = 6;
+
+/**
+ * Photos ou vidéo du post : vignettes des photos, ou vignette de la vidéo
+ * avec une icône de lecture (le lecteur s'ouvre au clic).
+ */
+function PostMedia({ media }) {
+  const [playing, setPlaying] = useState(false);
+  const items = (media || []).filter((m) => m?.url || m?.thumbnailUrl);
+  if (items.length === 0) return null;
+
+  const video = items.find(isVideoMedia);
+  if (video) {
+    if (playing && video.url) {
+      return (
+        <video
+          controls
+          autoPlay
+          playsInline
+          poster={video.thumbnailUrl || undefined}
+          src={video.url}
+          aria-label="Vidéo du post"
+          className="max-h-72 w-full rounded-lg bg-black object-contain"
+        />
+      );
+    }
+    const duration =
+      video.durationMs > 0 ? formatVideoDuration(video.durationMs) : "";
+    return (
+      <button
+        type="button"
+        onClick={() => setPlaying(true)}
+        disabled={!video.url}
+        aria-label="Lire la vidéo du post"
+        className="relative block h-24 w-40 cursor-pointer overflow-hidden rounded-lg border bg-black disabled:cursor-default"
+      >
+        {video.thumbnailUrl && (
+          <img
+            src={video.thumbnailUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        )}
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white">
+            <Play className="ml-0.5 h-4 w-4 fill-current" />
+          </span>
+        </span>
+        {duration && (
+          <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 text-[10px] font-medium leading-4 text-white">
+            {duration}
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  const shown = items.slice(0, MAX_THUMBNAILS);
+  const extra = items.length - shown.length;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {shown.map((image, index) => (
+        <img
+          key={image.id || index}
+          src={image.url || image.thumbnailUrl}
+          alt={`Image ${index + 1} du post`}
+          className="h-12 w-12 rounded-md border object-cover"
+        />
+      ))}
+      {extra > 0 && (
+        <span className="flex h-12 w-12 items-center justify-center rounded-md border bg-muted text-xs text-muted-foreground">
+          +{extra}
+        </span>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -99,6 +180,8 @@ export function SocialPostSection({ taskId, dueDate }) {
           </span>
         )}
       </div>
+
+      <PostMedia media={post.media} />
 
       <ul className="space-y-2">
         {(post.targets || []).map((target, index) => {
