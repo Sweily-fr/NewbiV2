@@ -39,6 +39,7 @@ import {
   toAnnexInput,
 } from "@/src/utils/document-annex";
 import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
+import { VALIDATION_PATTERNS, getItemTextErrors } from "@/src/lib/validation";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -706,23 +707,18 @@ export function useInvoiceEditor({
                   "description trop longue (max 2000 caractères)",
                 );
                 fields.push("description");
-              } else if (
-                !/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/.test(
-                  item.description,
-                )
-              ) {
-                itemErrors.push(
-                  "description contient des caractères non autorisés",
-                );
-                fields.push("description");
               }
             }
 
-            // Valider les détails si présents (optionnel mais limité à 500 caractères)
-            if (item.details && item.details.length > 2000) {
-              itemErrors.push("détails trop longs (max 2000 caractères)");
-              fields.push("details");
-            }
+            // Nom de l'article (vrais noms : « œ », « ’ », « n° »… acceptés
+            // comme par l'API) et détails (optionnels, 500 caractères au plus)
+            getItemTextErrors(item, existingInvoice?.items?.[index]).forEach(
+              ({ field, message }) => {
+                if (field === "description" && fields.includes(field)) return;
+                itemErrors.push(message);
+                fields.push(field);
+              },
+            );
 
             // Valider la quantité si présente
             if (item.quantity && parseFloat(item.quantity) <= 0) {
@@ -828,6 +824,7 @@ export function useInvoiceEditor({
     formData.isReverseCharge,
     watchedItems,
     isFormInitialized,
+    existingInvoice?.items,
   ]);
 
   // Effacer les erreurs de facture de situation quand l'utilisateur corrige
@@ -933,7 +930,9 @@ export function useInvoiceEditor({
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+            !VALIDATION_PATTERNS.fullName.pattern.test(
+              shippingAddr.fullName.trim(),
+            )
           ) {
             shippingErrors.push("nom complet invalide");
           }
@@ -967,7 +966,7 @@ export function useInvoiceEditor({
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
           } else if (
-            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+            !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
           ) {
             shippingErrors.push("ville invalide");
           }
@@ -1954,7 +1953,7 @@ export function useInvoiceEditor({
       if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
         shippingErrors.push("nom complet manquant");
       } else if (
-        !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+        !VALIDATION_PATTERNS.fullName.pattern.test(shippingAddr.fullName.trim())
       ) {
         shippingErrors.push("nom complet invalide");
       }
@@ -1984,7 +1983,9 @@ export function useInvoiceEditor({
       // Validation de la ville
       if (!shippingAddr.city || shippingAddr.city.trim() === "") {
         shippingErrors.push("ville manquante");
-      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+      } else if (
+        !VALIDATION_PATTERNS.city.pattern.test(shippingAddr.city.trim())
+      ) {
         shippingErrors.push("ville invalide");
       }
 
@@ -2067,6 +2068,13 @@ export function useInvoiceEditor({
           itemErrors.push("description");
           fields.push("description");
         }
+        // Nom trop court, caractères refusés par l'API, détails trop longs
+        getItemTextErrors(item, existingInvoice?.items?.[index]).forEach(
+          ({ field, message }) => {
+            itemErrors.push(message);
+            fields.push(field);
+          },
+        );
         if (!item.quantity || parseFloat(item.quantity) <= 0) {
           itemErrors.push("quantité invalide");
           fields.push("quantity");
@@ -2272,6 +2280,7 @@ export function useInvoiceEditor({
     reset,
     handleError,
     organization,
+    existingInvoice?.items,
   ]);
 
   // Submit handler (validate and send)
@@ -2359,7 +2368,9 @@ export function useInvoiceEditor({
 
       if (!shipping.fullName || shipping.fullName.trim() === "") {
         shippingErrors.push("nom complet manquant");
-      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shipping.fullName.trim())) {
+      } else if (
+        !VALIDATION_PATTERNS.fullName.pattern.test(shipping.fullName.trim())
+      ) {
         shippingErrors.push("nom complet invalide");
       }
 
@@ -2386,7 +2397,7 @@ export function useInvoiceEditor({
 
       if (!shipping.city || shipping.city.trim() === "") {
         shippingErrors.push("ville manquante");
-      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shipping.city.trim())) {
+      } else if (!VALIDATION_PATTERNS.city.pattern.test(shipping.city.trim())) {
         shippingErrors.push("ville invalide");
       }
 
@@ -2466,6 +2477,13 @@ export function useInvoiceEditor({
           itemErrors.push("description");
           fields.push("description");
         }
+        // Nom trop court, caractères refusés par l'API, détails trop longs
+        getItemTextErrors(item, existingInvoice?.items?.[index]).forEach(
+          ({ field, message }) => {
+            itemErrors.push(message);
+            fields.push(field);
+          },
+        );
         if (!item.quantity || parseFloat(item.quantity) <= 0) {
           itemErrors.push("quantité invalide");
           fields.push("quantity");
@@ -2711,6 +2729,7 @@ export function useInvoiceEditor({
     invoiceId,
     router,
     existingInvoice?.status,
+    existingInvoice?.items,
     handleError,
     organization,
   ]);
