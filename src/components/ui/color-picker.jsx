@@ -91,8 +91,8 @@ export function ColorPicker({
   sideOffset = 0,
   sideOffsetVw,
   inline = false,
-  // Nom lu par les lecteurs d'écran (« Couleur du texte ») : le bouton
-  // n'affiche que le code de la couleur (« 000000 »)
+  // Ce que règle la couleur (« Couleur du texte »), lu par les lecteurs
+  // d'écran : le bouton n'affiche que le code de la couleur (« 000000 »)
   label,
 }) {
   // Convertir HEX en HSV pour initialisation
@@ -138,6 +138,9 @@ export function ColorPicker({
 
   const [currentColor, setCurrentColor] = useState(() => toHex(color));
   const [hexInput, setHexInput] = useState(() => toHex(color));
+  // Nom du bouton : « Couleur du texte (000000) ». Le code entre parenthèses,
+  // jamais après deux-points : un nom accessible n'en contient pas.
+  const buttonLabel = label ? `${label} (${currentColor.slice(1)})` : undefined;
   const [isOpen, setIsOpen] = useState(false);
   const [hue, setHue] = useState(initialHsv.h);
   const [isDragging, setIsDragging] = useState(false);
@@ -686,7 +689,7 @@ export function ColorPicker({
           variant="outline"
           className={`h-8 px-2 justify-start gap-2 ${className}`}
           onClick={() => setIsOpen(!isOpen)}
-          aria-label={label ? `${label} : ${currentColor.slice(1)}` : undefined}
+          aria-label={buttonLabel}
         >
           <div
             className="w-4 h-4 rounded border border-gray-300"
@@ -709,7 +712,7 @@ export function ColorPicker({
         <Button
           variant="outline"
           className={`h-8 px-2 justify-start gap-2 ${className}`}
-          aria-label={label ? `${label} : ${currentColor.slice(1)}` : undefined}
+          aria-label={buttonLabel}
         >
           <div
             className="w-4 h-4 rounded border border-gray-300"

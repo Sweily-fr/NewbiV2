@@ -365,6 +365,7 @@ export default function InvoiceRowActions({
                       e.stopPropagation();
                       onSendEmail?.(invoice);
                     }}
+                    aria-label="Envoyer par email"
                   >
                     <Mail className="h-4 w-4" />
                   </Button>
