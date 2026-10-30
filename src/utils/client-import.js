@@ -521,6 +521,25 @@ export function detectDuplicateEmails(clients) {
   return duplicates;
 }
 
+// ─── API Refusals ─────────────────────────────────────────────
+
+/**
+ * Raison d'un contact refusé par l'API pendant l'import (erreurs GraphQL de
+ * la mutation, reçues dans `result.errors` avec l'errorPolicy « all »).
+ * Le doublon (même e-mail dans l'espace) est reformulé avec l'e-mail en
+ * cause : le message générique de l'API ne dit pas lequel.
+ */
+export function importRefusalMessage(errors) {
+  const first = Array.isArray(errors) ? errors[0] : null;
+  const { code, details } = first?.extensions || {};
+  if (code === "ALREADY_EXISTS" && details?.field === "email") {
+    return details.value
+      ? `Un contact avec l'e-mail ${details.value} existe déjà.`
+      : "Un contact avec cet e-mail existe déjà.";
+  }
+  return first?.message || "Contact refusé par le serveur.";
+}
+
 // ─── Template Generation ──────────────────────────────────────
 
 export function generateTemplate() {
