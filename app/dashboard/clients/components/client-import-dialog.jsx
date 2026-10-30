@@ -42,6 +42,7 @@ import {
   transformRowToClient,
   validateClientRow,
   downloadErrorsCSV,
+  importRefusalMessage,
 } from "@/src/utils/client-import";
 
 import ImportStepUpload from "./import-steps/import-step-upload";
@@ -240,7 +241,15 @@ export default function ClientImportDialog({
               workspaceId,
               input: client,
             },
-          }).then(() => ({ idx })),
+          }).then((result) => {
+            // errorPolicy « all » : un refus de l'API (e-mail déjà pris…)
+            // arrive dans result.errors, sans rejet de la promesse. Il était
+            // compté comme un contact importé.
+            if (result?.errors?.length || !result?.data?.createClient) {
+              throw new Error(importRefusalMessage(result?.errors));
+            }
+            return { idx };
+          }),
         ),
       );
 
@@ -504,15 +513,19 @@ export default function ClientImportDialog({
                 {currentStep === 1 && importFinished && (
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="w-full max-w-md space-y-4">
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                          {importResults.successCount} contact
-                          {importResults.successCount > 1 ? "s" : ""} importé
-                          {importResults.successCount > 1 ? "s" : ""} avec
-                          succès
-                        </p>
-                      </div>
+                      {/* Pas de « 0 contact importé avec succès » en vert
+                          quand toutes les lignes ont été refusées */}
+                      {importResults.successCount > 0 && (
+                        <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                            {importResults.successCount} contact
+                            {importResults.successCount > 1 ? "s" : ""} importé
+                            {importResults.successCount > 1 ? "s" : ""} avec
+                            succès
+                          </p>
+                        </div>
+                      )}
 
                       {importResults.errors.length > 0 && (
                         <div className="space-y-3">

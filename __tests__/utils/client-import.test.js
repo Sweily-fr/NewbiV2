@@ -6,6 +6,7 @@ import {
   validateClientRow,
   decodeCSVBytes,
   parseCSVRaw,
+  importRefusalMessage,
   CLIENT_FIELD_DEFINITIONS,
   FIELD_GROUPS,
 } from "@/src/utils/client-import";
@@ -218,5 +219,52 @@ describe("validateClientRow", () => {
     ).toEqual([
       "Ligne 3 : Le SIREN/SIRET est obligatoire pour une entreprise.",
     ]);
+  });
+});
+
+describe("importRefusalMessage", () => {
+  it("un contact déjà présent (même e-mail) est signalé avec l'e-mail en cause", () => {
+    expect(
+      importRefusalMessage([
+        {
+          message: "Un client avec ce email existe déjà",
+          extensions: {
+            code: "ALREADY_EXISTS",
+            details: {
+              resource: "client",
+              field: "email",
+              value: "deja-la@e2e.test",
+            },
+          },
+        },
+      ]),
+    ).toBe("Un contact avec l'e-mail deja-la@e2e.test existe déjà.");
+    expect(
+      importRefusalMessage([
+        {
+          message: "x",
+          extensions: { code: "ALREADY_EXISTS", details: { field: "email" } },
+        },
+      ]),
+    ).toBe("Un contact avec cet e-mail existe déjà.");
+  });
+
+  it("les autres refus gardent le message de l'API", () => {
+    expect(
+      importRefusalMessage([
+        {
+          message:
+            "Le SIREN/SIRET est obligatoire pour une entreprise française",
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        },
+      ]),
+    ).toBe("Le SIREN/SIRET est obligatoire pour une entreprise française");
+  });
+
+  it("sans erreur détaillée (réponse vide), un message générique", () => {
+    expect(importRefusalMessage(undefined)).toBe(
+      "Contact refusé par le serveur.",
+    );
+    expect(importRefusalMessage([])).toBe("Contact refusé par le serveur.");
   });
 });
