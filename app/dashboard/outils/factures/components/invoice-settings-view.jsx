@@ -119,6 +119,8 @@ export default function InvoiceSettingsView({
   // Préfixe / mode pour lesquels le numéro a été synchronisé en dernier.
   const numberSyncedForPrefixRef = useRef(null);
   const lastAutoNumberingRef = useRef(autoNumbering);
+  // Numéro saisi par l'utilisateur (et non rempli d'office par la numérotation)
+  const numberEditedRef = useRef(false);
 
   // Synchroniser le numéro depuis le hook de numérotation.
   // Déps limitées aux données du hook → n'agit qu'une fois la requête résolue
@@ -138,6 +140,12 @@ export default function InvoiceSettingsView({
     const setIfDifferent = () => {
       if (data.number !== formattedNumber) {
         setValue("number", formattedNumber, { shouldValidate: false });
+        // Numéro rempli d'office après l'ouverture : ce n'est pas une
+        // modification de l'utilisateur (« Annuler » annonçait sinon des
+        // modifications non sauvegardées alors que rien n'avait changé)
+        if (initialValuesRef.current && !numberEditedRef.current) {
+          initialValuesRef.current.number = formattedNumber;
+        }
       }
     };
 
@@ -588,6 +596,7 @@ export default function InvoiceSettingsView({
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="show-bank-details"
+                    aria-label="Afficher les coordonnées bancaires"
                     checked={data.showBankDetails || false}
                     onCheckedChange={(checked) => {
                       setValue("showBankDetails", checked, {
@@ -636,6 +645,7 @@ export default function InvoiceSettingsView({
                   checked={autoNumbering}
                   onCheckedChange={handleAutoNumberingChange}
                   className="data-[state=checked]:bg-[#5b4fff]"
+                  aria-label="Numérotation séquentielle continue"
                 />
               </div>
 
@@ -747,6 +757,7 @@ export default function InvoiceSettingsView({
                         canEditNumber
                           ? (e) => {
                               const val = e.target.value.replace(/[^0-9]/g, "");
+                              numberEditedRef.current = true;
                               setValue("number", val, {
                                 shouldValidate: false,
                               });
@@ -843,6 +854,7 @@ export default function InvoiceSettingsView({
                   </Label>
                   <ColorPicker
                     className="w-full"
+                    label="Couleur du texte"
                     color={data.appearance?.textColor || "#000000"}
                     onChange={(color) => {
                       setValue("appearance.textColor", color, {
@@ -862,6 +874,7 @@ export default function InvoiceSettingsView({
                   </Label>
                   <ColorPicker
                     className="w-full"
+                    label="Couleur des titres du tableau"
                     color={data.appearance?.headerTextColor || "#ffffff"}
                     onChange={(color) => {
                       setValue("appearance.headerTextColor", color, {
@@ -882,6 +895,7 @@ export default function InvoiceSettingsView({
                 </Label>
                 <ColorPicker
                   className="w-full"
+                  label="Couleur de fond du tableau"
                   color={data.appearance?.headerBgColor || "#5b50FF"}
                   onChange={(color) => {
                     setValue("appearance.headerBgColor", color, {

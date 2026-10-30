@@ -43,6 +43,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 
@@ -98,6 +99,7 @@ export default function InvoiceExportButton({
   });
   const [canExportInvoices, setCanExportInvoices] = useState(false);
   const { canExport } = usePermissions();
+  const { organization } = useWorkspace();
   const { subscription } = useSubscription();
   const allowedExports = getPlanLimits(subscription?.plan).exports;
 
@@ -136,10 +138,16 @@ export default function InvoiceExportButton({
           `${finalInvoices.length} facture(s) exportée(s) en Excel`,
         );
       } else if (selectedFormat === "fec") {
-        exportToFEC(finalInvoices, finalDateRange);
-        toast.success(
-          `${finalInvoices.length} facture(s) exportée(s) au format FEC`,
-        );
+        // Nom du fichier : SIREN de l'entreprise (SirenFECAAAAMMJJ.txt)
+        exportToFEC(finalInvoices, finalDateRange, {
+          siren: organization?.siren || organization?.siret || "",
+        });
+        // Les brouillons ne sont pas des écritures comptables
+        const issuedCount = finalInvoices.filter(
+          (invoice) =>
+            invoice._type === "imported" || invoice.status !== "DRAFT",
+        ).length;
+        toast.success(`${issuedCount} facture(s) exportée(s) au format FEC`);
       } else if (selectedFormat === "sage") {
         exportToSage(finalInvoices, finalDateRange);
         toast.success(

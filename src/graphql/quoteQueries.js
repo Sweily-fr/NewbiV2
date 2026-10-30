@@ -579,9 +579,10 @@ export const CONVERT_QUOTE_TO_INVOICE = gql`
 // ==================== HOOKS PERSONNALISÉS ====================
 
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useAllPagesQuery } from "@/src/hooks/useAllPagesQuery";
 
 // Hook pour récupérer les soldes agrégés (devis créés + importés)
 export const useQuoteBalances = () => {
@@ -607,57 +608,30 @@ export const useQuoteBalances = () => {
   };
 };
 
-// Hook optimisé pour récupérer la liste des devis
+// Liste des devis : toute la liste de l'organisation (la première page
+// s'affiche aussitôt, le reste suit) : onglets, recherche et exports sont
+// calculés sur elle.
 export const useQuotes = (filters = {}) => {
   const {
     workspaceId,
     loading: workspaceLoading,
     error: workspaceError,
   } = useRequiredWorkspace();
-  const [page, setPage] = useState(1);
-  const limit = 50;
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(GET_QUOTES, {
-    variables: {
-      workspaceId,
-      ...filters,
-      page,
-      limit,
+  const { data, loading, error, refetch } = useAllPagesQuery(
+    GET_QUOTES,
+    {
+      variables: { workspaceId, ...filters },
+      skip: !workspaceId,
+      errorPolicy: "all",
+      fetchPolicy: "cache-and-network",
     },
-    skip: !workspaceId,
-    errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
-  });
+    { field: "quotes", listField: "quotes" },
+  );
 
   const quotes = useMemo(() => data?.quotes?.quotes || [], [data]);
   const totalCount = data?.quotes?.totalCount || 0;
   const hasNextPage = data?.quotes?.hasNextPage || false;
-
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !loading) {
-      fetchMore({
-        variables: {
-          page: page + 1,
-        },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) return prev;
-
-          setPage(page + 1);
-
-          return {
-            quotes: {
-              ...fetchMoreResult.quotes,
-              quotes: [...prev.quotes.quotes, ...fetchMoreResult.quotes.quotes],
-            },
-          };
-        },
-      });
-    }
-  }, [hasNextPage, loading, fetchMore, page]);
-
-  const resetPage = useCallback(() => {
-    setPage(1);
-  }, []);
 
   return {
     quotes,
@@ -665,9 +639,7 @@ export const useQuotes = (filters = {}) => {
     hasNextPage,
     loading: (workspaceLoading && !workspaceId) || (loading && !quotes),
     error: error || workspaceError,
-    loadMore,
     refetch,
-    resetPage,
   };
 };
 

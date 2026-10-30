@@ -36,6 +36,10 @@ import {
   useUpdateEmailSettings,
 } from "@/src/graphql/emailQueries";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import {
+  apiRefusalMessage,
+  throwIfMutationErrors,
+} from "@/src/graphql/mutationErrors";
 
 export function AutoReminderModal({ open, onOpenChange }) {
   const [isSaving, setIsSaving] = useState(false);
@@ -124,8 +128,11 @@ Cordialement,
 
       // Sauvegarder les paramètres email (seulement avec le droit : sinon
       // ils sont affichés en lecture simple et restent inchangés)
+      // Mutations en errorPolicy « all » : un refus de l'API (adresse
+      // invalide, deuxième relance avant la première) ne lève rien, il était
+      // annoncé « sauvegardés ». Chaque réponse est vérifiée.
       if (canEditSender) {
-        await updateEmailSettings({
+        const emailResult = await updateEmailSettings({
           variables: {
             input: {
               fromEmail,
@@ -134,21 +141,25 @@ Cordialement,
             },
           },
         });
+        throwIfMutationErrors(emailResult);
       }
 
       // Sauvegarder les paramètres de relance
-      await updateSettings({
+      const reminderResult = await updateSettings({
         variables: {
           input: reminderData,
         },
       });
+      throwIfMutationErrors(reminderResult);
 
       toast.success("Paramètres de relance automatique sauvegardés");
       onOpenChange(false);
     } catch (error) {
-      console.error("Erreur lors de la sauvegarde:", error);
+      // Refus annoncé à l'utilisateur : avertissement, pas une erreur du site
+      console.warn("Paramètres de relance refusés:", error?.message);
       toast.error(
-        error.message || "Erreur lors de la sauvegarde des paramètres",
+        apiRefusalMessage(error) ||
+          "Erreur lors de la sauvegarde des paramètres",
       );
     } finally {
       setIsSaving(false);

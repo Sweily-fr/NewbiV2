@@ -650,13 +650,16 @@ export const CHECK_INVOICE_NUMBER_EXISTS = gql`
 // ==================== HOOKS PERSONNALISÉS ====================
 
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
+import { useAllPagesQuery } from "@/src/hooks/useAllPagesQuery";
 
-// Hook optimisé pour récupérer la liste des factures
+// Liste des factures : toutes celles de l'organisation (la première page
+// s'affiche aussitôt, le reste suit), car onglets, recherche, tri, exports et
+// chiffres de l'accueil sont calculés sur la liste chargée.
 export const useInvoices = ({ skip = false } = {}) => {
   // Récupérer le workspace actuel
   const {
@@ -665,104 +668,21 @@ export const useInvoices = ({ skip = false } = {}) => {
     error: workspaceError,
   } = useRequiredWorkspace();
 
-  // Configuration de la pagination - Charger toutes les factures pour combiner avec les importées
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 50, // Pagination côté client avec 50 éléments par page
-  });
-
-  // Configuration du tri et des filtres
-  const [sorting, setSorting] = useState([{ id: "issueDate", desc: true }]);
-  const [filters, setFilters] = useState([]);
-
-  // Options de requête avec cache-first
   const {
     data: invoicesData,
     loading: queryLoading,
     error: queryError,
     refetch,
-    fetchMore,
-  } = useQuery(GET_INVOICES, {
-    variables: {
-      workspaceId,
-      page: pagination.pageIndex + 1,
-      limit: pagination.pageSize,
-      sortField: sorting[0]?.id,
-      sortOrder: sorting[0]?.desc ? "desc" : "asc",
-      filters: filters.reduce(
-        (acc, { id, value }) => ({
-          ...acc,
-          [id]: value,
-        }),
-        {},
-      ),
+  } = useAllPagesQuery(
+    GET_INVOICES,
+    {
+      variables: { workspaceId },
+      errorPolicy: "all",
+      fetchPolicy: "cache-and-network",
+      notifyOnNetworkStatusChange: true,
+      skip: skip || !workspaceId, // Ne pas exécuter la query sans workspaceId
     },
-    errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
-    notifyOnNetworkStatusChange: true,
-    skip: skip || !workspaceId, // Ne pas exécuter la query sans workspaceId
-  });
-
-  // Fonction pour charger plus de données
-  const loadMore = useCallback(() => {
-    if (!queryLoading && workspaceId) {
-      fetchMore({
-        variables: {
-          workspaceId,
-          page: pagination.pageIndex + 1,
-          limit: pagination.pageSize,
-          sortField: sorting[0]?.id || "issueDate",
-          sortOrder: sorting[0]?.desc ? "desc" : "asc",
-          filters: filters.reduce(
-            (acc, { id, value }) => ({
-              ...acc,
-              [id]: value,
-            }),
-            {},
-          ),
-        },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult?.invoices?.invoices?.length) return prev;
-          return {
-            ...fetchMoreResult,
-            invoices: {
-              ...fetchMoreResult.invoices,
-              invoices: [
-                ...(prev.invoices?.invoices || []),
-                ...(fetchMoreResult.invoices?.invoices || []),
-              ],
-            },
-          };
-        },
-      }).then(() => {
-        setPagination((prev) => ({
-          ...prev,
-          pageIndex: prev.pageIndex + 1,
-        }));
-      });
-    }
-  }, [
-    fetchMore,
-    filters,
-    queryLoading,
-    workspaceId,
-    pagination.pageIndex,
-    pagination.pageSize,
-    sorting,
-  ]);
-
-  // Fonction de refetch optimisée
-  const optimizedRefetch = useCallback(
-    (variables) => {
-      if (!workspaceId) return Promise.resolve();
-      return refetch({
-        workspaceId,
-        ...variables,
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-      });
-    },
-    [workspaceId, pagination.pageIndex, pagination.pageSize, refetch],
+    { field: "invoices", listField: "invoices" },
   );
 
   // Valeurs de retour optimisées
@@ -774,18 +694,7 @@ export const useInvoices = ({ skip = false } = {}) => {
       loading:
         (workspaceLoading && !workspaceId) || (queryLoading && !invoicesData),
       error: workspaceError || queryError,
-      pagination: {
-        ...pagination,
-        pageCount: invoicesData?.invoices?.pagination?.totalPages || 1,
-        total: invoicesData?.invoices?.totalCount || 0,
-      },
-      sorting,
-      filters,
-      onSortingChange: setSorting,
-      onPaginationChange: setPagination,
-      onFiltersChange: setFilters,
-      loadMore,
-      refetch: optimizedRefetch,
+      refetch,
     }),
     [
       invoicesData,
@@ -794,11 +703,7 @@ export const useInvoices = ({ skip = false } = {}) => {
       queryLoading,
       workspaceError,
       queryError,
-      pagination,
-      sorting,
-      filters,
-      loadMore,
-      optimizedRefetch,
+      refetch,
     ],
   );
 };
