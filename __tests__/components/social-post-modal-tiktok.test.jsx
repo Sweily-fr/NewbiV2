@@ -26,7 +26,7 @@ vi.mock("@/src/hooks/useSocialPublishing", async (importOriginal) => ({
   ...(await importOriginal()),
   useConnectSocialAccount: () => ({
     connect: vi.fn(),
-    connectingPlatform: null,
+    connecting: null,
   }),
   // Même objet à chaque rendu, comme le cache Apollo
   useTikTokCreatorInfo: () => creatorInfo,

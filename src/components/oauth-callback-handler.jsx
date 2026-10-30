@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import {
-  getPlatformLabel,
+  getConnectorLabel,
   getSocialConnectErrorMessage,
 } from "@/src/utils/social-post-rules";
 
@@ -23,7 +23,8 @@ export function OAuthCallbackHandler({ onOpenSettings, onSetSettingsTab }) {
     const socialError = searchParams.get("social_error");
     if (socialConnected || socialError) {
       if (socialConnected) {
-        toast.success(`${getPlatformLabel(socialConnected)} connecté`);
+        // Réseau ou clé de connecteur (« Instagram via Facebook connecté »)
+        toast.success(`${getConnectorLabel(socialConnected)} connecté`);
       } else {
         toast.error(
           getSocialConnectErrorMessage(

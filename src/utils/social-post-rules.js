@@ -63,6 +63,7 @@ const TWITTER_URL_LENGTH = 23;
  * minRatio / maxRatio : largeur / hauteur acceptées (images Instagram).
  * minWidth / minHeight : taille minimale (images LinkedIn).
  * video : durées (ms) et poids (octets, après préparation par le serveur).
+ * story.video : mêmes limites pour une story (Instagram et Facebook).
  * La durée maximale TikTok dépend du compte (creator_info).
  */
 export const PLATFORM_RULES = {
@@ -78,6 +79,13 @@ export const PLATFORM_RULES = {
       maxDurationMs: MAX_VIDEO_DURATION_MS,
       maxBytes: 300 * DECIMAL_MB,
     },
+    story: {
+      video: {
+        minDurationMs: MIN_VIDEO_DURATION_MS,
+        maxDurationMs: 60 * 1000,
+        maxBytes: 100 * DECIMAL_MB,
+      },
+    },
   },
   facebook: {
     label: "Facebook",
@@ -85,6 +93,14 @@ export const PLATFORM_RULES = {
     maxImages: 10,
     imageRequired: false,
     video: { maxDurationMs: MAX_VIDEO_DURATION_MS, maxBytes: DECIMAL_GB },
+    // Pas de poids publié pour une story : on garde celui de la vidéo de page
+    story: {
+      video: {
+        minDurationMs: MIN_VIDEO_DURATION_MS,
+        maxDurationMs: 60 * 1000,
+        maxBytes: DECIMAL_GB,
+      },
+    },
   },
   linkedin: {
     label: "LinkedIn",
@@ -132,6 +148,22 @@ export const TIKTOK_MUSIC_CONFIRMATION_URL =
 export const TIKTOK_BRANDED_CONTENT_POLICY_URL =
   "https://www.tiktok.com/legal/page/global/bc-policy/fr";
 
+// Stories : Instagram et Facebook seulement (aucune API ailleurs)
+export const STORY_PLATFORMS = ["instagram", "facebook"];
+// Son tendance : Instagram (comptes connectés via Facebook, Reel) et TikTok
+// (comptes TikTok Business, publication directe)
+export const SOUND_PLATFORMS = ["instagram", "tiktok"];
+// Volumes proposés à l'ajout d'un son (exemple de la doc Meta, proche des
+// 50/50 par défaut de l'appli TikTok)
+export const DEFAULT_SOUND_VOLUME = 80;
+export const DEFAULT_VIDEO_SOUND_VOLUME = 50;
+export const TIKTOK_PUBLIC_PRIVACY = "PUBLIC_TO_EVERYONE";
+
+export const STORY_UNAVAILABLE_MESSAGE =
+  "Les stories ne sont disponibles que pour les comptes connectés directement.";
+export const TIKTOK_DRAFT_RECONNECT_MESSAGE =
+  "Reconnectez votre compte TikTok pour envoyer en brouillon.";
+
 /** Nom affiché d'un réseau (« X » pour twitter) */
 export function getPlatformLabel(platform) {
   return PLATFORM_RULES[platform]?.label || platform || "ce réseau";
@@ -148,6 +180,144 @@ export function joinLabels(labels) {
 export function uniquePlatforms(platforms) {
   const set = new Set(platforms || []);
   return SOCIAL_PLATFORMS.filter((p) => set.has(p));
+}
+
+// ── Format, son et brouillon ─────────────────────────────────────────────
+
+/**
+ * Format d'un réseau pour tout le post : "story" (Instagram et Facebook
+ * seulement) ou "post" (défaut).
+ * @param {{ instagram?: string, facebook?: string }} formats
+ */
+export function getPostFormat(formats, platform) {
+  return STORY_PLATFORMS.includes(platform) && formats?.[platform] === "story"
+    ? "story"
+    : "post";
+}
+
+export function isStoryFormat(formats, platform) {
+  return getPostFormat(formats, platform) === "story";
+}
+
+/**
+ * Réseaux dont le texte est publié, donc compté : ni une story (les API
+ * n'ont pas de légende pour les stories), ni TikTok pour une vidéo envoyée
+ * en brouillon (le texte n'est pas transmis, le client l'écrit dans TikTok).
+ */
+export function getTextPlatforms(
+  platforms,
+  { formats, tiktokMode, video = false } = {},
+) {
+  return uniquePlatforms(platforms).filter((platform) => {
+    if (isStoryFormat(formats, platform)) return false;
+    return !(platform === "tiktok" && tiktokMode === "draft" && video);
+  });
+}
+
+/** Compte qui peut publier des stories (Instagram et Facebook en direct) */
+export function canAccountPostStory(account) {
+  return !!account?.capabilities?.stories;
+}
+
+/** Compte qui accepte un son tendance (Instagram via Facebook, TikTok Business) */
+export function canAccountUseSound(account) {
+  return !!account?.capabilities?.sounds;
+}
+
+/** Compte TikTok connecté par TikTok Business */
+export function isTikTokBusinessAccount(account) {
+  return account?.platform === "tiktok" && account?.connector === "business";
+}
+
+/**
+ * Le média et le format permettent-ils un son tendance sur ce réseau ?
+ * Instagram : un Reel (une vidéo, format « Publication »), ni photo, ni
+ * carrousel, ni story. TikTok : vidéo ou photos en publication directe (en
+ * brouillon, le client choisit le son dans TikTok).
+ */
+export function isSoundAllowed(
+  platform,
+  { media = [], formats, tiktokMode } = {},
+) {
+  const videos = (media || []).filter(isVideoMedia).length;
+  const images = (media || []).length - videos;
+  if (platform === "instagram") {
+    return !isStoryFormat(formats, "instagram") && videos === 1 && !images;
+  }
+  if (platform === "tiktok") {
+    return tiktokMode !== "draft" && videos + images > 0;
+  }
+  return false;
+}
+
+/**
+ * Réseaux du post où un son tendance est possible : au moins un compte
+ * compatible choisi et un média qui s'y prête. `account` : compte dont on
+ * lit les sons ; `partial` : d'autres comptes du réseau publieront sans son.
+ * @returns {Array<{ platform: string, account: object, partial: boolean }>}
+ */
+export function getSoundTargets(accounts, options = {}) {
+  return SOUND_PLATFORMS.flatMap((platform) => {
+    const list = (accounts || []).filter((a) => a?.platform === platform);
+    const compatible = list.filter(canAccountUseSound);
+    if (compatible.length === 0 || !isSoundAllowed(platform, options)) {
+      return [];
+    }
+    return [
+      {
+        platform,
+        account: compatible[0],
+        partial: compatible.length < list.length,
+      },
+    ];
+  });
+}
+
+/** Mention quand d'autres comptes du réseau publieront sans le son */
+export const SOUND_PARTIAL_MESSAGES = {
+  instagram:
+    "Le son sera ajouté uniquement aux comptes connectés via Facebook.",
+  tiktok: "Le son sera ajouté uniquement aux comptes TikTok Business.",
+};
+
+/**
+ * Envoi TikTok en brouillon pour les comptes choisis. `available` : chaque
+ * compte TikTok a l'autorisation (video.upload) ; `needsReconnect` : un
+ * compte l'aurait après une reconnexion ; `offered` : choix à montrer.
+ */
+export function getTikTokDraftAvailability(accounts) {
+  const tiktok = (accounts || []).filter((a) => a?.platform === "tiktok");
+  const ready = tiktok.filter((a) => a.capabilities?.drafts);
+  const needsReconnect = tiktok.some(
+    (a) => !a.capabilities?.drafts && a.capabilities?.draftsNeedReconnect,
+  );
+  return {
+    available: tiktok.length > 0 && ready.length === tiktok.length,
+    needsReconnect,
+    offered: ready.length > 0 || needsReconnect,
+  };
+}
+
+// Tolérance d'arrondi du format vertical (1080 × 1920 = 0,5625 pile)
+const STORY_RATIO_TOLERANCE = 0.02;
+
+/** Média vertical au format d'une story (9:16, ou plus haut) ; inconnu : oui */
+export function isStoryRatio(width, height) {
+  if (!width || !height) return true;
+  return width / height <= 9 / 16 + STORY_RATIO_TOLERANCE;
+}
+
+/** Conseils d'une story (jamais bloquants), dans l'ordre d'affichage */
+export function getStoryHints(media = []) {
+  const hints = ["Le texte n'apparaît pas dans une story."];
+  const images = (media || []).filter((m) => !isVideoMedia(m));
+  if (images.length > 1) {
+    hints.push("Plusieurs photos donnent plusieurs stories à la suite.");
+  }
+  if ((media || []).some((m) => !isStoryRatio(m?.width, m?.height))) {
+    hints.push("Format vertical 9:16 conseillé.");
+  }
+  return hints;
 }
 
 // ── Compteur de caractères ────────────────────────────────────────────────
@@ -392,20 +562,28 @@ export function checkVideoFile(file, { durationMs } = {}) {
  * préparée par le serveur (`status` "ready"), c'est lui que reçoit le réseau.
  * @param {{ durationMs?: number, size?: number, status?: string }} video
  * @param {string[]} platforms
- * @param {{ tiktokMaxDurationSec?: number|null }} [options] durée maximale
- *   du compte TikTok (creator_info), null si inconnue
+ * @param {{ tiktokMaxDurationSec?: number|null, formats?: object }} [options]
+ *   durée maximale du compte TikTok (creator_info, null si inconnue) et
+ *   format par réseau (limites d'une story pour Instagram et Facebook)
  * @returns {Array<{ code: string, message: string }>}
  */
 export function getVideoErrors(
   video,
   platforms,
-  { tiktokMaxDurationSec } = {},
+  { tiktokMaxDurationSec, formats } = {},
 ) {
   const errors = [];
   if (!video) return errors;
   const selected = uniquePlatforms(platforms);
   const durationMs = Number(video.durationMs);
   const knownDuration = Number.isFinite(durationMs) && durationMs > 0;
+  const limitsFor = (platform) => {
+    const rules = PLATFORM_RULES[platform];
+    return (
+      (isStoryFormat(formats, platform) ? rules.story?.video : rules.video) ||
+      {}
+    );
+  };
 
   const globalError = knownDuration ? globalDurationError(durationMs) : null;
   if (globalError) {
@@ -413,19 +591,21 @@ export function getVideoErrors(
   } else if (knownDuration) {
     for (const platform of selected) {
       const rules = PLATFORM_RULES[platform];
-      const limits = rules.video || {};
+      const story = isStoryFormat(formats, platform);
+      const limits = limitsFor(platform);
       const max =
         platform === "tiktok" && tiktokMaxDurationSec > 0
           ? tiktokMaxDurationSec * 1000
           : limits.maxDurationMs;
       if (max && durationMs > max) {
-        errors.push({
-          code: "video_too_long",
-          message:
-            platform === "tiktok"
-              ? `TikTok accepte des vidéos de ${formatVideoDuration(max)} au maximum pour ce compte (cette vidéo dure ${formatVideoDuration(durationMs)}).`
-              : `${rules.label} accepte des vidéos de ${formatVideoDuration(max)} au maximum (cette vidéo dure ${formatVideoDuration(durationMs)}).`,
-        });
+        let message = `${rules.label} accepte des vidéos de ${formatVideoDuration(max)} au maximum (cette vidéo dure ${formatVideoDuration(durationMs)}).`;
+        if (platform === "tiktok") {
+          message = `TikTok accepte des vidéos de ${formatVideoDuration(max)} au maximum pour ce compte (cette vidéo dure ${formatVideoDuration(durationMs)}).`;
+        } else if (story) {
+          // « 60 s » plutôt que « 1 min » (limite annoncée par les réseaux)
+          message = `${rules.label} accepte des stories vidéo de ${Math.round(max / 1000)} s au maximum (cette vidéo dure ${formatVideoDuration(durationMs)}).`;
+        }
+        errors.push({ code: "video_too_long", message });
       } else if (limits.minDurationMs && durationMs < limits.minDurationMs) {
         errors.push({
           code: "video_too_short",
@@ -439,11 +619,14 @@ export function getVideoErrors(
   if (video.status === "ready" && Number.isFinite(size) && size > 0) {
     for (const platform of selected) {
       const rules = PLATFORM_RULES[platform];
-      const { maxBytes, minBytes } = rules.video || {};
+      const { maxBytes, minBytes } = limitsFor(platform);
       if (maxBytes && size > maxBytes) {
+        const target = isStoryFormat(formats, platform)
+          ? `une story ${rules.label}`
+          : rules.label;
         errors.push({
           code: "video_too_heavy",
-          message: `La vidéo est trop lourde pour ${rules.label} (${formatFileSize(maxBytes)} maximum après préparation).`,
+          message: `La vidéo est trop lourde pour ${target} (${formatFileSize(maxBytes)} maximum après préparation).`,
         });
       } else if (minBytes && size < minBytes) {
         errors.push({
@@ -467,24 +650,32 @@ export const VIDEO_FAILED_MESSAGE =
  *
  * @param {object} input
  * @param {string[]} input.platforms réseaux des comptes choisis
+ * @param {Array<{ platform: string, connector?: string|null, capabilities?: object }>} [input.accounts]
+ *   comptes choisis : stories, brouillons et TikTok Business contrôlés
+ *   seulement quand ils sont fournis
  * @param {number} input.accountCount nombre de comptes choisis
  * @param {string} input.content
  * @param {Array<{ kind?: string, status?: string, width?: number, height?: number, durationMs?: number, size?: number, errorMessage?: string }>} input.media
  *   images téléversées, ou une vidéo (`kind` "video", même en cours
  *   d'envoi ou de préparation : `status` autre que "ready")
+ * @param {{ instagram?: string, facebook?: string }} [input.formats]
+ *   "post" (défaut) ou "story" par réseau
  * @param {boolean} [input.publishNow]
  * @param {string|null} [input.scheduledFor] ISO UTC
  * @param {Date} [input.now]
- * @param {{ privacyLevel?: string, canPostMore?: boolean, commercial?: boolean, brandOrganic?: boolean, brandContent?: boolean, maxVideoDurationSec?: number|null }} [input.tiktok]
+ * @param {{ mode?: string, privacyLevel?: string, canPostMore?: boolean, commercial?: boolean, brandOrganic?: boolean, brandContent?: boolean, maxVideoDurationSec?: number|null }} [input.tiktok]
  *   (l'accord à la confirmation d'utilisation de la musique est donné en
- *   publiant : phrase de déclaration au-dessus du bouton, exigée par TikTok)
- * @returns {Array<{ field: "accounts"|"content"|"media"|"when"|"tiktok", code: string, message: string }>}
+ *   publiant : phrase de déclaration au-dessus du bouton, exigée par TikTok ;
+ *   en brouillon, TikTok demande tout dans l'appli)
+ * @returns {Array<{ field: "accounts"|"format"|"content"|"media"|"when"|"tiktok", code: string, message: string }>}
  */
 export function validateSocialPost({
   platforms = [],
+  accounts,
   accountCount,
   content = "",
   media = [],
+  formats = {},
   publishNow = false,
   scheduledFor = null,
   now = new Date(),
@@ -493,6 +684,8 @@ export function validateSocialPost({
   const errors = [];
   const selected = uniquePlatforms(platforms);
   const count = accountCount ?? platforms.length;
+  const stories = selected.filter((p) => isStoryFormat(formats, p));
+  const tiktokDraft = tiktok.mode === "draft";
 
   if (count === 0) {
     errors.push({
@@ -515,9 +708,17 @@ export function validateSocialPost({
     });
   }
 
-  const textLimit = getTextLimit(content, selected, {
-    video: videos.length > 0,
-  });
+  // Story (pas de texte affiché) et vidéo TikTok en brouillon (texte non
+  // transmis) : pas de limite pour ce réseau
+  const textLimit = getTextLimit(
+    content,
+    getTextPlatforms(selected, {
+      formats,
+      tiktokMode: tiktok.mode,
+      video: videos.length > 0,
+    }),
+    { video: videos.length > 0 },
+  );
   if (textLimit?.over) {
     errors.push({
       field: "content",
@@ -552,13 +753,39 @@ export function validateSocialPost({
     });
   }
 
-  const requiring = getPlatformsRequiringImage(selected);
+  // Story : message propre au réseau (« Une story Instagram exige… »)
+  const requiring = getPlatformsRequiringImage(selected).filter(
+    (p) => !stories.includes(p),
+  );
   if (requiring.length > 0 && media.length === 0) {
     const labels = joinLabels(requiring.map(getPlatformLabel));
     errors.push({
       field: "media",
       code: "image_required",
       message: `${labels} ${requiring.length > 1 ? "exigent" : "exige"} une image ou une vidéo.`,
+    });
+  }
+  if (media.length === 0) {
+    for (const platform of stories) {
+      errors.push({
+        field: "media",
+        code: "story_media_required",
+        message: `Une story ${getPlatformLabel(platform)} exige une photo ou une vidéo.`,
+      });
+    }
+  }
+
+  // Story visée sur un compte qui ne la permet pas (compte Zernio)
+  if (
+    accounts &&
+    stories.some((platform) =>
+      accounts.some((a) => a?.platform === platform && !canAccountPostStory(a)),
+    )
+  ) {
+    errors.push({
+      field: "format",
+      code: "story_unavailable",
+      message: STORY_UNAVAILABLE_MESSAGE,
     });
   }
 
@@ -570,8 +797,10 @@ export function validateSocialPost({
       message: video.errorMessage || VIDEO_FAILED_MESSAGE,
     });
   } else if (video) {
+    // En brouillon, la durée maximale du compte (creator_info) ne compte pas
     for (const error of getVideoErrors(video, selected, {
-      tiktokMaxDurationSec: tiktok.maxVideoDurationSec,
+      tiktokMaxDurationSec: tiktokDraft ? null : tiktok.maxVideoDurationSec,
+      formats,
     })) {
       errors.push({ field: "media", ...error });
     }
@@ -585,7 +814,8 @@ export function validateSocialPost({
     }
   }
 
-  if (selected.includes("instagram")) {
+  // Story : pas de contrôle du format des photos (9:16 seulement conseillé)
+  if (selected.includes("instagram") && !stories.includes("instagram")) {
     const invalid = imagePositions(images, (m) =>
       isInstagramRatioValid(m?.width, m?.height),
     );
@@ -638,7 +868,31 @@ export function validateSocialPost({
     }
   }
 
-  if (selected.includes("tiktok")) {
+  // Brouillon : confidentialité, interactions et divulgation se choisissent
+  // dans l'appli TikTok, seule l'autorisation d'envoi compte
+  if (selected.includes("tiktok") && tiktokDraft) {
+    if (accounts && !getTikTokDraftAvailability(accounts).available) {
+      errors.push({
+        field: "tiktok",
+        code: "tiktok_draft_unavailable",
+        message: TIKTOK_DRAFT_RECONNECT_MESSAGE,
+      });
+    }
+  } else if (selected.includes("tiktok")) {
+    // L'API Business n'a pas de confidentialité pour une vidéo : publique
+    if (
+      videos.length > 0 &&
+      tiktok.privacyLevel &&
+      tiktok.privacyLevel !== TIKTOK_PUBLIC_PRIVACY &&
+      (accounts || []).some(isTikTokBusinessAccount)
+    ) {
+      errors.push({
+        field: "tiktok",
+        code: "tiktok_business_public",
+        message:
+          "Avec un compte TikTok Business, une vidéo est toujours publique : choisissez « Tout le monde ».",
+      });
+    }
     if (tiktok.canPostMore === false) {
       errors.push({
         field: "tiktok",
@@ -855,11 +1109,19 @@ export function formatParisShortDateTime(iso) {
 
 // ── Statuts ──────────────────────────────────────────────────────────────
 
+export const TIKTOK_DRAFT_DELIVERED_LABEL = "Envoyé en brouillon TikTok";
+
+/** Cible terminée par un envoi dans les brouillons TikTok */
+export function isDeliveredAsDraft(target) {
+  return target?.deliveredAs === "draft";
+}
+
 /**
- * Libellé et ton du statut global d'un post.
+ * Libellé et ton du statut global d'un post. `targets` : un post dont toutes
+ * les cibles sont parties en brouillon TikTok n'est pas « Publié ».
  * tone : scheduled | progress | success | warning | error | muted
  */
-export function getPostStatusInfo(status, scheduledFor) {
+export function getPostStatusInfo(status, scheduledFor, targets) {
   switch (status) {
     case "scheduled": {
       const time = formatParisTime(scheduledFor);
@@ -871,6 +1133,9 @@ export function getPostStatusInfo(status, scheduledFor) {
     case "publishing":
       return { label: "Publication…", tone: "progress" };
     case "published":
+      if (targets?.length > 0 && targets.every(isDeliveredAsDraft)) {
+        return { label: TIKTOK_DRAFT_DELIVERED_LABEL, tone: "success" };
+      }
       return { label: "Publié", tone: "success" };
     case "partial":
       return { label: "Partiel", tone: "warning" };
@@ -884,10 +1149,12 @@ export function getPostStatusInfo(status, scheduledFor) {
 }
 
 /** Libellé et ton du statut d'un réseau (cible) du post */
-export function getTargetStatusInfo(status) {
+export function getTargetStatusInfo(status, target) {
   switch (status) {
     case "published":
-      return { label: "Publié", tone: "success" };
+      return isDeliveredAsDraft(target)
+        ? { label: TIKTOK_DRAFT_DELIVERED_LABEL, tone: "success" }
+        : { label: "Publié", tone: "success" };
     case "publishing":
     case "processing":
     case "uploading":
@@ -901,6 +1168,34 @@ export function getTargetStatusInfo(status) {
   }
 }
 
+/**
+ * Mention du format d'une cible : « Story », « 3 stories » (stories déjà
+ * publiées), null pour une publication.
+ */
+export function getTargetFormatLabel(post, target) {
+  const settings =
+    target?.platform === "instagram"
+      ? post?.instagramSettings
+      : target?.platform === "facebook"
+        ? post?.facebookSettings
+        : null;
+  if (settings?.format !== "story") return null;
+  return target.storyCount > 1 ? `${target.storyCount} stories` : "Story";
+}
+
+/** Son choisi pour un réseau du post (Instagram ou TikTok), null sinon */
+export function getPostSound(post, platform) {
+  if (platform === "instagram") return post?.instagramSettings?.sound || null;
+  if (platform === "tiktok") return post?.tiktokSettings?.sound || null;
+  return null;
+}
+
+/** « Titre · Artiste » (artiste absent : le titre seul) */
+export function formatSoundLabel(sound) {
+  if (!sound?.title) return "";
+  return sound.artist ? `${sound.title} · ${sound.artist}` : sound.title;
+}
+
 const POLL_WINDOW_MS = 15 * 60 * 1000;
 const TIKTOK_URL_WAIT_MS = 60 * 60 * 1000;
 
@@ -908,7 +1203,7 @@ const TIKTOK_URL_WAIT_MS = 60 * 60 * 1000;
  * Faut-il rafraîchir les posts du tableau ? Oui tant qu'un post est en
  * cours de publication, programmé dans moins de 15 minutes (ou en retard),
  * ou publié sur TikTok depuis moins d'une heure sans lien (TikTok le donne
- * quelques minutes après).
+ * quelques minutes après ; un brouillon n'en a jamais).
  */
 export function shouldPollSocialPosts(posts, now = new Date()) {
   const nowMs = now.getTime();
@@ -922,7 +1217,7 @@ export function shouldPollSocialPosts(posts, now = new Date()) {
     if (post.status === "published" || post.status === "partial") {
       return (post.targets || []).some((t) => {
         if (t?.platform !== "tiktok" || t.status !== "published") return false;
-        if (t.platformPostUrl) return false;
+        if (t.platformPostUrl || isDeliveredAsDraft(t)) return false;
         const at = toValidDate(t.publishedAt) || toValidDate(post.scheduledFor);
         return !!at && nowMs - at.getTime() <= TIKTOK_URL_WAIT_MS;
       });
@@ -934,12 +1229,108 @@ export function shouldPollSocialPosts(posts, now = new Date()) {
 // ── Connexion des comptes ────────────────────────────────────────────────
 
 /**
+ * Connexions autres que celle habituelle du réseau (clé de SocialConnector).
+ * connector : valeur de SocialAccount.connector ; mention : affichée à côté
+ * du compte ; description : aide du bouton (texte du cahier des charges,
+ * prioritaire sur celui de l'API).
+ */
+const SOCIAL_CONNECTORS = {
+  instagram_facebook: {
+    platform: "instagram",
+    connector: "facebook",
+    label: "Instagram via Facebook",
+    mention: "via Facebook",
+    description:
+      "Permet d'ajouter un son tendance aux Reels. Le compte doit être relié à une Page Facebook.",
+  },
+  tiktok_business: {
+    platform: "tiktok",
+    connector: "business",
+    label: "TikTok Business",
+    mention: "Business",
+    description: "Permet d'ajouter un son tendance.",
+  },
+};
+
+/** Réseau d'une clé de connecteur (« tiktok_business » → « tiktok ») */
+export function getConnectorPlatform(key) {
+  return SOCIAL_CONNECTORS[key]?.platform || key || null;
+}
+
+/** Libellé d'une clé de connecteur ou d'un réseau */
+export function getConnectorLabel(key) {
+  return (
+    SOCIAL_CONNECTORS[key]?.label || getPlatformLabel(getConnectorPlatform(key))
+  );
+}
+
+/** Phrase d'aide d'un connecteur, null s'il n'en a pas */
+export function getConnectorDescription(connector) {
+  return (
+    SOCIAL_CONNECTORS[connector?.key]?.description ||
+    connector?.description ||
+    null
+  );
+}
+
+function connectorEntryOf(account) {
+  return Object.entries(SOCIAL_CONNECTORS).find(
+    ([, entry]) =>
+      entry.platform === account?.platform &&
+      entry.connector === account?.connector,
+  );
+}
+
+/** Clé du connecteur d'un compte, pour le reconnecter par le même chemin */
+export function getAccountConnectorKey(account) {
+  return connectorEntryOf(account)?.[0] || account?.platform || null;
+}
+
+/** Mention du mode de connexion d'un compte : « via Facebook », « Business » */
+export function getAccountConnectorMention(account) {
+  return connectorEntryOf(account)?.[1].mention || null;
+}
+
+/**
+ * Connecteurs proposés (socialPublishingStatus.connectors), dans l'ordre
+ * des réseaux. API sans connecteurs : un par réseau connectable.
+ * @returns {Array<{ key: string, platform: string, label: string, description: string|null }>}
+ */
+export function normalizeConnectors(connectors, platforms) {
+  if (!Array.isArray(connectors)) {
+    return uniquePlatforms(platforms).map((platform) => ({
+      key: platform,
+      platform,
+      label: getPlatformLabel(platform),
+      description: null,
+    }));
+  }
+  const valid = connectors.filter(
+    (c) => c?.key && SOCIAL_PLATFORMS.includes(c.platform),
+  );
+  return SOCIAL_PLATFORMS.flatMap((platform) =>
+    valid
+      .filter((c) => c.platform === platform)
+      .map((c) => ({
+        key: c.key,
+        platform,
+        label: c.label || getConnectorLabel(c.key),
+        description: getConnectorDescription(c),
+      })),
+  );
+}
+
+/**
  * Message du retour de connexion en échec (?social_error=<code>).
  * Code inconnu : message générique (Zernio ajoute des codes sans prévenir).
+ * `platform` : réseau ou clé de connecteur.
  */
 export function getSocialConnectErrorMessage(code, platform) {
-  const label = PLATFORM_RULES[platform]?.label || "ce réseau";
+  const label =
+    PLATFORM_RULES[getConnectorPlatform(platform)]?.label || "ce réseau";
   switch (code) {
+    case "no_instagram_account":
+      return "Aucun compte Instagram professionnel n'est relié à vos Pages Facebook.";
     case "oauth_denied":
     case "access_denied":
     case "cancelled":

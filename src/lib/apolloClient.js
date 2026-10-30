@@ -677,6 +677,17 @@ const cache = new InMemoryCache({
     EmbeddedClient: {
       keyFields: false,
     },
+    // Son d'un post réseaux sociaux : son id est celui du son chez le réseau,
+    // partagé par tous les posts qui l'utilisent, chacun avec ses volumes.
+    // Normalisé par id, le dernier post lu écraserait les volumes des autres.
+    SocialPostSound: {
+      keyFields: false,
+    },
+    // Sons proposés : identifiants de catalogues différents (Instagram,
+    // TikTok), gardés dans le résultat de chaque recherche
+    SocialSound: {
+      keyFields: false,
+    },
   },
 });
 

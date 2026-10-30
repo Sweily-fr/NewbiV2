@@ -44,7 +44,7 @@ vi.mock("@/src/hooks/useSocialPublishing", async (importOriginal) => ({
   ...(await importOriginal()),
   useConnectSocialAccount: () => ({
     connect: vi.fn(),
-    connectingPlatform: null,
+    connecting: null,
   }),
   useTikTokCreatorInfo: () => creator.current,
 }));

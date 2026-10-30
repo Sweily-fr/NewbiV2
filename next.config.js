@@ -117,8 +117,10 @@ const cspValue = [
   // (/social-media/<id>.mp4 sur l'API) et blob: pour les entrées de ZIP
   // décompressées et les vidéos choisies avant leur envoi. Sans media-src,
   // <video> retombe sur default-src 'self' et la vidéo est bloquée en prod
-  // (ticket du 17/09/2026).
-  `media-src 'self' blob: https://*.r2.dev ${mediaApiOrigins.join(" ")}`,
+  // (ticket du 17/09/2026). Extraits des sons tendance écoutés avant de
+  // choisir (fenêtre « Programmer un post ») : servis par Meta (*.fbcdn.net,
+  // *.cdninstagram.com) et TikTok (*.tiktokcdn*.com, *.ibyteimg.com).
+  `media-src 'self' blob: https://*.r2.dev ${mediaApiOrigins.join(" ")} https://*.fbcdn.net https://*.cdninstagram.com https://*.tiktokcdn.com https://*.tiktokcdn-us.com https://*.tiktokcdn-eu.com https://*.ibyteimg.com`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr

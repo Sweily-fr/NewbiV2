@@ -10,6 +10,7 @@ import {
   Film,
   ImagePlus,
   Loader2,
+  Music,
   Plus,
   RefreshCw,
   Send,
@@ -27,8 +28,6 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Switch } from "@/src/components/ui/switch";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Tooltip,
   TooltipContent,
@@ -52,33 +51,44 @@ import { cn } from "@/src/lib/utils";
 import {
   getApiErrorMessage,
   useConnectSocialAccount,
-  useTikTokCreatorInfo,
 } from "@/src/hooks/useSocialPublishing";
 import {
   ACCEPTED_IMAGE_TYPES,
   ACCEPTED_VIDEO_TYPES,
   MAX_UPLOAD_BYTES,
+  DEFAULT_SOUND_VOLUME,
+  DEFAULT_VIDEO_SOUND_VOLUME,
   SOCIAL_PLATFORMS,
   SOCIAL_TIMEZONE,
-  TIKTOK_BRANDED_CONTENT_POLICY_URL,
-  TIKTOK_MUSIC_CONFIRMATION_URL,
+  SOUND_PLATFORMS,
+  STORY_PLATFORMS,
   buildComposerReturnTo,
+  canAccountPostStory,
   checkVideoFile,
   formatParisDateTime,
   formatParisShortDateTime,
+  formatSoundLabel,
   formatVideoDuration,
+  getAccountConnectorKey,
   getDefaultScheduleParts,
   getMaxImages,
   getParisToday,
   getPlatformLabel,
+  getSoundTargets,
+  getStoryHints,
   getTextLimit,
+  getTextPlatforms,
+  getTikTokDraftAvailability,
   getXQuotaNote,
+  isDeliveredAsDraft,
   isInstagramRatioValid,
   isSameParisMonth,
+  isTikTokBusinessAccount,
   isVideoFile,
   isVideoMedia,
   isoToParisParts,
   joinLabels,
+  normalizeConnectors,
   parisPartsToIso,
   uniquePlatforms,
   validateSocialPost,
@@ -91,9 +101,13 @@ import {
 } from "@/src/utils/social-video-upload";
 import {
   SocialAccountAvatar,
+  SocialAccountConnectorMention,
   SocialNetworkIcon,
   getSocialAccountName,
 } from "./SocialNetworkIcon";
+import { SocialPostFormatPicker } from "./SocialPostFormatPicker";
+import { SocialPostSoundSection } from "./SocialPostSoundPicker";
+import { TikTokDeclaration, TikTokOptions } from "./SocialPostTikTokOptions";
 import { useSocialPublishing } from "./SocialPostsProvider";
 
 const DRAFT_KEY_PREFIX = "newbi:social-post-draft:";
@@ -108,6 +122,8 @@ const LIVE_ERROR_CODES = new Set([
   "linkedin_size",
   "media_mixed",
   "too_many_videos",
+  "story_media_required",
+  "story_unavailable",
   "video_failed",
   "video_too_long",
   "video_too_short",
@@ -116,6 +132,8 @@ const LIVE_ERROR_CODES = new Set([
   "when_too_soon",
   "when_too_far",
   "tiktok_quota",
+  "tiktok_draft_unavailable",
+  "tiktok_business_public",
 ]);
 const VIDEO_INPUT_ACCEPT = ACCEPTED_VIDEO_TYPES.join(",");
 const PHOTOS_OR_VIDEO = "un post contient soit des photos, soit une vidéo.";
@@ -175,6 +193,8 @@ function sortAccounts(accounts) {
 // (commentaires, duos et collages pour une vidéo) et divulgation du contenu
 // commercial désactivées au départ
 const EMPTY_TIKTOK = {
+  // "direct" (publication) ou "draft" (brouillons de l'appli TikTok)
+  mode: "direct",
   privacyLevel: "",
   allowComment: false,
   allowDuet: false,
@@ -183,6 +203,39 @@ const EMPTY_TIKTOK = {
   brandOrganic: false,
   brandContent: false,
 };
+
+// Format par réseau (Instagram et Facebook) : publication par défaut
+const DEFAULT_FORMATS = { instagram: "post", facebook: "post" };
+// Son tendance par réseau (catalogues différents)
+const EMPTY_SOUNDS = { instagram: null, tiktok: null };
+
+function clampVolume(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n)
+    ? Math.min(100, Math.max(0, Math.round(n)))
+    : fallback;
+}
+
+/** Son lu (post enregistré, brouillon) → état de la fenêtre, sans __typename */
+function toSoundState(sound) {
+  if (!sound?.id || !sound?.title) return null;
+  return {
+    id: String(sound.id),
+    title: sound.title,
+    artist: sound.artist || null,
+    coverUrl: sound.coverUrl || null,
+    volume: clampVolume(sound.volume, DEFAULT_SOUND_VOLUME),
+    videoVolume: clampVolume(sound.videoVolume, DEFAULT_VIDEO_SOUND_VOLUME),
+  };
+}
+
+/** Formats d'un post enregistré ou d'un brouillon */
+function toFormatsState(instagram, facebook) {
+  return {
+    instagram: instagram === "story" ? "story" : "post",
+    facebook: facebook === "story" ? "story" : "post",
+  };
+}
 
 /** Champs d'un média renvoyé par l'API, sans écraser ce qui est déjà connu */
 function mediaFields(media) {
@@ -245,44 +298,52 @@ function SectionTitle({ children, htmlFor }) {
 
 // ── Comptes ──────────────────────────────────────────────────────────────
 
-function ConnectNetworkButtons({ platforms, onConnect, connectingPlatform }) {
+function ConnectNetworkButtons({ connectors, onConnect, connecting }) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      {platforms.map((platform) => (
-        <Button
-          key={platform}
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onConnect(platform)}
-          disabled={!!connectingPlatform}
-        >
-          {connectingPlatform === platform ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <SocialNetworkIcon platform={platform} title="" />
-          )}
-          {getPlatformLabel(platform)}
-        </Button>
-      ))}
+      {connectors.map((connector) => {
+        const button = (
+          <Button
+            key={connector.key}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onConnect(connector.platform, connector.key)}
+            disabled={!!connecting}
+          >
+            {connecting === connector.key ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <SocialNetworkIcon platform={connector.platform} title="" />
+            )}
+            {connector.label}
+          </Button>
+        );
+        if (!connector.description) return button;
+        return (
+          <Tooltip key={connector.key}>
+            <TooltipTrigger asChild>{button}</TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              {connector.description}
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }
 
 function AccountsPicker({
   accounts,
-  availablePlatforms,
+  connectors,
   selectedIds,
   onToggle,
   canManageAccounts,
   onConnect,
-  connectingPlatform,
+  connecting,
   allowAdd,
 }) {
-  // Réseaux connectables, dans l'ordre habituel
-  const connectable = SOCIAL_PLATFORMS.filter((platform) =>
-    availablePlatforms.includes(platform),
-  );
+  const connectorKeys = new Set(connectors.map((c) => c.key));
   if (accounts.length === 0) {
     return (
       <div className="rounded-xl border border-dashed px-4 py-6 text-center">
@@ -292,7 +353,7 @@ function AccountsPicker({
         <p className="text-sm font-medium">
           Connectez votre premier réseau social
         </p>
-        {canManageAccounts && connectable.length === 0 ? (
+        {canManageAccounts && connectors.length === 0 ? (
           <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
             Aucun réseau n&apos;est disponible pour le moment.
           </p>
@@ -303,9 +364,9 @@ function AccountsPicker({
               se fait en quelques clics, sans créer de compte.
             </p>
             <ConnectNetworkButtons
-              platforms={connectable}
+              connectors={connectors}
               onConnect={onConnect}
-              connectingPlatform={connectingPlatform}
+              connecting={connecting}
             />
           </>
         ) : (
@@ -324,6 +385,8 @@ function AccountsPicker({
         const needsReconnect = account.status !== "active";
         const selected = selectedIds.includes(account.id);
         const name = getSocialAccountName(account);
+        // Reconnexion par le même chemin (« Instagram via Facebook »…)
+        const connectorKey = getAccountConnectorKey(account);
         if (needsReconnect) {
           return (
             <div
@@ -337,14 +400,15 @@ function AccountsPicker({
                 className="opacity-50"
               />
               <span className="max-w-[140px] truncate">{name}</span>
-              {canManageAccounts && connectable.includes(account.platform) ? (
+              <SocialAccountConnectorMention account={account} />
+              {canManageAccounts && connectorKeys.has(connectorKey) ? (
                 <button
                   type="button"
-                  onClick={() => onConnect(account.platform)}
-                  disabled={!!connectingPlatform}
+                  onClick={() => onConnect(account.platform, connectorKey)}
+                  disabled={!!connecting}
                   className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/30 dark:text-amber-300"
                 >
-                  {connectingPlatform === account.platform ? (
+                  {connecting === connectorKey ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <RefreshCw className="h-3 w-3" />
@@ -374,6 +438,7 @@ function AccountsPicker({
           >
             <SocialAccountAvatar account={account} size={24} />
             <span className="max-w-[160px] truncate">{name}</span>
+            <SocialAccountConnectorMention account={account} />
             <span
               className={cn(
                 "flex h-4 w-4 items-center justify-center rounded-full border",
@@ -388,7 +453,7 @@ function AccountsPicker({
         );
       })}
 
-      {canManageAccounts && allowAdd && connectable.length > 0 && (
+      {canManageAccounts && allowAdd && connectors.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -399,16 +464,27 @@ function AccountsPicker({
               Ajouter un compte
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            {connectable.map((platform) => (
+          <DropdownMenuContent align="start" className="w-64">
+            {connectors.map((connector) => (
               <DropdownMenuItem
-                key={platform}
-                onSelect={() => onConnect(platform)}
-                disabled={!!connectingPlatform}
-                className="cursor-pointer gap-2"
+                key={connector.key}
+                onSelect={() => onConnect(connector.platform, connector.key)}
+                disabled={!!connecting}
+                className="cursor-pointer items-start gap-2"
               >
-                <SocialNetworkIcon platform={platform} title="" />
-                {getPlatformLabel(platform)}
+                <SocialNetworkIcon
+                  platform={connector.platform}
+                  title=""
+                  className="mt-0.5"
+                />
+                <span className="min-w-0">
+                  <span className="block">{connector.label}</span>
+                  {connector.description && (
+                    <span className="block text-xs text-muted-foreground">
+                      {connector.description}
+                    </span>
+                  )}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -635,9 +711,19 @@ function VideoTile({ item, onRemove, disabled }) {
 
 // ── Aperçu ───────────────────────────────────────────────────────────────
 
-function PostPreview({ accounts, content, media, whenLabel }) {
+function PostPreview({
+  accounts,
+  content,
+  media,
+  whenLabel,
+  storyPlatforms = [],
+  sounds = EMPTY_SOUNDS,
+}) {
   const first = accounts[0] || null;
   const platforms = uniquePlatforms(accounts.map((a) => a.platform));
+  const soundLines = SOUND_PLATFORMS.filter((p) => sounds[p]).map(
+    (p) => `${getPlatformLabel(p)} : ${formatSoundLabel(sounds[p])}`,
+  );
   const video = media.find(isVideoMedia) || null;
   const videoSrc = video ? video.url || video.previewUrl : null;
   const images = media.filter(
@@ -715,314 +801,33 @@ function PostPreview({ accounts, content, media, whenLabel }) {
           ))}
         </div>
       )}
+      {soundLines.length > 0 && (
+        <div className="space-y-0.5 border-t px-3 py-2 text-xs text-muted-foreground">
+          {soundLines.map((line) => (
+            <p key={line} className="flex min-w-0 items-center gap-1.5">
+              <Music className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{line}</span>
+            </p>
+          ))}
+        </div>
+      )}
       {platforms.length > 0 && (
         <div className="flex items-center gap-1.5 border-t px-3 py-2 text-xs text-muted-foreground">
           {platforms.map((p) => (
             <SocialNetworkIcon key={p} platform={p} size={14} />
           ))}
           <span className="ml-1 truncate">
-            {joinLabels(platforms.map(getPlatformLabel))}
+            {joinLabels(
+              platforms.map((p) =>
+                storyPlatforms.includes(p)
+                  ? `${getPlatformLabel(p)} (story)`
+                  : getPlatformLabel(p),
+              ),
+            )}
           </span>
         </div>
       )}
     </div>
-  );
-}
-
-// ── Options TikTok ───────────────────────────────────────────────────────
-
-function TikTokOptions({
-  accountId,
-  accountName,
-  workspaceId,
-  value,
-  onChange,
-  onInfo,
-  isVideo,
-}) {
-  const { info, loading, error, refetch } = useTikTokCreatorInfo(
-    accountId,
-    workspaceId,
-  );
-
-  useEffect(() => {
-    onInfo(info);
-  }, [info, onInfo]);
-
-  // Commentaires désactivés sur le compte : l'option reste coupée
-  useEffect(() => {
-    if (info?.commentDisabled && value.allowComment) {
-      onChange({ allowComment: false });
-    }
-  }, [info?.commentDisabled, value.allowComment, onChange]);
-
-  // Duos et collages coupés dans TikTok par le créateur : options coupées
-  useEffect(() => {
-    if (info?.duetDisabled && value.allowDuet) onChange({ allowDuet: false });
-  }, [info?.duetDisabled, value.allowDuet, onChange]);
-  useEffect(() => {
-    if (info?.stitchDisabled && value.allowStitch) {
-      onChange({ allowStitch: false });
-    }
-  }, [info?.stitchDisabled, value.allowStitch, onChange]);
-
-  // Visibilité choisie qui n'est plus proposée par le compte : à rechoisir
-  useEffect(() => {
-    if (
-      info?.privacyLevels &&
-      value.privacyLevel &&
-      !info.privacyLevels.some((l) => l.value === value.privacyLevel)
-    ) {
-      onChange({ privacyLevel: "" });
-    }
-  }, [info?.privacyLevels, value.privacyLevel, onChange]);
-
-  // Contenu de marque : jamais visible par soi seul (règle TikTok)
-  const brandedPrivate =
-    value.commercial &&
-    value.brandContent &&
-    value.privacyLevel === "SELF_ONLY";
-  const creatorName = info?.nickname || info?.username || accountName;
-
-  return (
-    <div className="space-y-3 rounded-xl border p-3">
-      <div className="flex items-center gap-2">
-        <SocialNetworkIcon platform="tiktok" title="" />
-        <span className="text-sm font-medium">Options TikTok</span>
-      </div>
-      {creatorName && (
-        <p className="text-xs text-muted-foreground">
-          Publication sur le compte TikTok{" "}
-          <span className="font-medium text-foreground">{creatorName}</span>
-          {info?.username && info.username !== creatorName && (
-            <> (@{info.username})</>
-          )}
-        </p>
-      )}
-
-      {loading && !info ? (
-        <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Chargement des réglages du compte TikTok…
-        </p>
-      ) : error && !info ? (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-red-600 dark:text-red-400">
-          <span>
-            {getApiErrorMessage(
-              error,
-              "Impossible de lire les réglages du compte TikTok.",
-            )}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-          >
-            Réessayer
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">
-              Qui peut voir ce post
-            </Label>
-            <Select
-              value={value.privacyLevel || undefined}
-              onValueChange={(privacyLevel) => onChange({ privacyLevel })}
-            >
-              <SelectTrigger className="w-full sm:w-64">
-                <SelectValue placeholder="Choisir" />
-              </SelectTrigger>
-              <SelectContent>
-                {(info?.privacyLevels || []).map((level) => (
-                  <SelectItem
-                    key={level.value}
-                    value={level.value}
-                    disabled={
-                      level.value === "SELF_ONLY" &&
-                      value.commercial &&
-                      value.brandContent
-                    }
-                  >
-                    {level.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {value.commercial && value.brandContent && (
-              <p
-                className={cn(
-                  "text-xs",
-                  brandedPrivate
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-muted-foreground",
-                )}
-              >
-                Le contenu de marque ne peut pas être visible par vous seul.
-              </p>
-            )}
-          </div>
-
-          <label className="flex items-center justify-between gap-3 text-sm">
-            <span>
-              Autoriser les commentaires
-              {info?.commentDisabled && (
-                <span className="block text-xs text-muted-foreground">
-                  Les commentaires sont désactivés sur ce compte TikTok.
-                </span>
-              )}
-            </span>
-            <Switch
-              checked={!!value.allowComment}
-              onCheckedChange={(allowComment) => onChange({ allowComment })}
-              disabled={!!info?.commentDisabled}
-            />
-          </label>
-
-          {isVideo && (
-            <>
-              <label className="flex items-center justify-between gap-3 text-sm">
-                <span>
-                  Autoriser les duos
-                  {info?.duetDisabled && (
-                    <span className="block text-xs text-muted-foreground">
-                      Les duos sont désactivés sur ce compte TikTok.
-                    </span>
-                  )}
-                </span>
-                <Switch
-                  checked={!!value.allowDuet}
-                  onCheckedChange={(allowDuet) => onChange({ allowDuet })}
-                  disabled={!!info?.duetDisabled}
-                />
-              </label>
-              <label className="flex items-center justify-between gap-3 text-sm">
-                <span>
-                  Autoriser les collages (Stitch)
-                  {info?.stitchDisabled && (
-                    <span className="block text-xs text-muted-foreground">
-                      Les collages sont désactivés sur ce compte TikTok.
-                    </span>
-                  )}
-                </span>
-                <Switch
-                  checked={!!value.allowStitch}
-                  onCheckedChange={(allowStitch) => onChange({ allowStitch })}
-                  disabled={!!info?.stitchDisabled}
-                />
-              </label>
-            </>
-          )}
-
-          {/* Divulgation du contenu commercial (consignes TikTok) */}
-          <div className="space-y-2">
-            <label className="flex items-center justify-between gap-3 text-sm">
-              <span>
-                Divulguer le contenu commercial
-                <span className="block text-xs text-muted-foreground">
-                  Indiquez si ce post fait la promotion de votre marque,
-                  d&apos;un tiers, ou des deux.
-                </span>
-              </span>
-              <Switch
-                checked={!!value.commercial}
-                onCheckedChange={(commercial) => onChange({ commercial })}
-              />
-            </label>
-            {value.commercial && (
-              <div className="space-y-2 rounded-lg bg-muted/40 p-2.5">
-                <label className="flex items-start gap-2 text-sm">
-                  <Checkbox
-                    checked={!!value.brandOrganic}
-                    onCheckedChange={(checked) =>
-                      onChange({ brandOrganic: checked === true })
-                    }
-                    className="mt-0.5"
-                  />
-                  <span>
-                    Votre marque
-                    <span className="block text-xs text-muted-foreground">
-                      Vous faites la promotion de vous-même ou de votre
-                      entreprise.
-                    </span>
-                  </span>
-                </label>
-                <label className="flex items-start gap-2 text-sm">
-                  <Checkbox
-                    checked={!!value.brandContent}
-                    onCheckedChange={(checked) =>
-                      onChange({ brandContent: checked === true })
-                    }
-                    className="mt-0.5"
-                  />
-                  <span>
-                    Contenu de marque
-                    <span className="block text-xs text-muted-foreground">
-                      Vous faites la promotion d&apos;une autre marque ou
-                      d&apos;un tiers.
-                    </span>
-                  </span>
-                </label>
-                {value.brandContent ? (
-                  <p className="text-xs text-muted-foreground">
-                    {`Votre ${isVideo ? "vidéo" : "photo"} sera étiquetée « Partenariat rémunéré ».`}
-                  </p>
-                ) : value.brandOrganic ? (
-                  <p className="text-xs text-muted-foreground">
-                    {`Votre ${isVideo ? "vidéo" : "photo"} sera étiquetée « Contenu promotionnel ».`}
-                  </p>
-                ) : (
-                  <p className="text-xs text-red-600 dark:text-red-400">
-                    Cochez au moins une option, ou désactivez la divulgation.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-/**
- * Déclaration exigée par TikTok au-dessus du bouton de publication : publier
- * vaut accord (confirmation d'utilisation de la musique, et politique du
- * contenu de marque si le post en est un).
- */
-function TikTokDeclaration({ branded }) {
-  const link = (href, label) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-[#5A50FF] underline-offset-2 hover:underline"
-    >
-      {label}
-    </a>
-  );
-  return (
-    <p className="text-xs text-muted-foreground">
-      En publiant, vous acceptez{" "}
-      {branded && (
-        <>
-          la{" "}
-          {link(
-            TIKTOK_BRANDED_CONTENT_POLICY_URL,
-            "politique relative au contenu de marque",
-          )}{" "}
-          et{" "}
-        </>
-      )}
-      la{" "}
-      {link(
-        TIKTOK_MUSIC_CONFIRMATION_URL,
-        "confirmation d'utilisation de la musique",
-      )}{" "}
-      de TikTok.
-    </p>
   );
 }
 
@@ -1042,7 +847,15 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     () => sortAccounts(status?.accounts),
     [status?.accounts],
   );
-  const { connect, connectingPlatform } = useConnectSocialAccount(workspaceId);
+  // Façons de connecter chaque réseau (déjà normalisées par le hook ; les
+  // simulations des tests n'en donnent pas toujours)
+  const connectors = useMemo(
+    () =>
+      status?.connectors ||
+      normalizeConnectors(null, status?.platforms || SOCIAL_PLATFORMS),
+    [status?.connectors, status?.platforms],
+  );
+  const { connect, connecting } = useConnectSocialAccount(workspaceId);
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [content, setContent] = useState("");
@@ -1053,6 +866,8 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   const [columnId, setColumnId] = useState("");
   const [tiktok, setTiktok] = useState(EMPTY_TIKTOK);
   const [tiktokInfo, setTiktokInfo] = useState(null);
+  const [formats, setFormats] = useState(DEFAULT_FORMATS);
+  const [sounds, setSounds] = useState(EMPTY_SOUNDS);
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -1091,9 +906,20 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       setDate(parts.date);
       setTime(parts.time);
       setColumnId("");
+      setFormats(
+        toFormatsState(
+          post.instagramSettings?.format,
+          post.facebookSettings?.format,
+        ),
+      );
+      setSounds({
+        instagram: toSoundState(post.instagramSettings?.sound),
+        tiktok: toSoundState(post.tiktokSettings?.sound),
+      });
       setTiktok(
         post.tiktokSettings
           ? {
+              mode: post.tiktokSettings.mode === "draft" ? "draft" : "direct",
               privacyLevel: post.tiktokSettings.privacyLevel || "",
               allowComment: !!post.tiktokSettings.allowComment,
               allowDuet: !!post.tiktokSettings.allowDuet,
@@ -1126,6 +952,13 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       setTime(draft.time || defaults.time);
       setColumnId(draft.columnId || firstColumnId(columns));
       setTiktok({ ...EMPTY_TIKTOK, ...(draft.tiktok || {}) });
+      setFormats(
+        toFormatsState(draft.formats?.instagram, draft.formats?.facebook),
+      );
+      setSounds({
+        instagram: toSoundState(draft.sounds?.instagram),
+        tiktok: toSoundState(draft.sounds?.tiktok),
+      });
     } else {
       // Un seul compte connecté : choisi d'office
       setSelectedIds(activeIds.size === 1 ? [...activeIds] : []);
@@ -1136,6 +969,8 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       setTime(defaults.time);
       setColumnId(firstColumnId(columns));
       setTiktok(EMPTY_TIKTOK);
+      setFormats(DEFAULT_FORMATS);
+      setSounds(EMPTY_SOUNDS);
     }
     // Comptes et colonnes lus à l'ouverture seulement
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1161,6 +996,35 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   const tiktokAccount = selectedAccounts.find((a) => a.platform === "tiktok");
   const hasTikTok = !!tiktokAccount;
 
+  // Format par réseau : story possible si un compte choisi du réseau la
+  // permet (sinon « Publication » imposée)
+  const formatNetworks = STORY_PLATFORMS.filter((p) =>
+    platforms.includes(p),
+  ).map((platform) => ({
+    platform,
+    storyAvailable: selectedAccounts.some(
+      (a) => a.platform === platform && canAccountPostStory(a),
+    ),
+  }));
+  const activeFormats = { ...DEFAULT_FORMATS };
+  for (const { platform, storyAvailable } of formatNetworks) {
+    if (storyAvailable && formats[platform] === "story") {
+      activeFormats[platform] = "story";
+    }
+  }
+  const storyPlatforms = formatNetworks
+    .map((n) => n.platform)
+    .filter((p) => activeFormats[p] === "story");
+
+  // Brouillon TikTok : seulement si un compte choisi peut le recevoir (ou le
+  // pourrait après une reconnexion)
+  const draftAvailability = getTikTokDraftAvailability(selectedAccounts);
+  const tiktokMode =
+    hasTikTok && tiktok.mode === "draft" && draftAvailability.offered
+      ? "draft"
+      : "direct";
+  const tiktokDraft = tiktokMode === "draft";
+
   const scheduledFor =
     whenMode === "schedule" ? parisPartsToIso(date, time) : null;
   const videoItem = media.find(isVideoMedia) || null;
@@ -1178,34 +1042,116 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     videoItem?.status === "uploading" || videoItem?.status === "processing";
   const uploading = media.some((m) => m.uploading) || videoBusy;
 
+  // Son tendance : réseaux où il est possible (compte compatible, média et
+  // format qui s'y prêtent). Un son d'un réseau qui ne le permet plus n'est
+  // jamais envoyé, et il est retiré (effet plus bas).
+  const soundTargets = getSoundTargets(selectedAccounts, {
+    media,
+    formats: activeFormats,
+    tiktokMode,
+  });
+  const soundPlatforms = soundTargets.map((t) => t.platform);
+  const soundPlatformsKey = soundPlatforms.join(",");
+  const activeSounds = useMemo(() => {
+    const allowed = soundPlatformsKey.split(",");
+    return {
+      instagram: allowed.includes("instagram") ? sounds.instagram : null,
+      tiktok: allowed.includes("tiktok") ? sounds.tiktok : null,
+    };
+  }, [soundPlatformsKey, sounds]);
+  // Vidéo d'un compte TikTok Business en publication directe : publique
+  const businessVideo =
+    !!videoItem &&
+    !tiktokDraft &&
+    selectedAccounts.some(isTikTokBusinessAccount);
+  const storyHints = storyPlatforms.length > 0 ? getStoryHints(media) : [];
+
   const errors = useMemo(
     () =>
       validateSocialPost({
         platforms,
+        accounts: selectedAccounts,
         accountCount: selectedAccounts.length,
         content,
         media: rulesMedia,
+        formats: activeFormats,
         publishNow: whenMode === "now",
         scheduledFor,
         tiktok: {
           ...tiktok,
+          mode: tiktokMode,
           canPostMore: tiktokInfo ? tiktokInfo.canPostMore : undefined,
           maxVideoDurationSec: tiktokInfo?.maxVideoPostDurationSec ?? null,
         },
       }),
-    // rulesMedia dérive de media
+    // rulesMedia dérive de media, activeFormats et tiktokMode des comptes
+    // choisis et des choix de l'utilisateur
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       platforms,
-      selectedAccounts.length,
+      selectedAccounts,
       content,
       media,
       whenMode,
       scheduledFor,
       tiktok,
       tiktokInfo,
+      activeFormats.instagram,
+      activeFormats.facebook,
+      tiktokMode,
     ],
   );
+
+  // Choix devenus impossibles (média, format, comptes ou mode changés) :
+  // son retiré, story et brouillon ramenés à la publication. Pas au passage
+  // qui suit l'ouverture : l'état vient d'y être initialisé.
+  const constraintsKey = [
+    soundPlatformsKey,
+    formatNetworks
+      .filter((n) => !n.storyAvailable)
+      .map((n) => n.platform)
+      .join(","),
+    hasTikTok && !draftAvailability.offered ? "no-draft" : "",
+  ].join("|");
+  const constraintsReadyRef = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      constraintsReadyRef.current = false;
+      return;
+    }
+    if (!constraintsReadyRef.current) {
+      constraintsReadyRef.current = true;
+      return;
+    }
+    const [allowedSounds, lockedStories, draftLock] = constraintsKey.split("|");
+    setSounds((prev) => {
+      const lost = SOUND_PLATFORMS.filter(
+        (p) => prev[p] && !allowedSounds.split(",").includes(p),
+      );
+      if (lost.length === 0) return prev;
+      const next = { ...prev };
+      lost.forEach((p) => {
+        next[p] = null;
+      });
+      return next;
+    });
+    setFormats((prev) => {
+      const locked = lockedStories
+        .split(",")
+        .filter((p) => p && prev[p] === "story");
+      if (locked.length === 0) return prev;
+      const next = { ...prev };
+      locked.forEach((p) => {
+        next[p] = "post";
+      });
+      return next;
+    });
+    if (draftLock) {
+      setTiktok((prev) =>
+        prev.mode === "draft" ? { ...prev, mode: "direct" } : prev,
+      );
+    }
+  }, [open, constraintsKey]);
   // Limite mensuelle de posts X : envois que ce post ajoute au mois visé
   const xSelected = selectedAccounts.filter(
     (a) => a.platform === "twitter",
@@ -1226,8 +1172,17 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     errors
       .filter((e) => e.field === field && isShown(e, attempted))
       .map((e) => e.message);
-  // Le dépassement de texte s'affiche déjà en rouge dans le compteur
-  const textLimit = getTextLimit(content, platforms, { video: !!videoItem });
+  // Le dépassement de texte s'affiche déjà en rouge dans le compteur. Story
+  // et vidéo TikTok en brouillon : texte non publié, pas de compteur
+  const textLimit = getTextLimit(
+    content,
+    getTextPlatforms(platforms, {
+      formats: activeFormats,
+      tiktokMode,
+      video: !!videoItem,
+    }),
+    { video: !!videoItem },
+  );
   const contentErrors = errors
     .filter(
       (e) =>
@@ -1238,7 +1193,9 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     .map((e) => e.message);
 
   const maxImages = getMaxImages(platforms);
-  const instagramChosen = platforms.includes("instagram");
+  // Format des photos contrôlé pour le fil Instagram, pas pour une story
+  const instagramChosen =
+    platforms.includes("instagram") && !storyPlatforms.includes("instagram");
 
   const toggleAccount = useCallback((accountId) => {
     setSelectedIds((prev) =>
@@ -1250,6 +1207,15 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
 
   const patchTiktok = useCallback(
     (patch) => setTiktok((prev) => ({ ...prev, ...patch })),
+    [],
+  );
+  const changeFormat = useCallback(
+    (platform, format) =>
+      setFormats((prev) => ({ ...prev, [platform]: format })),
+    [],
+  );
+  const changeSound = useCallback(
+    (platform, sound) => setSounds((prev) => ({ ...prev, [platform]: sound })),
     [],
   );
 
@@ -1287,6 +1253,8 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       time,
       columnId,
       tiktok,
+      formats,
+      sounds: activeSounds,
     });
   }, [
     isEdit,
@@ -1299,18 +1267,36 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     time,
     columnId,
     tiktok,
+    formats,
+    activeSounds,
   ]);
 
   const handleConnect = useCallback(
-    (platform) => {
+    (platform, connector) => {
       const pathname = window.location.pathname;
       const returnTo = isEdit
         ? `${pathname}?task=${encodeURIComponent(post.taskId)}`
         : buildComposerReturnTo(pathname);
-      connect(platform, returnTo, { beforeRedirect: saveDraft });
+      connect(platform, returnTo, { connector, beforeRedirect: saveDraft });
     },
     [connect, isEdit, post?.taskId, saveDraft],
   );
+
+  // Compte TikTok choisi à reconnecter pour l'envoi en brouillon (par le
+  // même chemin de connexion), si l'utilisateur peut gérer les comptes
+  const reconnectTikTokAccount = selectedAccounts.find(
+    (a) =>
+      a.platform === "tiktok" &&
+      !a.capabilities?.drafts &&
+      a.capabilities?.draftsNeedReconnect,
+  );
+  const reconnectTikTokKey = reconnectTikTokAccount
+    ? getAccountConnectorKey(reconnectTikTokAccount)
+    : null;
+  const canReconnectTikTok =
+    !!status?.canManageAccounts &&
+    !!reconnectTikTokKey &&
+    connectors.some((c) => c.key === reconnectTikTokKey);
 
   // ── Téléversement ──
   const addFiles = useCallback(
@@ -1526,8 +1512,32 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     if (errors.length > 0 || uploading || submitting) return;
     setSubmitting(true);
     const mediaIds = uploadedMedia.map((m) => m.id);
-    const tiktokSettings = hasTikTok
+    // Son : champs du contrat seulement (jamais __typename) ; null le retire
+    const soundInput = (sound) =>
+      sound
+        ? {
+            id: sound.id,
+            title: sound.title,
+            artist: sound.artist || null,
+            coverUrl: sound.coverUrl || null,
+            volume: sound.volume,
+            videoVolume: sound.videoVolume,
+          }
+        : null;
+    // Réglages des réseaux visés seulement (les autres sont ignorés)
+    const instagramSettings = platforms.includes("instagram")
       ? {
+          format: activeFormats.instagram,
+          sound: soundInput(activeSounds.instagram),
+        }
+      : undefined;
+    const facebookSettings = platforms.includes("facebook")
+      ? { format: activeFormats.facebook }
+      : undefined;
+    // Brouillon : TikTok demande le reste dans l'appli
+    const tiktokDirectSettings = hasTikTok
+      ? {
+          mode: "direct",
           privacyLevel: tiktok.privacyLevel,
           allowComment: !!tiktok.allowComment && !tiktokInfo?.commentDisabled,
           // Duos et collages : seulement pour une vidéo (obligatoires alors)
@@ -1542,15 +1552,26 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           brandContent: !!tiktok.commercial && !!tiktok.brandContent,
           // Accord donné en publiant (déclaration au-dessus du bouton)
           consentGiven: true,
+          sound: soundInput(activeSounds.tiktok),
         }
       : undefined;
+    const tiktokSettings = tiktokDraft
+      ? { mode: "draft" }
+      : tiktokDirectSettings;
+    const networkSettings = {
+      ...(tiktokSettings ? { tiktokSettings } : {}),
+      ...(instagramSettings ? { instagramSettings } : {}),
+      ...(facebookSettings ? { facebookSettings } : {}),
+    };
     // Consigne TikTok : prévenir que la publication n'est pas immédiate
     // (une vidéo est traitée par chaque réseau avant d'être en ligne)
-    const tiktokDelay = videoItem
-      ? " La publication d'une vidéo peut prendre quelques minutes."
-      : hasTikTok
-        ? " La publication sur TikTok peut prendre quelques minutes."
-        : "";
+    const tiktokDelay = tiktokDraft
+      ? " TikTok l'enverra dans vos brouillons : terminez la publication dans l'appli TikTok."
+      : videoItem
+        ? " La publication d'une vidéo peut prendre quelques minutes."
+        : hasTikTok
+          ? " La publication sur TikTok peut prendre quelques minutes."
+          : "";
     try {
       if (isEdit) {
         await mutations.update(post.id, {
@@ -1558,7 +1579,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           content,
           mediaIds,
           scheduledFor,
-          ...(tiktokSettings ? { tiktokSettings } : {}),
+          ...networkSettings,
         });
         toast.success("Post modifié", {
           description: `Publication le ${formatParisDateTime(scheduledFor)}.${tiktokDelay}`,
@@ -1571,13 +1592,21 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           mediaIds,
           ...(whenMode === "now" ? { publishNow: true } : { scheduledFor }),
           timezone: SOCIAL_TIMEZONE,
-          ...(tiktokSettings ? { tiktokSettings } : {}),
+          ...networkSettings,
         });
         clearDraft(boardId);
         const result = payload?.post;
         if (whenMode !== "now") {
           toast.success("Post programmé", {
             description: `Publication le ${formatParisDateTime(result?.scheduledFor || scheduledFor)}.${tiktokDelay}`,
+          });
+        } else if (
+          result?.status === "published" &&
+          result.targets?.length > 0 &&
+          result.targets.every(isDeliveredAsDraft)
+        ) {
+          toast.success("Envoyé dans vos brouillons TikTok", {
+            description: "Terminez la publication dans l'appli TikTok.",
           });
         } else if (result?.status === "published") {
           toast.success("Post publié");
@@ -1675,12 +1704,12 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                 <SectionTitle>Publier sur</SectionTitle>
                 <AccountsPicker
                   accounts={accounts}
-                  availablePlatforms={status?.platforms || SOCIAL_PLATFORMS}
+                  connectors={connectors}
                   selectedIds={selectedIds}
                   onToggle={toggleAccount}
                   canManageAccounts={status?.canManageAccounts}
                   onConnect={handleConnect}
-                  connectingPlatform={connectingPlatform}
+                  connecting={connecting}
                   allowAdd={!isEdit}
                 />
                 <FieldError messages={errorsFor("accounts")} />
@@ -1700,6 +1729,21 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                   </p>
                 )}
               </section>
+
+              {/* Format (Instagram, Facebook) : publication ou story */}
+              {formatNetworks.length > 0 && (
+                <section className="space-y-2.5">
+                  <SectionTitle>Format</SectionTitle>
+                  <SocialPostFormatPicker
+                    networks={formatNetworks}
+                    formats={activeFormats}
+                    onChange={changeFormat}
+                    hints={storyHints}
+                    disabled={submitting}
+                  />
+                  <FieldError messages={errorsFor("format")} />
+                </section>
+              )}
 
               {/* 2. Texte */}
               <section className="space-y-2">
@@ -1842,6 +1886,21 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                 <FieldError messages={errorsFor("media")} />
               </section>
 
+              {/* Son tendance (Instagram via Facebook, TikTok Business) */}
+              {soundTargets.length > 0 && (
+                <section className="space-y-2">
+                  <SectionTitle>Son</SectionTitle>
+                  <SocialPostSoundSection
+                    targets={soundTargets}
+                    sounds={activeSounds}
+                    onChange={changeSound}
+                    hasVideo={!!videoItem}
+                    workspaceId={workspaceId}
+                    disabled={submitting}
+                  />
+                </section>
+              )}
+
               {/* 4. Options TikTok */}
               {hasTikTok && (
                 <section className="space-y-2">
@@ -1849,10 +1908,17 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                     accountId={tiktokAccount.id}
                     accountName={getSocialAccountName(tiktokAccount)}
                     workspaceId={workspaceId}
-                    value={tiktok}
+                    value={{ ...tiktok, mode: tiktokMode }}
                     onChange={patchTiktok}
                     onInfo={setTiktokInfo}
                     isVideo={!!videoItem}
+                    draftAvailability={draftAvailability}
+                    onReconnect={
+                      canReconnectTikTok
+                        ? () => handleConnect("tiktok", reconnectTikTokKey)
+                        : undefined
+                    }
+                    businessVideo={businessVideo}
                   />
                   <FieldError messages={errorsFor("tiktok")} />
                 </section>
@@ -1977,6 +2043,8 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                   content={content}
                   media={media}
                   whenLabel={whenLabel}
+                  storyPlatforms={storyPlatforms}
+                  sounds={activeSounds}
                 />
                 <p className="text-xs text-muted-foreground">
                   L&apos;affichage final dépend de chaque réseau.
@@ -1986,7 +2054,9 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
           </div>
         </div>
 
-        {hasTikTok && (
+        {/* Déclaration TikTok : publication directe seulement (en
+            brouillon, TikTok la demande dans l'appli) */}
+        {hasTikTok && !tiktokDraft && (
           <div className="border-t px-5 pt-3">
             <TikTokDeclaration
               branded={!!tiktok.commercial && !!tiktok.brandContent}
@@ -1996,7 +2066,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         <div
           className={cn(
             "flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between",
-            !hasTikTok && "border-t",
+            !(hasTikTok && !tiktokDraft) && "border-t",
           )}
         >
           <p className="min-h-[1rem] text-xs text-muted-foreground sm:max-w-[55%]">

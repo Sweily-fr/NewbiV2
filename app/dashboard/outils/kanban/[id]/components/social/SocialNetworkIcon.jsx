@@ -2,7 +2,10 @@
 
 import { useId, useState } from "react";
 import { cn } from "@/src/lib/utils";
-import { getPlatformLabel } from "@/src/utils/social-post-rules";
+import {
+  getAccountConnectorMention,
+  getPlatformLabel,
+} from "@/src/utils/social-post-rules";
 
 // Pictogrammes simplifiés aux couleurs des marques (vue 24 × 24) : une
 // tuile arrondie de la couleur du réseau, le signe en blanc.
@@ -204,6 +207,26 @@ export function SocialAccountAvatar({ account, size = 24, className }) {
       >
         <SocialNetworkIcon platform={account.platform} size={badge} title="" />
       </span>
+    </span>
+  );
+}
+
+/**
+ * Mode de connexion d'un compte, à côté de son nom : « via Facebook »
+ * (Instagram connecté via Facebook), « Business » (TikTok Business). Rien
+ * pour la connexion habituelle du réseau.
+ */
+export function SocialAccountConnectorMention({ account, className }) {
+  const mention = getAccountConnectorMention(account);
+  if (!mention) return null;
+  return (
+    <span
+      className={cn(
+        "flex-shrink-0 rounded border px-1 text-[10px] font-medium leading-4 text-muted-foreground",
+        className,
+      )}
+    >
+      {mention}
     </span>
   );
 }

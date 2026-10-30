@@ -21,10 +21,12 @@ import {
 import {
   SOCIAL_PLATFORMS,
   buildSettingsReturnTo,
+  getAccountConnectorKey,
   getPlatformLabel,
 } from "@/src/utils/social-post-rules";
 import {
   SocialAccountAvatar,
+  SocialAccountConnectorMention,
   SocialNetworkIcon,
   getSocialAccountName,
 } from "@/app/dashboard/outils/kanban/[id]/components/social/SocialNetworkIcon";
@@ -69,23 +71,25 @@ export function SocialAccountsPanel({
   readOnlyTooltip,
 }) {
   const status = useSocialPublishingStatus(workspaceId);
-  const { connect, connectingPlatform } = useConnectSocialAccount(workspaceId);
+  const { connect, connecting } = useConnectSocialAccount(workspaceId);
   const { disconnect, refresh, disconnecting, refreshing } =
     useSocialAccountActions(workspaceId);
   const [toDisconnect, setToDisconnect] = useState(null);
 
   const manage = canManage && status.canManageAccounts;
-  const locked = isReadOnly || !!connectingPlatform;
+  const locked = isReadOnly || !!connecting;
   // Réseaux connectables, plus ceux où un compte est encore connecté
   const visiblePlatforms = SOCIAL_PLATFORMS.filter(
     (platform) =>
-      status.platforms.includes(platform) ||
+      status.connectors.some((c) => c.platform === platform) ||
       status.accounts.some((account) => account.platform === platform),
   );
+  const connectorKeys = new Set(status.connectors.map((c) => c.key));
 
-  const handleConnect = (platform) => {
+  const handleConnect = (platform, connector) => {
     const returnTo = buildSettingsReturnTo(window.location.pathname);
     connect(platform, returnTo, {
+      connector,
       beforeRedirect: () => {
         try {
           window.sessionStorage.setItem(
@@ -147,9 +151,13 @@ export function SocialAccountsPanel({
             (a) => a.platform === platform,
           );
           const label = getPlatformLabel(platform);
-          // Réseau sans fournisseur configuré : comptes listés, pas de
-          // nouvelle connexion
-          const connectable = status.platforms.includes(platform);
+          // Façons de connecter ce réseau ; aucune (fournisseur non
+          // configuré) : comptes listés, pas de nouvelle connexion
+          const connectors = status.connectors.filter(
+            (c) => c.platform === platform,
+          );
+          const connectLabel =
+            accounts.length > 0 ? "Ajouter un compte" : "Connecter";
           return (
             <div key={platform} className="space-y-2 px-3 py-3">
               <div className="flex items-center justify-between gap-3">
@@ -162,25 +170,64 @@ export function SocialAccountsPanel({
                     </p>
                   </div>
                 </div>
-                {manage && connectable && (
+                {manage && connectors.length === 1 && (
                   <Button
                     type="button"
                     variant={accounts.length > 0 ? "ghost" : "outline"}
                     size="sm"
-                    onClick={() => handleConnect(platform)}
+                    onClick={() => handleConnect(platform, connectors[0].key)}
                     disabled={locked}
                     title={readOnlyTooltip}
                     className="flex-shrink-0"
                   >
-                    {connectingPlatform === platform ? (
+                    {connecting === connectors[0].key ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Plus className="h-3.5 w-3.5" />
                     )}
-                    {accounts.length > 0 ? "Ajouter un compte" : "Connecter"}
+                    {connectLabel}
                   </Button>
                 )}
               </div>
+
+              {/* Plusieurs façons de connecter le réseau (« Instagram » et
+                  « Instagram via Facebook ») : un choix chacune, avec son aide */}
+              {manage && connectors.length > 1 && (
+                <div className="space-y-1.5 sm:ml-8">
+                  {connectors.map((connector) => (
+                    <div
+                      key={connector.key}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-[#eeeff1] px-2.5 py-2 dark:border-[#232323]"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm">{connector.label}</p>
+                        {connector.description && (
+                          <p className="text-xs text-muted-foreground">
+                            {connector.description}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleConnect(platform, connector.key)}
+                        disabled={locked}
+                        title={readOnlyTooltip}
+                        aria-label={`${connectLabel} : ${connector.label}`}
+                        className="flex-shrink-0"
+                      >
+                        {connecting === connector.key ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5" />
+                        )}
+                        {connectLabel}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {accounts.map((account) => (
                 <div
@@ -189,9 +236,12 @@ export function SocialAccountsPanel({
                 >
                   <SocialAccountAvatar account={account} size={28} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
-                      {account.displayName || getSocialAccountName(account)}
-                    </p>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <p className="truncate text-sm font-medium">
+                        {account.displayName || getSocialAccountName(account)}
+                      </p>
+                      <SocialAccountConnectorMention account={account} />
+                    </div>
                     {account.displayName && account.username && (
                       <p className="truncate text-xs text-muted-foreground">
                         {getSocialAccountName(account)}
@@ -201,18 +251,24 @@ export function SocialAccountsPanel({
                   <StatusPill status={account.status} />
                   {manage && (
                     <div className="flex items-center gap-1">
-                      {account.status !== "active" && connectable && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleConnect(platform)}
-                          disabled={locked}
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" />
-                          Reconnecter
-                        </Button>
-                      )}
+                      {account.status !== "active" &&
+                        connectorKeys.has(getAccountConnectorKey(account)) && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleConnect(
+                                platform,
+                                getAccountConnectorKey(account),
+                              )
+                            }
+                            disabled={locked}
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Reconnecter
+                          </Button>
+                        )}
                       <Button
                         type="button"
                         variant="ghost"
