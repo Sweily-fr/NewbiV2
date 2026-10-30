@@ -80,6 +80,17 @@ const SELECTION = {
   "checkbox Sélectionner tout": { etat: /\[checked\]/ },
   "checkbox Sélectionner la ligne": { etat: /\[checked\]/ },
 };
+// En-têtes de tri : un clic range la première page autrement (ordre obtenu : voir tri.spec.mjs).
+const TRI = {
+  "button Client": { contenu: true },
+  "button Référence": { contenu: true },
+  "button Montant TTC": { contenu: true },
+  "button Date d'émission": { contenu: true },
+  "button Échéance": { contenu: true },
+  "button Statut": { contenu: true },
+};
+// Mêmes en-têtes, mêmes effets quel que soit le rôle : essayés une fois.
+const TRI_DEJA_ESSAYE = Object.fromEntries(Object.keys(TRI).map((cle) => [cle, { parcours: "essayé sur « Liste des factures » (propriétaire)" }]));
 // Première ligne : le brouillon daté d'après-demain (F.brouillon).
 const MENU_BROUILLON_PROPRIETAIRE = {
   "button Ouvrir le menu": { menu: ["Voir", "Sauv. modèle", "Éditer", "Créer la facture", "Supprimer"] },
@@ -102,13 +113,15 @@ test.describe("Factures (propriétaire)", () => {
     ouvrir: ouvrirListe,
     nomsVariables: true,
     boutons: {
-      // Deux boutons à icône seule, sans nom : relances (le premier) et paramètres (voir parametres.spec.mjs).
-      "button ": { fenetre: "Relances automatiques" },
+      "button Relances automatiques": { fenetre: "Relances automatiques" },
+      // Les paramètres s'affichent par-dessus la liste (voir parametres.spec.mjs).
+      "button Paramètres des factures": { contenu: true },
       "button Importer": { fenetre: "Importer des factures" },
       ...EXPORT,
       "button Nouvelle facture": { navigation: `${LISTE}/new` },
       "button Respecter les majuscules et les accents": { etat: /\[pressed\]/ },
       ...FILTRES,
+      ...TRI,
       ...MENU_BROUILLON_PROPRIETAIRE,
       ...PAGINATION,
       ...ONGLETS,
@@ -126,12 +139,14 @@ test.describe("Factures (propriétaire)", () => {
     },
     nomsVariables: true,
     boutons: {
-      "button ": { fenetre: "Relances automatiques" },
+      "button Relances automatiques": { fenetre: "Relances automatiques" },
+      "button Paramètres des factures": { contenu: true },
       "button Importer": { fenetre: "Importer des factures" },
       ...EXPORT,
       "button Nouvelle facture": { navigation: `${LISTE}/new` },
       "button Respecter les majuscules et les accents": { etat: /\[pressed\]/ },
       ...FILTRES,
+      ...TRI_DEJA_ESSAYE,
       "button Supprimer (1)": { fenetre: "Confirmer la suppression" },
       ...MENU_BROUILLON_PROPRIETAIRE,
       ...PAGINATION,
@@ -187,13 +202,14 @@ test.describe("Factures (propriétaire)", () => {
     "button Modèles": { menu: ["Sauvegarder comme modèle"] },
     "button Modèles > Sauvegarder comme modèle": { fenetre: "Sauvegarder comme modèle" },
     "button icône settings": { contenu: true },
-    "button Supprimer la sélection": { parcours: "consultation.spec.mjs : rien ne se modifie en consultation" },
+    // Le client d'une facture émise ne se retire pas, et aucun ne se crée (voir consultation.spec.mjs).
+    "button Supprimer la sélection": { desactive: "facture émise" },
     [`button ${jourLong(f.issueDate)}`]: { desactive: "facture émise" },
     [`button ${jourLong(f.dueDate)}`]: { desactive: "facture émise" },
     "button Annuler": { parcours: "consultation.spec.mjs : quitter la consultation" },
     "button Continuer": { contenu: true },
     "tab Client existant": { sansEffet: "onglet déjà affiché" },
-    "tab Nouveau client": { parcours: "consultation.spec.mjs : rien ne se modifie en consultation" },
+    "tab Nouveau client": { desactive: "facture émise" },
     "combobox icône chevron-down": { desactive: "facture émise" },
   });
   verifierBoutons({ test, titre: "Consultation d'une facture en attente", ouvrir: ouvrirConsultation(F.attente), boutons: CONSULTATION_EMISE(F.attente) });
@@ -269,23 +285,22 @@ test.describe("Factures (propriétaire)", () => {
     ouvrir: ouvrirParametres,
     zone: zoneParametres,
     boutons: {
-      "button icône x": { contenu: true },
+      "button Fermer les paramètres": { contenu: true },
       "button Modifier vos informations entreprise": { fenetre: "Informations de l'entreprise" },
       "button Modifier vos informations légales": { fenetre: "Informations légales" },
       "button Configurer les coordonnées bancaires": { fenetre: "Coordonnées bancaires" },
-      // Couleurs : texte (sans nom, voir accessibilite), texte de l'en-tête, fond de l'en-tête.
-      // Bouton sans nom : impossible à viser sans le confondre avec la croix (voir « boutons sans nom »).
-      "button ": { parcours: "boutons.spec.mjs : boutons sans nom" },
-      "button FFFFFF": { etat: /\[expanded\]/ },
-      "button 5B4FFF": { etat: /\[expanded\]/ },
+      // Couleurs : ce qu'elles règlent, puis leur code (couleurs de l'organisation « Factures »).
+      "button Couleur du texte (000000)": { etat: /\[expanded\]/ },
+      "button Couleur des titres du tableau (FFFFFF)": { etat: /\[expanded\]/ },
+      "button Couleur de fond du tableau (5B4FFF)": { etat: /\[expanded\]/ },
       "button Au centre": { sansEffet: "position du client sur l'aperçu, aucun texte ne change" },
       "button À droite": { sansEffet: "position du client sur l'aperçu, aucun texte ne change" },
       "button Suggestions": { menuContient: [/^Remerciement standard/] },
       "button Ajouter une annexe PDF": { selecteurDeFichier: true },
       "button Annuler": { parcours: "parametres.spec.mjs : annuler sans rien changer" },
       "button Enregistrer les modifications": { parcours: "parametres.spec.mjs : enregistrer les paramètres" },
-      // Numérotation séquentielle continue (interrupteur sans nom) : test dédié ci-dessous.
-      "switch ": { parcours: "boutons.spec.mjs : interrupteur de la numérotation continue" },
+      // Demande confirmation, « Annuler » ne change rien : test dédié ci-dessous.
+      "switch Numérotation séquentielle continue": { parcours: "boutons.spec.mjs : interrupteur de la numérotation continue" },
     },
   });
 
@@ -341,6 +356,7 @@ test.describe("Factures (éditeur)", () => {
       "button Nouvelle facture": { navigation: `${LISTE}/new` },
       "button Respecter les majuscules et les accents": { etat: /\[pressed\]/ },
       ...FILTRES,
+      ...TRI_DEJA_ESSAYE,
       "button Ouvrir le menu": { menu: ["Voir", "Sauv. modèle", "Éditer", "Créer la facture"] },
       "button Ouvrir le menu > Voir": { contenu: true },
       "button Ouvrir le menu > Sauv. modèle": { fenetre: "Sauvegarder comme modèle" },
@@ -451,6 +467,7 @@ test.describe("Factures (membre, lecture seule)", () => {
     boutons: {
       "button Respecter les majuscules et les accents": { etat: /\[pressed\]/ },
       ...FILTRES,
+      ...TRI_DEJA_ESSAYE,
       "button Ouvrir le menu": { menu: ["Voir"] },
       "button Ouvrir le menu > Voir": { contenu: true },
       ...PAGINATION,
@@ -475,7 +492,7 @@ test.describe("Factures (membre, lecture seule)", () => {
     boutons: {
       "button icône arrow-left": { parcours: DEFAUT_EN_TETE },
       "button icône settings": { contenu: true },
-      "button Supprimer la sélection": { parcours: "consultation.spec.mjs : rien ne se modifie en consultation" },
+      "button Supprimer la sélection": { desactive: "lecture seule" },
       [`button ${jourLong(F.attente.issueDate)}`]: { desactive: "lecture seule" },
       [`button ${jourLong(F.attente.dueDate)}`]: { desactive: "lecture seule" },
       "button Annuler": { parcours: "consultation.spec.mjs : quitter la consultation" },
