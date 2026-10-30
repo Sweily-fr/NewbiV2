@@ -540,6 +540,27 @@ export function importRefusalMessage(errors) {
   return first?.message || "Contact refusé par le serveur.";
 }
 
+/**
+ * Refus de la création d'un contact pendant l'import, d'après la réponse de
+ * createClient (errorPolicy « all ») : les erreurs de la mutation elle-même
+ * (chemin ["createClient"]) ou de la requête (sans chemin). Une erreur sur un
+ * champ du contact renvoyé (chemin plus long) arrive après sa création : le
+ * contact est bien importé.
+ * @returns {Array|null} les erreurs du refus ([] sans détail), null si le
+ *   contact est créé
+ */
+export function createClientRefusal(result) {
+  const errors = Array.isArray(result?.errors) ? result.errors : [];
+  const refusals = errors.filter(
+    (error) =>
+      !Array.isArray(error?.path) ||
+      (error.path.length === 1 && error.path[0] === "createClient"),
+  );
+  if (refusals.length) return refusals;
+  if (!result?.data?.createClient && errors.length === 0) return [];
+  return null;
+}
+
 // ─── Template Generation ──────────────────────────────────────
 
 export function generateTemplate() {

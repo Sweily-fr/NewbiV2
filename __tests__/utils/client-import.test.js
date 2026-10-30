@@ -7,6 +7,7 @@ import {
   decodeCSVBytes,
   parseCSVRaw,
   importRefusalMessage,
+  createClientRefusal,
   CLIENT_FIELD_DEFINITIONS,
   FIELD_GROUPS,
 } from "@/src/utils/client-import";
@@ -265,6 +266,50 @@ describe("importRefusalMessage", () => {
     expect(importRefusalMessage(undefined)).toBe(
       "Contact refusé par le serveur.",
     );
+    expect(importRefusalMessage([])).toBe("Contact refusé par le serveur.");
+  });
+});
+
+describe("createClientRefusal", () => {
+  const refus = {
+    message: "Un client avec ce email existe déjà",
+    path: ["createClient"],
+    extensions: { code: "ALREADY_EXISTS" },
+  };
+
+  it("contact créé, sans erreur : pas de refus", () => {
+    expect(
+      createClientRefusal({ data: { createClient: { id: "c1" } } }),
+    ).toBeNull();
+  });
+
+  it("erreur de la mutation : refusé avec cette erreur", () => {
+    expect(
+      createClientRefusal({ data: { createClient: null }, errors: [refus] }),
+    ).toEqual([refus]);
+  });
+
+  it("erreur de la requête, sans chemin : refusé", () => {
+    const erreur = { message: "Variable invalide" };
+    expect(createClientRefusal({ errors: [erreur] })).toEqual([erreur]);
+  });
+
+  it("erreur d'un champ du contact renvoyé : le contact est bien créé", () => {
+    const champ = {
+      message: "Échec du champ",
+      path: ["createClient", "hasDocuments"],
+    };
+    expect(createClientRefusal({ data: null, errors: [champ] })).toBeNull();
+    expect(
+      createClientRefusal({
+        data: { createClient: { id: "c1" } },
+        errors: [champ],
+      }),
+    ).toBeNull();
+  });
+
+  it("ni contact ni erreur : refusé sans détail", () => {
+    expect(createClientRefusal({ data: { createClient: null } })).toEqual([]);
     expect(importRefusalMessage([])).toBe("Contact refusé par le serveur.");
   });
 });

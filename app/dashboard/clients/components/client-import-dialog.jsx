@@ -43,6 +43,7 @@ import {
   validateClientRow,
   downloadErrorsCSV,
   importRefusalMessage,
+  createClientRefusal,
 } from "@/src/utils/client-import";
 
 import ImportStepUpload from "./import-steps/import-step-upload";
@@ -245,8 +246,9 @@ export default function ClientImportDialog({
             // errorPolicy « all » : un refus de l'API (e-mail déjà pris…)
             // arrive dans result.errors, sans rejet de la promesse. Il était
             // compté comme un contact importé.
-            if (result?.errors?.length || !result?.data?.createClient) {
-              throw new Error(importRefusalMessage(result?.errors));
+            const refusal = createClientRefusal(result);
+            if (refusal) {
+              throw new Error(importRefusalMessage(refusal));
             }
             return { idx };
           }),
