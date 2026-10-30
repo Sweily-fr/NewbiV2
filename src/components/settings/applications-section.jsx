@@ -3043,7 +3043,7 @@ export function ApplicationsSection() {
 
           {/* Grille d'applications */}
           <div className="flex-1 min-w-0">
-            {groupedApps.length === 0 ? (
+            {filteredApps.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-sm text-gray-400">
                   Aucune application trouvée.
