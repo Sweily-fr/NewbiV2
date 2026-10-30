@@ -10,7 +10,7 @@ const purify = vi.hoisted(() => ({
 }));
 vi.mock("dompurify", () => ({ default: purify }));
 
-import { sanitizeRichText } from "@/src/utils/sanitize-html";
+import { looksLikeHtml, sanitizeRichText } from "@/src/utils/sanitize-html";
 
 beforeEach(() => {
   purify.isSupported = true;
@@ -49,5 +49,28 @@ describe("sanitizeRichText", () => {
     expect(sanitizeRichText(undefined)).toBe("");
     expect(sanitizeRichText("")).toBe("");
     expect(purify.sanitize).not.toHaveBeenCalled();
+  });
+});
+
+describe("looksLikeHtml", () => {
+  it("une balise : HTML", () => {
+    expect(looksLikeHtml("<b>gras</b>")).toBe(true);
+    expect(
+      looksLikeHtml('Voir <a href="https://www.newbi.fr">le site</a>'),
+    ).toBe(true);
+  });
+
+  it("texte échappé par l'éditeur (« < » et « & » tapés) : HTML, affiché sans ses codes", () => {
+    expect(looksLikeHtml("Prix &lt; 100 € &amp; remise de 5 %")).toBe(true);
+    expect(looksLikeHtml('&lt;img src=x onerror="window.__piege=1"&gt;')).toBe(
+      true,
+    );
+  });
+
+  it("texte simple : affiché tel quel", () => {
+    expect(looksLikeHtml("prix < 100 & remise")).toBe(false);
+    expect(looksLikeHtml("R&D")).toBe(false);
+    expect(looksLikeHtml("")).toBe(false);
+    expect(looksLikeHtml(null)).toBe(false);
   });
 });

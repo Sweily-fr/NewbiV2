@@ -44,7 +44,7 @@ import { GET_ORGANIZATION_MEMBERS } from "@/src/graphql/kanbanQueries";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { createSearchMatcher } from "@/src/utils/search-text";
-import { sanitizeRichText } from "@/src/utils/sanitize-html";
+import { looksLikeHtml, sanitizeRichText } from "@/src/utils/sanitize-html";
 
 const toolbarItems = [
   { icon: Bold, tooltip: "Gras", command: "bold" },
@@ -559,7 +559,8 @@ export default function ClientNotesTab({
     }
   };
 
-  const isHtml = (str) => /<[a-z][\s\S]*>/i.test(str);
+  // HTML (balises ou texte échappé par l'éditeur) ou texte simple
+  const isHtml = looksLikeHtml;
 
   return (
     <div className="flex flex-col h-full">

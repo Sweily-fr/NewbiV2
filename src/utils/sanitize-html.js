@@ -73,3 +73,19 @@ export function sanitizeRichText(html) {
   }
   return DOMPurify.sanitize(value, RICH_TEXT_CONFIG);
 }
+
+/**
+ * Vrai si un contenu enregistré doit être affiché comme du HTML (nettoyé par
+ * sanitizeRichText) plutôt que comme du texte : il contient une balise, ou
+ * seulement des caractères échappés par l'éditeur. L'éditeur des notes
+ * enregistre son innerHTML : « Prix < 100 € & remise » devient « Prix &lt;
+ * 100 € &amp; remise », qui s'affichait avec ses codes faute de balise. Un
+ * texte simple (« prix < 100 ») reste affiché tel quel.
+ */
+const HTML_TAG = /<[a-z][\s\S]*>/i;
+const HTML_ESCAPE = /&(?:amp|lt|gt|quot|nbsp|#39);/i;
+
+export function looksLikeHtml(content) {
+  const value = String(content ?? "");
+  return HTML_TAG.test(value) || HTML_ESCAPE.test(value);
+}

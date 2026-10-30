@@ -538,14 +538,34 @@ export default function TableClients({
   }, [externalSelectedTypes]);
 
   // Utilisation du hook pour récupérer les clients ou utilisation des clients passés en props
+  // Filtre « Type » appliqué par l'API : il porte sur tous les contacts, pas
+  // seulement sur la page affichée. Clé stable (le tableau reçu peut être
+  // recréé à chaque rendu du parent)
+  const selectedTypesKey = (externalSelectedTypes || []).join(",");
+  const serverTypes = useMemo(
+    () => (selectedTypesKey ? selectedTypesKey.split(",") : []),
+    [selectedTypesKey],
+  );
+
   const hookResult = useClients(
     pagination.pageIndex + 1,
     pagination.pageSize,
     debouncedGlobalFilter,
     // Pas de requête si les clients sont fournis (vue d'une liste) ou si le
     // rôle ne peut pas lire les clients
-    { skip: useProvidedClients || !canOpenClients, searchExact },
+    {
+      skip: useProvidedClients || !canOpenClients,
+      searchExact,
+      types: serverTypes,
+    },
   );
+
+  // Changement du filtre « Type » : retour à la première page
+  useEffect(() => {
+    setPagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
+  }, [selectedTypesKey]);
 
   const {
     clients: hookClients,

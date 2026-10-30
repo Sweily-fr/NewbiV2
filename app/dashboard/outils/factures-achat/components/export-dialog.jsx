@@ -53,6 +53,14 @@ const STATUS_LABELS = {
   ARCHIVED: "Archivée",
 };
 
+// Montant d'une colonne de l'export : « 120.00 » pour une facture en euros,
+// « 120.00 USD » sinon (une facture en dollars était lue comme 120 €)
+export const formatExportAmount = (amount, currency) => {
+  const value = (Number(amount) || 0).toFixed(2);
+  const code = String(currency || "EUR").toUpperCase();
+  return code === "EUR" ? value : `${value} ${code}`;
+};
+
 // « 20 % : 35.36 HT / 7.07 TVA ; 10 % : 80.00 HT / 8.00 TVA » : une entrée
 // par taux (une seule pour une facture à taux unique), montants au même
 // format que les autres colonnes.
@@ -126,10 +134,10 @@ export function ExportDialog({
       inv.invoiceNumber || "",
       inv.issueDate ? new Date(inv.issueDate).toLocaleDateString("fr-FR") : "",
       inv.dueDate ? new Date(inv.dueDate).toLocaleDateString("fr-FR") : "",
-      inv.amountHT?.toFixed(2) || "0.00",
-      inv.amountTVA?.toFixed(2) || "0.00",
+      formatExportAmount(inv.amountHT, inv.currency),
+      formatExportAmount(inv.amountTVA, inv.currency),
       formatVatDetail(inv),
-      inv.amountTTC?.toFixed(2) || "0.00",
+      formatExportAmount(inv.amountTTC, inv.currency),
       getCategoryLabel(inv.subcategory || inv.category) || "",
       STATUS_LABELS[inv.status] || inv.status || "",
       inv.paymentMethod || "",

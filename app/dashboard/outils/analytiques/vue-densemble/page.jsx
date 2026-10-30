@@ -174,11 +174,12 @@ export default function VueDensemblePage() {
   // T1 — libellé concret de la période affichée (recalculé à chaque changement de filtre)
   const caPeriodLabel = useMemo(() => getCaPeriodLabel(caPeriod), [caPeriod]);
 
-  // T3 — Encours clients = factures à émettre (DRAFT) + en retard (OVERDUE)
-  // + en attente (PENDING, échéance future). Exclut COMPLETED et CANCELED.
+  // T3 — Encours clients = factures émises non réglées : en attente
+  // (PENDING) et en retard (OVERDUE). Un brouillon n'est pas une créance ;
+  // COMPLETED et CANCELED sont exclues.
   const encoursClients = useMemo(() => {
     return (invoices || [])
-      .filter((i) => ["DRAFT", "PENDING", "OVERDUE"].includes(i.status))
+      .filter((i) => ["PENDING", "OVERDUE"].includes(i.status))
       .reduce((s, i) => s + (i.finalTotalTTC || i.finalTotalHT || 0), 0);
   }, [invoices]);
 

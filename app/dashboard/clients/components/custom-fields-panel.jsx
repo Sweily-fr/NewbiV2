@@ -53,6 +53,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import { upgradePlanNameFor } from "@/src/lib/plans-display";
 
 const FIELD_TYPE_ICONS = {
   TEXT: Type,
@@ -466,7 +467,9 @@ export default function CustomFieldsPanel({
   const customFieldsLimit = planLimits?.customFields ?? -1;
   const isLimitReached =
     customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
-  const nextPlanName = customFieldsLimit <= 3 ? "TPE" : "Entreprise";
+  // Offre qui lève la limite (TPE pour Freelance)
+  const nextPlanName =
+    upgradePlanNameFor("customFields", customFieldsLimit) || "Entreprise";
 
   const handleCreate = async (data) => {
     setCreateLoading(true);

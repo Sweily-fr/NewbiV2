@@ -257,6 +257,19 @@ export const GET_TRANSACTIONS = gql`
 `;
 
 /**
+ * Compteurs « Justificatifs manquants » et « Transactions à catégoriser » du
+ * cadre « À traiter » de l'accueil (toutes les transactions de l'espace).
+ */
+export const GET_TRANSACTION_TODO_COUNTS = gql`
+  query GetTransactionTodoCounts($workspaceId: ID!) {
+    transactionTodoCounts(workspaceId: $workspaceId) {
+      missingReceipt
+      uncategorized
+    }
+  }
+`;
+
+/**
  * Liste paginée côté serveur pour la page Transactions : items de la page
  * demandée + total + compteurs d'onglets calculés sur toute la base.
  * Même sélection de champs que GET_TRANSACTIONS pour les items.
