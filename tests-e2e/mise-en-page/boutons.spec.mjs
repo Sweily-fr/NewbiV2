@@ -36,6 +36,8 @@ test.describe("Mise en page (propriétaire de « Pilotage »)", () => {
     titre: "Barre latérale",
     ouvrir: ouvrirAccueil,
     zone: barreLaterale,
+    // « Notifications 2 » : le nombre de non lues fait partie du nom du bouton.
+    nomsVariables: true,
     boutons: {
       "button NewBi Logo": { menu: ["Pilotage Test SASU", "Paramètres du compte", "Paramètres de l'espace", "Inviter des membres", "Collaborateurs", "Nouvel espace", "Déconnexion"] },
       "button NewBi Logo > Paramètres du compte": { fenetre: PARAMETRES },
@@ -62,7 +64,8 @@ test.describe("Mise en page (propriétaire de « Pilotage »)", () => {
       "button Tâches > Toutes les listes": { navigation: "/dashboard/outils/kanban" },
       "button Documents": { menu: ["Transfert de fichiers", "Documents partagés"] },
       "button Documents > Transfert de fichiers": { navigation: "/dashboard/outils/transferts-fichiers" },
-      "button Communication": { menu: ["Signature de mail"] },
+      "button Communication": { menu: ["Signature de mail", "Prise de rendez-vous"] },
+      "button Communication > Prise de rendez-vous": { navigation: "/dashboard/outils/rendez-vous" },
       "button Facturation électronique": { fenetre: "Facturation électronique" },
       "button Notifications": { fenetre: PARAMETRES },
       "button Paramètres": { menu: ["Paramètres entreprise", "Collaborateurs"] },

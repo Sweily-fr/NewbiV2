@@ -16,6 +16,8 @@ import {
   sanitizeInput,
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
+  getIbanError,
+  normalizeIban,
 } from "@/src/lib/validation";
 import { Callout } from "@/src/components/ui/callout";
 
@@ -101,6 +103,40 @@ export function CoordonneesBancairesSection({
       setDisplayIban(formatIban(ibanValue));
     }
   }, [ibanValue, displayIban]);
+
+  // BIC et nom de la banque : la transformation de la saisie passe par le
+  // onChange de react-hook-form, sinon un champ modifié seul ne rendait pas
+  // le formulaire « modifié » et « Sauvegarder » restait grisé
+  const bicField = register("bankDetails.bic", {
+    required: hasAnyBankField
+      ? "Le BIC est requis si vous renseignez des coordonnées bancaires"
+      : false,
+    pattern: {
+      value: VALIDATION_PATTERNS.bic.pattern,
+      message: VALIDATION_PATTERNS.bic.message,
+    },
+    validate: (value) => {
+      if (value && detectInjectionAttempt(value)) {
+        return "Caractères non autorisés détectés";
+      }
+      return true;
+    },
+  });
+  const bankNameField = register("bankDetails.bankName", {
+    required: hasAnyBankField
+      ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires"
+      : false,
+    pattern: {
+      value: VALIDATION_PATTERNS.bankName.pattern,
+      message: VALIDATION_PATTERNS.bankName.message,
+    },
+    validate: (value) => {
+      if (value && detectInjectionAttempt(value)) {
+        return "Caractères non autorisés détectés";
+      }
+      return true;
+    },
+  });
 
   // Fonction utilitaire pour traiter l'IBAN (saisie ou collage)
   const handleIbanInput = (inputValue) => {
@@ -200,15 +236,20 @@ export function CoordonneesBancairesSection({
                 required: hasAnyBankField
                   ? "L'IBAN est requis si vous renseignez des coordonnées bancaires"
                   : false,
-                pattern: {
-                  value: VALIDATION_PATTERNS.iban.pattern,
-                  message: VALIDATION_PATTERNS.iban.message,
-                },
                 validate: (value) => {
                   if (value && detectInjectionAttempt(value)) {
                     return "Caractères non autorisés détectés";
                   }
-                  return true;
+                  // Format, longueur du pays et clé de contrôle. L'IBAN déjà
+                  // enregistré, laissé tel quel, n'est pas recontrôlé.
+                  if (
+                    !value ||
+                    normalizeIban(value) ===
+                      normalizeIban(organization?.bankIban)
+                  ) {
+                    return true;
+                  }
+                  return getIbanError(value) || true;
                 },
               })}
             />
@@ -256,24 +297,11 @@ export function CoordonneesBancairesSection({
               placeholder="BNPAFRPP"
               className="w-full"
               disabled={!canManageOrgSettings}
-              {...register("bankDetails.bic", {
-                required: hasAnyBankField
-                  ? "Le BIC est requis si vous renseignez des coordonnées bancaires"
-                  : false,
-                pattern: {
-                  value: VALIDATION_PATTERNS.bic.pattern,
-                  message: VALIDATION_PATTERNS.bic.message,
-                },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
-              })}
+              {...bicField}
               onChange={(e) => {
                 const sanitized = sanitizeInput(e.target.value, "alphanumeric");
                 e.target.value = sanitized.toUpperCase();
+                bicField.onChange(e);
               }}
             />
             {errors.bankDetails?.bic && (
@@ -318,25 +346,10 @@ export function CoordonneesBancairesSection({
               placeholder="BNP Paribas"
               className="w-full"
               disabled={!canManageOrgSettings}
-              {...register("bankDetails.bankName", {
-                required: hasAnyBankField
-                  ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires"
-                  : false,
-                pattern: {
-                  value: VALIDATION_PATTERNS.bankName.pattern,
-                  message: VALIDATION_PATTERNS.bankName.message,
-                },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
-              })}
-              onChange={(e) => {
-                const sanitized = sanitizeInput(e.target.value);
-                e.target.value = sanitized;
-              }}
+              // Saisie gardée telle quelle (espaces compris pendant la frappe) :
+              // les balises sont refusées par le motif, le nom est nettoyé à
+              // l'enregistrement
+              {...bankNameField}
             />
             {errors.bankDetails?.bankName && (
               <p className="text-sm text-red-500">

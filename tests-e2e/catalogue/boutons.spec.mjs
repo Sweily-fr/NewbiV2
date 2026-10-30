@@ -118,6 +118,8 @@ test.describe("Catalogue (membre, lecture seule)", () => {
 
   test("Le Membre consulte la fiche d'un produit (produits liés, description) sans pouvoir la modifier", async ({ page }) => {
     await ouvrirCatalogue(page);
+    // Dans l'ordre alphabétique français (« Écran » avec les E), le produit est en deuxième page : recherché d'abord.
+    await page.getByPlaceholder("Recherchez par nom ou par référence...").fill(PRODUITS.pose.name);
     // Aucun moyen d'ouvrir la fiche : le menu ne propose que « Copier référence ».
     await page.getByRole("row").filter({ hasText: PRODUITS.pose.name }).getByText(PRODUITS.pose.name, { exact: true }).click();
     await expect(

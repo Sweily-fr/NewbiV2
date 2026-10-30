@@ -16,6 +16,7 @@ import { COMPTES } from "../donnees/base.mjs";
 import { connecte, SESSION_TOKEN_EDITEUR_PARAMETRES, SESSION_TOKEN_MEMBRE_PARAMETRES, SESSION_TOKEN_PARAMETRES } from "../config.mjs";
 import { ROLES_PERSO } from "../donnees/lot-parametres-auth.mjs";
 import { contenuParametres, menuParametres, ouvrirParametres } from "../authentification/outils-auth.mjs";
+import { simulerBanques } from "../accueil/outils-accueil.mjs";
 
 const PARAMETRES = COMPTES.parametres;
 
@@ -33,6 +34,18 @@ const onglet = (id) => async (page) => {
   await ouvrirParametres(page, id);
 };
 
+/**
+ * Comptes bancaires du propriétaire : les comptes sont lus après l'ouverture
+ * de l'onglet, la page est prête une fois la liste affichée (vide pour
+ * « Paramètres », d'où « Connecter une banque »). Liste des banques simulée :
+ * Bridge est injoignable en CI (erreur 500).
+ */
+const comptesBancaires = async (page) => {
+  await simulerBanques(page);
+  await sessionsReglees();
+  await ouvrirParametres(page, "comptes-bancaires", { pret: (contenu) => contenu.getByText("Aucun compte connecté", { exact: true }) });
+};
+
 const FERMER = { parcours: "parcours.spec.mjs : « Annuler » ferme la fenêtre" };
 
 /** Onglet Espaces, puis la liste des membres de « Paramètres ». */
@@ -42,10 +55,8 @@ const membres = async (page) => {
   await contenuParametres(page).getByPlaceholder("Rechercher par nom ou email").waitFor();
 };
 // Panneau des membres glissé hors de l'écran tant qu'aucun espace n'est choisi :
-// ses boutons restent dans la page (voir accessibilite.spec.mjs).
+// inerte, ses boutons ne sont plus atteignables (voir accessibilite.spec.mjs).
 const ESPACES_LISTE = {
-  "button icône arrow-left": { parcours: "accessibilite.spec.mjs : panneau des membres masqué mais atteignable" },
-  "button Filtrer": { parcours: "accessibilite.spec.mjs : panneau des membres masqué mais atteignable" },
   "button Annuler": FERMER,
 };
 const FILTRE_MEMBRES = { "button Filtrer": { menu: ["Actif", "Invité", "Suspendu"] } };
@@ -176,8 +187,8 @@ test.describe("Paramètres (propriétaire)", () => {
       "button Sélectionner une date": { etat: /\[expanded\]/ },
       "button Annuler": FERMER,
       "button Sauvegarder": { desactive: "rien n'a été modifié" },
-      // Interrupteurs sans nom (assujetti à la TVA, franchise) : voir accessibilite.spec.mjs.
-      "switch ": { parcours: "accessibilite.spec.mjs : interrupteurs sans nom" },
+      "switch Assujetti à la TVA": { parcours: "accessibilite.spec.mjs : interrupteurs nommés" },
+      "switch Franchise en base de TVA": { parcours: "accessibilite.spec.mjs : interrupteurs nommés" },
       // Les 15 premières formes juridiques (18 en tout, comme LEGAL_FORM_GROUPS).
       "combobox icône chevron-down": {
         options: [
@@ -210,8 +221,10 @@ test.describe("Paramètres (propriétaire)", () => {
     boutons: {
       "button Déconnexion globale": { parcours: "appareils.spec.mjs : déconnecter tous les autres appareils (compte à part)" },
       "button Annuler": FERMER,
-      "switch ": { parcours: "accessibilite.spec.mjs : interrupteur de la double authentification sans nom" },
-      "combobox icône chevron-down": { options: ["7 jours", "30 jours", "90 jours"] },
+      "switch Activer l'authentification à deux facteurs": { parcours: "accessibilite.spec.mjs : interrupteur de la double authentification nommé" },
+      "combobox Durée de session des utilisateurs": { options: ["7 jours", "30 jours", "90 jours"] },
+      "combobox Timeout d'inactivité": { options: ["15 minutes", "1 heure", "12 heures", "24 heures"] },
+      "combobox Sessions simultanées": { options: ["1 session", "2 sessions", "3 sessions"] },
     },
   });
 
@@ -240,7 +253,7 @@ test.describe("Paramètres (propriétaire)", () => {
     zone: contenuParametres,
     boutons: {
       ...Object.fromEntries(
-        ["Toutes", "Paiement", "Banque", "Comptabilité", "Automatisations", "CRM", "Intelligence artificielle", "E-mailing", "Productivité"].map((c) => [
+        ["Toutes", "Paiement", "Banque", "Comptabilité", "Automatisations", "CRM", "Intelligence artificielle", "E-mailing", "Réseaux sociaux", "Productivité"].map((c) => [
           `button ${c}`,
           { parcours: "parcours.spec.mjs : catégories des applications" },
         ]),
@@ -249,7 +262,13 @@ test.describe("Paramètres (propriétaire)", () => {
     },
   });
 
-  verifierBoutons({ test, titre: "Comptes bancaires", ouvrir: onglet("comptes-bancaires"), zone: contenuParametres, boutons: { "button Annuler": FERMER } });
+  verifierBoutons({
+    test,
+    titre: "Comptes bancaires",
+    ouvrir: comptesBancaires,
+    zone: contenuParametres,
+    boutons: { "button Connecter une banque": { fenetre: "Connecter votre banque" }, "button Annuler": FERMER },
+  });
 
   verifierBoutons({
     test,
@@ -328,13 +347,14 @@ const LECTURE_SEULE_GENERALE = {
 const LECTURE_SEULE_LEGALES = {
   "button Sélectionner une date": { desactive: "lecture seule" },
   "button Annuler": FERMER,
-  "switch ": { desactive: "lecture seule" },
+  "switch Assujetti à la TVA": { desactive: "lecture seule" },
+  "switch Franchise en base de TVA": { desactive: "lecture seule" },
   "combobox icône chevron-down": { desactive: "lecture seule" },
 };
 const SECURITE_SANS_REGLAGES = {
   "button Déconnexion globale": { parcours: "appareils.spec.mjs : déconnecter tous les autres appareils (compte à part)" },
   "button Annuler": FERMER,
-  "switch ": { parcours: "accessibilite.spec.mjs : interrupteur de la double authentification sans nom" },
+  "switch Activer l'authentification à deux facteurs": { parcours: "accessibilite.spec.mjs : interrupteur de la double authentification nommé" },
 };
 const COMPTE_MEMBRE = {
   "button Upload image": { selecteurDeFichier: true },

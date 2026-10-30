@@ -19,11 +19,20 @@ export async function requireAccountManager(
   const { user } = await requireSession(request);
   const manager = await findAccountManagerByUserId(mongoDb, user.id);
   if (!manager) throw apiError(403, "Réservé aux comptes gestionnaires");
-  if (manager.status !== "active" && !allowSuspended) {
+  if (!allowSuspended) assertAccountManagerActive(manager);
+  return { user, manager };
+}
+
+/**
+ * Cabinet suspendu par Newbi : refusé, pour les actions qui l'engagent
+ * (après un requireAccountManager avec allowSuspended).
+ * @throws {NextResponse} 403
+ */
+export function assertAccountManagerActive(manager) {
+  if (manager.status !== "active") {
     throw apiError(
       403,
       "Votre compte gestionnaire est suspendu : contactez Newbi pour le réactiver.",
     );
   }
-  return { user, manager };
 }

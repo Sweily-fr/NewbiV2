@@ -128,9 +128,13 @@ export const getVisibleFields = (
 // Patterns de validation regex
 export const VALIDATION_PATTERNS = {
   // Informations générales - Synchronisé avec le backend (validators.js)
+  // Texte libre « réel » : lettres de tous les alphabets (« œ », « Ł », « ễ »),
+  // accents combinés (texte copié depuis un Mac), chiffres, ponctuation
+  // (apostrophe typographique « ’ », « n° », guillemets), symboles (« & »,
+  // « m² ») et espaces. Seuls < et > sont refusés (balises HTML). Même
+  // forme pour l'adresse, la ville, le destinataire et le nom de la banque.
   companyName: {
-    pattern:
-      /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
+    pattern: /^(?![\s\S]*[<>])[\p{L}\p{M}\p{N}\p{P}\p{S}\s]{2,200}$/u,
     message:
       "Le nom doit contenir entre 2 et 200 caractères (lettres, chiffres, espaces et caractères spéciaux autorisés, < et > interdits)",
   },
@@ -160,17 +164,35 @@ export const VALIDATION_PATTERNS = {
       "La description ne peut contenir que des lettres, chiffres, espaces et ponctuation basique (max 1000 caractères)",
   },
 
+  // Prénom ou nom d'une personne - Synchronisé avec le backend (validators.js)
+  // Lettres de tous les alphabets (« Lecœur », « Łukasiewicz », « Nguyễn »),
+  // espaces, apostrophes droite et typographique, points et tirets
+  personName: {
+    pattern: /^[\p{L}\p{M}a-zA-ZÀ-ÿ\s'’.-]{2,50}$/u,
+    message:
+      "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, points et tirets uniquement)",
+  },
+
+  // Téléphone d'un contact, national ou international - Synchronisé avec le
+  // backend (validators.js PHONE_REGEX) : au moins 9 chiffres, « + » en tête
+  // et séparateurs d'usage (espaces, points, tirets, parenthèses)
+  contactPhone: {
+    pattern: /^(?=(?:\D*\d){9})\(?\+?[\d\s.()-]+$/,
+    message:
+      "Numéro de téléphone invalide (ex : +33 6 12 34 56 78, 06.12.34.56.78)",
+  },
+
   // Adresse - Synchronisé avec le backend (validators.js)
   street: {
-    pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s,'\-\.]{3,100}$/,
+    pattern: /^(?![\s\S]*[<>])[\p{L}\p{M}\p{N}\p{P}\p{S}\s]{3,100}$/u,
     message:
-      "L'adresse doit contenir entre 3 et 100 caractères (lettres, chiffres, espaces, virgules, apostrophes, tirets et points autorisés)",
+      "L'adresse doit contenir entre 3 et 100 caractères (< et > interdits)",
   },
 
   city: {
-    pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]{2,50}$/,
+    pattern: /^(?![\s\S]*[<>])[\p{L}\p{M}\p{N}\p{P}\p{S}\s]{2,50}$/u,
     message:
-      "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
+      "La ville doit contenir entre 2 et 50 caractères (< et > interdits)",
   },
 
   postalCode: {
@@ -179,9 +201,17 @@ export const VALIDATION_PATTERNS = {
   },
 
   country: {
-    pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]{2,50}$/,
+    pattern: /^[\p{L}\p{M}a-zA-ZÀ-ÿ\s'’().,-]{2,50}$/u,
     message:
-      "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
+      "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets, points, virgules et parenthèses uniquement)",
+  },
+
+  // Nom du destinataire d'une adresse (personne ou entreprise) - Synchronisé
+  // avec le backend (validators.js FULL_NAME_REGEX)
+  fullName: {
+    pattern: /^(?![\s\S]*[<>])[\p{L}\p{M}\p{N}\p{P}\p{S}\s]{2,100}$/u,
+    message:
+      "Le nom doit contenir entre 2 et 100 caractères (< et > interdits)",
   },
 
   // Informations bancaires
@@ -196,8 +226,9 @@ export const VALIDATION_PATTERNS = {
   },
 
   bankName: {
-    pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()]{2,100}$/,
-    message: "Nom de banque invalide",
+    pattern: /^(?![\s\S]*[<>])[\p{L}\p{M}\p{N}\p{P}\p{S}\s]{2,100}$/u,
+    message:
+      "Le nom de la banque doit contenir entre 2 et 100 caractères (< et > interdits)",
   },
 
   // Informations légales - Synchronisé avec le backend (validators.js)
@@ -206,8 +237,10 @@ export const VALIDATION_PATTERNS = {
     message: "Le SIREN doit contenir 9 chiffres",
   },
 
+  // Espaces acceptés (SIRET copié depuis un Kbis : « 987 654 321 00012 ») ;
+  // ils sont retirés à l'enregistrement
   siret: {
-    pattern: /^\d{14}$/,
+    pattern: /^\s*(?:\d\s*){14}$/,
     message: "Le SIRET doit contenir 14 chiffres",
   },
 
@@ -246,6 +279,167 @@ export const VALIDATION_PATTERNS = {
     pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()]{2,50}$/,
     message: "Forme juridique invalide",
   },
+};
+
+// Désignation d'un article - Synchronisé avec le backend (validators.js
+// ITEM_DESCRIPTION_REGEX) : tous les caractères imprimables, accents combinés
+// d'un texte copié depuis un Mac et caractères invisibles d'un copier-coller
+// (trait d'union conditionnel de Word, espaces sans chasse, liant des émojis)
+export const ITEM_DESCRIPTION_PATTERN =
+  /^[\p{L}\p{M}\p{N}\p{P}\p{S}\p{Z}\t\n\r\u00AD\u200B-\u200D\u2060\uFEFF]+$/u;
+
+// Nom d'un article de facture : l'éditeur de factures n'acceptait que les
+// lettres latines, les chiffres et la ponctuation ASCII (plus $ + =). Les vrais
+// noms passent désormais (lettres de tous les alphabets, « œ », accents
+// combinés, apostrophe typographique, guillemets, « n° », « m² ») ; les autres
+// symboles (« € », émojis…) restent refusés comme avant.
+export const INVOICE_ITEM_NAME_PATTERN =
+  /^[\p{L}\p{M}\p{N}\p{P}\s$+=°\u00AD\u200B-\u200D\u2060\uFEFF]+$/u;
+
+/**
+ * Nom de l'article d'une facture (2 caractères au moins) et
+ * détails (500 caractères au plus) : contrôlés sur ce que l'utilisateur
+ * saisit, pas sur une ligne reprise telle quelle du document existant
+ * (`original`), enregistrée avant ces règles. Renvoie [{ field, message }].
+ */
+export function getItemTextErrors(item, original) {
+  const errors = [];
+  const description = (item.description || "").trim();
+  if (description && description !== (original?.description || "").trim()) {
+    if (description.length < 2) {
+      errors.push({
+        field: "description",
+        message: "nom de l'article trop court (2 caractères minimum)",
+      });
+    } else if (!INVOICE_ITEM_NAME_PATTERN.test(description)) {
+      errors.push({
+        field: "description",
+        message: "description contient des caractères non autorisés",
+      });
+    }
+  }
+  if (
+    item.details &&
+    item.details.length > 500 &&
+    item.details !== (original?.details || "")
+  ) {
+    errors.push({
+      field: "details",
+      message: "détails trop longs (500 caractères maximum)",
+    });
+  }
+  return errors;
+}
+
+/**
+ * Champ rempli uniquement d'espaces : refusé comme un champ vide (une fois
+ * les espaces retirés, il serait enregistré vide).
+ */
+export const isBlank = (value) =>
+  typeof value === "string" && value.length > 0 && value.trim() === "";
+
+/** Pays vide ou France : le code postal suit le format français. */
+export const isFranceCountry = (country) => {
+  const value = (country || "").trim().toLowerCase();
+  return value === "" || value === "france" || value === "fr";
+};
+
+/**
+ * Code postal selon le pays de l'adresse (même règle que l'API) : format
+ * français pour la France, format libre ailleurs (« 1000 » à Bruxelles,
+ * « SW1A 1AA » à Londres). Renvoie le message d'erreur, ou null.
+ */
+export const getPostalCodeError = (
+  value,
+  { country = "", international = false } = {},
+) => {
+  const postalCode = (value || "").trim();
+  if (!postalCode) return null;
+  if (international || !isFranceCountry(country)) {
+    return /^[a-zA-Z0-9\s-]{2,20}$/.test(postalCode)
+      ? null
+      : "Le code postal doit contenir entre 2 et 20 caractères (lettres, chiffres, espaces ou tirets)";
+  }
+  return VALIDATION_PATTERNS.postalCode.pattern.test(postalCode)
+    ? null
+    : VALIDATION_PATTERNS.postalCode.message;
+};
+
+// Longueur de l'IBAN des pays de la zone SEPA (registre IBAN de SWIFT)
+const IBAN_LENGTHS = {
+  AD: 24,
+  AT: 20,
+  BE: 16,
+  BG: 22,
+  CH: 21,
+  CY: 28,
+  CZ: 24,
+  DE: 22,
+  DK: 18,
+  EE: 20,
+  ES: 24,
+  FI: 18,
+  FR: 27,
+  GB: 22,
+  GI: 23,
+  GR: 27,
+  HR: 21,
+  HU: 28,
+  IE: 22,
+  IS: 26,
+  IT: 27,
+  LI: 21,
+  LT: 20,
+  LU: 20,
+  LV: 21,
+  MC: 27,
+  MT: 31,
+  NL: 18,
+  NO: 15,
+  PL: 28,
+  PT: 25,
+  RO: 24,
+  SE: 24,
+  SI: 19,
+  SK: 24,
+  SM: 27,
+  VA: 22,
+};
+
+/** IBAN sans espaces, en majuscules (forme enregistrée). */
+export const normalizeIban = (iban) =>
+  String(iban || "")
+    .replace(/\s/g, "")
+    .toUpperCase();
+
+/**
+ * Contrôle d'un IBAN (sans espaces, en majuscules : les champs le mettent
+ * déjà sous cette forme) : caractères, longueur du pays et clé de contrôle
+ * (norme ISO 13616 : les 4 premiers caractères passent à la fin, chaque
+ * lettre devient un nombre, A = 10… Z = 35, et le reste de la division par
+ * 97 doit valoir 1). Renvoie le message d'erreur, ou null s'il est valide.
+ */
+export const getIbanError = (iban) => {
+  const value = String(iban || "").replace(/\s/g, "");
+  if (!value) return null;
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(value)) {
+    return "Format IBAN invalide";
+  }
+  const expectedLength = IBAN_LENGTHS[value.slice(0, 2)];
+  if (expectedLength && value.length !== expectedLength) {
+    return `Format IBAN invalide : ${expectedLength} caractères attendus pour ce pays`;
+  }
+  const rearranged = value.slice(4) + value.slice(0, 4);
+  let remainder = 0;
+  for (const char of rearranged) {
+    const digits = /\d/.test(char) ? char : String(char.charCodeAt(0) - 55);
+    for (const digit of digits) {
+      remainder = (remainder * 10 + Number(digit)) % 97;
+    }
+  }
+  return remainder === 1
+    ? null
+    : "IBAN invalide : la clé de contrôle ne correspond pas";
 };
 
 // Fonction de nettoyage des données (sanitization)
@@ -302,6 +496,13 @@ export const validateField = (value, fieldName, isRequired = false) => {
       isValid: false,
       message: "La valeur est trop longue (max 1000 caractères)",
     };
+  }
+
+  // IBAN : format, longueur du pays et clé de contrôle
+  if (fieldName === "iban") {
+    const ibanError = getIbanError(sanitizedValue);
+    if (ibanError) return { isValid: false, message: ibanError };
+    return { isValid: true, message: "", sanitizedValue };
   }
 
   // Validation avec regex si pattern défini

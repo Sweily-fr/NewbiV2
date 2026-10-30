@@ -73,6 +73,20 @@ export const toCalendarDate = (value) => {
 };
 
 /**
+ * Date décalée de `days` jours calendaires. Ajouter `days` × 24 h faisait
+ * perdre un jour quand la période traversait le passage à l'heure d'hiver
+ * (journée de 25 h) : un devis valable 30 jours ne l'était plus que 29.
+ * @param {Date} date
+ * @param {number} days
+ * @returns {Date}
+ */
+const addCalendarDays = (date, days) => {
+  const shifted = new Date(date);
+  shifted.setDate(shifted.getDate() + days);
+  return shifted;
+};
+
+/**
  * Recale les dates d'un brouillon repris ultérieurement.
  *
  * Un brouillon (devis / facture / bon de commande) créé un mois antérieur garde
@@ -113,7 +127,7 @@ export const refreshDraftDates = (issueDate, secondDate) => {
 
   const newIssue = formatLocalDate(today);
   const newSecond = prevSecond
-    ? formatLocalDate(new Date(today.getTime() + gapDays * DAY_MS))
+    ? formatLocalDate(addCalendarDays(today, gapDays))
     : secondDate;
 
   return { issueDate: newIssue, secondDate: newSecond, changed: true };
@@ -171,9 +185,7 @@ export const getDraftEffectiveDates = (issueDate, secondDate) => {
     changed: true,
     issue: { effective: today, original: issueOrig },
     second: {
-      effective: secondOrig
-        ? new Date(today.getTime() + gapDays * DAY_MS)
-        : null,
+      effective: secondOrig ? addCalendarDays(today, gapDays) : null,
       original: secondOrig,
     },
   };

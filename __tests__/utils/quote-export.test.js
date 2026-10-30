@@ -65,3 +65,26 @@ describe("filterQuotesByDateRange", () => {
     expect(out.map((x) => x.number)).toEqual(["in-range"]);
   });
 });
+
+describe("exportToCSV des devis : statut en clair", () => {
+  it("« En attente » et « Accepté », pas PENDING ni COMPLETED", async () => {
+    const { exportToCSV } = await import("@/src/utils/quote-export");
+    const createObjectURL = vi.fn(() => "blob:mock");
+    globalThis.URL.createObjectURL = createObjectURL;
+    globalThis.URL.revokeObjectURL = vi.fn();
+    vi.spyOn(document.body, "appendChild").mockImplementation((el) => {
+      if (el && el.tagName === "A") el.click = vi.fn();
+      return el;
+    });
+    vi.spyOn(document.body, "removeChild").mockImplementation(() => null);
+
+    exportToCSV([
+      q({ prefix: "D", number: "0001", status: "PENDING" }),
+      q({ prefix: "D", number: "0002", status: "COMPLETED" }),
+    ]);
+    const text = await createObjectURL.mock.calls[0][0].text();
+    expect(text).toContain(";En attente;");
+    expect(text).toContain(";Accepté;");
+    expect(text).not.toMatch(/;(PENDING|COMPLETED);/);
+  });
+});

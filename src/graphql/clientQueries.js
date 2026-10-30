@@ -73,6 +73,8 @@ export const CLIENT_FRAGMENT = gql`
       postalCode
       country
     }
+    # Contact bloqué : exclu de la création de documents (éditeurs)
+    isBlocked
     notes {
       ...ClientNoteFragment
     }

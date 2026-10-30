@@ -49,7 +49,9 @@ const ECRITURE = {
   "button Exporter > Excel (.xlsx)": { telechargement: /^transactions_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}\.xlsx$/ },
   "button Exporter > CSV (.csv)": { telechargement: /^transactions_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}\.csv$/ },
   "button Actions de la transaction": { menu: ["Modifier ⌘E", "Copier description ⌘C"] },
-  "button Actions de la transaction > Modifier ⌘E": { contenu: true },
+  // Ouvre le tiroir de la transaction, annoncé comme une fenêtre titrée par
+  // son type (première ligne : Spotify, paiement par carte)
+  "button Actions de la transaction > Modifier ⌘E": { fenetre: "Paiement par carte" },
   "button Actions de la transaction > Copier description ⌘C": { notification: /Description copiée dans le presse-papier/ },
 };
 

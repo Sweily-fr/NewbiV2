@@ -205,7 +205,16 @@ export default function ProductImportDialog({ open, onOpenChange }) {
                 workspaceId,
               },
             },
-          }).then(() => ({ idx })),
+          }).then((result) => {
+            // errorPolicy « all » : un refus de l'API (nom déjà pris…)
+            // arrive dans result.errors, sans rejet de la promesse
+            if (result?.errors?.length || !result?.data?.createProduct) {
+              throw new Error(
+                result?.errors?.[0]?.message || "Produit refusé par le serveur",
+              );
+            }
+            return { idx };
+          }),
         ),
       );
 

@@ -247,8 +247,11 @@ test.describe("Contacts : actions sur un contact", () => {
     const supprimer = page.getByRole("menuitem", { name: "Supprimer", exact: true });
     await supprimer.hover();
     await expect(page.getByText("Ce contact est lié à des factures, devis ou bons de commande.")).toBeVisible();
-    await supprimer.click();
+    // « Supprimer » est annoncé indisponible (aria-disabled, test suivant) : Playwright n'y clique
+    // qu'en forçant. Le clic doit rester sans effet.
+    await supprimer.click({ force: true });
     await page.waitForTimeout(800);
+    await expect(page.getByRole("alertdialog"), "Une confirmation de suppression s'ouvre pour un contact facturé").toHaveCount(0);
     expect(await enBase(CONTACTS.avecFactures), "Le contact facturé a été supprimé").not.toBeNull();
     expect(await (await base()).collection("invoices").countDocuments({ "client.id": CONTACTS.avecFactures._id.toHexString() })).toBe(2);
   });

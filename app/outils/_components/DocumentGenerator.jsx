@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -39,30 +46,50 @@ const ligneVide = () => ({
   unit: "unité",
 });
 
+// Jour à Paris (AAAA-MM-JJ) : en UTC, entre minuit et 2 h, la date
+// proposée était la veille
+const PARIS_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Paris",
+});
+
 function aujourdhui() {
-  return new Date().toISOString().slice(0, 10);
+  return PARIS_DAY.format(new Date());
 }
 
 function dansNJours(n) {
   const d = new Date();
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return PARIS_DAY.format(d);
 }
 
 function Section({ title, children, className = "" }) {
   return (
-    <section className={`rounded-xl border border-gray-200 bg-white p-5 ${className}`}>
+    <section
+      className={`rounded-xl border border-gray-200 bg-white p-5 ${className}`}
+    >
       <h2 className="text-sm font-medium text-gray-900 mb-4">{title}</h2>
       {children}
     </section>
   );
 }
 
-function Champ({ label, value, onChange, placeholder, type = "text", className = "" }) {
+function Champ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  className = "",
+}) {
+  // Libellé relié au champ (lu par les lecteurs d'écran)
+  const id = useId();
   return (
     <div className={className}>
-      <Label className="text-xs text-gray-600 mb-1.5 block">{label}</Label>
+      <Label htmlFor={id} className="text-xs text-gray-600 mb-1.5 block">
+        {label}
+      </Label>
       <Input
+        id={id}
         type={type}
         value={value}
         placeholder={placeholder}
@@ -75,6 +102,8 @@ function Champ({ label, value, onChange, placeholder, type = "text", className =
 
 export default function DocumentGenerator({ config }) {
   const isQuote = config.type === "quote";
+  // Préfixe des identifiants qui relient libellés et champs
+  const fieldId = useId();
   const previewRef = useRef(null);
   const frameRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -125,15 +154,29 @@ export default function DocumentGenerator({ config }) {
   const [doc, setDoc] = useState({
     prefix: `${config.prefix}-${new Date().getFullYear()}`,
     number: "001",
-    issueDate: aujourdhui(),
-    secondDate: dansNJours(config.secondDate.defaultDays),
+    // Posées dans le navigateur (effet ci-dessous)
+    issueDate: "",
+    secondDate: "",
     terms: config.defaultTerms,
   });
+
+  // Dates du jour posées dans le navigateur : la page est pré-rendue à la
+  // mise en ligne du site, des dates calculées au rendu seraient celles de
+  // ce jour-là (dates fausses, erreur d'hydratation)
+  useEffect(() => {
+    setDoc((d) => ({
+      ...d,
+      issueDate: d.issueDate || aujourdhui(),
+      secondDate: d.secondDate || dansNJours(config.secondDate.defaultDays),
+    }));
+  }, [config.secondDate.defaultDays]);
 
   const [items, setItems] = useState([ligneVide()]);
 
   const setItem = (i, patch) =>
-    setItems((prev) => prev.map((it, k) => (k === i ? { ...it, ...patch } : it)));
+    setItems((prev) =>
+      prev.map((it, k) => (k === i ? { ...it, ...patch } : it)),
+    );
 
   const totals = useMemo(() => {
     let ht = 0;
@@ -156,7 +199,9 @@ export default function DocumentGenerator({ config }) {
       executionDate: doc.issueDate,
       // Le gabarit lit `validUntil` pour un devis et `dueDate` pour une
       // facture : une seule saisie alimente l'un ou l'autre.
-      ...(isQuote ? { validUntil: doc.secondDate } : { dueDate: doc.secondDate }),
+      ...(isQuote
+        ? { validUntil: doc.secondDate }
+        : { dueDate: doc.secondDate }),
       companyInfo: {
         name: emetteur.name || "Votre entreprise",
         address: {
@@ -205,7 +250,7 @@ export default function DocumentGenerator({ config }) {
         .filter(Boolean)
         .join("\n"),
     }),
-    [emetteur, client, doc, items, isQuote]
+    [emetteur, client, doc, items, isQuote],
   );
 
   const telecharger = useCallback(async () => {
@@ -225,7 +270,7 @@ export default function DocumentGenerator({ config }) {
     } catch (e) {
       console.error("Génération du PDF impossible", e);
       alert(
-        "La génération du PDF a échoué. Réessayez, et si le problème persiste, utilisez un autre navigateur."
+        "La génération du PDF a échoué. Réessayez, et si le problème persiste, utilisez un autre navigateur.",
       );
     } finally {
       setDownloading(false);
@@ -233,7 +278,10 @@ export default function DocumentGenerator({ config }) {
   }, [doc.prefix, doc.number]);
 
   const fmt = (n) =>
-    n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    n.toLocaleString("fr-FR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   return (
     <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8">
@@ -297,10 +345,15 @@ export default function DocumentGenerator({ config }) {
             <Checkbox
               id="franchise"
               checked={emetteur.franchise}
-              onCheckedChange={(v) => setEmetteur({ ...emetteur, franchise: !!v })}
+              onCheckedChange={(v) =>
+                setEmetteur({ ...emetteur, franchise: !!v })
+              }
               className="mt-0.5"
             />
-            <label htmlFor="franchise" className="text-sm text-gray-700 leading-snug">
+            <label
+              htmlFor="franchise"
+              className="text-sm text-gray-700 leading-snug"
+            >
               Je suis en franchise en base de TVA
               <span className="block text-xs text-gray-500">
                 La mention de l'article 293 B est ajoutée et les montants sont
@@ -391,10 +444,14 @@ export default function DocumentGenerator({ config }) {
             />
           </div>
           <div className="mt-3">
-            <Label className="text-xs text-gray-600 mb-1.5 block">
+            <Label
+              htmlFor={`${fieldId}-conditions`}
+              className="text-xs text-gray-600 mb-1.5 block"
+            >
               Conditions de règlement et mentions
             </Label>
             <textarea
+              id={`${fieldId}-conditions`}
               value={doc.terms}
               onChange={(e) => setDoc({ ...doc, terms: e.target.value })}
               rows={3}
@@ -411,19 +468,31 @@ export default function DocumentGenerator({ config }) {
                 className="grid grid-cols-12 gap-2 items-end rounded-lg bg-gray-50 p-3"
               >
                 <div className="col-span-12 sm:col-span-5">
-                  <Label className="text-xs text-gray-600 mb-1.5 block">
+                  <Label
+                    htmlFor={`${fieldId}-ligne-${i}-designation`}
+                    className="text-xs text-gray-600 mb-1.5 block"
+                  >
                     Désignation
                   </Label>
                   <Input
+                    id={`${fieldId}-ligne-${i}-designation`}
                     value={it.description}
                     placeholder="Prestation de conseil"
-                    onChange={(e) => setItem(i, { description: e.target.value })}
+                    onChange={(e) =>
+                      setItem(i, { description: e.target.value })
+                    }
                     className="h-9"
                   />
                 </div>
                 <div className="col-span-4 sm:col-span-2">
-                  <Label className="text-xs text-gray-600 mb-1.5 block">Qté</Label>
+                  <Label
+                    htmlFor={`${fieldId}-ligne-${i}-quantite`}
+                    className="text-xs text-gray-600 mb-1.5 block"
+                  >
+                    Qté
+                  </Label>
                   <Input
+                    id={`${fieldId}-ligne-${i}-quantite`}
                     type="number"
                     min="0"
                     // Une quantité se compte en unités : les flèches montent
@@ -436,10 +505,14 @@ export default function DocumentGenerator({ config }) {
                   />
                 </div>
                 <div className="col-span-4 sm:col-span-2">
-                  <Label className="text-xs text-gray-600 mb-1.5 block">
+                  <Label
+                    htmlFor={`${fieldId}-ligne-${i}-prix`}
+                    className="text-xs text-gray-600 mb-1.5 block"
+                  >
                     Prix unitaire
                   </Label>
                   <Input
+                    id={`${fieldId}-ligne-${i}-prix`}
                     type="number"
                     min="0"
                     step="0.01"
@@ -449,8 +522,14 @@ export default function DocumentGenerator({ config }) {
                   />
                 </div>
                 <div className="col-span-3 sm:col-span-2">
-                  <Label className="text-xs text-gray-600 mb-1.5 block">TVA</Label>
+                  <Label
+                    htmlFor={`${fieldId}-ligne-${i}-tva`}
+                    className="text-xs text-gray-600 mb-1.5 block"
+                  >
+                    TVA
+                  </Label>
                   <select
+                    id={`${fieldId}-ligne-${i}-tva`}
                     value={it.vatRate}
                     disabled={emetteur.franchise}
                     onChange={(e) => setItem(i, { vatRate: e.target.value })}
@@ -527,8 +606,11 @@ export default function DocumentGenerator({ config }) {
               onCheckedChange={(v) => setConsent(!!v)}
               className="mt-0.5"
             />
-            <label htmlFor="consent" className="text-sm text-gray-700 leading-snug">
-{config.warnings.consent}
+            <label
+              htmlFor="consent"
+              className="text-sm text-gray-700 leading-snug"
+            >
+              {config.warnings.consent}
             </label>
           </div>
 
@@ -568,7 +650,9 @@ export default function DocumentGenerator({ config }) {
 
       {/* -------------------------------- Aperçu -------------------------------- */}
       <div className="lg:sticky lg:top-24 lg:self-start">
-        <p className="text-sm font-medium text-gray-900 mb-3">Aperçu en direct</p>
+        <p className="text-sm font-medium text-gray-900 mb-3">
+          Aperçu en direct
+        </p>
         <div
           ref={frameRef}
           className="rounded-xl border border-gray-200 overflow-hidden bg-white"

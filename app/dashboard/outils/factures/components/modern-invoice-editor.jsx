@@ -141,6 +141,11 @@ export default function ModernInvoiceEditor({
   mode = "create",
   invoiceId = null,
   initialData = null,
+  // Consultation d'une facture (/factures/[id]) : retour et actions de la
+  // page, affichés dans l'en-tête de l'éditeur (plein écran, il recouvrait
+  // l'en-tête de la page et ses boutons ne répondaient plus)
+  onBack = null,
+  headerActions = null,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -654,14 +659,16 @@ export default function ModernInvoiceEditor({
             {/* Header */}
             <div className="flex items-center justify-between pb-4 md:pb-6 border-b">
               <div className="flex items-center gap-2">
-                {/* <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBack}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button> */}
+                {onBack && !showSettings && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onBack}
+                    className="h-8 w-8"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
                 <div>
                   <h1 className="text-xl md:text-2xl font-medium mb-1">
                     {showSettings ? (
@@ -688,6 +695,7 @@ export default function ModernInvoiceEditor({
               </div>
 
               <div className="flex items-center gap-2">
+                {!showSettings && headerActions}
                 {!showSettings && (
                   <>
                     {/* Croix pour fermer sur mobile */}

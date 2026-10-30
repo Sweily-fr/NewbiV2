@@ -13,7 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { toast } from "@/src/components/ui/sonner";
-import { updateUser, useSession } from "@/src/lib/auth-client";
+import { useSession } from "@/src/lib/auth-client";
 
 export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
   const [newPhone, setNewPhone] = useState("");
@@ -36,23 +36,22 @@ export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
     setIsLoading(true);
 
     try {
-      // Mise à jour directe du numéro via Better Auth
-      await updateUser(
-        { phoneNumber: newPhone },
-        {
-          onSuccess: async () => {
-            toast.success("Numéro de téléphone modifié avec succès");
-            await refetch(); // Rafraîchir la session
-            handleClose();
-          },
-          onError: (error) => {
-            console.error("Erreur mise à jour:", error);
-            toast.error(
-              error?.message || "Erreur lors de la mise à jour du numéro"
-            );
-          },
-        }
-      );
+      // Enregistré par /api/account/phone : Better Auth refuse de changer
+      // le numéro par updateUser (vérification par SMS attendue)
+      const response = await fetch("/api/account/phone", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: newPhone }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(data?.error || "Erreur lors de la mise à jour du numéro");
+        return;
+      }
+      toast.success("Numéro de téléphone modifié avec succès");
+      // Session relue sans son cache, qui garde l'ancien numéro
+      await refetch({ query: { disableCookieCache: true } });
+      handleClose();
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
       toast.error("Erreur lors de la mise à jour du numéro");

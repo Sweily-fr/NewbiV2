@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   formatDateToFrench,
   formatDateToFrenchLong,
@@ -128,16 +128,21 @@ describe("formatDateTimeToFrench", () => {
   });
 });
 
+// Jour calendaire décalé (un changement d'heure ne fait pas perdre de jour)
+const addDays = (date, days) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
 describe("refreshDraftDates", () => {
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const today = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   })();
   const todayStr = formatLocalDate(today);
-  const plus = (days) =>
-    formatLocalDate(new Date(today.getTime() + days * DAY_MS));
+  const plus = (days) => formatLocalDate(addDays(today, days));
 
   it("recale une émission passée à aujourd'hui et conserve le délai de validité", () => {
     // émission mars 2024, validité +30 j
@@ -183,7 +188,6 @@ describe("refreshDraftDates", () => {
 });
 
 describe("getDraftEffectiveDates", () => {
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const today = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -198,18 +202,18 @@ describe("getDraftEffectiveDates", () => {
     expect(res.issue.effective.getTime()).toBe(today.getTime());
     expect(res.issue.original.getFullYear()).toBe(2024);
     // délai 30 j conservé
-    expect(res.second.effective.getTime()).toBe(today.getTime() + 30 * DAY_MS);
+    expect(res.second.effective.getTime()).toBe(addDays(today, 30).getTime());
     expect(res.second.original.getFullYear()).toBe(2024);
   });
 
   it("accepte les chaînes YYYY-MM-DD", () => {
     const res = getDraftEffectiveDates("2024-03-15", "2024-05-14"); // 60 j
     expect(res.changed).toBe(true);
-    expect(res.second.effective.getTime()).toBe(today.getTime() + 60 * DAY_MS);
+    expect(res.second.effective.getTime()).toBe(addDays(today, 60).getTime());
   });
 
   it("ne recale pas une émission future", () => {
-    const future = new Date(today.getTime() + 5 * DAY_MS);
+    const future = addDays(today, 5);
     const res = getDraftEffectiveDates(future, null);
     expect(res.changed).toBe(false);
     expect(res.issue.effective.getTime()).toBe(future.getTime());
@@ -220,5 +224,28 @@ describe("getDraftEffectiveDates", () => {
     expect(res.changed).toBe(true);
     expect(res.second.effective).toBe(null);
     expect(res.second.original).toBe(null);
+  });
+});
+
+describe("Validité d'un devis recalé au passage à l'heure d'hiver", () => {
+  const ORIGINAL_TZ = process.env.TZ;
+  afterEach(() => {
+    vi.useRealTimers();
+    if (ORIGINAL_TZ === undefined) delete process.env.TZ;
+    else process.env.TZ = ORIGINAL_TZ;
+  });
+
+  it("30 jours restent 30 jours (dimanche de 25 h dans la période)", () => {
+    process.env.TZ = "Europe/Paris";
+    // 21 octobre 2026 : la période de 30 jours traverse le 25 octobre
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 21, 9, 30));
+
+    const res = refreshDraftDates("2026-09-18", "2026-10-18");
+    expect(res.issueDate).toBe("2026-10-21");
+    expect(res.secondDate).toBe("2026-11-20");
+
+    const affichage = getDraftEffectiveDates("2026-09-18", "2026-10-18");
+    expect(formatLocalDate(affichage.second.effective)).toBe("2026-11-20");
   });
 });

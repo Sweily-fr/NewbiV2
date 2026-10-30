@@ -193,8 +193,13 @@ function formatAmount(amount) {
 }
 
 function getStatusLabel(status) {
+  // Statuts des devis (PENDING, COMPLETED, IMPORTED) écrits comme dans la
+  // liste : ils sortaient en code (« PENDING »)
   const labels = {
     DRAFT: "Brouillon",
+    PENDING: "En attente",
+    COMPLETED: "Accepté",
+    IMPORTED: "Importé",
     SENT: "Envoyé",
     ACCEPTED: "Accepté",
     CANCELED: "Annulé",

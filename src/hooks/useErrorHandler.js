@@ -2,6 +2,7 @@ import { useCallback, useRef } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import {
   getErrorMessage,
+  getUserFacingRefusal,
   isCriticalError,
   requiresUserAction,
 } from "@/src/utils/errorMessages";
@@ -175,6 +176,14 @@ export function useErrorHandler() {
           : backendMessage;
       }
 
+      // Refus métier rédigé par l'API (« Le nom doit contenir au moins 2
+      // caractères ») : affiché sous le titre, sinon l'utilisateur ne sait pas
+      // quoi corriger
+      const refusal = getUserFacingRefusal(error);
+      if (refusal && !contextualOptions.description) {
+        contextualOptions.description = refusal;
+      }
+
       return handleGraphQLError(error, context, contextualOptions);
     },
     [handleGraphQLError],
@@ -245,6 +254,7 @@ function getOperationErrorMessage(operation, context) {
       creditNote: "Impossible de créer l'avoir",
       purchaseOrder: "Impossible de créer le bon de commande",
       deliveryNote: "Impossible de créer le bon de livraison",
+      segment: "Impossible de créer le segment",
     },
     update: {
       client: "Impossible de modifier le client",
@@ -253,6 +263,7 @@ function getOperationErrorMessage(operation, context) {
       creditNote: "Impossible de modifier l'avoir",
       purchaseOrder: "Impossible de modifier le bon de commande",
       deliveryNote: "Impossible de modifier le bon de livraison",
+      segment: "Impossible de modifier le segment",
     },
     delete: {
       client: "Impossible de supprimer le client",

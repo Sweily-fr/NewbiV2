@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import {
   CREATE_PRODUCT,
@@ -45,6 +46,23 @@ export const useProducts = (
     error: workspaceError || queryError,
     refetch,
   };
+};
+
+// Le catalogue filtre et pagine sur place : il charge tous les produits de
+// l'espace (il était tronqué à 100). Premier chargement par 1 000 ; un
+// catalogue plus grand relance la requête avec le nombre total.
+const CATALOGUE_FIRST_LIMIT = 1000;
+
+export const useCatalogueProducts = () => {
+  const [limit, setLimit] = useState(CATALOGUE_FIRST_LIMIT);
+  const result = useProducts(1, limit, "");
+  const { totalItems } = result;
+
+  useEffect(() => {
+    if (totalItems > limit) setLimit(totalItems);
+  }, [totalItems, limit]);
+
+  return result;
 };
 
 export const useProduct = (id) => {

@@ -713,6 +713,7 @@ export default function ModernQuoteEditor({
                     size="sm"
                     onClick={handleCloseSettings}
                     className="h-8 w-8 p-0"
+                    aria-label="Fermer les paramètres"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
                   </Button>
