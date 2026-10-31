@@ -906,10 +906,14 @@ export const IMPORTEES_SAISIE = {
   editeurLiee: importeeLot(152, "saisieAchats", { numero: "IMP-EDI-152", client: "Client importé rapproché", ttc: 340, statut: "COMPLETED", transactions: [TX(163)] }),
   editeurAConvertir: importeeLot(153, "saisieAchats", { numero: "IMP-EDI-153", client: "Fournisseur importé à convertir", ttc: 350, statut: "PENDING_REVIEW" }),
 };
-/** « Achats » (référence, jamais modifiée) : une facture importée à rapprocher, une à valider. */
+/**
+ * « Achats » (référence, jamais modifiée) : deux factures importées validées,
+ * cibles des écritures refusées (aucune à valider : l'onglet « Importées
+ * Gmail » ne s'affiche pas sur la page des factures d'achat de référence).
+ */
 export const IMPORTEES_ACHATS = {
   validee: importeeLot(160, "achats", { numero: "IMP-ACH-160", client: "Client importé de référence", ttc: 2500, statut: "VALIDATED" }),
-  aValider: importeeLot(161, "achats", { numero: "IMP-ACH-161", client: "Fournisseur importé de référence", ttc: 360, statut: "PENDING_REVIEW" }),
+  aConvertir: importeeLot(161, "achats", { numero: "IMP-ACH-161", client: "Fournisseur importé de référence", ttc: 360, statut: "VALIDATED" }),
 };
 /** Transactions des écritures permises de l'Éditeur sur les factures importées. */
 export const TRANSACTIONS_IMPORTEES = {

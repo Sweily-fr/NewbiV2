@@ -95,7 +95,9 @@ export async function appelApiFichier(page, query, variables, fichier, { organis
       const form = new FormData();
       form.append("operations", JSON.stringify({ query, variables }));
       form.append("map", JSON.stringify({ 0: [`variables.${fichier.cle}`] }));
-      form.append("0", new Blob([fichier.contenu], { type: fichier.type }), fichier.nom);
+      // Contenu donné en octets (tableau de nombres) : envoyé tel quel, pas sous forme de texte.
+      const octets = Array.isArray(fichier.contenu) ? new Uint8Array(fichier.contenu) : fichier.contenu;
+      form.append("0", new Blob([octets], { type: fichier.type }), fichier.nom);
       const res = await fetch(`${api}/graphql`, {
         method: "POST",
         credentials: "include",

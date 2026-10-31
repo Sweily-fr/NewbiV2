@@ -51,7 +51,7 @@ const CIBLES = {
     fournisseur: FOURNISSEURS.hotel,
     supprimerFournisseur: FOURNISSEURS.bureau,
     fusion: [FOURNISSEURS.adobe, FOURNISSEURS.remplissage],
-    convertir: IMPORTEES_ACHATS.aValider,
+    convertir: IMPORTEES_ACHATS.aConvertir,
   },
   [ORG_SAISIE]: {
     modifier: FAS.editeur,
@@ -550,11 +550,10 @@ test.describe("Factures d'achat : l'en-tête de son espace n'ouvre pas celui des
       const reponse = await appelApi(page, l.requete, l.variables(ORG), { organisation: ORG_INTRUS, delai: 15_000 });
       const texte = JSON.stringify(reponse.data ?? {});
       for (const f of FUITES) expect.soft(texte, `« ${f} » renvoyé à une autre entreprise`).not.toContain(f);
-      if (l.champ === "purchaseInvoiceStats" && reponse.data?.purchaseInvoiceStats) {
-        expect(reponse.data.purchaseInvoiceStats.totalToPay, "Les totaux d'« Achats » sont renvoyés à une autre entreprise").toBe(0);
-      }
+      // Seules ses propres factures (créées par d'autres tests de l'intrus) peuvent sortir.
       if (l.champ === "purchaseInvoices" && reponse.data?.purchaseInvoices) {
-        expect(reponse.data.purchaseInvoices.totalCount).toBe(0);
+        const siennes = await (await base()).collection("purchaseinvoices").countDocuments({ workspaceId: new ObjectId(ORG_INTRUS) });
+        expect(reponse.data.purchaseInvoices.totalCount, "Des factures d'« Achats » sont comptées pour une autre entreprise").toBeLessThanOrEqual(siennes);
       }
       if (l.champ === "matchTransactionsForReceipt" && reponse.data?.matchTransactionsForReceipt) {
         expect(reponse.data.matchTransactionsForReceipt.count).toBe(0);
