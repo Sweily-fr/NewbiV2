@@ -11,7 +11,7 @@ author: Newbi
 image: /blog/top-outils-scan-tickets-caisse-notes-frais/hero.webp
 published: true
 publishDate: '2026-05-11'
-updated: '2026-09-23'
+updated: '2026-10-31'
 ---
 
 import Image from "next/image"
@@ -75,7 +75,7 @@ Avant de plonger dans le comparatif, rappelons les enjeux concrets pour votre ac
 
 **Newbi** n'est pas simplement un scanner de tickets : c'est une plateforme complète de gestion financière qui intègre nativement la reconnaissance OCR pour vos justificatifs, la facturation, le suivi bancaire et la collaboration comptable.
 
-**Précision OCR** : Excellente (triple moteur : Mindee, Google Document AI, Tesseract)
+**Précision OCR** : Excellente (plusieurs moteurs de reconnaissance utilisés en cascade, avec un moteur de secours si le premier échoue)
 
 **Fonctionnalités clés** :
 - Scan instantané depuis mobile ou upload de fichiers (photo, PDF)
@@ -86,7 +86,7 @@ Avant de plonger dans le comparatif, rappelons les enjeux concrets pour votre ac
 - Partage direct avec l'expert-comptable
 - Archivage numérique conforme
 
-**Tarif** : Gratuit pour démarrer, puis formules à partir de 9 euros/mois.
+**Tarif** : Essai gratuit de 30 jours, puis à partir de 17,99 euros TTC/mois (16,19 euros TTC/mois en facturation annuelle), scan OCR inclus dans la limite de 50 documents par mois sur la formule Freelance.
 
 <div className="not-prose my-6">
   <Callout type="tip" title="Pourquoi Newbi se démarque">
@@ -231,7 +231,7 @@ Avant de plonger dans le comparatif, rappelons les enjeux concrets pour votre ac
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Prix</TableCell>
-        <TableCell>Dès 0 euros</TableCell>
+        <TableCell>Essai gratuit, puis dès 16,19 euros TTC/mois</TableCell>
         <TableCell>Dès 30 euros/mois</TableCell>
         <TableCell>Dès 5 euros/user/mois</TableCell>
         <TableCell>Sur devis</TableCell>
@@ -240,6 +240,14 @@ Avant de plonger dans le comparatif, rappelons les enjeux concrets pour votre ac
     </TableBody>
   </Table>
 </div>
+
+## Comparer les logiciels de scan comptable : précision et coût
+
+Pour comparer deux logiciels de scan de factures ou de tickets, testez-les sur vos propres justificatifs et rapportez leur prix au nombre de documents que vous traitez réellement : la fiche commerciale ne suffit ni pour juger la précision, ni pour calculer le coût.
+
+- **Précision** : pendant la période d'essai, faites passer le même lot d'une vingtaine de documents dans chaque outil (tickets nets, tickets thermiques pâlis, factures PDF, facture à plusieurs taux de TVA) et comptez les champs justes sans correction : total TTC, date, fournisseur, TVA par taux. C'est le temps de correction qui compte, pas le taux de reconnaissance annoncé par l'éditeur.
+- **Coût** : divisez l'abonnement mensuel par votre volume de justificatifs, en vérifiant le quota de scans inclus, le prix de chaque utilisateur supplémentaire et ce qui est vendu en option (export comptable, accès de l'expert-comptable).
+- **Ce qui se passe après le scan** : rapprochement automatique avec la transaction bancaire, export vers votre comptabilité, archivage conforme pendant 10 ans. Un OCR précis mais isolé vous laisse ces étapes à faire à la main.
 
 ---
 
@@ -279,6 +287,25 @@ Le meilleur outil dépend de votre profil et de vos besoins :
 
 ---
 
+## Comment scanner un ticket de caisse ou une facture
+
+Pour numériser un ticket de caisse, photographiez-le à plat avec votre smartphone depuis une application de scan OCR, vérifiez les montants qu'elle extrait, puis laissez-la classer et archiver le fichier. Avec une photo nette, l'opération prend quelques secondes.
+
+1. **Posez le ticket à plat** sur un fond sombre et uni, dépliez-le entièrement et éclairez-le sans reflet ni ombre portée du téléphone.
+2. **Cadrez le document en entier**, en-tête du commerçant et pied de ticket compris : la date, le total et le détail de la TVA se trouvent souvent tout en bas.
+3. **Contrôlez l'extraction** : date, total TTC, TVA par taux et fournisseur, et corrigez immédiatement ce qui est faux.
+4. **Laissez l'outil conserver le fichier d'origine** : l'image ou le PDF doit être archivé tel quel, sans retouche, pour garder sa valeur de justificatif.
+
+Pour une facture reçue par e-mail, inutile de l'imprimer pour la scanner : déposez directement le PDF dans l'outil, qui le lit de la même manière. Pour rattraper une pile de factures papier, un scanner de bureau à chargeur automatique ou le mode multipage d'une application mobile fait gagner beaucoup de temps, avant de déposer les fichiers dans votre outil OCR. Sans application dédiée, l'app Notes de l'iPhone et l'application Google Drive sur Android savent aussi numériser un document en PDF, mais sans extraire les montants.
+
+## Scanner ses notes de frais : ce que doit faire une solution OCR
+
+Une solution OCR de notes de frais transforme chaque ticket photographié en ligne de dépense prête à être remboursée : elle extrait le montant, la date et la TVA, propose une catégorie (repas, transport, hébergement, carburant), rattache le justificatif et regroupe les dépenses dans une note de frais à valider.
+
+Pour une entreprise avec des salariés, l'application doit surtout gérer le circuit de validation (plafonds, approbation par un responsable) et l'export vers la paie ou la comptabilité : c'est le terrain d'Expensya ou de Spendesk dans le comparatif. Pour un indépendant ou un dirigeant de TPE, l'enjeu est plutôt d'attacher chaque ticket à la bonne transaction bancaire et de le transmettre à l'expert-comptable sans ressaisie. Les indemnités kilométriques, qui n'ont pas de ticket, se calculent à part à partir du barème fiscal. Le circuit complet, du scan au partage avec le cabinet, est détaillé dans notre guide sur la [gestion des notes de frais et des déplacements](/blog/gestion-notes-frais-deplacement). En micro-entreprise, vos frais réels ne sont pas déductibles de votre revenu imposable, puisqu'un abattement forfaitaire s'applique : scanner vos tickets sert alors à suivre vos dépenses et, si vous êtes redevable de la TVA, à justifier la TVA que vous récupérez.
+
+---
+
 ## Les bonnes pratiques pour scanner vos justificatifs
 
 Pour tirer le meilleur parti de votre outil OCR et garantir la fiabilité de vos données comptables, voici quelques conseils :
@@ -303,7 +330,7 @@ Enfin, un OCR comptable ne se limite pas aux tickets : il traite de la même fa�
 
 ## En résumé
 
-Scanner vos tickets de caisse et notes de frais n'est plus une option mais une nécessité pour toute entreprise soucieuse de sa productivité et de sa conformité. Parmi les 5 outils présentés, **Newbi se distingue comme la seule solution qui combine un OCR performant avec la facturation, le suivi des dépenses et la connexion bancaire** dans une plateforme unique et accessible dès 0 euro.
+Scanner vos tickets de caisse et notes de frais n'est plus une option mais une nécessité pour toute entreprise soucieuse de sa productivité et de sa conformité. Parmi les 5 outils présentés, **Newbi se distingue comme la seule solution qui combine un OCR performant avec la facturation, le suivi des dépenses et la connexion bancaire** dans une plateforme unique, à essayer gratuitement pendant 30 jours.
 
 Que vous soyez freelance, dirigeant de TPE ou responsable administratif, l'adoption d'un outil de scan OCR vous fera gagner plusieurs heures par mois et sécurisera votre comptabilité. Pour un office manager, le scan n'est qu'une brique parmi d'autres : notre [sélection de logiciels office manager](/blog/meilleurs-logiciels-office-manager) montre comment l'associer à la facturation et au suivi de projet.
 
@@ -356,6 +383,18 @@ Que vous soyez freelance, dirigeant de TPE ou responsable administratif, l'adopt
       <AccordionTrigger>Faut-il conserver le ticket papier après l'avoir scanné ?</AccordionTrigger>
       <AccordionContent>
         Non, si la copie numérique respecte l'arrêté du 22 mars 2017 : reproduction à l'identique et en couleur si l'original l'exige, sans retouche, conservée dans un format garantissant l'intégrité (PDF ou PDF A/3 avec horodatage) pendant la durée légale de 10 ans. Dans ce cas, le fichier remplace l'original. Restez toutefois prudent pendant vos premiers exercices : gardez les tickets papier des dépenses importantes jusqu'à la clôture, le temps de vérifier que votre outil archive correctement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-7">
+      <AccordionTrigger>Quelle application utiliser pour scanner ses notes de frais ?</AccordionTrigger>
+      <AccordionContent>
+        Tout dépend de qui dépense. Pour une équipe de salariés qui avancent des frais, choisissez une application de notes de frais avec circuit de validation et export vers la paie, comme Expensya ou Spendesk. Pour un indépendant ou une TPE, une application qui scanne le ticket, l'attache à la transaction bancaire et le partage avec l'expert-comptable suffit, comme Newbi ou Dext. Pour un usage ponctuel, une application de scan gratuite comme Adobe Scan numérise le ticket, mais vous devrez saisir les montants vous-même.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-8">
+      <AccordionTrigger>Que faire d'un ticket de caisse effacé ou illisible ?</AccordionTrigger>
+      <AccordionContent>
+        L'encre thermique pâlit vite : scannez vos tickets le jour même pour éviter le problème. Si un ticket est déjà illisible, demandez une facture au commerçant, qui est tenu d'en établir une pour un achat professionnel. À défaut, conservez la preuve du paiement et notez l'objet de la dépense, en sachant qu'un relevé bancaire seul ne permet pas de récupérer la TVA.
       </AccordionContent>
     </AccordionItem>
   </Accordion>

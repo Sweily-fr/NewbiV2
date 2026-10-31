@@ -12,6 +12,7 @@ author: Newbi
 image: ''
 published: true
 publishDate: '2026-09-25'
+updated: '2026-10-31'
 ---
 
 import Link from "next/link"
@@ -130,6 +131,30 @@ La première étape est donc le dialogue. Contactez votre client pour comprendre
 
 Dans tous les cas, gardez une trace écrite des échanges : en cas de litige persistant, l'historique des statuts de la facture et vos échanges avec le client constituent des éléments précieux.
 
+## Peut-on refuser une facture électronique reçue ?
+
+Oui, vous pouvez refuser une facture électronique dont le contenu est erroné : depuis votre plateforme, vous lui attribuez le statut « Refusée » en indiquant le motif, et ce statut remonte jusqu'à votre fournisseur. En revanche, vous ne pouvez pas refuser le format électronique lui-même : depuis le 1er septembre 2026, toutes les entreprises doivent être en mesure de recevoir les factures électroniques, comme l'explique notre article sur [l'obligation de réception du 1er septembre 2026](/blog/facture-electronique-reception-1er-septembre-2026).
+
+Le refus doit reposer sur un motif réel, que votre fournisseur pourra corriger :
+
+- un **prix ou un montant** différent du devis signé ou du bon de commande ;
+- une **quantité** ou une prestation facturée qui n'a pas été livrée ou réalisée ;
+- une facture reçue **en double** pour la même opération ;
+- une facture qui ne vous est **pas destinée** (autre société du groupe, mauvais établissement) ;
+- une **erreur dans les mentions**, par exemple un taux de TVA inapplicable ou une référence de commande manquante que vous aviez exigée.
+
+Refuser une facture correcte pour retarder son paiement n'a pas de sens : le motif est transmis à votre fournisseur, qui contestera, et la dette reste due. Si vous constatez un problème après avoir accepté la facture, ou si la contestation porte sur une partie seulement, dialoguez avec le fournisseur pour qu'il émette un avoir. Côté émetteur, un refus se traite comme décrit plus haut : échange avec le client, puis avoir et nouvelle facture si la contestation est fondée.
+
+## Corriger une facture électronique : la méthode selon son statut
+
+Une facture électronique transmise ne se modifie jamais directement : on la corrige selon le statut qu'elle a reçu. La méthode n'est pas la même pour une facture rejetée, refusée ou déjà acceptée par le client.
+
+- **Facture rejetée** par la plateforme : elle n'a jamais été mise à disposition du client. Vous corrigez l'anomalie (adressage, mention, format) et vous la redéposez, sans avoir.
+- **Facture refusée** par le client : après échange, vous émettez un avoir qui annule tout ou partie de la facture, puis une nouvelle facture correcte si nécessaire.
+- **Facture acceptée** dans laquelle vous découvrez une erreur : vous ne la modifiez pas, vous émettez un avoir qui l'annule suivi d'une facture correcte, ou une [facture rectificative](/blog/facture-rectificative-comment-faire) qui référence la facture d'origine et corrige l'erreur.
+
+Dans les deux derniers cas, l'avoir est lui-même un document électronique qui suit le même circuit et les mêmes statuts que la facture : notre guide sur les [avoirs dans la facturation électronique](/blog/avoir-facture-electronique-regles) détaille ses mentions et son traitement.
+
 ## Prévenir les rejets : les bons réflexes
 
 La meilleure gestion des rejets reste celle que vous n'avez pas à faire. Quelques habitudes simples éliminent la grande majorité des anomalies.
@@ -219,6 +244,18 @@ Un rejet et un refus n'ont ni la même cause ni la même solution. Le rejet est 
       <AccordionTrigger>Comment éviter les rejets de factures électroniques ?</AccordionTrigger>
       <AccordionContent>
         Trois réflexes couvrent la grande majorité des cas : tenir vos fiches clients à jour (SIREN, raison sociale, adressage) pour que le routage via l'annuaire fonctionne, renseigner toutes les mentions attendues sur vos factures, et utiliser un logiciel qui génère nativement des formats conformes comme Factur-X, UBL ou CII. Un devis clair et validé en amont limite par ailleurs les refus côté client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Peut-on refuser une facture électronique reçue d'un fournisseur ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si son contenu est erroné : prix différent de la commande, prestation non réalisée, doublon, mauvais destinataire ou mention incorrecte. Vous lui attribuez le statut « Refusée » depuis votre plateforme en indiquant le motif, et votre fournisseur corrige par un avoir puis une nouvelle facture. Vous ne pouvez pas, en revanche, refuser une facture au seul motif qu'elle est électronique : la réception est obligatoire pour toutes les entreprises depuis le 1er septembre 2026.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-7">
+      <AccordionTrigger>Comment corriger une facture électronique déjà envoyée ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de son statut. Une facture rejetée par la plateforme n'a jamais atteint le client : vous corrigez l'anomalie et vous la redéposez. Une facture refusée par le client, ou acceptée puis reconnue erronée, ne se modifie pas : vous émettez un avoir qui l'annule en tout ou partie, puis une nouvelle facture, ou une facture rectificative qui référence la facture d'origine.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
