@@ -11,14 +11,16 @@ import {
 /**
  * POST /api/attribution
  *
- * Enregistre l'attribution marketing (Google Ads gclid / UTM / page d'arrivée)
- * sur l'utilisateur connecté, dans `user.acquisition`. Écriture unique : si le
+ * Enregistre la provenance de l'inscription (Google Ads gclid / UTM, site
+ * d'origine, page d'arrivée, dernière page vue avant l'inscription) sur
+ * l'utilisateur connecté, dans `user.acquisition`. Écriture unique : si le
  * champ existe déjà, la requête est ignorée (first write wins), pour que
  * l'attribution reste celle de l'inscription et ne soit pas réécrite par une
  * visite ultérieure.
  *
  * Sert de base à l'import de conversions hors ligne Google Ads
- * (gclid + date de passage en payant) et au reporting ROI par campagne.
+ * (gclid + date de passage en payant), au reporting ROI par campagne et à la
+ * lecture du rendement du référencement naturel page par page.
  */
 const str = z.string().trim().min(1).max(200);
 
@@ -35,7 +37,9 @@ const attributionSchema = z
     hadClickId: z.boolean().optional(),
     landingPage: z.string().trim().max(500).optional(),
     referrer: z.string().trim().max(500).optional(),
+    lastPage: z.string().trim().max(500).optional(),
     capturedAt: z.number().int().positive().optional(),
+    lastPageAt: z.number().int().positive().optional(),
   })
   .strict();
 
@@ -56,8 +60,10 @@ async function handler(request) {
   }
   const data = validation.data;
 
+  // Une visite sans campagne (Google naturel, accès direct…) n'a qu'une page
+  // d'arrivée, un site d'origine ou une dernière page : c'est une donnée.
   const hasContent = Object.keys(data).some(
-    (k) => !["hadClickId", "landingPage", "referrer", "capturedAt"].includes(k),
+    (k) => !["hadClickId", "capturedAt", "lastPageAt"].includes(k),
   );
   if (!hasContent && !data.hadClickId) {
     return apiError(400, "Aucune donnée d'attribution");
@@ -66,6 +72,7 @@ async function handler(request) {
   const acquisition = {
     ...data,
     capturedAt: data.capturedAt ? new Date(data.capturedAt) : undefined,
+    lastPageAt: data.lastPageAt ? new Date(data.lastPageAt) : undefined,
     recordedAt: new Date(),
   };
 
@@ -80,7 +87,7 @@ async function handler(request) {
   const recorded = result.modifiedCount === 1;
   if (recorded) {
     console.log(
-      `✅ [ATTRIBUTION] ${sessionUser.email}: ${data.utm_source || "?"} / ${data.utm_campaign || "?"}${data.gclid ? " (gclid)" : ""}`,
+      `✅ [ATTRIBUTION] ${sessionUser.email}: ${data.utm_source || data.referrer || "direct"} / ${data.utm_campaign || data.lastPage || "?"}${data.gclid ? " (gclid)" : ""}`,
     );
   }
 

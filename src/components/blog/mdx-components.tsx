@@ -5,11 +5,13 @@ import { Button } from "@/src/components/ui/button";
 import { Callout } from "@/src/components/ui/callout";
 import { Badge } from "@/src/components/ui/badge";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/src/components/ui/accordion";
+  MdxAccordion,
+  MdxAccordionContent,
+  MdxAccordionItem,
+  MdxAccordionTrigger,
+} from "@/src/components/blog/mdx-accordion";
+import { ArticleCta } from "@/src/components/blog/article-cta";
+import { ctaIntentFor } from "@/src/lib/blog-cta";
 import {
   Table,
   TableBody,
@@ -56,7 +58,13 @@ function SmartLink({
   );
 }
 
-export function getMDXComponents(): MDXComponents {
+export function getMDXComponents(post?: {
+  slug: string;
+  keyword?: string | null;
+  category?: string | null;
+  cta?: string | null;
+}): MDXComponents {
+  const defaultIntent = post ? ctaIntentFor(post) : "facture";
   return {
     // Next.js components
     Image,
@@ -66,10 +74,14 @@ export function getMDXComponents(): MDXComponents {
     Button,
     Callout,
     Badge,
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+    // FAQ servie dans le HTML (voir mdx-accordion.tsx), même API que Radix.
+    Accordion: MdxAccordion,
+    AccordionContent: MdxAccordionContent,
+    AccordionItem: MdxAccordionItem,
+    AccordionTrigger: MdxAccordionTrigger,
+    ArticleCta: (props: { intent?: string; variant?: "card" | "compact" }) => (
+      <ArticleCta defaultIntent={defaultIntent} {...props} />
+    ),
     Table,
     TableBody,
     TableCaption,
@@ -104,10 +116,7 @@ export function getMDXComponents(): MDXComponents {
       );
     },
     h3: ({ children, ...props }: any) => (
-      <h3
-        className="text-lg font-medium text-gray-800 mt-7 mb-3"
-        {...props}
-      >
+      <h3 className="text-lg font-medium text-gray-800 mt-7 mb-3" {...props}>
         {children}
       </h3>
     ),
@@ -120,10 +129,7 @@ export function getMDXComponents(): MDXComponents {
       </h4>
     ),
     p: ({ children, ...props }: any) => (
-      <p
-        className="text-sm text-gray-600 leading-relaxed mb-3"
-        {...props}
-      >
+      <p className="text-sm text-gray-600 leading-relaxed mb-3" {...props}>
         {children}
       </p>
     ),

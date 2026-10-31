@@ -107,6 +107,7 @@ export default function DocumentGenerator({ config }) {
   const previewRef = useRef(null);
   const frameRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const [consent, setConsent] = useState(false);
 
   // L'aperçu est rendu à sa largeur réelle (794 px, soit une page A4) puis
@@ -267,6 +268,7 @@ export default function DocumentGenerator({ config }) {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      setDownloaded(true);
     } catch (e) {
       console.error("Génération du PDF impossible", e);
       alert(
@@ -636,6 +638,28 @@ export default function DocumentGenerator({ config }) {
             Gratuit, sans inscription. Votre saisie reste dans votre navigateur
             et n'est jamais envoyée à Newbi.
           </p>
+
+          {downloaded && (
+            <div
+              role="status"
+              className="mt-4 rounded-lg border border-[#5A50FF]/30 bg-[#5A50FF]/[0.04] p-4"
+            >
+              <p className="text-sm font-medium text-gray-900">
+                {config.afterDownload.title}
+              </p>
+              <ul className="mt-2 space-y-1 list-disc pl-5 text-sm text-gray-700">
+                {config.afterDownload.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <Button asChild size="sm" className="mt-3">
+                <Link href="/auth/signup">{config.afterDownload.cta}</Link>
+              </Button>
+              <p className="mt-2 text-xs text-gray-500">
+                30 jours gratuits, sans carte bancaire.
+              </p>
+            </div>
+          )}
         </Section>
 
         {/* ---------------------------- Accroche ---------------------------- */}

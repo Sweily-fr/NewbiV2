@@ -1,9 +1,8 @@
 ---
-title: 'Modèle de facture en anglais (invoice) : vocabulaire et mentions'
+title: 'Facture en anglais : invoice ou bill ? Modèle et lexique'
 description: >-
-  Modèle de facture en anglais prêt à reproduire, lexique facture/invoice,
-  mentions françaises obligatoires même en anglais et gestion de la TVA pour
-  l'export.
+  Invoice ou bill ? Le bon terme, la structure d'une facture en anglais
+  conforme au droit français, un lexique français-anglais et les mentions de TVA.
 date: '2026-10-19'
 category: modele
 sector: null
@@ -12,6 +11,7 @@ author: Joaquim
 image: ''
 published: true
 publishDate: '2026-10-19'
+updated: '2026-10-31'
 ---
 
 import Link from "next/link"
@@ -31,13 +31,11 @@ import { Check } from "lucide-react"
 
 Un **modèle de facture en anglais** devient indispensable dès que vous facturez un client basé au Royaume-Uni, aux Etats-Unis ou dans tout autre pays anglophone. Mais attention : une facture en anglais destinée à un client étranger reste soumise aux règles françaises si vous êtes établi en France. Il ne suffit pas de traduire les mots, il faut aussi conserver toutes les mentions obligatoires du droit français.
 
+Invoice ou bill ? Sur un document émis par un professionnel, le terme à utiliser est **invoice**. **Bill** désigne plutôt la note à régler par un consommateur (électricité, téléphone, restaurant) et n'apparaît sur une invoice que dans la rubrique « Bill to », qui identifie le client facturé.
+
 Ce guide vous donne la structure complète d'une invoice conforme, le lexique facture-invoice à connaître, et les règles de TVA applicables lorsque vous facturez à l'étranger.
 
-<div className="not-prose my-8">
-  <Button asChild size="lg">
-    <Link href="/auth/signup">Créer ma facture en anglais gratuitement</Link>
-  </Button>
-</div>
+<ArticleCta variant="compact" />
 
 ## Pourquoi les mentions obligatoires françaises restent nécessaires
 
@@ -134,7 +132,7 @@ Votre invoice doit reprendre l'ensemble des blocs d'une facture classique, dans 
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span><strong>Sous-total, taux de TVA applicable et total TTC</strong>, ou mention d'exonération le cas échéant</span>
+    <span><strong>Sous-total, taux de TVA applicable et total TTC</strong>, ou mention justifiant l'absence de TVA (autoliquidation, exonération, TVA non applicable) le cas échéant</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -152,7 +150,7 @@ La règle de TVA applicable dépend de la localisation de votre client et de son
 
 <div className="not-prose my-8">
   <Callout type="warning" title="Ne confondez pas les régimes de TVA à l'export">
-    Pour un client professionnel assujetti dans un autre pays de l'Union européenne, la TVA française n'est en principe pas applicable : c'est le mécanisme d'**autoliquidation** qui s'applique, le client déclarant lui-même la TVA dans son pays. Pour un client hors Union européenne, professionnel ou particulier, la prestation est le plus souvent exonérée de TVA française. Ces deux cas nécessitent une mention spécifique sur la facture, sous peine de redressement.
+    Pour un client professionnel assujetti dans un autre pays de l'Union européenne, la TVA française n'est en principe pas applicable : c'est le mécanisme d'**autoliquidation** qui s'applique, le client déclarant lui-même la TVA dans son pays. Pour un client professionnel établi hors Union européenne, la prestation de services est en principe hors du champ de la TVA française. Pour un particulier établi hors Union européenne, la TVA française reste en principe due, sauf pour certaines prestations listées à l'article 259 B du CGI, comme le conseil, l'ingénierie ou la publicité, qui ne sont alors pas taxées en France. Ces cas sans TVA française nécessitent une mention spécifique sur la facture, sous peine de redressement.
   </Callout>
 </div>
 
@@ -162,7 +160,7 @@ Vous êtes développeur freelance et facturez une prestation de 8 000 € HT à 
 
 ### Cas pratique : facturer un client en Allemagne
 
-Vous facturez cette fois une prestation de conseil de 6 000 € HT à une entreprise allemande assujettie à la TVA, identifiée par son numéro de [TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire). Vous appliquez l'autoliquidation : votre facture indique "VAT reverse charge - Article 283-2 CGI" ou une mention équivalente, et le montant facturé reste 6 000 €, sans TVA française ajoutée. Le client allemand déclare lui-même la TVA due dans son propre pays. Le détail de cette mécanique figure dans notre article sur l'[autoliquidation de la TVA](/blog/autoliquidation-tva-facture-mention).
+Vous facturez cette fois une prestation de conseil de 6 000 € HT à une entreprise allemande assujettie à la TVA, identifiée par son numéro de [TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire). Vous appliquez l'autoliquidation : votre facture porte la mention "Autoliquidation", exigée par l'article 242 nonies A de l'annexe II au CGI, que vous pouvez doubler de "Reverse charge" pour votre client, ainsi que votre numéro de TVA intracommunautaire et celui de votre client. Le montant facturé reste 6 000 €, sans TVA française ajoutée. Le client allemand déclare lui-même la TVA due dans son propre pays. Le détail de cette mécanique figure dans notre article sur l'[autoliquidation de la TVA](/blog/autoliquidation-tva-facture-mention).
 
 ## La devise : rester en euros ou facturer en devise étrangère
 
@@ -220,13 +218,13 @@ Certaines erreurs reviennent régulièrement sur les invoices rédigées par des
 
 ## Numérotation et archivage d'une facture en anglais
 
-Votre invoice émise à destination d'un client étranger doit s'inscrire dans la même séquence de numérotation que vos factures françaises. Il n'est pas possible de créer une séquence distincte réservée aux clients internationaux : l'article A102 B-2 du Livre des procédures fiscales impose une numérotation chronologique et continue, tous documents confondus.
+Votre invoice émise à destination d'un client étranger peut s'inscrire dans la même séquence de numérotation que vos factures françaises, ce qui reste la solution la plus simple. La règle, fixée par l'article 242 nonies A, I-7° de l'annexe II au CGI, impose une numérotation chronologique et continue, sans trou ni doublon. Des séries distinctes sont toutefois admises lorsqu'elles sont justifiées, par exemple une série par activité ou par établissement : une série réservée à l'international n'est donc pas interdite par principe, à condition de pouvoir la justifier et que chaque série reste elle-même chronologique et continue.
 
 De la même manière, la durée de conservation ne change pas selon la langue du document. Vos invoices doivent être archivées pendant 10 ans au titre du Code de commerce et pendant 6 ans au titre du Livre des procédures fiscales, exactement comme vos factures françaises. Si vous facturez plusieurs devises, conservez également le justificatif du taux de change utilisé pour chaque conversion, afin de pouvoir le présenter en cas de contrôle fiscal.
 
 <div className="not-prose my-8">
-  <Callout type="success" title="Une seule séquence, tous documents confondus">
-    Que votre facture soit rédigée en français ou en anglais, destinée à un client à Paris ou à Chicago, elle doit porter un numéro s'inscrivant dans votre séquence unique et continue de numérotation. Mélanger les séquences par langue ou par zone géographique constitue une irrégularité comptable.
+  <Callout type="success" title="Une numérotation continue, quelle que soit la langue">
+    Que votre facture soit rédigée en français ou en anglais, destinée à un client à Paris ou à Chicago, elle doit porter un numéro unique s'inscrivant dans une séquence chronologique et continue. Si vous utilisez plusieurs séries, chacune doit être justifiée par vos conditions d'exercice et ne comporter ni trou ni doublon ; à défaut, une séquence commune à toutes vos factures reste le choix le plus sûr.
   </Callout>
 </div>
 
@@ -248,13 +246,9 @@ Newbi permet de générer vos factures avec les mentions obligatoires française
 
 ## En résumé
 
-Un modèle de facture en anglais destiné à un client étranger doit conserver l'intégralité des mentions obligatoires du droit français, uniquement présentées avec des libellés en anglais. La TVA applicable dépend de la localisation et du statut du client : autoliquidation pour un professionnel dans l'Union européenne, exonération le plus souvent pour un client hors Union européenne. En structurant votre invoice avec un lexique clair et les bonnes mentions de TVA, vous évitez les erreurs de conformité tout en donnant une image professionnelle à l'international.
+Un modèle de facture en anglais destiné à un client étranger doit conserver l'intégralité des mentions obligatoires du droit français, uniquement présentées avec des libellés en anglais. La TVA applicable dépend de la localisation et du statut du client : autoliquidation pour un professionnel dans l'Union européenne, prestation hors du champ de la TVA française pour un professionnel hors Union européenne, et TVA française en principe pour un particulier hors Union européenne, sauf prestations visées à l'article 259 B du CGI. En structurant votre invoice avec un lexique clair et les bonnes mentions de TVA, vous évitez les erreurs de conformité tout en donnant une image professionnelle à l'international.
 
-<div className="not-prose my-8">
-  <Button asChild size="lg">
-    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
-  </Button>
-</div>
+<ArticleCta />
 
 ## Questions fréquentes sur la facture en anglais
 
@@ -269,7 +263,7 @@ Un modèle de facture en anglais destiné à un client étranger doit conserver 
     <AccordionItem value="item-2">
       <AccordionTrigger>Faut-il appliquer la TVA sur une facture envoyée à un client anglophone ?</AccordionTrigger>
       <AccordionContent>
-        Cela dépend de la localisation du client. Pour un professionnel dans l'Union européenne, l'autoliquidation s'applique généralement, sans TVA française. Pour un client hors Union européenne, la prestation est le plus souvent exonérée de TVA française. Une mention spécifique doit alors figurer sur la facture.
+        Cela dépend de la localisation du client. Pour un professionnel dans l'Union européenne, l'autoliquidation s'applique généralement, sans TVA française. Pour un client professionnel hors Union européenne, la prestation de services est en principe hors du champ de la TVA française. Pour un particulier hors Union européenne, la TVA française reste en principe due, sauf pour certaines prestations comme le conseil ou la publicité (article 259 B du CGI). Lorsqu'aucune TVA française n'est facturée, une mention spécifique doit figurer sur la facture.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
