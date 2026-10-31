@@ -10,7 +10,7 @@ import { test, expect, etape } from "../outils.mjs";
 import { ouvrir, attendreCalme } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { COMPTES } from "../donnees/base.mjs";
-import { FACTURES_ACHAT_SAISIE } from "../donnees/lot-achats-banque.mjs";
+import { CANDIDAT, FACTURES_ACHAT_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { SESSION_TOKEN_SAISIE_ACHATS } from "../config.mjs";
 import { connecteAchats } from "../achats-banque.mjs";
 import { verifierFormulaire, marque } from "../champs.mjs";
@@ -255,6 +255,46 @@ test.describe("Saisie manuelle : doublon signalé avant la création", () => {
     expect(reponse.data?.createPurchaseInvoice ?? null).toBeNull();
     expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/similaire existe déjà/);
     expect(await compter()).toBe(avant);
+  });
+});
+
+// --- Paiement déjà passé en banque ------------------------------------------------------
+
+test.describe("Saisie manuelle : transaction déjà passée en banque proposée", () => {
+  const facturePar = (numero) => base().then((db) => db.collection("purchaseinvoices").findOne({ workspaceId: ORG, invoiceNumber: numero }));
+  const txEnBase = (t) => base().then((db) => db.collection("transactions").findOne({ _id: t._id }));
+
+  async function saisirFacturePayee(page, fournisseur, numero, ttc) {
+    const tiroir = await ouvrirSaisie(page);
+    await remplir(tiroir, { fournisseur, numero, ttc: String(ttc) });
+    await boutonValider(tiroir).click();
+    const dialogue = page.getByRole("alertdialog", { name: "Transaction trouvée" });
+    await etape(page, "« Transaction trouvée » proposée", async () => {
+      await expect(dialogue).toBeVisible({ timeout: 20_000 });
+    }, { capture: "ecran" });
+    return dialogue;
+  }
+
+  test("Facture saisie après son prélèvement : « Rapprocher » lie la facture et la transaction, la facture passe payée", async ({ page }) => {
+    const dialogue = await saisirFacturePayee(page, CANDIDAT.fournisseur, "CAND-001", CANDIDAT.montant);
+    await expect(dialogue).toContainText(CANDIDAT.transaction.description);
+    await dialogue.getByRole("button", { name: "Rapprocher" }).click();
+    await expect.poll(async () => (await facturePar("CAND-001"))?.linkedTransactionIds?.map(String)).toEqual([CANDIDAT.transaction._id.toHexString()]);
+    expect((await facturePar("CAND-001")).status).toBe("PAID");
+    const tx = await txEnBase(CANDIDAT.transaction);
+    expect({ liens: tx.linkedPurchaseInvoiceIds.map(String), statut: tx.reconciliationStatus }).toEqual({ liens: [String((await facturePar("CAND-001"))._id)], statut: "matched" });
+  });
+
+  test("« Non, plus tard » : la facture est créée sans lien, la transaction reste à rapprocher", async ({ page }) => {
+    const dialogue = await saisirFacturePayee(page, CANDIDAT.refusFournisseur, "CAND-002", CANDIDAT.refusMontant);
+    await dialogue.getByRole("button", { name: "Non, plus tard" }).click();
+    await expect(dialogue).toBeHidden();
+    const facture = await facturePar("CAND-002");
+    expect(facture, "La facture n'est pas créée").toBeTruthy();
+    expect(facture.linkedTransactionIds).toEqual([]);
+    expect(facture.status).not.toBe("PAID");
+    const tx = await txEnBase(CANDIDAT.refusTransaction);
+    expect({ liens: tx.linkedPurchaseInvoiceIds, statut: tx.reconciliationStatus }).toEqual({ liens: [], statut: "unmatched" });
   });
 });
 

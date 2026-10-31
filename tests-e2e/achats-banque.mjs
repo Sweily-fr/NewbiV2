@@ -27,7 +27,7 @@ import { test, expect, etape } from "./outils.mjs";
 import { ouvrir } from "./navigation.mjs";
 import { API_URL, BASE_URL, connecte, sessionCookie, SESSION_TOKEN_COMPTABLE_ACHATS, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_LECTEUR_ACHATS } from "./config.mjs";
 import { COMPTES } from "./donnees/base.mjs";
-import { CANDIDAT, DELIAISONS, PAYEES_GROUPE, SENS, SUGGESTIONS, TRANSACTIONS, TRANSACTIONS_IMPORTEES, TRANSACTIONS_SAISIE } from "./donnees/lot-achats-banque.mjs";
+import { CANDIDAT, DELIAISONS, PAYEES_GROUPE, PROPOSITIONS, SENS, SUGGESTIONS, TRANSACTIONS, TRANSACTIONS_IMPORTEES, TRANSACTIONS_SAISIE } from "./donnees/lot-achats-banque.mjs";
 import { appelApi, verifierRefus, id } from "./securite.mjs";
 import { base } from "./base.mjs";
 
@@ -53,6 +53,7 @@ export function connecteAchats(token) {
       CANDIDAT.transaction,
       CANDIDAT.refusTransaction,
       ...Object.values(TRANSACTIONS_IMPORTEES),
+      ...[PROPOSITIONS.creer, PROPOSITIONS.deuxTauxDollars, PROPOSITIONS.rattacher, PROPOSITIONS.ignorer, PROPOSITIONS.doublonApparu, PROPOSITIONS.doubleClic],
     ].map((t) => t._id.toHexString()),
   );
   return {

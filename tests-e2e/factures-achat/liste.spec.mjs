@@ -12,9 +12,10 @@ import { test, expect, etape, fenetre } from "../outils.mjs";
 import { ouvrir, cliquer, attendreCalme } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { COMPTES } from "../donnees/base.mjs";
-import { FACTURES_ACHAT, FACTURES_ACHAT_REMPLISSAGE, FACTURES_ACHAT_SAISIE, TRANSACTIONS, TRANSACTIONS_SAISIE } from "../donnees/lot-achats-banque.mjs";
+import { FACTURES_ACHAT, FACTURES_ACHAT_REMPLISSAGE, FACTURES_ACHAT_SAISIE, PAYEES_GROUPE, TRANSACTIONS, TRANSACTIONS_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { SESSION_TOKEN_ACHATS, SESSION_TOKEN_SAISIE_ACHATS } from "../config.mjs";
-import { connecteAchats, lireCsv, simulerApercus } from "../achats-banque.mjs";
+import { appelApi } from "../securite.mjs";
+import { ORG_SAISIE, connecteAchats, lireCsv, simulerApercus } from "../achats-banque.mjs";
 
 const FA = FACTURES_ACHAT;
 const FAS = FACTURES_ACHAT_SAISIE;
@@ -280,6 +281,25 @@ test.describe("Factures d'achat : chaque action vérifiée en base", () => {
     await page.getByRole("menuitem", { name: "Marquer payées" }).click();
     await expect(notification(page, "2 facture(s) mise(s) à jour")).toBeVisible();
     for (const f of [FAS.groupeStatut1, FAS.groupeStatut2]) expect((await enBase(f)).status).toBe("PAID");
+  });
+
+  test("« Marquer payées » sur une sélection avec une facture déjà payée : sa date de paiement est gardée, « Payé ce mois » ne compte que l'autre", async ({ page }) => {
+    const { dejaPayee, aPayer } = PAYEES_GROUPE;
+    const datePaiement = (await enBase(dejaPayee)).paymentDate.toISOString();
+    const statsDuMois = async () =>
+      (await appelApi(page, `query($w: ID!) { purchaseInvoiceStats(workspaceId: $w) { paidThisMonth paidThisMonthCount } }`, { w: ORG_SAISIE }, { organisation: ORG_SAISIE })).data?.purchaseInvoiceStats;
+    await selectionner(page, [dejaPayee, aPayer]);
+    const avant = await statsDuMois();
+    await page.getByRole("button", { name: "Actions groupées" }).click();
+    await page.getByRole("menuitem", { name: "Marquer payées" }).click();
+    await expect(notification(page, /facture\(s\) mise\(s\) à jour/)).toBeVisible();
+    await expect.poll(async () => (await enBase(aPayer)).status).toBe("PAID");
+    const payee = await enBase(dejaPayee);
+    expect(payee.paymentDate.toISOString(), "La date de paiement d'une facture déjà payée (reprise du virement) a été remplacée par celle du jour").toBe(datePaiement);
+    expect(payee.linkedTransactionIds.map(String)).toEqual([PAYEES_GROUPE.transaction._id.toHexString()]);
+    const apres = await statsDuMois();
+    expect(apres.paidThisMonthCount - avant.paidThisMonthCount, "« Payé ce mois » compte la facture payée il y a quatre mois").toBe(1);
+    expect(Math.round((apres.paidThisMonth - avant.paidThisMonth) * 100) / 100).toBe(aPayer.amountTTC);
   });
 
   test("Actions groupées « Catégoriser » : sous-catégorie et catégorie large enregistrées", async ({ page }) => {

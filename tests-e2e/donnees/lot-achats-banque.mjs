@@ -946,6 +946,99 @@ export const CANDIDAT = {
   refusTransaction: transaction(160, "saisieAchats", { libelle: "PRLV PAPETERIE REFUSEE", montant: -74.32, ilYa: 1, compteBancaire: CBS }),
 };
 
+// « Saisie Achats » : factures d'achat proposées depuis un justificatif (analyse déjà faite).
+/** Justificatif dont l'analyse propose une facture d'achat, en attente de confirmation. */
+function justificatifPropose(n, nom, valeurs, { doublon = null, raison = null } = {}) {
+  return {
+    ...justificatif(n, "saisieAchats", nom),
+    ocrProcessed: true,
+    ocrProposal: {
+      values: { currency: "EUR", issueDate: jour(-4), ...valeurs },
+      meta: { ocrSucceeded: true, ocrMetadata: { extractionQuality: "full", provider: "claude-vision", confidenceScore: 0.97 } },
+      duplicateInvoiceId: doublon ? doublon._id : null,
+      duplicateLinkTransaction: true,
+      duplicateReason: raison,
+      proposedAt: DANS(-1),
+      dismissedAt: null,
+    },
+  };
+}
+const FP = {
+  doublon: fournisseur(122, "saisieAchats", "Fournisseur Doublon Proposé", "OTHER"),
+  apparu: fournisseur(123, "saisieAchats", "Fournisseur Apparu", "OTHER"),
+};
+const factureDoublonProposee = factureAchat(157, "saisieAchats", { fournisseur: FP.doublon, numero: "DUP-157", emiseIlYa: 5, ttc: 64.5, statut: "TO_PAY" });
+const factureApparue = factureAchat(158, "saisieAchats", { fournisseur: FP.apparu, numero: "APP-168", emiseIlYa: 1, ttc: 71.3, statut: "TO_PAY" });
+export const PROPOSITIONS = {
+  fournisseurs: FP,
+  factureDoublon: factureDoublonProposee,
+  factureApparue,
+  creer: transaction(164, "saisieAchats", {
+    libelle: "CB ELECTRICITE PROPOSEE",
+    montant: -96.6,
+    ilYa: 3,
+    compteBancaire: CBS,
+    justificatifs: [justificatifPropose(164, "Facture électricité.pdf", { supplierName: "Electricite Generale du Sud", invoiceNumber: "PROP-164", amountHT: 80.5, amountTVA: 16.1, vatRate: 20, amountTTC: 96.6, subcategory: "electricite", category: "UTILITIES", paymentMethod: "CREDIT_CARD" })],
+  }),
+  deuxTauxDollars: transaction(165, "saisieAchats", {
+    libelle: "CB CLOUD TOOLS USD",
+    montant: -110.4,
+    ilYa: 3,
+    compteBancaire: CBS,
+    justificatifs: [
+      justificatifPropose(165, "Invoice Cloud Tools.pdf", {
+        supplierName: "Cloud Tools Inc",
+        invoiceNumber: "PROP-165",
+        amountHT: 105,
+        amountTVA: 13.75,
+        vatRate: 20,
+        vatBreakdown: [
+          { rate: 20, baseHT: 55, amountTVA: 11 },
+          { rate: 5.5, baseHT: 50, amountTVA: 2.75 },
+        ],
+        amountTTC: 118.75,
+        currency: "USD",
+      }),
+    ],
+  }),
+  rattacher: transaction(166, "saisieAchats", {
+    libelle: "PRLV FOURNISSEUR DOUBLON PROPOSE",
+    montant: -64.5,
+    ilYa: 2,
+    compteBancaire: CBS,
+    justificatifs: [justificatifPropose(166, "Facture doublon.pdf", { supplierName: "Fournisseur Doublon Proposé", invoiceNumber: "DUP-157", amountHT: 53.75, amountTVA: 10.75, vatRate: 20, amountTTC: 64.5 }, { doublon: factureDoublonProposee, raison: "NUMBER" })],
+  }),
+  ignorer: transaction(167, "saisieAchats", {
+    libelle: "CB TICKET SANS FACTURE",
+    montant: -8.4,
+    ilYa: 2,
+    compteBancaire: CBS,
+    justificatifs: [justificatifPropose(167, "Ticket parking.pdf", { supplierName: "Parking du Centre", invoiceNumber: "PROP-167", amountHT: 7, amountTVA: 1.4, vatRate: 20, amountTTC: 8.4 })],
+  }),
+  doublonApparu: transaction(168, "saisieAchats", {
+    libelle: "PRLV FOURNISSEUR APPARU",
+    montant: -71.3,
+    ilYa: 1,
+    compteBancaire: CBS,
+    justificatifs: [justificatifPropose(168, "Facture apparue.pdf", { supplierName: "Fournisseur Apparu", invoiceNumber: "APP-168", amountHT: 59.42, amountTVA: 11.88, vatRate: 20, amountTTC: 71.3 })],
+  }),
+  doubleClic: transaction(169, "saisieAchats", {
+    libelle: "CB DOUBLE CLIC PROPOSE",
+    montant: -33.3,
+    ilYa: 2,
+    compteBancaire: CBS,
+    justificatifs: [justificatifPropose(169, "Facture double clic.pdf", { supplierName: "Fournisseur Double Clic", invoiceNumber: "DBL-169", amountHT: 27.75, amountTVA: 5.55, vatRate: 20, amountTTC: 33.3 })],
+  }),
+};
+
+// « Saisie Achats » : valeurs refusées par l'API (une donnée par modification essayée).
+const fournisseurValidation = fournisseur(124, "saisieAchats", "Fournisseur Validation", "OTHER");
+export const VALIDATION = {
+  fournisseur: fournisseurValidation,
+  facture: factureAchat(159, "saisieAchats", { fournisseur: fournisseurValidation, numero: "VAL-159", emiseIlYa: 3, ttc: 59.9, statut: "TO_PROCESS" }),
+  transaction: transaction(171, "saisieAchats", { libelle: "CB LIBELLE A BORNER", montant: -19.1, ilYa: 3, compteBancaire: CBS }),
+};
+
 // Offre d'entrée : imports OCR du mois épuisés (50 sur 50).
 export const QUOTA_OCR_EPUISE = {
   _id: oid("membreAchats", 90),
@@ -1115,7 +1208,7 @@ export function donneesAchatsBanque() {
     member: [...membresEnPlus(), ...bloc.member],
     products: [...Object.values(PRODUITS), ...Object.values(PRODUITS_SAISIE), ...PRODUITS_VOLUMINEUX],
     productcustomfields: [...Object.values(CHAMPS_PRODUITS), ...CHAMPS_FREELANCE_ACHATS, ...Object.values(CHAMPS_SAISIE)],
-    suppliers: [...Object.values(F), ...Object.values(FS), ...Object.values(FF), ...Object.values(FUSION), BANQUE.fournisseur],
+    suppliers: [...Object.values(F), ...Object.values(FS), ...Object.values(FF), ...Object.values(FUSION), ...Object.values(PROPOSITIONS.fournisseurs), VALIDATION.fournisseur, BANQUE.fournisseur],
     purchaseinvoices: [
       ...Object.values(FACTURES_ACHAT),
       ...FACTURES_ACHAT_REMPLISSAGE,
@@ -1129,6 +1222,9 @@ export function donneesAchatsBanque() {
       PAYEES_GROUPE.aPayer,
       ROLE_ACHATS.aPayer,
       FUSION_FACTURE,
+      PROPOSITIONS.factureDoublon,
+      PROPOSITIONS.factureApparue,
+      VALIDATION.facture,
       BANQUE.achat,
     ],
     accounts_bankings: [...Object.values(COMPTES_BANCAIRES), COMPTE_BANCAIRE_EXPIRE, ...Object.values(COMPTES_BANCAIRES_BANQUE)],
@@ -1147,6 +1243,8 @@ export function donneesAchatsBanque() {
       TRANSACTION_QUOTA,
       TRANSACTION_EXPIREE,
       ...Object.values(TRANSACTIONS_IMPORTEES),
+      ...[PROPOSITIONS.creer, PROPOSITIONS.deuxTauxDollars, PROPOSITIONS.rattacher, PROPOSITIONS.ignorer, PROPOSITIONS.doublonApparu, PROPOSITIONS.doubleClic],
+      VALIDATION.transaction,
       ...Object.values(BANQUE.transactions),
     ],
     clients: [...Object.values(CLIENTS_ACHATS), BANQUE.client],
