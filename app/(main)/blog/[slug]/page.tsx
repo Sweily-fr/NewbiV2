@@ -248,7 +248,10 @@ export default async function BlogPostPage({
 
           {/* MDX Content */}
           <div className="blog-content">
-            <MDXRemote source={post.content} components={getMDXComponents()} />
+            <MDXRemote
+              source={post.content}
+              components={getMDXComponents(post)}
+            />
           </div>
 
           {/* Articles liés */}

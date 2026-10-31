@@ -18,6 +18,8 @@ export interface BlogPost {
   publishDate: string | null;
   /** Date de dernière mise à jour éditoriale (frontmatter `updated`), sinon null */
   updated: string | null;
+  /** Thème forcé des appels à l'action (frontmatter `cta`, voir src/lib/blog-cta.ts), sinon null */
+  cta: string | null;
   readTime: number;
   content: string;
 }
@@ -168,6 +170,7 @@ function parsePost(slug: string): BlogPost | null {
     published: data.published === true,
     publishDate: toDateString(data.publishDate),
     updated: toDateString(data.updated),
+    cta: typeof data.cta === "string" ? data.cta : null,
     readTime: calculateReadTime(strippedContent),
     content: strippedContent,
   };
