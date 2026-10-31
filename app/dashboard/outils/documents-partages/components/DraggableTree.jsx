@@ -20,6 +20,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { ancestorIds, isFolderInAncestry } from "@/src/utils/folder-tree";
 import {
   Tooltip,
   TooltipContent,
@@ -384,16 +385,13 @@ function useTreeDnD({
 
       // Build ancestor chain of current target (regardless of position)
       // For documents, use folderId to get the parent folder
-      const ancestorChain = new Set();
-      if (targetId) {
-        let cur = targetId;
-        while (cur) {
-          ancestorChain.add(cur);
+      const ancestorChain = new Set(
+        ancestorIds(targetId, (cur) => {
           const it = items()[cur];
-          if (!it) break;
-          cur = it.isFolder ? it.parentId || null : it.folderId || null;
-        }
-      }
+          if (!it) return null;
+          return it.isFolder ? it.parentId || null : it.folderId || null;
+        }),
+      );
 
       // Close auto-expanded folders that are NOT in the ancestor chain
       if (autoExpanded.size > 0) {
@@ -590,12 +588,7 @@ function useTreeDnD({
         if (info.type === "document") {
           await onMoveRef.current?.([info.id.replace("doc-", "")], folderId);
         } else {
-          const flds = foldersRef.current;
-          let cur = folderId;
-          while (cur) {
-            if (cur === info.id) return;
-            cur = flds.find((f) => f.id === cur)?.parentId;
-          }
+          if (isFolderInAncestry(foldersRef.current, folderId, info.id)) return;
           await onMoveFolderRef.current?.(info.id, folderId);
         }
         return;
@@ -611,13 +604,8 @@ function useTreeDnD({
       }
 
       // Circular reference check
-      if (dropParentId) {
-        const flds = foldersRef.current;
-        let cur = dropParentId;
-        while (cur) {
-          if (cur === info.id) return;
-          cur = flds.find((f) => f.id === cur)?.parentId;
-        }
+      if (isFolderInAncestry(foldersRef.current, dropParentId, info.id)) {
+        return;
       }
 
       await onMoveFolderRef.current?.(info.id, dropParentId, {

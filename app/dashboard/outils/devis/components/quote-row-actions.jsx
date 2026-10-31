@@ -55,6 +55,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useCompanyInfoGate } from "@/src/components/company-info-gate";
+import { isQuoteSignatureActive } from "@/src/utils/quote-signature";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -442,9 +443,12 @@ export default function QuoteRowActions({
                   Sauv. modèle
                 </DropdownMenuItem>
               )}
+              {/* Pas d'édition pendant une demande de signature en cours :
+                  le client signe la version envoyée */}
               {canEditQuotes &&
                 (quote.status === QUOTE_STATUS.DRAFT ||
-                  quote.status === QUOTE_STATUS.PENDING) && (
+                  (quote.status === QUOTE_STATUS.PENDING &&
+                    !isQuoteSignatureActive(quote.signatureStatus))) && (
                   <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Éditer
@@ -552,12 +556,7 @@ export default function QuoteRowActions({
 
               {/* Annuler la signature - visible quand une demande est en cours */}
               {canSignQuotes &&
-                [
-                  "PENDING",
-                  "WAIT_VALIDATION",
-                  "WAIT_SIGN",
-                  "WAIT_SIGNER",
-                ].includes(quote.signatureStatus) && (
+                isQuoteSignatureActive(quote.signatureStatus) && (
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
