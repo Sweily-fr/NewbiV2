@@ -7,6 +7,10 @@ import {
   resolveBillingOrgId,
   withErrorHandler,
 } from "@/src/lib/security";
+import {
+  canOpenBillingPortal,
+  SHARED_PAYER_PORTAL_MESSAGE,
+} from "@/src/lib/security/billing-portal-access";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia",
@@ -20,6 +24,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
  * l'abonnement ». Le `customerId` éventuellement envoyé par le front n'est
  * accepté que s'il appartient à cet espace ; sans lui, on prend le client
  * de l'abonnement de l'espace.
+ *
+ * Le portail Stripe couvre tout le client (abonnements, factures, carte).
+ * Quand ce client règle aussi d'autres espaces, seul le payeur l'ouvre : un
+ * autre membre qui gère l'abonnement de cet espace ne doit ni voir ni
+ * résilier ceux des autres espaces.
  *
  * Body (facultatif) : { customerId?, organizationId? }
  */
@@ -48,6 +57,10 @@ async function handler(request) {
       400,
       "Aucune facturation Stripe associée à cette organisation",
     );
+  }
+
+  if (!(await canOpenBillingPortal({ stripe, user, orgId, customerId }))) {
+    return apiError(403, SHARED_PAYER_PORTAL_MESSAGE);
   }
 
   try {

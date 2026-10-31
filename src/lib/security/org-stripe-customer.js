@@ -89,3 +89,120 @@ export async function requireOrgStripeCustomer({
 
   return customerIds[0] || null;
 }
+
+// Espace auquel se rattache un document `subscription` (en cours, ou
+// archivé lors d'un changement de payeur)
+function subscriptionDocOrgId(doc) {
+  if (doc?.replacedOrganizationId) return String(doc.replacedOrganizationId);
+  if (doc?.organizationId) return String(doc.organizationId);
+  return doc?.referenceId ? String(doc.referenceId) : null;
+}
+
+// Espace auquel un abonnement Stripe se rattache par ses métadonnées. Celui
+// d'un NOUVEL espace porte d'abord l'espace actif de son créateur dans
+// organizationId, puis le nouvel espace dans referenceId (webhook).
+function stripeSubscriptionOrgId(subscription) {
+  const meta = subscription?.metadata || {};
+  if (meta.referenceId) return String(meta.referenceId);
+  if (meta.organizationId && meta.isNewOrganization !== "true") {
+    return String(meta.organizationId);
+  }
+  return null;
+}
+
+/**
+ * Périmètre de facturation d'un espace sur un client Stripe.
+ *
+ * Un client Stripe est celui d'un utilisateur : il peut payer plusieurs
+ * espaces. Factures et portail d'un espace se limitent donc à ses propres
+ * abonnements.
+ *
+ * @param {string} orgId - espace visé
+ * @param {string} customerId - client Stripe de l'espace
+ * @returns {Promise<{ subscriptionIds: Set<string>, paysOtherWorkspaces: boolean }>}
+ *   abonnements Stripe de l'espace (archivés compris) et indication que ce
+ *   client règle aussi un autre espace
+ */
+export async function getOrgBillingScope(orgId, customerId) {
+  const or = [{ referenceId: orgId }, { replacedOrganizationId: orgId }];
+  if (ObjectId.isValid(orgId)) {
+    or.push({ organizationId: new ObjectId(orgId) });
+  }
+  const subscriptions = mongoDb.collection("subscription");
+  const [orgDocs, customerDocs] = await Promise.all([
+    subscriptions
+      .find(
+        { $or: or, stripeSubscriptionId: { $nin: [null, ""] } },
+        { projection: { stripeSubscriptionId: 1 } },
+      )
+      .toArray(),
+    customerId
+      ? subscriptions
+          .find(
+            { stripeCustomerId: customerId },
+            {
+              projection: {
+                referenceId: 1,
+                organizationId: 1,
+                replacedOrganizationId: 1,
+              },
+            },
+          )
+          .toArray()
+      : [],
+  ]);
+  return {
+    subscriptionIds: new Set(
+      orgDocs.map((doc) => doc.stripeSubscriptionId).filter(Boolean),
+    ),
+    paysOtherWorkspaces: customerDocs.some((doc) => {
+      const owner = subscriptionDocOrgId(doc);
+      return Boolean(owner) && owner !== orgId;
+    }),
+  };
+}
+
+/**
+ * Facture Stripe d'un abonnement de l'espace : abonnement enregistré pour
+ * l'espace, ou rattaché à l'espace par ses métadonnées (abonnement développé
+ * par `expand`). Une facture sans abonnement n'est gardée que si le client
+ * ne règle aucun autre espace.
+ */
+export function invoiceBelongsToOrg(invoice, orgId, scope) {
+  const subscription = invoice?.subscription;
+  const subscriptionId =
+    typeof subscription === "string" ? subscription : subscription?.id;
+  if (!subscriptionId) return !scope.paysOtherWorkspaces;
+  if (scope.subscriptionIds.has(subscriptionId)) return true;
+  if (typeof subscription !== "object") return false;
+  return stripeSubscriptionOrgId(subscription) === orgId;
+}
+
+/**
+ * Le client Stripe règle-t-il, chez Stripe, un abonnement d'un autre espace
+ * (métadonnées) ? Complète getOrgBillingScope pour un abonnement dont le
+ * document a été remplacé. En cas d'erreur Stripe : null (inconnu).
+ */
+export async function stripeCustomerPaysOtherWorkspaces(
+  stripe,
+  customerId,
+  orgId,
+) {
+  try {
+    const { data } = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+      limit: 100,
+    });
+    return (data || []).some((subscription) => {
+      const owner = stripeSubscriptionOrgId(subscription);
+      return Boolean(owner) && owner !== orgId;
+    });
+  } catch (error) {
+    console.warn(
+      "[BILLING-SCOPE] Abonnements Stripe du client non relus:",
+      error?.message,
+    );
+    return null;
+  }
+}
