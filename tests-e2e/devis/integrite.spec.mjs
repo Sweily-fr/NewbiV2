@@ -152,7 +152,7 @@ test.describe("Devis et bons de livraison : préfixes et numéros", () => {
         "Liste des devis : la référence s'affiche telle quelle",
         async () => {
           await ouvrirListe(page, "devis");
-          await page.getByPlaceholder(/^Recherchez par numéro, client ou montant/).fill(prefixe);
+          await page.getByPlaceholder(/^Recherchez par numéro, client ou montant/).fill(`${prefixe}-${cree.number}`);
           await attendreCalme(page);
           const ligne = page.getByRole("row").filter({ hasText: `${prefixe}-${cree.number}` });
           await expect(ligne, "Référence absente ou transformée dans la liste").toHaveCount(1);
