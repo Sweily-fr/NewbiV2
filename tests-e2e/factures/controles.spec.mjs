@@ -12,10 +12,12 @@
  *   - facture transmise en facturation électronique.
  * Aucune page n'est ouverte : la requête part du navigateur connecté.
  */
+import { ObjectId } from "mongodb";
 import { test, expect, etape } from "../outils.mjs";
 import { base } from "../base.mjs";
 import {
   API_URL,
+  BASE_URL,
   connecte,
   SESSION_TOKEN_FACTURES_ADMIN,
   SESSION_TOKEN_FACTURES_COMPTABLE,
@@ -216,6 +218,68 @@ test.describe("Factures : droits des rôles Comptable, Administrateur et personn
         expect.soft(refusDeDroits(reponse), `${nom} : pas un refus de droits (${messages(reponse)})`).toBe(true);
       }
       expect(await photo("creditnotes", { workspaceId: ORG_ID }), "Les avoirs ont changé").toBe(avant);
+    });
+  });
+});
+
+test.describe("Factures : frais de port, remise, retenue de garantie, escompte et champs personnalisés", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_CONTROLES) });
+
+  test("Totaux enregistrés = données d'impression, et l'avoir total reprend le port", async ({ page }) => {
+    const nom = "Pose de bardage (port, remise, retenue, escompte)";
+    // 2 × 500 € HT à 20 %, remise de 10 % (pas sur le port), 15 € HT de port à 20 %
+    const creee = await appelApiDirect(
+      page,
+      CREER,
+      {
+        w: ORG,
+        input: nouvelleFacture(nom, {
+          status: "PENDING",
+          prefix: "F-PORT",
+          items: [article(nom, 500, { quantity: 2 })],
+          discount: 10,
+          discountType: "PERCENTAGE",
+          shipping: { billShipping: true, shippingAddress: { fullName: CLIENTS_CONTROLES.chantier.name, ...CLIENTS_CONTROLES.chantier.address }, shippingAmountHT: 15, shippingVatRate: 20 },
+          retenueGarantie: 5,
+          escompte: 2,
+          customFields: [
+            { key: "Bon de commande client", value: "BC-2026-117" },
+            { key: "Chantier", value: "Résidence Les Érables, bât. B" },
+          ],
+        }),
+      },
+      { organisation: ORG },
+    );
+    expect(creee.errors, messages(creee)).toEqual([]);
+    const factureId = creee.data.createInvoice.id;
+    const enregistree = await (await factures()).findOne({ _id: new ObjectId(factureId) });
+    await etape(page, "Totaux en base : 915 € HT, 183 € de TVA, 1 098 € TTC", async () => {
+      expect.soft(enregistree.finalTotalHT, "HT (900 € remisés + 15 € de port)").toBeCloseTo(915, 2);
+      expect.soft(enregistree.finalTotalVAT, "TVA").toBeCloseTo(183, 2);
+      expect.soft(enregistree.finalTotalTTC, "TTC").toBeCloseTo(1098, 2);
+      expect.soft(enregistree.retenueGarantie).toBe(5);
+      expect.soft(enregistree.escompte).toBe(2);
+      expect.soft(enregistree.customFields?.map((c) => c.value)).toEqual(["BC-2026-117", "Résidence Les Érables, bât. B"]);
+    });
+    await etape(page, "Données d'impression identiques", async () => {
+      const donnees = await page.request.get(`/api/invoices/data/${factureId}`, { failOnStatusCode: false });
+      expect(donnees.status()).toBe(200);
+      const corps = await donnees.json();
+      const d = corps.invoice || corps.data || corps;
+      for (const champ of ["finalTotalHT", "finalTotalVAT", "finalTotalTTC", "retenueGarantie", "escompte"]) {
+        expect.soft(d[champ], `${champ} des données d'impression`).toBe(enregistree[champ]);
+      }
+    });
+    await etape(page, "Avoir total : frais de port repris, 1 098 € TTC", async () => {
+      const avoir = await appelApiDirect(
+        page,
+        AVOIR,
+        { w: ORG, input: { originalInvoiceId: factureId, creditType: "CORRECTION", client: clientDe(CLIENTS_CONTROLES.chantier), items: [{ ...article(nom, 500), quantity: -2 }], discount: 10, discountType: "PERCENTAGE", issueDate: AUJOURDHUI } },
+        { organisation: ORG },
+      );
+      expect(avoir.errors, messages(avoir)).toEqual([]);
+      const enregistre = await (await base()).collection("creditnotes").findOne({ originalInvoice: enregistree._id });
+      expect(enregistre.finalTotalTTC, "L'avoir total ne reprend pas les frais de port").toBeCloseTo(-1098, 2);
     });
   });
 });
@@ -477,5 +541,30 @@ test.describe("Factures : facture transmise en facturation électronique", () =>
       expect(avoir, "Avoir introuvable").not.toBeNull();
       expect(Boolean(avoir.superPdpInvoiceId) || !["NOT_SENT", undefined, null].includes(avoir.eInvoiceStatus), "Avoir d'une facture transmise créé dans Newbi sans être déposé sur la plateforme (type 381)").toBe(true);
     }
+  });
+});
+
+test.describe("Factures : référence de commande et lien « Voir la facture » des e-mails", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_CONTROLES) });
+
+  test("Référence de commande « BC/2026/014 » : même réponse claire à la création et à la modification", async ({ page }) => {
+    const reference = "BC/2026/014";
+    const creation = await appelApiDirect(page, CREER, { w: ORG, input: nouvelleFacture("Référence avec barres obliques", { purchaseOrderNumber: reference }) }, { organisation: ORG });
+    const brouillon = await appelApiDirect(page, CREER, { w: ORG, input: nouvelleFacture("Référence ajoutée ensuite") }, { organisation: ORG });
+    expect(brouillon.errors, messages(brouillon)).toEqual([]);
+    const modification = await appelApiDirect(page, MODIFIER, { w: ORG, id: brouillon.data.createInvoice.id, input: { purchaseOrderNumber: reference } }, { organisation: ORG });
+    if (creation.errors.length || modification.errors.length) {
+      expect(messages(creation), "Refus sans explication à la création").toMatch(/référence/i);
+      expect(messages(modification), "Création et modification ne répondent pas pareil").toBe(messages(creation).replace("createInvoice", "updateInvoice"));
+    } else {
+      const enregistrees = await (await factures()).find({ workspaceId: ORG_ID, purchaseOrderNumber: reference }).toArray();
+      expect(enregistrees, "Référence acceptée mais pas enregistrée").toHaveLength(2);
+    }
+  });
+
+  test("Lien « Voir la facture » d'un e-mail avec un jeton inconnu : renvoie vers le site, sans rien révéler", async ({ page }) => {
+    const r = await page.request.get(`${API_URL}/tracking/click/jeton-inconnu-e2e`, { maxRedirects: 0, failOnStatusCode: false });
+    expect(r.status()).toBe(302);
+    expect(new URL(r.headers().location).origin, "Redirection vers un autre site que Newbi").toBe(new URL(BASE_URL).origin);
   });
 });
