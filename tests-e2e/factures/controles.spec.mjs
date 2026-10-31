@@ -447,7 +447,8 @@ test.describe("Factures : facture récurrente, saisies refusées", () => {
   for (const [cas, champs, motif] of [
     ["intervalle de 0", { interval: 0 }, /entier entre 1 et 365/],
     ["intervalle de 366", { interval: 366 }, /entier entre 1 et 365/],
-    ["intervalle de 1,5", { interval: 1.5 }, /Int|entier/],
+    // Refusé dès la lecture de la requête (le champ est un entier)
+    ["intervalle de 1,5", { interval: 1.5 }, /Int|entier|Données d'entrée invalides/],
     ["première facture dans le passé", { startDate: jour(-3) }, /dans le passé/],
     ["fin avant la première facture", { startDate: jour(10), endDate: jour(5) }, /date de fin doit suivre/],
     ["objet de 301 caractères", { emailSubject: "O".repeat(301) }, /300 caractères/],
