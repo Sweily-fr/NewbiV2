@@ -66,7 +66,9 @@ const FIELD_VALIDATIONS = {
     message: "Format email invalide",
   },
   URL: {
-    pattern: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
+    // Domaine en minuscules, point, deux lettres ou points, puis chemin :
+    // chaque caractère n'est lu qu'une fois (saisie longue sans blocage)
+    pattern: /^(?:https?:\/\/)?(?=[\da-z.-]+\.[a-z.]{2})[/\w .-]*$/,
     message: "Format URL invalide",
   },
   PHONE: {
