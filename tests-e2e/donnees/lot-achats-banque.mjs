@@ -828,7 +828,17 @@ export const ROLE_SANS_PAIEMENT = {
 /** Membres invités de ce bloc : Comptable d'« Achats » (et de « Saisie Achats »), rôle personnalisé de « Saisie Achats ». */
 export const MEMBRES_LOT = {
   comptable: { utilisateur: utilisateurLot(200, "comptable-achats@e2e.test", "Clémence Comptable"), token: SESSION_TOKEN_COMPTABLE_ACHATS, de: [["achats", "accountant"], ["saisieAchats", "accountant"]] },
-  role: { utilisateur: utilisateurLot(201, "role-achats@e2e.test", "Rémi Rôle"), token: SESSION_TOKEN_ROLE_ACHATS, de: [["saisieAchats", ROLE_SANS_PAIEMENT.role]] },
+  // Données personnelles (abonnement, parrainage, banque de son entreprise) : jamais montrées aux autres membres.
+  role: {
+    utilisateur: {
+      ...utilisateurLot(201, "role-achats@e2e.test", "Rémi Rôle"),
+      referralCode: "PARRAIN-E2E-PRIVE",
+      subscription: { licence: true, trial: false, stripeCustomerId: "cus_e2e_prive" },
+      company: { name: "Cabinet Rôle", bankDetails: { iban: "FR7630006000011234567890189", bic: "AGRIFRPP", bankName: "Banque Privée Test" } },
+    },
+    token: SESSION_TOKEN_ROLE_ACHATS,
+    de: [["saisieAchats", ROLE_SANS_PAIEMENT.role]],
+  },
 };
 
 /** Document d'un helper du lot, rangé dans un espace de ce bloc. */
@@ -931,6 +941,8 @@ export const PAYEES_GROUPE = {
 export const ROLE_ACHATS = {
   aPayer: factureAchat(155, "saisieAchats", { fournisseur: FS.payer, numero: "ROL-155", emiseIlYa: 3, ttc: 56.7, statut: "TO_PAY" }),
 };
+/** Facture saisie par le membre au rôle personnalisé : son auteur est lu par les autres membres. */
+export const FACTURE_AUTEUR = { ...factureAchat(160, "saisieAchats", { fournisseur: FS.payer, numero: "AUT-160", emiseIlYa: 2, ttc: 58.9, statut: "TO_PROCESS" }), createdBy: oid("membreAchats", 201) };
 export const FUSION = {
   cible: fournisseur(120, "saisieAchats", "Fusion Cible SARL", "OTHER"),
   source: fournisseur(121, "saisieAchats", "Fusion Source SARL", "OTHER"),
@@ -1106,8 +1118,8 @@ export const BANQUE = {
   },
 };
 
-function utilisateurPretLot({ _id, email, name }) {
-  return { _id, email, name, emailVerified: true, role: "member", isActive: true, isDisabled: false, hasSeenOnboarding: true, onboardingStep: "completed", hasCompletedTutorial: true, createdAt: MAINTENANT, updatedAt: MAINTENANT };
+function utilisateurPretLot({ _id, email, name, ...autres }) {
+  return { ...autres, _id, email, name, emailVerified: true, role: "member", isActive: true, isDisabled: false, hasSeenOnboarding: true, onboardingStep: "completed", hasCompletedTutorial: true, createdAt: MAINTENANT, updatedAt: MAINTENANT };
 }
 const sessionLot = (n, token, utilisateur, organisationId) => ({
   _id: oid("membreAchats", n),
@@ -1221,6 +1233,7 @@ export function donneesAchatsBanque() {
       PAYEES_GROUPE.dejaPayee,
       PAYEES_GROUPE.aPayer,
       ROLE_ACHATS.aPayer,
+      FACTURE_AUTEUR,
       FUSION_FACTURE,
       PROPOSITIONS.factureDoublon,
       PROPOSITIONS.factureApparue,

@@ -16,6 +16,7 @@ import {
   FACTURES_ACHAT_SAISIE,
   FOURNISSEURS,
   FOURNISSEURS_SAISIE,
+  FACTURE_AUTEUR,
   FUSION,
   FUSION_FACTURE,
   IMPORTEES_ACHATS,
@@ -663,5 +664,25 @@ test.describe("Factures d'achat : quota d'analyses de l'offre épuisé", () => {
     const texte = [reponse.data?.uploadTransactionReceipt?.message, ...reponse.errors.map((e) => e.message)].filter(Boolean).join(" | ");
     expect(texte, "Le justificatif est envoyé à l'analyse malgré le quota épuisé").toMatch(/Quota OCR/i);
     expect(await photo(temoin)).toBe(avant);
+  });
+});
+
+/** L'auteur d'une facture d'achat lu par un autre membre : son identité, rien de personnel. */
+test.describe("Factures d'achat : l'auteur d'une facture ne livre pas ses données personnelles", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_EDITEUR_ACHATS) });
+
+  test("Abonnement, code de parrainage et banque de l'entreprise de l'auteur : jamais renvoyés", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    const reponse = await appelApi(
+      page,
+      `query($id: ID!) { purchaseInvoice(id: $id) { id createdBy { id email referralCode subscription { stripeCustomerId } company { name bankDetails { iban bankName } } } } }`,
+      { id: id(FACTURE_AUTEUR) },
+      { organisation: ORG_SAISIE, delai: 15_000 },
+    );
+    expect(reponse.data?.purchaseInvoice?.id, reponse.errors.map((e) => e.message).join(" | ")).toBe(id(FACTURE_AUTEUR));
+    const texte = JSON.stringify(reponse.data);
+    for (const prive of ["cus_e2e_prive", "PARRAIN-E2E-PRIVE", "FR7630006000011234567890189", "Banque Privée Test", "Cabinet Rôle"]) {
+      expect.soft(texte, `« ${prive} » renvoyé à un autre membre`).not.toContain(prive);
+    }
   });
 });

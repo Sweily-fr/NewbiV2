@@ -178,3 +178,19 @@ test.describe("Transactions : libellé et notes bornés par l'API", () => {
     });
   }
 });
+
+test.describe("Listes : pages et tailles hors bornes", () => {
+  test("Factures d'achat, fiches fournisseurs et transactions avec une page négative et une taille démesurée : pas d'erreur", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    for (const [nom, requete] of [
+      ["Factures d'achat", `query($w: ID!) { purchaseInvoices(workspaceId: $w, page: -1, limit: 100000) { totalCount items { id } } }`],
+      ["Fiches fournisseurs", `query($w: ID!) { suppliers(workspaceId: $w, page: -1, limit: 100000) { totalCount items { id } } }`],
+      ["Transactions", `query($w: ID!) { transactions(workspaceId: $w, limit: 100000, offset: -5) { id } }`],
+    ]) {
+      const reponse = await appeler(page, requete, { w: ORG_SAISIE });
+      expect.soft(messages(reponse), `${nom} : erreur sur une page hors bornes`).toBe("");
+    }
+    const factures = await appeler(page, `query($w: ID!) { purchaseInvoices(workspaceId: $w, page: 1, limit: 100000) { items { id } } }`, { w: ORG_SAISIE });
+    expect(factures.data?.purchaseInvoices?.items?.length ?? 0).toBeLessThanOrEqual(1000);
+  });
+});

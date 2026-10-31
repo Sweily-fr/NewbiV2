@@ -19,9 +19,10 @@ import {
   SESSION_TOKEN_FREELANCE_ACHATS,
   SESSION_TOKEN_INTRUS,
   SESSION_TOKEN_LECTEUR_ACHATS,
+  SESSION_TOKEN_SAISIE_ACHATS,
 } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
-import { BANQUE, COMPTES_BANCAIRES, COMPTES_BANCAIRES_BANQUE, COMPTES_LOT } from "../donnees/lot-achats-banque.mjs";
+import { BANQUE, COMPTE_BANCAIRE_EXPIRE, COMPTES_BANCAIRES, COMPTES_BANCAIRES_BANQUE, COMPTES_LOT, TRANSACTION_EXPIREE } from "../donnees/lot-achats-banque.mjs";
 import { id } from "../securite.mjs";
 import { ORG, ORG_INTRUS, appelRest, connecteAchats, photo } from "../achats-banque.mjs";
 import { ouvrirParametres } from "../authentification/outils-auth.mjs";
@@ -267,3 +268,22 @@ test.describe("Banque : bannière de reconnexion (SCA expirée)", () => {
   }
 });
 
+
+test.describe("Banque : déconnexion sans abonnement actif", () => {
+  // Propriétaire de « Saisie Achats », aussi propriétaire d'« Achats Expiré » (abonnement échu).
+  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+
+  test("Espace à l'abonnement échu : le propriétaire déconnecte sa banque depuis le site, ses transactions restent", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    const transaction = ["transactions", { _id: TRANSACTION_EXPIREE._id }];
+    const avant = await photo(transaction);
+    const reponse = await page.request.post(`${BASE_URL}/api/banking-connect/disconnect`, {
+      headers: { "x-workspace-id": id(COMPTES_LOT.expire.organisation), "content-type": "application/json" },
+      data: { accountId: id(COMPTE_BANCAIRE_EXPIRE) },
+      failOnStatusCode: false,
+    });
+    expect(reponse.status(), `Déconnexion refusée : ${await reponse.text()}`).toBe(200);
+    expect((await compteEnBase(COMPTE_BANCAIRE_EXPIRE)).status).toBe("disconnected");
+    expect(await photo(transaction)).toBe(avant);
+  });
+});
