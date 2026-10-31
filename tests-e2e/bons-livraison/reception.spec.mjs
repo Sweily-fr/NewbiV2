@@ -27,6 +27,7 @@ test.describe("Bons de livraison : réception", () => {
   test("Bon déjà livré : une nouvelle réception est refusée, réceptionnaire et signature d'origine conservés", async ({ page }) => {
     const doc = C.blLivre;
     await ouvrir(page, "/dashboard");
+    const avant = await enBase(doc);
     const reponse = await noterReception(page, doc, {
       receivedBy: "Autre réceptionnaire",
       receivedAt: "2020-01-01",
@@ -37,7 +38,7 @@ test.describe("Bons de livraison : réception", () => {
     const apres = await enBase(doc);
     expect.soft(apres.receivedBy, "Réceptionnaire").toBe("Claire Réception");
     expect.soft(apres.signatureDataUrl, "Signature du client").toBe(SIGNATURE_RECEPTION);
-    expect.soft(jour(apres.receivedAt), "Date de réception").toBe(jour(doc.receivedAt));
+    expect.soft(apres.receivedAt?.getTime(), "Date de réception").toBe(avant.receivedAt?.getTime());
   });
 
   for (const [titre, doc, date] of [

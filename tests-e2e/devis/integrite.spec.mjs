@@ -22,6 +22,9 @@ import { ouvrirListe } from "./ventes.mjs";
 import { appelControle, collection, messages, MUTATIONS, ORG_CONTROLE, ORG_CONTROLE_ID, relire } from "./controle.mjs";
 
 test.use({ storageState: connecte(SESSION_TOKEN_CONTROLE_VENTES) });
+
+/** Client nouveau à chaque création (l'API crée le contact : une adresse e-mail par document). */
+const clientNouveau = () => ({ ...CLIENT_API, email: `integrite-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@e2e.test` });
 test.beforeEach(async ({ page }) => {
   await ouvrir(page, "/dashboard");
 });
@@ -68,7 +71,7 @@ test.describe("Devis, bons de commande et de livraison : documents numérotés",
     await etape(page, "Créer le devis (préfixe « \\u00a0\\u00a0\\u00a0 ») puis l'accepter", async () => {
       const cree = await appelControle(page, `mutation($w: ID!, $input: CreateQuoteInput!) { createQuote(workspaceId: $w, input: $input) { id prefix number } }`, {
         w: ORG_CONTROLE,
-        input: { prefix: "   ", issueDate: new Date().toISOString(), client: CLIENT_API, items: [article(nom)], status: "PENDING" },
+        input: { prefix: "\u00a0\u00a0\u00a0", issueDate: new Date().toISOString(), client: clientNouveau(), items: [article(nom)], status: "PENDING" },
       });
       if (!cree.data?.createQuote) {
         // Préfixe refusé à la création : rien à supprimer.
@@ -132,7 +135,7 @@ test.describe("Devis et bons de livraison : préfixes et numéros", () => {
   const creerDevis = (page, input) =>
     appelControle(page, `mutation($w: ID!, $input: CreateQuoteInput!) { createQuote(workspaceId: $w, input: $input) { id prefix number } }`, {
       w: ORG_CONTROLE,
-      input: { issueDate: new Date().toISOString(), client: CLIENT_API, status: "PENDING", ...input },
+      input: { issueDate: new Date().toISOString(), client: clientNouveau(), status: "PENDING", ...input },
     });
 
   for (const prefixe of ["<b>D</b>", 'D"X', "D/2026", "D é"]) {
@@ -173,7 +176,7 @@ test.describe("Devis et bons de livraison : préfixes et numéros", () => {
       input: {
         prefix: "BL-12345678",
         issueDate: new Date().toISOString(),
-        client: CLIENT_API,
+        client: clientNouveau(),
         items: [{ description: "Livraison au préfixe trop long", quantity: 1, unit: "" }],
         status: "DRAFT",
       },

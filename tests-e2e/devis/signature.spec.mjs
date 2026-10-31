@@ -281,12 +281,17 @@ test.describe("Devis : fenêtre « Faire signer » au clavier et au lecteur d'é
       page,
       "Saisie au clavier : une adresse invalide est annoncée",
       async () => {
+        // Champs préremplis avec le client du devis : tout sélectionner, puis saisir.
+        const saisir = async (texte) => {
+          await page.keyboard.press("ControlOrMeta+A");
+          await page.keyboard.type(texte);
+        };
         await signataireN(1).getByRole("textbox", { name: "Prénom", exact: true }).focus();
-        await page.keyboard.type("Jeanne");
+        await saisir("Jeanne");
         await page.keyboard.press("Tab");
-        await page.keyboard.type("Dupont");
+        await saisir("Dupont");
         await page.keyboard.press("Tab");
-        await page.keyboard.type("pas-un-email");
+        await saisir("pas-un-email");
         await page.keyboard.press("Tab");
         const email = signataireN(1).getByRole("textbox", { name: "E-mail", exact: true });
         await expect(email, "Le champ ne se signale pas comme invalide").toHaveAttribute("aria-invalid", "true");

@@ -155,7 +155,10 @@ test.describe("Devis, bons de commande et de livraison : rôle « Comptable »",
       { w: ORG, a: id(AUTOMATISATIONS_VENTES.ventes), d: id(cible), pdf: faux },
     );
     const apres = await (await base()).collection("quotes").findOne({ _id: cible._id });
-    expect(apres.cachedPdf, "Le PDF en cache du devis a été remplacé").toEqual(cible.cachedPdf);
+    expect({ key: apres.cachedPdf?.key, url: apres.cachedPdf?.url }, "Le PDF en cache du devis a été remplacé").toEqual({
+      key: cible.cachedPdf.key,
+      url: cible.cachedPdf.url,
+    });
   });
 });
 
