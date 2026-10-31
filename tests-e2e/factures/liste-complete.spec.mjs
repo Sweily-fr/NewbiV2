@@ -10,7 +10,7 @@ import { attendreCalme, cliquer } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { connecte, SESSION_TOKEN_FACTURES, SESSION_TOKEN_FACTURES_REGLAGES } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
-import { F, FORMULE, IMPORTEES, reference, VOLUME } from "../donnees/lot-factures.mjs";
+import { AVOIRS_FACTURES, F, FORMULE, IMPORTEES, reference, VOLUME } from "../donnees/lot-factures.mjs";
 import { chercher, fenetreTitree, ligne, notifications, ouvrirListe, RECHERCHE } from "./pages.mjs";
 
 const ORG = COMPTES.factures.organisation._id;
@@ -214,6 +214,48 @@ test.describe("Factures : exports", () => {
 
     test("Les brouillons ne sont pas des écritures comptables : absents du FEC", async () => {
       expect(fec.texte, `Le brouillon ${reference(F.brouillon)} est exporté dans le FEC`).not.toContain(F.brouillon.number);
+    });
+
+    /** Lignes d'écriture du FEC, en objets { champ: valeur }. */
+    const lignesFEC = () => {
+      const [entete, ...lignes] = fec.texte.split(/\r?\n/).filter((l) => l.trim());
+      const champs = entete.split("|");
+      return lignes.map((l) => Object.fromEntries(l.split("|").map((v, i) => [champs[i], v])));
+    };
+    const montant = (v) => Number(String(v || "0").replace(",", "."));
+
+    test("Une facture annulée n'est pas une vente : son solde au compte client est nul", async () => {
+      const ref = reference(F.annulee);
+      const client = lignesFEC().filter((l) => l.PieceRef === ref && l.CompteNum === "411000");
+      const solde = client.reduce((t, l) => t + montant(l.Debit) - montant(l.Credit), 0);
+      expect(Math.round(solde * 100) / 100, `La facture annulée ${ref} est comptée en vente au 411`).toBe(0);
+    });
+
+    test("Une facture importée à revoir n'est pas une vente : absente du FEC", async () => {
+      expect(fec.texte, "Facture importée jamais validée exportée en vente").not.toContain(IMPORTEES.aRevoirFec.originalInvoiceNumber);
+    });
+
+    test("Les avoirs sont des écritures inverses : 411 au crédit, 706 et TVA au débit", async () => {
+      const a = AVOIRS_FACTURES.existant;
+      const lignes = lignesFEC().filter((l) => l.PieceRef === `${a.prefix}-${a.number}`);
+      expect(lignes.length, `L'avoir ${a.prefix}-${a.number} est absent du FEC`).toBeGreaterThan(0);
+      const client = lignes.find((l) => l.CompteNum === "411000");
+      expect(montant(client?.Credit), "411 au crédit du TTC de l'avoir").toBeCloseTo(Math.abs(a.finalTotalTTC), 2);
+      expect(montant(lignes.find((l) => l.CompteNum === "706000")?.Debit), "706 au débit du HT de l'avoir").toBeCloseTo(Math.abs(a.finalTotalHT), 2);
+    });
+
+    test("Chaque écriture est équilibrée (débit = crédit) et les numéros d'écriture se suivent", async () => {
+      const ecritures = new Map();
+      for (const l of lignesFEC()) {
+        const e = ecritures.get(l.EcritureNum) || { debit: 0, credit: 0 };
+        e.debit += montant(l.Debit);
+        e.credit += montant(l.Credit);
+        ecritures.set(l.EcritureNum, e);
+      }
+      const desequilibrees = [...ecritures].filter(([, e]) => Math.round(e.debit * 100) !== Math.round(e.credit * 100)).map(([num, e]) => `${num} : ${e.debit.toFixed(2)} / ${e.credit.toFixed(2)}`);
+      expect(desequilibrees, "Écritures déséquilibrées").toEqual([]);
+      const numeros = [...ecritures.keys()];
+      expect(numeros, "Numéros d'écriture avec un trou").toEqual(numeros.map((_, i) => `VTE${String(i + 1).padStart(8, "0")}`));
     });
 
     test("Les montants utilisent la virgule comme séparateur décimal", async () => {
