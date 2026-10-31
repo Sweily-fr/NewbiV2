@@ -96,9 +96,6 @@ test.describe("Paramètres : la fenêtre et ses onglets", () => {
       ["CRM", "HubSpot", "Zapier"],
       ["Intelligence artificielle", "OpenAI", "HubSpot"],
       ["E-mailing", "Mailchimp", "OpenAI"],
-      // Application « Réseaux sociaux » masquée par le serveur de test (publication
-      // sur les réseaux non configurée) : la catégorie vide le dit.
-      ["Réseaux sociaux", "Aucune application trouvée.", "Mailchimp"],
       ["Productivité", "Notion", "Mailchimp"],
       ["Toutes", "Stripe", null],
     ]) {

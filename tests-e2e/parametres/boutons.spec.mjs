@@ -253,7 +253,7 @@ test.describe("Paramètres (propriétaire)", () => {
     zone: contenuParametres,
     boutons: {
       ...Object.fromEntries(
-        ["Toutes", "Paiement", "Banque", "Comptabilité", "Automatisations", "CRM", "Intelligence artificielle", "E-mailing", "Réseaux sociaux", "Productivité"].map((c) => [
+        ["Toutes", "Paiement", "Banque", "Comptabilité", "Automatisations", "CRM", "Intelligence artificielle", "E-mailing", "Productivité"].map((c) => [
           `button ${c}`,
           { parcours: "parcours.spec.mjs : catégories des applications" },
         ]),
