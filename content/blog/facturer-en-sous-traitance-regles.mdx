@@ -12,6 +12,7 @@ author: Joaquim
 image: ''
 published: true
 publishDate: '2026-10-13'
+updated: '2026-10-31'
 ---
 
 import Link from "next/link"
@@ -33,11 +34,7 @@ import { Check } from "lucide-react"
 
 Ce guide détaille à qui adresser votre facture, quand appliquer l'autoliquidation de la TVA, quelles mentions ajouter selon votre secteur, et comment vous protéger contractuellement grâce à la clause de paiement direct prévue par la loi.
 
-<div className="not-prose my-8">
-  <Button asChild size="lg">
-    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
-  </Button>
-</div>
+<ArticleCta variant="compact" />
 
 ## Qui est le sous-traitant, qui est le donneur d'ordre
 
@@ -50,6 +47,24 @@ Cette organisation contractuelle a des conséquences directes sur votre facturat
     La loi n° 75-1334 du 31 décembre 1975 relative à la sous-traitance impose notamment à l'entrepreneur principal de faire accepter et agréer chaque sous-traitant par le maître d'ouvrage, et prévoit des garanties de paiement pour le sous-traitant, dont la clause de paiement direct pour les marchés publics.
   </Callout>
 </div>
+
+## Le devis de sous-traitance : ce qu'il doit préciser
+
+Le devis de sous-traitance (ou le contrat qui le reprend) fixe à l'avance tout ce que vous facturerez : la part exacte du projet qui vous est confiée, le prix, les délais et les conditions de paiement. Il est adressé à l'entrepreneur principal, pas au client final, et c'est à lui que vous le faites signer avant de commencer.
+
+Quel que soit le secteur, un devis de sous-traitance solide comporte :
+
+- la **référence du projet ou du chantier** du client final, et le lot ou la partie que vous prenez en charge ;
+- une **description précise des prestations**, avec ce qui est inclus et ce qui ne l'est pas, pour éviter les discussions au moment de facturer ;
+- le **prix**, au forfait ou au temps passé, et le régime de TVA qui s'appliquera (TVA classique, autoliquidation dans le BTP ou franchise en base) ;
+- les **délais d'exécution** et les **conditions de paiement** : échéancier, acompte éventuel, délai de règlement ;
+- dans le BTP, l'engagement de l'entrepreneur principal à vous faire **accepter et agréer** par le maître d'ouvrage.
+
+### Le cas du devis de sous-traitance informatique
+
+En informatique, le devis de sous-traitance doit aussi régler des points propres au développement. Précisez le mode de facturation (régie au tarif journalier ou forfait sur un périmètre fonctionnel défini), les livrables attendus et la manière dont ils seront validés (recette), ainsi que le sort des droits sur le code produit. Sans clause écrite de cession de droits, le développeur reste titulaire de ses droits d'auteur : l'article L131-3 du Code de la propriété intellectuelle exige que chaque droit cédé soit mentionné distinctement, avec son étendue, sa durée et son territoire. Une clause de confidentialité est aussi d'usage, puisque vous travaillez sur le projet du client de l'agence. Pour chiffrer votre prestation en régie, partez de votre [tarif journalier (TJM)](/blog/comment-fixer-tarif-journalier-tjm) : le prix de sous-traitance est négocié avec l'agence, qui ajoute ensuite sa propre marge vis-à-vis de son client.
+
+Un devis de sous-traitance se prépare comme n'importe quel devis professionnel : le [générateur de devis gratuit](/outils/generateur-de-devis) permet d'en produire un rapidement. Si le périmètre évolue en cours de mission, [modifier le devis signé par un avenant](/blog/modifier-devis-signe-avenant) vous évite de facturer des prestations que l'entrepreneur principal n'a jamais validées.
 
 ## La TVA en sous-traitance : autoliquidation ou facturation classique
 
@@ -114,7 +129,11 @@ Un développeur freelance est missionné par une agence web pour réaliser une p
 
 Le risque principal du sous-traitant est la dépendance financière à l'entrepreneur principal : si celui-ci rencontre des difficultés de trésorerie ou fait défaut, le sous-traitant peut se retrouver impayé alors même que le maître d'ouvrage a réglé l'entrepreneur principal.
 
-Pour les marchés publics, la loi de 1975 impose une **clause de paiement direct** dès lors que le montant du contrat de sous-traitance dépasse 600 € TTC : le maître d'ouvrage public paie directement le sous-traitant pour la part du marché qu'il exécute, sans passer par l'entrepreneur principal. Pour les marchés privés, cette clause n'est pas systématique mais peut être négociée et intégrée au contrat de sous-traitance.
+Pour les marchés publics, la loi de 1975 impose une **clause de paiement direct** dès lors que le montant du contrat de sous-traitance dépasse 600 € TTC : le maître d'ouvrage public paie directement le sous-traitant pour la part du marché qu'il exécute, sans passer par l'entrepreneur principal. Pour les marchés privés, le paiement direct n'est pas automatique (il peut être négocié dans le contrat), mais la même loi protège le sous-traitant accepté et agréé : il dispose d'une **action directe** contre le maître d'ouvrage si l'entrepreneur principal ne le paie pas un mois après une mise en demeure (article 12), et l'entrepreneur principal doit garantir ses paiements par une caution bancaire ou par une délégation de paiement du maître d'ouvrage (article 14).
+
+### Facturer en paiement direct sur un marché public
+
+En paiement direct, la facture ne suit pas le circuit habituel. Vous établissez votre demande de paiement au nom de l'acheteur public, vous la transmettez à l'entrepreneur principal (le titulaire du marché) pour accord, puis à l'acheteur, en pratique via Chorus Pro, le portail de facturation des entités publiques. Le titulaire dispose de 15 jours pour accepter ou refuser votre demande ; sans réponse dans ce délai, elle est réputée acceptée et l'acheteur vous règle directement. Le fonctionnement de Chorus Pro et ses différences avec la réforme entre entreprises sont détaillés dans notre article sur la [facture électronique B2G et Chorus Pro](/blog/facture-electronique-b2g-chorus-pro-difference).
 
 <div className="not-prose my-6 space-y-3">
   <div className="flex items-start gap-3">
@@ -170,13 +189,67 @@ Au-delà des mentions obligatoires classiques (numéro SIRET, adresse, descripti
 
 Pour les chantiers de construction facturés en plusieurs étapes, la logique de la [facture de situation de travaux en BTP](/blog/facture-situation-travaux-btp) s'applique également aux sous-traitants, chacun facturant l'avancement de sa propre part du marché.
 
+## Exemple de facture de sous-traitance
+
+Voici le contenu d'une facture de sous-traitance dans le BTP, reprenant l'exemple du plombier sous-traitant ci-dessus. Pour une sous-traitance informatique, la structure est identique, avec une ligne de TVA à 20 % à la place de la mention d'autoliquidation.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de facture d'un sous-traitant BTP en autoliquidation</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Rubrique</TableHead>
+        <TableHead>Contenu de la facture</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Émetteur</TableCell>
+        <TableCell>Entreprise de plomberie sous-traitante : raison sociale, adresse, SIRET, numéro de TVA intracommunautaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Destinataire</TableCell>
+        <TableCell>Entreprise générale de construction (entrepreneur principal) : raison sociale, adresse, SIREN</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numéro et date</TableCell>
+        <TableCell>Numéro chronologique unique, date d'émission et date d'exécution des travaux</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Références</TableCell>
+        <TableCell>Contrat ou devis de sous-traitance signé, nom et adresse du chantier, lot concerné</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Désignation</TableCell>
+        <TableCell>Reprise du réseau de plomberie, fourniture et pose : 6 500,00 € HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA</TableCell>
+        <TableCell>Aucune TVA facturée, mention « Autoliquidation »</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Net à payer</TableCell>
+        <TableCell>6 500,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Paiement</TableCell>
+        <TableCell>Date d'échéance, taux des pénalités de retard et indemnité forfaitaire de 40 € pour frais de recouvrement</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour produire ce document sans repartir de zéro, le [générateur de factures gratuit](/outils/generateur-de-facture) reprend ces mentions ; pensez simplement à ajouter la référence du contrat de sous-traitance et la mention d'autoliquidation lorsqu'elle s'applique.
+
 ## La facturation électronique et la sous-traitance
 
-La réforme de la facturation électronique s'applique aussi aux sous-traitants. Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures au format électronique, et les grandes entreprises et ETI doivent émettre sous ce format. Pour les PME, TPE et micro-entreprises, l'obligation d'émission démarre le 1er septembre 2027. Un sous-traitant qui travaille avec une entreprise générale de grande taille peut donc être amené à recevoir ses factures au format électronique dès 2026, tout en continuant lui-même à facturer classiquement jusqu'en 2027 s'il est une TPE.
+Oui, la sous-traitance entre dans le champ de la facturation électronique : une facture adressée par un sous-traitant établi en France à un entrepreneur principal lui aussi établi en France est une facture entre entreprises, soumise au même calendrier que les autres. Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures au format électronique, et les grandes entreprises et ETI doivent émettre sous ce format. Pour les PME, TPE et micro-entreprises, l'obligation d'émission démarre le 1er septembre 2027. Un sous-traitant qui travaille avec une entreprise générale de grande taille peut donc déjà recevoir ses factures au format électronique, tout en continuant lui-même à facturer classiquement jusqu'au 1er septembre 2027 s'il est une TPE.
+
+Le passage au format électronique ne change pas les règles de fond : la mention d'autoliquidation, la référence au contrat et le détail des situations de travaux se retrouvent simplement dans les données structurées de la facture. Notre guide de la [facturation électronique dans le BTP et la sous-traitance](/blog/facture-electronique-btp-sous-traitance-situations) détaille ces points avec des exemples chiffrés.
 
 <div className="not-prose my-8">
   <Callout type="tip" title="Anticiper si vous êtes en chaîne de sous-traitance BTP">
-    Le secteur du BTP est particulièrement concerné par les chaînes de sous-traitance longues. Si votre entrepreneur principal bascule vers la facturation électronique avant vous, assurez-vous que votre outil de facturation est compatible avec la réception des formats Factur-X, UBL ou CII dès 2026.
+    Le secteur du BTP est particulièrement concerné par les chaînes de sous-traitance longues. La réception des factures électroniques est obligatoire depuis le 1er septembre 2026 : si votre entrepreneur principal émet déjà au format électronique, vérifiez que votre outil de facturation reçoit bien les formats Factur-X, UBL ou CII, et qu'il saura émettre les vôtres au 1er septembre 2027.
   </Callout>
 </div>
 
@@ -210,11 +283,7 @@ La dépendance à un nombre restreint de donneurs d'ordre rend le sous-traitant 
 
 Facturer en sous-traitance suppose de bien identifier votre interlocuteur, l'entrepreneur principal et non le maître d'ouvrage, et d'appliquer la bonne règle de TVA selon votre secteur : autoliquidation obligatoire dans le BTP, TVA classique ailleurs. La clause de paiement direct, systématique dans les marchés publics au-delà de 600 € TTC, reste votre meilleure protection contre les impayés. En parallèle, des mentions précises sur le chantier ou le contrat de sous-traitance facilitent le suivi de vos factures, y compris à l'approche de la facturation électronique obligatoire.
 
-<div className="not-prose my-8">
-  <Button asChild size="lg">
-    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
-  </Button>
-</div>
+<ArticleCta />
 
 ## Questions fréquentes sur la facturation en sous-traitance
 
@@ -241,13 +310,25 @@ Facturer en sous-traitance suppose de bien identifier votre interlocuteur, l'ent
     <AccordionItem value="item-4">
       <AccordionTrigger>Que se passe-t-il si l'entrepreneur principal ne paie pas le sous-traitant ?</AccordionTrigger>
       <AccordionContent>
-        Si le sous-traitant a été régulièrement agréé et que le contrat le prévoit, il peut activer une action directe contre le maître d'ouvrage, notamment sur les marchés publics via la clause de paiement direct. Sur un marché privé, il peut aussi être protégé par une caution ou une garantie de paiement si celle-ci a été mise en place par l'entrepreneur principal.
+        Tout dépend de la nature du marché, et à condition que le sous-traitant ait été accepté et agréé par le maître d'ouvrage. Sur un marché public, il est réglé directement par l'acheteur public grâce au paiement direct. Sur un marché privé, il dispose d'une action directe contre le maître d'ouvrage si l'entrepreneur principal ne le paie pas un mois après une mise en demeure, et il peut appeler la caution bancaire que l'entrepreneur principal doit lui fournir, sauf si celui-ci a mis en place une délégation de paiement.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-5">
       <AccordionTrigger>Faut-il mentionner "Autoliquidation" sur toutes les factures de sous-traitance BTP ?</AccordionTrigger>
       <AccordionContent>
         Oui, lorsque le sous-traitant et l'entrepreneur principal sont tous deux assujettis à la TVA en France pour des travaux de bâtiment, la mention "Autoliquidation" doit figurer sur la facture, sans indication de taux ni de montant de TVA, cette dernière étant déclarée et reversée par l'entrepreneur principal.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Un auto-entrepreneur sous-traitant doit-il appliquer l'autoliquidation ?</AccordionTrigger>
+      <AccordionContent>
+        Non, tant qu'il bénéficie de la franchise en base de TVA : il ne facture aucune TVA et porte la mention "TVA non applicable, article 293 B du CGI", y compris dans le BTP, et l'entrepreneur principal n'a rien à autoliquider. Ce n'est que s'il dépasse les seuils de la franchise et devient redevable de la TVA qu'un auto-entrepreneur sous-traitant du bâtiment facture hors taxes avec la mention "Autoliquidation".
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-7">
+      <AccordionTrigger>La facturation électronique s'applique-t-elle aux factures de sous-traitance ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Une facture de sous-traitance entre deux entreprises établies en France suit le calendrier général : réception obligatoire pour toutes les entreprises depuis le 1er septembre 2026, émission obligatoire depuis la même date pour les grandes entreprises et ETI, et à partir du 1er septembre 2027 pour les PME, TPE et micro-entreprises. La mention d'autoliquidation doit alors figurer dans les données structurées de la facture, comme sur une facture papier ou PDF.
       </AccordionContent>
     </AccordionItem>
   </Accordion>

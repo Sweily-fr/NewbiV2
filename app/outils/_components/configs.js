@@ -52,6 +52,20 @@ export const FACTURE_CONFIG = {
     subtitle:
       "Numérotation automatique, clients et produits enregistrés, relances des impayés et facturation électronique incluse. 30 jours gratuits, sans carte bancaire.",
   },
+  // Affiché sous le bouton juste après un téléchargement réussi : c'est le
+  // moment où le visiteur vient d'obtenir ce qu'il cherchait et mesure ce que
+  // l'outil ne fera pas pour la facture suivante.
+  afterDownload: {
+    title:
+      "Votre facture est téléchargée. Pour la suivante, Newbi s'occupe de :",
+    items: [
+      "la numérotation, continue et automatique, sans compteur à tenir ;",
+      "l'envoi par e-mail, avec la preuve de remise et le suivi du paiement ;",
+      "la relance automatique des factures en retard ;",
+      "la facture électronique, obligatoire entre professionnels pour les TPE au 1er septembre 2027.",
+    ],
+    cta: "Créer ma prochaine facture avec Newbi",
+  },
 };
 
 export const DEVIS_CONFIG = {
@@ -90,5 +104,15 @@ export const DEVIS_CONFIG = {
       "Vous voulez envoyer vos devis plus vite et les transformer en facture en un clic ? Rejoignez Newbi.",
     subtitle:
       "Devis signés en ligne, relance automatique de ceux qui traînent, conversion en facture sans ressaisie, et suivi de votre taux de signature. 30 jours gratuits, sans carte bancaire.",
+  },
+  afterDownload: {
+    title:
+      "Votre devis est téléchargé. Pour le faire accepter plus vite, Newbi propose :",
+    items: [
+      "la signature électronique du devis par votre client, en ligne ;",
+      "la relance automatique des devis restés sans réponse ;",
+      "la conversion du devis signé en facture, sans ressaisie.",
+    ],
+    cta: "Faire signer mes devis en ligne",
   },
 };

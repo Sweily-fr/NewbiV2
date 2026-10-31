@@ -1,9 +1,8 @@
 ---
-title: "Facture électronique et clients étrangers : quelles règles s'appliquent ?"
+title: 'Facture électronique et client étranger : e-reporting et TVA'
 description: >-
-  Les factures aux clients hors de France ne passent pas par la plateforme
-  mais relèvent de l'e-reporting. Ce qu'il faut transmettre, quand et dans
-  quel format.
+  Pas de PDP pour un client étranger, mais l'e-reporting : mentions de TVA
+  selon le pays et l'opération, exemple Allemagne et Suisse, amendes encourues.
 date: '2026-09-25'
 category: guide
 sector: null
@@ -12,6 +11,7 @@ author: Newbi
 image: ''
 published: true
 publishDate: '2026-09-25'
+updated: '2026-10-31'
 ---
 
 import Link from "next/link"
@@ -31,11 +31,7 @@ import { Check } from "lucide-react"
 
 Vous facturez des clients situés hors de France et vous vous demandez si la réforme de la **facture électronique pour les clients étrangers** vous concerne de la même façon que vos ventes en France ? La réponse est non : la facturation électronique obligatoire, avec passage par une plateforme de dématérialisation partenaire, ne s'applique qu'aux transactions entre entreprises établies en France. Pour vos clients étrangers, qu'ils soient dans l'Union européenne ou hors UE, un autre mécanisme prend le relais, celui de l'e-reporting. Ce guide vous détaille précisément ce qui change, ce qui reste identique, et les mentions de TVA à respecter selon la localisation de votre client.
 
-<div className="not-prose my-8">
-  <Button asChild size="lg">
-    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
-  </Button>
-</div>
+<ArticleCta variant="compact" />
 
 ## Le périmètre de la réforme de facturation électronique
 
@@ -99,7 +95,7 @@ L'e-invoicing suppose l'échange d'un fichier structuré, lisible par les systè
 
 Pour vos clients professionnels établis dans un autre État membre de l'Union européenne, les règles de TVA intracommunautaire s'appliquent en plus de l'e-reporting. Si votre client vous communique un numéro de TVA intracommunautaire valide et que la prestation ou la livraison entre dans le champ de l'autoliquidation, votre facture doit être émise hors taxes avec la mention appropriée.
 
-Pour une prestation de services B2B, la mention à porter est généralement "TVA due par le preneur - article 283-2 du Code général des impôts" ou la référence à l'article 44 de la directive TVA. Pour une livraison de biens intracommunautaire, la mention devient "Exonération de TVA, article 262 ter I du Code général des impôts". Dans les deux cas, vous devez également déclarer l'opération dans votre déclaration de TVA et, selon les seuils, dans une déclaration européenne de services (DES) ou un état récapitulatif.
+Pour une prestation de services B2B, l'opération n'est pas imposable en France : la facture est émise sans TVA française et doit porter la mention "Autoliquidation", exigée par l'article 242 nonies A de l'annexe II au CGI, ainsi que votre numéro de TVA intracommunautaire et celui de votre client. Pour une livraison de biens intracommunautaire, la mention devient "Exonération de TVA, article 262 ter I du Code général des impôts". Dans les deux cas, vous devez également déclarer l'opération dans votre déclaration de TVA et, dès le premier euro, dans une déclaration européenne de services (DES) pour une prestation ou dans un état récapitulatif pour une livraison de biens.
 
 Pour un client européen non assujetti, c'est-à-dire un particulier, la TVA française s'applique par défaut sur les ventes à distance de biens, sauf si vous dépassez le seuil européen unique de 10 000 € de ventes à distance annuelles, auquel cas vous basculez sur la TVA du pays de destination via le guichet unique OSS.
 
@@ -119,7 +115,7 @@ Pour les prestations de services, le lieu de taxation dépend généralement du 
 
 Prenons l'exemple d'une agence de conseil française qui facture deux clients le même mois.
 
-Le premier client est une entreprise basée à Munich, en Allemagne, assujettie à la TVA et disposant d'un numéro de TVA intracommunautaire valide. La prestation de conseil facturée 8 000 € est émise hors taxes, avec la mention "TVA due par le preneur - article 283-2 du CGI". L'agence transmet ensuite les données de cette transaction via l'e-reporting et reporte l'opération dans sa déclaration de TVA.
+Le premier client est une entreprise basée à Munich, en Allemagne, assujettie à la TVA et disposant d'un numéro de TVA intracommunautaire valide. La prestation de conseil facturée 8 000 € est émise hors taxes, avec la mention "Autoliquidation" et les numéros de TVA intracommunautaire de l'agence et de son client. L'agence transmet ensuite les données de cette transaction via l'e-reporting et reporte l'opération dans sa déclaration de TVA.
 
 Le second client est une société suisse, donc hors Union européenne. La prestation de conseil facturée 5 000 € est également émise hors taxes, cette fois avec la mention "TVA non applicable, article 259-1 du CGI". Les données de cette seconde vente sont aussi transmises via e-reporting, au même titre que la première.
 
@@ -127,7 +123,7 @@ Dans les deux cas, aucune des deux factures ne transite par une PDP au titre de 
 
 ## Le calendrier et les sanctions applicables à l'e-reporting
 
-L'e-reporting existe déjà et continue de monter en puissance avec la réforme. Les données doivent être transmises selon une périodicité qui dépend de votre régime de TVA, le plus souvent mensuellement ou trimestriellement pour les opérations de vente, dans des délais resserrés par rapport à votre échéance de déclaration de TVA habituelle.
+L'e-reporting suit le même calendrier que la facturation électronique : il s'applique à partir du 1er septembre 2026 pour les grandes entreprises et les ETI, et à partir du 1er septembre 2027 pour les PME, TPE et micro-entreprises. Les données de transaction doivent ensuite être transmises selon une fréquence qui dépend de votre régime de TVA : par décade pour le réel normal mensuel, une fois par mois pour le réel normal trimestriel et tous les deux mois pour les entreprises en franchise en base, dans des délais resserrés par rapport à votre échéance de déclaration de TVA habituelle.
 
 <div className="not-prose my-6 space-y-3">
   <div className="flex items-start gap-3">
@@ -176,11 +172,7 @@ Certaines entreprises choisissent malgré tout de conserver un format structuré
 
 La réforme de la facturation électronique ne s'applique qu'aux transactions B2B entre entreprises établies en France, avec passage obligatoire par une plateforme de dématérialisation partenaire selon le calendrier 2026-2027. Vos clients étrangers, qu'ils soient dans l'Union européenne ou hors UE, ne sont pas concernés par cette obligation d'e-invoicing mais relèvent de l'e-reporting, qui impose de transmettre les données de chaque transaction à l'administration. Les mentions de TVA à porter sur la facture varient selon la localisation et le statut du client : autoliquidation intracommunautaire, exonération pour l'export, ou opération hors du champ pour certaines prestations de services. Bien identifier le statut de chaque client reste la clé pour appliquer la bonne mention et sécuriser votre facturation à l'international.
 
-<div className="not-prose my-8">
-  <Button asChild size="lg">
-    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
-  </Button>
-</div>
+<ArticleCta />
 
 ## Questions fréquentes sur la facture électronique et les clients étrangers
 
@@ -201,7 +193,7 @@ La réforme de la facturation électronique ne s'applique qu'aux transactions B2
     <AccordionItem value="item-3">
       <AccordionTrigger>Quelle mention de TVA indiquer sur une facture à un client de l'Union européenne ?</AccordionTrigger>
       <AccordionContent>
-        Pour une prestation de services B2B avec un client européen assujetti disposant d'un numéro de TVA intracommunautaire valide, la mention est "TVA due par le preneur - article 283-2 du CGI". Pour une livraison de biens intracommunautaire, la mention devient "Exonération de TVA, article 262 ter I du CGI".
+        Pour une prestation de services B2B avec un client européen assujetti disposant d'un numéro de TVA intracommunautaire valide, la facture est émise sans TVA française avec la mention "Autoliquidation", accompagnée de votre numéro de TVA intracommunautaire et de celui du client. Pour une livraison de biens intracommunautaire, la mention devient "Exonération de TVA, article 262 ter I du CGI".
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-4">
