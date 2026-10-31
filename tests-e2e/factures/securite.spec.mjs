@@ -673,6 +673,7 @@ test.describe("Factures : une facture émise ne se modifie pas", () => {
   test("Changer les coordonnées bancaires d'une facture émise par l'API : refusé, l'IBAN de la facture ne change pas", async ({ page }) => {
     await ouvrir(page, "/dashboard");
     const f = F.emiseAModifierApi;
+    const avant = await (await base()).collection("invoices").findOne({ _id: f._id });
     const reponse = await appelApi(
       page,
       `mutation($w: ID!, $id: ID!, $input: UpdateInvoiceInput!) { updateInvoice(id: $id, workspaceId: $w, input: $input) { id } }`,
@@ -682,13 +683,14 @@ test.describe("Factures : une facture émise ne se modifie pas", () => {
     expect(reponse.data?.updateInvoice ?? null, "Coordonnées bancaires d'une facture émise remplacées").toBeNull();
     expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/ne se modifie plus/);
     const apres = await (await base()).collection("invoices").findOne({ _id: f._id });
-    expect(apres.bankDetails ?? null, "IBAN de la facture émise changé").toEqual(f.bankDetails ?? null);
-    expect(apres.showBankDetails).toBe(f.showBankDetails);
+    expect(apres.bankDetails ?? null, "IBAN de la facture émise changé").toEqual(avant.bankDetails ?? null);
+    expect(apres.showBankDetails).toBe(avant.showBankDetails);
   });
 
   test("Reculer la date d'émission d'une facture émise au 1er janvier : refusé", async ({ page }) => {
     await ouvrir(page, "/dashboard");
     const f = F.emiseAModifierApi;
+    const avant = await (await base()).collection("invoices").findOne({ _id: f._id });
     const reponse = await appelApi(
       page,
       `mutation($w: ID!, $id: ID!, $input: UpdateInvoiceInput!) { updateInvoice(id: $id, workspaceId: $w, input: $input) { id } }`,
@@ -697,7 +699,7 @@ test.describe("Factures : une facture émise ne se modifie pas", () => {
     );
     expect(reponse.data?.updateInvoice ?? null, "Date d'émission d'une facture émise reculée").toBeNull();
     const apres = await (await base()).collection("invoices").findOne({ _id: f._id });
-    expect(apres.issueDate.toISOString()).toBe(f.issueDate.toISOString());
+    expect(apres.issueDate.toISOString()).toBe(avant.issueDate.toISOString());
   });
 });
 

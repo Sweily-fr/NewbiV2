@@ -118,10 +118,13 @@ export async function envoiFichierApi(page, query, variables, fichier, { organis
       ...(jeton ? { authorization: `Bearer ${jeton}` } : {}),
       ...(organisation ? { "x-organization-id": organisation } : {}),
     },
+    // Clé du fichier non numérique : une clé « 0 » passerait avant
+    // « operations » et « map » (ordre des clés d'un objet), que la
+    // spécification exige en premier.
     multipart: {
       operations: JSON.stringify({ query, variables: { ...variables, file: null } }),
-      map: JSON.stringify({ 0: ["variables.file"] }),
-      0: fichier,
+      map: JSON.stringify({ fichier: ["variables.file"] }),
+      fichier,
     },
     timeout: 30_000,
     failOnStatusCode: false,
