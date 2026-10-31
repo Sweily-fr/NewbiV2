@@ -68,6 +68,12 @@ const PREFIXES = {
   blVentes: "e2eaa",
   devisImporte: "e2e8e",
   bcImporte: "e2e9d",
+  // Comptes, rôles personnalisés et documents partagés propres au lot.
+  utilisateurVentes: "e2eab",
+  organisationVentes: "e2eac",
+  roleVentes: "e2ead",
+  automatisationVentes: "e2eae",
+  dossierVentes: "e2eaf",
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
   produit: "e2e0a",
@@ -254,6 +260,30 @@ export const COMPTES = {
     organisation: { ...organisation(17, "Volume Test SAS"), quoteAutoNumbering: true },
     token: SESSION_TOKEN_VOLUME,
   },
+  // Signatures (webhook du prestataire), conversions et facturation, paramètres :
+  // tests qui modifient leurs documents, à l'écart des listes de « Ventes ».
+  controleVentes: {
+    utilisateur: { _id: oid("utilisateurVentes", 1), email: "controle-ventes@e2e.test", name: "Corentin Contrôle" },
+    organisation: { ...organisation(18, "Contrôles Ventes Test SASU"), _id: oid("organisationVentes", 1) },
+    // = SESSION_TOKEN_CONTROLE_VENTES (config.mjs)
+    token: "e2eSessionTokenNewbiControleVentesUniquement",
+    plan: "entreprise",
+  },
+  // Essai terminé, sans abonnement : espace en lecture seule.
+  ventesExpiree: {
+    utilisateur: { _id: oid("utilisateurVentes", 2), email: "ventes-expiree@e2e.test", name: "Estelle Expirée" },
+    organisation: {
+      ...organisation(19, "Ventes Expirée Test SASU"),
+      _id: oid("organisationVentes", 2),
+      trialStartDate: DANS(-45).toISOString(),
+      trialEndDate: DANS(-15).toISOString(),
+      isTrialActive: false,
+      hasUsedTrial: true,
+    },
+    // = SESSION_TOKEN_VENTES_EXPIREE (config.mjs)
+    token: "e2eSessionTokenNewbiVentesExpireeUniquement",
+    plan: null,
+  },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (organisations et utilisateurs 20 à 24) ──
   // Jetons : mêmes chaînes que SESSION_TOKEN_*_ACHATS de config.mjs (repères du lot).
@@ -383,6 +413,38 @@ export const MEMBRES = {
     de: "ventes",
     role: "member",
     token: SESSION_TOKEN_VENTES_EDITEUR,
+  },
+  // Jetons : mêmes valeurs que SESSION_TOKEN_VENTES_* de config.mjs.
+  ventesComptable: {
+    utilisateur: { _id: oid("utilisateurVentes", 11), email: "ventes-comptable@e2e.test", name: "Constance Comptable" },
+    de: "ventes",
+    role: "accountant",
+    token: "e2eSessionTokenNewbiVentesComptableUniquement",
+  },
+  // Rôles personnalisés de « Ventes » (ROLES_VENTES, lot-devis-bc-bl.mjs).
+  ventesPersoBl: {
+    utilisateur: { _id: oid("utilisateurVentes", 12), email: "ventes-perso-bl@e2e.test", name: "Bastien Livraisons" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 1).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoBlUniquement",
+  },
+  ventesPersoDevis: {
+    utilisateur: { _id: oid("utilisateurVentes", 13), email: "ventes-perso-devis@e2e.test", name: "Diane Devis" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 2).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoDevisUniquement",
+  },
+  ventesPersoBc: {
+    utilisateur: { _id: oid("utilisateurVentes", 14), email: "ventes-perso-bc@e2e.test", name: "Boris Commandes" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 3).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoBcUniquement",
+  },
+  ventesPersoSaisie: {
+    utilisateur: { _id: oid("utilisateurVentes", 15), email: "ventes-perso-saisie@e2e.test", name: "Sasha Saisie" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 4).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoSaisieUniquement",
   },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (utilisateurs 20 à 24) ──
@@ -604,7 +666,8 @@ export function socle() {
       createdAt: MAINTENANT,
     });
     docs.member.push({ _id: oid("membre", n), userId: utilisateur._id, organizationId: org._id, role: "owner", createdAt: MAINTENANT });
-    docs.subscription.push({
+    // plan: null : aucun abonnement (espace en lecture seule une fois l'essai terminé).
+    if (plan !== null) docs.subscription.push({
       _id: oid("abonnement", n),
       referenceId: org._id.toHexString(),
       plan,

@@ -72,6 +72,18 @@ export const SESSION_TOKEN_VENTES_EDITEUR = "e2eSessionTokenNewbiVentesEditeurUn
 export const SESSION_TOKEN_FREELANCE_VENTES = "e2eSessionTokenNewbiFreelanceVentesUniquement";
 /** Propriétaire de l'organisation « Volume » (offre PME) : plus de 50 documents, quota de signatures atteint. */
 export const SESSION_TOKEN_VOLUME = "e2eSessionTokenNewbiVolumeUniquement";
+/** Membre « Comptable » de l'organisation « Ventes » (lit les ventes, n'écrit rien). */
+export const SESSION_TOKEN_VENTES_COMPTABLE = "e2eSessionTokenNewbiVentesComptableUniquement";
+/** Membres de « Ventes » aux rôles personnalisés : une seule page en lecture (bons de livraison, devis, bons de commande). */
+export const SESSION_TOKEN_VENTES_PERSO_BL = "e2eSessionTokenNewbiVentesPersoBlUniquement";
+export const SESSION_TOKEN_VENTES_PERSO_DEVIS = "e2eSessionTokenNewbiVentesPersoDevisUniquement";
+export const SESSION_TOKEN_VENTES_PERSO_BC = "e2eSessionTokenNewbiVentesPersoBcUniquement";
+/** Membre de « Ventes » au rôle personnalisé « Saisie » : crée devis, bons de commande et de livraison, sans statut ni factures. */
+export const SESSION_TOKEN_VENTES_PERSO_SAISIE = "e2eSessionTokenNewbiVentesPersoSaisieUniquement";
+/** Propriétaire de « Contrôles Ventes » : signatures, conversions et paramètres qui modifient les données. */
+export const SESSION_TOKEN_CONTROLE_VENTES = "e2eSessionTokenNewbiControleVentesUniquement";
+/** Propriétaire d'un espace sans abonnement (essai terminé) : lecture seule. */
+export const SESSION_TOKEN_VENTES_EXPIREE = "e2eSessionTokenNewbiVentesExpireeUniquement";
 // ── fin du lot devis-bc-bl ──
 // ── Lot achats-banque ──
 /** Propriétaire de l'organisation « Achats » (catalogue, factures d'achat, transactions, prévision de référence : jamais modifiés par les tests). */
