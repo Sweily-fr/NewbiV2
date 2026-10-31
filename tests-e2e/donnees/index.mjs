@@ -14,6 +14,10 @@ import { donneesDevisBcBl } from "./lot-devis-bc-bl.mjs";
 import { donneesAchatsBanque } from "./lot-achats-banque.mjs";
 import { donneesParametresAuth } from "./lot-parametres-auth.mjs";
 import { donneesCollaboration } from "./lot-collaboration.mjs";
+import { donneesCalendrier } from "./lot-calendrier.mjs";
+import { donneesRendezVous } from "./lot-rendez-vous.mjs";
+import { donneesReseauxSociaux } from "./lot-reseaux-sociaux.mjs";
+import { donneesEmailsEnvoyes } from "./lot-emails-envoyes.mjs";
 import { donneesPilotage } from "./lot-pilotage.mjs";
 
 /** Rassemble les données de plusieurs fonctionnalités, collection par collection. */
@@ -41,6 +45,10 @@ export async function semer(db) {
     donneesAchatsBanque(),
     donneesParametresAuth(),
     donneesCollaboration(),
+    donneesCalendrier(),
+    donneesRendezVous(),
+    donneesReseauxSociaux(),
+    donneesEmailsEnvoyes(),
     donneesPilotage(),
   );
   for (const [nom, docs] of Object.entries(collections)) {
