@@ -12,7 +12,7 @@ import {
   multiSessionPlugin,
   emailOTPPlugin,
 } from "./auth-plugins";
-import { beforeSignInHook, afterHook } from "./auth-hooks";
+import { beforeSignInHook, afterHook, DISABLED_AUTH_PATHS } from "./auth-hooks";
 import {
   sendChangeEmailConfirmation,
   sendReactivationEmail,
@@ -37,6 +37,9 @@ export const auth = betterAuth({
   // 10 s (100 par défaut dans Better Auth). Relevé seulement par les tests de
   // bout en bout, où un même navigateur enchaîne des dizaines de pages.
   rateLimit: { max: Number(process.env.AUTH_RATE_LIMIT_MAX) || undefined },
+
+  // Connexion et réinitialisation par code OTP fermées (voir auth-hooks.js)
+  disabledPaths: DISABLED_AUTH_PATHS,
 
   // trustedOrigins — function form to support dynamic origins (mobile, dev IPs).
   trustedOrigins: (request) => {

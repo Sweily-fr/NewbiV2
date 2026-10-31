@@ -124,9 +124,12 @@ export const twoFactorPlugin = twoFactor({
 export const emailOTPPlugin = emailOTP({
   otpLength: 6,
   expiresIn: 300, // 5 minutes
-  // On n'envoie un code que pour la vérification d'email (pas sign-in/reset ici).
+  // Codes de vérification d'e-mail seulement : les autres types sont refusés
+  // en amont (auth-hooks.js) et leurs routes fermées (disabledPaths).
   async sendVerificationOTP({ email, otp, type }) {
-    if (type !== "email-verification") return;
+    if (type !== "email-verification") {
+      throw new Error(`Code OTP « ${type} » non pris en charge`);
+    }
     console.log("[EMAIL OTP] Envoi code de vérification à:", email);
     await sendVerificationOtpEmail(email, otp);
     console.log("[EMAIL OTP] Email envoyé avec succès");
