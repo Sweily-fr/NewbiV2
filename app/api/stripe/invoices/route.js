@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import {
+  getOrgBillingScope,
+  invoiceBelongsToOrg,
   requireSession,
   requireOrgStripeCustomer,
   resolveBillingOrgId,
@@ -14,9 +16,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 /**
  * GET /api/stripe/invoices?customerId=&organizationId=
  *
- * Factures d'abonnement du client Stripe de l'espace actif (ou de l'espace
- * passé dans `organizationId`), avec le droit « Voir » sur l'abonnement. Un
- * `customerId` qui n'appartient pas à l'espace est refusé.
+ * Factures d'abonnement de l'espace actif (ou de l'espace passé dans
+ * `organizationId`), avec le droit « Voir » sur l'abonnement. Un
+ * `customerId` qui n'appartient pas à l'espace est refusé. Le client Stripe
+ * d'un utilisateur peut payer plusieurs espaces : seules les factures des
+ * abonnements de cet espace sont renvoyées.
  */
 async function handler(request) {
   const { user, session } = await requireSession(request);
@@ -39,6 +43,8 @@ async function handler(request) {
   }
 
   try {
+    const scope = await getOrgBillingScope(orgId, stripeCustomerId);
+
     // Récupérer les factures Stripe pour ce customer
     const invoices = await stripe.invoices.list({
       customer: stripeCustomerId,
@@ -49,6 +55,8 @@ async function handler(request) {
     // Filtrer et formater les factures
     const formattedInvoices = invoices.data
       .filter((invoice) => invoice.status !== "draft") // Exclure les brouillons
+      // Abonnements de cet espace seulement (le client peut en payer d'autres)
+      .filter((invoice) => invoiceBelongsToOrg(invoice, orgId, scope))
       .map((invoice) => ({
         id: invoice.id,
         number: invoice.number,
@@ -67,7 +75,11 @@ async function handler(request) {
         invoice_pdf: invoice.invoice_pdf,
         period_start: invoice.period_start,
         period_end: invoice.period_end,
-        subscription_id: invoice.subscription,
+        // Identifiant seulement (abonnement développé pour le filtre)
+        subscription_id:
+          typeof invoice.subscription === "string"
+            ? invoice.subscription
+            : invoice.subscription?.id || null,
         customer_email: invoice.customer_email,
         customer_name: invoice.customer_name,
         lines: invoice.lines.data.map((line) => ({

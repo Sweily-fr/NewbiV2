@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { safeFileHeaders } from "@/src/lib/safe-file-headers";
 
 /**
  * Proxy same-origin des PDF archivés (factures, devis, avoirs, bons de
@@ -114,26 +115,11 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Streamer la réponse sans buffer en mémoire
-    const headers = new Headers();
-    headers.set(
-      "Content-Type",
-      response.headers.get("Content-Type") || "application/pdf",
-    );
-    if (response.headers.get("Content-Disposition")) {
-      headers.set(
-        "Content-Disposition",
-        response.headers.get("Content-Disposition"),
-      );
-    }
-    if (response.headers.get("Content-Length")) {
-      headers.set("Content-Length", response.headers.get("Content-Length"));
-    }
-    // Fichier choisi par l'utilisateur, servi sur l'origine du site : le
-    // navigateur s'en tient au type annoncé par l'API (jamais de HTML deviné)
-    if (type === "emailAttachment") {
-      headers.set("X-Content-Type-Options", "nosniff");
-    }
+    // Streamer la réponse sans buffer en mémoire. Fichier choisi par
+    // l'utilisateur, servi sur l'origine du site : seuls les PDF et les
+    // images matricielles s'affichent, le reste se télécharge
+    // (safeFileHeaders).
+    const headers = safeFileHeaders(response.headers);
     // Document nominatif servi sous session : jamais de cache partagé
     // (private). Les documents dont l'archive est réécrite sous la même URL
     // après une modification (factures et avoirs émis, devis et bons de

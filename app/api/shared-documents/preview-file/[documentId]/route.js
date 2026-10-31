@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  safeFileHeaders,
+  SHARED_PREVIEW_EXTRA_TYPES,
+} from "@/src/lib/safe-file-headers";
 import { withErrorHandler } from "@/src/lib/security";
 import {
   backendBaseUrl,
@@ -45,21 +49,12 @@ async function handler(request, { params }) {
     );
   }
 
-  // Streamer directement la réponse sans buffer en mémoire
-  const headers = new Headers();
-  headers.set(
-    "Content-Type",
-    response.headers.get("Content-Type") || "application/octet-stream",
-  );
-  if (response.headers.get("Content-Disposition")) {
-    headers.set(
-      "Content-Disposition",
-      response.headers.get("Content-Disposition"),
-    );
-  }
-  if (response.headers.get("Content-Length")) {
-    headers.set("Content-Length", response.headers.get("Content-Length"));
-  }
+  // Streamer directement la réponse sans buffer en mémoire. Fichier choisi
+  // par l'utilisateur, servi sur l'origine du site : seuls les formats qui ne
+  // s'exécutent pas s'affichent, le reste se télécharge (safeFileHeaders).
+  const headers = safeFileHeaders(response.headers, {
+    extraInlineTypes: SHARED_PREVIEW_EXTRA_TYPES,
+  });
   // Document privé : jamais en cache partagé
   headers.set("Cache-Control", "private, max-age=3600");
 
