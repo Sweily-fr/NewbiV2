@@ -10,7 +10,18 @@ export function getNumberFormat(locale, options) {
   }`;
   let formatter = numberFormats.get(key);
   if (!formatter) {
-    formatter = new Intl.NumberFormat(locale, options);
+    try {
+      formatter = new Intl.NumberFormat(locale, options);
+    } catch (error) {
+      // Devise enregistrée qui n'est pas un code ISO (« € », « EURO » sur
+      // d'anciennes factures) : le montant s'affiche en euros plutôt que de
+      // faire tomber le dialogue ou le tableau qui l'affiche.
+      if (!(error instanceof RangeError) || !options?.currency) throw error;
+      formatter = new Intl.NumberFormat(locale, {
+        ...options,
+        currency: "EUR",
+      });
+    }
     numberFormats.set(key, formatter);
   }
   return formatter;
