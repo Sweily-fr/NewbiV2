@@ -499,24 +499,163 @@ export function fecFilename(siren, dateRange = null, now = new Date()) {
   return `${sirenDigits}FEC${format(closing, "yyyyMMdd")}.txt`;
 }
 
+/** Statuts d'une facture importée qui n'est pas (encore) une vente. */
+const IMPORTED_NOT_SALES = new Set(["PENDING_REVIEW", "REJECTED"]);
+
+const cents = (n) => Math.round((parseFloat(n) || 0) * 100) / 100;
+
 /**
- * Contenu du FEC (Fichier des Écritures Comptables) des factures, détail
- * des lignes compris. Les brouillons ne sont pas des écritures comptables :
- * ils sont écartés.
+ * Lignes d'une vente (facture émise) : 411 au débit pour le TTC, 706 et
+ * TVA collectée au crédit, par taux. Le HT de chaque taux vient des
+ * articles (et des frais de port), ramené au HT final de la facture
+ * (remise globale comprise) ; un écart d'arrondi est porté sur la plus
+ * grosse ligne de vente pour que l'écriture soit équilibrée.
+ */
+function saleLines(invoice, invoiceNumber, clientName) {
+  const totalTTC = cents(invoice.finalTotalTTC);
+  const totalHT = cents(invoice.finalTotalHT);
+  const reverseCharge = Boolean(invoice.isReverseCharge);
+  const byRate = {};
+  const add = (rate, amount) => {
+    const key = String(parseFloat(rate) || 0);
+    byRate[key] = (byRate[key] || 0) + amount;
+  };
+
+  for (const item of invoice.items || []) {
+    const quantity = parseFloat(item.quantity) || 0;
+    const unitPrice = parseFloat(item.unitPrice) || 0;
+    const discount = parseFloat(item.discount) || 0;
+    const progress =
+      item.progressPercentage !== undefined && item.progressPercentage !== null
+        ? parseFloat(item.progressPercentage) / 100
+        : 1;
+    let lineHT = quantity * unitPrice * progress;
+    if (discount > 0) {
+      lineHT =
+        item.discountType === "PERCENTAGE"
+          ? lineHT * (1 - discount / 100)
+          : lineHT - discount;
+    }
+    add(item.vatRate || 0, lineHT);
+  }
+  if (invoice.shipping?.billShipping) {
+    add(
+      invoice.shipping.shippingVatRate ?? 20,
+      parseFloat(invoice.shipping.shippingAmountHT) || 0,
+    );
+  }
+
+  const itemizedHT = Object.values(byRate).reduce((t, v) => t + v, 0);
+  const lines = [
+    {
+      CompteNum: "411000",
+      CompteLib: "Clients",
+      auxiliary: true,
+      EcritureLib: `Facture ${invoiceNumber} - ${clientName}`,
+      debit: totalTTC,
+      credit: 0,
+    },
+  ];
+
+  if (itemizedHT > 0 && totalHT > 0) {
+    const ratio = totalHT / itemizedHT;
+    for (const [rate, amount] of Object.entries(byRate)) {
+      const ht = cents(amount * ratio);
+      if (ht <= 0) continue;
+      lines.push({
+        CompteNum: "706000",
+        CompteLib: "Prestations de services",
+        EcritureLib: `${clientName} - TVA ${rate}%`,
+        debit: 0,
+        credit: ht,
+      });
+      const vat = reverseCharge ? 0 : cents((ht * parseFloat(rate)) / 100);
+      if (vat > 0) {
+        lines.push({
+          CompteNum: getVATAccount(parseFloat(rate)),
+          CompteLib: `TVA collectée ${rate}%`,
+          EcritureLib: `${clientName} - TVA ${rate}%`,
+          debit: 0,
+          credit: vat,
+        });
+      }
+    }
+  } else {
+    // Pas de détail des lignes : totaux de la facture
+    if (totalHT > 0) {
+      lines.push({
+        CompteNum: "706000",
+        CompteLib: "Prestations de services",
+        EcritureLib: `Facture ${invoiceNumber} - ${clientName}`,
+        debit: 0,
+        credit: totalHT,
+      });
+    }
+    const totalVAT = cents(invoice.finalTotalVAT);
+    if (totalVAT > 0) {
+      lines.push({
+        CompteNum: "445710",
+        CompteLib: "TVA collectée",
+        EcritureLib: `Facture ${invoiceNumber} - ${clientName}`,
+        debit: 0,
+        credit: totalVAT,
+      });
+    }
+  }
+
+  // Écart d'arrondi (au plus quelques centimes) : sur la plus grosse ligne
+  // de vente, pour une écriture équilibrée
+  const credits = lines.reduce((t, l) => t + l.credit, 0);
+  const gap = cents(totalTTC - credits);
+  const sales = lines.filter((l) => l.CompteNum === "706000");
+  if (gap !== 0 && Math.abs(gap) <= 0.05 && sales.length) {
+    const largest = sales.reduce((a, b) => (b.credit > a.credit ? b : a));
+    largest.credit = cents(largest.credit + gap);
+  }
+  return lines;
+}
+
+/** Lignes inverses d'une écriture (annulation, avoir). */
+const reversed = (lines, label) =>
+  lines.map((l) => ({
+    ...l,
+    EcritureLib: l.CompteNum === "411000" ? label : l.EcritureLib,
+    debit: l.credit,
+    credit: l.debit,
+  }));
+
+/**
+ * Contenu du FEC (Fichier des Écritures Comptables) des ventes, détail des
+ * lignes compris, en ordre chronologique :
+ *   - une écriture par facture émise (les brouillons, et les factures
+ *     importées à revoir ou rejetées, ne sont pas des ventes) ;
+ *   - une facture annulée garde son écriture, suivie de son annulation
+ *     (écriture inverse) : elle ne compte plus dans les ventes ;
+ *   - un avoir est une écriture inverse (411 au crédit, 706 et TVA au
+ *     débit).
+ * Chaque écriture est équilibrée et les numéros d'écriture se suivent.
  * @param {Array} invoices - Liste des factures
  * @param {Object} dateRange - Plage de dates (optionnel)
+ * @param {Object} [options]
+ * @param {Array} [options.creditNotes] - avoirs à exporter avec les factures
  * @returns {String} - Texte du fichier (sans BOM)
  */
-export function buildFECContent(invoices, dateRange = null) {
-  const issuedInvoices = invoices.filter(
-    (invoice) => invoice._type === "imported" || invoice.status !== "DRAFT",
+export function buildFECContent(invoices, dateRange = null, options = {}) {
+  const { creditNotes = [] } = options;
+  const issuedInvoices = invoices.filter((invoice) =>
+    invoice._type === "imported"
+      ? !IMPORTED_NOT_SALES.has(invoice.status)
+      : invoice.status !== "DRAFT",
   );
   // Filtrer par date si nécessaire
   const filteredInvoices = dateRange
     ? filterInvoicesByDateRange(issuedInvoices, dateRange)
     : issuedInvoices;
+  const filteredCreditNotes = dateRange
+    ? filterInvoicesByDateRange(creditNotes || [], dateRange)
+    : creditNotes || [];
 
-  if (filteredInvoices.length === 0) {
+  if (filteredInvoices.length === 0 && filteredCreditNotes.length === 0) {
     const totalInvoices = invoices.length;
     const dateInfo =
       dateRange?.from && dateRange?.to
@@ -528,213 +667,112 @@ export function buildFECContent(invoices, dateRange = null) {
     );
   }
 
-  // Générer les écritures comptables avec numérotation séquentielle
-  const entries = [];
-  let ecritureCounter = 1;
-
+  // Pièces comptables (une écriture chacune), datées
+  const pieces = [];
   filteredInvoices.forEach((rawInvoice) => {
     const invoice = normalizeInvoiceForAccounting(rawInvoice);
     const issueDate = convertToDate(invoice.issueDate);
-    const createdAt = convertToDate(invoice.createdAt);
     if (!issueDate) return;
-
-    const dateStr = format(issueDate, "yyyyMMdd");
-    const validDateStr = createdAt ? format(createdAt, "yyyyMMdd") : dateStr;
+    const createdAt = convertToDate(invoice.createdAt);
     const invoiceNumber = sanitizeFECField(
       invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number,
     );
     const clientName = sanitizeFECField(
       invoice.client?.name || "Client inconnu",
     );
-    const totalTTC = parseFloat(invoice.finalTotalTTC) || 0;
-
-    // Numéro d'écriture unique et séquentiel
-    const ecritureNum = `VTE${String(ecritureCounter).padStart(8, "0")}`;
-
-    // Ligne 1 : Débit client (compte 411)
-    entries.push({
-      JournalCode: "VTE",
-      JournalLib: "Ventes",
-      EcritureNum: ecritureNum,
-      EcritureDate: dateStr,
-      CompteNum: "411000",
-      CompteLib: "Clients",
-      CompAuxNum: invoice.client?.siret || invoiceNumber,
-      CompAuxLib: clientName,
-      PieceRef: invoiceNumber,
-      PieceDate: dateStr,
-      EcritureLib: sanitizeFECField(`Facture ${invoiceNumber} - ${clientName}`),
-      Debit: formatFECAmount(totalTTC),
-      Credit: formatFECAmount(0),
-      EcritureLet: "",
-      DateLet: "",
-      ValidDate: validDateStr,
-      Montantdevise: "",
-      Idevise: "",
-    });
-
-    // Traiter les lignes de facture pour ventilation par compte et TVA
-    if (invoice.items && invoice.items.length > 0) {
-      // Grouper les lignes par taux de TVA
-      const itemsByVatRate = {};
-
-      invoice.items.forEach((item) => {
-        const vatRate = item.vatRate || 0;
-        const quantity = parseFloat(item.quantity) || 0;
-        const unitPrice = parseFloat(item.unitPrice) || 0;
-        const itemDiscount = parseFloat(item.discount) || 0;
-
-        // Calculer le montant HT de la ligne
-        let lineHT = quantity * unitPrice;
-
-        // Appliquer la remise de ligne
-        if (itemDiscount > 0) {
-          if (item.discountType === "PERCENTAGE") {
-            lineHT = lineHT * (1 - itemDiscount / 100);
-          } else {
-            lineHT = lineHT - itemDiscount;
-          }
-        }
-
-        // Grouper par taux de TVA
-        if (!itemsByVatRate[vatRate]) {
-          itemsByVatRate[vatRate] = {
-            totalHT: 0,
-            items: [],
-          };
-        }
-
-        itemsByVatRate[vatRate].totalHT += lineHT;
-        itemsByVatRate[vatRate].items.push({
-          description: item.description,
-          amount: lineHT,
-        });
+    const piece = {
+      issueDate,
+      createdAt,
+      ref: invoiceNumber,
+      clientName,
+      compAux: invoice.client?.siret || invoiceNumber,
+      lines: saleLines(invoice, invoiceNumber, clientName),
+    };
+    pieces.push(piece);
+    // Facture annulée : son annulation suit, ses ventes s'annulent
+    if (invoice._type !== "imported" && invoice.status === "CANCELED") {
+      pieces.push({
+        ...piece,
+        lines: reversed(
+          piece.lines,
+          `Annulation facture ${invoiceNumber} - ${clientName}`,
+        ),
       });
-
-      // Appliquer la remise globale proportionnellement
-      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce(
-        (sum, group) => sum + group.totalHT,
-        0,
-      );
-      const globalDiscountAmount = parseFloat(invoice.discountAmount) || 0;
-
-      // Créer les lignes de crédit ventes par taux de TVA
-      Object.entries(itemsByVatRate).forEach(([vatRate, group]) => {
-        let finalHT = group.totalHT;
-
-        // Appliquer la remise globale proportionnellement
-        if (globalDiscountAmount > 0 && totalHTBeforeDiscount > 0) {
-          const proportion = group.totalHT / totalHTBeforeDiscount;
-          finalHT = finalHT - globalDiscountAmount * proportion;
-        }
-
-        if (finalHT > 0) {
-          // Ligne crédit ventes (compte 706)
-          entries.push({
-            JournalCode: "VTE",
-            JournalLib: "Ventes",
-            EcritureNum: ecritureNum,
-            EcritureDate: dateStr,
-            CompteNum: "706000",
-            CompteLib: "Prestations de services",
-            CompAuxNum: "",
-            CompAuxLib: "",
-            PieceRef: invoiceNumber,
-            PieceDate: dateStr,
-            EcritureLib: sanitizeFECField(`${clientName} - TVA ${vatRate}%`),
-            Debit: formatFECAmount(0),
-            Credit: formatFECAmount(finalHT),
-            EcritureLet: "",
-            DateLet: "",
-            ValidDate: validDateStr,
-            Montantdevise: "",
-            Idevise: "",
-          });
-
-          // Ligne crédit TVA (compte 44571x selon le taux)
-          const vatAmount = finalHT * (parseFloat(vatRate) / 100);
-          if (vatAmount > 0) {
-            const vatAccount = getVATAccount(parseFloat(vatRate));
-            entries.push({
-              JournalCode: "VTE",
-              JournalLib: "Ventes",
-              EcritureNum: ecritureNum,
-              EcritureDate: dateStr,
-              CompteNum: vatAccount,
-              CompteLib: sanitizeFECField(`TVA collectée ${vatRate}%`),
-              CompAuxNum: "",
-              CompAuxLib: "",
-              PieceRef: invoiceNumber,
-              PieceDate: dateStr,
-              EcritureLib: sanitizeFECField(`${clientName} - TVA ${vatRate}%`),
-              Debit: formatFECAmount(0),
-              Credit: formatFECAmount(vatAmount),
-              EcritureLet: "",
-              DateLet: "",
-              ValidDate: validDateStr,
-              Montantdevise: "",
-              Idevise: "",
-            });
-          }
-        }
-      });
-    } else {
-      // Pas de détail des lignes : utiliser les totaux globaux
-      const totalHT = parseFloat(invoice.finalTotalHT) || 0;
-      const totalTVA = parseFloat(invoice.finalTotalVAT) || 0;
-
-      if (totalHT > 0) {
-        entries.push({
-          JournalCode: "VTE",
-          JournalLib: "Ventes",
-          EcritureNum: ecritureNum,
-          EcritureDate: dateStr,
-          CompteNum: "706000",
-          CompteLib: "Prestations de services",
-          CompAuxNum: "",
-          CompAuxLib: "",
-          PieceRef: invoiceNumber,
-          PieceDate: dateStr,
-          EcritureLib: sanitizeFECField(
-            `Facture ${invoiceNumber} - ${clientName}`,
-          ),
-          Debit: formatFECAmount(0),
-          Credit: formatFECAmount(totalHT),
-          EcritureLet: "",
-          DateLet: "",
-          ValidDate: validDateStr,
-          Montantdevise: "",
-          Idevise: "",
-        });
-      }
-
-      if (totalTVA > 0) {
-        entries.push({
-          JournalCode: "VTE",
-          JournalLib: "Ventes",
-          EcritureNum: ecritureNum,
-          EcritureDate: dateStr,
-          CompteNum: "445710",
-          CompteLib: "TVA collectée",
-          CompAuxNum: "",
-          CompAuxLib: "",
-          PieceRef: invoiceNumber,
-          PieceDate: dateStr,
-          EcritureLib: sanitizeFECField(
-            `Facture ${invoiceNumber} - ${clientName}`,
-          ),
-          Debit: formatFECAmount(0),
-          Credit: formatFECAmount(totalTVA),
-          EcritureLet: "",
-          DateLet: "",
-          ValidDate: validDateStr,
-          Montantdevise: "",
-          Idevise: "",
-        });
-      }
     }
+  });
 
-    ecritureCounter++;
+  filteredCreditNotes.forEach((creditNote) => {
+    const issueDate = convertToDate(creditNote.issueDate);
+    if (!issueDate) return;
+    const ref = sanitizeFECField(
+      creditNote.prefix
+        ? `${creditNote.prefix}-${creditNote.number}`
+        : creditNote.number,
+    );
+    const clientName = sanitizeFECField(
+      creditNote.client?.name || "Client inconnu",
+    );
+    // Montants de l'avoir en valeur absolue (stockés en négatif)
+    const asSale = {
+      finalTotalTTC: Math.abs(parseFloat(creditNote.finalTotalTTC) || 0),
+      finalTotalHT: Math.abs(parseFloat(creditNote.finalTotalHT) || 0),
+      finalTotalVAT: Math.abs(parseFloat(creditNote.finalTotalVAT) || 0),
+      items: [],
+    };
+    const origine = creditNote.originalInvoiceNumber
+      ? ` (facture ${creditNote.originalInvoiceNumber})`
+      : "";
+    pieces.push({
+      issueDate,
+      createdAt: convertToDate(creditNote.createdAt),
+      ref,
+      clientName,
+      compAux: creditNote.client?.siret || ref,
+      lines: reversed(
+        saleLines(asSale, ref, clientName),
+        sanitizeFECField(`Avoir ${ref} - ${clientName}${origine}`),
+      ).map((l) =>
+        l.CompteNum === "411000"
+          ? l
+          : {
+              ...l,
+              EcritureLib: sanitizeFECField(`Avoir ${ref} - ${clientName}`),
+            },
+      ),
+    });
+  });
+
+  // Ordre chronologique, numéros d'écriture continus
+  pieces.sort((a, b) => a.issueDate - b.issueDate);
+  const entries = [];
+  pieces.forEach((piece, index) => {
+    const ecritureNum = `VTE${String(index + 1).padStart(8, "0")}`;
+    const dateStr = format(piece.issueDate, "yyyyMMdd");
+    const validDateStr = piece.createdAt
+      ? format(piece.createdAt, "yyyyMMdd")
+      : dateStr;
+    for (const line of piece.lines) {
+      entries.push({
+        JournalCode: "VTE",
+        JournalLib: "Ventes",
+        EcritureNum: ecritureNum,
+        EcritureDate: dateStr,
+        CompteNum: line.CompteNum,
+        CompteLib: sanitizeFECField(line.CompteLib),
+        CompAuxNum: line.auxiliary ? piece.compAux : "",
+        CompAuxLib: line.auxiliary ? piece.clientName : "",
+        PieceRef: piece.ref,
+        PieceDate: dateStr,
+        EcritureLib: sanitizeFECField(line.EcritureLib),
+        Debit: formatFECAmount(line.debit),
+        Credit: formatFECAmount(line.credit),
+        EcritureLet: "",
+        DateLet: "",
+        ValidDate: validDateStr,
+        Montantdevise: "",
+        Idevise: "",
+      });
+    }
   });
 
   // Première ligne : le nom des 18 champs (la norme l'exige), puis une
@@ -752,9 +790,14 @@ export function buildFECContent(invoices, dateRange = null) {
  * @param {Object} dateRange - Plage de dates (optionnel)
  * @param {Object} options
  * @param {String} options.siren - SIREN de l'entreprise (nom du fichier)
+ * @param {Array} [options.creditNotes] - avoirs (écritures inverses)
  */
-export function exportToFEC(invoices, dateRange = null, { siren = "" } = {}) {
-  const fecContent = buildFECContent(invoices, dateRange);
+export function exportToFEC(
+  invoices,
+  dateRange = null,
+  { siren = "", creditNotes = [] } = {},
+) {
+  const fecContent = buildFECContent(invoices, dateRange, { creditNotes });
 
   // Ajouter le BOM UTF-8
   const BOM = "\uFEFF";
