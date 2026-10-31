@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { MoneyReciveIcon } from "@/src/components/icons";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
+import { formatCurrencyAmount } from "@/src/lib/format-currency";
 import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
@@ -102,7 +103,8 @@ export const columns = [
           }}
         >
           {isIncome ? "+" : ""}
-          {amount.toFixed(2)} €
+          {/* Format français : « -1 200,00 € » (et non « -1200.00 € ») */}
+          {formatCurrencyAmount(amount, row.original.currency)}
         </div>
       );
     },

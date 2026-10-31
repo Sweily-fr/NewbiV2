@@ -90,7 +90,10 @@ import {
 } from "@/src/components/ui/table";
 import { toast } from "@/src/components/ui/sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useProducts, useDeleteProduct } from "@/src/hooks/useProducts";
+import {
+  useCatalogueProducts,
+  useDeleteProduct,
+} from "@/src/hooks/useProducts";
 import { useProductCustomFields } from "@/src/hooks/useProductCustomFields";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -104,6 +107,8 @@ import { CataloguesTableSkeleton } from "./catalogues-page-skeleton";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { createSearchMatcher } from "@/src/utils/search-text";
 import { SearchExactToggle } from "@/src/components/search-exact-toggle";
+import { formatCurrencyAmount } from "@/src/lib/format-currency";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Recherche nom / référence / catégorie, sans accents ni majuscules sauf si
 // le bouton « Aa » est coché. Le filtre vaut { query, exact } ;
@@ -112,6 +117,22 @@ const multiColumnFilterFn = (row, columnId, match) =>
   match(row.original.name, row.original.reference, row.original.category);
 multiColumnFilterFn.resolveFilterValue = (value) =>
   createSearchMatcher(value?.query, { exact: value?.exact });
+
+// Ordre alphabétique français : « Écran » avec les E, « Câble » avec les C
+// (le tri par défaut rangeait les noms accentués à la fin)
+const frenchNameSortingFn = (rowA, rowB, columnId) =>
+  String(rowA.getValue(columnId) ?? "").localeCompare(
+    String(rowB.getValue(columnId) ?? ""),
+    "fr",
+    { sensitivity: "base" },
+  );
+
+// Taux de TVA au format français : « 5,5 % », « 0 % »
+const formatVatRate = (rate) =>
+  `${getNumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(rate)}\u00a0%`;
+
+const hasNumber = (value) =>
+  value !== null && value !== undefined && value !== "" && !isNaN(value);
 
 const categoryFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -167,6 +188,7 @@ const baseColumns = [
     },
     size: 200,
     filterFn: multiColumnFilterFn,
+    sortingFn: frenchNameSortingFn,
     enableHiding: false,
   },
   {
@@ -192,8 +214,12 @@ const baseColumns = [
     accessorKey: "unitPrice",
     cell: ({ row }) => {
       const price = row.getValue("unitPrice");
-      return price ? (
-        <span className="font-normal">{price.toFixed(2)} €</span>
+      // Format français (« 1 200,00 € ») ; un produit offert affiche
+      // « 0,00 € », le tiret reste pour un prix absent
+      return hasNumber(price) ? (
+        <span className="font-normal">
+          {formatCurrencyAmount(price, "EUR")}
+        </span>
       ) : (
         "-"
       );
@@ -205,9 +231,10 @@ const baseColumns = [
     accessorKey: "vatRate",
     cell: ({ row }) => {
       const vatRate = row.getValue("vatRate");
-      return vatRate ? (
+      // « 5,5 % » ; une TVA à 0 % s'affiche « 0 % », pas un tiret
+      return hasNumber(vatRate) ? (
         <Badge className="bg-green-100 border-green-300 text-green-800 font-normal">
-          {vatRate}%
+          {formatVatRate(vatRate)}
         </Badge>
       ) : (
         "-"
@@ -387,8 +414,8 @@ export default function TableProduct({
   const [editingProduct, setEditingProduct] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Utilisation du hook pour récupérer les produits (sans recherche côté serveur)
-  // On récupère les produits avec pagination côté client
+  // Tous les produits de l'espace (sans recherche côté serveur), filtrés et
+  // paginés côté client
   const {
     products: allProducts,
     totalItems,
@@ -397,7 +424,7 @@ export default function TableProduct({
     loading,
     error,
     refetch,
-  } = useProducts(1, 100, ""); // Récupère 100 produits max (pagination côté client)
+  } = useCatalogueProducts();
 
   const { deleteProduct: deleteProductMain } = useDeleteProduct({
     showToast: false,
@@ -1120,9 +1147,16 @@ function RowActions({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
-            onClick={() =>
-              navigator.clipboard.writeText(product.reference || product.name)
-            }
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(
+                  product.reference || product.name,
+                );
+                toast.success("Référence copiée dans le presse-papiers");
+              } catch {
+                toast.error("Impossible de copier la référence");
+              }
+            }}
           >
             <span>Copier référence</span>
           </DropdownMenuItem>

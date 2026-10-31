@@ -93,6 +93,7 @@ import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { isHiddenForRole } from "@/src/lib/route-modules";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
+import { GET_TRANSACTION_TODO_COUNTS } from "@/src/graphql/queries/banking";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import {
   useCreationLinkClick,
@@ -222,6 +223,16 @@ function DashboardContent() {
       !workspaceId || permissionsPending || !canReadBanking || !showToProcess,
   });
 
+  // Justificatifs manquants et transactions à catégoriser (toutes les
+  // transactions de l'espace, mêmes règles que la page Transactions)
+  const { data: todoCountsData } = useQuery(GET_TRANSACTION_TODO_COUNTS, {
+    variables: { workspaceId },
+    fetchPolicy: "cache-and-network",
+    skip:
+      !workspaceId || permissionsPending || !canReadBanking || !showToProcess,
+  });
+  const transactionTodoCounts = todoCountsData?.transactionTodoCounts;
+
   // État pour le filtre de compte bancaire
   const [selectedAccountId, setSelectedAccountId] = useState("all");
 
@@ -312,8 +323,16 @@ function DashboardContent() {
       pendingQuotesCount: quoteBalances.pendingCount,
       pendingQuotesAmount: quoteBalances.pendingAmount,
       notifCount: notifUnreadCount || 0,
+      uncategorizedCount: transactionTodoCounts?.uncategorized || 0,
+      missingReceiptCount: transactionTodoCounts?.missingReceipt || 0,
     };
-  }, [invoices, reconData, quoteBalances, notifUnreadCount]);
+  }, [
+    invoices,
+    reconData,
+    quoteBalances,
+    notifUnreadCount,
+    transactionTodoCounts,
+  ]);
 
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
@@ -450,6 +469,17 @@ function DashboardContent() {
     );
   }, [bankAccounts, selectedAccountId]);
 
+  // Transactions récentes filtrées par l'identifiant du compte chez la
+  // banque (externalId, la valeur de tx.fromAccount), comme la page
+  // Transactions : le sélecteur garde account.id
+  const recentTransactionsAccountId = useMemo(() => {
+    if (selectedAccountId === "all") return "all";
+    const account = (bankAccounts || []).find(
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
+    );
+    return account?.externalId || selectedAccountId;
+  }, [selectedAccountId, bankAccounts]);
+
   const selectedAccountLabel = useMemo(() => {
     if (selectedAccountId === "all") return "Tous les comptes";
     const account = (bankAccounts || []).find(
@@ -498,15 +528,22 @@ function DashboardContent() {
 
       {/* BankBalanceCard caché — sert uniquement pour le dialog de connexion.
           Monté seulement si le rôle lit les transactions et peut connecter une
-          banque : il interroge les routes bancaires dès son montage. */}
-      {!permissionsPending && canReadBanking && canConnectBank && (
-        <div className="hidden">
-          <BankBalanceCard ref={bankBalanceRef} />
-        </div>
-      )}
+          banque, hors lecture seule (routes bancaires refusées, 402) : il
+          interroge les routes bancaires dès son montage. */}
+      {!permissionsPending &&
+        canReadBanking &&
+        canConnectBank &&
+        !isReadOnly && (
+          <div className="hidden">
+            <BankBalanceCard ref={bankBalanceRef} />
+          </div>
+        )}
 
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
-        {!permissionsPending && canReadBanking && <BankReconnectAlert />}
+        {/* Hors lecture seule : la route du statut bancaire répond 402 */}
+        {!permissionsPending && canReadBanking && !isReadOnly && (
+          <BankReconnectAlert />
+        )}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full mb-2 gap-1 md:gap-0">
           <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},
@@ -920,6 +957,7 @@ function DashboardContent() {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
+                              aria-label="Connecter un compte bancaire"
                               onClick={() =>
                                 bankBalanceRef.current?.openConnectModal()
                               }
@@ -999,8 +1037,14 @@ function DashboardContent() {
                   s'affichent sans attendre de compte bancaire. */}
                 {showBillingMonth && (
                   <Card className="shadow-xs">
+                    {/* Les ventes et achats du mois viennent des factures,
+                      pas du compte bancaire : sans compte, le cadre reste
+                      affiché dès que le mois a des données de facturation */}
                     {canReadBanking &&
-                    (filteredBankAccounts || []).length === 0 ? (
+                    (filteredBankAccounts || []).length === 0 &&
+                    billingMonth &&
+                    !monthSales.total &&
+                    !monthPurchases.total ? (
                       <CardContent className="p-0">
                         <TableEmptyState
                           icon={DocumentText2Icon}
@@ -1194,7 +1238,7 @@ function DashboardContent() {
                       variant="secondary"
                       className="text-[10px] h-5 px-1.5 font-medium rounded-md"
                     >
-                      0
+                      {actionCounts.uncategorizedCount}
                     </Badge>
                   </a>
                   <a
@@ -1211,7 +1255,7 @@ function DashboardContent() {
                       variant="secondary"
                       className="text-[10px] h-5 px-1.5 font-medium rounded-md"
                     >
-                      0
+                      {actionCounts.missingReceiptCount}
                     </Badge>
                   </a>
                 </CardContent>
@@ -1249,7 +1293,7 @@ function DashboardContent() {
                   {canReadInvoices && (
                     <>
                       <a
-                        href="/dashboard/outils/factures?status=PENDING"
+                        href="/dashboard/outils/factures?status=overdue"
                         className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
@@ -1340,9 +1384,11 @@ function DashboardContent() {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
+                    // Fenêtre des paramètres ouverte par le layout du tableau
+                    // de bord (« openSettingsModal » n'était écouté nulle part)
                     window.dispatchEvent(
-                      new CustomEvent("openSettingsModal", {
-                        detail: { section: "notifications" },
+                      new CustomEvent("newbi:open-settings", {
+                        detail: { tab: "notifications" },
                       }),
                     );
                   }}
@@ -1425,7 +1471,7 @@ function DashboardContent() {
                 <RecentTransactionsCard
                   className="shadow-xs w-full"
                   workspaceId={workspaceId}
-                  accountId={selectedAccountId}
+                  accountId={recentTransactionsAccountId}
                   limit={5}
                   isLoading={transactionsLoading || permissionsPending}
                   skip={permissionsPending}
@@ -1508,8 +1554,9 @@ function DashboardContent() {
                                       {clientName}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                      {inv.prefix}
-                                      {inv.number}
+                                      {inv.prefix
+                                        ? `${inv.prefix}-${inv.number}`
+                                        : inv.number}
                                     </span>
                                   </div>
                                 </div>

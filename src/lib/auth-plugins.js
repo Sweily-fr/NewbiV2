@@ -124,9 +124,12 @@ export const twoFactorPlugin = twoFactor({
 export const emailOTPPlugin = emailOTP({
   otpLength: 6,
   expiresIn: 300, // 5 minutes
-  // On n'envoie un code que pour la vérification d'email (pas sign-in/reset ici).
+  // Codes de vérification d'e-mail seulement : les autres types sont refusés
+  // en amont (auth-hooks.js) et leurs routes fermées (disabledPaths).
   async sendVerificationOTP({ email, otp, type }) {
-    if (type !== "email-verification") return;
+    if (type !== "email-verification") {
+      throw new Error(`Code OTP « ${type} » non pris en charge`);
+    }
     console.log("[EMAIL OTP] Envoi code de vérification à:", email);
     await sendVerificationOtpEmail(email, otp);
     console.log("[EMAIL OTP] Email envoyé avec succès");
@@ -221,7 +224,25 @@ export async function authorizeSubscriptionReference({
           organizationId: referenceId,
           moduleKey: "billing",
         });
-        return actions.includes("manage");
+        if (!actions.includes("manage")) return false;
+        // Même règle aussi pour le client Stripe : portail d'un client qui
+        // règle d'autres espaces réservé à son titulaire
+        const { getOrgStripeCustomerIds } =
+          await import("./security/org-stripe-customer.js");
+        const { canOpenBillingPortal } =
+          await import("./security/billing-portal-access.js");
+        for (const customerId of await getOrgStripeCustomerIds(referenceId)) {
+          if (
+            !(await canOpenBillingPortal({
+              user,
+              orgId: referenceId,
+              customerId,
+            }))
+          ) {
+            return false;
+          }
+        }
+        return true;
       }
       default:
         return false;

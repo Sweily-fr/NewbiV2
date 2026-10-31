@@ -23,6 +23,8 @@ import {
   sanitizeInput,
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
+  isBlank,
+  getPostalCodeError,
 } from "@/src/lib/validation";
 import { Callout } from "@/src/components/ui/callout";
 import { toast } from "@/src/components/ui/sonner";
@@ -60,6 +62,8 @@ export function GeneraleSection({
     register,
     watch,
     setValue,
+    getValues,
+    trigger,
     resetField,
     formState: { errors },
   } = formContext;
@@ -116,6 +120,8 @@ export function GeneraleSection({
       shouldValidate: true,
       shouldDirty: true,
     });
+    // Le format du code postal dépend du pays (« 1000 » à Bruxelles)
+    if (getValues("address.postalCode")) trigger("address.postalCode");
   };
 
   return (
@@ -259,6 +265,8 @@ export function GeneraleSection({
                     message: VALIDATION_PATTERNS.companyName.message,
                   },
                   validate: (value) => {
+                    // Rempli d'espaces : refusé comme un champ vide
+                    if (isBlank(value)) return "Le nom est requis";
                     if (detectInjectionAttempt(value)) {
                       return "Caractères non autorisés détectés";
                     }
@@ -612,6 +620,7 @@ export function GeneraleSection({
                     message: VALIDATION_PATTERNS.street.message,
                   },
                   validate: (value) => {
+                    if (isBlank(value)) return "L'adresse est requise";
                     if (detectInjectionAttempt(value)) {
                       return "Caractères non autorisés détectés";
                     }
@@ -647,6 +656,7 @@ export function GeneraleSection({
                       message: VALIDATION_PATTERNS.city.message,
                     },
                     validate: (value) => {
+                      if (isBlank(value)) return "La ville est requise";
                       if (detectInjectionAttempt(value)) {
                         return "Caractères non autorisés détectés";
                       }
@@ -675,15 +685,18 @@ export function GeneraleSection({
                   disabled={!canManageOrgSettings}
                   {...register("address.postalCode", {
                     required: "Le code postal est requis",
-                    pattern: {
-                      value: VALIDATION_PATTERNS.postalCode.pattern,
-                      message: VALIDATION_PATTERNS.postalCode.message,
-                    },
+                    // Format français en France, format libre dans les
+                    // autres pays proposés (même règle que l'API)
                     validate: (value) => {
+                      if (isBlank(value)) return "Le code postal est requis";
                       if (detectInjectionAttempt(value)) {
                         return "Caractères non autorisés détectés";
                       }
-                      return true;
+                      return (
+                        getPostalCodeError(value, {
+                          country: getValues("address.country"),
+                        }) || true
+                      );
                     },
                   })}
                 />

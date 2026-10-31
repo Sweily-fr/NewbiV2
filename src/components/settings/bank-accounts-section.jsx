@@ -617,9 +617,11 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                           Toutes vos connexions bancaires seront déconnectées et
-                          les comptes retirés de Newbi. Cette action est
-                          irréversible — vous devrez reconnecter vos banques
-                          pour resynchroniser vos transactions.
+                          les comptes retirés de Newbi. Vos transactions, avec
+                          leurs justificatifs et leurs rapprochements, sont
+                          conservées mais ne seront plus synchronisées :
+                          reconnectez vos banques pour reprendre la
+                          synchronisation.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

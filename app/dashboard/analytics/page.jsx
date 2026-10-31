@@ -45,24 +45,30 @@ import { PcgTableSkeleton } from "./components/analytics-skeleton";
 import { createSearchMatcher } from "@/src/utils/search-text";
 import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 
-const PARENT_CATEGORIES = [
-  "Tous",
-  "Incomes",
-  "Taxes",
-  "Misc.",
-  "Home",
-  "Shopping",
-  "Health",
-  "Bank",
-  "Transport",
-  "Business",
-  "Education",
-  "Food",
-  "Entertainment",
-  "Bills",
-  "Transfers",
-  "Personal care",
-];
+// Catégories parentes de Bridge : valeur renvoyée par l'API (en anglais) et
+// libellé affiché dans l'interface
+const PARENT_CATEGORY_LABELS = {
+  Incomes: "Revenus",
+  Taxes: "Impôts et taxes",
+  "Misc.": "Divers",
+  Home: "Logement",
+  Shopping: "Achats",
+  Health: "Santé",
+  Bank: "Banque",
+  Transport: "Transport",
+  Business: "Activité professionnelle",
+  Education: "Éducation",
+  Food: "Alimentation",
+  Entertainment: "Loisirs",
+  Bills: "Factures et abonnements",
+  Transfers: "Virements",
+  "Personal care": "Soins et bien-être",
+};
+
+const PARENT_CATEGORIES = ["Tous", ...Object.keys(PARENT_CATEGORY_LABELS)];
+
+const parentCategoryLabel = (category) =>
+  PARENT_CATEGORY_LABELS[category] || category;
 
 function ConfidenceBadge({ confidence }) {
   const config = CONFIDENCE_CONFIG[confidence];
@@ -119,6 +125,7 @@ function PCGMappingTable() {
           item.pcgNumero,
           item.pcgIntitule,
           item.parentCategory,
+          parentCategoryLabel(item.parentCategory),
         ),
       );
     }
@@ -259,7 +266,7 @@ function PCGMappingTable() {
           <SelectContent>
             {PARENT_CATEGORIES.map((cat) => (
               <SelectItem key={cat} value={cat}>
-                {cat}
+                {parentCategoryLabel(cat)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -351,8 +358,8 @@ function PCGMappingTable() {
                               {item.bridgeLabel}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {item.parentCategory} (ID: {item.bridgeCategoryId}
-                              )
+                              {parentCategoryLabel(item.parentCategory)} (ID:{" "}
+                              {item.bridgeCategoryId})
                             </div>
                           </div>
                         </TableCell>

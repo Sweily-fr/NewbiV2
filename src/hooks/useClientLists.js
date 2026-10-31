@@ -17,6 +17,15 @@ import {
   ADD_CLIENT_TO_LISTS,
   REMOVE_CLIENT_FROM_LISTS,
 } from "@/src/graphql/mutations/clientLists";
+import { getUserFacingRefusal } from "@/src/utils/errorMessages";
+
+/**
+ * Message d'un refus de l'API (client Apollo en errorPolicy « all » : la
+ * mutation refusée ne lève pas d'erreur, `data` est vide) : le motif rédigé
+ * par l'API (« Le nom doit contenir au moins 2 caractères »), sinon `fallback`.
+ */
+const refusalMessage = (errors, fallback) =>
+  getUserFacingRefusal({ graphQLErrors: errors }) || fallback;
 
 export const useClientLists = (workspaceId) => {
   const { data, loading, error, refetch } = useQuery(GET_CLIENT_LISTS, {
@@ -76,18 +85,25 @@ export const useCreateClientList = () => {
 
   return {
     createList: async (workspaceId, input) => {
+      let result;
       try {
-        const { data } = await createList({
+        result = await createList({
           variables: { workspaceId, input },
           refetchQueries: [
             { query: GET_CLIENT_LISTS, variables: { workspaceId } },
           ],
         });
-        return data.createClientList;
       } catch (err) {
         console.error("Erreur lors de la création de la liste:", err);
         throw err;
       }
+      // Refus de l'API : son motif, jamais une erreur technique
+      if (result.errors?.length || !result.data?.createClientList) {
+        throw new Error(
+          refusalMessage(result.errors, "Impossible de créer la liste"),
+        );
+      }
+      return result.data.createClientList;
     },
     loading,
     error,
@@ -99,15 +115,22 @@ export const useUpdateClientList = () => {
 
   return {
     updateList: async (workspaceId, id, input) => {
+      let result;
       try {
-        const { data } = await updateList({
+        result = await updateList({
           variables: { workspaceId, id, input },
         });
-        return data.updateClientList;
       } catch (err) {
         console.error("Erreur lors de la mise à jour de la liste:", err);
         throw err;
       }
+      // Refus de l'API : son motif, jamais une erreur technique
+      if (result.errors?.length || !result.data?.updateClientList) {
+        throw new Error(
+          refusalMessage(result.errors, "Impossible de mettre à jour la liste"),
+        );
+      }
+      return result.data.updateClientList;
     },
     loading,
     error,

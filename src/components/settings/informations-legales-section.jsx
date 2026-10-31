@@ -541,6 +541,10 @@ export function InformationsLegalesSection({
                   id="capital"
                   placeholder="10000"
                   type="number"
+                  // Centimes acceptés (1500.50) : avec le pas par défaut (1),
+                  // le navigateur bloquait l'envoi du formulaire sans message
+                  // (le motif ci-dessous limite à 2 décimales)
+                  step="any"
                   disabled={!canManageOrgSettings}
                   className="w-full"
                   {...register("legal.capital", {
@@ -649,6 +653,7 @@ export function InformationsLegalesSection({
                   </p>
                 </div>
                 <Switch
+                  aria-label="Assujetti à la TVA"
                   checked={isVatSubject}
                   onCheckedChange={handleVatSubjectChange}
                   disabled={!canManageOrgSettings}
@@ -806,6 +811,7 @@ export function InformationsLegalesSection({
                     </p>
                   </div>
                   <Switch
+                    aria-label="Franchise en base de TVA"
                     checked={isVatFranchise}
                     onCheckedChange={handleVatFranchiseChange}
                     disabled={!canManageOrgSettings}

@@ -83,7 +83,9 @@ export const CHAMPS_CLIENTS = {
 export const CONTACTS = {
   complet: contact(100, {
     name: "Atelier Lumière SARL",
-    email: "contact@atelier-lumiere.test",
+    // E-mail sans « lumiere » : la recherche exacte (« Aa ») de « lumiere » ne
+    // doit pas trouver ce contact, la recherche sans accent le trouver par son nom
+    email: "contact@atelier-fontaine.test",
     phone: "+33145678901",
     siret: "41234567800017",
     vatNumber: "FR41412345678",
@@ -97,7 +99,7 @@ export const CONTACTS = {
         id: oid("client", 9100).toHexString(),
         firstName: "Marc",
         lastName: "Petit",
-        email: "marc.petit@atelier-lumiere.test",
+        email: "marc.petit@atelier-fontaine.test",
         phone: "+33612345601",
         position: "Comptable",
         department: "Finances",

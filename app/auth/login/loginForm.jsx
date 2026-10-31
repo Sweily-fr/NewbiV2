@@ -16,6 +16,8 @@ import {
 import { TwoFactorModal } from "./components/TwoFactorModal";
 import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 import { capture, identify } from "@/src/lib/analytics";
+import { startupPagePath } from "@/src/lib/startup-page";
+import { safeInternalPath } from "@/src/lib/safe-redirect";
 
 // Compte gestionnaire (cabinet) : il arrive sur son espace, la liste de ses
 // clients, plutôt que sur le tableau de bord d'une entreprise
@@ -277,7 +279,8 @@ const LoginForm = () => {
         const urlParams = new URLSearchParams(window.location.search);
         let invitationId = urlParams.get("invitation");
         let invitationEmail = urlParams.get("email");
-        const callbackUrl = urlParams.get("callbackUrl");
+        // Page demandée avant la connexion : chemin interne du site seulement
+        const callbackUrl = safeInternalPath(urlParams.get("callbackUrl"));
 
         if (!invitationId) {
           const pendingInvitation = localStorage.getItem("pendingInvitation");
@@ -391,29 +394,7 @@ const LoginForm = () => {
 
           // Rediriger vers la page préférée de l'utilisateur
           // dashboard/layout.jsx redirigera vers /auth/signup si pas d'abonnement
-          const routeMap = {
-            dashboard: "/dashboard",
-            outils: "/dashboard",
-            kanban: "/dashboard/outils/kanban",
-            calendar: "/dashboard/calendar",
-            factures: "/dashboard/outils/factures",
-            devis: "/dashboard/outils/devis",
-            clients: "/dashboard/clients",
-            transactions: "/dashboard/outils/transactions",
-            depenses: "/dashboard/outils/transactions",
-            signatures: "/dashboard/outils/signatures-mail",
-            transferts: "/dashboard/outils/transferts-fichiers",
-            "documents-partages": "/dashboard/outils/documents-partages",
-            catalogues: "/dashboard/catalogues",
-            collaborateurs: "/dashboard/collaborateurs",
-            analytics: "/dashboard/analytics",
-            favoris: "/dashboard/favoris",
-          };
-
-          const redirectPath =
-            userRedirectPage && userRedirectPage !== "last-page"
-              ? routeMap[userRedirectPage] || "/dashboard"
-              : "/dashboard";
+          const redirectPath = startupPagePath(userRedirectPage);
 
           router.push(redirectPath);
         }
@@ -548,7 +529,7 @@ const LoginForm = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const invitationId = urlParams.get("invitation");
       const invitationEmail = urlParams.get("email");
-      const callbackUrl = urlParams.get("callbackUrl");
+      const callbackUrl = safeInternalPath(urlParams.get("callbackUrl"));
 
       // Si c'est une connexion via invitation, accepter automatiquement l'invitation
       if (invitationId && invitationEmail) {
@@ -636,29 +617,7 @@ const LoginForm = () => {
           return true;
         }
 
-        const routeMap = {
-          dashboard: "/dashboard",
-          outils: "/dashboard",
-          kanban: "/dashboard/outils/kanban",
-          calendar: "/dashboard/calendar",
-          factures: "/dashboard/outils/factures",
-          devis: "/dashboard/outils/devis",
-          clients: "/dashboard/clients",
-          transactions: "/dashboard/outils/transactions",
-          depenses: "/dashboard/outils/transactions",
-          signatures: "/dashboard/outils/signatures-mail",
-          transferts: "/dashboard/outils/transferts-fichiers",
-          "documents-partages": "/dashboard/outils/documents-partages",
-          catalogues: "/dashboard/catalogues",
-          collaborateurs: "/dashboard/collaborateurs",
-          analytics: "/dashboard/analytics",
-          favoris: "/dashboard/favoris",
-        };
-
-        const redirectPath =
-          userRedirectPage && userRedirectPage !== "last-page"
-            ? routeMap[userRedirectPage] || "/dashboard"
-            : "/dashboard";
+        const redirectPath = startupPagePath(userRedirectPage);
 
         router.push(redirectPath);
       }

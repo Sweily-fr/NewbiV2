@@ -16,9 +16,7 @@ const corps = (page) => page.locator("body");
 const page_ = (url, pret) => async (page) => ouvrir(page, url, { pret: pret(page) });
 
 test.describe("Pages publiques de l'authentification", () => {
-  // La page d'inscription précharge le lien cassé « /politique-confidentialite » (404) :
-  // défaut dédié dans parcours.spec.mjs, toléré ici.
-  test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /politique-confidentialite/ });
+  test.use({ storageState: SANS_SESSION });
 
   verifierBoutons({
     test,
@@ -62,9 +60,9 @@ test.describe("Pages publiques de l'authentification", () => {
       "button Continuer avec Google": { parcours: "non testable : Google injoignable dans les tests" },
       "button Continuer avec Apple": { parcours: "non testable : Apple injoignable dans les tests" },
       "button Continuer avec l'email": { parcours: "inscription.spec.mjs : formulaire d'inscription" },
+      "link /cgv": { navigation: "/cgv" },
+      "link /politique-de-confidentialite": { navigation: "/politique-de-confidentialite" },
       "link /mentions-legales": { navigation: "/mentions-legales" },
-      // Lien cassé (le dossier est politique-de-confidentialite) : parcours.spec.mjs.
-      "link /politique-confidentialite": { parcours: "parcours.spec.mjs : chaque lien de la page d'inscription mène à une page qui existe" },
       "link /auth/login": { navigation: "/auth/login" },
     },
   });

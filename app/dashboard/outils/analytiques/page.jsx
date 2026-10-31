@@ -143,7 +143,8 @@ const SYNTHESE_KPI = [
     key: "collectionRate",
     label: "Taux recouvrement",
     format: formatPercent,
-    tooltip: "Factures payées / Total factures émises",
+    tooltip:
+      "Part encaissée de ce qui était dû : montant encaissé / (montant encaissé + montant impayé échu)",
   },
   {
     key: "dso",
@@ -251,7 +252,7 @@ const TRESORERIE_KPI = [
     label: "Taux recouvrement",
     format: (v) => `${(v || 0).toFixed(2)}%`,
     tooltip:
-      "Montant encaissé / Montant impayé (factures échues sans avoir, Newbi + importées) × 100",
+      "Montant encaissé / (montant encaissé + montant impayé échu, factures échues sans avoir, Newbi + importées) × 100",
   },
 ];
 

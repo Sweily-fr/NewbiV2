@@ -95,6 +95,8 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     let processedCount = 0;
     let successCount = 0;
     const importedDocs = [];
+    // Fichiers non importés : annoncés à la fin (l'import échouait en silence)
+    const failedFiles = [];
 
     const PARALLEL_STREAMS = 5;
     const DELAY_BETWEEN_STARTS = 300;
@@ -154,10 +156,14 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
         if (payload?.success) {
           successCount++;
           if (payload.invoice) importedDocs.push(payload.invoice);
-        } else if (payload?.error) {
-          console.error(`Import échoué pour ${file.name}:`, payload.error);
+        } else {
+          failedFiles.push(file.name);
+          if (payload?.error) {
+            console.error(`Import échoué pour ${file.name}:`, payload.error);
+          }
         }
       } catch (error) {
+        failedFiles.push(file.name);
         console.error(`Erreur réseau pour ${file.name}:`, error.message);
       } finally {
         processedCount++;
@@ -212,6 +218,14 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
         toast.success(
           `${successCount} facture(s) importée(s) en ${timeDisplay} !`,
           { duration: 5000 },
+        );
+      }
+      if (failedFiles.length > 0) {
+        toast.error(
+          failedFiles.length === 1
+            ? `La facture « ${failedFiles[0]} » n'a pas pu être importée. Réessayez dans quelques instants.`
+            : `${failedFiles.length} factures n'ont pas pu être importées : ${failedFiles.join(", ")}.`,
+          { duration: 8000 },
         );
       }
     } catch (error) {

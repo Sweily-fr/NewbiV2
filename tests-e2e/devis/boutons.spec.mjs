@@ -18,19 +18,21 @@ const EDITION = /\/dashboard\/outils\/devis\/[0-9a-f]{24}\/editer$/;
 const RIEN_A_FILTRER = "aucun filtre n'est actif";
 const UN_SEUL = "un seul devis affiché";
 
-const EXPORT = {
-  "button Exporter": { menu: ["CSV", "Excel", "FEC (Format légal)", "Sage Compta", "Cegid Expert"] },
-  "button Exporter > CSV": { fenetre: "Exporter en CSV" },
-  "button Exporter > Excel": { fenetre: "Exporter en Excel" },
-  "button Exporter > FEC (Format légal)": { fenetre: "Exporter en FEC" },
-  "button Exporter > Sage Compta": { fenetre: "Exporter en Sage Compta" },
-  "button Exporter > Cegid Expert": { fenetre: "Exporter en Cegid Expert" },
-};
+/** Menu d'export. Des lignes cochées : le bouton affiche leur nombre (« Exporter 1 ») et n'exporte qu'elles. */
+const exporter = (bouton) => ({
+  [`button ${bouton}`]: { menu: ["CSV", "Excel", "FEC (Format légal)", "Sage Compta", "Cegid Expert"] },
+  [`button ${bouton} > CSV`]: { fenetre: "Exporter en CSV" },
+  [`button ${bouton} > Excel`]: { fenetre: "Exporter en Excel" },
+  [`button ${bouton} > FEC (Format légal)`]: { fenetre: "Exporter en FEC" },
+  [`button ${bouton} > Sage Compta`]: { fenetre: "Exporter en Sage Compta" },
+  [`button ${bouton} > Cegid Expert`]: { fenetre: "Exporter en Cegid Expert" },
+});
+const EXPORT = exporter("Exporter");
+/** En-tête du propriétaire, sans l'export (son bouton change avec la sélection). */
 const ENTETE = {
-  // Paramètres des devis : bouton sans nom (voir « accessibilité » plus bas).
-  "button ": { contenu: true },
+  // Les paramètres des devis s'affichent à la place de la liste.
+  "button Paramètres des devis": { contenu: true },
   "button Importer": { fenetre: "Importer des devis" },
-  ...EXPORT,
   "button Nouveau devis": { navigation: "/dashboard/outils/devis/new" },
 };
 const ENTETE_EDITEUR = {
@@ -64,7 +66,17 @@ const BAS_DE_LISTE = {
   "checkbox Sélectionner la ligne": { etat: /\[checked\]/ },
   "combobox icône chevron-down": { options: ["10", "20", "30", "40", "50"] },
 };
-const ENVOYER = { "button icône mail": { fenetre: "Envoyer le devis" } };
+// En-têtes de tri : avec un seul devis affiché, l'ordre ne change pas (tri vérifié par filtres.spec.mjs).
+const SANS_TRI = `${UN_SEUL}, l'ordre ne change pas (tri vérifié par filtres.spec.mjs)`;
+const TRI = {
+  "button Client": { sansEffet: SANS_TRI },
+  "button Référence": { sansEffet: SANS_TRI },
+  "button Date d'émission": { sansEffet: SANS_TRI },
+  "button Date de validité": { sansEffet: SANS_TRI },
+  "button Statut": { sansEffet: SANS_TRI },
+  "button Montant TTC": { sansEffet: SANS_TRI },
+};
+const ENVOYER = { "button Envoyer par email": { fenetre: "Envoyer le devis" } };
 const VOIR = {
   "button Ouvrir le menu > Voir": { contenu: true },
   "button Ouvrir le menu > Sauv. modèle": { fenetre: "Sauvegarder comme modèle" },
@@ -201,7 +213,7 @@ test.describe("Devis (propriétaire)", () => {
 
   for (const [statut, doc] of LIGNES) {
     // Boutons communs essayés une fois (devis en attente) ; chaque statut essaie sa ligne.
-    const communs = { ...ENTETE, ...RECHERCHE, ...FILTRES, ...BAS_DE_LISTE };
+    const communs = { ...ENTETE, ...EXPORT, ...RECHERCHE, ...FILTRES, ...TRI, ...BAS_DE_LISTE };
     verifierBoutons({
       test,
       titre: `Liste des devis, devis ${statut}`,
@@ -218,7 +230,9 @@ test.describe("Devis (propriétaire)", () => {
       await page.getByRole("checkbox", { name: "Sélectionner la ligne" }).first().check();
     },
     boutons: {
-      ...dejaEssayes({ ...ENTETE, ...RECHERCHE, ...FILTRES, ...MENU.brouillon(true), ...BAS_DE_LISTE }, LISTE_COMPLETE),
+      ...dejaEssayes({ ...ENTETE, ...RECHERCHE, ...FILTRES, ...TRI, ...MENU.brouillon(true), ...BAS_DE_LISTE }, LISTE_COMPLETE),
+      // Une ligne cochée : l'export ne porte que sur elle.
+      ...exporter("Exporter 1"),
       "button Supprimer (1)": { fenetre: "Confirmer la suppression" },
     },
   });
@@ -249,14 +263,14 @@ test.describe("Devis (propriétaire)", () => {
     titre: "Paramètres d'un nouveau devis",
     ouvrir: ouvrirParametres,
     boutons: {
-      "button icône x": { contenu: true },
+      "button Fermer les paramètres": { contenu: true },
       "button Modifier vos informations entreprise": { fenetre: "Informations de l'entreprise" },
       "button Modifier vos informations légales": { fenetre: "Informations légales" },
       "button Configurer les coordonnées bancaires": { fenetre: "Coordonnées bancaires" },
-      // Bouton sans nom (couleur du texte, voir « accessibilité ») : non cliqué ici, les couleurs nommées le sont.
-      "button ": { parcours: "accessibilité : commandes sans nom des paramètres" },
-      "button FFFFFF": { fenetre: "(fenêtre sans titre)" },
-      "button 5C50FF": { fenetre: "(fenêtre sans titre)" },
+      // Couleurs : ce qu'elles règlent, puis leur code (couleurs de l'organisation « Ventes »).
+      "button Couleur du texte (000000)": { fenetre: "(fenêtre sans titre)" },
+      "button Couleur des titres du tableau (FFFFFF)": { fenetre: "(fenêtre sans titre)" },
+      "button Couleur de fond du tableau (5B50FF)": { fenetre: "(fenêtre sans titre)" },
       "button Au centre": { sansEffet: "position du client, visible sur l'aperçu seulement" },
       "button À droite": { sansEffet: "position du client, visible sur l'aperçu seulement" },
       // Trois listes de suggestions (en-tête, conditions, bas de page) : la première est essayée.
@@ -264,9 +278,8 @@ test.describe("Devis (propriétaire)", () => {
       "button Ajouter une annexe PDF": { selecteurDeFichier: true },
       "button Annuler": { contenu: true },
       "button Appliquer à ce devis": { notification: /Paramètres appliqués/ },
-      // Interrupteur de numérotation continue : sans nom (voir « accessibilité ») ; il ouvre
-      // « Activer la numérotation séquentielle continue ? » (même titre de test que la couleur : non cliqué ici).
-      "switch ": { parcours: "edition.spec.mjs : numérotation continue d'un brouillon" },
+      // Des devis sont déjà émis : activer la numérotation continue demande confirmation (rien n'est changé ici).
+      "switch Numérotation séquentielle continue": { fenetre: "Activer la numérotation séquentielle continue ?" },
     },
   });
 
@@ -307,7 +320,7 @@ test.describe("Devis (éditeur)", () => {
       test,
       titre: `Liste des devis, devis ${statut}`,
       ouvrir: (page) => epingler(page, "devis", doc),
-      boutons: dejaEssayes({ ...ENTETE_EDITEUR, ...RECHERCHE, ...FILTRES, ...menuDe(statut, false), ...BAS_DE_LISTE }, "propriétaire", ["button Ouvrir le menu"]),
+      boutons: dejaEssayes({ ...ENTETE_EDITEUR, ...RECHERCHE, ...FILTRES, ...TRI, ...menuDe(statut, false), ...BAS_DE_LISTE }, "propriétaire", ["button Ouvrir le menu"]),
     });
   }
 
@@ -329,6 +342,7 @@ test.describe("Devis (membre, lecture seule)", () => {
   const LECTURE = {
     ...RECHERCHE,
     ...FILTRES,
+    ...TRI,
     "button Ouvrir le menu": { menu: ["Voir"] },
     "button Ouvrir le menu > Voir": { contenu: true },
     ...BAS_DE_LISTE,

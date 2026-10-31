@@ -159,6 +159,8 @@ function InvoicesContent() {
   const handleFilteredDataChange = useCallback((data) => {
     setFilteredData(data);
   }, []);
+  // Factures cochées dans la liste : l'export ne porte que sur elles
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
 
   // Calculer les statistiques à partir des données filtrées
   const invoiceStats = useMemo(() => {
@@ -246,6 +248,7 @@ function InvoicesContent() {
                   variant="outline"
                   size="icon"
                   onClick={() => setIsAutoReminderOpen(true)}
+                  aria-label="Relances automatiques"
                 >
                   <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
@@ -255,6 +258,7 @@ function InvoicesContent() {
                   variant="outline"
                   size="icon"
                   onClick={() => setIsSettingsOpen(true)}
+                  aria-label="Paramètres des factures"
                 >
                   <Settings className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
@@ -268,7 +272,11 @@ function InvoicesContent() {
                   Importer
                 </Button>
               )}
-              <InvoiceExportButton invoices={filteredData} iconOnly={false} />
+              <InvoiceExportButton
+                invoices={filteredData}
+                selectedRows={selectedInvoices}
+                iconOnly={false}
+              />
               <PermissionButton
                 requiresActiveSubscription
                 resource="invoices"
@@ -402,6 +410,7 @@ function InvoicesContent() {
                   triggerImport={triggerImport}
                   onImportTriggered={() => setTriggerImport(false)}
                   onFilteredDataChange={handleFilteredDataChange}
+                  onSelectionChange={setSelectedInvoices}
                 />
               </Suspense>
             </div>

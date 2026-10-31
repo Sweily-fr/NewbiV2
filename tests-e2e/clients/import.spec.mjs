@@ -195,15 +195,22 @@ test.describe("Import de contacts", () => {
     expect(await contactEnBase("sans-adresse@e2e.test"), "Un fichier sans adresse ne peut pas être importé").not.toBeNull();
   });
 
-  test("Texte piégé dans le fichier : importé comme du texte, jamais exécuté", async ({ page }) => {
+  test("Texte piégé dans le fichier : jamais exécuté (refusé avec sa raison, ou importé comme du texte)", async ({ page }) => {
     const piege = `<img src=x onerror="window.__piege=1">`;
     const chemin = fichier("piege.csv", csv([EN_TETES, ["Entreprise", "Piège importé SARL", "piege-import@e2e.test", "", piege, "Paris", "75001", "France", "12345678900011", ""]]));
-    await importer(page, chemin, { attendus: 1 });
+    const fenetre = await deposer(page, chemin);
+    await fenetre.getByRole("button", { name: "Suivant" }).click();
+    await fenetre.getByRole("button", { name: /^Importer 1 contact/ }).click();
+    await expect(notification(page, /importé|erreur/).first(), "L'import ne se termine pas (« Import en cours » sans fin)").toBeVisible({ timeout: 30_000 });
+    expect(await page.evaluate(() => window.__piege ?? null), "Le texte piégé s'est exécuté pendant l'import").toBeNull();
     const doc = await contactEnBase("piege-import@e2e.test");
-    if (doc) {
-      await ouvrir(page, `/dashboard/clients/${doc._id.toHexString()}`, { pret: page.getByText("piege-import@e2e.test").first() });
-      await page.waitForTimeout(1_000);
-      expect(await page.evaluate(() => window.__piege ?? null)).toBeNull();
+    if (!doc) {
+      // L'API refuse les balises dans une adresse (« < et > interdits ») : la ligne refusée est expliquée.
+      await expect(fenetre.getByText(/< et > interdits/), "La ligne refusée par l'API n'est pas expliquée").toBeVisible();
+      return;
     }
+    await ouvrir(page, `/dashboard/clients/${doc._id.toHexString()}`, { pret: page.getByText("piege-import@e2e.test").first() });
+    await page.waitForTimeout(1_000);
+    expect(await page.evaluate(() => window.__piege ?? null)).toBeNull();
   });
 });

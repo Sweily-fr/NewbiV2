@@ -38,3 +38,22 @@ describe("throwIfMutationErrors", () => {
     );
   });
 });
+
+describe("apiRefusalMessage", () => {
+  it("retire l'enveloppe du contrôle des droits", async () => {
+    const { apiRefusalMessage } = await import("@/src/graphql/mutationErrors");
+    expect(
+      apiRefusalMessage(
+        new Error(
+          "Erreur lors de la vérification des permissions: Le délai de deuxième relance doit être supérieur au délai de première relance",
+        ),
+      ),
+    ).toBe(
+      "Le délai de deuxième relance doit être supérieur au délai de première relance",
+    );
+    expect(apiRefusalMessage(new Error("Format d'email invalide"))).toBe(
+      "Format d'email invalide",
+    );
+    expect(apiRefusalMessage(null)).toBe("");
+  });
+});

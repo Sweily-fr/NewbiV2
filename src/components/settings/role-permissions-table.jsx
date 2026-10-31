@@ -222,7 +222,7 @@ export function RolePermissionsTable({ catalog, actions, onChange, disabled }) {
                 </span>
               </button>
               <Checkbox
-                aria-label={`Tous les droits : ${group.label}`}
+                aria-label={`Tous les droits de la section ${group.label}`}
                 checked={groupState}
                 disabled={disabled}
                 onCheckedChange={() =>
@@ -263,7 +263,7 @@ export function RolePermissionsTable({ catalog, actions, onChange, disabled }) {
                           </span>
                         </button>
                         <Checkbox
-                          aria-label={`Tous les droits : ${page.label}`}
+                          aria-label={`Tous les droits de la page ${page.label}`}
                           checked={pageState}
                           disabled={disabled}
                           onCheckedChange={() =>

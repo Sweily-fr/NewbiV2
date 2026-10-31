@@ -94,13 +94,15 @@ test.describe("Éditeur de factures : client créé à la volée", () => {
 
   for (const [cas, client] of [
     ["particulier", { type: "Particulier", prenom: "Hélène", nom: "Brémond", email: "helene.bremond@e2e.test" }],
-    ["entreprise avec « œ » (Cœur de Lion SARL)", { type: "Entreprise", raison: "Cœur de Lion SARL", email: "contact@coeur-de-lion-factures.test" }],
+    // Entreprise française : SIREN/SIRET obligatoire (formulaire, API, import de contacts).
+    ["entreprise avec « œ » (Cœur de Lion SARL)", { type: "Entreprise", raison: "Cœur de Lion SARL", siret: "12345678900011", email: "contact@coeur-de-lion-factures.test" }],
   ]) {
     test(`Client ${cas} créé depuis l'éditeur : enregistré et choisi pour la facture`, async ({ page }) => {
       await ouvrirNouvelle(page);
       const tiroir = await nouveauClient(page);
       await tiroir.getByRole("tab", { name: client.type }).click();
       if (client.raison) await tiroir.getByPlaceholder("Nom de l'entreprise").fill(client.raison);
+      if (client.siret) await tiroir.getByPlaceholder("123456789 ou 12345678901234").fill(client.siret);
       if (client.prenom) {
         await tiroir.getByPlaceholder("Prénom").fill(client.prenom);
         await tiroir.getByPlaceholder("Nom", { exact: true }).fill(client.nom);

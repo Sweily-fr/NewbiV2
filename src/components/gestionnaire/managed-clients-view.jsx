@@ -50,6 +50,7 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
+  timeZone: "Europe/Paris",
 });
 const formatDate = (value) =>
   value ? dateFormat.format(new Date(value)) : "-";

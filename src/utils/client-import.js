@@ -71,40 +71,62 @@ function parseCSVLine(line, separator) {
   return result;
 }
 
-export function parseCSVRaw(file) {
+/**
+ * Texte d'un fichier CSV : UTF-8 (avec ou sans BOM), sinon Windows-1252,
+ * l'encodage d'Excel « CSV (séparateur : point-virgule) ». Lu en UTF-8, un
+ * fichier Windows-1252 donnait « Soci�t� » et ses lignes étaient refusées.
+ */
+export function decodeCSVBytes(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder("windows-1252").decode(bytes);
+  }
+}
+
+function readFileBytes(file) {
+  if (typeof file.arrayBuffer === "function") return file.arrayBuffer();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        let text = e.target.result;
-        // Strip BOM
-        if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
-
-        const separator = detectSeparator(text);
-        const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
-
-        if (lines.length < 2) {
-          reject(
-            new Error(
-              "Le fichier doit contenir au moins un en-tête et une ligne de données.",
-            ),
-          );
-          return;
-        }
-
-        const headers = parseCSVLine(lines[0], separator);
-        const rows = lines
-          .slice(1)
-          .map((line) => parseCSVLine(line, separator));
-
-        resolve({ headers, rows });
-      } catch (err) {
-        reject(new Error("Erreur lors de la lecture du fichier CSV."));
-      }
-    };
+    reader.onload = (e) => resolve(e.target.result);
     reader.onerror = () => reject(new Error("Impossible de lire le fichier."));
-    reader.readAsText(file, "UTF-8");
+    reader.readAsArrayBuffer(file);
   });
+}
+
+export async function parseCSVRaw(file) {
+  let buffer;
+  try {
+    buffer = await readFileBytes(file);
+  } catch {
+    throw new Error("Impossible de lire le fichier.");
+  }
+
+  let headers;
+  let rows;
+  try {
+    let text = decodeCSVBytes(buffer);
+    // Strip BOM
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+
+    const separator = detectSeparator(text);
+    const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+
+    if (lines.length >= 2) {
+      headers = parseCSVLine(lines[0], separator);
+      rows = lines.slice(1).map((line) => parseCSVLine(line, separator));
+    }
+  } catch {
+    throw new Error("Erreur lors de la lecture du fichier CSV.");
+  }
+
+  if (!headers) {
+    throw new Error(
+      "Le fichier doit contenir au moins un en-tête et une ligne de données.",
+    );
+  }
+  return { headers, rows };
 }
 
 // ─── Excel Parsing ────────────────────────────────────────────
@@ -377,16 +399,23 @@ export function transformRowToClient(
     return row[idx]?.trim() || "";
   };
 
+  // Téléphone du fichier : celui du contact (et de son contact principal)
+  const phone = getValue("phone");
+
   const client = {
     type: parseClientType(getValue("type")),
     name: getValue("name"),
     firstName: getValue("firstName") || undefined,
     lastName: getValue("lastName") || undefined,
     email: getValue("email") || undefined,
+    phone: phone || undefined,
+    // Adresse toujours envoyée, champs vides compris, comme le formulaire de
+    // contact : l'API l'exige (AddressInput!) et refusait ligne par ligne un
+    // fichier sans colonnes d'adresse
     address: {
-      street: getValue("street") || undefined,
-      city: getValue("city") || undefined,
-      postalCode: getValue("postalCode") || undefined,
+      street: getValue("street"),
+      city: getValue("city"),
+      postalCode: getValue("postalCode"),
       country: getValue("country") || "France",
     },
     siret: getValue("siret") || undefined,
@@ -395,7 +424,6 @@ export function transformRowToClient(
   };
 
   // Add phone as a contact if present
-  const phone = getValue("phone");
   if (phone || client.email) {
     client.contacts = [
       {
@@ -406,18 +434,6 @@ export function transformRowToClient(
         isPrimary: true,
       },
     ];
-  }
-
-  // Clean undefined values from address
-  Object.keys(client.address).forEach((key) => {
-    if (!client.address[key]) delete client.address[key];
-  });
-  if (!client.address.country) client.address.country = "France";
-  if (
-    Object.keys(client.address).length === 1 &&
-    client.address.country === "France"
-  ) {
-    delete client.address;
   }
 
   // Clean top-level undefined values
@@ -503,6 +519,46 @@ export function detectDuplicateEmails(clients) {
   });
 
   return duplicates;
+}
+
+// ─── API Refusals ─────────────────────────────────────────────
+
+/**
+ * Raison d'un contact refusé par l'API pendant l'import (erreurs GraphQL de
+ * la mutation, reçues dans `result.errors` avec l'errorPolicy « all »).
+ * Le doublon (même e-mail dans l'espace) est reformulé avec l'e-mail en
+ * cause : le message générique de l'API ne dit pas lequel.
+ */
+export function importRefusalMessage(errors) {
+  const first = Array.isArray(errors) ? errors[0] : null;
+  const { code, details } = first?.extensions || {};
+  if (code === "ALREADY_EXISTS" && details?.field === "email") {
+    return details.value
+      ? `Un contact avec l'e-mail ${details.value} existe déjà.`
+      : "Un contact avec cet e-mail existe déjà.";
+  }
+  return first?.message || "Contact refusé par le serveur.";
+}
+
+/**
+ * Refus de la création d'un contact pendant l'import, d'après la réponse de
+ * createClient (errorPolicy « all ») : les erreurs de la mutation elle-même
+ * (chemin ["createClient"]) ou de la requête (sans chemin). Une erreur sur un
+ * champ du contact renvoyé (chemin plus long) arrive après sa création : le
+ * contact est bien importé.
+ * @returns {Array|null} les erreurs du refus ([] sans détail), null si le
+ *   contact est créé
+ */
+export function createClientRefusal(result) {
+  const errors = Array.isArray(result?.errors) ? result.errors : [];
+  const refusals = errors.filter(
+    (error) =>
+      !Array.isArray(error?.path) ||
+      (error.path.length === 1 && error.path[0] === "createClient"),
+  );
+  if (refusals.length) return refusals;
+  if (!result?.data?.createClient && errors.length === 0) return [];
+  return null;
 }
 
 // ─── Template Generation ──────────────────────────────────────

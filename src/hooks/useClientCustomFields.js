@@ -22,6 +22,17 @@ export const FIELD_TYPES = [
   { value: "PHONE", label: "Téléphone", icon: "Phone" },
 ];
 
+/**
+ * Client Apollo en errorPolicy « all » : une mutation refusée par l'API ne
+ * lève pas d'erreur (le motif est déjà affiché par onError). On lève ici pour
+ * que l'appelant n'annonce pas un succès et garde la saisie à l'écran.
+ */
+function assertMutationSucceeded(result) {
+  if (result?.errors?.length) {
+    throw new Error(result.errors[0]?.message || "Opération refusée");
+  }
+}
+
 // Hook pour récupérer les champs personnalisés
 export function useClientCustomFields(workspaceId) {
   const { data, loading, error, refetch } = useQuery(GET_CLIENT_CUSTOM_FIELDS, {
@@ -55,6 +66,7 @@ export function useCreateClientCustomField() {
         { query: GET_CLIENT_CUSTOM_FIELDS, variables: { workspaceId } },
       ],
     });
+    assertMutationSucceeded(result);
     return result.data?.createClientCustomField;
   };
 
@@ -79,6 +91,7 @@ export function useUpdateClientCustomField() {
         { query: GET_CLIENT_CUSTOM_FIELDS, variables: { workspaceId } },
       ],
     });
+    assertMutationSucceeded(result);
     return result.data?.updateClientCustomField;
   };
 
@@ -103,6 +116,7 @@ export function useDeleteClientCustomField() {
         { query: GET_CLIENT_CUSTOM_FIELDS, variables: { workspaceId } },
       ],
     });
+    assertMutationSucceeded(result);
     return result.data?.deleteClientCustomField;
   };
 

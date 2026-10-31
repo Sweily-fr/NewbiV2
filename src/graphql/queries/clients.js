@@ -1,21 +1,7 @@
 import { gql } from "@apollo/client";
 
-export const GET_CLIENTS = gql`
-  query GetClients(
-    $workspaceId: String!
-    $page: Int
-    $limit: Int
-    $search: String
-    $searchExact: Boolean
-  ) {
-    clients(
-      workspaceId: $workspaceId
-      page: $page
-      limit: $limit
-      search: $search
-      searchExact: $searchExact
-    ) {
-      items {
+// Champs d'un contact de la liste (GET_CLIENTS et GET_CLIENTS_BY_TYPES)
+const CLIENT_LIST_ITEM_FIELDS = `
         id
         name
         email
@@ -64,6 +50,55 @@ export const GET_CLIENTS = gql`
         blockedReason
         hasDocuments
         invoiceCount
+`;
+
+export const GET_CLIENTS = gql`
+  query GetClients(
+    $workspaceId: String!
+    $page: Int
+    $limit: Int
+    $search: String
+    $searchExact: Boolean
+  ) {
+    clients(
+      workspaceId: $workspaceId
+      page: $page
+      limit: $limit
+      search: $search
+      searchExact: $searchExact
+    ) {
+      items {${CLIENT_LIST_ITEM_FIELDS}
+      }
+      totalItems
+      currentPage
+      totalPages
+    }
+  }
+`;
+
+// Même liste filtrée par type (« Particulier », « Entreprise ») côté serveur,
+// pour porter sur tous les contacts et pas seulement la page affichée.
+// Document à part : la liste sans filtre reste lisible par une API qui ne
+// connaît pas encore l'argument types. Même nom d'opération, pour être
+// relancée avec elle (refetchQueries ["GetClients"]).
+export const GET_CLIENTS_BY_TYPES = gql`
+  query GetClients(
+    $workspaceId: String!
+    $page: Int
+    $limit: Int
+    $search: String
+    $searchExact: Boolean
+    $types: [ClientType!]
+  ) {
+    clients(
+      workspaceId: $workspaceId
+      page: $page
+      limit: $limit
+      search: $search
+      searchExact: $searchExact
+      types: $types
+    ) {
+      items {${CLIENT_LIST_ITEM_FIELDS}
       }
       totalItems
       currentPage

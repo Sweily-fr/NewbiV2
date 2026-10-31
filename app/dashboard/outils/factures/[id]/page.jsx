@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
-import { ArrowLeft, Send, MoreHorizontal } from "lucide-react";
+import { Suspense, useState } from "react";
+import { Send, MoreHorizontal } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   InvoiceEditorSkeleton,
@@ -11,10 +11,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import ModernInvoiceEditor from "../components/modern-invoice-editor";
+import { SendDocumentModal } from "../components/send-document-modal";
 import { useRouter, useParams } from "next/navigation";
 import { useInvoice } from "@/src/graphql/invoiceQueries";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
@@ -22,11 +22,24 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { getNumberFormat } from "@/src/lib/intl-cache";
+import { duplicateInvoiceData } from "../utils/duplicate-invoice";
+
+/** Date d'une facture (timestamp en chaîne ou date ISO) au format français. */
+const formatInvoiceDate = (value) => {
+  if (!value) return null;
+  const date =
+    typeof value === "string" && /^\d+$/.test(value)
+      ? new Date(parseInt(value, 10))
+      : new Date(value);
+  return isNaN(date.getTime()) ? null : date.toLocaleDateString("fr-FR");
+};
 
 function InvoiceDetailsContent() {
   const router = useRouter();
   const params = useParams();
   const invoiceId = params.id;
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
 
   const { invoice, loading, error } = useInvoice(invoiceId);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
@@ -34,11 +47,20 @@ function InvoiceDetailsContent() {
   const canEditInvoices = !isReady || canDo("invoices", "edit");
   const canSendInvoices = !isReady || canDo("invoices", "send");
   const canCreateInvoices = !isReady || canDo("invoices", "create");
-  const canCreateQuotes = !isReady || canDo("quotes", "create");
-  const canDeleteInvoices = !isReady || canDo("invoices", "delete");
 
   const handleBack = () => {
     router.push("/dashboard/outils/factures");
+  };
+
+  // « Dupliquer » : nouvelle facture pré-remplie avec le client, les
+  // articles et les conditions de celle-ci (l'élément de menu n'avait
+  // aucune action)
+  const handleDuplicate = () => {
+    sessionStorage.setItem(
+      "duplicateInvoiceData",
+      JSON.stringify(duplicateInvoiceData(invoice)),
+    );
+    router.push("/dashboard/outils/factures/new");
   };
 
   // Détecter les changements d'organisation et rediriger si nécessaire
@@ -67,66 +89,41 @@ function InvoiceDetailsContent() {
   const isDraft = invoice.status === "DRAFT";
   const canEdit = isDraft && canEditInvoices;
 
+  // En-tête de la page (retour, « Envoyer », menu) : affiché par l'éditeur,
+  // qui occupe tout l'écran
+  const headerActions = (
+    <>
+      {!isDraft && canSendInvoices && (
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => setShowSendEmailModal(true)}
+        >
+          <Send className="h-4 w-4" />
+          Envoyer
+        </Button>
+      )}
+
+      {/* Menu d'actions : masqué en lecture seule (aucune action possible) */}
+      {canCreateInvoices && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleDuplicate}>
+              Dupliquer
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </>
+  );
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleBack}
-            className="h-8 w-8"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {invoice.number || "Brouillon"}
-            </h1>
-            <p className="text-muted-foreground">
-              {invoice.client?.name || "Client non défini"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {!isDraft && canSendInvoices && (
-            <Button variant="outline" className="gap-2">
-              <Send className="h-4 w-4" />
-              Envoyer
-            </Button>
-          )}
-
-          {/* Menu d'actions : masqué en lecture seule (aucune action possible) */}
-          {(canCreateInvoices ||
-            canCreateQuotes ||
-            (isDraft && canDeleteInvoices)) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canCreateInvoices && (
-                  <DropdownMenuItem>Dupliquer</DropdownMenuItem>
-                )}
-                {canCreateQuotes && (
-                  <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                {isDraft && canDeleteInvoices && (
-                  <DropdownMenuItem className="text-destructive">
-                    Supprimer
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </div>
-
       {/* Editor : consulter ne demande rien, modifier un brouillon demande
           des informations d'entreprise complètes (il sera généré) */}
       {canEdit ? (
@@ -136,6 +133,8 @@ function InvoiceDetailsContent() {
               mode="edit"
               invoiceId={invoiceId}
               initialData={invoice}
+              onBack={handleBack}
+              headerActions={headerActions}
             />
           </Suspense>
         </CompanyInfoGuard>
@@ -145,8 +144,32 @@ function InvoiceDetailsContent() {
             mode="view"
             invoiceId={invoiceId}
             initialData={invoice}
+            onBack={handleBack}
+            headerActions={headerActions}
           />
         </Suspense>
+      )}
+
+      {/* Envoi par e-mail depuis l'en-tête (le bouton n'avait aucune action) */}
+      {showSendEmailModal && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={invoice.id}
+          documentType="invoice"
+          documentNumber={`${invoice.prefix || "F"}-${invoice.number}`}
+          clientName={invoice.client?.name}
+          clientEmail={invoice.client?.email}
+          totalAmount={getNumberFormat("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          }).format(invoice.finalTotalTTC || invoice.totalTTC || 0)}
+          companyName={invoice.companyInfo?.name}
+          issueDate={formatInvoiceDate(invoice.issueDate)}
+          dueDate={formatInvoiceDate(invoice.dueDate)}
+          onSent={() => setShowSendEmailModal(false)}
+          onClose={() => setShowSendEmailModal(false)}
+        />
       )}
     </div>
   );

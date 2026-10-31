@@ -34,8 +34,9 @@ export const TOGGLE_CRM_EMAIL_AUTOMATION = gql`
   }
 `;
 
+// L'e-mail de test part à l'adresse du compte connecté
 export const TEST_CRM_EMAIL_AUTOMATION = gql`
-  mutation TestCrmEmailAutomation($workspaceId: ID!, $id: ID!, $testEmail: String!) {
-    testCrmEmailAutomation(workspaceId: $workspaceId, id: $id, testEmail: $testEmail)
+  mutation TestCrmEmailAutomation($workspaceId: ID!, $id: ID!) {
+    testCrmEmailAutomation(workspaceId: $workspaceId, id: $id)
   }
 `;

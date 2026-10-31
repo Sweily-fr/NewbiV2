@@ -47,6 +47,21 @@ const getApiErrorMessage = (error) => {
   return error?.message || null;
 };
 
+/**
+ * Somme (en valeur absolue) des avoirs d'une facture, sans l'avoir en cours
+ * de modification : c'est ce qui limite le montant restant à créditer.
+ * @param {Array} creditNotes - avoirs de la facture
+ * @param {String|null} excludeId - avoir modifié (null à la création)
+ */
+export function otherCreditNotesTotal(creditNotes = [], excludeId = null) {
+  return creditNotes
+    .filter((creditNote) => !excludeId || creditNote.id !== excludeId)
+    .reduce(
+      (sum, creditNote) => sum + Math.abs(creditNote.finalTotalTTC || 0),
+      0,
+    );
+}
+
 export function useCreditNoteEditor({
   mode,
   creditNoteId,
@@ -343,12 +358,11 @@ export function useCreditNoteEditor({
         const creditNoteAmount = Math.abs(totals.finalTotalTTC);
         const invoiceAmount = originalInvoice.finalTotalTTC || 0;
 
-        // Calculate existing credit notes total
-        const existingCreditNotesTotal = existingCreditNotes.reduce(
-          (sum, creditNote) => {
-            return sum + Math.abs(creditNote.finalTotalTTC || 0);
-          },
-          0,
+        // Total des autres avoirs de la facture : un avoir modifié ne compte
+        // pas son propre montant (il était compté deux fois dans le restant)
+        const existingCreditNotesTotal = otherCreditNotesTotal(
+          existingCreditNotes,
+          mode === "create" ? null : creditNoteId,
         );
 
         const remainingAmount = invoiceAmount - existingCreditNotesTotal;
@@ -363,7 +377,15 @@ export function useCreditNoteEditor({
 
       return await save(data, { redirect });
     },
-    [getValues, save, originalInvoice, calculateTotals, existingCreditNotes],
+    [
+      getValues,
+      save,
+      originalInvoice,
+      calculateTotals,
+      existingCreditNotes,
+      mode,
+      creditNoteId,
+    ],
   );
 
   // Finalize credit note (same as create since only CREATED status exists)

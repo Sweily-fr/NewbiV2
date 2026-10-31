@@ -250,22 +250,25 @@ test.describe("Paramètres > Compte : nom, mot de passe, e-mail, téléphone", (
       expect((await utilisateur(COMPTES_AUTH.nomComplet)).name).toBe("Nora Nom-Lecœur");
     });
 
-    // La fenêtre annonce un e-mail envoyé, mais rien n'est fait (« TODO », attente simulée).
+    // Flux de Better Auth : la demande part au serveur, qui envoie un lien signé à
+    // l'adresse actuelle (rien n'est écrit en base) ; l'adresse ne change qu'une
+    // fois ce lien ouvert. Avant, la fenêtre simulait l'envoi (« TODO »).
     test("Changer d'adresse e-mail : la demande est réellement prise en compte", async ({ page }) => {
       await ouvrirParametres(page, "user-info");
       await contenuParametres(page).getByRole("button", { name: "Changer d'adresse e-mail" }).click();
       const fenetre = page.getByRole("dialog").filter({ hasText: "Nouvelle adresse e-mail" });
       await fenetre.locator("#new-email").fill("nouvelle-adresse@e2e.test");
       await fenetre.locator("#confirm-email").fill("nouvelle-adresse@e2e.test");
+      const demande = page
+        .waitForResponse((r) => new URL(r.url()).pathname === "/api/auth/change-email" && r.request().method() === "POST", { timeout: 10_000 })
+        .catch(() => null);
       await fenetre.getByRole("button", { name: "Confirmer" }).click();
-      await page.waitForTimeout(2_000);
-      const db = await base();
-      const u = await utilisateur(COMPTES_AUTH.nomComplet);
-      const demande = await db.collection("verification").findOne({ value: { $regex: "nouvelle-adresse@e2e.test" } });
-      expect(
-        u.email === "nouvelle-adresse@e2e.test" || Boolean(demande),
-        "« Un email de confirmation a été envoyé » est affiché, mais l'adresse n'a pas changé et aucune demande n'existe : le changement est simulé",
-      ).toBe(true);
+      const reponse = await demande;
+      expect(reponse, "« Un email de confirmation a été envoyé » est affiché, mais aucune demande n'est partie au serveur : le changement est simulé").not.toBeNull();
+      expect(reponse.ok(), `Demande de changement refusée par le serveur (${reponse.status()})`).toBe(true);
+      expect(JSON.parse(reponse.request().postData() || "{}").newEmail, "Nouvelle adresse transmise au serveur").toBe("nouvelle-adresse@e2e.test");
+      // Rien ne change tant que le lien envoyé à l'adresse actuelle n'est pas ouvert.
+      expect((await utilisateur(COMPTES_AUTH.nomComplet)).email).toBe("nom-complet@e2e.test");
     });
 
     test("Modifier le numéro de téléphone : enregistré", async ({ page }) => {

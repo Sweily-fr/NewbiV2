@@ -66,7 +66,9 @@ const FIELD_VALIDATIONS = {
     message: "Format email invalide",
   },
   URL: {
-    pattern: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
+    // Domaine en minuscules, point, deux lettres ou points, puis chemin :
+    // chaque caractère n'est lu qu'une fois (saisie longue sans blocage)
+    pattern: /^(?:https?:\/\/)?(?=[\da-z.-]+\.[a-z.]{2})[/\w .-]*$/,
     message: "Format URL invalide",
   },
   PHONE: {
@@ -75,6 +77,9 @@ const FIELD_VALIDATIONS = {
   },
 };
 
+// Message d'erreur du format d'une valeur (e-mail, lien, téléphone), ou null.
+// Repris à l'enregistrement de la fiche : une valeur signalée en rouge ne
+// doit pas être enregistrée quand même.
 function validateFieldValue(fieldType, value) {
   if (!value || value === "") return null;
   
@@ -353,4 +358,4 @@ export default function CustomFieldsForm({ values = {}, onChange, errors = {}, o
   );
 }
 
-export { CustomFieldInput, FIELD_TYPE_ICONS };
+export { CustomFieldInput, FIELD_TYPE_ICONS, validateFieldValue };
