@@ -291,4 +291,59 @@ describe("LoginForm", () => {
       expect(mockPush).toHaveBeenCalledWith("/dashboard");
     });
   });
+
+  describe("page demandée avant la connexion (callbackUrl)", () => {
+    const loginWithCallback = async (callbackUrl) => {
+      window.history.pushState(
+        {},
+        "",
+        `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+      );
+      mockSignInEmail.mockImplementation(async (_data, callbacks) => {
+        await callbacks.onSuccess({ data: {} });
+      });
+      const user = userEvent.setup();
+      render(<LoginForm />);
+      await user.type(
+        screen.getByPlaceholderText(/Saisissez votre email/i),
+        "user@example.com",
+      );
+      await user.type(
+        screen.getByPlaceholderText(/Saisissez votre mot de passe/i),
+        "Password123!",
+      );
+      await user.click(screen.getByRole("button", { name: /Se connecter/i }));
+    };
+
+    afterEach(() => {
+      window.history.pushState({}, "", "/");
+    });
+
+    it.each([
+      "https://evil.example",
+      "//evil.example",
+      "/\\evil.example",
+      "javascript:alert(1)",
+      " javascript:alert(1)",
+      "java\tscript:alert(1)",
+      "\tjava\nscript:alert(1)",
+    ])("ignore la valeur hors du site %j", async (callbackUrl) => {
+      await loginWithCallback(callbackUrl);
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/dashboard");
+      });
+      expect(mockPush).not.toHaveBeenCalledWith(callbackUrl);
+      expect(mockPush).toHaveBeenCalledTimes(1);
+    });
+
+    it("suit un chemin interne du site", async () => {
+      await loginWithCallback("/invitation-gestionnaire/abc?x=1");
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(
+          "/invitation-gestionnaire/abc?x=1",
+        );
+      });
+      expect(mockPush).not.toHaveBeenCalledWith("/dashboard");
+    });
+  });
 });

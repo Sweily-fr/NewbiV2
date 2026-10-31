@@ -33,6 +33,8 @@ vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: {
     collection: (name) => {
       if (name === "member") return { findOne: m.memberFindOne };
+      // Titulaire du client Stripe (portail)
+      if (name === "user") return { findOne: async () => null };
       if (name === "accountmanagers") {
         return { find: () => ({ toArray: m.managerDocs }) };
       }

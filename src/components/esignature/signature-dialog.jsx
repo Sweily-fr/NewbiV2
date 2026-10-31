@@ -24,6 +24,9 @@ import {
   uint8ArrayToBase64,
 } from "@/src/utils/document-annex";
 
+// Nombre de signataires accepté par l'API pour une demande
+const MAX_SIGNERS = 5;
+
 const DOCUMENT_TYPE_LABELS = {
   invoice: "facture",
   quote: "devis",
@@ -337,6 +340,7 @@ export function SignatureDialog({
   }, [open]);
 
   const addSigner = () => {
+    if (signers.length >= MAX_SIGNERS) return;
     setSigners([...signers, { name: "", surname: "", email: "", mobile: "" }]);
   };
 
@@ -553,14 +557,16 @@ export function SignatureDialog({
               ))}
 
               {/* Ajouter signataire */}
-              <button
-                type="button"
-                onClick={addSigner}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
-              >
-                <Plus className="size-3" />
-                Ajouter un signataire
-              </button>
+              {signers.length < MAX_SIGNERS && (
+                <button
+                  type="button"
+                  onClick={addSigner}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                >
+                  <Plus className="size-3" />
+                  Ajouter un signataire
+                </button>
+              )}
             </div>
 
             {/* Footer avec bouton */}

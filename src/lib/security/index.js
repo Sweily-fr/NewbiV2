@@ -20,6 +20,9 @@ export {
   resolveBillingOrgId,
   getOrgStripeCustomerIds,
   requireOrgStripeCustomer,
+  getOrgBillingScope,
+  invoiceBelongsToOrg,
+  stripeCustomerPaysOtherWorkspaces,
 } from "./org-stripe-customer";
 export { requireActiveSubscription } from "./require-active-subscription";
 export {

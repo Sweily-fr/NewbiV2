@@ -1,7 +1,33 @@
 import { createAuthMiddleware } from "better-auth/api";
 import { sendReactivationEmail } from "./auth-utils";
 
+// Routes Better Auth fermées (disabledPaths de auth.js, réponse 404).
+// Connexion et réinitialisation par code OTP (e-mail ou SMS) : aucun code
+// n'est envoyé pour ces usages (seule la vérification d'e-mail par code de
+// l'application mobile en envoie un). On se connecte par e-mail et mot de
+// passe (puis double authentification), Google ou Apple ; le mot de passe se
+// réinitialise par lien envoyé par e-mail.
+export const DISABLED_AUTH_PATHS = [
+  "/sign-in/email-otp",
+  "/email-otp/check-verification-otp",
+  "/email-otp/request-password-reset",
+  "/forget-password/email-otp",
+  "/email-otp/reset-password",
+  "/email-otp/request-email-change",
+  "/email-otp/change-email",
+  "/sign-in/phone-number",
+  "/phone-number/send-otp",
+  "/phone-number/verify",
+  "/phone-number/request-password-reset",
+  "/phone-number/reset-password",
+];
+
+// Seul usage des codes OTP envoyés par e-mail : vérification de l'adresse
+// (application mobile, /email-otp/verify-email)
+const EMAIL_OTP_ALLOWED_TYPES = new Set(["email-verification"]);
+
 // Hook "before" global Better Auth. Regroupe :
+//  0. les codes OTP limités à la vérification d'e-mail ;
 //  1. le blocage des comptes désactivés à la connexion ;
 //  2. le blocage de l'invitation de membre sans abonnement (période d'essai
 //     incluse) — enforcement serveur incontournable, en plus du garde UI ;
@@ -9,6 +35,19 @@ import { sendReactivationEmail } from "./auth-utils";
 // NOUVEAU-5 fix: les throw APIError sont OUTSIDE try/catch pour éviter que la
 // minification casse le check error.constructor.name.
 export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
+  // ── 0. Codes OTP : vérification d'e-mail seulement ──
+  // Un code d'un autre type (connexion, mot de passe oublié) serait
+  // enregistré sans jamais être envoyé : demande refusée avant.
+  if (
+    ctx.path === "/email-otp/send-verification-otp" &&
+    !EMAIL_OTP_ALLOWED_TYPES.has(ctx.body?.type)
+  ) {
+    const { APIError } = await import("better-auth/api");
+    throw new APIError("BAD_REQUEST", {
+      message: "Ce type de code n'est pas disponible.",
+    });
+  }
+
   // ── 1. Comptes désactivés à la connexion ──
   if (ctx.path === "/sign-in/email") {
     const email = ctx.body?.email;

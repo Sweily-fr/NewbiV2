@@ -9,6 +9,12 @@ import {
   withErrorHandler,
 } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import {
+  expireOpenWorkspaceCheckouts,
+  findLiveStripeSubscription,
+  findLiveWorkspaceSubscription,
+  liveSubscriptionMessage,
+} from "@/src/lib/subscription-checkout-guard";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -144,6 +150,12 @@ async function handler(request) {
         );
       }
     }
+    // Un seul abonnement en cours par espace : un second Checkout créerait
+    // un second abonnement Stripe, prélevé en plus du premier
+    if (!cabinetHandBack) {
+      const live = await findLiveWorkspaceSubscription(mongoDb, orgId);
+      if (live) return apiError(409, liveSubscriptionMessage(live.status));
+    }
   }
   let deferredBillingUnix = null;
   if (cabinetHandBack) {
@@ -258,6 +270,15 @@ async function handler(request) {
 
     // 2. Récupérer ou créer le customer Stripe
     const customerId = await getOrCreateStripeCustomer(session.user);
+
+    // Espace existant : paiement déjà fait dont le webhook n'est pas encore
+    // arrivé, puis un seul Checkout ouvert à la fois pour cet espace
+    if (organizationData.type === "existing" && !cabinetHandBack) {
+      const orgId = session.session.activeOrganizationId;
+      const live = await findLiveStripeSubscription(stripe, customerId, orgId);
+      if (live) return apiError(409, liveSubscriptionMessage(live.status));
+      await expireOpenWorkspaceCheckouts(stripe, customerId, orgId);
+    }
 
     // 3. Déterminer le Price ID selon le plan et la période (mensuel/annuel)
     const priceIds = {

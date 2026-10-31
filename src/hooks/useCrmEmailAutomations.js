@@ -217,13 +217,14 @@ export const useTestCrmEmailAutomation = () => {
     },
   );
 
-  const testAutomation = async (workspaceId, id, testEmail) => {
+  // Envoyé à l'adresse du compte connecté
+  const testAutomation = async (workspaceId, id) => {
     try {
       const { data } = await testMutation({
-        variables: { workspaceId, id, testEmail },
+        variables: { workspaceId, id },
       });
       if (data.testCrmEmailAutomation) {
-        toast.success("Email de test envoyé avec succès");
+        toast.success("E-mail de test envoyé à votre adresse");
       }
       return data.testCrmEmailAutomation;
     } catch (err) {

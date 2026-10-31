@@ -17,6 +17,7 @@ import { TwoFactorModal } from "./components/TwoFactorModal";
 import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 import { capture, identify } from "@/src/lib/analytics";
 import { startupPagePath } from "@/src/lib/startup-page";
+import { safeInternalPath } from "@/src/lib/safe-redirect";
 
 // Compte gestionnaire (cabinet) : il arrive sur son espace, la liste de ses
 // clients, plutôt que sur le tableau de bord d'une entreprise
@@ -278,7 +279,8 @@ const LoginForm = () => {
         const urlParams = new URLSearchParams(window.location.search);
         let invitationId = urlParams.get("invitation");
         let invitationEmail = urlParams.get("email");
-        const callbackUrl = urlParams.get("callbackUrl");
+        // Page demandée avant la connexion : chemin interne du site seulement
+        const callbackUrl = safeInternalPath(urlParams.get("callbackUrl"));
 
         if (!invitationId) {
           const pendingInvitation = localStorage.getItem("pendingInvitation");
@@ -527,7 +529,7 @@ const LoginForm = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const invitationId = urlParams.get("invitation");
       const invitationEmail = urlParams.get("email");
-      const callbackUrl = urlParams.get("callbackUrl");
+      const callbackUrl = safeInternalPath(urlParams.get("callbackUrl"));
 
       // Si c'est une connexion via invitation, accepter automatiquement l'invitation
       if (invitationId && invitationEmail) {
