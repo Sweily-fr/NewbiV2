@@ -25,9 +25,9 @@
  */
 import { test, expect, etape } from "./outils.mjs";
 import { ouvrir } from "./navigation.mjs";
-import { API_URL, BASE_URL, connecte, sessionCookie, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_LECTEUR_ACHATS } from "./config.mjs";
+import { API_URL, BASE_URL, connecte, sessionCookie, SESSION_TOKEN_COMPTABLE_ACHATS, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_LECTEUR_ACHATS } from "./config.mjs";
 import { COMPTES } from "./donnees/base.mjs";
-import { SUGGESTIONS, TRANSACTIONS, TRANSACTIONS_SAISIE } from "./donnees/lot-achats-banque.mjs";
+import { CANDIDAT, DELIAISONS, PAYEES_GROUPE, SENS, SUGGESTIONS, TRANSACTIONS, TRANSACTIONS_IMPORTEES, TRANSACTIONS_SAISIE } from "./donnees/lot-achats-banque.mjs";
 import { appelApi, verifierRefus, id } from "./securite.mjs";
 import { base } from "./base.mjs";
 
@@ -39,7 +39,22 @@ import { base } from "./base.mjs";
  * lignes. Les suggestions ont leurs propres tests, avec une session normale.
  */
 export function connecteAchats(token) {
-  const ids = JSON.stringify([...Object.values(TRANSACTIONS), ...Object.values(TRANSACTIONS_SAISIE), SUGGESTIONS.transaction, SUGGESTIONS.transactionMasquee].map((t) => t._id.toHexString()));
+  const ids = JSON.stringify(
+    [
+      ...Object.values(TRANSACTIONS),
+      ...Object.values(TRANSACTIONS_SAISIE),
+      SUGGESTIONS.transaction,
+      SUGGESTIONS.transactionMasquee,
+      ...Object.values(DELIAISONS).filter((d) => d.reconciliationStatus),
+      SENS.debitPourVente,
+      SENS.creditPourAchat,
+      SENS.transactionLiee,
+      PAYEES_GROUPE.transaction,
+      CANDIDAT.transaction,
+      CANDIDAT.refusTransaction,
+      ...Object.values(TRANSACTIONS_IMPORTEES),
+    ].map((t) => t._id.toHexString()),
+  );
   return {
     cookies: [sessionCookie(token)],
     origins: [
@@ -237,6 +252,68 @@ export function verifierDroits({ fonctionnalite, lectures, ecritures, fuites }) 
         expect.soft(await photo(temoin), `${op.nom} : la base a changé sans session`).toBe(avant);
       }
     });
+  });
+}
+
+/** Jeton d'accès de la session du navigateur, comme le site le demande avant d'appeler l'API. */
+export async function jetonApi(page) {
+  const reponse = await page.request.get(`${BASE_URL}/api/auth/token`, { failOnStatusCode: false });
+  if (!reponse.ok()) return null;
+  return (await reponse.json().catch(() => ({}))).token || null;
+}
+
+/**
+ * Route REST de l'API appelée directement avec le jeton de la session, sans
+ * le proxy du site (comme l'app mobile ou un script). La requête part hors de
+ * la page : un refus (401, 403) n'est pas une erreur de la page.
+ * `espace` : en-tête x-workspace-id ; `jeton: null` : sans jeton.
+ * Renvoie { statut, corps (JSON ou null), texte, entetes }.
+ */
+export async function appelRest(page, methode, chemin, { espace = null, corps, jeton } = {}) {
+  const j = jeton === undefined ? await jetonApi(page) : jeton;
+  const reponse = await page.request.fetch(`${API_URL}${chemin}`, {
+    method: methode,
+    headers: { "x-app-client": "web", ...(j ? { authorization: `Bearer ${j}` } : {}), ...(espace ? { "x-workspace-id": espace } : {}) },
+    ...(corps !== undefined ? { data: corps } : {}),
+    maxRedirects: 0,
+    failOnStatusCode: false,
+    timeout: 20_000,
+  });
+  const texte = await reponse.text().catch(() => "");
+  let json = null;
+  try {
+    json = JSON.parse(texte);
+  } catch {
+    json = null;
+  }
+  return { statut: reponse.status(), corps: json, texte, entetes: reponse.headers() };
+}
+
+/**
+ * Droits du « Comptable » d'« Achats » : il lit tout ; les écritures marquées
+ * `comptable: false` lui sont refusées sans effet (les autres, que son rôle
+ * permet, ne sont pas essayées : elles modifieraient la référence).
+ */
+export function verifierDroitsComptable({ fonctionnalite, lectures, ecritures }) {
+  test.describe(`${fonctionnalite} : droits du rôle « Comptable »`, () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_COMPTABLE_ACHATS) });
+    test.beforeEach(async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+    });
+
+    test("Peut tout lire", async ({ page }) => {
+      for (const l of lectures) {
+        const reponse = await appelApi(page, l.requete, l.variables(ORG), { organisation: ORG, delai: 15_000 });
+        expect.soft(messages(reponse), `${l.nom} : le Comptable doit pouvoir lire`).toBe("");
+        if (!l.peutEtreVide) expect.soft(reponse.data?.[l.champ] ?? null, `${l.nom} : aucune donnée renvoyée au Comptable`).not.toBeNull();
+      }
+    });
+
+    for (const op of ecritures.filter((o) => o.comptable === false)) {
+      test(`${op.nom} : refusé`, async ({ page }) => {
+        await refusSansEffet(page, op, "comptable", ORG);
+      });
+    }
   });
 }
 

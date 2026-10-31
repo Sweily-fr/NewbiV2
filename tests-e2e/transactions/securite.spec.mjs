@@ -10,9 +10,20 @@ import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_SAISIE_ACHATS } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
-import { COMPTES_BANCAIRES, FACTURES_VENTE, METRIQUES_BANCAIRES, TRANSACTIONS, TRANSACTIONS_SAISIE } from "../donnees/lot-achats-banque.mjs";
+import {
+  COMPTES_BANCAIRES,
+  COMPTES_LOT,
+  FACTURES_VENTE,
+  IMPORTEES_ACHATS,
+  IMPORTEES_SAISIE,
+  METRIQUES_BANCAIRES,
+  TRANSACTION_EXPIREE,
+  TRANSACTIONS,
+  TRANSACTIONS_IMPORTEES,
+  TRANSACTIONS_SAISIE,
+} from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
-import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, avecSession, connecteAchats, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
+import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, appelApiFichier, avecSession, connecteAchats, photo, verifierDroits, verifierDroitsComptable, verifierPiegeInerte } from "../achats-banque.mjs";
 
 const T = TRANSACTIONS;
 const TS = TRANSACTIONS_SAISIE;
@@ -27,6 +38,8 @@ const CIBLES = {
     reintegrer: T.ignoree,
     rembourser: T.virementGamma,
     compte: COMPTES_BANCAIRES.achats,
+    lierImportee: [T.virementDelta, IMPORTEES_ACHATS.validee],
+    delierImportee: [T.virementDelta, IMPORTEES_ACHATS.validee],
   },
   [ORG_SAISIE]: {
     modifier: TS.editeur,
@@ -37,6 +50,8 @@ const CIBLES = {
     reintegrer: TS.editeurDesignorer,
     rembourser: TS.editeurEncaissement,
     compte: COMPTES_BANCAIRES.saisie,
+    lierImportee: [TRANSACTIONS_IMPORTEES.editeurALier, IMPORTEES_SAISIE.editeurALier],
+    delierImportee: [TRANSACTIONS_IMPORTEES.editeurLiee, IMPORTEES_SAISIE.editeurLiee],
   },
 };
 const cibles = (w) => CIBLES[w] || CIBLES[ORG];
@@ -56,6 +71,14 @@ const LECTURES = [
   { nom: "Les transactions rattachables à une facture", champ: "transactionsForInvoice", requete: `query($id: ID!) { transactionsForInvoice(invoiceId: $id) { transactions { id description } } }`, variables: () => ({ id: id(FACTURES_VENTE.aEncaisserDelta) }) },
   { nom: "Les factures rattachables à une transaction", champ: "invoicesForTransaction", requete: `query($id: ID!) { invoicesForTransaction(transactionId: $id) { invoices { id number clientName } } }`, variables: () => ({ id: id(T.virementDelta) }) },
   { nom: "Les factures importées rattachables à une transaction", champ: "importedInvoicesForTransaction", requete: `query($id: ID!) { importedInvoicesForTransaction(transactionId: $id) { invoices { id } } }`, variables: () => ({ id: id(T.virementDelta) }) },
+  { nom: "Les transactions rattachables à une facture importée", champ: "transactionsForImportedInvoice", requete: `query($id: ID!) { transactionsForImportedInvoice(importedInvoiceId: $id) { transactions { id description } } }`, variables: () => ({ id: id(IMPORTEES_ACHATS.validee) }) },
+  {
+    nom: "Les transactions proches d'un reçu (app mobile)",
+    champ: "matchTransactionsForReceipt",
+    requete: `query($w: ID!, $d: DateTime!) { matchTransactionsForReceipt(workspaceId: $w, amount: 1200, date: $d, vendor: "SCI des Tilleuls") { count candidates { transaction { id description } } } }`,
+    variables: (w) => ({ w, d: T.loyer.date.toISOString() }),
+  },
+  { nom: "Les compteurs « à traiter »", champ: "transactionTodoCounts", requete: `query($w: ID!) { transactionTodoCounts(workspaceId: $w) { missingReceipt uncategorized } }`, variables: (w) => ({ w }) },
   {
     nom: "Les métriques des appels bancaires",
     champ: "apiMetrics",
@@ -130,13 +153,22 @@ const ECRITURES = [
   {
     nom: "Rapprocher une transaction d'une facture importée",
     editeur: true,
-    externe: "aucune facture importée dans les données de test",
     cible: true,
     champ: "linkTransactionToImportedInvoice",
     resultat: "succes",
     requete: `mutation($t: ID!, $f: ID!) { linkTransactionToImportedInvoice(input: { transactionId: $t, importedInvoiceId: $f }) { success message } }`,
-    variables: (w) => ({ t: id(cibles(w).lier[0]), f: id(cibles(w).lier[1]) }),
-    temoin: (qui, w) => ["transactions", parId(cibles(w).lier[0])],
+    variables: (w) => ({ t: id(cibles(w).lierImportee[0]), f: id(cibles(w).lierImportee[1]) }),
+    temoin: (qui, w) => ["imported_invoices", parId(cibles(w).lierImportee[1])],
+  },
+  {
+    nom: "Délier une transaction d'une facture importée",
+    editeur: true,
+    cible: true,
+    champ: "unlinkTransactionFromImportedInvoice",
+    resultat: "succes",
+    requete: `mutation($t: ID!, $f: ID!) { unlinkTransactionFromImportedInvoice(input: { transactionId: $t, importedInvoiceId: $f }) { success message } }`,
+    variables: (w) => ({ t: id(cibles(w).delierImportee[0]), f: id(cibles(w).delierImportee[1]) }),
+    temoin: (qui, w) => ["imported_invoices", parId(cibles(w).delierImportee[1])],
   },
   {
     nom: "Ignorer une transaction pour le rapprochement",
@@ -243,7 +275,57 @@ verifierDroits({
   fonctionnalite: "Transactions",
   lectures: LECTURES,
   ecritures: ECRITURES,
-  fuites: [id(T.loyer), T.loyer.description, T.virementDelta.description, COMPTES_BANCAIRES.achats.iban, id(COMPTES_BANCAIRES.achats), id(FACTURES_VENTE.aEncaisserDelta)],
+  fuites: [id(T.loyer), T.loyer.description, T.virementDelta.description, COMPTES_BANCAIRES.achats.iban, id(COMPTES_BANCAIRES.achats), id(FACTURES_VENTE.aEncaisserDelta), IMPORTEES_ACHATS.validee.originalInvoiceNumber],
+});
+
+// Le Comptable a toute la banque : il lit tout ; ses écritures permises modifieraient la référence.
+verifierDroitsComptable({ fonctionnalite: "Transactions", lectures: LECTURES, ecritures: [] });
+
+test.describe("Transactions : plan comptable de référence sans session", () => {
+  test.use({ storageState: { cookies: [], origins: [] }, erreursConsoleAutorisees: /401.*\/api\/auth\/token/ });
+
+  test("Table de correspondance et comptes du plan comptable : rien sans session", async ({ page }) => {
+    await ouvrir(page, "/auth/login");
+    for (const [champ, requete] of [
+      ["pcgMappingTable", `{ pcgMappingTable { pcgNumero bridgeLabel } }`],
+      ["pcgAccounts", `{ pcgAccounts { numero intitule } }`],
+    ]) {
+      const reponse = await appelApi(page, requete, {}, { delai: 15_000 });
+      expect.soft(reponse.data?.[champ] ?? null, `${champ} renvoyé sans session`).toBeNull();
+    }
+  });
+});
+
+/**
+ * Espace à l'abonnement échu (« Achats Expiré », dont le propriétaire de
+ * « Saisie Achats » est aussi propriétaire) : l'en-tête désigne « Saisie
+ * Achats » (abonné), les paramètres l'espace échu. L'abonnement contrôlé doit
+ * être celui de l'espace où l'opération a lieu.
+ */
+test.describe("Transactions : abonnement de l'espace visé, pas de l'en-tête", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+  const EXPIRE = id(COMPTES_LOT.expire.organisation);
+  const t = TRANSACTION_EXPIREE;
+  const temoin = ["transactions", { _id: t._id }];
+  const PDF_TICKET = [...Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF")];
+  const LECTURE_SEULE = /abonnement|SUBSCRIPTION_READ_ONLY/i;
+  const motifs = (reponse, champ) => [reponse.data?.[champ]?.message, ...reponse.errors.map((e) => `${e.extensions?.code || ""} ${e.message}`)].filter(Boolean).join(" | ");
+
+  for (const [nom, champ, requete, variables, fichier] of [
+    ["Déposer un justificatif", "uploadTransactionReceipt", `mutation($t: ID!, $w: ID!, $files: [Upload!]!) { uploadTransactionReceipt(transactionId: $t, workspaceId: $w, files: $files) { success message } }`, { t: id(t), w: EXPIRE, files: [null] }, { cle: "files.0", nom: "ticket.pdf", type: "application/pdf", contenu: PDF_TICKET }],
+    ["Décider de la facture proposée", "confirmTransactionReceiptInvoice", `mutation($t: ID!, $w: ID!, $f: ID!) { confirmTransactionReceiptInvoice(transactionId: $t, workspaceId: $w, fileId: $f, action: SKIP) { success message } }`, { t: id(t), w: EXPIRE, f: id(t.receiptFiles[0]) }],
+    ["Retirer un justificatif", "removeTransactionReceiptFile", `mutation($t: ID!, $w: ID!, $f: ID!) { removeTransactionReceiptFile(transactionId: $t, workspaceId: $w, fileId: $f) { success message } }`, { t: id(t), w: EXPIRE, f: id(t.receiptFiles[0]) }],
+    ["Analyser un document (OCR)", "processDocumentOcr", `mutation($file: Upload!, $w: String!) { processDocumentOcr(file: $file, workspaceId: $w) { success message } }`, { file: null, w: EXPIRE }, { cle: "file", nom: "facture.pdf", type: "application/pdf", contenu: PDF_TICKET }],
+  ]) {
+    test(`${nom} dans l'espace échu, en-tête d'un espace abonné : refusé (abonnement inactif), rien ne change`, async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      const avant = await photo(temoin);
+      const reponse = fichier ? await appelApiFichier(page, requete, variables, fichier, { organisation: ORG_SAISIE }) : await appelApi(page, requete, variables, { organisation: ORG_SAISIE, delai: 15_000 });
+      expect(await photo(temoin), "La transaction de l'espace échu a changé").toBe(avant);
+      expect(reponse.data?.[champ]?.success ?? false, `${nom} accepté dans un espace à l'abonnement échu`).toBe(false);
+      expect(motifs(reponse, champ)).toMatch(LECTURE_SEULE);
+    });
+  }
 });
 
 test.describe("Transactions : métriques bancaires d'une autre entreprise", () => {

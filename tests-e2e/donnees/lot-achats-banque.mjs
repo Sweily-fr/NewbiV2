@@ -18,6 +18,7 @@
  * Supplier, Transaction, AccountBanking, ManualCashflowEntry, ForecastScenario).
  */
 import { COMPTES, MEMBRES, DANS, MAINTENANT, oid } from "./base.mjs";
+import { SESSION_TOKEN_BANQUE_ACHATS, SESSION_TOKEN_COMPTABLE_ACHATS, SESSION_TOKEN_ROLE_ACHATS } from "../config.mjs";
 import { facture } from "./factures-liste.mjs";
 import { ligne } from "./documents.mjs";
 
@@ -802,6 +803,271 @@ export const METRIQUES_BANCAIRES = [
   },
 ];
 
+// --- Rôles, espace à l'abonnement échu, banque à déconnecter --------------------------
+// Identifiants de ce bloc : type « membreAchats » (utilisateurs 200+, sessions 300+,
+// rattachements 10+, espaces 80+, rôle 70, abonnements 60+), données des types du lot (n ≥ 150).
+
+const utilisateurLot = (n, email, name) => ({ _id: oid("membreAchats", n), email, name });
+const espaceLot = (n, nom) => ({ ...organisationApi(0, nom), _id: oid("membreAchats", n), companyEmail: `facturation@espace-lot-${n}.test` });
+
+/** Comptes propres à ce bloc, hors du socle (sessions et rattachements écrits plus bas). */
+export const COMPTES_LOT = {
+  // Deux banques connectées (deux connexions Bridge), déconnectées par les tests de la banque.
+  banque: { utilisateur: utilisateurLot(202, "banque-achats@e2e.test", "Bao Banque"), organisation: espaceLot(80, "Banque Test SASU"), token: SESSION_TOKEN_BANQUE_ACHATS },
+  // Abonnement échu : son propriétaire est celui de « Saisie Achats » (contrôle de l'espace visé).
+  expire: { utilisateur: COMPTES.saisieAchats.utilisateur, organisation: espaceLot(81, "Achats Expiré SASU") },
+};
+/** Rôle personnalisé de « Saisie Achats » : saisir et modifier des factures d'achat, sans « Marquer comme payée ». */
+export const ROLE_SANS_PAIEMENT = {
+  _id: oid("membreAchats", 70),
+  role: `role_${oid("membreAchats", 70).toHexString()}`,
+  name: "Saisie sans paiement",
+  description: "Ajouter et modifier des factures d'achat, sans les marquer payées",
+  actions: { purchaseInvoices: ["view", "create", "edit"], banking: ["view"] },
+};
+/** Membres invités de ce bloc : Comptable d'« Achats » (et de « Saisie Achats »), rôle personnalisé de « Saisie Achats ». */
+export const MEMBRES_LOT = {
+  comptable: { utilisateur: utilisateurLot(200, "comptable-achats@e2e.test", "Clémence Comptable"), token: SESSION_TOKEN_COMPTABLE_ACHATS, de: [["achats", "accountant"], ["saisieAchats", "accountant"]] },
+  role: { utilisateur: utilisateurLot(201, "role-achats@e2e.test", "Rémi Rôle"), token: SESSION_TOKEN_ROLE_ACHATS, de: [["saisieAchats", ROLE_SANS_PAIEMENT.role]] },
+};
+
+/** Document d'un helper du lot, rangé dans un espace de ce bloc. */
+function dansEspace(doc, compte, { chaine = false } = {}) {
+  const { utilisateur, organisation } = COMPTES_LOT[compte];
+  const ws = chaine ? hex(organisation) : organisation._id;
+  return {
+    ...doc,
+    workspaceId: ws,
+    ...("createdBy" in doc ? { createdBy: utilisateur._id } : {}),
+    ...("userId" in doc ? { userId: utilisateur._id } : {}),
+  };
+}
+
+// « Saisie Achats » : déliaisons de paires jamais liées (rien ne doit changer).
+export const DELIAISONS = {
+  // Factures de vente : annulée, brouillon numéroté, payée par chèque (aucune transaction).
+  venteAnnulee: factureVente(20, "saisieAchats", { numero: "0220", statut: "CANCELED", emiseIlYa: 20, echeanceDans: 10, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation annulée", 1, 410)] }),
+  venteBrouillon: { ...factureVente(21, "saisieAchats", { numero: "DRAFT-0007", statut: "DRAFT", emiseIlYa: 2, echeanceDans: 28, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation en brouillon", 1, 420)] }), prefix: "" },
+  ventePayeeCheque: { ...factureVente(22, "saisieAchats", { numero: "0222", statut: "COMPLETED", emiseIlYa: 25, echeanceDans: 5, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation payée par chèque", 1, 430)], payeeIlYa: 4 }), paymentMethod: "CHECK" },
+  // Facture d'achat payée en espèces, sans transaction.
+  achatPayeEspeces: factureAchat(150, "saisieAchats", { fournisseur: FS.payer, numero: "ESP-150", emiseIlYa: 9, ttc: 44.4, statut: "PAID", payeeIlYa: 8, moyen: "CASH" }),
+  // Une transaction ignorée par déliaison tentée.
+  ignoreeVenteAnnulee: transaction(150, "saisieAchats", { libelle: "VIR INTERNE IGNORE DELIAISON 1", montant: 271, ilYa: 6, compteBancaire: CBS, statut: "ignored" }),
+  ignoreeVenteBrouillon: transaction(151, "saisieAchats", { libelle: "VIR INTERNE IGNORE DELIAISON 2", montant: 272, ilYa: 6, compteBancaire: CBS, statut: "ignored" }),
+  ignoreeVentePayee: transaction(152, "saisieAchats", { libelle: "VIR INTERNE IGNORE DELIAISON 3", montant: 273, ilYa: 6, compteBancaire: CBS, statut: "ignored" }),
+  ignoreeAchat: transaction(153, "saisieAchats", { libelle: "PRLV IGNORE DELIAISON 4", montant: -44.4, ilYa: 6, compteBancaire: CBS, statut: "ignored" }),
+  ignoreeImportee: transaction(154, "saisieAchats", { libelle: "VIR INTERNE IGNORE DELIAISON 5", montant: 275, ilYa: 6, compteBancaire: CBS, statut: "ignored" }),
+};
+
+/** Facture client importée (statut au choix, transactions rattachées ou non). */
+function importeeLot(n, compte, { numero, client: nomClient, ttc, statut, transactions = [] }) {
+  const { utilisateur, organisation } = COMPTES[compte];
+  const ht = arrondi(ttc / 1.2);
+  return {
+    _id: oid("factureVenteAchats", n),
+    workspaceId: organisation._id,
+    importedBy: utilisateur._id,
+    status: statut,
+    originalInvoiceNumber: numero,
+    vendor: { name: organisation.companyName, normalizedName: organisation.companyName.toLowerCase(), address: "1 rue de la Paix", city: "Paris", postalCode: "75001", country: "France", siret: organisation.siret },
+    client: { name: nomClient, email: null, address: "", city: "", postalCode: "" },
+    invoiceDate: DANS(-30),
+    dueDate: DANS(0),
+    ...(statut === "COMPLETED" ? { paymentDate: DANS(-3) } : {}),
+    totalHT: ht,
+    totalVAT: arrondi(ttc - ht),
+    totalTTC: ttc,
+    currency: "EUR",
+    items: [],
+    category: "SERVICES",
+    paymentMethod: "TRANSFER",
+    file: { url: `https://fichiers.e2e.invalid/${hex(organisation)}/importees/${n}.pdf`, cloudflareKey: `${hex(organisation)}/importees/${n}.pdf`, originalFileName: `facture-importee-${n}.pdf`, mimeType: "application/pdf", fileSize: 1024 },
+    source: "OCR_UPLOAD",
+    isDuplicate: false,
+    linkedTransactionIds: transactions.map((t) => t._id),
+    createdAt: DANS(-30),
+    updatedAt: DANS(-30),
+  };
+}
+export const IMPORTEES_SAISIE = {
+  payeeHorsBanque: importeeLot(150, "saisieAchats", { numero: "IMP-PAYEE-150", client: "Client importé payé", ttc: 275, statut: "COMPLETED" }),
+  // Écritures permises de l'Éditeur : rapprocher, délier (paire liée), convertir en facture d'achat.
+  editeurALier: importeeLot(151, "saisieAchats", { numero: "IMP-EDI-151", client: "Client importé à rapprocher", ttc: 330, statut: "VALIDATED" }),
+  editeurLiee: importeeLot(152, "saisieAchats", { numero: "IMP-EDI-152", client: "Client importé rapproché", ttc: 340, statut: "COMPLETED", transactions: [TX(163)] }),
+  editeurAConvertir: importeeLot(153, "saisieAchats", { numero: "IMP-EDI-153", client: "Fournisseur importé à convertir", ttc: 350, statut: "PENDING_REVIEW" }),
+};
+/** « Achats » (référence, jamais modifiée) : une facture importée à rapprocher, une à valider. */
+export const IMPORTEES_ACHATS = {
+  validee: importeeLot(160, "achats", { numero: "IMP-ACH-160", client: "Client importé de référence", ttc: 2500, statut: "VALIDATED" }),
+  aValider: importeeLot(161, "achats", { numero: "IMP-ACH-161", client: "Fournisseur importé de référence", ttc: 360, statut: "PENDING_REVIEW" }),
+};
+/** Transactions des écritures permises de l'Éditeur sur les factures importées. */
+export const TRANSACTIONS_IMPORTEES = {
+  editeurALier: transaction(162, "saisieAchats", { libelle: "VIR SEPA EDITEUR IMPORTEE A RAPPROCHER", montant: 330, ilYa: 2, compteBancaire: CBS }),
+  editeurLiee: { ...transaction(163, "saisieAchats", { libelle: "VIR SEPA EDITEUR IMPORTEE RAPPROCHEE", montant: 340, ilYa: 3, compteBancaire: CBS }), linkedImportedInvoiceIds: [oid("factureVenteAchats", 152)], reconciliationStatus: "matched", reconciliationLinks: [{ documentType: "IMPORTED_INVOICE", documentId: oid("factureVenteAchats", 152), origin: "TRANSACTION", linkedAt: DANS(-2), linkedBy: hex(COMPTES.saisieAchats.utilisateur) }] },
+};
+
+// « Saisie Achats » : sens du paiement et transaction rattachée (rapprochements refusés).
+const factureVenteSens = factureVente(23, "saisieAchats", { numero: "0223", statut: "PENDING", emiseIlYa: 5, echeanceDans: 25, client: CLIENTS_ACHATS.saisie, articles: [ligne("Prestation à encaisser (sens)", 1, 250)] });
+const achatPayeLie = factureAchat(152, "saisieAchats", { fournisseur: FS.rapprochee, numero: "SENS-152", emiseIlYa: 8, ttc: 61.2, statut: "PAID", transactions: [TX(157)], payeeIlYa: 7 });
+export const SENS = {
+  factureVente: factureVenteSens,
+  debitPourVente: transaction(155, "saisieAchats", { libelle: "PRLV SENS DEBIT VENTE", montant: -300, ilYa: 3, compteBancaire: CBS }),
+  factureAchat: factureAchat(151, "saisieAchats", { fournisseur: FS.rapprocher, numero: "SENS-151", emiseIlYa: 6, ttc: 88.8, statut: "TO_PAY" }),
+  creditPourAchat: transaction(156, "saisieAchats", { libelle: "VIR SEPA SENS CREDIT ACHAT", montant: 88.8, ilYa: 3, compteBancaire: CBS }),
+  achatPayeLie,
+  transactionLiee: transaction(157, "saisieAchats", { libelle: "PRLV SENS RATTACHEE", montant: -61.2, ilYa: 7, compteBancaire: CBS, facturesAchat: [achatPayeLie] }),
+};
+
+// « Saisie Achats » : « Marquer payées » sur une sélection mêlant une facture déjà payée.
+const dejaPayeeGroupe = factureAchat(153, "saisieAchats", { fournisseur: FS.groupe, numero: "GRP-PAY-1", emiseIlYa: 130, ttc: 37, statut: "PAID", transactions: [TX(158)], payeeIlYa: 120, moyen: "BANK_TRANSFER" });
+export const PAYEES_GROUPE = {
+  dejaPayee: dejaPayeeGroupe,
+  aPayer: factureAchat(154, "saisieAchats", { fournisseur: FS.groupe, numero: "GRP-PAY-2", emiseIlYa: 4, ttc: 38, statut: "TO_PAY" }),
+  transaction: transaction(158, "saisieAchats", { libelle: "VIR FOURNISSEUR GROUPE PAYE", montant: -37, ilYa: 120, compteBancaire: CBS, facturesAchat: [dejaPayeeGroupe] }),
+};
+
+// « Saisie Achats » : rôle sans « Marquer comme payée », fusion de fiches, transaction trouvée après une saisie.
+export const ROLE_ACHATS = {
+  aPayer: factureAchat(155, "saisieAchats", { fournisseur: FS.payer, numero: "ROL-155", emiseIlYa: 3, ttc: 56.7, statut: "TO_PAY" }),
+};
+export const FUSION = {
+  cible: fournisseur(120, "saisieAchats", "Fusion Cible SARL", "OTHER"),
+  source: fournisseur(121, "saisieAchats", "Fusion Source SARL", "OTHER"),
+};
+export const FUSION_FACTURE = factureAchat(156, "saisieAchats", { fournisseur: FUSION.source, numero: "FUS-156", emiseIlYa: 3, ttc: 57.8, statut: "TO_PROCESS" });
+/** Débit déjà passé en banque, au libellé du fournisseur : proposé après la saisie de sa facture. */
+export const CANDIDAT = {
+  fournisseur: "Imprimerie Candidate",
+  montant: 73.21,
+  transaction: transaction(159, "saisieAchats", { libelle: "PRLV IMPRIMERIE CANDIDATE", montant: -73.21, ilYa: 1, compteBancaire: CBS }),
+  refusFournisseur: "Papeterie Refusee",
+  refusMontant: 74.32,
+  refusTransaction: transaction(160, "saisieAchats", { libelle: "PRLV PAPETERIE REFUSEE", montant: -74.32, ilYa: 1, compteBancaire: CBS }),
+};
+
+// Offre d'entrée : imports OCR du mois épuisés (50 sur 50).
+export const QUOTA_OCR_EPUISE = {
+  _id: oid("membreAchats", 90),
+  userId: COMPTES.freelanceAchats.utilisateur._id,
+  workspaceId: COMPTES.freelanceAchats.organisation._id,
+  plan: "FREELANCE",
+  // Mois au format de l'API (date UTC), remis à zéro le 1er du mois suivant.
+  month: MAINTENANT.toISOString().slice(0, 7),
+  resetDate: new Date(Date.UTC(MAINTENANT.getUTCFullYear(), MAINTENANT.getUTCMonth() + 1, 1)),
+  usedQuota: 50,
+  extraImportsPurchased: 0,
+  extraImportsUsed: 0,
+  extraImportsSpent: 0,
+  importHistory: [],
+  purchaseHistory: [],
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+};
+/** Dépense de l'offre d'entrée pour y déposer un justificatif (quota épuisé). */
+export const TRANSACTION_QUOTA = transaction(161, "freelanceAchats", { libelle: "CB DEPENSE QUOTA OCR", montant: -14.9, ilYa: 2, compteBancaire: COMPTES_BANCAIRES.freelance });
+
+// « Achats Expiré » (abonnement échu) : une dépense avec un justificatif et sa facture proposée.
+const justificatifExpire = {
+  ...justificatif(170, "saisieAchats", "Ticket espace expiré.pdf"),
+  url: `https://fichiers.e2e.invalid/${hex(COMPTES_LOT.expire.organisation)}/receipts/170-ticket.pdf`,
+  key: `${hex(COMPTES_LOT.expire.organisation)}/receipts/170-ticket.pdf`,
+  ocrProcessed: true,
+  ocrProposal: { values: { supplierName: "Fournisseur Expiré", amountTTC: 23.4, amountHT: 19.5, amountTVA: 3.9, vatRate: 20, currency: "EUR" }, meta: { ocrSucceeded: true }, duplicateInvoiceId: null, duplicateLinkTransaction: true, duplicateReason: null, proposedAt: DANS(-1), dismissedAt: null },
+};
+export const COMPTE_BANCAIRE_EXPIRE = dansEspace(compteBancaire(170, "saisieAchats", { name: "Compte espace expiré", iban: "FR7630006000011111111111170", solde: 900 }), "expire", { chaine: true });
+export const TRANSACTION_EXPIREE = dansEspace(
+  transaction(170, "saisieAchats", { libelle: "CB DEPENSE ESPACE EXPIRE", montant: -23.4, ilYa: 2, compteBancaire: COMPTE_BANCAIRE_EXPIRE, justificatifs: [justificatifExpire] }),
+  "expire",
+  { chaine: true },
+);
+
+// « Banque Test » : deux connexions Bridge et les données qui doivent leur survivre.
+const CBB = {
+  aDeconnecter: { ...dansEspace(compteBancaire(180, "saisieAchats", { name: "Compte à déconnecter", iban: "FR7630006000018080808080801", solde: 3210.5 }), "banque", { chaine: true }), institutionName: "Banque Populaire Test", raw: { item_id: 9001, provider_id: 501 } },
+  restant: { ...dansEspace(compteBancaire(181, "saisieAchats", { name: "Compte gardé jusqu'au bout", iban: "FR7630006000018181818181802", solde: 1500 }), "banque", { chaine: true }), institutionName: "Crédit Test", raw: { item_id: 9002, provider_id: 502 } },
+};
+export const COMPTES_BANCAIRES_BANQUE = CBB;
+const clientBanque = dansEspace(client(10, "saisieAchats", "Client Banque SAS", "compta@client-banque.test"), "banque");
+const fournisseurBanque = dansEspace(fournisseur(130, "saisieAchats", "Fournisseur Banque SARL", "SERVICES"), "banque");
+const venteBanque = dansEspace(factureVente(30, "saisieAchats", { numero: "0301", statut: "COMPLETED", emiseIlYa: 20, echeanceDans: 10, client: clientBanque, articles: [ligne("Prestation encaissée (banque)", 1, 500)], payeeIlYa: 5, transactions: [TX(181)] }), "banque");
+const achatBanque = dansEspace(factureAchat(180, "saisieAchats", { fournisseur: fournisseurBanque, numero: "BNQ-180", emiseIlYa: 10, ttc: 120, statut: "PAID", transactions: [TX(182)], payeeIlYa: 9, moyen: "DIRECT_DEBIT" }), "banque");
+const enBanque = (doc) => dansEspace(doc, "banque", { chaine: true });
+export const BANQUE = {
+  client: clientBanque,
+  fournisseur: fournisseurBanque,
+  vente: venteBanque,
+  achat: achatBanque,
+  transactions: {
+    justifiee: enBanque({
+      ...transaction(180, "saisieAchats", { libelle: "CB PAPETERIE JUSTIFIEE", montant: -45.9, ilYa: 4, categorie: "bureau", compteBancaire: CBB.aDeconnecter, justificatifs: [justificatif(180, "saisieAchats", "Ticket papeterie.pdf")] }),
+      categoryIsManual: true,
+      description: "Papeterie du salon (libellé corrigé)",
+      descriptionIsManual: true,
+      metadata: { notes: "Note conservée à la déconnexion", paymentMethod: "CREDIT_CARD" },
+    }),
+    encaissement: enBanque(transaction(181, "saisieAchats", { libelle: "VIR SEPA CLIENT BANQUE", montant: 600, ilYa: 5, compteBancaire: CBB.aDeconnecter, factures: [venteBanque] })),
+    prelevement: enBanque(transaction(182, "saisieAchats", { libelle: "PRLV FOURNISSEUR BANQUE", montant: -120, ilYa: 9, compteBancaire: CBB.aDeconnecter, facturesAchat: [achatBanque] })),
+    ignoree: enBanque(transaction(183, "saisieAchats", { libelle: "VIR INTERNE IGNORE BANQUE", montant: 75, ilYa: 11, compteBancaire: CBB.aDeconnecter, statut: "ignored" })),
+    autreBanque: enBanque(transaction(184, "saisieAchats", { libelle: "CB DEPENSE COMPTE RESTANT", montant: -30, ilYa: 3, categorie: "bureau", compteBancaire: CBB.restant, justificatifs: [justificatif(184, "saisieAchats", "Ticket compte restant.pdf")] })),
+  },
+};
+
+function utilisateurPretLot({ _id, email, name }) {
+  return { _id, email, name, emailVerified: true, role: "member", isActive: true, isDisabled: false, hasSeenOnboarding: true, onboardingStep: "completed", hasCompletedTutorial: true, createdAt: MAINTENANT, updatedAt: MAINTENANT };
+}
+const sessionLot = (n, token, utilisateur, organisationId) => ({
+  _id: oid("membreAchats", n),
+  token,
+  userId: utilisateur._id,
+  activeOrganizationId: organisationId.toHexString(),
+  expiresAt: DANS(30),
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+  ipAddress: "127.0.0.1",
+  userAgent: "playwright-e2e",
+});
+
+/** Utilisateurs, sessions, espaces, abonnements, rattachements et rôle de ce bloc. */
+function comptesDuBloc() {
+  const { banque, expire } = COMPTES_LOT;
+  const organisation = [banque.organisation, expire.organisation].map((org) => ({ ...org, logo: null, metadata: null, organizationType: "business", onboardingCompleted: true, sessionSettings: { maxSessions: 0 }, createdAt: DANS(-200) }));
+  const abonnement = (n, org, statut, fin) => ({ _id: oid("membreAchats", n), referenceId: org._id.toHexString(), plan: "pme", status: statut, periodStart: DANS(-60), periodEnd: fin, createdAt: DANS(-60), updatedAt: MAINTENANT });
+  const membres = [
+    { _id: oid("membreAchats", 10), userId: banque.utilisateur._id, organizationId: banque.organisation._id, role: "owner", createdAt: MAINTENANT },
+    { _id: oid("membreAchats", 11), userId: expire.utilisateur._id, organizationId: expire.organisation._id, role: "owner", createdAt: MAINTENANT },
+  ];
+  let m = 12;
+  for (const membre of Object.values(MEMBRES_LOT)) {
+    for (const [compte, role] of membre.de) membres.push({ _id: oid("membreAchats", m++), userId: membre.utilisateur._id, organizationId: COMPTES[compte].organisation._id, role, createdAt: MAINTENANT });
+  }
+  return {
+    user: [banque.utilisateur, ...Object.values(MEMBRES_LOT).map((x) => x.utilisateur)].map(utilisateurPretLot),
+    organization: organisation,
+    subscription: [abonnement(60, banque.organisation, "active", DANS(30)), abonnement(61, expire.organisation, "canceled", DANS(-5))],
+    member: membres,
+    session: [
+      sessionLot(300, banque.token, banque.utilisateur, banque.organisation._id),
+      sessionLot(301, MEMBRES_LOT.comptable.token, MEMBRES_LOT.comptable.utilisateur, COMPTES.achats.organisation._id),
+      sessionLot(302, MEMBRES_LOT.role.token, MEMBRES_LOT.role.utilisateur, COMPTES.saisieAchats.organisation._id),
+    ],
+    organizationRole: [
+      {
+        _id: ROLE_SANS_PAIEMENT._id,
+        organizationId: COMPTES.saisieAchats.organisation._id,
+        role: ROLE_SANS_PAIEMENT.role,
+        permission: JSON.stringify({}),
+        actions: ROLE_SANS_PAIEMENT.actions,
+        catalogVersion: 2,
+        name: ROLE_SANS_PAIEMENT.name,
+        description: ROLE_SANS_PAIEMENT.description,
+        createdAt: MAINTENANT,
+        updatedAt: MAINTENANT,
+      },
+    ],
+  };
+}
+
 // --- Assemblage -----------------------------------------------------------------------
 
 /** Rattachements en plus des MEMBRES du socle : l'Éditeur dans « Saisie Achats », le propriétaire de « Saisie » dans « Scénarios ». */
@@ -816,8 +1082,14 @@ function membresEnPlus() {
 /** Documents à écrire en base, par collection : { clients: [...], invoices: [...] }. */
 export function donneesAchatsBanque() {
   const proprietaireScenarios = COMPTES.saisieAchats.utilisateur;
+  const bloc = comptesDuBloc();
   return {
-    organization: [ORGANISATION_SCENARIOS, ORGANISATION_BORNES].map((org) => ({
+    user: bloc.user,
+    session: bloc.session,
+    organizationRole: bloc.organizationRole,
+    organization: [
+      ...bloc.organization,
+      ...[ORGANISATION_SCENARIOS, ORGANISATION_BORNES].map((org) => ({
       ...org,
       logo: null,
       metadata: null,
@@ -826,7 +1098,10 @@ export function donneesAchatsBanque() {
       sessionSettings: { maxSessions: 0 },
       createdAt: MAINTENANT,
     })),
-    subscription: [ORGANISATION_SCENARIOS, ORGANISATION_BORNES].map((org, i) => ({
+    ],
+    subscription: [
+      ...bloc.subscription,
+      ...[ORGANISATION_SCENARIOS, ORGANISATION_BORNES].map((org, i) => ({
       _id: oid("membreAchats", 50 + i),
       referenceId: org._id.toHexString(),
       plan: "pme",
@@ -836,15 +1111,48 @@ export function donneesAchatsBanque() {
       createdAt: MAINTENANT,
       updatedAt: MAINTENANT,
     })),
-    member: membresEnPlus(),
+    ],
+    member: [...membresEnPlus(), ...bloc.member],
     products: [...Object.values(PRODUITS), ...Object.values(PRODUITS_SAISIE), ...PRODUITS_VOLUMINEUX],
     productcustomfields: [...Object.values(CHAMPS_PRODUITS), ...CHAMPS_FREELANCE_ACHATS, ...Object.values(CHAMPS_SAISIE)],
-    suppliers: [...Object.values(F), ...Object.values(FS), ...Object.values(FF)],
-    purchaseinvoices: [...Object.values(FACTURES_ACHAT), ...FACTURES_ACHAT_REMPLISSAGE, ...Object.values(FACTURES_ACHAT_SAISIE), SUGGESTIONS.facture, SUGGESTIONS.factureMasquee],
-    accounts_bankings: Object.values(COMPTES_BANCAIRES),
-    transactions: [...Object.values(TRANSACTIONS), ...Object.values(TRANSACTIONS_SAISIE), SUGGESTIONS.transaction, SUGGESTIONS.transactionMasquee],
-    clients: Object.values(CLIENTS_ACHATS),
-    invoices: Object.values(FACTURES_VENTE),
+    suppliers: [...Object.values(F), ...Object.values(FS), ...Object.values(FF), ...Object.values(FUSION), BANQUE.fournisseur],
+    purchaseinvoices: [
+      ...Object.values(FACTURES_ACHAT),
+      ...FACTURES_ACHAT_REMPLISSAGE,
+      ...Object.values(FACTURES_ACHAT_SAISIE),
+      SUGGESTIONS.facture,
+      SUGGESTIONS.factureMasquee,
+      DELIAISONS.achatPayeEspeces,
+      SENS.factureAchat,
+      SENS.achatPayeLie,
+      PAYEES_GROUPE.dejaPayee,
+      PAYEES_GROUPE.aPayer,
+      ROLE_ACHATS.aPayer,
+      FUSION_FACTURE,
+      BANQUE.achat,
+    ],
+    accounts_bankings: [...Object.values(COMPTES_BANCAIRES), COMPTE_BANCAIRE_EXPIRE, ...Object.values(COMPTES_BANCAIRES_BANQUE)],
+    transactions: [
+      ...Object.values(TRANSACTIONS),
+      ...Object.values(TRANSACTIONS_SAISIE),
+      SUGGESTIONS.transaction,
+      SUGGESTIONS.transactionMasquee,
+      ...[DELIAISONS.ignoreeVenteAnnulee, DELIAISONS.ignoreeVenteBrouillon, DELIAISONS.ignoreeVentePayee, DELIAISONS.ignoreeAchat, DELIAISONS.ignoreeImportee],
+      SENS.debitPourVente,
+      SENS.creditPourAchat,
+      SENS.transactionLiee,
+      PAYEES_GROUPE.transaction,
+      CANDIDAT.transaction,
+      CANDIDAT.refusTransaction,
+      TRANSACTION_QUOTA,
+      TRANSACTION_EXPIREE,
+      ...Object.values(TRANSACTIONS_IMPORTEES),
+      ...Object.values(BANQUE.transactions),
+    ],
+    clients: [...Object.values(CLIENTS_ACHATS), BANQUE.client],
+    invoices: [...Object.values(FACTURES_VENTE), DELIAISONS.venteAnnulee, DELIAISONS.venteBrouillon, DELIAISONS.ventePayeeCheque, SENS.factureVente, BANQUE.vente],
+    imported_invoices: [...Object.values(IMPORTEES_SAISIE), ...Object.values(IMPORTEES_ACHATS)],
+    userocrquotas: [QUOTA_OCR_EPUISE],
     forecastscenarios: Object.values(SCENARIOS).map((s) => (s.workspaceId.equals(ORGANISATION_SCENARIOS._id) ? { ...s, createdBy: proprietaireScenarios._id } : s)),
     manualcashflowentries: [...Object.values(SAISIES), ...Object.values(SAISIES_SAISIE)],
     detectedrecurrences: Object.values(RECURRENCES),

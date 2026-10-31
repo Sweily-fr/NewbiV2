@@ -84,6 +84,12 @@ export const SESSION_TOKEN_LECTEUR_ACHATS = "e2eSessionTokenNewbiLecteurAchatsUn
 export const SESSION_TOKEN_SAISIE_ACHATS = "e2eSessionTokenNewbiSaisieAchatsUniquement";
 /** Propriétaire d'une organisation sur l'offre d'entrée, pour les plafonds du lot. */
 export const SESSION_TOKEN_FREELANCE_ACHATS = "e2eSessionTokenNewbiFreelanceAchatsUniquement";
+/** « Comptable » d'« Achats » (et de « Saisie Achats ») : banque complète, factures d'achat en lecture. */
+export const SESSION_TOKEN_COMPTABLE_ACHATS = "e2eSessionTokenNewbiComptableAchatsUniquement";
+/** Membre de « Saisie Achats » au rôle personnalisé « Saisie sans paiement » (ajouter, modifier, sans « Marquer comme payée »). */
+export const SESSION_TOKEN_ROLE_ACHATS = "e2eSessionTokenNewbiRoleAchatsUniquement";
+/** Propriétaire de « Banque Test » : deux banques connectées, déconnectées par les tests. */
+export const SESSION_TOKEN_BANQUE_ACHATS = "e2eSessionTokenNewbiBanqueAchatsUniquement";
 // ── fin du lot achats-banque ──
 // ── Lot parametres-auth ──
 /** Propriétaire de « Paramètres » (un membre de chaque rôle, rien n'y change). */
