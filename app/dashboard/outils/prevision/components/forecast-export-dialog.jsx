@@ -12,6 +12,7 @@ import { ExportIcon } from "@/src/components/icons";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toCsvCell } from "@/src/utils/spreadsheet-cell";
+import { getCategoryLabel } from "@/lib/category-icons-config";
 
 const INCOME_ROWS = [
   { category: "SALES", label: "Ventes", type: "INCOME" },
@@ -34,6 +35,21 @@ const EXPENSE_ROWS = [
   { category: "SALARIES", label: "Salaires", type: "EXPENSE" },
   { category: "SOFTWARE", label: "Logiciels", type: "EXPENSE" },
   { category: "MARKETING", label: "Marketing", type: "EXPENSE" },
+  // Toutes les catégories de sorties du tableau de la page : sans elles, la
+  // somme des lignes d'un mois n'égalait pas son « Sous-total sorties ».
+  ...[
+    "ENERGY",
+    "TELECOMMUNICATIONS",
+    "MEALS",
+    "HARDWARE",
+    "TRAINING",
+    "MAINTENANCE",
+    "UTILITIES",
+  ].map((category) => ({
+    category,
+    label: getCategoryLabel(category),
+    type: "EXPENSE",
+  })),
   { category: "OTHER_EXPENSE", label: "Autres dépenses", type: "EXPENSE" },
 ];
 
@@ -45,6 +61,89 @@ const formatMonthHeader = (monthStr) => {
     .toUpperCase();
 };
 
+/**
+ * Contenu du CSV de la prévision : une ligne par catégorie du tableau de la
+ * page (réel pour un mois passé, prévu sinon), puis sous-totaux, variation
+ * et solde cumulé. `currentMonth` : « AAAA-MM ».
+ */
+export function buildForecastCsv(months, currentMonth) {
+  const getVal = (month, type, category) => {
+    const m = months.find((md) => md.month === month);
+    if (!m) return 0;
+    const isPast = month < currentMonth;
+    const cb = m.categoryBreakdown?.find(
+      (c) => c.type === type && c.category === category,
+    );
+    return isPast ? cb?.actualAmount || 0 : cb?.forecastAmount || 0;
+  };
+
+  const headers = [
+    "Catégorie",
+    ...months.map((m) => formatMonthHeader(m.month)),
+  ];
+  const rows = [];
+
+  rows.push(["ENCAISSEMENTS", ...months.map(() => "")]);
+  for (const r of INCOME_ROWS) {
+    rows.push([
+      r.label,
+      ...months.map((m) => getVal(m.month, r.type, r.category)),
+    ]);
+  }
+  rows.push([
+    "Sous-total entrées",
+    ...months.map((m) => {
+      const isPast = m.month < currentMonth;
+      return isPast ? m.actualIncome : m.forecastIncome || 0;
+    }),
+  ]);
+
+  rows.push(["", ...months.map(() => "")]);
+
+  rows.push(["DECAISSEMENTS", ...months.map(() => "")]);
+  for (const r of EXPENSE_ROWS) {
+    rows.push([
+      r.label,
+      ...months.map((m) => getVal(m.month, r.type, r.category)),
+    ]);
+  }
+  rows.push([
+    "Sous-total sorties",
+    ...months.map((m) => {
+      const isPast = m.month < currentMonth;
+      return isPast ? m.actualExpense : m.forecastExpense || 0;
+    }),
+  ]);
+
+  rows.push(["", ...months.map(() => "")]);
+
+  rows.push([
+    "Variation du mois",
+    ...months.map((m) => {
+      const isPast = m.month < currentMonth;
+      const income = isPast ? m.actualIncome : m.forecastIncome || 0;
+      const expense = isPast ? m.actualExpense : m.forecastExpense || 0;
+      return income - expense;
+    }),
+  ]);
+  rows.push(["Solde cumulé", ...months.map((m) => m.closingBalance)]);
+
+  const csvContent = [
+    headers.join(";"),
+    ...rows.map((row) =>
+      row
+        .map((cell) => {
+          if (typeof cell === "number")
+            return cell.toString().replace(".", ",");
+          // Texte neutralisé (formules du tableur), guillemets échappés
+          return toCsvCell(cell);
+        })
+        .join(";"),
+    ),
+  ].join("\n");
+  return csvContent;
+}
+
 export function ForecastExportDialog({ open, onOpenChange, months }) {
   const [exporting, setExporting] = useState(false);
 
@@ -54,81 +153,7 @@ export function ForecastExportDialog({ open, onOpenChange, months }) {
 
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
-    const getVal = (month, type, category) => {
-      const m = months.find((md) => md.month === month);
-      if (!m) return 0;
-      const isPast = month < currentMonth;
-      const cb = m.categoryBreakdown?.find(
-        (c) => c.type === type && c.category === category,
-      );
-      return isPast ? cb?.actualAmount || 0 : cb?.forecastAmount || 0;
-    };
-
-    const headers = [
-      "Catégorie",
-      ...months.map((m) => formatMonthHeader(m.month)),
-    ];
-    const rows = [];
-
-    rows.push(["ENCAISSEMENTS", ...months.map(() => "")]);
-    for (const r of INCOME_ROWS) {
-      rows.push([
-        r.label,
-        ...months.map((m) => getVal(m.month, r.type, r.category)),
-      ]);
-    }
-    rows.push([
-      "Sous-total entrées",
-      ...months.map((m) => {
-        const isPast = m.month < currentMonth;
-        return isPast ? m.actualIncome : m.forecastIncome || 0;
-      }),
-    ]);
-
-    rows.push(["", ...months.map(() => "")]);
-
-    rows.push(["DECAISSEMENTS", ...months.map(() => "")]);
-    for (const r of EXPENSE_ROWS) {
-      rows.push([
-        r.label,
-        ...months.map((m) => getVal(m.month, r.type, r.category)),
-      ]);
-    }
-    rows.push([
-      "Sous-total sorties",
-      ...months.map((m) => {
-        const isPast = m.month < currentMonth;
-        return isPast ? m.actualExpense : m.forecastExpense || 0;
-      }),
-    ]);
-
-    rows.push(["", ...months.map(() => "")]);
-
-    rows.push([
-      "Variation du mois",
-      ...months.map((m) => {
-        const isPast = m.month < currentMonth;
-        const income = isPast ? m.actualIncome : m.forecastIncome || 0;
-        const expense = isPast ? m.actualExpense : m.forecastExpense || 0;
-        return income - expense;
-      }),
-    ]);
-    rows.push(["Solde cumulé", ...months.map((m) => m.closingBalance)]);
-
-    const csvContent = [
-      headers.join(";"),
-      ...rows.map((row) =>
-        row
-          .map((cell) => {
-            if (typeof cell === "number")
-              return cell.toString().replace(".", ",");
-            // Texte neutralisé (formules du tableur), guillemets échappés
-            return toCsvCell(cell);
-          })
-          .join(";"),
-      ),
-    ].join("\n");
+    const csvContent = buildForecastCsv(months, currentMonth);
 
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + csvContent], {
