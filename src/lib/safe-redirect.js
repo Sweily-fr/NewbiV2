@@ -21,7 +21,7 @@ const FALLBACK_ORIGIN = "http://newbi.invalid";
 export function safeInternalPath(value, origin) {
   if (typeof value !== "string") return null;
   if (!value.startsWith("/") || value.startsWith("//")) return null;
-
+  // Caractères de contrôle et barres obliques inverses
   if (/[\u0000-\u001f\u007f\\]/.test(value)) return null;
 
   const base =

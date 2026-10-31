@@ -6,6 +6,12 @@ import { mongoDb } from "@/src/lib/mongodb";
 import { apiError, withErrorHandler, toObjectId } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 import { getAccountActions } from "@/src/lib/organization-roles";
+import {
+  expireOpenWorkspaceCheckouts,
+  findLiveStripeSubscription,
+  findLiveWorkspaceSubscription,
+  liveSubscriptionMessage,
+} from "@/src/lib/subscription-checkout-guard";
 
 /**
  * POST /api/billing/subscribe
@@ -133,6 +139,14 @@ async function handler(request) {
       replacesCabinetSubscription: handBack.subscriptionId || "",
     };
   }
+  const isHandover = Boolean(handoverMetadata.payerHandover);
+
+  // Un seul abonnement en cours par espace : un second Checkout créerait
+  // un second abonnement Stripe, prélevé en plus du premier
+  if (!isHandover) {
+    const live = await findLiveWorkspaceSubscription(mongoDb, organizationId);
+    if (live) return apiError(409, liveSubscriptionMessage(live.status));
+  }
 
   // Resolve or create the Stripe customer.
   let customerId = session.user.stripeCustomerId;
@@ -149,6 +163,18 @@ async function handler(request) {
         { _id: toObjectId(session.user.id) },
         { $set: { stripeCustomerId: customerId } },
       );
+  }
+
+  // Paiement déjà fait dont le webhook n'est pas encore arrivé, puis un seul
+  // Checkout ouvert à la fois pour cet espace
+  if (!isHandover) {
+    const live = await findLiveStripeSubscription(
+      stripe,
+      customerId,
+      organizationId,
+    );
+    if (live) return apiError(409, liveSubscriptionMessage(live.status));
+    await expireOpenWorkspaceCheckouts(stripe, customerId, organizationId);
   }
 
   const requestOrigin = request.headers.get("origin");
