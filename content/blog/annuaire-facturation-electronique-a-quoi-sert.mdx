@@ -144,6 +144,8 @@ Trois situations expliquent la majorité des échecs d'adressage constatés par 
 2. **Un client non encore inscrit dans l'annuaire**, en particulier durant la période transitoire précédant septembre 2027 pour les petites structures. La facture ne peut alors être acheminée que via le canal minimal du PPF, en attendant que le client active sa PDP.
 3. **Une confusion entre numéro SIREN et numéro SIRET** dans les paramètres de facturation. L'annuaire fonctionne au niveau du SIREN (l'entreprise), tandis que le SIRET identifie un établissement précis : une mauvaise saisie peut empêcher la résolution de l'adresse.
 
+Lorsque l'adressage échoue, la plateforme renvoie la facture avec un motif de rejet : notre article sur la [facture électronique rejetée ou refusée](/blog/rejet-facture-electronique-que-faire) détaille comment la corriger et la réémettre.
+
 <div className="not-prose my-8">
   <Callout type="tip" title="Vérifiez vos données client en amont">
     Avant l'échéance de réception obligatoire, prenez l'habitude de vérifier le SIREN de vos clients récurrents directement dans votre outil de facturation. Cela évite les blocages au moment où l'obligation d'émission s'appliquera à votre tour.

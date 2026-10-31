@@ -12,6 +12,7 @@ author: Newbi
 image: ''
 published: true
 publishDate: '2026-09-02'
+updated: '2026-10-31'
 ---
 
 import Link from "next/link"
@@ -37,7 +38,7 @@ Ce guide fait le tour des cas où facturer sans SIRET est effectivement possible
 
 ## Le SIRET, une mention obligatoire de la facture
 
-En droit français, une facture émise par un professionnel doit comporter un certain nombre de mentions obligatoires, listées notamment à l'article 242 nonies A de l'annexe II du Code général des impôts (CGI). Parmi elles figure le numéro unique d'identification de l'entreprise, c'est-à-dire le SIREN complété de son extension à 5 chiffres pour former le SIRET à 14 chiffres.
+En droit français, une facture émise par un professionnel doit comporter un certain nombre de mentions obligatoires, listées notamment à l'article 242 nonies A de l'annexe II du Code général des impôts (CGI) et à l'article R123-237 du Code de commerce. Parmi elles figure le numéro unique d'identification de l'entreprise, c'est-à-dire son SIREN à 9 chiffres, le plus souvent indiqué sous la forme du SIRET à 14 chiffres (le SIREN suivi des 5 chiffres qui identifient l'établissement).
 
 Le SIRET permet d'identifier sans ambiguïté l'établissement qui a émis la facture. Il est indispensable pour que votre client, votre expert-comptable et l'administration fiscale puissent rattacher le document à une entité juridique existante. Une facture sans SIRET, émise par une personne censée exercer une activité professionnelle, est considérée comme non conforme. Retrouvez la liste complète des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) pour vérifier que vos documents sont en règle.
 
@@ -104,6 +105,14 @@ Il existe une différence fondamentale entre les cas légaux évoqués ci-dessus
 
 Cette situation n'a donc rien à voir avec le portage salarial ou la période d'attente d'un SIRET déjà demandé : elle concerne les personnes qui exercent durablement une activité sans jamais entamer de démarche d'immatriculation. Les [erreurs fréquentes lors de la création d'une micro-entreprise](/blog/erreurs-creation-micro-entreprise) montrent d'ailleurs que beaucoup de créateurs sous-estiment les délais et commencent à travailler trop tôt.
 
+## Cas n° 5 : l'entreprise étrangère sans établissement en France
+
+Une entreprise établie à l'étranger qui n'a pas d'établissement en France n'a pas de SIRET, et peut pourtant facturer légalement un client français. Sa facture porte l'identifiant attribué dans son pays (numéro d'immatriculation au registre local) et, si elle est établie dans l'Union européenne, son numéro de TVA intracommunautaire, qui permet notamment d'appliquer l'autoliquidation de la TVA en B2B. Si vous recevez ce type de facture, l'absence de SIRET n'est donc pas une anomalie. Les règles applicables dans l'autre sens, quand c'est vous qui facturez à l'étranger, sont détaillées dans notre guide pour [facturer un client étranger](/blog/facturer-client-etranger-ue-hors-ue).
+
+## Cas n° 6 : l'association non inscrite au répertoire Sirene
+
+Une association loi 1901 n'obtient un SIREN et un SIRET que si elle s'inscrit au répertoire Sirene de l'INSEE. Tant qu'elle n'emploie pas de salarié, ne perçoit pas de subvention publique et n'exerce pas d'activité soumise à la TVA ou aux impôts commerciaux, elle peut émettre une facture en y indiquant son numéro RNA, attribué lors de sa déclaration en préfecture. Dès que l'une de ces conditions est remplie, elle doit demander son SIRET et le faire figurer sur ses factures. Notre guide de la [facturation d'une association loi 1901](/blog/facturation-association-loi-1901) détaille les mentions propres aux associations.
+
 ## Tableau récapitulatif : facturer sans SIRET selon votre situation
 
 <div className="not-prose my-8">
@@ -136,6 +145,16 @@ Cette situation n'a donc rien à voir avec le portage salarial ou la période d'
         <TableCell className="font-medium">Activité professionnelle régulière non déclarée</TableCell>
         <TableCell>Oui</TableCell>
         <TableCell>Immatriculation immédiate obligatoire, risque de travail dissimulé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Entreprise étrangère sans établissement en France</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Identifiant de son pays et, dans l'UE, numéro de TVA intracommunautaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Association sans activité soumise à la TVA, sans salarié ni subvention</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Numéro RNA sur la facture, SIRET à demander dès qu'une de ces conditions est remplie</TableCell>
       </TableRow>
     </TableBody>
   </Table>
@@ -197,7 +216,7 @@ Newbi facilite la mise en conformité de vos factures dès la création de votre
 
 ## En résumé
 
-Facturer sans SIRET n'est légal que dans des cas précis : le portage salarial, où c'est la société de portage qui facture en son nom propre, et la vente occasionnelle entre particuliers, qui ne relève pas d'une activité professionnelle. En dehors de ces situations, toute personne exerçant une activité économique régulière doit impérativement disposer d'un SIRET avant d'émettre la moindre facture, sous peine de sanctions fiscales et, en cas d'activité non déclarée, de poursuites pour travail dissimulé. En période de création d'entreprise, mieux vaut patienter quelques jours et utiliser un devis plutôt que de facturer prématurément.
+Facturer sans SIRET n'est légal que dans des cas précis : le portage salarial, où c'est la société de portage qui facture en son nom propre, et la vente occasionnelle entre particuliers, qui ne relève pas d'une activité professionnelle. Une entreprise étrangère sans établissement en France et une association qui n'a pas à s'inscrire au répertoire Sirene facturent aussi sans SIRET, avec leurs propres identifiants. En dehors de ces situations, toute personne exerçant une activité économique régulière doit impérativement disposer d'un SIRET avant d'émettre la moindre facture, sous peine de sanctions fiscales et, en cas d'activité non déclarée, de poursuites pour travail dissimulé. En période de création d'entreprise, mieux vaut patienter quelques jours et utiliser un devis plutôt que de facturer prématurément.
 
 <ArticleCta />
 
@@ -233,6 +252,18 @@ Facturer sans SIRET n'est légal que dans des cas précis : le portage salarial,
       <AccordionTrigger>Combien de temps faut-il pour recevoir son SIRET après une création d'entreprise ?</AccordionTrigger>
       <AccordionContent>
         Le délai varie généralement de quelques jours à trois ou quatre semaines selon la forme juridique et la charge du guichet unique de l'INPI et de l'INSEE. Il est conseillé de vérifier régulièrement l'avancement de son dossier avant de s'engager auprès de clients sur une date de démarrage précise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Peut-on facturer avec son SIREN sans indiquer le SIRET ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. La mention obligatoire est le numéro unique d'identification de l'entreprise, c'est-à-dire le SIREN à 9 chiffres. Indiquer le SIRET à 14 chiffres, qui contient le SIREN, est l'usage le plus répandu et identifie en plus l'établissement qui facture, mais une facture qui porte seulement le SIREN reste conforme sur ce point.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-7">
+      <AccordionTrigger>Une entreprise étrangère peut-elle facturer un client français sans SIRET ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Une entreprise établie à l'étranger sans établissement en France n'a pas de SIRET : elle indique l'identifiant de son pays et, si elle est établie dans l'Union européenne, son numéro de TVA intracommunautaire. Sa facture est valable sans SIRET.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
