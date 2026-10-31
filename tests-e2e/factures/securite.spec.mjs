@@ -25,7 +25,7 @@ import { ouvrir } from "../navigation.mjs";
 import { API_URL, BASE_URL, connecte, SESSION_TOKEN_FACTURES, SESSION_TOKEN_FACTURES_EDITEUR, SESSION_TOKEN_FACTURES_LECTEUR, SESSION_TOKEN_INTRUS } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
 import { AVOIRS_FACTURES, CLIENTS_FACTURES, F, IMPORTEES, MODELES, RECURRENCES } from "../donnees/lot-factures.mjs";
-import { appelApi, verifierRefus, id } from "../securite.mjs";
+import { appelApi, envoiFichierApi, jetonApi, verifierRefus, id } from "../securite.mjs";
 import { base } from "../base.mjs";
 
 const ORG = id(COMPTES.factures.organisation);
@@ -669,6 +669,36 @@ test.describe("Factures : une facture émise ne se modifie pas", () => {
     const apres = await (await base()).collection("invoices").findOne({ _id: f._id });
     expect(apres.finalTotalTTC, `Le montant de la facture émise ${f.prefix}-${f.number} a changé (réponse ${JSON.stringify(reponse.data)})`).toBe(f.finalTotalTTC);
   });
+
+  test("Changer les coordonnées bancaires d'une facture émise par l'API : refusé, l'IBAN de la facture ne change pas", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    const f = F.emiseAModifierApi;
+    const reponse = await appelApi(
+      page,
+      `mutation($w: ID!, $id: ID!, $input: UpdateInvoiceInput!) { updateInvoice(id: $id, workspaceId: $w, input: $input) { id } }`,
+      { w: ORG, id: id(f), input: { showBankDetails: true, bankDetails: { iban: "FR7630006000011234567890189", bic: "AGRIFRPP", bankName: "Autre banque" } } },
+      { organisation: ORG },
+    );
+    expect(reponse.data?.updateInvoice ?? null, "Coordonnées bancaires d'une facture émise remplacées").toBeNull();
+    expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/ne se modifie plus/);
+    const apres = await (await base()).collection("invoices").findOne({ _id: f._id });
+    expect(apres.bankDetails ?? null, "IBAN de la facture émise changé").toEqual(f.bankDetails ?? null);
+    expect(apres.showBankDetails).toBe(f.showBankDetails);
+  });
+
+  test("Reculer la date d'émission d'une facture émise au 1er janvier : refusé", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    const f = F.emiseAModifierApi;
+    const reponse = await appelApi(
+      page,
+      `mutation($w: ID!, $id: ID!, $input: UpdateInvoiceInput!) { updateInvoice(id: $id, workspaceId: $w, input: $input) { id } }`,
+      { w: ORG, id: id(f), input: { issueDate: `${new Date().getFullYear()}-01-01` } },
+      { organisation: ORG },
+    );
+    expect(reponse.data?.updateInvoice ?? null, "Date d'émission d'une facture émise reculée").toBeNull();
+    const apres = await (await base()).collection("invoices").findOne({ _id: f._id });
+    expect(apres.issueDate.toISOString()).toBe(f.issueDate.toISOString());
+  });
 });
 
 /**
@@ -800,5 +830,325 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
     const modeles = page.locator("main button[title='Modèles']");
     if (await modeles.isVisible().catch(() => false)) await modeles.click();
     await pasExecute(page);
+  });
+});
+
+/**
+ * Relance immédiate d'une facture (sendInvoiceReminderNow, fiche d'une
+ * échéance du calendrier) : droit « Envoyer par e-mail » des factures, une
+ * relance au plus toutes les 12 heures, jamais pour une facture payée, et
+ * rien pour les factures d'une autre entreprise.
+ */
+test.describe("Factures : relance immédiate", () => {
+  const RELANCER = `mutation($id: ID!, $w: ID) { sendInvoiceReminderNow(invoiceId: $id, workspaceId: $w) { success message } }`;
+  const journaux = async (f) => (await base()).collection("invoicereminderlogs").countDocuments({ invoiceId: f._id });
+
+  test.describe("Membre", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_LECTEUR) });
+    test("Relancer une facture : refusé, aucune relance journalisée", async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      const avant = await journaux(F.relanceEditeur);
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG });
+      verifierRefus(reponse, "sendInvoiceReminderNow", "Relance par le Membre");
+      expect(await journaux(F.relanceEditeur)).toBe(avant);
+    });
+  });
+
+  test.describe("Éditeur", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_EDITEUR) });
+    test.beforeEach(async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+    });
+
+    test("Relancer une facture échue : le droit de l'Éditeur est reconnu", async ({ page }) => {
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG, delai: 30_000 });
+      expect(reponse.sansReponse, "L'API n'a pas répondu").toBe(false);
+      expect(estRefusDeDroits(reponse), `Refusé pour une question de droits (${JSON.stringify(reponse.errors).slice(0, 300)})`).toBe(false);
+    });
+
+    test("Relancer une facture payée : refusé avec un message", async ({ page }) => {
+      const reponse = await appelApi(page, RELANCER, { id: id(F.payee), w: ORG }, { organisation: ORG });
+      expect(reponse.data?.sendInvoiceReminderNow?.success).toBe(false);
+      expect(reponse.data?.sendInvoiceReminderNow?.message).toMatch(/Seules les factures en attente/);
+      expect(await journaux(F.payee)).toBe(0);
+    });
+
+    test("Seconde relance dans les 12 heures : refusée avec un message", async ({ page }) => {
+      const avant = await journaux(F.relanceRecente);
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceRecente), w: ORG }, { organisation: ORG });
+      expect(reponse.data?.sendInvoiceReminderNow?.success).toBe(false);
+      expect(reponse.data?.sendInvoiceReminderNow?.message).toMatch(/12 dernières heures/);
+      expect(await journaux(F.relanceRecente)).toBe(avant);
+    });
+  });
+
+  test.describe("Autre entreprise", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_INTRUS) });
+    test("Relancer une facture des autres : « introuvable », rien n'est journalisé", async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      const avant = await journaux(F.relanceEditeur);
+      await etape(page, "Depuis sa propre organisation, avec leur identifiant", async () => {
+        const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG_INTRUS }, { organisation: ORG_INTRUS });
+        expect(reponse.data?.sendInvoiceReminderNow?.success ?? false).toBe(false);
+        expect(JSON.stringify(reponse)).toMatch(/introuvable/i);
+      });
+      await etape(page, "En visant leur organisation", async () => {
+        verifierRefus(await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG }), "sendInvoiceReminderNow", "Relance chez les autres");
+      });
+      await etape(page, "En-tête de sa propre organisation, organisation des autres en argument", async () => {
+        verifierRefus(await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG_INTRUS }), "sendInvoiceReminderNow", "Relance chez les autres (en-tête)");
+      });
+      expect(await journaux(F.relanceEditeur)).toBe(avant);
+    });
+  });
+
+  test.describe("Sans session", () => {
+    test.use({ storageState: { cookies: [], origins: [] }, erreursConsoleAutorisees: /401.*\/api\/auth\/token/ });
+    test("Relancer une facture : refusé", async ({ page }) => {
+      await ouvrir(page, "/auth/login");
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG });
+      expect(reponse.data?.sendInvoiceReminderNow ?? null).toBeNull();
+    });
+  });
+});
+
+/**
+ * Archive PDF d'une facture ou d'un avoir (archiveInvoicePdf,
+ * archiveCreditNotePdf), envoyée par le site en multipart : c'est le
+ * document qui fait foi (aperçu, bouton PDF, envois).
+ */
+test.describe("Factures : archivage du PDF (envoi de fichier)", () => {
+  const ARCHIVER = `mutation($w: ID!, $i: ID!, $file: Upload!) { archiveInvoicePdf(workspaceId: $w, invoiceId: $i, file: $file) { id } }`;
+  const ARCHIVER_AVOIR = `mutation($w: ID!, $c: ID!, $file: Upload!) { archiveCreditNotePdf(workspaceId: $w, creditNoteId: $c, file: $file) { id } }`;
+  const PDF = { name: "facture.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n") };
+  const HTML = { name: "facture.pdf", mimeType: "application/pdf", buffer: Buffer.from("<html><body>Autre IBAN : FR76 3000 6000 0112 3456 7890 189</body></html>") };
+  const SANS_TYPE = { name: "facture", mimeType: "application/octet-stream", buffer: PDF.buffer };
+  const archive = async (collection, doc) => (await (await base()).collection(collection).findOne({ _id: doc._id }))?.archivedPdfKey ?? null;
+
+  test.describe("Membre", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_LECTEUR) });
+    test("Archiver le PDF d'une facture ou d'un avoir : refusé, archive inchangée", async ({ page }) => {
+      const facture = await envoiFichierApi(page, ARCHIVER, { w: ORG, i: id(F.cibleAttente) }, PDF, { organisation: ORG });
+      verifierRefus(facture, "archiveInvoicePdf", "Archive d'une facture par le Membre");
+      const avoir = await envoiFichierApi(page, ARCHIVER_AVOIR, { w: ORG, c: id(AVOIRS_FACTURES.cible) }, PDF, { organisation: ORG });
+      verifierRefus(avoir, "archiveCreditNotePdf", "Archive d'un avoir par le Membre");
+      expect(await archive("invoices", F.cibleAttente)).toBeNull();
+      expect(await archive("creditnotes", AVOIRS_FACTURES.cible)).toBeNull();
+    });
+  });
+
+  test.describe("Autre entreprise", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_INTRUS) });
+    test("Archiver le PDF d'une facture des autres : refusé, archive inchangée", async ({ page }) => {
+      for (const [contexte, w, entete] of [
+        ["en visant leur organisation", ORG, ORG],
+        ["en-tête de la sienne, leur organisation en argument", ORG, ORG_INTRUS],
+        ["depuis sa propre organisation, avec leur identifiant", ORG_INTRUS, ORG_INTRUS],
+      ]) {
+        const reponse = await envoiFichierApi(page, ARCHIVER, { w, i: id(F.cibleAttente) }, PDF, { organisation: entete });
+        expect.soft(reponse.data?.archiveInvoicePdf ?? null, `Archive acceptée (${contexte})`).toBeNull();
+        expect.soft(reponse.errors.length, `Aucun refus (${contexte})`).toBeGreaterThan(0);
+      }
+      expect(await archive("invoices", F.cibleAttente)).toBeNull();
+    });
+  });
+
+  test.describe("Éditeur", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_EDITEUR) });
+
+    for (const [cas, fichier] of [
+      ["une page HTML nommée facture.pdf, annoncée application/pdf", HTML],
+      ["un fichier sans type PDF annoncé", SANS_TYPE],
+    ]) {
+      test(`Archiver ${cas} : refusé, ce n'est pas un PDF`, async ({ page }) => {
+        const reponse = await envoiFichierApi(page, ARCHIVER, { w: ORG, i: id(F.cibleAttente) }, fichier, { organisation: ORG });
+        expect(reponse.data?.archiveInvoicePdf ?? null, "Fichier archivé comme document légal").toBeNull();
+        expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/doit être un PDF/);
+        expect(await archive("invoices", F.cibleAttente)).toBeNull();
+      });
+    }
+
+    test("Archiver une page HTML comme PDF d'un avoir : refusé", async ({ page }) => {
+      const reponse = await envoiFichierApi(page, ARCHIVER_AVOIR, { w: ORG, c: id(AVOIRS_FACTURES.editeur) }, HTML, { organisation: ORG });
+      expect(reponse.data?.archiveCreditNotePdf ?? null).toBeNull();
+      expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/doit être un PDF/);
+    });
+
+    test("Remplacer l'archive d'une facture payée : refusé, l'archive d'origine reste", async ({ page }) => {
+      const f = F.payeeArchivee;
+      const reponse = await envoiFichierApi(page, ARCHIVER, { w: ORG, i: id(f) }, PDF, { organisation: ORG });
+      expect(reponse.data?.archiveInvoicePdf ?? null, "Archive d'une facture payée remplacée").toBeNull();
+      expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/ne se remplace plus/);
+      expect(await archive("invoices", f)).toBe(f.archivedPdfKey);
+    });
+  });
+});
+
+/**
+ * Paiement en ligne (Stripe Connect) : seuls ceux qui gèrent les
+ * applications de l'espace le connectent ou le déconnectent. Stripe n'est
+ * jamais appelé ici : le refus vient avant.
+ */
+test.describe("Factures : paiement en ligne (Stripe Connect), droits", () => {
+  const comptes = () => photo(["stripeconnectaccounts", {}]);
+  const OPERATIONS = [
+    ["Connecter Stripe", `mutation { createStripeConnectAccount { success message } }`, {}, "createStripeConnectAccount"],
+    ["Ouvrir le tableau de bord Stripe", `mutation($a: String!) { generateStripeDashboardLink(accountId: $a) { success message url } }`, { a: "acct_e2e_factures" }, "generateStripeDashboardLink"],
+    ["Déconnecter Stripe", `mutation { disconnectStripe { success message } }`, {}, "disconnectStripe"],
+  ];
+
+  for (const [role, token] of [
+    ["Membre", SESSION_TOKEN_FACTURES_LECTEUR],
+    ["Éditeur", SESSION_TOKEN_FACTURES_EDITEUR],
+  ]) {
+    test.describe(role, () => {
+      test.use({ storageState: connecte(token) });
+      test("Connecter, ouvrir ou déconnecter Stripe : refusé, aucun compte modifié", async ({ page }) => {
+        await ouvrir(page, "/dashboard");
+        const avant = await comptes();
+        for (const [nom, requete, variables, champ] of OPERATIONS) {
+          const reponse = await appelApi(page, requete, variables, { organisation: ORG });
+          const resultat = reponse.data?.[champ];
+          expect.soft(resultat?.success ?? false, `${nom} : accepté pour le rôle ${role}`).toBe(false);
+          expect.soft(resultat?.url ?? null, `${nom} : lien Stripe donné au rôle ${role}`).toBeNull();
+          expect.soft(estRefusDeDroits(reponse) || /rôle ne permet pas|permission|droit/i.test(resultat?.message || ""), `${nom} : pas un refus de droits (${JSON.stringify(reponse).slice(0, 300)})`).toBe(true);
+        }
+        expect(await comptes(), "Un compte Stripe Connect a changé").toBe(avant);
+      });
+    });
+  }
+
+  test.describe("Autre entreprise", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_INTRUS) });
+    test("Lire le compte Stripe des autres : refusé, rien ne revient", async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      const reponse = await appelApi(page, `query { myStripeConnectAccount { accountId chargesEnabled } }`, {}, { organisation: ORG });
+      expect(JSON.stringify(reponse.data ?? {}), "Compte Stripe des autres renvoyé").not.toContain("acct_e2e_factures");
+      verifierRefus(reponse, "myStripeConnectAccount", "Compte Stripe des autres");
+    });
+  });
+});
+
+/** Factures importées : lots, réanalyse, conversion et achat d'imports. */
+test.describe("Factures : factures importées (lots, réanalyse, conversion)", () => {
+  const LOT = `mutation($w: ID!, $f: [BatchImportFileInput!]!) { batchImportInvoices(workspaceId: $w, files: $f) { __typename } }`;
+  const fichier = (n, espace = ORG) => ({ cloudflareUrl: `https://fichiers.e2e.invalid/importedInvoice/${espace}/lot-${n}.pdf`, cloudflareKey: `importedInvoice/${espace}/lot-${n}.pdf`, fileName: `lot-${n}.pdf`, mimeType: "application/pdf", fileSize: 1000 });
+  const OPERATIONS = [
+    ["Importer un lot", "batchImportInvoices", LOT, (w) => ({ w, f: [fichier(1, w)] })],
+    ["Relancer la lecture OCR", "reanalyzeImportedInvoice", `mutation($id: ID!) { reanalyzeImportedInvoice(id: $id) { __typename } }`, () => ({ id: id(IMPORTEES.cible) })],
+    ["Convertir en facture d'achat", "convertImportedInvoiceToPurchaseInvoice", `mutation($id: ID!) { convertImportedInvoiceToPurchaseInvoice(id: $id) { id } }`, () => ({ id: id(IMPORTEES.cible) })],
+    ["Convertir plusieurs en factures d'achat", "convertImportedInvoicesToPurchaseInvoices", `mutation($ids: [ID!]!) { convertImportedInvoicesToPurchaseInvoices(ids: $ids) { converted } }`, () => ({ ids: [id(IMPORTEES.cible)] })],
+    ["Acheter des imports", "purchaseExtraOcrImports", `mutation($w: ID!) { purchaseExtraOcrImports(workspaceId: $w, quantity: 10) { __typename } }`, (w) => ({ w })],
+  ];
+  const temoins = async () => [await photo(["imported_invoices", { workspaceId: ORG_ID }]), await photo(["purchaseinvoices", { workspaceId: ORG_ID }])];
+
+  test.describe("Membre", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_LECTEUR) });
+    for (const [nom, champ, requete, variables] of OPERATIONS) {
+      test(`${nom} : refusé`, async ({ page }) => {
+        await ouvrir(page, "/dashboard");
+        const avant = await temoins();
+        const reponse = await appelApi(page, requete, variables(ORG), { organisation: ORG });
+        if (champ === "convertImportedInvoicesToPurchaseInvoices" && reponse.data?.[champ]) expect(reponse.data[champ].converted, "Conversion faite par le Membre").toBe(0);
+        else verifierRefus(reponse, champ, `${nom} (Membre)`);
+        expect(await temoins(), "La base a changé malgré le refus").toEqual(avant);
+      });
+    }
+  });
+
+  test.describe("Autre entreprise", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_INTRUS) });
+    for (const [nom, champ, requete, variables] of OPERATIONS) {
+      test(`${nom} chez les autres : refusé`, async ({ page }) => {
+        await ouvrir(page, "/dashboard");
+        const avant = await temoins();
+        // En-tête de sa propre organisation : leurs identifiants, leur organisation en argument
+        const reponse = await appelApi(page, requete, variables(ORG), { organisation: ORG_INTRUS });
+        expect(JSON.stringify(reponse.data ?? {}), "Une donnée des autres revient").not.toContain(IMPORTEES.cible.originalInvoiceNumber);
+        if (champ === "convertImportedInvoicesToPurchaseInvoices" && reponse.data?.[champ]) expect(reponse.data[champ].converted).toBe(0);
+        expect(await temoins(), "La base des autres a changé").toEqual(avant);
+      });
+    }
+  });
+
+  test.describe("Éditeur", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_EDITEUR) });
+    test.beforeEach(async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+    });
+
+    test("Lot de 101 fichiers : refusé avec un message, rien n'est importé", async ({ page }) => {
+      const avant = await temoins();
+      const reponse = await appelApi(page, LOT, { w: ORG, f: Array.from({ length: 101 }, (_, i) => fichier(i)) }, { organisation: ORG });
+      expect(reponse.data?.batchImportInvoices ?? null).toBeNull();
+      expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/Maximum 100 factures/);
+      expect(await temoins()).toEqual(avant);
+    });
+
+    test("Fichier rangé dans l'espace d'une autre entreprise : refusé, rien n'est importé", async ({ page }) => {
+      const avant = await temoins();
+      const reponse = await appelApi(page, LOT, { w: ORG, f: [fichier(1, ORG_INTRUS)] }, { organisation: ORG });
+      expect(reponse.data?.batchImportInvoices ?? null).toBeNull();
+      expect(reponse.errors.map((e) => e.message).join(" | ")).toMatch(/Clé de fichier invalide/);
+      expect(await temoins()).toEqual(avant);
+    });
+  });
+});
+
+/** Facturation électronique : réglages, statistiques et annuaire des autres. */
+test.describe("Factures : facturation électronique d'une autre entreprise", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_INTRUS) });
+  const LECTURES_EFACTURATION = [
+    ["La vérification de l'entreprise", "eInvoicingVerification", `query($w: ID!) { eInvoicingVerification(workspaceId: $w) { connected } }`, (w) => ({ w })],
+    ["Les entrées d'annuaire", "eInvoicingDirectoryEntries", `query($w: ID!) { eInvoicingDirectoryEntries(workspaceId: $w) { id identifier } }`, (w) => ({ w })],
+    ["Les déclarations e-reporting", "eInvoicingEReportings", `query($w: ID!) { eInvoicingEReportings(workspaceId: $w) { id } }`, (w) => ({ w })],
+    ["Les statistiques", "eInvoicingStats", `query($w: ID!) { eInvoicingStats(workspaceId: $w) { totalSent } }`, (w) => ({ w })],
+    ["Les réglages", "eInvoicingSettings", `query($w: ID!) { eInvoicingSettings(workspaceId: $w) { __typename } }`, (w) => ({ w })],
+    ["Le contrôle d'un destinataire", "checkRecipientEInvoicing", `mutation($w: ID!) { checkRecipientEInvoicing(workspaceId: $w, siret: "55566677700011") { success } }`, (w) => ({ w })],
+    ["Le routage d'une facture", "previewInvoiceRouting", `mutation($w: ID!, $i: ID!) { previewInvoiceRouting(workspaceId: $w, invoiceId: $i) { __typename } }`, (w) => ({ w, i: id(F.attente) })],
+  ];
+  for (const [nom, champ, requete, variables] of LECTURES_EFACTURATION) {
+    test(`${nom} des autres : refusé, rien ne revient`, async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      for (const entete of [ORG, ORG_INTRUS]) {
+        const reponse = await appelApi(page, requete, variables(ORG), { organisation: entete, delai: 15_000 });
+        sansFuite(reponse);
+        verifierRefus(reponse, champ, `${nom} (en-tête ${entete === ORG ? "des autres" : "de sa propre organisation"})`);
+      }
+    });
+  }
+});
+
+/** Routes de PDF du site (aperçu, Factur-X) et de l'API. */
+test.describe("Factures : routes de PDF protégées", () => {
+  test.describe("Sans session", () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+    test("Aperçu PDF, Factur-X du site et aperçu PDF de l'API : refusés (401)", async ({ page }) => {
+      const corps = { invoiceData: { number: "0001", client: { name: "Client" }, items: [] }, invoiceId: id(F.attente) };
+      for (const chemin of ["/api/invoices/preview-pdf", "/api/generate-facturx", "/api/invoices/facturx-pdf"]) {
+        const r = await page.request.post(`${BASE_URL}${chemin}`, { data: corps, failOnStatusCode: false });
+        expect.soft(r.status(), `${chemin} sans session`).toBe(401);
+      }
+      const api = await page.request.post(`${API_URL}/api/invoice-preview-pdf`, { data: corps, failOnStatusCode: false });
+      expect.soft(api.status(), "Aperçu PDF de l'API sans jeton").toBe(401);
+    });
+  });
+
+  test.describe("Avec une session", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES) });
+    test("Factur-X complet du site : réservé aux appels internes (sans secret ou avec un faux secret : 401)", async ({ page }) => {
+      for (const entetes of [{}, { "x-internal-secret": "pas-le-bon-secret" }]) {
+        const r = await page.request.post(`${BASE_URL}/api/invoices/facturx-pdf`, { data: { invoiceId: id(F.attente) }, headers: entetes, failOnStatusCode: false });
+        expect.soft(r.status(), `facturx-pdf ${JSON.stringify(entetes)}`).toBe(401);
+      }
+    });
+
+    test("PDF d'une facture ou d'un avoir avec un identifiant malformé : « introuvable » (404), pas une erreur serveur", async ({ page }) => {
+      const jeton = await jetonApi(page);
+      for (const chemin of ["/invoices/abc/document-pdf", "/documents/creditNote/abc/document-pdf"]) {
+        const r = await page.request.get(`${API_URL}${chemin}`, { headers: { authorization: `Bearer ${jeton}` }, failOnStatusCode: false });
+        expect.soft(r.status(), `${chemin}`).toBe(404);
+      }
+    });
   });
 });

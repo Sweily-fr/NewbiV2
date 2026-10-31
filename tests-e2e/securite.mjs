@@ -9,7 +9,7 @@
  *     ou d'authentification), jamais une réussite silencieuse.
  */
 import { expect } from "@playwright/test";
-import { API_URL } from "./config.mjs";
+import { API_URL, BASE_URL } from "./config.mjs";
 
 /**
  * Appelle l'API GraphQL avec la session de la page (la page doit être sur le
@@ -73,3 +73,62 @@ export function verifierRefus(reponse, champ, contexte) {
 
 /** Fragments d'identifiants utiles aux requêtes de contrôle. */
 export const id = (doc) => doc._id.toHexString();
+
+/**
+ * Jeton de l'API pour la session de la page, sans ouvrir de page : utile
+ * aux rôles dont le tableau de bord n'est pas le sujet du test.
+ */
+export async function jetonApi(page) {
+  const reponse = await page.request.get(`${BASE_URL}/api/auth/token`, { failOnStatusCode: false });
+  if (!reponse.ok()) return null;
+  return (await reponse.json().catch(() => ({}))).token || null;
+}
+
+/**
+ * Comme appelApi, sans page chargée : requête GraphQL envoyée depuis le
+ * contexte du navigateur (cookies de la session), avec le jeton de l'API.
+ */
+export async function appelApiDirect(page, query, variables = {}, { organisation = null, delai = 30_000 } = {}) {
+  const jeton = await jetonApi(page);
+  const res = await page.request.post(`${API_URL}/graphql`, {
+    headers: {
+      "Content-Type": "application/json",
+      "x-app-client": "web",
+      ...(jeton ? { authorization: `Bearer ${jeton}` } : {}),
+      ...(organisation ? { "x-organization-id": organisation } : {}),
+    },
+    data: { query, variables },
+    timeout: delai,
+    failOnStatusCode: false,
+  });
+  const corps = await res.json().catch(() => ({}));
+  return { statut: res.status(), data: corps.data ?? null, errors: corps.errors ?? [], sansReponse: false };
+}
+
+/**
+ * Mutation GraphQL avec un fichier (envoi multipart, comme le site) :
+ * `fichier` = { name, mimeType, buffer } placé dans la variable `file`.
+ */
+export async function envoiFichierApi(page, query, variables, fichier, { organisation = null } = {}) {
+  const jeton = await jetonApi(page);
+  const res = await page.request.post(`${API_URL}/graphql`, {
+    headers: {
+      "Apollo-Require-Preflight": "true",
+      "x-app-client": "web",
+      ...(jeton ? { authorization: `Bearer ${jeton}` } : {}),
+      ...(organisation ? { "x-organization-id": organisation } : {}),
+    },
+    multipart: {
+      operations: JSON.stringify({ query, variables: { ...variables, file: null } }),
+      map: JSON.stringify({ 0: ["variables.file"] }),
+      0: fichier,
+    },
+    timeout: 30_000,
+    failOnStatusCode: false,
+  });
+  const corps = await res.json().catch(() => ({}));
+  return { statut: res.status(), data: corps.data ?? null, errors: corps.errors ?? [] };
+}
+
+/** Messages des erreurs d'une réponse, en une ligne (pour les assertions). */
+export const messages = (reponse) => reponse.errors.map((e) => `${e.extensions?.code || ""} ${e.message}`).join(" | ");

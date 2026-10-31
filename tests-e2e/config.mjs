@@ -60,6 +60,20 @@ export const SESSION_TOKEN_FACTURES_LECTEUR = "e2eSessionTokenNewbiFacturesLecte
 export const SESSION_TOKEN_FACTURES_REGLAGES = "e2eSessionTokenNewbiFacturesReglagesUniquement";
 /** Propriétaire de l'organisation « Offre Factures » (offre d'entrée : plafonds des factures). */
 export const SESSION_TOKEN_FACTURES_OFFRE = "e2eSessionTokenNewbiFacturesOffreUniquement";
+/** Propriétaire de « Contrôles Factures » (statuts, avoirs simultanés, montants, numérotation). */
+export const SESSION_TOKEN_FACTURES_CONTROLES = "e2eSessionTokenNewbiFacturesControlesUniquement";
+/** « Comptable » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_COMPTABLE = "e2eSessionTokenNewbiFacturesComptableUniquement";
+/** « Administrateur » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_ADMIN = "e2eSessionTokenNewbiFacturesAdminUniquement";
+/** Rôle personnalisé « Factures : voir, créer » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_ROLE_CREATION = "e2eSessionTokenNewbiFacturesRoleCreationUniquement";
+/** Rôle personnalisé « Avoirs : voir » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_ROLE_AVOIRS = "e2eSessionTokenNewbiFacturesRoleAvoirsUniquement";
+/** Propriétaire de « Soldes Factures » (factures créditées, lues seulement). */
+export const SESSION_TOKEN_FACTURES_SOLDES = "e2eSessionTokenNewbiFacturesSoldesUniquement";
+/** Propriétaire de « E-facturation Factures » (factures transmises à la plateforme). */
+export const SESSION_TOKEN_FACTURES_EFACTURATION = "e2eSessionTokenNewbiFacturesEFacturationUniquement";
 // ── fin du lot factures ──
 // ── Lot devis-bc-bl ──
 /** Propriétaire de l'organisation « Ventes » (offre Entreprise) : devis, bons de commande et de livraison par rôle. */

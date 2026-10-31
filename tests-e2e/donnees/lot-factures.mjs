@@ -212,6 +212,21 @@ export const F = {
   aCrediterParEditeur: f(51, { numero: "0035", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: dumas, articles: [ligne("Facture créditée par l'Éditeur", 1, 160)], creeeIlYa: 411 }),
   cibleRecurrence: f(52, { numero: "0036", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: lumiere, articles: [ligne("Cible de la récurrence (droits)", 1, 17)], creeeIlYa: 412 }),
   cibleRecurrenceEditeur: f(53, { numero: "0037", statut: "PENDING", emiseIlYa: 60, echeanceDans: 10, client: dumas, articles: [ligne("Récurrence suspendue par l'Éditeur", 1, 18)], creeeIlYa: 413 }),
+  // Relance immédiate (sendInvoiceReminderNow) : échues, une par cas.
+  relanceEditeur: f(54, { numero: "0039", statut: "PENDING", emiseIlYa: 60, echeanceDans: -20, client: lumiere, articles: [ligne("Facture relancée par l'Éditeur", 1, 19)], creeeIlYa: 414 }),
+  relanceRecente: f(55, { numero: "0040", statut: "PENDING", emiseIlYa: 60, echeanceDans: -20, client: dumas, articles: [ligne("Facture déjà relancée ce matin", 1, 20)], creeeIlYa: 415 }),
+  // Facture payée dont le PDF est déjà archivé : l'archive fait foi.
+  payeeArchivee: f(56, {
+    numero: "0041",
+    statut: "COMPLETED",
+    emiseIlYa: 60,
+    echeanceDans: -30,
+    client: zoe,
+    articles: [ligne("Facture payée archivée", 1, 21)],
+    payeeLe: DANS(-35),
+    creeeIlYa: 416,
+    extra: { archivedPdfKey: "e2e/factures/archive-payee.pdf", archivedPdfStoredAt: DANS(-35), archivedPdfSource: "NEWBI" },
+  }),
 };
 
 /** Référence affichée dans la liste et le panneau (« F-092026-0001 »). */
@@ -384,6 +399,8 @@ export const IMPORTEES = {
   editeurValider: importee(4, { numero: "IMPORT-EDIT-003", client: "Client importé à valider", montantHT: 52, statut: "PENDING_REVIEW", emiseIlYa: 302 }),
   editeurRejeter: importee(5, { numero: "IMPORT-EDIT-004", client: "Client importé rejeté", montantHT: 53, statut: "PENDING_REVIEW", emiseIlYa: 303 }),
   editeurArchiver: importee(6, { numero: "IMPORT-EDIT-005", client: "Client importé archivé", montantHT: 54, emiseIlYa: 304 }),
+  // Jamais validée (lecture OCR à revoir) : pas une vente du FEC.
+  aRevoirFec: importee(7, { numero: "IMPORT-REVUE-006", client: "Client importé à revoir", montantHT: 77, statut: "PENDING_REVIEW", emiseIlYa: 305 }),
 };
 
 // --- Organisation « Réglages Factures » : numérotation continue et volume -------------
@@ -445,6 +462,400 @@ export const F_OFFRE = {
   attente: f(180, { compte: "facturesOffre", numero: "0001", statut: "PENDING", emiseIlYa: 5, echeanceDans: 25, client: CLIENTS_FACTURES.offre, articles: [ligne("Prestation de l'offre d'entrée", 1, 300)] }),
 };
 
+// --- Espaces de contrôle (hors COMPTES, semés ici) -------------------------------------
+
+/**
+ * Trois espaces du lot, à part pour que leurs montants et leurs numéros ne
+ * dépendent d'aucun autre test :
+ *   - « Contrôles Factures » : statuts, avoirs simultanés, montants des
+ *     factures liées et de situation, numérotation, et un membre par rôle
+ *     (Comptable, Administrateur, deux rôles personnalisés) ;
+ *   - « Soldes Factures » : factures échues créditées, jamais modifiées
+ *     (soldes, paiement en ligne, relances d'une facture soldée par avoir) ;
+ *   - « E-facturation Factures » (SA, facturation électronique activée) :
+ *     factures déjà transmises à la plateforme ou déclarées.
+ */
+const jeton = (nom) => `e2eSessionTokenNewbiFactures${nom}Uniquement`;
+const espace = (n, nom, champs = {}) => ({
+  _id: oid("espaceFactures", n),
+  name: nom,
+  slug: nom.toLowerCase().replace(/\s+/g, "-"),
+  companyName: nom,
+  companyEmail: `facturation@espace-factures-${n}.test`,
+  companyPhone: "+33123456789",
+  addressStreet: "1 rue de la Paix",
+  addressCity: "Paris",
+  addressZipCode: "75001",
+  addressCountry: "France",
+  siret: "98765432100012",
+  legalForm: "SASU",
+  vatNumber: "FR98765432100",
+  capitalSocial: "10000",
+  rcs: "Paris B 987 654 321",
+  ...champs,
+});
+
+export const ESPACES_FACTURES = {
+  controles: {
+    organisation: espace(1, "Contrôles Factures Test SASU"),
+    proprietaire: { _id: oid("membreFactures", 1), email: "factures-controles@e2e.test", name: "Clément Contrôles", token: jeton("Controles") },
+  },
+  soldes: {
+    organisation: espace(2, "Soldes Factures Test SASU"),
+    proprietaire: { _id: oid("membreFactures", 6), email: "factures-soldes@e2e.test", name: "Solène Soldes", token: jeton("Soldes") },
+  },
+  efacturation: {
+    organisation: espace(3, "E-facturation Factures Test SA", { legalForm: "SA", eInvoicingEnabled: true }),
+    proprietaire: { _id: oid("membreFactures", 7), email: "factures-efacturation@e2e.test", name: "Émile Efacturation", token: jeton("EFacturation") },
+  },
+};
+
+/** Rôles personnalisés de « Contrôles Factures » (clé role_<hex>, comme l'API les crée). */
+export const ROLES_FACTURES = {
+  creation: {
+    _id: oid("espaceFactures", 101),
+    role: `role_${oid("espaceFactures", 101).toHexString()}`,
+    name: "Factures : voir, créer",
+    actions: { invoices: ["view", "create"] },
+  },
+  avoirs: {
+    _id: oid("espaceFactures", 102),
+    role: `role_${oid("espaceFactures", 102).toHexString()}`,
+    name: "Avoirs : voir",
+    actions: { creditNotes: ["view"] },
+  },
+};
+
+/** Membres de « Contrôles Factures », un par rôle. */
+export const MEMBRES_CONTROLES = {
+  comptable: { _id: oid("membreFactures", 2), email: "factures-comptable@e2e.test", name: "Camille Comptable", role: "accountant", token: jeton("Comptable") },
+  admin: { _id: oid("membreFactures", 3), email: "factures-admin@e2e.test", name: "Adèle Administratrice", role: "admin", token: jeton("Admin") },
+  creation: { _id: oid("membreFactures", 4), email: "factures-role-creation@e2e.test", name: "Corentin Création", role: ROLES_FACTURES.creation.role, token: jeton("RoleCreation") },
+  avoirs: { _id: oid("membreFactures", 5), email: "factures-role-avoirs@e2e.test", name: "Ava Avoirs", role: ROLES_FACTURES.avoirs.role, token: jeton("RoleAvoirs") },
+};
+
+const adresseEspace = { street: "1 rue de la Paix", city: "Paris", postalCode: "75001", country: "France" };
+const emetteur = (org) => ({
+  name: org.companyName,
+  email: org.companyEmail,
+  phone: org.companyPhone,
+  siret: org.siret,
+  vatNumber: org.vatNumber,
+  companyStatus: org.legalForm,
+  capitalSocial: org.capitalSocial,
+  rcs: org.rcs,
+  transactionCategory: "SERVICES",
+  vatPaymentCondition: "NONE",
+  vatFranchise: false,
+  address: adresseEspace,
+});
+
+/** Clients des espaces de contrôle (un par espace, plus un second pour les avoirs). */
+export const CLIENTS_CONTROLES = {
+  chantier: client(30, null, { name: "Maître d'ouvrage Chantier SAS", email: "travaux@chantier.test", type: "COMPANY", siret: "11122233300014", vatNumber: "FR11111222333", address: adresse("5 place du Chantier", "Lyon", "69003") }),
+  autre: client(31, null, { name: "Autre Client Fictif SARL", email: "contact@autre-client.test", type: "COMPANY", siret: "44455566600017", vatNumber: "FR44444555666", address: adresse("2 rue Ailleurs", "Nantes", "44000") }),
+  soldes: client(32, null, { name: "Client des Soldes SARL", email: "compta@soldes.test", type: "COMPANY", siret: "55566677700018", vatNumber: "FR55555666778", address: adresse("8 rue des Comptes", "Lille", "59000") }),
+  public: client(33, null, { name: "Collectivité Destinataire SA", email: "factures@collectivite.test", type: "COMPANY", siret: "66677788800019", vatNumber: "FR66666777889", address: adresse("1 place de la Mairie", "Rennes", "35000") }),
+};
+const ESPACE_DU_CLIENT = { chantier: "controles", autre: "controles", soldes: "soldes", public: "efacturation" };
+
+/**
+ * Facture d'un espace de contrôle (forme de factures-liste.mjs). `lignes` :
+ * articles ; `extra` : champs propres au cas (remise, port, e-facturation…).
+ */
+function piece(n, cle, { prefixe = "F-CTRL", numero, statut, emiseIlYa = 30, echeanceDans = 30, client: c, lignes, creeeIlYa = 100, payeeLe = null, extra = {} }) {
+  const { organisation, proprietaire } = ESPACES_FACTURES[cle];
+  const doc = factureListe({ n: 0, compte: "factures", numero, statut, emiseIlYa, echeanceDans, client: c, articles: lignes, payeeLe, creeeIlYa });
+  return {
+    ...doc,
+    _id: oid("pieceFactures", n),
+    prefix: prefixe,
+    companyInfo: statut === "DRAFT" ? null : emetteur(organisation),
+    workspaceId: organisation._id,
+    createdBy: proprietaire._id,
+    ...extra,
+  };
+}
+
+const { chantier, autre, soldes: clientSoldes, public: clientPublic } = CLIENTS_CONTROLES;
+
+/** Factures de « Contrôles Factures », une par action qui la modifie. */
+export const C = {
+  // Rôles
+  payerComptable: piece(1, "controles", { numero: "0001", statut: "PENDING", client: chantier, lignes: [ligne("Encaissée par le Comptable", 1, 100)] }),
+  refusComptable: piece(2, "controles", { numero: "0002", statut: "PENDING", client: chantier, lignes: [ligne("Intouchable par le Comptable", 1, 110)] }),
+  refusRoleCreation: piece(3, "controles", { numero: "0003", statut: "PENDING", client: chantier, lignes: [ligne("Non encaissable par le rôle Création", 1, 120)] }),
+  annulerAdmin: piece(4, "controles", { numero: "0004", statut: "PENDING", client: chantier, lignes: [ligne("Annulée par l'Administrateur", 1, 130)] }),
+  // Statuts
+  brouillonStatuts: piece(5, "controles", { numero: "DRAFT-0001", statut: "DRAFT", emiseIlYa: 0, client: chantier, lignes: [ligne("Brouillon aux statuts impossibles", 1, 140)] }),
+  payeeParStatut: piece(6, "controles", { numero: "0005", statut: "PENDING", client: chantier, lignes: [ligne("Payée par changement de statut", 1, 150)] }),
+  brouillonAcompte: piece(7, "controles", { prefixe: "ACOMPTE", numero: "DRAFT-0001", statut: "DRAFT", emiseIlYa: 0, client: chantier, lignes: [ligne("Acompte à valider depuis le panneau", 1, 160)] }),
+  // Avoirs : 900 € HT, soit 1 080 € TTC
+  avoirsSimultanes: piece(8, "controles", { numero: "0006", statut: "PENDING", client: chantier, lignes: [ligne("Facture créditée deux fois au même instant", 1, 900)] }),
+  avoirsModifiesSimultanes: piece(9, "controles", { numero: "0007", statut: "PENDING", client: chantier, lignes: [ligne("Facture dont deux avoirs grandissent", 1, 900)] }),
+  avoirClient: piece(10, "controles", { numero: "0008", statut: "PENDING", client: chantier, lignes: [ligne("Avoir au client de la facture", 1, 300)] }),
+  avoirDate: piece(11, "controles", { numero: "0009", statut: "PENDING", emiseIlYa: 10, client: chantier, lignes: [ligne("Avoir daté d'avant la facture", 1, 200)] }),
+  // Remise de 10 %, port de 15 € HT, autoliquidation
+  avoirRemisePort: piece(12, "controles", {
+    numero: "0010",
+    statut: "PENDING",
+    client: chantier,
+    lignes: [ligne("Pose de cloisons", 2, 500)],
+    extra: {
+      discount: 10,
+      discountType: "PERCENTAGE",
+      isReverseCharge: true,
+      shipping: { billShipping: true, shippingAddress: { fullName: chantier.name, ...chantier.address }, shippingAmountHT: 15, shippingVatRate: 20 },
+      // 1 000 € HT - 10 % + 15 € de port = 915 € HT, TVA autoliquidée
+      totalHT: 915,
+      totalVAT: 0,
+      totalTTC: 915,
+      finalTotalHT: 915,
+      finalTotalVAT: 0,
+      finalTotalTTC: 915,
+    },
+  }),
+};
+
+/** Devis acceptés de « Contrôles Factures » (factures liées et de situation). */
+function devis(n, { numero, lignes, montantTTC }) {
+  const { organisation, proprietaire } = ESPACES_FACTURES.controles;
+  const ht = lignes.reduce((t, a) => t + a.quantity * a.unitPrice, 0);
+  return {
+    _id: oid("pieceFactures", n),
+    prefix: "D-CTRL",
+    number: numero,
+    status: "COMPLETED",
+    issueDate: DANS(-20),
+    issueYear: DANS(-20).getFullYear(),
+    validUntil: DANS(10),
+    client: snapshotClient(chantier),
+    companyInfo: emetteur(organisation),
+    items: avecDefauts(lignes),
+    discount: 0,
+    discountType: "PERCENTAGE",
+    totalHT: ht,
+    totalVAT: montantTTC - ht,
+    totalTTC: montantTTC,
+    finalTotalHT: ht,
+    finalTotalVAT: Math.round((montantTTC - ht) * 100) / 100,
+    finalTotalTTC: montantTTC,
+    shipping: { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
+    linkedInvoices: [],
+    customFields: [],
+    workspaceId: organisation._id,
+    createdBy: proprietaire._id,
+    createdAt: DANS(-20),
+    updatedAt: MAINTENANT,
+  };
+}
+
+export const DEVIS_CONTROLES = {
+  // 8 333,33 € HT à 20 % = 10 000 € TTC (contrat des factures de situation)
+  situation: devis(50, { numero: "0001", lignes: [ligne("Construction de l'extension", 1, 8333.33)], montantTTC: 10000 }),
+  // 1 200 € TTC à deux taux : 900 € à 20 % (750 € HT) et 300 € à 5,5 % (284,36 € HT)
+  acompte: devis(51, { numero: "0002", lignes: [ligne("Rénovation énergétique", 1, 750), ligne("Isolation des combles", 1, 284.36, 5.5)], montantTTC: 1200 }),
+};
+
+/** Factures de « Soldes Factures » : échues, jamais modifiées par les tests. */
+export const S = {
+  // 1 000 € HT (1 200 € TTC), avoir de 400 € HT : 600 € HT encore dus
+  credit400: piece(60, "soldes", { numero: "0001", statut: "PENDING", emiseIlYa: 60, echeanceDans: -30, client: clientSoldes, lignes: [ligne("Mission créditée en partie", 1, 1000)] }),
+  // 500 € HT (600 € TTC), avoir total : plus rien à régler
+  soldee: piece(61, "soldes", { numero: "0002", statut: "PENDING", emiseIlYa: 60, echeanceDans: -30, client: clientSoldes, lignes: [ligne("Mission soldée par avoir", 1, 500)] }),
+  // 200 € HT (240 € TTC), sans avoir
+  due: piece(62, "soldes", { numero: "0003", statut: "PENDING", emiseIlYa: 60, echeanceDans: -30, client: clientSoldes, lignes: [ligne("Mission due", 1, 200)] }),
+};
+
+/** Factures de « E-facturation Factures », déjà transmises ou déclarées. */
+const transmise = (n, numero, nom) =>
+  piece(n, "efacturation", {
+    numero,
+    statut: "PENDING",
+    emiseIlYa: 5,
+    client: clientPublic,
+    lignes: [ligne(nom, 1, 1000)],
+    extra: {
+      superPdpInvoiceId: `spdp-e2e-${numero}`,
+      eInvoiceStatus: "VALIDATED",
+      eInvoiceFlowType: "E_INVOICING",
+      eInvoiceSentAt: DANS(-5),
+    },
+  });
+
+export const E = {
+  aCrediter: transmise(70, "0001", "Facture transmise à créditer"),
+  aAnnuler: transmise(71, "0002", "Facture transmise qu'on voudrait annuler"),
+  aRenvoyer: transmise(72, "0003", "Facture transmise renvoyée par erreur"),
+  declaree: piece(73, "efacturation", {
+    numero: "0004",
+    statut: "PENDING",
+    emiseIlYa: 5,
+    client: { ...clientPublic, type: "INDIVIDUAL", siret: undefined, vatNumber: undefined },
+    lignes: [ligne("Facture à un particulier déclarée", 1, 100)],
+    extra: { eInvoiceFlowType: "E_REPORTING_TRANSACTION", eReportingStatus: "REPORTED", eReportingTransactionId: "e2e-ereporting-1" },
+  }),
+};
+
+/** Avoirs des espaces de contrôle. */
+function avoirEspace(n, cle, { facture: source, numero, lignes }) {
+  const { organisation, proprietaire } = ESPACES_FACTURES[cle];
+  const t = totaux(lignes);
+  const negatif = Object.fromEntries(Object.entries(t).map(([k, v]) => [k, -Math.abs(v)]));
+  return {
+    _id: oid("pieceFactures", n),
+    prefix: "AV",
+    number: numero,
+    originalInvoice: source._id,
+    originalInvoiceNumber: source.number,
+    creditType: "COMMERCIAL_GESTURE",
+    reason: "",
+    issueDate: DANS(-2),
+    issueYear: DANS(-2).getFullYear(),
+    items: avecDefauts(lignes),
+    companyInfo: emetteur(organisation),
+    client: source.client,
+    status: "CREATED",
+    refundMethod: "NEXT_INVOICE",
+    discount: 0,
+    discountType: "PERCENTAGE",
+    customFields: [],
+    showBankDetails: false,
+    isReverseCharge: false,
+    ...negatif,
+    shipping: { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
+    clientPositionRight: false,
+    operationType: null,
+    retenueGarantie: 0,
+    escompte: 0,
+    workspaceId: organisation._id,
+    createdBy: proprietaire._id,
+    createdAt: DANS(-2),
+    updatedAt: MAINTENANT,
+  };
+}
+
+export const AVOIRS_CONTROLES = {
+  // « Contrôles Factures » : deux avoirs de 100 € HT, modifiés au même instant
+  croissantA: avoirEspace(80, "controles", { facture: C.avoirsModifiesSimultanes, numero: "0001", lignes: [ligne("Premier geste", -1, 100)] }),
+  croissantB: avoirEspace(81, "controles", { facture: C.avoirsModifiesSimultanes, numero: "0002", lignes: [ligne("Second geste", -1, 100)] }),
+  // Cible du rôle « Avoirs : voir » (modification et envoi refusés)
+  cibleRole: avoirEspace(82, "controles", { facture: C.refusRoleCreation, numero: "0003", lignes: [ligne("Avoir cible du rôle", -1, 10)] }),
+  // « Soldes Factures »
+  partiel: avoirEspace(83, "soldes", { facture: S.credit400, numero: "0001", lignes: [ligne("Remise sur la mission", -1, 400)] }),
+  total: avoirEspace(84, "soldes", { facture: S.soldee, numero: "0002", lignes: [ligne("Annulation de la mission", -1, 500)] }),
+};
+
+/** Facture importée de « Contrôles Factures » (modifiable par le Comptable). */
+export const IMPORTEE_CONTROLES = {
+  ...importee(20, { numero: "IMPORT-CTRL-001", client: "Client importé du Comptable", montantHT: 60, statut: "VALIDATED" }),
+  workspaceId: ESPACES_FACTURES.controles.organisation._id,
+  importedBy: ESPACES_FACTURES.controles.proprietaire._id,
+};
+
+/** Relance manuelle envoyée il y a une heure (une seule toutes les 12 heures). */
+const RELANCES = [
+  {
+    _id: oid("diversFactures", 10),
+    invoiceId: F.relanceRecente._id,
+    workspaceId: COMPTES.factures.organisation._id,
+    reminderType: "MANUAL",
+    recipientEmail: F.relanceRecente.client.email,
+    emailSubject: "Rappel de paiement",
+    emailBody: "Bonjour",
+    status: "SENT",
+    sentAt: DANS(-1 / 24),
+    createdAt: DANS(-1 / 24),
+    updatedAt: DANS(-1 / 24),
+  },
+];
+
+const utilisateurPret = (u) => ({
+  _id: u._id,
+  email: u.email,
+  name: u.name,
+  emailVerified: true,
+  role: "member",
+  isActive: true,
+  isDisabled: false,
+  hasSeenOnboarding: true,
+  onboardingStep: "completed",
+  hasCompletedTutorial: true,
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+});
+const sessionDe = (n, u, org) => ({
+  _id: oid("membreFactures", 100 + n),
+  token: u.token,
+  userId: u._id,
+  activeOrganizationId: org._id.toHexString(),
+  expiresAt: DANS(30),
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+  ipAddress: "127.0.0.1",
+  userAgent: "playwright-e2e",
+});
+
+/** Comptes, membres, rôles et documents des espaces de contrôle. */
+function donneesEspacesControle() {
+  const docs = { user: [], organization: [], member: [], subscription: [], session: [], organizationRole: [] };
+  Object.values(ESPACES_FACTURES).forEach(({ organisation: org, proprietaire }, i) => {
+    docs.user.push(utilisateurPret(proprietaire));
+    docs.organization.push({ ...org, logo: null, metadata: null, organizationType: "business", onboardingCompleted: true, sessionSettings: { maxSessions: 0 }, createdAt: MAINTENANT });
+    docs.member.push({ _id: oid("membreFactures", 200 + i), userId: proprietaire._id, organizationId: org._id, role: "owner", createdAt: MAINTENANT });
+    docs.subscription.push({ _id: oid("espaceFactures", 200 + i), referenceId: org._id.toHexString(), plan: "pme", status: "active", periodStart: DANS(-1), periodEnd: DANS(30), createdAt: MAINTENANT, updatedAt: MAINTENANT });
+    docs.session.push(sessionDe(i, proprietaire, org));
+  });
+  const org = ESPACES_FACTURES.controles.organisation;
+  Object.values(MEMBRES_CONTROLES).forEach((m, i) => {
+    docs.user.push(utilisateurPret(m));
+    docs.member.push({ _id: oid("membreFactures", 210 + i), userId: m._id, organizationId: org._id, role: m.role, createdAt: MAINTENANT });
+    docs.session.push(sessionDe(10 + i, m, org));
+  });
+  for (const r of Object.values(ROLES_FACTURES)) {
+    docs.organizationRole.push({ _id: r._id, organizationId: org._id, role: r.role, permission: "{}", actions: r.actions, catalogVersion: 2, name: r.name, description: "", createdAt: MAINTENANT, updatedAt: MAINTENANT });
+  }
+  const clients = Object.entries(CLIENTS_CONTROLES).map(([cle, { organisation: _, ...c }]) => {
+    const espaceDuClient = ESPACES_FACTURES[ESPACE_DU_CLIENT[cle]];
+    return {
+      contacts: [],
+      notes: [],
+      customFields: [],
+      activityLog: [],
+      assignedMembers: [],
+      ...c,
+      createdBy: espaceDuClient.proprietaire._id,
+      workspaceId: espaceDuClient.organisation._id,
+      createdAt: DANS(-90),
+      updatedAt: DANS(-90),
+    };
+  });
+  // Paiement en ligne activé pour « Soldes Factures » : un refus vient de l'avoir, pas du compte.
+  const stripeconnectaccounts = [
+    {
+      _id: oid("espaceFactures", 300),
+      organizationId: ESPACES_FACTURES.soldes.organisation._id.toHexString(),
+      userId: ESPACES_FACTURES.soldes.proprietaire._id,
+      accountId: "acct_e2e_soldes",
+      isOnboarded: true,
+      chargesEnabled: true,
+      payoutsEnabled: true,
+      createdAt: DANS(-60),
+      updatedAt: DANS(-60),
+    },
+  ];
+  return {
+    ...docs,
+    clients,
+    invoices: [...Object.values(C), ...Object.values(S), ...Object.values(E)],
+    quotes: Object.values(DEVIS_CONTROLES),
+    creditnotes: Object.values(AVOIRS_CONTROLES),
+    imported_invoices: [IMPORTEE_CONTROLES],
+    stripeconnectaccounts,
+    invoicereminderlogs: RELANCES,
+  };
+}
+
 /** Tous les documents du lot, par collection. */
 export function donneesFactures() {
   const clients = Object.values(CLIENTS_FACTURES).map(({ organisation: cle, ...c }) => ({
@@ -491,15 +902,17 @@ export function donneesFactures() {
       updatedAt: DANS(-60),
     },
   ];
+  const controles = donneesEspacesControle();
   return {
-    clients,
+    ...controles,
+    clients: [...clients, ...controles.clients],
     clientcustomfields,
-    invoices: [...Object.values(F), ...Object.values(VOLUME), ...Object.values(NUMEROTATION), ...Object.values(F_OFFRE)],
-    creditnotes: Object.values(AVOIRS_FACTURES),
+    invoices: [...Object.values(F), ...Object.values(VOLUME), ...Object.values(NUMEROTATION), ...Object.values(F_OFFRE), ...controles.invoices],
+    creditnotes: [...Object.values(AVOIRS_FACTURES), ...controles.creditnotes],
     invoicerecurrences: Object.values(RECURRENCES),
     invoicetemplates: Object.values(MODELES),
-    imported_invoices: Object.values(IMPORTEES),
-    stripeconnectaccounts,
+    imported_invoices: [...Object.values(IMPORTEES), ...controles.imported_invoices],
+    stripeconnectaccounts: [...stripeconnectaccounts, ...controles.stripeconnectaccounts],
   };
 }
 
