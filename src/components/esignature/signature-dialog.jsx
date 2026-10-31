@@ -27,6 +27,10 @@ import {
 // Nombre de signataires accepté par l'API pour une demande
 const MAX_SIGNERS = 5;
 
+/** Adresse e-mail de forme valide (l'API la revérifie). */
+const isValidSignerEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
 const DOCUMENT_TYPE_LABELS = {
   invoice: "facture",
   quote: "devis",
@@ -311,6 +315,8 @@ export function SignatureDialog({
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const [signers, setSigners] = useState([]);
+  // Adresses quittées par l'utilisateur : leur erreur éventuelle est annoncée
+  const [emailsTouched, setEmailsTouched] = useState([]);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -328,6 +334,7 @@ export function SignatureDialog({
       } else {
         setSigners([{ name: "", surname: "", email: "", mobile: "" }]);
       }
+      setEmailsTouched([]);
       setGeneratingPdf(false);
     }
   }, [open, client]);
@@ -347,6 +354,13 @@ export function SignatureDialog({
   const removeSigner = (index) => {
     if (signers.length <= 1) return;
     setSigners(signers.filter((_, i) => i !== index));
+    setEmailsTouched(emailsTouched.filter((_, i) => i !== index));
+  };
+
+  const touchEmail = (index) => {
+    const touched = [...emailsTouched];
+    touched[index] = true;
+    setEmailsTouched(touched);
   };
 
   const updateSigner = (index, field, value) => {
@@ -356,7 +370,7 @@ export function SignatureDialog({
   };
 
   const isValid = signers.every(
-    (s) => s.name.trim() && s.surname.trim() && s.email.trim(),
+    (s) => s.name.trim() && s.surname.trim() && isValidSignerEmail(s.email),
   );
 
   const isBusy = loading || generatingPdf || loadingFullQuote;
@@ -490,71 +504,106 @@ export function SignatureDialog({
 
             {/* Signataires */}
             <div className="space-y-3">
-              {signers.map((signer, index) => (
-                <div key={index} className="space-y-2">
-                  {/* Header signataire (seulement si multiple) */}
-                  {signers.length > 1 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        Signataire {index + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeSigner(index)}
-                        className="rounded-sm hover:bg-muted-foreground/20 p-0.5"
-                      >
-                        <X className="size-3 text-muted-foreground" />
-                      </button>
+              {signers.map((signer, index) => {
+                const emailError =
+                  emailsTouched[index] &&
+                  signer.email.trim() &&
+                  !isValidSignerEmail(signer.email);
+                const emailErrorId = `signataire-${index + 1}-email-erreur`;
+                return (
+                  <div
+                    key={index}
+                    role="group"
+                    aria-label={`Signataire ${index + 1}`}
+                    className="space-y-2"
+                  >
+                    {/* Header signataire (seulement si multiple) */}
+                    {signers.length > 1 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Signataire {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeSigner(index)}
+                          aria-label={`Retirer le signataire ${index + 1}`}
+                          className="rounded-sm hover:bg-muted-foreground/20 p-0.5"
+                        >
+                          <X
+                            className="size-3 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Champs */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        ref={index === 0 ? firstInputRef : undefined}
+                        value={signer.name}
+                        onChange={(e) =>
+                          updateSigner(index, "name", e.target.value)
+                        }
+                        placeholder="Prénom *"
+                        aria-label="Prénom"
+                        aria-required="true"
+                        className="h-9 text-sm"
+                      />
+                      <Input
+                        value={signer.surname}
+                        onChange={(e) =>
+                          updateSigner(index, "surname", e.target.value)
+                        }
+                        placeholder="Nom *"
+                        aria-label="Nom"
+                        aria-required="true"
+                        className="h-9 text-sm"
+                      />
                     </div>
-                  )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="email"
+                        value={signer.email}
+                        onChange={(e) =>
+                          updateSigner(index, "email", e.target.value)
+                        }
+                        onBlur={() => touchEmail(index)}
+                        placeholder="Email *"
+                        aria-label="E-mail"
+                        aria-required="true"
+                        aria-invalid={emailError ? "true" : undefined}
+                        aria-describedby={emailError ? emailErrorId : undefined}
+                        className="h-9 text-sm"
+                      />
+                      <Input
+                        type="tel"
+                        value={signer.mobile}
+                        onChange={(e) =>
+                          updateSigner(index, "mobile", e.target.value)
+                        }
+                        placeholder="Téléphone"
+                        aria-label="Téléphone"
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                    {emailError && (
+                      <p
+                        id={emailErrorId}
+                        role="alert"
+                        className="text-xs text-destructive"
+                      >
+                        Adresse e-mail invalide
+                      </p>
+                    )}
 
-                  {/* Champs */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      ref={index === 0 ? firstInputRef : undefined}
-                      value={signer.name}
-                      onChange={(e) =>
-                        updateSigner(index, "name", e.target.value)
-                      }
-                      placeholder="Prénom *"
-                      className="h-9 text-sm"
-                    />
-                    <Input
-                      value={signer.surname}
-                      onChange={(e) =>
-                        updateSigner(index, "surname", e.target.value)
-                      }
-                      placeholder="Nom *"
-                      className="h-9 text-sm"
-                    />
+                    {/* Séparateur entre signataires */}
+                    {signers.length > 1 && index < signers.length - 1 && (
+                      <div className="border-b border-border/30 mt-1" />
+                    )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="email"
-                      value={signer.email}
-                      onChange={(e) =>
-                        updateSigner(index, "email", e.target.value)
-                      }
-                      placeholder="Email *"
-                      className="h-9 text-sm"
-                    />
-                    <Input
-                      type="tel"
-                      value={signer.mobile}
-                      onChange={(e) =>
-                        updateSigner(index, "mobile", e.target.value)
-                      }
-                      placeholder="Téléphone"
-                      className="h-9 text-sm"
-                    />
-                  </div>
-
-                  {/* Séparateur entre signataires */}
-                  {signers.length > 1 && index < signers.length - 1 && (
-                    <div className="border-b border-border/30 mt-1" />
-                  )}
-                </div>
-              ))}
+                );
+              })}
 
               {/* Ajouter signataire */}
               {signers.length < MAX_SIGNERS && (
