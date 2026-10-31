@@ -6,7 +6,7 @@
 // souscription d'un espace existant refusent (409) sans créer de Checkout.
 // Un abonnement résilié ou dont le premier paiement n'a pas abouti laisse
 // souscrire. Un seul Checkout reste ouvert par espace.
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import { ObjectId } from "mongodb";
 import { createMemoryMongo } from "../helpers/memory-mongo";
 
@@ -65,6 +65,12 @@ async function seed({ status } = {}) {
     });
   }
 }
+
+// Première importation des routes (lente quand toute la suite tourne)
+beforeAll(async () => {
+  await import("@/app/api/create-org-subscription/route.js");
+  await import("@/app/api/billing/subscribe/route");
+}, 60_000);
 
 beforeEach(() => {
   vi.stubEnv("ENABLE_APP_TRIAL", "true");

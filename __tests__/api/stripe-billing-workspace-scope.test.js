@@ -6,7 +6,7 @@
 // espaces. Les factures renvoyées pour un espace sont celles de ses propres
 // abonnements, et le portail Stripe (qui couvre tout le client) ne s'ouvre
 // qu'au payeur quand ce client règle aussi d'autres espaces.
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import { ObjectId } from "mongodb";
 import { createMemoryMongo } from "../helpers/memory-mongo";
 
@@ -113,6 +113,13 @@ const invoice = (id, subscription) => ({
   subscription,
   lines: { data: [] },
 });
+
+// Première importation des modules (lente quand toute la suite tourne)
+beforeAll(async () => {
+  await import("@/app/api/stripe/invoices/route");
+  await import("@/app/api/stripe/billing-portal/route");
+  await import("@/src/lib/auth-plugins");
+}, 60_000);
 
 beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
