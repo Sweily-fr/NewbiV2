@@ -130,18 +130,54 @@ describe("beforeSignInHook", () => {
 });
 
 describe("afterHook", () => {
-  it("deletes orphan members on /admin/remove-user", async () => {
+  const USER_ID = "665f1f77bcf86cd799439011";
+
+  it("deletes orphan members on /admin/remove-user once the user is gone", async () => {
     deleteManyMock.mockResolvedValue({ deletedCount: 2 });
+    findOneMock.mockResolvedValue(null);
     await afterHook({
       path: "/admin/remove-user",
-      body: { userId: "user-123" },
-      context: {},
+      body: { userId: USER_ID },
+      context: { returned: { success: true } },
     });
 
     expect(deleteManyMock).toHaveBeenCalledTimes(1);
     const filter = deleteManyMock.mock.calls[0][0];
     expect(filter.$or).toBeDefined();
-    expect(filter.$or[1]).toEqual({ userId: "user-123" });
+    expect(filter.$or[1]).toEqual({ userId: USER_ID });
+  });
+
+  it("/admin/remove-user refusée (droits) : aucun membre supprimé", async () => {
+    const refus = new APIErrorMock("FORBIDDEN", { message: "not allowed" });
+    for (const returned of [refus, undefined, null, { success: false }]) {
+      await afterHook({
+        path: "/admin/remove-user",
+        body: { userId: USER_ID },
+        context: { returned },
+      });
+    }
+    expect(deleteManyMock).not.toHaveBeenCalled();
+  });
+
+  it("/admin/remove-user : compte toujours présent, aucun membre supprimé", async () => {
+    findOneMock.mockResolvedValue({ _id: USER_ID });
+    await afterHook({
+      path: "/admin/remove-user",
+      body: { userId: USER_ID },
+      context: { returned: { success: true } },
+    });
+    expect(deleteManyMock).not.toHaveBeenCalled();
+  });
+
+  it("/admin/remove-user : identifiant qui n'en est pas un, aucun membre supprimé", async () => {
+    for (const userId of [{ $ne: null }, "user-123", ["x"]]) {
+      await afterHook({
+        path: "/admin/remove-user",
+        body: { userId },
+        context: { returned: { success: true } },
+      });
+    }
+    expect(deleteManyMock).not.toHaveBeenCalled();
   });
 
   it("on /admin/remove-user without userId, does nothing and returns", async () => {

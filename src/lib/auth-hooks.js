@@ -640,11 +640,26 @@ export const afterHook = createAuthMiddleware(async (ctx) => {
   // ========================================
   if (ctx.path === "/admin/remove-user") {
     const userId = ctx.body?.userId;
-    if (userId) {
+    // Seulement après une suppression faite : le hook « après » tourne aussi
+    // quand Better Auth a refusé la demande (droits, compte introuvable)
+    const returned = ctx.context?.returned;
+    const removed =
+      returned && !(returned instanceof Error) && returned.success === true;
+    if (
+      removed &&
+      typeof userId === "string" &&
+      /^[0-9a-f]{24}$/i.test(userId)
+    ) {
       try {
         const { getMongoDb } = await import("./mongodb");
         const { ObjectId } = await import("mongodb");
         const db = await getMongoDb();
+
+        // Le compte doit avoir disparu de la base
+        const stillExists = await db
+          .collection("user")
+          .findOne({ _id: new ObjectId(userId) }, { projection: { _id: 1 } });
+        if (stillExists) return;
 
         // Supprimer tous les members liés à ce userId
         // On cherche avec les deux formats (string et ObjectId) par sécurité
