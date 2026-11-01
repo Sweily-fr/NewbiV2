@@ -9,7 +9,7 @@
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { appelApi, verifierRefus, id } from "../securite.mjs";
-import { connecte, SESSION_TOKEN_INTRUS, SESSION_TOKEN_PILOTAGE_EDITEUR, SESSION_TOKEN_PILOTAGE_MEMBRE } from "../config.mjs";
+import { connecte, SESSION_TOKEN_INTRUS, SESSION_TOKEN_PILOTAGE, SESSION_TOKEN_PILOTAGE_EDITEUR, SESSION_TOKEN_PILOTAGE_MEMBRE, SESSION_TOKEN_PILOTAGE_VUE_ENSEMBLE } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
 import { CONTACTS_PILOTAGE, FACTURES_PILOTAGE } from "../donnees/lot-pilotage.mjs";
 import { aujourdhui } from "./attendus.mjs";
@@ -75,6 +75,61 @@ for (const [role, token] of [
     });
   });
 }
+
+/**
+ * Rôle personnalisé « Vue d'ensemble seule » : les indicateurs agrégés, sans
+ * le détail des pages qu'il ne voit pas (factures en retard avec numéro,
+ * client et montant ; chiffre d'affaires par client ; ventes par produit),
+ * comme le détail d'un mois de la Prévision. Sans « Prévision » ni
+ * « Analytiques », la prévision de trésorerie lui est refusée.
+ */
+const DETAIL = `query($w: ID, $d: String!, $f: String!) { financialAnalytics(workspaceId: $w, startDate: $d, endDate: $f) {
+  kpi { netRevenueHT invoiceCount outstandingReceivables }
+  revenueByClient { clientName totalTTC } topClients { clientName totalTTC } revenueByProduct { description totalHT }
+  revenueByClientMonthly { clientName } collection { overdueInvoices { invoiceId invoiceNumber clientName totalTTC } } } }`;
+const detailVisible = (r) => {
+  const d = r.data?.financialAnalytics;
+  return {
+    "factures en retard": d?.collection?.overdueInvoices?.length ?? 0,
+    "chiffre d'affaires par client": d?.revenueByClient?.length ?? 0,
+    "meilleurs clients": d?.topClients?.length ?? 0,
+    "chiffre d'affaires mensuel par client": d?.revenueByClientMonthly?.length ?? 0,
+    "ventes par produit": d?.revenueByProduct?.length ?? 0,
+  };
+};
+
+test.describe("Analytiques : le propriétaire voit le détail des factures, clients et produits", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_PILOTAGE) });
+
+  test("Factures en retard, clients et produits renvoyés", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    const r = await appelApi(page, DETAIL, { w: ORG, d: PERIODE.debut, f: PERIODE.fin }, { organisation: ORG });
+    expect(r.errors).toEqual([]);
+    for (const [quoi, n] of Object.entries(detailVisible(r))) expect.soft(n, `Données de départ : ${quoi}`).toBeGreaterThan(0);
+  });
+});
+
+test.describe("Analytiques : rôle personnalisé « Vue d'ensemble seule »", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_PILOTAGE_VUE_ENSEMBLE) });
+
+  test("Indicateurs agrégés lisibles, sans factures, clients ni produits", async ({ page }) => {
+    await ouvrir(page, "/dashboard/outils/analytiques/vue-densemble");
+    const r = await appelApi(page, DETAIL, { w: ORG, d: PERIODE.debut, f: PERIODE.fin }, { organisation: ORG });
+    expect(r.errors, "Les indicateurs de la Vue d'ensemble doivent rester lisibles").toEqual([]);
+    expect(r.data?.financialAnalytics?.kpi?.invoiceCount, "Nombre de factures émises").toBeGreaterThan(0);
+    for (const [quoi, n] of Object.entries(detailVisible(r))) {
+      expect.soft(n, `${quoi} renvoyé(s) à un rôle qui ne voit ni les factures, ni les clients, ni le catalogue`).toBe(0);
+    }
+    sansFuite({ data: { ...r.data, kpi: null } }, "Vue d'ensemble seule");
+  });
+
+  test("Prévision de trésorerie refusée sans la page Prévision", async ({ page }) => {
+    await ouvrir(page, "/dashboard/outils/analytiques/vue-densemble");
+    const l = LECTURES.find((x) => x.champ === "treasuryForecastData");
+    const r = await appelApi(page, l.requete, l.variables(ORG), { organisation: ORG });
+    verifierRefus(r, l.champ, "Prévision de trésorerie (rôle Vue d'ensemble seule)");
+  });
+});
 
 test.describe("Analytiques : une autre entreprise n'atteint rien", () => {
   test.use({ storageState: connecte(SESSION_TOKEN_INTRUS) });

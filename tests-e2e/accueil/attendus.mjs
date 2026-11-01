@@ -102,12 +102,15 @@ export async function aTraiter({ workspaceId, utilisateurId }) {
   };
 }
 
-/** Solde (comptes + espèces) et flux de l'année civile, comme le cadre « Solde du compte ». */
+/** Opérations qui n'ont pas déplacé d'argent : annulées par la banque (Bridge : « cancelled ») ou échouées. */
+export const sansMouvement = (t) => ["cancelled", "failed"].includes(t.status);
+
+/** Solde (comptes actifs + espèces) et flux de l'année civile, comme le cadre « Solde du compte ». */
 export async function soldeEtFlux(workspaceId) {
   const db = await base();
   const wid = workspaceId.toHexString();
   const comptes = await db.collection("accounts_bankings").find({ workspaceId: wid, status: { $in: ["active", "ACTIVE"] } }).toArray();
-  const transactions = await db.collection("transactions").find({ workspaceId: wid, deletedAt: null }).toArray();
+  const transactions = (await db.collection("transactions").find({ workspaceId: wid, deletedAt: null }).toArray()).filter((t) => !sansMouvement(t));
   const especes = somme(transactions.filter((t) => t.provider === "manual"), (t) => t.amount);
   const maintenant = new Date();
   const annee = maintenant.getUTCFullYear();

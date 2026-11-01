@@ -490,6 +490,15 @@ export const MEMBRES = {
     // = SESSION_TOKEN_CABINET (config.mjs)
     token: "e2eSessionTokenNewbiCabinetUniquement",
   },
+  // Rôle personnalisé « Vue d'ensemble seule » de « Pilotage » (lot-pilotage.mjs) :
+  // indicateurs agrégés, sans Factures clients, Clients, Catalogue ni Prévision.
+  pilotageVueEnsemble: {
+    utilisateur: { _id: oid("utilisateur", 45), email: "pilotage-vue-ensemble@e2e.test", name: "Vic Synthèse" },
+    de: "pilotage",
+    role: "role_e2e2c0000000000000000040",
+    // = SESSION_TOKEN_PILOTAGE_VUE_ENSEMBLE (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageVueEnsembleUniquement",
+  },
   // ── fin du lot pilotage ──
 };
 

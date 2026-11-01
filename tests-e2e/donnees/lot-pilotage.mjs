@@ -548,6 +548,23 @@ export const COMPTE_BANCAIRE_PILOTAGE = {
   updatedAt: MAINTENANT,
 };
 
+/**
+ * Ancien compte resté « inactive » (Bridge ne le synchronise plus) : absent
+ * de la liste des comptes et de la Prévision, son dernier solde (1 000 €)
+ * ne doit compter dans aucun solde (accueil, Vue d'ensemble, Analytiques).
+ */
+export const COMPTE_INACTIF_PILOTAGE = {
+  ...COMPTE_BANCAIRE_PILOTAGE,
+  _id: oid("pilCompteBancaire", 2),
+  externalId: "e2e-pilotage-compte-inactif",
+  name: "Ancien compte Pilotage",
+  status: "inactive",
+  balance: 1000,
+  iban: "FR7630001007949876543210144",
+  transactionSync: { status: "complete", lastSyncAt: DANS(-90), totalTransactions: 0 },
+  lastSyncAt: DANS(-90),
+};
+
 function transaction(n, { montant, date, libelle, statut = "completed", rapprochement = "unmatched", factures = [], achats = [], categorie = null, depense = null, fournisseur = "bridge", supprimee = false }) {
   return {
     _id: T(n),
@@ -587,6 +604,9 @@ export const TRANSACTIONS_PILOTAGE = {
   anneePrecedente: transaction(7, { montant: -1000, date: DANS(-380), libelle: "CB MATERIEL AN DERNIER", depense: "HARDWARE" }),
   especes: transaction(8, { montant: 50, date: DANS(-2), libelle: "Dépôt d'espèces", fournisseur: "manual", rapprochement: "ignored" }),
   supprimee: transaction(9, { montant: -999, date: DANS(-5), libelle: "CB SUPPRIMEE", supprimee: true }),
+  // Pré-autorisation de carte annulée par la banque (Bridge : deleted, enregistrée « cancelled ») :
+  // aucun argent n'a bougé, elle ne compte nulle part (accueil, courbe, camemberts, Analytiques, Prévision)
+  annulee: transaction(10, { montant: -500, date: ceMois(2), libelle: "CB PREAUTORISATION ANNULEE", statut: "cancelled", depense: "SOFTWARE" }),
 };
 
 // --- Notifications d'activité ------------------------------------------------------
@@ -612,6 +632,22 @@ export const NOTIFICATIONS_PILOTAGE = {
   nonLue: notification(301, { titre: "Demande d'accès", message: "Léa Éditrice demande à voir « Factures clients »" }),
   piegee: notification(302, { titre: `Demande ${PIEGE_HTML}`, message: `Sam ${PIEGE_HTML} demande à voir « Devis »`, ilYa: 2, acteur: "Sam Lecteur" }),
   lue: notification(303, { titre: "Demande d'accès", message: "Notification déjà lue", lue: true, ilYa: 10 }),
+};
+
+// --- Rôle personnalisé ----------------------------------------------------------
+
+/** « Vue d'ensemble seule » : indicateurs agrégés, sans le détail des factures, clients et produits. */
+export const ROLE_VUE_ENSEMBLE_PILOTAGE = {
+  _id: oid("pilDivers", 40),
+  organizationId: PILOTAGE.organisation._id,
+  role: MEMBRES.pilotageVueEnsemble.role,
+  permission: JSON.stringify({}),
+  actions: { overview: ["view"] },
+  catalogVersion: 2,
+  name: "Vue d'ensemble seule",
+  description: "Indicateurs de la Vue d'ensemble, sans les documents",
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
 };
 
 // --- Assemblage --------------------------------------------------------------------
@@ -656,9 +692,10 @@ export function donneesPilotage() {
     deliverynotes: Object.values(BONS_LIVRAISON_PILOTAGE),
     purchaseinvoices: Object.values(ACHATS_PILOTAGE),
     imported_invoices: [IMPORTEE_PILOTAGE],
-    accounts_bankings: [COMPTE_BANCAIRE_PILOTAGE],
+    accounts_bankings: [COMPTE_BANCAIRE_PILOTAGE, COMPTE_INACTIF_PILOTAGE],
     transactions: Object.values(TRANSACTIONS_PILOTAGE),
     notifications: Object.values(NOTIFICATIONS_PILOTAGE),
+    organizationRole: [ROLE_VUE_ENSEMBLE_PILOTAGE],
   };
 }
 
