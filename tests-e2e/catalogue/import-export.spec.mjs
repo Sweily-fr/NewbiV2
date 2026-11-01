@@ -227,6 +227,15 @@ test.describe("Catalogue : import", () => {
     expect(await notification(page, /erreur/).count(), "Le refus n'est pas signalé").toBeGreaterThan(0);
   });
 
+  test("Deux lignes au même nom dans le fichier : un seul produit créé, la seconde signalée en doublon", async ({ page }) => {
+    const nom = "Pose de parquet chêne massif";
+    const chemin = fichier("doublon-fichier.csv", csv([EN_TETES, [nom, "PAR-01", "Prestations", "45", "20", "m²", ""], [nom, "PAR-02", "Prestations", "48", "20", "m²", ""]]));
+    await importer(page, chemin, { attendus: 2 });
+    await page.waitForTimeout(1_000);
+    expect(await (await base()).collection("products").countDocuments({ workspaceId: ORG_SAISIE, name: nom }), "Deux produits du même nom créés").toBe(1);
+    expect(await notification(page, /erreur/).count(), "La seconde ligne n'est pas signalée").toBeGreaterThan(0);
+  });
+
   test("Nom avec « œ » (Crème au cœur coulant) : importé", async ({ page }) => {
     const chemin = fichier("ligature.csv", csv([EN_TETES, ["Moelleux au cœur coulant", "COE-01", "Pâtisserie", "6,50", "10", "unité", ""]]));
     await importer(page, chemin, { attendus: 1 });

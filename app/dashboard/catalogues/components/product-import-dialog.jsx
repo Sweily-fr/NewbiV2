@@ -34,6 +34,7 @@ import {
   transformRowToProduct,
   validateProductRow,
   downloadProductErrorsCSV,
+  findDuplicateNameRows,
 } from "@/src/utils/product-import-v2";
 
 import ImportStepUpload from "./import-steps/import-step-upload";
@@ -185,12 +186,23 @@ export default function ProductImportDialog({ open, onOpenChange }) {
     setIsImporting(true);
     setImportResults({ successCount: 0, errors: [] });
 
-    const productsToImport = transformedProducts
+    const validProducts = transformedProducts
       .map((product, idx) => ({ product, idx }))
       .filter(({ product, idx }) => validateProductRow(product, idx).valid);
 
     let successCount = 0;
     const errors = [];
+
+    // Même nom qu'une ligne précédente du fichier : signalé, pas importé
+    const duplicates = findDuplicateNameRows(validProducts);
+    const productsToImport = validProducts.filter(({ idx }) => {
+      if (duplicates[idx] === undefined) return true;
+      errors.push({
+        row: idx + 1,
+        message: `Doublon de la ligne ${duplicates[idx] + 1} (même nom), non importé.`,
+      });
+      return false;
+    });
 
     // Process in batches
     for (let i = 0; i < productsToImport.length; i += BATCH_SIZE) {

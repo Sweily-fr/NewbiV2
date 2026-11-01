@@ -140,6 +140,27 @@ const PREFIXES = {
   pilAbonnement: "e2ede",
   pilDivers: "e2edf",
   // ── fin du lot pilotage ──
+  // ── Lot clients-catalogue (e2e3a à e2e3c) ──
+  // Espaces, membres et données de donnees/lot-clients-catalogue.mjs.
+  utilisateurCc: "e2e3aa",
+  espaceCc: "e2e3ab",
+  membreCc: "e2e3ac",
+  sessionCc: "e2e3ad",
+  abonnementCc: "e2e3ae",
+  roleCc: "e2e3af",
+  contactCc: "e2e3ba",
+  factureCc: "e2e3bb",
+  devisCc: "e2e3bc",
+  bcCc: "e2e3bd",
+  blCc: "e2e3be",
+  avoirCc: "e2e3bf",
+  listeCc: "e2e3ca",
+  segmentCc: "e2e3cb",
+  champCc: "e2e3cc",
+  automatisationCc: "e2e3cd",
+  produitCc: "e2e3ce",
+  diversCc: "e2e3cf",
+  // ── fin du lot clients-catalogue ──
 };
 
 export function oid(type, n) {

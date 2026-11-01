@@ -1916,6 +1916,8 @@ function RowActions({
             <Textarea
               id={`block-reason-${client.id}`}
               value={blockReason}
+              // Plafond de l'API : 500 caractères
+              maxLength={500}
               onChange={(e) => setBlockReason(e.target.value)}
               placeholder="Ex: Impayés récurrents, communication difficile..."
               className="resize-none"

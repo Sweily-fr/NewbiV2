@@ -377,6 +377,31 @@ export const GET_QUOTES = gql`
   ${QUOTE_LIST_FRAGMENT}
 `;
 
+// Devis d'un contact (onglet Devis de sa fiche) : filtrés par l'API, quel
+// que soit leur rang parmi les devis de l'espace
+export const GET_CLIENT_QUOTES = gql`
+  query GetClientQuotes(
+    $workspaceId: ID!
+    $clientId: ID!
+    $page: Int
+    $limit: Int
+  ) {
+    quotes(
+      workspaceId: $workspaceId
+      clientId: $clientId
+      page: $page
+      limit: $limit
+    ) {
+      quotes {
+        ...QuoteListFragment
+      }
+      totalCount
+      hasNextPage
+    }
+  }
+  ${QUOTE_LIST_FRAGMENT}
+`;
+
 // Query légère pour le calcul de numérotation (ne charge que prefix/number/status)
 export const GET_QUOTE_NUMBERS = gql`
   query GetQuoteNumbers($workspaceId: ID!) {

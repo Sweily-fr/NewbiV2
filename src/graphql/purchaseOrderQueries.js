@@ -372,6 +372,31 @@ export const GET_PURCHASE_ORDERS = gql`
   ${PURCHASE_ORDER_LIST_FRAGMENT}
 `;
 
+// Bons de commande d'un contact (onglet de sa fiche) : filtrés par l'API,
+// quel que soit leur rang parmi ceux de l'espace
+export const GET_CLIENT_PURCHASE_ORDERS = gql`
+  query GetClientPurchaseOrders(
+    $workspaceId: ID!
+    $clientId: ID!
+    $page: Int
+    $limit: Int
+  ) {
+    purchaseOrders(
+      workspaceId: $workspaceId
+      clientId: $clientId
+      page: $page
+      limit: $limit
+    ) {
+      purchaseOrders {
+        ...PurchaseOrderListFragment
+      }
+      totalCount
+      hasNextPage
+    }
+  }
+  ${PURCHASE_ORDER_LIST_FRAGMENT}
+`;
+
 // Query légère pour le calcul de numérotation
 export const GET_PURCHASE_ORDER_NUMBERS = gql`
   query GetPurchaseOrderNumbers($workspaceId: ID!) {
