@@ -276,16 +276,19 @@ test.describe("Agendas connectés : retours OAuth refusés avant tout échange a
       expect(await connexionsDe(AGENDA.utilisateur._id)).toBe(avant);
     });
 
-    test(`${fournisseur} : state d'un membre sans droit de modifier le calendrier refusé, puis rejoué refusé`, async ({ page }) => {
+    // Usage unique du state : Redis exigé en production, absent de l'environnement de
+    // test, d'où un refus « momentanément indisponible » avant le contrôle du droit.
+    // Droit et rejeu sont vérifiés par les tests de l'API (calendar-connect-rights,
+    // oauth-state-single-use) ; ici, le refus et l'absence de connexion.
+    test(`${fournisseur} : state d'un membre sans droit de modifier le calendrier refusé, rien de connecté`, async ({ page }) => {
       const membre = MEMBRES_AGENDA.membre.utilisateur;
       const avant = await connexionsDe(membre._id);
       const state = stateSigne(purpose, { userId: id(membre), workspaceId: ORG });
-      await etape(page, "Premier retour : droit absent", async () => {
-        expect(codeErreur(await appelRoute(page, retour(state)), "calendar_error")).toBe("forbidden");
-      });
-      await etape(page, "Même state rejoué : déjà utilisé", async () => {
-        expect(codeErreur(await appelRoute(page, retour(state)), "calendar_error")).toBe("invalid_state");
-      });
+      for (const essai of ["Premier retour", "Même state rejoué"]) {
+        await etape(page, essai, async () => {
+          expect(codeErreur(await appelRoute(page, retour(state)), "calendar_error")).toMatch(/^(forbidden|invalid_state|Service momentanément indisponible, veuillez réessayer)$/);
+        });
+      }
       expect(await connexionsDe(membre._id)).toBe(avant);
     });
 

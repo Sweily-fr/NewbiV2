@@ -9,12 +9,13 @@
  * par adresse IP des routes publiques.
  */
 import { test, expect, etape } from "../outils.mjs";
+import { visiteur } from "../pages-publiques/consentement.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { PAGES_RDV, TYPES_RDV } from "../donnees/lot-rendez-vous.mjs";
 import { appelPublic, brancherIp, CONSOLE_API_PUBLIQUE, invite, ipUnique, jourDeReservation } from "./outils-rdv.mjs";
 
-test.use({ storageState: { cookies: [], origins: [] }, erreursConsoleAutorisees: CONSOLE_API_PUBLIQUE });
+test.use({ storageState: visiteur(), erreursConsoleAutorisees: CONSOLE_API_PUBLIQUE });
 
 const INCONNUE = { slug: "personne-ici-e2e", typeSlug: "decouverte", noms: [] };
 

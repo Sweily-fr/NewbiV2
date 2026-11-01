@@ -19,7 +19,7 @@ import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { connecte } from "../config.mjs";
 import { appelApi, id } from "../securite.mjs";
-import { refusSansEffet, verifierRefusCollab, verifierReussite, sansFuite, photo, messagesDe } from "../securite-collaboration.mjs";
+import { REFUS, refusSansEffet, verifierRefusCollab, verifierReussite, sansFuite, photo, messagesDe } from "../securite-collaboration.mjs";
 import {
   COMPTES_RESEAUX,
   MEMBRES_RESEAUX,
@@ -302,9 +302,19 @@ test.describe("Réseaux sociaux : une autre entreprise n'atteint rien", () => {
   for (const op of ECRITURES) {
     test(`${op.nom} chez les autres : refusé`, async ({ page }) => {
       await etape(page, "En visant leur espace", () => refusSansCreation(page, op, "intrus", ORG));
-      await etape(page, "Depuis son espace, avec leurs identifiants", () =>
-        refusSansCreation(page, op, "intrus", ORG_AUTRE, { organisation: ORG_AUTRE }),
-      );
+      // Depuis son espace, l'intrus a tous les droits : sans fournisseur configuré (CI),
+      // l'écriture s'arrête sur « pas encore disponible » avant de chercher les données
+      // visées (introuvables : tests de l'API avec fournisseur simulé). Ici : refus, et
+      // rien de changé chez les autres.
+      await etape(page, "Depuis son espace, avec leurs identifiants", async () => {
+        const temoins = [op.temoin("intrus"), ...(op.temoinPosts ? [op.temoinPosts()] : [])];
+        const avant = await Promise.all(temoins.map((t) => photo(...t)));
+        const reponse = await appelApi(page, op.requete, op.variables(ORG_AUTRE, "intrus"), { organisation: ORG_AUTRE, delai: 15_000 });
+        sansFuite(reponse, [POSTS_RESEAUX.ouvert.content, COMPTES_SOCIAUX.linkedin.username], `${op.nom} (intrus, son espace)`);
+        expect(reponse.data?.[op.champ] ?? null, `${op.nom} (intrus, son espace) : accepté`).toBeFalsy();
+        expect(messagesDe(reponse), `${op.nom} (intrus, son espace) : refus non expliqué`).toMatch(new RegExp(`${REFUS.source}|${PAS_DISPONIBLE.source}`, "i"));
+        expect(await Promise.all(temoins.map((t) => photo(...t))), `${op.nom} (intrus, son espace) : la base des autres a changé`).toEqual(avant);
+      });
     });
   }
 });

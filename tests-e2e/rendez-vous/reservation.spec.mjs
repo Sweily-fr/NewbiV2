@@ -10,6 +10,7 @@
  * (__tests__/services/appointmentBooking.test.js, appointmentEmails.test.js).
  */
 import { test, expect, etape } from "../outils.mjs";
+import { visiteur } from "../pages-publiques/consentement.mjs";
 import { ouvrir, cliquer } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { COMPTES_RDV, PAGES_RDV, TYPES_RDV, CLIENT_FIDELE } from "../donnees/lot-rendez-vous.mjs";
@@ -20,7 +21,7 @@ const TYPE = TYPES_RDV.decouverte;
 const ORG = COMPTES_RDV.principal.organisation._id;
 const HOTE = COMPTES_RDV.principal.utilisateur._id;
 
-test.use({ storageState: { cookies: [], origins: [] } });
+test.use({ storageState: visiteur() });
 
 test.describe("Rendez-vous : réservation par un invité", () => {
   test("Un invité réserve un créneau de bout en bout et tout est enregistré", async ({ page, request }) => {

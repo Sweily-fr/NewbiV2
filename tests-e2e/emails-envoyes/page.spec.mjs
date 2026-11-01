@@ -172,7 +172,12 @@ test.describe("E-mails envoyés : le rôle « Membre » lit l'envoi d'une factur
 });
 
 test.describe("E-mails envoyés : un rôle sans les factures ne lit pas l'envoi d'une facture", () => {
-  test.use({ storageState: connecte(MEMBRES_ENVOIS.devisSeulement.token), erreursConsoleAutorisees: /GraphQL Error/ });
+  // Cadre isolé de l'e-mail (sandbox sans scripts) : les scripts de surveillance de
+  // Playwright y sont bloqués, ce que le navigateur signale en console.
+  test.use({
+    storageState: connecte(MEMBRES_ENVOIS.devisSeulement.token),
+    erreursConsoleAutorisees: /GraphQL Error|Blocked script execution in 'about:srcdoc'/,
+  });
 
   test("Envoi d'une facture : introuvable à l'écran, refusé à l'API, fichier joint refusé", async ({ page }) => {
     await ouvrir(page, url(ENVOIS.facture), { pret: page.getByText(INTROUVABLE) });
