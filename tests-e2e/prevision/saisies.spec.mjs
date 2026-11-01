@@ -214,7 +214,8 @@ test.describe("Prévision : chaque action vérifiée en base", () => {
     await expect(confirmation, "Suppression sans confirmation").toBeVisible();
     await confirmation.getByRole("button", { name: /Supprimer/ }).click();
     await expect.poll(async () => (await base()).collection("forecastscenarios").countDocuments({ _id: SCENARIOS.aSupprimer._id })).toBe(0);
-    expect(await entreeEnBase(SAISIES_SAISIE.duScenario), "La saisie du scénario supprimé est restée").toBeNull();
+    // Le scénario puis ses saisies : la suppression des saisies suit de peu
+    await expect.poll(() => entreeEnBase(SAISIES_SAISIE.duScenario), { message: "La saisie du scénario supprimé est restée" }).toBeNull();
   });
 });
 
