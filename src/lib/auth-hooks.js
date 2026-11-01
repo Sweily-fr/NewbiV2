@@ -4,6 +4,7 @@ import {
   DEACTIVATED_ACCOUNT_MESSAGE,
   normalizeEmail,
 } from "./deactivated-account";
+import { isAllowedAuthorizationURL } from "./trusted-origins";
 
 // Routes Better Auth fermées (disabledPaths de auth.js, réponse 404).
 // Connexion et réinitialisation par code OTP (e-mail ou SMS) : aucun code
@@ -49,6 +50,19 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
     const { APIError } = await import("better-auth/api");
     throw new APIError("BAD_REQUEST", {
       message: "Ce type de code n'est pas disponible.",
+    });
+  }
+
+  // ── 0 bis. Proxy d'autorisation de l'application mobile ──
+  // Il ne redirige que vers un fournisseur de connexion (Google, Apple,
+  // GitHub), jamais vers une adresse quelconque.
+  if (
+    ctx.path === "/expo-authorization-proxy" &&
+    !isAllowedAuthorizationURL(ctx.query?.authorizationURL)
+  ) {
+    const { APIError } = await import("better-auth/api");
+    throw new APIError("BAD_REQUEST", {
+      message: "Adresse d'autorisation non prise en charge.",
     });
   }
 

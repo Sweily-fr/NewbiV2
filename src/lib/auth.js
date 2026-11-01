@@ -13,6 +13,7 @@ import {
   emailOTPPlugin,
 } from "./auth-plugins";
 import { beforeSignInHook, afterHook, DISABLED_AUTH_PATHS } from "./auth-hooks";
+import { buildTrustedOrigins } from "./trusted-origins";
 import {
   sendChangeEmailConfirmation,
   sendReactivationEmail,
@@ -42,40 +43,8 @@ export const auth = betterAuth({
   disabledPaths: DISABLED_AUTH_PATHS,
 
   // trustedOrigins — function form to support dynamic origins (mobile, dev IPs).
-  trustedOrigins: (request) => {
-    const origins = [
-      "https://newbi.fr",
-      "https://www.newbi.fr",
-      "https://newbi-v2.vercel.app",
-      "http://localhost:3000",
-      "newbi://",
-      "exp://",
-      ...(process.env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
-        .map((o) => o.trim())
-        .filter(Boolean) ?? []),
-    ];
-
-    // Le plugin @better-auth/expo envoie "expo-origin" au lieu de "Origin".
-    const expoOrigin = request?.headers?.get("expo-origin");
-    if (expoOrigin) {
-      origins.push(expoOrigin);
-    }
-
-    // En dev uniquement : autoriser les IPs locales privées (RFC1918)
-    // pour le test du flow mobile (web view chargée depuis l'IP du Mac).
-    if (process.env.NODE_ENV === "development") {
-      const requestOrigin = request?.headers?.get("origin");
-      if (requestOrigin) {
-        const localIpPattern =
-          /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
-        if (localIpPattern.test(requestOrigin)) {
-          origins.push(requestOrigin);
-        }
-      }
-    }
-
-    return origins;
-  },
+  // Voir trusted-origins.js : schemes de l'application mobile seulement.
+  trustedOrigins: (request) => buildTrustedOrigins(request),
 
   // Configuration de la session
   session: {

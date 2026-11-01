@@ -250,3 +250,29 @@ describe("afterHook", () => {
     expect(findMany).not.toHaveBeenCalled();
   });
 });
+
+describe("beforeSignInHook : proxy d'autorisation de l'application mobile", () => {
+  it("adresse d'un autre domaine : refusée avant toute redirection", async () => {
+    await expect(
+      beforeSignInHook({
+        path: "/expo-authorization-proxy",
+        query: {
+          authorizationURL: "https://exemple.invalid/",
+          oauthState: "x",
+        },
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("adresse de Google (connexion de l'application) : laissée passer", async () => {
+    await expect(
+      beforeSignInHook({
+        path: "/expo-authorization-proxy",
+        query: {
+          authorizationURL:
+            "https://accounts.google.com/o/oauth2/v2/auth?state=abc",
+        },
+      }),
+    ).resolves.toBeUndefined();
+  });
+});
