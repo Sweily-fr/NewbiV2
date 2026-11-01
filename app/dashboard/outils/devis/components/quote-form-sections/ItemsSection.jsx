@@ -66,6 +66,7 @@ import { CurrencyInput } from "@/src/components/ui/currency-input";
 import { QuantityInput } from "@/src/components/ui/quantity-input";
 import { TextareaNew } from "@/src/components/ui/textarea-new";
 import { Separator } from "@/src/components/ui/separator";
+import { focusItemErrorField } from "@/src/utils/focus-item-error";
 import {
   Accordion,
   AccordionContent,
@@ -250,8 +251,7 @@ export default function ItemsSection({
       const el =
         document.querySelector(`[name="items.${index}.${field}"]`) ||
         document.querySelector(`[data-item-index="${index}"]`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      el?.focus?.({ preventScroll: true });
+      focusItemErrorField(el);
     }, 350);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps

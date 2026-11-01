@@ -74,6 +74,7 @@ import {
 } from "@/src/components/ui/accordion";
 import PercentageSliderInput from "@/src/components/percentage-slider-input";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { focusItemErrorField } from "@/src/utils/focus-item-error";
 // Utilisation du composant ProductSearchCombobox défini dans enhanced-invoice-form.jsx
 
 // Convertir une quantité décimale en { hours, minutes }
@@ -310,8 +311,7 @@ export default function ItemsSection({
       const el =
         document.querySelector(`[name="items.${index}.${field}"]`) ||
         document.querySelector(`[data-item-index="${index}"]`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      el?.focus?.({ preventScroll: true });
+      focusItemErrorField(el);
     }, 350);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
