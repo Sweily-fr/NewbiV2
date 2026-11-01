@@ -125,6 +125,38 @@ const PREFIXES = {
   signatureMail: "e2e6e",
   // Sous-documents et données annexes (commentaires, étiquettes, codes de visiteur…).
   annexeCollab: "e2e6f",
+  // Comptes ajoutés par fonctionnalité (donnees/comptes-collaboration.mjs) : préfixes
+  // du lot prolongés par une lettre (e2e6f + lettre ≠ annexeCollab, toujours suivi d'un chiffre).
+  utilisateurLot: "e2e6fa",
+  espaceLot: "e2e6fb",
+  membreLot: "e2e6fc",
+  sessionLot: "e2e6fd",
+  abonnementLot: "e2e6fe",
+  roleLot: "e2e6ff",
+  // Kanban : tableau restreint, liens publics (lot-kanban.mjs).
+  kbTableau: "e2e5aa",
+  kbColonne: "e2e5ba",
+  kbTache: "e2e5ca",
+  kbPartage: "e2e5fa",
+  kbDivers: "e2e5fb",
+  // Calendrier (lot-calendrier.mjs).
+  calEvenement: "e2e5da",
+  calConnexion: "e2e5db",
+  calDivers: "e2e5dc",
+  // Prise de rendez-vous (lot-rendez-vous.mjs).
+  rdvPage: "e2e5ea",
+  rdvType: "e2e5eb",
+  rdvReservation: "e2e5ec",
+  rdvDivers: "e2e5ed",
+  // Posts réseaux sociaux (lot-reseaux-sociaux.mjs).
+  socialCompte: "e2e6aa",
+  socialPost: "e2e6ab",
+  socialMedia: "e2e6ac",
+  socialDivers: "e2e6ad",
+  // E-mails envoyés (lot-emails-envoyes.mjs).
+  emailEnvoi: "e2e6ba",
+  emailDocument: "e2e6bb",
+  emailDivers: "e2e6bc",
   // ── fin du lot collaboration ──
   // ── Lot pilotage (e2e7a à e2e7f, e2eda à e2edf) ──
   pilFacture: "e2e7a",
