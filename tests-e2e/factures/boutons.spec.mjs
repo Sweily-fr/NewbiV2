@@ -439,7 +439,7 @@ test.describe("Factures (éditeur)", () => {
     titre: "Nouvel avoir",
     ouvrir: ouvrirAvoirNouveau(F.attente),
     boutons: {
-      [`button ${jourLong(new Date())}`]: { etat: /\[expanded\]/ },
+      [`button ${jourLongAvoir(new Date())}`]: { etat: /\[expanded\]/ },
       "button Annuler": { navigation: LISTE },
       "button Suivant": { contenu: true },
       "combobox icône chevron-down": { options: ["Correction d'erreur", "Geste commercial", "Remboursement", "Rupture de stock"] },
