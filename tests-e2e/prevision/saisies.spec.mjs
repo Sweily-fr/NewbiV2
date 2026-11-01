@@ -153,7 +153,8 @@ test.describe("Prévision : chaque action vérifiée en base", () => {
     const dialogue = await modifierSaisie(page, SAISIES_SAISIE.aSupprimer);
     await dialogue.getByRole("button", { name: "Supprimer" }).click();
     const confirmation = page.getByRole("alertdialog");
-    if (await confirmation.isVisible({ timeout: 2_000 }).catch(() => false)) await confirmation.getByRole("button", { name: /Supprimer/ }).click();
+    await expect(confirmation, "Suppression sans confirmation").toBeVisible();
+    await confirmation.getByRole("button", { name: /Supprimer/ }).click();
     await expect.poll(() => entreeEnBase(SAISIES_SAISIE.aSupprimer)).toBeNull();
   });
 
@@ -210,9 +211,44 @@ test.describe("Prévision : chaque action vérifiée en base", () => {
     const dialogue = fenetre(page, "Modifier le scénario");
     await dialogue.getByRole("button", { name: "Supprimer" }).or(dialogue.getByText("Supprimer", { exact: true })).first().click();
     const confirmation = page.getByRole("alertdialog");
-    if (await confirmation.isVisible({ timeout: 2_000 }).catch(() => false)) await confirmation.getByRole("button", { name: /Supprimer/ }).click();
+    await expect(confirmation, "Suppression sans confirmation").toBeVisible();
+    await confirmation.getByRole("button", { name: /Supprimer/ }).click();
     await expect.poll(async () => (await base()).collection("forecastscenarios").countDocuments({ _id: SCENARIOS.aSupprimer._id })).toBe(0);
-    expect(await entreeEnBase(SAISIES_SAISIE.duScenario), "La saisie du scénario supprimé est restée").toBeNull();
+    // Le scénario puis ses saisies : la suppression des saisies suit de peu
+    await expect.poll(() => entreeEnBase(SAISIES_SAISIE.duScenario), { message: "La saisie du scénario supprimé est restée" }).toBeNull();
+  });
+});
+
+test.describe("Prévision : suppressions confirmées", () => {
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_SAISIE_ACHATS) });
+
+  test("Supprimer un scénario puis Annuler : le scénario reste en base", async ({ page }) => {
+    await ouvrirPrevision(page);
+    await page.getByRole("button", { name: "Base" }).click();
+    const element = page.getByRole("menuitem", { name: new RegExp(SCENARIOS.aRenommer.name) });
+    await element.hover();
+    await element.getByText("Modifier", { exact: true }).click();
+    const dialogue = fenetre(page, "Modifier le scénario");
+    await dialogue.getByRole("button", { name: "Supprimer" }).or(dialogue.getByText("Supprimer", { exact: true })).first().click();
+    const confirmation = page.getByRole("alertdialog");
+    await etape(page, "Confirmation", async () => {
+      await expect(confirmation, "Le scénario et ses saisies sont supprimés sans confirmation").toBeVisible();
+      await expect(confirmation).toContainText(SCENARIOS.aRenommer.name);
+    }, { capture: "ecran" });
+    await confirmation.getByRole("button", { name: "Annuler" }).click();
+    await page.waitForTimeout(1_000);
+    expect(await (await base()).collection("forecastscenarios").countDocuments({ _id: SCENARIOS.aRenommer._id })).toBe(1);
+  });
+
+  test("Supprimer une saisie puis Annuler : la saisie reste en base", async ({ page }) => {
+    await ouvrirPrevision(page);
+    const dialogue = await modifierSaisie(page, SAISIES_SAISIE.aModifier);
+    await dialogue.getByRole("button", { name: "Supprimer" }).click();
+    const confirmation = page.getByRole("alertdialog");
+    await expect(confirmation, "La saisie et toutes ses occurrences sont supprimées sans confirmation").toBeVisible();
+    await confirmation.getByRole("button", { name: "Annuler" }).click();
+    await page.waitForTimeout(1_000);
+    expect(await entreeEnBase(SAISIES_SAISIE.aModifier)).not.toBeNull();
   });
 });
 

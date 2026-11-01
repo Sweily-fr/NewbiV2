@@ -1,5 +1,8 @@
+import { escapeOrganizationEmailData } from "./escape-data.js";
 // Template pour confirmer au nouveau membre qu'il a rejoint l'organisation - Style Qonto
-export const memberJoinedConfirmation = (data) => `
+export const memberJoinedConfirmation = (rawData) => {
+  const data = escapeOrganizationEmailData(rawData);
+  return `
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -167,3 +170,4 @@ export const memberJoinedConfirmation = (data) => `
     </body>
     </html>
   `;
+};

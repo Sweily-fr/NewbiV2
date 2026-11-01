@@ -46,6 +46,8 @@ import { usePermissions } from "@/src/hooks/usePermissions";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
+import { useApolloClient } from "@apollo/client";
+import { GET_CREDIT_NOTES } from "@/src/graphql/creditNoteQueries";
 
 const FORMAT_CONFIG = {
   csv: {
@@ -99,7 +101,8 @@ export default function InvoiceExportButton({
   });
   const [canExportInvoices, setCanExportInvoices] = useState(false);
   const { canExport } = usePermissions();
-  const { organization } = useWorkspace();
+  const { organization, workspaceId } = useWorkspace();
+  const apolloClient = useApolloClient();
   const { subscription } = useSubscription();
   const allowedExports = getPlanLimits(subscription?.plan).exports;
 
@@ -122,7 +125,35 @@ export default function InvoiceExportButton({
     setIsDialogOpen(true);
   };
 
-  const handleExport = () => {
+  /**
+   * Avoirs à mettre dans le FEC (écritures inverses des ventes) : tous ceux
+   * de l'espace, ou ceux des factures sélectionnées.
+   */
+  const creditNotesForFEC = async () => {
+    if (!workspaceId) return [];
+    const total = await apolloClient.query({
+      query: GET_CREDIT_NOTES,
+      variables: { workspaceId, page: 1, limit: 1 },
+      fetchPolicy: "network-only",
+    });
+    const count = total.data?.creditNotes?.totalCount || 0;
+    if (!count) return [];
+    const { data } = await apolloClient.query({
+      query: GET_CREDIT_NOTES,
+      variables: { workspaceId, page: 1, limit: count },
+      fetchPolicy: "network-only",
+    });
+    const creditNotes = data?.creditNotes?.creditNotes || [];
+    if (!hasSelection) return creditNotes;
+    const selected = new Set(
+      invoicesToExport.map((invoice) => invoice.number).filter(Boolean),
+    );
+    return creditNotes.filter((creditNote) =>
+      selected.has(creditNote.originalInvoiceNumber),
+    );
+  };
+
+  const handleExport = async () => {
     if (!selectedFormat) return;
 
     try {
@@ -139,15 +170,29 @@ export default function InvoiceExportButton({
         );
       } else if (selectedFormat === "fec") {
         // Nom du fichier : SIREN de l'entreprise (SirenFECAAAAMMJJ.txt)
+        // Sans ses avoirs, le FEC serait faux : pas d'export incomplet
+        const creditNotes = await creditNotesForFEC().catch(() => {
+          throw new Error(
+            "Les avoirs n'ont pas pu être lus : le FEC n'a pas été exporté. Réessayez.",
+          );
+        });
         exportToFEC(finalInvoices, finalDateRange, {
           siren: organization?.siren || organization?.siret || "",
+          creditNotes,
         });
-        // Les brouillons ne sont pas des écritures comptables
-        const issuedCount = finalInvoices.filter(
-          (invoice) =>
-            invoice._type === "imported" || invoice.status !== "DRAFT",
+        // Les brouillons (et les factures importées à revoir ou rejetées)
+        // ne sont pas des écritures comptables
+        const issuedCount = finalInvoices.filter((invoice) =>
+          invoice._type === "imported"
+            ? !["PENDING_REVIEW", "REJECTED"].includes(invoice.status)
+            : invoice.status !== "DRAFT",
         ).length;
-        toast.success(`${issuedCount} facture(s) exportée(s) au format FEC`);
+        const avoirs = creditNotes.length
+          ? ` et ${creditNotes.length} avoir(s)`
+          : "";
+        toast.success(
+          `${issuedCount} facture(s)${avoirs} exportée(s) au format FEC`,
+        );
       } else if (selectedFormat === "sage") {
         exportToSage(finalInvoices, finalDateRange);
         toast.success(

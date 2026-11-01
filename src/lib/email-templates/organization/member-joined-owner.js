@@ -1,5 +1,8 @@
+import { escapeOrganizationEmailData } from "./escape-data.js";
 // Template pour notifier l'owner qu'un membre a rejoint - Style Qonto
-export const memberJoinedNotificationOwner = (data) => `
+export const memberJoinedNotificationOwner = (rawData) => {
+  const data = escapeOrganizationEmailData(rawData);
+  return `
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -167,3 +170,4 @@ export const memberJoinedNotificationOwner = (data) => `
     </body>
     </html>
   `;
+};

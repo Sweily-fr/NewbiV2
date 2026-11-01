@@ -116,6 +116,14 @@ export default function ModernDeliveryNoteEditor({
   // Pré-remplir le client si clientId est dans l'URL
   useEffect(() => {
     if (preselectedClient && mode === "create" && !formData?.client) {
+      // Contact bloqué : exclu de la création de documents
+      if (preselectedClient.isBlocked) {
+        toast.info(
+          "Ce contact est bloqué : il n'est pas repris dans le document.",
+          { id: "client-bloque" },
+        );
+        return;
+      }
       form.setValue("client", preselectedClient, { shouldDirty: true });
     }
   }, [preselectedClient, mode, form, formData?.client]);

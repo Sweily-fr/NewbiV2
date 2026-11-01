@@ -56,11 +56,18 @@ export async function GET() {
     for (const sub of subscriptions) {
       const orgId = (sub.referenceId || sub.organizationId)?.toString();
       if (!orgId) continue;
-      const isActive = sub.status === "active" || sub.status === "trialing";
+      // Même règle que le tableau de bord (app/dashboard/layout.jsx) et
+      // l'API : past_due (relances de paiement Stripe) reste actif.
+      const isActive =
+        sub.status === "active" ||
+        sub.status === "trialing" ||
+        sub.status === "past_due";
       const isCanceledButValid =
         sub.status === "canceled" &&
         sub.periodEnd &&
         new Date(sub.periodEnd) > new Date();
+      // Un abonnement en cours l'emporte sur un ancien document expiré
+      if (subscriptionMap[orgId] === "active") continue;
       subscriptionMap[orgId] =
         isActive || isCanceledButValid ? "active" : "expired";
     }

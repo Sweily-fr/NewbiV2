@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Button } from "@/src/components/ui/button";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
 import {
@@ -124,8 +125,14 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
     }
   };
 
-  const handleDelete = async (id) => {
+  // Suppression confirmée : le scénario part avec ses saisies propres
+  const [toDelete, setToDelete] = useState(null);
+  const handleDelete = (scenario) => setToDelete(scenario);
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    const id = toDelete.id;
     const result = await deleteScenario(id);
+    setToDelete(null);
     if (result.success && activeScenarioId === id) {
       onScenarioChange(null);
     }
@@ -196,7 +203,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(s.id);
+                      handleDelete(s);
                     }}
                     disabled={deleting}
                     className="text-[10px] text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity px-1 disabled:opacity-50"
@@ -310,7 +317,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                     <button
                       type="button"
                       onClick={() => {
-                        handleDelete(editing.id);
+                        handleDelete(editing);
                         setDialogOpen(false);
                       }}
                       disabled={deleting}
@@ -344,6 +351,14 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
           </div>
         </DialogContent>
       </Dialog>
+      <ConfirmDeleteDialog
+        open={Boolean(toDelete)}
+        onOpenChange={(o) => !o && setToDelete(null)}
+        title="Supprimer ce scénario ?"
+        description={`Le scénario « ${toDelete?.name ?? ""} » et les prévisions ajoutées dans ce scénario seront supprimés. Base n'est pas modifiée.`}
+        onConfirm={confirmDelete}
+        loading={deleting}
+      />
     </>
   );
 }

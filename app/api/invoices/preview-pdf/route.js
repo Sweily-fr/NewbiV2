@@ -7,6 +7,7 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { isSafeDocumentColor } from "@/src/lib/organization-document-colors";
 
 /**
  * POST /api/invoices/preview-pdf
@@ -20,6 +21,12 @@ import {
  * Auth: session cookie OR X-Internal-Secret header (for mobile/backend proxy)
  */
 async function handler(request) {
+  // Auth d'abord (session ou secret interne du proxy mobile) : sans elle,
+  // 401 quel que soit le corps de la requête
+  if (!hasInternalSecret(request)) {
+    await requireSession(request);
+  }
+
   const body = await request.json();
   const { invoiceData } = body;
 
@@ -35,9 +42,17 @@ async function handler(request) {
     return apiError(400, "Les informations client sont requises");
   }
 
-  // Auth check — session cookie OR internal secret (mobile proxy)
-  if (!hasInternalSecret(request)) {
-    await requireSession(request);
+  // Couleurs reprises dans les styles du document rendu : valeurs de
+  // couleur seulement
+  const appearance = invoiceData.appearance;
+  if (
+    appearance &&
+    (typeof appearance !== "object" ||
+      ["textColor", "headerTextColor", "headerBgColor"].some(
+        (field) => !isSafeDocumentColor(appearance[field]),
+      ))
+  ) {
+    return apiError(400, "Couleur du document invalide");
   }
 
   let browser = null;

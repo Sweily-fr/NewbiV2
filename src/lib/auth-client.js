@@ -16,6 +16,7 @@ import {
   accountant,
 } from "./permissions";
 import { resetAnalytics } from "@/src/lib/analytics";
+import { clearAllRecents } from "@/src/lib/search-recents";
 
 export const authClient = createAuthClient({
   // Pas de baseURL explicite : Better Auth utilise "/api/auth" (relatif)
@@ -170,6 +171,9 @@ export function clearSessionStorage() {
     localStorage.removeItem("user-cache");
     localStorage.removeItem("active_organization_id");
     localStorage.removeItem("user_role");
+
+    // « Récents » de la recherche globale : clients et numéros de documents
+    clearAllRecents();
 
     // Vider tous les caches d'abonnement
     Object.keys(localStorage).forEach((key) => {

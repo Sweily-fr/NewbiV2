@@ -1,14 +1,32 @@
-export const guideLeadNotification = ({
-  firstName = "Jean",
-  lastName = "Dupont",
-  companyName = "Ma Societe",
-  email = "jean@entreprise.fr",
-  phone = "06 12 34 56 78",
-  source = "Non renseigné",
-  guideName = "Guide Facturation Electronique",
-} = {}) => {
+// Champs saisis dans un formulaire public : insérés comme du texte
+const escapeHtml = (str = "") =>
+  String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+export const guideLeadNotification = (lead = {}) => {
+  const {
+    firstName = "Jean",
+    lastName = "Dupont",
+    companyName = "Ma Societe",
+    email = "jean@entreprise.fr",
+    phone = "06 12 34 56 78",
+    source = "Non renseigné",
+    guideName = "Guide Facturation Electronique",
+  } = Object.fromEntries(
+    Object.entries(lead || {})
+      .filter(([, valeur]) => valeur !== undefined)
+      .map(([cle, valeur]) => [cle, escapeHtml(valeur)]),
+  );
   const date = new Date()
-    .toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
+    .toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
     .toUpperCase();
 
   return `

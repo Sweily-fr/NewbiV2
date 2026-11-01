@@ -214,8 +214,9 @@ const nextConfig = {
             value: "nosniff",
           },
           {
+            // Document servi sous session : jamais de cache partagé
             key: "Cache-Control",
-            value: "public, max-age=3600",
+            value: "private, max-age=3600",
           },
         ],
       },

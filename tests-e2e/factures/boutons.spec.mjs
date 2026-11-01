@@ -20,6 +20,7 @@ import {
   etapeArticles,
   fenetreTitree,
   jourLong,
+  jourLongAvoir,
   LISTE,
   ouvrirAvoirExistant,
   ouvrirAvoirNouveau,
@@ -330,7 +331,7 @@ test.describe("Factures (propriétaire)", () => {
   });
 
   const AVOIR_ETAPE_1 = (date) => ({
-    [`button ${jourLong(date)}`]: { etat: /\[expanded\]/ },
+    [`button ${jourLongAvoir(date)}`]: { etat: /\[expanded\]/ },
     "button Annuler": { navigation: LISTE },
     "button Suivant": { contenu: true },
     // Type d'avoir (la première des listes) ; remboursement et nature : voir avoirs/.
@@ -438,7 +439,7 @@ test.describe("Factures (éditeur)", () => {
     titre: "Nouvel avoir",
     ouvrir: ouvrirAvoirNouveau(F.attente),
     boutons: {
-      [`button ${jourLong(new Date())}`]: { etat: /\[expanded\]/ },
+      [`button ${jourLongAvoir(new Date())}`]: { etat: /\[expanded\]/ },
       "button Annuler": { navigation: LISTE },
       "button Suivant": { contenu: true },
       "combobox icône chevron-down": { options: ["Correction d'erreur", "Geste commercial", "Remboursement", "Rupture de stock"] },

@@ -76,6 +76,25 @@ export const GET_CLIENTS = gql`
   }
 `;
 
+// Contacts bloqués de tout l'espace (page « Contacts bloqués ») : filtrés par
+// l'API, pas parmi une première page de contacts
+export const GET_BLOCKED_CLIENTS = gql`
+  query GetBlockedClients($workspaceId: String!, $page: Int, $limit: Int) {
+    clients(
+      workspaceId: $workspaceId
+      page: $page
+      limit: $limit
+      blocked: true
+    ) {
+      items {${CLIENT_LIST_ITEM_FIELDS}
+      }
+      totalItems
+      currentPage
+      totalPages
+    }
+  }
+`;
+
 // Même liste filtrée par type (« Particulier », « Entreprise ») côté serveur,
 // pour porter sur tous les contacts et pas seulement la page affichée.
 // Document à part : la liste sans filtre reste lisible par une API qui ne

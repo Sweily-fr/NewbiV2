@@ -164,6 +164,26 @@ test.describe("Calculateur de pénalités de retard", () => {
     expect(await ligneDetail(page, "Facture impayée")).toBe(euros(1200.5));
   });
 
+  test("Montant avec des points de milliers (1.200,50) : calculé sur 1 200,50 €", async ({ page }) => {
+    await ouvrirCalculateur(page);
+    await calculer(page, { montant: "1.200,50", echeance: jourLocal(-10), taux: "10" });
+    expect(await ligneDetail(page, "Facture impayée"), "« 1.200,50 » lu comme 1,20 €").toBe(euros(1200.5));
+  });
+
+  test("Taux négatif (-5) : aucune pénalité négative, total au moins égal au montant", async ({ page }) => {
+    await ouvrirCalculateur(page);
+    await calculer(page, { montant: "1000", echeance: jourLocal(-30), taux: "-5" });
+    expect(await ligneDetail(page, "Pénalités de retard"), "Un taux négatif réduit le montant dû").toBe(euros(0));
+    expect(simple(await resultat(page).innerText())).toBe(euros(1000 + 40));
+  });
+
+  test("Paiement avant l'échéance : aucun retard, aucune indemnité", async ({ page }) => {
+    await ouvrirCalculateur(page);
+    await calculer(page, { montant: "500", echeance: jourLocal(-5), paiement: jourLocal(-10), taux: "12" });
+    await expect(page.getByText("Aucun retard", { exact: true })).toBeVisible();
+    expect(await ligneDetail(page, "Indemnité forfaitaire")).toBe(euros(0));
+  });
+
   test("Paiement le jour de l'échéance : aucun retard, aucune indemnité", async ({ page }) => {
     await ouvrirCalculateur(page);
     const jour = jourLocal(-5);

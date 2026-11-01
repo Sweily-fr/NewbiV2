@@ -8,6 +8,8 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { getPlanLimits } from "@/src/lib/plan-limits";
+import { withoutCabinetMembers } from "@/src/lib/cabinet-members";
 
 /**
  * Sans « Voir l'abonnement » : le plan et ses limites de membres, pas les
@@ -47,23 +49,23 @@ async function handler(request, { params }) {
     return apiError(404, "Aucun abonnement trouvé");
   }
 
-  const planLimits = {
-    freelance: { users: 1 },
-    pme: { users: 10 },
-    entreprise: { users: 25 },
-  };
+  // Même décompte que la facturation des sièges (seatSyncService) : les
+  // membres de Better Auth n'ont pas de champ status ; le super admin, les
+  // comptables et le cabinet qui suit l'espace ne sont pas facturés.
+  const includedSeats = getPlanLimits(subscription.plan).invitableUsers;
 
-  const includedSeats = planLimits[subscription.plan]?.users || 1;
+  const members = await withoutCabinetMembers(
+    mongoDb,
+    organizationId,
+    await mongoDb
+      .collection("member")
+      .find({ organizationId: orgObjectId })
+      .toArray(),
+  );
 
-  const members = await mongoDb
-    .collection("member")
-    .find({
-      organizationId: orgObjectId,
-      status: { $in: ["active", "pending"] },
-    })
-    .toArray();
-
-  const billableMembers = members.filter((m) => m.role !== "accountant");
+  const billableMembers = members.filter(
+    (m) => m.role !== "owner" && m.role !== "accountant",
+  );
   const currentMembers = billableMembers.length;
   const availableSeats = Math.max(0, includedSeats - currentMembers);
   const additionalSeats = Math.max(0, currentMembers - includedSeats);

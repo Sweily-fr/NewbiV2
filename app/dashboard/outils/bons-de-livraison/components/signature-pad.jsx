@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Eraser } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
@@ -9,6 +9,8 @@ import { cn } from "@/src/lib/utils";
  * Pad de signature manuscrite (canvas, souris + tactile).
  * Renvoie une data URL PNG via onChange, ou null quand le pad est vide.
  * Aucune dépendance externe : suffisant pour une signature de réception.
+ * La zone est nommée et décrite pour les lecteurs d'écran ; la signature
+ * reste facultative, la réception s'enregistre au clavier sans elle.
  */
 export default function SignaturePad({
   value = null,
@@ -16,7 +18,10 @@ export default function SignaturePad({
   disabled = false,
   height = 160,
   className,
+  label = "Zone de signature du client",
+  description = "Signez avec la souris ou le doigt. La signature est facultative.",
 }) {
+  const descriptionId = useId();
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef(null);
@@ -124,6 +129,9 @@ export default function SignaturePad({
       >
         <canvas
           ref={canvasRef}
+          role="img"
+          aria-label={label}
+          aria-describedby={descriptionId}
           onMouseDown={start}
           onMouseMove={move}
           onMouseUp={end}
@@ -134,11 +142,17 @@ export default function SignaturePad({
           onTouchCancel={end}
         />
         {isEmpty && (
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-muted-foreground"
+          >
             Signez ici (souris ou doigt)
           </span>
         )}
       </div>
+      <p id={descriptionId} className="sr-only">
+        {description}
+      </p>
       <div className="flex justify-end">
         <Button
           type="button"

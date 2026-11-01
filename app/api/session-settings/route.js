@@ -78,17 +78,35 @@ export async function PUT(req) {
       );
     }
 
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
+    }
     const update = {};
 
-    // Valider chaque champ
+    // Valider chaque champ : un nombre de la liste autorisée (ou son
+    // écriture exacte en texte), sinon la demande est refusée en entier
     for (const key of Object.keys(DEFAULTS)) {
-      if (body[key] !== undefined) {
-        const val = parseFloat(body[key]);
-        if (ALLOWED[key].includes(val)) {
-          update[key] = val;
-        }
+      if (body[key] === undefined) continue;
+      const raw = body[key];
+      const val =
+        typeof raw === "number"
+          ? raw
+          : typeof raw === "string" && /^\d+(\.\d+)?$/.test(raw.trim())
+            ? Number(raw.trim())
+            : NaN;
+      if (!ALLOWED[key].includes(val)) {
+        return NextResponse.json(
+          { error: "Valeur non autorisée pour ce réglage" },
+          { status: 400 },
+        );
       }
+      update[key] = val;
     }
 
     if (Object.keys(update).length === 0) {
