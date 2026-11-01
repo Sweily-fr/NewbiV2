@@ -15,6 +15,7 @@ import { donneesAchatsBanque } from "./lot-achats-banque.mjs";
 import { donneesParametresAuth } from "./lot-parametres-auth.mjs";
 import { donneesCollaboration } from "./lot-collaboration.mjs";
 import { donneesPilotage } from "./lot-pilotage.mjs";
+import { donneesClientsCatalogue } from "./lot-clients-catalogue.mjs";
 
 /** Rassemble les données de plusieurs fonctionnalités, collection par collection. */
 function fusionner(...sources) {
@@ -42,6 +43,7 @@ export async function semer(db) {
     donneesParametresAuth(),
     donneesCollaboration(),
     donneesPilotage(),
+    donneesClientsCatalogue(),
   );
   for (const [nom, docs] of Object.entries(collections)) {
     if (docs.length) await db.collection(nom).insertMany(docs);
