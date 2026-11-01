@@ -78,7 +78,7 @@ test.describe("Rendez-vous : états qui n'acceptent plus d'action", () => {
       async () => {
         await brancherIp(page);
         await ouvrir(page, `/rdv/gerer/${jeton}`, { pret: page.getByRole("heading", { name: "Votre rendez-vous" }) });
-        await expect(page.getByText("Annulé", { exact: true })).toBeVisible();
+        await expect(page.getByText(/^Annulé( le .+)?$/).first()).toBeVisible();
         await expect(page.getByRole("button", { name: "Annuler le rendez-vous" })).toHaveCount(0);
         await expect(page.getByRole("button", { name: "Reprogrammer" })).toHaveCount(0);
       },
@@ -113,7 +113,7 @@ test.describe("Rendez-vous : annulation par l'invité", () => {
     await cliquer(page, page.getByRole("button", { name: "Annuler le rendez-vous" }));
     await page.getByLabel(/Motif/).fill("Empêchement de dernière minute, désolée !");
     await cliquer(page, page.getByRole("button", { name: "Confirmer l'annulation" }));
-    await expect(page.getByText("Annulé", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(/^Annulé( le .+)?$/).first()).toBeVisible({ timeout: 20_000 });
 
     await etape(page, "En base : annulée par l'invité, motif gardé, événement retiré", async () => {
       const doc = await enBase("aAnnuler");

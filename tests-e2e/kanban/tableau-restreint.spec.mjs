@@ -143,7 +143,8 @@ test.describe("Kanban : le tableau restreint reste ouvert à ses membres", () =>
     test.use({ storageState: connecte(KANBAN.token) });
     test("Voit le tableau restreint dans sa liste et l'ouvre à l'écran", async ({ page }) => {
       await ouvrir(page, `/dashboard/outils/kanban/${id(TABLEAU)}`, { pret: page.getByText(T.restreintLire.title).first() });
-      await expect(page.getByText(T.restreintModifier.title).first()).toBeVisible();
+      // Titre jamais modifié par un autre test (le commentaire ne change pas le titre).
+      await expect(page.getByText(T.restreintCommenter.title).first()).toBeVisible();
     });
   });
 });
