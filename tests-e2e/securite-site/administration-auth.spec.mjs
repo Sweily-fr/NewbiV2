@@ -16,13 +16,21 @@ const CIBLE_ID = CIBLE._id.toHexString();
 /** Compte visé, ses sessions et ses identifiants de connexion, tels qu'en base. */
 async function photoCible() {
   const db = await base();
-  const [utilisateur, sessions, comptes] = await Promise.all([
+  const filtre = { userId: { $in: [CIBLE._id, CIBLE_ID] } };
+  const [utilisateur, sessions, comptes, membres] = await Promise.all([
     db.collection("user").findOne({ _id: CIBLE._id }),
-    db.collection("session").find({ userId: { $in: [CIBLE._id, CIBLE_ID] } }).sort({ _id: 1 }).toArray(),
-    db.collection("account").find({ userId: { $in: [CIBLE._id, CIBLE_ID] } }).sort({ _id: 1 }).toArray(),
+    db.collection("session").find(filtre).sort({ _id: 1 }).toArray(),
+    db.collection("account").find(filtre).sort({ _id: 1 }).toArray(),
+    // Ses espaces : un refus ne doit pas l'en retirer
+    db.collection("member").find(filtre).sort({ _id: 1 }).toArray(),
   ]);
   const { updatedAt, ...u } = utilisateur || {};
-  return JSON.stringify({ u, sessions: sessions.map((s) => s.token), comptes: comptes.map(({ updatedAt: _, ...c }) => c) });
+  return JSON.stringify({
+    u,
+    sessions: sessions.map((s) => s.token),
+    comptes: comptes.map(({ updatedAt: _, ...c }) => c),
+    membres: membres.map((m) => [String(m.organizationId), m.role]),
+  });
 }
 
 const sessionsUsurpees = async () => (await base()).collection("session").countDocuments({ impersonatedBy: { $exists: true } });
