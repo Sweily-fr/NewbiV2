@@ -657,6 +657,57 @@ async function filterMembersVisibility(ctx) {
   }
 }
 
+// Champs Stripe retirés de /subscription/list sans « Voir l'abonnement »
+const STRIPE_SUBSCRIPTION_FIELDS = [
+  "stripeCustomerId",
+  "stripeSubscriptionId",
+  "stripeScheduleId",
+];
+
+/**
+ * /subscription/list (plugin Stripe) : tout membre de l'espace lit ses
+ * abonnements, mais les identifiants Stripe ne sont renvoyés qu'avec
+ * « Voir l'abonnement ». Droits illisibles : réponse restreinte.
+ */
+async function filterSubscriptionList(ctx) {
+  const returned = ctx.context?.returned;
+  if (!Array.isArray(returned) || returned.length === 0) return;
+
+  let canViewBilling = false;
+  try {
+    const { getSessionFromCtx } = await import("better-auth/api");
+    const session =
+      ctx.context.session || (await getSessionFromCtx(ctx).catch(() => null));
+    const referenceId =
+      ctx.query?.referenceId || session?.session?.activeOrganizationId;
+    if (session?.user?.id && typeof referenceId === "string") {
+      const { getMongoDb } = await import("./mongodb");
+      const { getModuleActions } = await import("./organization-roles");
+      const db = await getMongoDb();
+      const { role, actions } = await getModuleActions(db, {
+        userId: session.user.id,
+        organizationId: referenceId,
+        moduleKey: "billing",
+      });
+      canViewBilling = Boolean(role) && actions.includes("view");
+    }
+  } catch (error) {
+    console.error(
+      "❌ [subscriptionList] droits illisibles, réponse restreinte:",
+      error?.message,
+    );
+  }
+  if (canViewBilling) return;
+
+  return ctx.json(
+    returned.map((subscription) => {
+      const copy = { ...subscription };
+      for (const field of STRIPE_SUBSCRIPTION_FIELDS) delete copy[field];
+      return copy;
+    }),
+  );
+}
+
 // Hook après — visibilité des membres, OAuth callback, nettoyage members
 // après suppression user
 export const afterHook = createAuthMiddleware(async (ctx) => {
@@ -665,6 +716,14 @@ export const afterHook = createAuthMiddleware(async (ctx) => {
   // ========================================
   if (MEMBER_VISIBILITY_PATHS.has(ctx.path)) {
     return filterMembersVisibility(ctx);
+  }
+
+  // ========================================
+  // 0 bis. Abonnements d'un espace : identifiants Stripe réservés à
+  // « Voir l'abonnement » (même règle que /api/organizations/[id]/subscription)
+  // ========================================
+  if (ctx.path === "/subscription/list") {
+    return filterSubscriptionList(ctx);
   }
 
   // ========================================
