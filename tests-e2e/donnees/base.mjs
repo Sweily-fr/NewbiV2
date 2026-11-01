@@ -122,6 +122,12 @@ const PREFIXES = {
   sessionLot: "e2e6fd",
   abonnementLot: "e2e6fe",
   roleLot: "e2e6ff",
+  // Kanban : tableau restreint, liens publics (lot-kanban.mjs).
+  kbTableau: "e2e5aa",
+  kbColonne: "e2e5ba",
+  kbTache: "e2e5ca",
+  kbPartage: "e2e5fa",
+  kbDivers: "e2e5fb",
   // Calendrier (lot-calendrier.mjs).
   calEvenement: "e2e5da",
   calConnexion: "e2e5db",

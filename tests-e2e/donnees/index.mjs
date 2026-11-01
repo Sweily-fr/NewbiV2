@@ -14,6 +14,7 @@ import { donneesDevisBcBl } from "./lot-devis-bc-bl.mjs";
 import { donneesAchatsBanque } from "./lot-achats-banque.mjs";
 import { donneesParametresAuth } from "./lot-parametres-auth.mjs";
 import { donneesCollaboration } from "./lot-collaboration.mjs";
+import { donneesKanban } from "./lot-kanban.mjs";
 import { donneesCalendrier } from "./lot-calendrier.mjs";
 import { donneesRendezVous } from "./lot-rendez-vous.mjs";
 import { donneesReseauxSociaux } from "./lot-reseaux-sociaux.mjs";
@@ -45,6 +46,7 @@ export async function semer(db) {
     donneesAchatsBanque(),
     donneesParametresAuth(),
     donneesCollaboration(),
+    donneesKanban(),
     donneesCalendrier(),
     donneesRendezVous(),
     donneesReseauxSociaux(),
