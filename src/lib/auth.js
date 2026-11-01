@@ -69,6 +69,22 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Code partenaire envoyé avec l'inscription (referredBy, non
+        // modifiable ensuite) : gardé seulement s'il est celui d'un
+        // partenaire existant.
+        before: async (user, context) => {
+          const raw = context?.body?.referredBy;
+          if (raw === undefined || raw === null || raw === "") return;
+          try {
+            const { mongoDb } = await import("./mongodb.js");
+            const { resolvePartnerCode } =
+              await import("./partner-referral.js");
+            const code = await resolvePartnerCode(mongoDb, raw);
+            if (code) return { data: { ...user, referredBy: code } };
+          } catch (error) {
+            console.error("❌ [USER CREATE] Code partenaire:", error);
+          }
+        },
         after: async (user) => {
           // ✅ NOUVEAU FLUX : NE PAS créer d'organisation au signup
           // L'organisation sera créée APRÈS le paiement Stripe dans le webhook

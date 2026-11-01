@@ -386,9 +386,8 @@ test.describe("Désactiver un compte : seulement le sien", () => {
 
 test.describe("Programme partenaire : code transmis à l'inscription", () => {
   test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 40\d|\/api\/auth\/token/ });
-  // Défaut connu : le code ?partner= est envoyé par la page d'inscription
-  // (referredBy) mais Better Auth l'ignore (champ non saisissable) : aucun
-  // filleul n'est jamais rattaché à un partenaire.
+  // Le code ?partner= est envoyé par la page d'inscription (referredBy) et
+  // gardé s'il est celui d'un partenaire : ses commissions en dépendent.
   test("Inscription avec un code partenaire : le compte garde le code", async ({ page }) => {
     const email = "filleul-partenaire@e2e.test";
     await surLeSite(page);
@@ -396,5 +395,18 @@ test.describe("Programme partenaire : code transmis à l'inscription", () => {
     expect(r.statut, `Inscription : ${r.statut} ${JSON.stringify(r.corps)?.slice(0, 200)}`).toBe(200);
     const u = await (await db()).collection("user").findOne({ email });
     expect(u?.referredBy ?? null, "Le code partenaire est perdu à l'inscription").toBe("E2EPARTENAIRE");
+  });
+
+  test("Code inconnu : l'inscription aboutit, aucun code gardé", async ({ page }) => {
+    const email = "filleul-code-inconnu@e2e.test";
+    await surLeSite(page);
+    const r = await appelAuth(page, "/sign-up/email", { corps: { email, password: "Filleul-Inconnu-2026!", name: "Ida Inconnue", referredBy: "CODE-INVENTE" } });
+    expect(r.statut).toBe(200);
+    expect((await (await db()).collection("user").findOne({ email }))?.referredBy ?? null).toBeNull();
+  });
+
+  test("Code arrivé par une page du site : gardé jusqu'au formulaire d'inscription", async ({ page }) => {
+    await ouvrir(page, "/mentions-legales?partner=E2EPARTENAIRE", { pret: page.getByRole("heading", { level: 1 }) });
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("newbi_partner_code") || "null")?.code ?? null)).toBe("E2EPARTENAIRE");
   });
 });

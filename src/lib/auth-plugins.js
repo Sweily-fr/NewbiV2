@@ -1397,6 +1397,34 @@ export const stripePlugin = stripe({
             `💰 [STRIPE WEBHOOK] Paiement facture réussi: ${paidInvoice.id}, billing_reason: ${paidInvoice.billing_reason}`,
           );
 
+          // Commission du partenaire qui a apporté ce client (programme
+          // partenaire), indépendante des e-mails ci-dessous
+          try {
+            const { recordPartnerCommission } =
+              await import("./partner-referral.js");
+            const { mongoDb } = await import("./mongodb.js");
+            let subscriptionForCommission = null;
+            if (paidInvoice.subscription && paidInvoice.amount_paid > 0) {
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              const stripeClient = require("stripe")(
+                process.env.STRIPE_SECRET_KEY,
+              );
+              subscriptionForCommission = await stripeClient.subscriptions
+                .retrieve(paidInvoice.subscription)
+                .catch(() => null);
+            }
+            await recordPartnerCommission({
+              mongoDb,
+              invoice: paidInvoice,
+              subscription: subscriptionForCommission,
+            });
+          } catch (commissionError) {
+            console.error(
+              "❌ [STRIPE WEBHOOK] Commission partenaire:",
+              commissionError?.message,
+            );
+          }
+
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
