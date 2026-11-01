@@ -13,9 +13,9 @@ import {
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useQuery } from "@apollo/client";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
-import { GET_QUOTES } from "@/src/graphql/quoteQueries";
+import { GET_CLIENT_QUOTES } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT_NAVIGATION_IDS } from "@/src/graphql/clientQueries";
-import { GET_PURCHASE_ORDERS } from "@/src/graphql/purchaseOrderQueries";
+import { GET_CLIENT_PURCHASE_ORDERS } from "@/src/graphql/purchaseOrderQueries";
 import { useCreateEvent } from "@/src/hooks/useEvents";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
@@ -61,22 +61,22 @@ function ClientDetailContent() {
   const allClients = navigationData?.clients?.items;
   const { canRead, isReady } = useMyPermissions();
   // Documents du client : requêtes sautées sans lecture du module (onglets
-  // et encarts masqués en conséquence). Mêmes variables que useQuotes /
-  // usePurchaseOrders (première page) pour partager le cache Apollo.
+  // et encarts masqués en conséquence). Devis et bons de commande filtrés
+  // par l'API sur ce contact (pas les 50 derniers de l'espace).
   const canReadInvoices = !isReady || canRead("invoices");
   const canReadQuotes = !isReady || canRead("quotes");
   const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
   const { invoices } = useInvoices({ skip: !canReadInvoices });
-  const { data: quotesData } = useQuery(GET_QUOTES, {
-    variables: { workspaceId, page: 1, limit: 50 },
-    skip: !workspaceId || !canReadQuotes,
+  const { data: quotesData } = useQuery(GET_CLIENT_QUOTES, {
+    variables: { workspaceId, clientId: id, page: 1, limit: 100 },
+    skip: !workspaceId || !isValid || !canReadQuotes,
     errorPolicy: "all",
     fetchPolicy: "cache-and-network",
   });
   const quotes = quotesData?.quotes?.quotes;
-  const { data: purchaseOrdersData } = useQuery(GET_PURCHASE_ORDERS, {
-    variables: { workspaceId, page: 1, limit: 50 },
-    skip: !workspaceId || !canReadPurchaseOrders,
+  const { data: purchaseOrdersData } = useQuery(GET_CLIENT_PURCHASE_ORDERS, {
+    variables: { workspaceId, clientId: id, page: 1, limit: 100 },
+    skip: !workspaceId || !isValid || !canReadPurchaseOrders,
     errorPolicy: "all",
     fetchPolicy: "cache-and-network",
   });
