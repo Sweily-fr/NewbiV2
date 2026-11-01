@@ -24,6 +24,10 @@ import {
   normalizeLegalForm,
 } from "@/src/lib/company-registry";
 import { isOwnerRole } from "@/src/lib/organization-roles";
+import {
+  isSiretTakenByAnotherWorkspace,
+  SIRET_TAKEN_MESSAGE,
+} from "@/src/lib/organization-siret-guard";
 import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
 
 /**
@@ -236,6 +240,19 @@ async function handler(request) {
     let verifiedCompany = null;
 
     if (siret) {
+      // Un SIRET appartient à un seul espace (règle de /api/check-siret,
+      // que l'écran appelle mais qu'un appel direct contournait)
+      if (
+        await isSiretTakenByAnotherWorkspace({
+          mongoDb,
+          siret,
+          userId: sessionUser.id,
+          excludeOrganizationId: targetOrganizationId,
+        })
+      ) {
+        return apiError(409, SIRET_TAKEN_MESSAGE);
+      }
+
       // Vérification du SIRET auprès du registre public, à la complétion et
       // côté serveur. Le client fait déjà une recherche pour
       // l'autocomplétion, mais elle est contournable : c'est ce contrôle-ci

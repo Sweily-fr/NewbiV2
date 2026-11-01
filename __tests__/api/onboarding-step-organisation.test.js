@@ -17,6 +17,8 @@ const m = vi.hoisted(() => ({
   orgUpdateOne: vi.fn(),
   grantTrial: vi.fn(),
   verifySiret: vi.fn(),
+  orgsWithSiret: vi.fn(async () => []),
+  memberFindOne: vi.fn(),
 }));
 
 vi.mock("@/src/lib/auth", () => ({
@@ -32,11 +34,16 @@ vi.mock("@/src/lib/mongodb", () => ({
       if (name === "member") {
         return {
           // Ancien code : première appartenance trouvée
-          findOne: async () => (await m.memberships())[0] || null,
+          findOne: (query) => m.memberFindOne(query),
           find: () => ({ toArray: m.memberships }),
         };
       }
-      if (name === "organization") return { updateOne: m.orgUpdateOne };
+      if (name === "organization") {
+        return {
+          updateOne: m.orgUpdateOne,
+          find: () => ({ toArray: m.orgsWithSiret }),
+        };
+      }
       throw new Error(`Collection inattendue : ${name}`);
     },
   },
@@ -110,6 +117,10 @@ beforeEach(() => {
     },
   });
   m.grantTrial.mockResolvedValue(true);
+  m.orgsWithSiret.mockResolvedValue([]);
+  m.memberFindOne.mockImplementation(
+    async () => (await m.memberships())[0] || null,
+  );
 });
 
 describe("PATCH /api/onboarding/step : espace configuré", () => {
@@ -262,5 +273,38 @@ describe("PATCH /api/onboarding/step : inscription sans SIRET", () => {
     expect(res.status).toBe(400);
     expect(m.verifySiret).toHaveBeenCalledWith("12345678900011");
     expect(m.orgUpdateOne).not.toHaveBeenCalled();
+  });
+});
+
+describe("PATCH /api/onboarding/step : SIRET d'un autre espace", () => {
+  const otherOrgId = "507f1f77bcf86cd799439055";
+
+  it("SIRET déjà porté par un espace dont l'utilisateur n'est pas membre : refus 409, rien d'écrit, aucun essai", async () => {
+    signIn(ownOrgId);
+    m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
+    m.orgsWithSiret.mockResolvedValue([{ _id: new ObjectId(otherOrgId) }]);
+    m.memberFindOne.mockResolvedValue(null);
+
+    const res = await call(completeBody());
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatch(
+      /déjà utilisé par un autre espace/,
+    );
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
+    expect(m.userUpdateOne).not.toHaveBeenCalled();
+    expect(m.grantTrial).not.toHaveBeenCalled();
+    expect(m.verifySiret).not.toHaveBeenCalled();
+  });
+
+  it("SIRET d'un espace dont il est déjà membre (reprise) : accepté", async () => {
+    signIn(ownOrgId);
+    m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
+    m.orgsWithSiret.mockResolvedValue([{ _id: new ObjectId(otherOrgId) }]);
+    m.memberFindOne.mockResolvedValue(membership(otherOrgId, "member"));
+
+    const res = await call(completeBody());
+
+    expect(res.status).toBe(200);
   });
 });

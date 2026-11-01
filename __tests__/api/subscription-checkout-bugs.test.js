@@ -377,3 +377,64 @@ describe("POST /api/change-subscription-plan : verrou", () => {
     expect(lockState()._lockId).toBe("verrou-de-l-autre-requete");
   });
 });
+
+describe("POST /api/create-org-subscription : SIRET d'un autre espace", () => {
+  const otherOrgId = new ObjectId("507f1f77bcf86cd799439099");
+
+  beforeEach(() => {
+    m.customersCreate.mockImplementation(async () => ({ id: "cus_1" }));
+    m.checkoutCreate.mockImplementation(async () => ({
+      id: "cs_1",
+      url: "https://checkout.stripe.com/c/cs_1",
+      metadata: {},
+    }));
+    m.getSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr", stripeCustomerId: "cus_1" },
+      session: {},
+    });
+  });
+
+  const call = async (siret) => {
+    const { POST } = await import("@/app/api/create-org-subscription/route.js");
+    return POST(
+      new Request("http://localhost/api/create-org-subscription", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          organizationData: { type: "new", name: "Nouvel espace", siret },
+        }),
+      }),
+    );
+  };
+
+  it("SIRET porté par un espace dont l'utilisateur n'est pas membre : refus 409 avant tout paiement", async () => {
+    m.db = fakeDb({
+      user: [{ _id: new ObjectId(userId), email: "u@x.fr" }],
+      organization: [{ _id: otherOrgId, siret: "12345678900011" }],
+      member: [],
+    });
+    const res = await call("12345678900011");
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatch(
+      /déjà utilisé par un autre espace/,
+    );
+    expect(m.checkoutCreate).not.toHaveBeenCalled();
+  });
+
+  it("SIRET d'un espace dont il est membre : paiement proposé", async () => {
+    m.db = fakeDb({
+      user: [{ _id: new ObjectId(userId), email: "u@x.fr" }],
+      organization: [{ _id: otherOrgId, siret: "12345678900011" }],
+      member: [
+        {
+          userId: new ObjectId(userId),
+          organizationId: otherOrgId,
+          role: "owner",
+        },
+      ],
+    });
+    const res = await call("12345678900011");
+    expect(res.status).toBe(200);
+    expect(m.checkoutCreate).toHaveBeenCalledTimes(1);
+  });
+});
