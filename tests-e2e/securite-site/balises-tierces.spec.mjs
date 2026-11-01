@@ -1,10 +1,9 @@
 /**
  * Pages dont l'adresse porte un secret (jeton de réinitialisation, clé d'un
- * transfert, jeton de réactivation, de tableau public ou de gestion d'un
- * rendez-vous, adresse invitée) : aucune balise publicitaire ou de mesure
- * n'y est chargée, même avec le consentement. Ces services reçoivent
- * l'adresse complète de la page (page_location, dl, $current_url) : le
- * secret partirait chez eux.
+ * transfert, jeton de réactivation ou de tableau public, adresse invitée) :
+ * aucune balise publicitaire ou de mesure n'y est chargée, même avec le
+ * consentement. Ces services reçoivent l'adresse complète de la page
+ * (page_location, dl, $current_url) : le secret partirait chez eux.
  *
  * Les appels vers l'extérieur sont coupés pendant les tests (outils.mjs) :
  * une balise n'envoie donc rien ici, mais toute requête vers ces services
@@ -29,7 +28,6 @@ const PAGES = [
   ["Transfert de fichiers", `/transfer/${TRANSFERT.shareLink}?key=${TRANSFERT.accessKey}`, TRANSFERT.accessKey],
   ["Réactivation du compte", `/reactivate-account?email=reactivation%40e2e.test&token=${JETON}`, JETON],
   ["Tableau Kanban public", `/public/kanban/${PARTAGES.actif.token}`, PARTAGES.actif.token],
-  ["Gestion d'un rendez-vous", `/rdv/gerer/${JETON}`, JETON],
   ["Invitation dans un espace", `/accept-invitation/${oid("invitationAuth", invitation.n).toHexString()}?email=${encodeURIComponent(invitation.email)}`, invitation.email],
 ];
 

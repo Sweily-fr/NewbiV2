@@ -3,8 +3,6 @@
  * dans le build de production :
  *   - chaque page HTML (publique, connexion, tableau de bord) : CSP,
  *     X-Frame-Options DENY, HSTS, nosniff, Referrer-Policy ;
- *   - /rdv : intégrable en iframe (pas de X-Frame-Options, frame-ancestors *),
- *     non indexée ;
  *   - proxys de fichiers (/api/document-preview, /api/shared-documents/
  *     preview-file) : nosniff, affichage en iframe du site seulement, jamais
  *     de cache partagé ;
@@ -42,16 +40,6 @@ test.describe("En-têtes de sécurité : pages publiques", () => {
     const reponse = await request.get("/page-qui-n-existe-pas-e2e");
     expect(reponse.status()).toBe(404);
     verifierEntetesPage(reponse.headers(), "page 404");
-  });
-
-  test("Prise de rendez-vous : intégrable en iframe, non indexée, toujours sous CSP", async ({ request }) => {
-    const reponse = await request.get("/rdv/page-inexistante-e2e");
-    const entetes = reponse.headers();
-    expect.soft(entetes["x-frame-options"], "X-Frame-Options présent sur /rdv : l'intégration en iframe casse").toBeUndefined();
-    expect.soft(entetes["content-security-policy"] || "").toContain("frame-ancestors *");
-    expect.soft(entetes["content-security-policy"] || "").toContain("default-src 'self'");
-    expect.soft(entetes["x-robots-tag"] || "").toContain("noindex");
-    expect.soft(entetes["x-content-type-options"]).toBe("nosniff");
   });
 });
 

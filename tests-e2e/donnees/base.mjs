@@ -143,16 +143,6 @@ const PREFIXES = {
   calEvenement: "e2e5da",
   calConnexion: "e2e5db",
   calDivers: "e2e5dc",
-  // Prise de rendez-vous (lot-rendez-vous.mjs).
-  rdvPage: "e2e5ea",
-  rdvType: "e2e5eb",
-  rdvReservation: "e2e5ec",
-  rdvDivers: "e2e5ed",
-  // Posts réseaux sociaux (lot-reseaux-sociaux.mjs).
-  socialCompte: "e2e6aa",
-  socialPost: "e2e6ab",
-  socialMedia: "e2e6ac",
-  socialDivers: "e2e6ad",
   // E-mails envoyés (lot-emails-envoyes.mjs).
   emailEnvoi: "e2e6ba",
   emailDocument: "e2e6bb",

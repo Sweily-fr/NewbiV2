@@ -16,8 +16,6 @@ import { donneesParametresAuth } from "./lot-parametres-auth.mjs";
 import { donneesCollaboration } from "./lot-collaboration.mjs";
 import { donneesKanban } from "./lot-kanban.mjs";
 import { donneesCalendrier } from "./lot-calendrier.mjs";
-import { donneesRendezVous } from "./lot-rendez-vous.mjs";
-import { donneesReseauxSociaux } from "./lot-reseaux-sociaux.mjs";
 import { donneesEmailsEnvoyes } from "./lot-emails-envoyes.mjs";
 import { donneesPilotage } from "./lot-pilotage.mjs";
 import { donneesClientsCatalogue } from "./lot-clients-catalogue.mjs";
@@ -50,8 +48,6 @@ export async function semer(db) {
     donneesCollaboration(),
     donneesKanban(),
     donneesCalendrier(),
-    donneesRendezVous(),
-    donneesReseauxSociaux(),
     donneesEmailsEnvoyes(),
     donneesPilotage(),
     donneesClientsCatalogue(),

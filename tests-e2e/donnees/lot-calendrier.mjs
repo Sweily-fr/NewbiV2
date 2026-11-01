@@ -1,13 +1,11 @@
 /**
  * Données du lot « collaboration » : Calendrier (événements privés, membres
- * assignés, agendas connectés, webhooks, abonnement iCal, échéances liées,
- * connexion Gmail).
+ * assignés, agendas connectés, webhooks, connexion Gmail).
  *
  * Espace « Agenda » à part (comptes 20 à 39 de comptes-collaboration.mjs) :
- * un membre par rôle, deux rôles personnalisés, et des membres dont un test
- * change l'appartenance (lien d'abonnement après retrait ou changement de
- * rôle). Une donnée par action qui modifie : un test qui échoue (défaut
- * connu) ne touche jamais la donnée d'un autre.
+ * un membre par rôle et des rôles personnalisés. Une donnée par action qui
+ * modifie : un test qui échoue (défaut connu) ne touche jamais la donnée
+ * d'un autre.
  */
 import { COMPTES, DANS, MAINTENANT, oid } from "./base.mjs";
 import { compteLot, docsComptesLot, membreLot, roleLot } from "./comptes-collaboration.mjs";
@@ -56,10 +54,6 @@ export const MEMBRES_AGENDA = {
   membre: membreLot(23, { email: "agenda-membre@e2e.test", name: "Mona Agenda", de: AGENDA, role: "viewer" }),
   sansFactures: membreLot(24, { email: "agenda-sans-factures@e2e.test", name: "Sami Sansfacture", de: AGENDA, role: ROLES_AGENDA.sansFactures.role }),
   lecture: membreLot(25, { email: "agenda-lecture@e2e.test", name: "Lisa Lecture", de: AGENDA, role: ROLES_AGENDA.lecture.role }),
-  // Retiré de l'espace par son test (lien d'abonnement : 404 aussitôt).
-  aRetirer: membreLot(26, { email: "agenda-a-retirer@e2e.test", name: "Rémi Retiré", de: AGENDA, role: "member" }),
-  // Passé à un rôle sans calendrier par son test.
-  aRetrograder: membreLot(27, { email: "agenda-a-retrograder@e2e.test", name: "Rose Rôle", de: AGENDA, role: "member" }),
 };
 
 export { AGENDA, AGENDA_LECTURE };
@@ -99,24 +93,13 @@ export const EVENEMENTS_AGENDA = {
   priveModifier: evenement(2, "Entretien privé à modifier", { visibility: "private" }),
   priveSupprimer: evenement(3, "Entretien privé à supprimer", { visibility: "private" }),
   priveEnvoyer: evenement(4, "Entretien privé à envoyer", { visibility: "private" }),
-  // Rendez-vous pris sur la page de réservation du gérant : coordonnées de l'invité dans la description.
-  rendezVous: evenement(5, "Rendez-vous avec Zoé Martin", {
-    type: "APPOINTMENT",
-    visibility: "private",
-    description: "Invitée : zoe.martin@client.test, +33 6 12 34 56 78. Message : projet confidentiel",
-  }),
-  rendezVousEnvoyer: evenement(6, "Rendez-vous avec Paul Lefèvre", {
-    type: "APPOINTMENT",
-    visibility: "private",
-    description: "Invité : paul.lefevre@client.test",
-  }),
   // Échéance de facture (titre avec client et montant) : cachée sans « Voir » des factures.
   echeanceFacture: evenement(7, "Échéance F-202611-0001 Client Agenda SARL 1 200,00 €", { type: "INVOICE_DUE", color: "amber" }),
   // Événement de l'espace : l'Éditeur y change les membres assignés.
   equipeAssigner: evenement(8, "Réunion de l'espace Agenda"),
   // Événement privé de l'Éditeur lui-même : il le modifie (contrôle positif).
   priveEditeur: evenement(9, "Note privée de l'Éditeur", { visibility: "private", userId: MEMBRES_AGENDA.editeur.utilisateur._id }),
-  // Événement de l'espace visible de tous (abonnement iCal).
+  // Événement de l'espace visible de tous.
   equipeLecture: evenement(10, "Point mensuel de l'espace Agenda", { start: DANS(3), end: DANS(3) }),
   // Espace en lecture seule : un événement à envoyer.
   lectureSeule: evenement(11, "Événement de l'espace en lecture seule", {
@@ -163,7 +146,6 @@ export const CONNEXIONS = {
   proprietaire: connexion(1, PROPRIO, "google"),
   // Agendas de l'Éditeur, un par tentative d'envoi d'un événement qui ne le regarde pas.
   editeurPrive: connexion(2, EDITEUR, "google"),
-  editeurRendezVous: connexion(3, EDITEUR, "google"),
   // Webhooks : une connexion par notification (une notification acceptée lancerait une synchro).
   webhookGoogleSansRessource: connexion(4, PROPRIO, "google", {
     webhookChannelId: "e2e-canal-google-sans-ressource",
@@ -224,30 +206,6 @@ export const GMAIL = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Facture à échéance (échéances liées, abonnement iCal)              */
-/* ------------------------------------------------------------------ */
-
-export const FACTURE_AGENDA = {
-  _id: oid("calDivers", 10),
-  workspaceId: ESPACE,
-  createdBy: PROPRIO,
-  status: "PENDING",
-  prefix: "F-202611",
-  number: "0042",
-  issueDate: DANS(-10),
-  dueDate: DANS(5),
-  finalTotalHT: 1000,
-  finalTotalTVA: 200,
-  finalTotalTTC: 1200,
-  totalHT: 1000,
-  totalTTC: 1200,
-  client: { name: "Client Échéance Agenda SARL", email: "compta@client-echeance.test", type: "COMPANY" },
-  items: [],
-  createdAt: MAINTENANT,
-  updatedAt: MAINTENANT,
-};
-
-/* ------------------------------------------------------------------ */
 
 /** Documents à écrire en base, par collection. */
 export function donneesCalendrier() {
@@ -261,7 +219,6 @@ export function donneesCalendrier() {
     events: Object.values(EVENEMENTS_AGENDA),
     calendarconnections: Object.values(CONNEXIONS),
     gmailconnections: Object.values(GMAIL),
-    invoices: [FACTURE_AGENDA],
   };
 }
 
