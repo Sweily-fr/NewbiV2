@@ -21,6 +21,19 @@ const surLeSite = (page) => ouvrir(page, "/mentions-legales", { pret: page.getBy
 const utilisateur = async (compte) => (await db()).collection("user").findOne({ _id: compte.utilisateur._id });
 const deuxFacteurs = async (compte) => (await db()).collection("twoFactor").findOne({ userId: compte.utilisateur._id });
 const codeEnvoye = async (compte) => (await (await db()).collection("twoFactorSetupOtp").findOne({ userId: compte.utilisateur._id.toHexString() }))?.otp;
+/**
+ * Code de mise en place « envoyé par e-mail » : le service d'e-mails est
+ * coupé dans les tests (la route d'envoi y échoue), le code est donc posé en
+ * base comme /api/auth/send-2fa-setup-otp l'enregistre (src/lib/setup-otp-store.js).
+ */
+async function codeRecuParEmail(compte, code) {
+  await (await db()).collection("twoFactorSetupOtp").updateOne(
+    { userId: compte.utilisateur._id.toHexString() },
+    { $set: { userId: compte.utilisateur._id.toHexString(), otp: code, expiresAt: new Date(Date.now() + 5 * 60_000), attempts: 0 } },
+    { upsert: true },
+  );
+  return code;
+}
 
 test.describe("Double authentification par e-mail : activée depuis les Paramètres", () => {
   test.use({ storageState: connecte(COMPTES_CE.a2fEmail.token), erreursConsoleAutorisees: REFUS_CONSOLE });
@@ -30,10 +43,7 @@ test.describe("Double authentification par e-mail : activée depuis les Paramèt
     const active = await appelAuth(page, "/two-factor/enable", { corps: { password: MOT_DE_PASSE, issuer: "Newbi" } });
     expect(active.statut).toBe(200);
     expect(active.corps.backupCodes?.length, "Aucun code de secours remis").toBeGreaterThan(0);
-    const envoi = await appelSite(page, "/api/auth/send-2fa-setup-otp", { methode: "POST" });
-    expect(envoi.statut).toBe(200);
-    const code = await codeEnvoye(compte);
-    expect(code).toMatch(/^\d{6}$/);
+    const code = await codeRecuParEmail(compte, "482913");
     const verif = await appelSite(page, "/api/auth/verify-2fa-setup-otp", { methode: "POST", corps: { code } });
     expect(verif.statut).toBe(200);
     expect((await utilisateur(compte)).twoFactorEnabled).toBe(true);
@@ -69,9 +79,8 @@ test.describe("Double authentification : erreurs à l'activation", () => {
       expect(await deuxFacteurs(compte)).toBeNull();
     });
     await appelAuth(page, "/two-factor/enable", { corps: { password: MOT_DE_PASSE } });
-    await appelSite(page, "/api/auth/send-2fa-setup-otp", { methode: "POST" });
-    const bon = await codeEnvoye(compte);
-    const faux = bon === "000000" ? "111111" : "000000";
+    const bon = await codeRecuParEmail(compte, "735146");
+    const faux = "000000";
     for (let i = 0; i < 5; i++) {
       const r = await appelSite(page, "/api/auth/verify-2fa-setup-otp", { methode: "POST", corps: { code: faux } });
       expect.soft(r.statut).toBe(400);

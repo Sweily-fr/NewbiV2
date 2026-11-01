@@ -63,7 +63,7 @@ test.describe("Connexion : adresse de retour (callbackUrl)", () => {
     test(`${cas} : la connexion reste sur le site`, async ({ page }) => {
       const sorties = [];
       page.on("request", (r) => {
-        if (r.url().includes("exemple.invalid")) sorties.push(r.url());
+        if (new URL(r.url()).hostname.endsWith("exemple.invalid")) sorties.push(r.url());
       });
       await seConnecter(page, `/auth/login?callbackUrl=${encodeURIComponent(cible)}`, compte.utilisateur.email);
       await expect(page, "La connexion n'a pas mené au tableau de bord").toHaveURL(/\/dashboard/, { timeout: 30_000 });
@@ -277,15 +277,14 @@ test.describe("Jeton à usage unique de l'application mobile", () => {
     const p = await contexte.newPage();
     try {
       await surLeSite(p);
-      const avant = (await sessionsDe(compte)).length;
       const premier = await appelAuth(p, "/one-time-token/verify", { corps: { token: jeton } });
       expect(premier.statut, "Le jeton n'ouvre pas la session de l'application").toBe(200);
-      expect((await sessionsDe(compte)).length).toBe(avant + 1);
+      // Le jeton transmet la session ouverte sur le site, celle du compte
+      expect(premier.corps?.session?.userId ?? premier.corps?.user?.id).toBe(compte.utilisateur._id.toHexString());
       const second = await appelAuth(p, "/one-time-token/verify", { corps: { token: jeton } });
       expect(second.statut, "Le même jeton sert deux fois").toBeGreaterThanOrEqual(400);
       const invente = await appelAuth(p, "/one-time-token/verify", { corps: { token: "jeton-invente-e2e" } });
       expect(invente.statut).toBeGreaterThanOrEqual(400);
-      expect((await sessionsDe(compte)).length).toBe(avant + 1);
     } finally {
       await contexte.close();
     }
@@ -335,5 +334,34 @@ test.describe("Compte créé par un tiers avec l'adresse d'un autre", () => {
     } finally {
       await contexteTiers.close();
     }
+  });
+});
+
+test.describe("Désactiver un compte : seulement le sien", () => {
+  test.use({ storageState: connecte(COMPTES_CE.jetonUnique.token), erreursConsoleAutorisees: /status of 40\d/ });
+  test("Adresse d'un autre compte ou objet à la place de l'adresse : refusé, les deux comptes restent actifs", async ({ page }) => {
+    await surLeSite(page);
+    for (const email of [COMPTES_CE.callback.utilisateur.email, { $ne: null }, ["x"]]) {
+      const r = await appelSite(page, "/api/account/deactivate", { methode: "POST", corps: { email } });
+      expect.soft(r.statut, `Désactivation avec ${JSON.stringify(email)} : ${r.statut}`).toBeGreaterThanOrEqual(400);
+      expect.soft(r.statut).toBeLessThan(500);
+    }
+    expect((await utilisateur(COMPTES_CE.callback)).isActive).toBe(true);
+    expect((await utilisateur(COMPTES_CE.jetonUnique)).isActive).toBe(true);
+  });
+});
+
+test.describe("Programme partenaire : code transmis à l'inscription", () => {
+  test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 40\d|\/api\/auth\/token/ });
+  // Défaut connu : le code ?partner= est envoyé par la page d'inscription
+  // (referredBy) mais Better Auth l'ignore (champ non saisissable) : aucun
+  // filleul n'est jamais rattaché à un partenaire.
+  test("Inscription avec un code partenaire : le compte garde le code", async ({ page }) => {
+    const email = "filleul-partenaire@e2e.test";
+    await surLeSite(page);
+    const r = await appelAuth(page, "/sign-up/email", { corps: { email, password: "Filleul-Partenaire-2026!", name: "Félicie Filleule", referredBy: "E2EPARTENAIRE" } });
+    expect(r.statut, `Inscription : ${r.statut} ${JSON.stringify(r.corps)?.slice(0, 200)}`).toBe(200);
+    const u = await (await db()).collection("user").findOne({ email });
+    expect(u?.referredBy ?? null, "Le code partenaire est perdu à l'inscription").toBe("E2EPARTENAIRE");
   });
 });

@@ -186,7 +186,8 @@ test.describe("Abonnement : sans session, rien", () => {
     const avant = await photoFacturation();
     for (const [nom, url, methode, corps] of [...GESTION, ...LECTURE, ["sync-subscription", `/api/organizations/${F}/sync-subscription`, "POST", undefined], ["session-settings", "/api/session-settings", "PUT", { maxSessions: 1 }]]) {
       const r = await appelSite(page, url, { methode, corps });
-      expect.soft(r.statut, `${nom} sans session : ${r.statut}`).toBe(401);
+      // billing/subscribe n'existe qu'avec l'essai géré par l'application (coupé dans les tests) : 404
+      expect.soft(r.statut, `${nom} sans session : ${r.statut}`).toBe(url === "/api/billing/subscribe" ? 404 : 401);
     }
     for (const [nom, chemin, corps] of PLUGIN) refuse(await appelAuth(page, chemin, { corps }), `plugin ${nom}`);
     expect(await photoFacturation()).toBe(avant);
