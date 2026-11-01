@@ -182,8 +182,18 @@ export default function AcceptInvitationPage() {
         throw new Error(result.details || result.error);
       }
 
+      try {
+        localStorage.removeItem("pendingInvitation");
+        if (result.organizationId) {
+          localStorage.setItem("active_organization_id", result.organizationId);
+        }
+      } catch {
+        // Stockage local indisponible : sans incidence
+      }
       // Rediriger vers le dashboard après acceptation réussie
-      window.location.href = "/dashboard";
+      window.location.href = session.user.isInvitedUser
+        ? "/dashboard?welcome=invited"
+        : "/dashboard";
     } catch (err) {
       console.error("❌ Erreur lors de l'acceptation:", err);
       setError(err.message);
@@ -208,6 +218,11 @@ export default function AcceptInvitationPage() {
         throw new Error(`Erreur ${response.status}: ${response.statusText}`);
       }
 
+      try {
+        localStorage.removeItem("pendingInvitation");
+      } catch {
+        // Stockage local indisponible : sans incidence
+      }
       // Rediriger ou afficher un message de confirmation
       window.location.href = "/";
     } catch (err) {

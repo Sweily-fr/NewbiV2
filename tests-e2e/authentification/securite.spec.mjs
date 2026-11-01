@@ -318,12 +318,13 @@ test.describe("Jeton à usage unique de l'application mobile", () => {
 
 test.describe("Lien de connexion qui porte une invitation", () => {
   test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 40[01]|\/api\/auth\/token/ });
-  // Défaut connu : l'invitation est acceptée dès la connexion, sans que
-  // l'utilisateur l'ait choisie, et toutes ses sessions changent d'espace.
+  // L'invitation n'est jamais acceptée à la place de l'utilisateur : après la
+  // connexion, il arrive sur la page de l'invitation, qui attend son choix.
   test("Se connecter par ce lien n'accepte pas l'invitation à sa place", async ({ page }) => {
     const compte = COMPTES_CE.invitationLien;
     await seConnecter(page, `/auth/login?invitation=${INVITATION_LIEN._id.toHexString()}&email=${encodeURIComponent(compte.utilisateur.email)}`, compte.utilisateur.email);
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+    await expect(page).toHaveURL(new RegExp(`/accept-invitation/${INVITATION_LIEN._id.toHexString()}`), { timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "Accepter l'invitation" })).toBeVisible({ timeout: 30_000 });
     await page.waitForTimeout(2_000);
     const invitation = await (await db()).collection("invitation").findOne({ _id: INVITATION_LIEN._id });
     expect(invitation.status, "Invitation acceptée sans geste de l'utilisateur").toBe("pending");
