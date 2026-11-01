@@ -56,6 +56,11 @@ const PREFIXES = {
   importee: "e2e4e",
   diversFactures: "e2e4f",
   avoirLot: "e2eba",
+  // Espaces de contrôle du lot (contrôles, soldes, facturation électronique),
+  // leurs membres et leurs documents (voir lot-factures.mjs)
+  membreFactures: "e2ebb",
+  espaceFactures: "e2ebc",
+  pieceFactures: "e2ebd",
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (e2e8a à e2e8f, e2e9a à e2e9f, e2eaa à e2eaf) ──
   clientVentes: "e2e8a",

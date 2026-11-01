@@ -20,6 +20,12 @@ import {
  * Auth: session cookie OR X-Internal-Secret header (for mobile/backend proxy)
  */
 async function handler(request) {
+  // Auth d'abord (session ou secret interne du proxy mobile) : sans elle,
+  // 401 quel que soit le corps de la requête
+  if (!hasInternalSecret(request)) {
+    await requireSession(request);
+  }
+
   const body = await request.json();
   const { invoiceData } = body;
 
@@ -33,11 +39,6 @@ async function handler(request) {
 
   if (!invoiceData.client) {
     return apiError(400, "Les informations client sont requises");
-  }
-
-  // Auth check — session cookie OR internal secret (mobile proxy)
-  if (!hasInternalSecret(request)) {
-    await requireSession(request);
   }
 
   let browser = null;
