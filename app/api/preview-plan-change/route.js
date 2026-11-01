@@ -82,6 +82,14 @@ async function handler(request) {
     );
   }
 
+  // Identifiant d'espace mal formé : refusé (il faisait échouer la route)
+  if (typeof organizationId !== "string" || !ObjectId.isValid(organizationId)) {
+    return NextResponse.json(
+      { error: "Identifiant d'espace invalide" },
+      { status: 400 },
+    );
+  }
+
   // ✅ CRITIQUE #2: Valider le nom du plan (whitelist)
   if (!VALID_PLANS.includes(newPlan)) {
     return NextResponse.json(

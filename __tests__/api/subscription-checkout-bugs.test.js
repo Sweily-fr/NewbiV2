@@ -48,6 +48,8 @@ vi.mock("stripe", () => {
   return { default: Stripe };
 });
 
+vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()) }));
+
 vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: { collection: (name) => m.db.collection(name) },
 }));
@@ -436,5 +438,43 @@ describe("POST /api/create-org-subscription : SIRET d'un autre espace", () => {
     const res = await call("12345678900011");
     expect(res.status).toBe(200);
     expect(m.checkoutCreate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Identifiant d'espace mal formé : 400 au lieu d'une erreur serveur", () => {
+  beforeEach(() => {
+    m.getSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr" },
+      session: {},
+    });
+    m.db = fakeDb({ user: [{ _id: new ObjectId(userId), email: "u@x.fr" }] });
+  });
+
+  const ROUTES = {
+    "change-subscription-plan": () =>
+      import("@/app/api/change-subscription-plan/route.js"),
+    "preview-plan-change": () =>
+      import("@/app/api/preview-plan-change/route.js"),
+    "billing/sync-seats": () => import("@/app/api/billing/sync-seats/route.js"),
+  };
+
+  it.each([
+    ["change-subscription-plan", { newPlan: "entreprise", isAnnual: false }],
+    ["preview-plan-change", { newPlan: "entreprise", isAnnual: false }],
+    ["billing/sync-seats", {}],
+  ])("%s", async (route, corps) => {
+    const { POST } = await ROUTES[route]();
+    for (const organizationId of ["pas-un-id", { $ne: null }]) {
+      const res = await POST(
+        new Request(`http://localhost/api/${route}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...corps, organizationId }),
+        }),
+      );
+      expect(res.status).toBe(400);
+    }
+    expect(m.subscriptionsRetrieve).not.toHaveBeenCalled();
+    expect(m.subscriptionsUpdate).not.toHaveBeenCalled();
   });
 });
