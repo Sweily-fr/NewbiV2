@@ -72,7 +72,13 @@ test.describe("Bons de livraison : réception", () => {
       { capture: "ecran" },
     );
     await etape(page, "Saisir le réceptionnaire et confirmer au clavier", async () => {
+      // Le menu « ... » se referme en 150 ms ; à sa disparition, Radix rend le
+      // focus au bouton du menu, la fenêtre le reprend et sélectionne le champ :
+      // une saisie commencée avant serait écrasée (« Lé » perdu). Aucun humain
+      // ne tape aussi vite : on attend que le menu soit parti.
+      await expect(page.getByRole("menu")).toHaveCount(0);
       await fenetre.getByRole("textbox", { name: "Réceptionné par" }).focus();
+      await expect(fenetre.getByRole("textbox", { name: "Réceptionné par" })).toBeFocused();
       await page.keyboard.type("Léon Clavier");
       await fenetre.getByRole("button", { name: "Marquer comme livré" }).focus();
       await page.keyboard.press("Enter");
