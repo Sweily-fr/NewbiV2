@@ -25,6 +25,12 @@ export const DISABLED_AUTH_PATHS = [
   "/phone-number/verify",
   "/phone-number/request-password-reset",
   "/phone-number/reset-password",
+  // Quitter un espace : aucun écran ne le propose (web et mobile), et la
+  // route du plugin retire l'adhésion sans les suites d'un retrait de
+  // membre (sièges facturés recalculés, fin du suivi par un cabinet). Un
+  // membre est retiré par un rôle qui gère les membres
+  // (/organization/remove-member).
+  "/organization/leave",
 ];
 
 // Seul usage des codes OTP envoyés par e-mail : vérification de l'adresse
