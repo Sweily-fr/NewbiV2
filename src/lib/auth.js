@@ -273,11 +273,17 @@ export const auth = betterAuth({
               console.log(
                 `✅ [SESSION CREATE] Organisation trouvée: ${member.organizationId}`,
               );
+              // Durée de session choisie par l'espace (Paramètres > Sécurité)
+              const { capNewSessionExpiry } =
+                await import("./session-duration.js");
               return {
-                data: {
-                  ...session,
-                  activeOrganizationId: member.organizationId.toString(),
-                },
+                data: await capNewSessionExpiry(
+                  {
+                    ...session,
+                    activeOrganizationId: member.organizationId.toString(),
+                  },
+                  { mongoDb },
+                ),
               };
             }
 
@@ -324,6 +330,19 @@ export const auth = betterAuth({
             await logLogin(session);
           } catch (error) {
             console.error("❌ [SESSION CREATE] logLogin:", error);
+          }
+        },
+      },
+      update: {
+        // Renouvellement d'une session : jamais au-delà de la durée de
+        // session choisie par l'espace (voir session-duration.js)
+        before: async (data, context) => {
+          try {
+            const { capSessionRenewal } = await import("./session-duration.js");
+            return await capSessionRenewal(data, context);
+          } catch (error) {
+            console.error("❌ [SESSION UPDATE] Durée de session:", error);
+            return undefined;
           }
         },
       },

@@ -114,8 +114,8 @@ test.describe("Double authentification : sans session, rien", () => {
 
 test.describe("Durée de session de l'espace", () => {
   test.use({ storageState: connecte(COMPTES_CE.dureeSession.token), erreursConsoleAutorisees: REFUS_CONSOLE });
-  // Défaut connu : la durée choisie dans Sécurité (7, 30 ou 90 jours) est
-  // enregistrée mais jamais appliquée (toutes les sessions valent 30 jours).
+  // La durée choisie dans Sécurité (7, 30 ou 90 jours) borne la session
+  // depuis la connexion, renouvellement compris.
   test("Durée de 7 jours : une session ouverte il y a 8 jours n'est plus valable", async ({ page }) => {
     await surLeSite(page);
     const r = await appelAuth(page, "/get-session", { methode: "GET" });
