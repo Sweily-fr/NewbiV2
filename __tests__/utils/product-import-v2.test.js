@@ -8,6 +8,7 @@ import {
   generateProductTemplate,
   downloadProductErrorsCSV,
   parseImportNumber,
+  findDuplicateNameRows,
 } from "@/src/utils/product-import-v2";
 
 // ─── PRODUCT_FIELD_DEFINITIONS ───────────────────────────────────────────────
@@ -329,5 +330,27 @@ describe("parseImportNumber", () => {
     expect(parseImportNumber("dix")).toBeNaN();
     expect(parseImportNumber("12 abc")).toBeNaN();
     expect(parseImportNumber("")).toBeNaN();
+  });
+});
+
+// ─── findDuplicateNameRows ───────────────────────────────────────────────────
+
+describe("findDuplicateNameRows", () => {
+  it("signale les lignes qui reprennent le nom d'une ligne précédente", () => {
+    const items = [
+      { idx: 0, product: { name: "Pose de parquet" } },
+      { idx: 1, product: { name: "Ponçage" } },
+      { idx: 2, product: { name: " Pose de parquet " } },
+      { idx: 4, product: { name: "Pose de parquet" } },
+    ];
+    expect(findDuplicateNameRows(items)).toEqual({ 2: 0, 4: 0 });
+  });
+
+  it("garde des noms différents par la casse, comme l'API", () => {
+    const items = [
+      { idx: 0, product: { name: "Vis" } },
+      { idx: 1, product: { name: "VIS" } },
+    ];
+    expect(findDuplicateNameRows(items)).toEqual({});
   });
 });
