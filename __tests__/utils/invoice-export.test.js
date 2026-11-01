@@ -169,6 +169,131 @@ describe("FEC (art. A47 A-1 du LPF)", () => {
     ]);
   });
 
+  /** Lignes du FEC (sans l'en-tête) en objets { champ: valeur }. */
+  const lignesFEC = (texte, FEC_FIELDS) =>
+    texte
+      .split("\n")
+      .slice(1)
+      .map((l) =>
+        Object.fromEntries(l.split("|").map((v, i) => [FEC_FIELDS[i], v])),
+      );
+  const montant = (v) => Number(String(v).replace(",", "."));
+
+  it("une facture annulée n'est pas une vente : son annulation suit, solde nul au 411", async () => {
+    const { buildFECContent, FEC_FIELDS } =
+      await import("@/src/utils/invoice-export");
+    const lignes = lignesFEC(
+      buildFECContent([facture({ number: "0004", status: "CANCELED" })]),
+      FEC_FIELDS,
+    );
+    const client = lignes.filter((l) => l.CompteNum === "411000");
+    expect(client).toHaveLength(2);
+    const solde = client.reduce(
+      (t, l) => t + montant(l.Debit) - montant(l.Credit),
+      0,
+    );
+    expect(solde).toBeCloseTo(0, 2);
+    expect(client[1].EcritureLib).toMatch(/^Annulation facture F-092026-0004/);
+  });
+
+  it("une facture importée à revoir ou rejetée n'est pas une vente", async () => {
+    const { buildFECContent } = await import("@/src/utils/invoice-export");
+    const importee = (numero, status) => ({
+      _type: "imported",
+      status,
+      originalInvoiceNumber: numero,
+      invoiceDate: new Date("2026-10-10T10:00:00Z").getTime(),
+      totalHT: 100,
+      totalVAT: 20,
+      totalTTC: 120,
+      client: { name: "Client importé" },
+    });
+    const texte = buildFECContent([
+      facture(),
+      importee("IMPORT-VALIDE", "VALIDATED"),
+      importee("IMPORT-A-REVOIR", "PENDING_REVIEW"),
+      importee("IMPORT-REJETE", "REJECTED"),
+    ]);
+    expect(texte).toContain("IMPORT-VALIDE");
+    expect(texte).not.toContain("IMPORT-A-REVOIR");
+    expect(texte).not.toContain("IMPORT-REJETE");
+  });
+
+  it("un avoir est une écriture inverse : 411 au crédit, 706 et TVA au débit", async () => {
+    const { buildFECContent, FEC_FIELDS } =
+      await import("@/src/utils/invoice-export");
+    const avoir = {
+      prefix: "AV",
+      number: "0001",
+      originalInvoiceNumber: "0024",
+      issueDate: new Date("2026-10-22T10:00:00Z").getTime(),
+      finalTotalHT: -24,
+      finalTotalVAT: -4.8,
+      finalTotalTTC: -28.8,
+      client: { name: "Boulangerie Lumière SARL", siret: "55566677700011" },
+    };
+    const lignes = lignesFEC(
+      buildFECContent([facture()], null, { creditNotes: [avoir] }),
+      FEC_FIELDS,
+    ).filter((l) => l.PieceRef === "AV-0001");
+    expect(lignes.map((l) => [l.CompteNum, l.Debit, l.Credit])).toEqual([
+      ["411000", "0,00", "28,80"],
+      ["706000", "24,00", "0,00"],
+      ["445710", "4,80", "0,00"],
+    ]);
+  });
+
+  it("chaque écriture est équilibrée (remise globale, frais de port, plusieurs taux) et les numéros se suivent", async () => {
+    const { buildFECContent, FEC_FIELDS } =
+      await import("@/src/utils/invoice-export");
+    // 1 000 € HT à 20 % et 200 € à 5,5 %, remise de 10 %, 15 € de port à 20 %
+    const remisee = facture({
+      number: "0030",
+      discount: 10,
+      discountType: "PERCENTAGE",
+      items: [
+        { description: "Pose", quantity: 2, unitPrice: 500, vatRate: 20 },
+        { description: "Isolant", quantity: 1, unitPrice: 200, vatRate: 5.5 },
+      ],
+      shipping: {
+        billShipping: true,
+        shippingAmountHT: 15,
+        shippingVatRate: 20,
+      },
+      finalTotalHT: 1095,
+      finalTotalVAT: 192.9,
+      finalTotalTTC: 1287.9,
+    });
+    const lignes = lignesFEC(
+      buildFECContent([
+        facture(),
+        remisee,
+        facture({ number: "0031", status: "CANCELED" }),
+      ]),
+      FEC_FIELDS,
+    );
+    const ecritures = {};
+    for (const l of lignes) {
+      ecritures[l.EcritureNum] = ecritures[l.EcritureNum] || {
+        debit: 0,
+        credit: 0,
+      };
+      ecritures[l.EcritureNum].debit += montant(l.Debit);
+      ecritures[l.EcritureNum].credit += montant(l.Credit);
+    }
+    for (const [num, { debit, credit }] of Object.entries(ecritures)) {
+      expect(Math.round(debit * 100), `Écriture ${num} déséquilibrée`).toBe(
+        Math.round(credit * 100),
+      );
+    }
+    expect(Object.keys(ecritures)).toEqual([
+      "VTE00000001",
+      "VTE00000002",
+      "VTE00000003",
+      "VTE00000004",
+    ]);
+  });
+
   it("nom du fichier : SirenFECAAAAMMJJ.txt", async () => {
     const { fecFilename } = await import("@/src/utils/invoice-export");
     const jour = new Date(2026, 9, 21);

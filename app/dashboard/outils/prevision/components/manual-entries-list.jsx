@@ -27,6 +27,7 @@ import {
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { ManualEntryDialog } from "./manual-entry-dialog";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const FREQUENCY_LABELS = {
@@ -72,6 +73,13 @@ export function ManualEntriesList() {
   const { entries, loading } = useManualCashflowEntries();
   const { setHidden, loading: hiding } = useHideManualEntryInScenario();
   const { deleteEntry, loading: deleting } = useDeleteManualCashflowEntry();
+  // Suppression confirmée (rôle qui supprime sans modifier)
+  const [entryToDelete, setEntryToDelete] = useState(null);
+  const confirmDelete = async () => {
+    if (!entryToDelete) return;
+    await deleteEntry(entryToDelete.id);
+    setEntryToDelete(null);
+  };
   // Droits du rôle, action par action (tout autorisé tant que la grille
   // n'est pas chargée) : modifier et masquer demandent « edit » ; sans
   // « edit », « delete » seul propose de supprimer la saisie
@@ -200,7 +208,7 @@ export function ManualEntriesList() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteEntry(entry.id)}
+                      onClick={() => setEntryToDelete(entry)}
                       disabled={deleting}
                       className="h-7 w-7 hover:text-destructive"
                       title="Supprimer"
@@ -265,6 +273,14 @@ export function ManualEntriesList() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         entry={editing}
+      />
+      <ConfirmDeleteDialog
+        open={Boolean(entryToDelete)}
+        onOpenChange={(o) => !o && setEntryToDelete(null)}
+        title="Supprimer cette saisie ?"
+        description={`« ${entryToDelete?.name ?? ""} » sera supprimée de la prévision, avec toutes ses occurrences.`}
+        onConfirm={confirmDelete}
+        loading={deleting}
       />
     </>
   );

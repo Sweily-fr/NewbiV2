@@ -117,6 +117,33 @@ describe("beforeSignInHook", () => {
     expect(sendReactivationEmailMock).toHaveBeenCalledWith(user);
   });
 
+  it("compte désactivé saisi en majuscules et avec des espaces : cherché en minuscules, refusé", async () => {
+    const user = { email: "u@x.fr", isActive: false };
+    findOneMock.mockResolvedValue(user);
+
+    await expect(
+      beforeSignInHook({
+        path: "/sign-in/email",
+        body: { email: "  U@X.FR " },
+      }),
+    ).rejects.toBeInstanceOf(APIErrorMock);
+
+    expect(findOneMock).toHaveBeenCalledWith({ email: "u@x.fr" });
+    expect(sendReactivationEmailMock).toHaveBeenCalledWith(user);
+  });
+
+  it("adresse envoyée comme un objet (opérateur MongoDB) : refusée sans lecture ni e-mail", async () => {
+    await expect(
+      beforeSignInHook({
+        path: "/sign-in/email",
+        body: { email: { $regex: "^a" }, password: "x" },
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    expect(findOneMock).not.toHaveBeenCalled();
+    expect(sendReactivationEmailMock).not.toHaveBeenCalled();
+  });
+
   it("swallows non-APIError exceptions (logs but does not block sign-in)", async () => {
     findOneMock.mockRejectedValue(new Error("DB down"));
     await expect(
@@ -257,5 +284,31 @@ describe("afterHook", () => {
       context: { adapter: { findMany }, newSession: null },
     });
     expect(findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("beforeSignInHook : proxy d'autorisation de l'application mobile", () => {
+  it("adresse d'un autre domaine : refusée avant toute redirection", async () => {
+    await expect(
+      beforeSignInHook({
+        path: "/expo-authorization-proxy",
+        query: {
+          authorizationURL: "https://exemple.invalid/",
+          oauthState: "x",
+        },
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("adresse de Google (connexion de l'application) : laissée passer", async () => {
+    await expect(
+      beforeSignInHook({
+        path: "/expo-authorization-proxy",
+        query: {
+          authorizationURL:
+            "https://accounts.google.com/o/oauth2/v2/auth?state=abc",
+        },
+      }),
+    ).resolves.toBeUndefined();
   });
 });

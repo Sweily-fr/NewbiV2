@@ -13,6 +13,12 @@ const submissions = new Map();
 
 function isRateLimited(ip) {
   const now = Date.now();
+  // Adresses sans envoi récent retirées : la mémoire ne grossit pas sans fin
+  if (submissions.size > 1000) {
+    for (const [key, times] of submissions) {
+      if (!times.some((t) => now - t < RATE_WINDOW_MS)) submissions.delete(key);
+    }
+  }
   const timestamps = (submissions.get(ip) || []).filter(
     (t) => now - t < RATE_WINDOW_MS,
   );
@@ -32,14 +38,18 @@ async function handler(request) {
     );
   }
 
-  const { name, email, subject, message, website } = await request.json();
+  const body = await request.json().catch(() => null);
+  const { name, email, subject, message, website } =
+    body && typeof body === "object" ? body : {};
 
   // Honeypot anti-spam : champ invisible pour les humains
   if (website) {
     return NextResponse.json({ success: true });
   }
 
-  if (!name?.trim() || !email?.trim() || !subject?.trim() || !message?.trim()) {
+  // Valeurs non texte (nombre, tableau, objet) : refusées comme un champ vide
+  const isText = (v) => typeof v === "string" && v.trim() !== "";
+  if (!isText(name) || !isText(email) || !isText(subject) || !isText(message)) {
     return NextResponse.json(
       { error: "Tous les champs sont requis" },
       { status: 400 },

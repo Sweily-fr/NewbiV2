@@ -7,12 +7,9 @@ export async function POST(request) {
   try {
     // Vérifier l'authentification
     const session = await auth.api.getSession({ headers: await headers() });
-    
+
     if (!session?.user) {
-      return Response.json(
-        { error: "Non authentifié" },
-        { status: 401 }
-      );
+      return Response.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     const { organizationIds } = await request.json();
@@ -20,7 +17,21 @@ export async function POST(request) {
     if (!Array.isArray(organizationIds)) {
       return Response.json(
         { error: "organizationIds doit être un tableau" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    // Identifiants d'espaces seulement (un identifiant mal formé faisait
+    // échouer la route en erreur serveur)
+    if (
+      organizationIds.length > 200 ||
+      !organizationIds.every(
+        (id) => typeof id === "string" && /^[a-f\d]{24}$/i.test(id),
+      )
+    ) {
+      return Response.json(
+        { error: "Identifiants d'espaces invalides" },
+        { status: 400 },
       );
     }
 
@@ -36,7 +47,7 @@ export async function POST(request) {
         },
         {
           $set: { order: index },
-        }
+        },
       );
     });
 
@@ -49,7 +60,7 @@ export async function POST(request) {
     console.error("❌ [REORDER] Erreur:", error);
     return Response.json(
       { error: "Erreur lors de la sauvegarde de l'ordre" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

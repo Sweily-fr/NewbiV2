@@ -12,6 +12,7 @@ import { capture } from "@/src/lib/analytics";
 import {
   GET_CLIENTS,
   GET_CLIENTS_BY_TYPES,
+  GET_BLOCKED_CLIENTS,
   GET_CLIENT,
 } from "../graphql/queries/clients";
 import { GET_CLIENT_LISTS } from "../graphql/queries/clientLists";
@@ -100,6 +101,34 @@ export const useClients = (
       (queryLoading && !data?.clients) ||
       isRetrying,
     // Ne remonter l'erreur (bouton "Réessayer") qu'une fois l'auto-retry épuisé
+    error: isRetrying ? null : error,
+    refetch,
+  };
+};
+
+/**
+ * Contacts bloqués de l'espace (1 000 au plus, plafond de l'API), filtrés
+ * par l'API. Un contact débloqué depuis la page quitte la liste par le cache
+ * (isBlocked à false), un contact bloqué ailleurs y apparaît au rechargement.
+ */
+export const useBlockedClients = ({ skip = false } = {}) => {
+  const { workspaceId, loading: workspaceLoading } = useWorkspace();
+  const { data, loading, error, refetch } = useQuery(GET_BLOCKED_CLIENTS, {
+    variables: { workspaceId, page: 1, limit: 1000 },
+    skip: !workspaceId || skip,
+    fetchPolicy: "cache-and-network",
+  });
+  const { isRetrying } = useAutoRetryOnError({
+    error,
+    refetch,
+    enabled: !!workspaceId && !skip,
+  });
+  return {
+    clients: (data?.clients?.items || []).filter((c) => c.isBlocked),
+    loading:
+      (workspaceLoading && !workspaceId) ||
+      (loading && !data?.clients) ||
+      isRetrying,
     error: isRetrying ? null : error,
     refetch,
   };
@@ -329,6 +358,8 @@ export const useBlockClient = () => {
         query: GET_CLIENTS,
         variables: { workspaceId, page: 1, limit: 10, search: "" },
       },
+      // Page « Contacts bloqués » si elle est affichée
+      "GetBlockedClients",
     ],
     awaitRefetchQueries: false,
     onCompleted: () => {
@@ -357,6 +388,8 @@ export const useUnblockClient = () => {
         query: GET_CLIENTS,
         variables: { workspaceId, page: 1, limit: 10, search: "" },
       },
+      // Page « Contacts bloqués » si elle est affichée
+      "GetBlockedClients",
     ],
     awaitRefetchQueries: false,
     onCompleted: () => {

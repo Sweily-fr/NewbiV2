@@ -1,5 +1,10 @@
 import { createAuthMiddleware } from "better-auth/api";
 import { sendReactivationEmail } from "./auth-utils";
+import {
+  DEACTIVATED_ACCOUNT_MESSAGE,
+  normalizeEmail,
+} from "./deactivated-account";
+import { isAllowedAuthorizationURL } from "./trusted-origins";
 
 // Routes Better Auth fermées (disabledPaths de auth.js, réponse 404).
 // Connexion et réinitialisation par code OTP (e-mail ou SMS) : aucun code
@@ -20,6 +25,12 @@ export const DISABLED_AUTH_PATHS = [
   "/phone-number/verify",
   "/phone-number/request-password-reset",
   "/phone-number/reset-password",
+  // Quitter un espace : aucun écran ne le propose (web et mobile), et la
+  // route du plugin retire l'adhésion sans les suites d'un retrait de
+  // membre (sièges facturés recalculés, fin du suivi par un cabinet). Un
+  // membre est retiré par un rôle qui gère les membres
+  // (/organization/remove-member).
+  "/organization/leave",
 ];
 
 // Seul usage des codes OTP envoyés par e-mail : vérification de l'adresse
@@ -48,9 +59,31 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
     });
   }
 
+  // ── 0 bis. Proxy d'autorisation de l'application mobile ──
+  // Il ne redirige que vers un fournisseur de connexion (Google, Apple,
+  // GitHub), jamais vers une adresse quelconque.
+  if (
+    ctx.path === "/expo-authorization-proxy" &&
+    !isAllowedAuthorizationURL(ctx.query?.authorizationURL)
+  ) {
+    const { APIError } = await import("better-auth/api");
+    throw new APIError("BAD_REQUEST", {
+      message: "Adresse d'autorisation non prise en charge.",
+    });
+  }
+
   // ── 1. Comptes désactivés à la connexion ──
   if (ctx.path === "/sign-in/email") {
-    const email = ctx.body?.email;
+    // Adresse attendue en texte : un objet (ex. { "$regex": "^a" }) serait
+    // lu par MongoDB comme un opérateur et viserait un autre compte
+    if (ctx.body?.email !== undefined && typeof ctx.body.email !== "string") {
+      const { APIError } = await import("better-auth/api");
+      throw new APIError("BAD_REQUEST", {
+        message: "Adresse e-mail invalide.",
+      });
+    }
+    // Comme Better Auth l'enregistre : minuscules, sans espaces autour
+    const email = normalizeEmail(ctx.body?.email);
     if (email) {
       // DB lookup in try/catch — fail-open if DB is temporarily unavailable
       let user = null;
@@ -78,8 +111,7 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
 
         const { APIError } = await import("better-auth/api");
         throw new APIError("BAD_REQUEST", {
-          message:
-            "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
+          message: DEACTIVATED_ACCOUNT_MESSAGE,
         });
       }
     }
@@ -625,6 +657,57 @@ async function filterMembersVisibility(ctx) {
   }
 }
 
+// Champs Stripe retirés de /subscription/list sans « Voir l'abonnement »
+const STRIPE_SUBSCRIPTION_FIELDS = [
+  "stripeCustomerId",
+  "stripeSubscriptionId",
+  "stripeScheduleId",
+];
+
+/**
+ * /subscription/list (plugin Stripe) : tout membre de l'espace lit ses
+ * abonnements, mais les identifiants Stripe ne sont renvoyés qu'avec
+ * « Voir l'abonnement ». Droits illisibles : réponse restreinte.
+ */
+async function filterSubscriptionList(ctx) {
+  const returned = ctx.context?.returned;
+  if (!Array.isArray(returned) || returned.length === 0) return;
+
+  let canViewBilling = false;
+  try {
+    const { getSessionFromCtx } = await import("better-auth/api");
+    const session =
+      ctx.context.session || (await getSessionFromCtx(ctx).catch(() => null));
+    const referenceId =
+      ctx.query?.referenceId || session?.session?.activeOrganizationId;
+    if (session?.user?.id && typeof referenceId === "string") {
+      const { getMongoDb } = await import("./mongodb");
+      const { getModuleActions } = await import("./organization-roles");
+      const db = await getMongoDb();
+      const { role, actions } = await getModuleActions(db, {
+        userId: session.user.id,
+        organizationId: referenceId,
+        moduleKey: "billing",
+      });
+      canViewBilling = Boolean(role) && actions.includes("view");
+    }
+  } catch (error) {
+    console.error(
+      "❌ [subscriptionList] droits illisibles, réponse restreinte:",
+      error?.message,
+    );
+  }
+  if (canViewBilling) return;
+
+  return ctx.json(
+    returned.map((subscription) => {
+      const copy = { ...subscription };
+      for (const field of STRIPE_SUBSCRIPTION_FIELDS) delete copy[field];
+      return copy;
+    }),
+  );
+}
+
 // Hook après — visibilité des membres, OAuth callback, nettoyage members
 // après suppression user
 export const afterHook = createAuthMiddleware(async (ctx) => {
@@ -633,6 +716,14 @@ export const afterHook = createAuthMiddleware(async (ctx) => {
   // ========================================
   if (MEMBER_VISIBILITY_PATHS.has(ctx.path)) {
     return filterMembersVisibility(ctx);
+  }
+
+  // ========================================
+  // 0 bis. Abonnements d'un espace : identifiants Stripe réservés à
+  // « Voir l'abonnement » (même règle que /api/organizations/[id]/subscription)
+  // ========================================
+  if (ctx.path === "/subscription/list") {
+    return filterSubscriptionList(ctx);
   }
 
   // ========================================

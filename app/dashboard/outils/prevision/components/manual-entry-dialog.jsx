@@ -61,6 +61,7 @@ import {
   isCategoryOfType,
 } from "@/lib/category-icons-config";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 
 // Catégorie (sous-catégorie fine ou code large hérité) gardée seulement si
 // elle est du sens demandé (une catégorie de dépense n'est pas valide pour
@@ -439,370 +440,391 @@ export function ManualEntryDialog({
     onOpenChange(false);
   };
 
-  const handleDelete = async () => {
+  // Suppression confirmée : toutes les occurrences de la saisie disparaissent
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const handleDelete = () => {
+    if (entry?.id) setConfirmDeleteOpen(true);
+  };
+  const confirmDelete = async () => {
     if (!entry?.id) return;
     const result = await deleteEntry(entry.id);
+    setConfirmDeleteOpen(false);
     if (result.success) onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* La modal suit la hauteur naturelle du formulaire (aucun scroll sur
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {/* La modal suit la hauteur naturelle du formulaire (aucun scroll sur
           Entrée/Sortie, plafond 90vh sur petit écran). L'onglet Détails fige
           la hauteur mesurée du formulaire pour éviter tout saut. */}
-      <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl max-h-[90vh] flex flex-col">
-        <div
-          ref={bodyRef}
-          style={
-            activeTab === "DETAILS" && detailsHeight
-              ? { height: detailsHeight }
-              : undefined
-          }
-          className="bg-background rounded-xl ring-1 ring-black/[0.07] dark:ring-white/[0.1] min-h-0 flex flex-col"
-        >
-          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 shrink-0">
-            <DialogTitle className="text-sm font-medium flex items-center gap-2">
-              {activeTab === "DETAILS" ? null : type === "INCOME" ? (
-                <ArrowUpRight className="size-4" />
-              ) : (
-                <ArrowDownRight className="size-4" />
+        <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl max-h-[90vh] flex flex-col">
+          <div
+            ref={bodyRef}
+            style={
+              activeTab === "DETAILS" && detailsHeight
+                ? { height: detailsHeight }
+                : undefined
+            }
+            className="bg-background rounded-xl ring-1 ring-black/[0.07] dark:ring-white/[0.1] min-h-0 flex flex-col"
+          >
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 shrink-0">
+              <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                {activeTab === "DETAILS" ? null : type === "INCOME" ? (
+                  <ArrowUpRight className="size-4" />
+                ) : (
+                  <ArrowDownRight className="size-4" />
+                )}
+                {activeTab === "DETAILS"
+                  ? detailsMonth
+                    ? `Détails des prévisions · ${formatMonthLabel(detailsMonth)}`
+                    : "Détails des prévisions"
+                  : entry
+                    ? "Modifier la saisie"
+                    : fromDetection
+                      ? `Nouvelle prévision à partir de « ${fromDetection.name} »`
+                      : "Nouvelle saisie"}
+              </DialogTitle>
+              {fromDetection && activeTab !== "DETAILS" && (
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Cette prévision remplace la récurrence détectée : à
+                  l&apos;enregistrement, la détection sera masquée
+                  {isScenario ? " dans ce scénario" : ""} pour ne pas compter le
+                  montant deux fois.
+                </p>
               )}
-              {activeTab === "DETAILS"
-                ? detailsMonth
-                  ? `Détails des prévisions · ${formatMonthLabel(detailsMonth)}`
-                  : "Détails des prévisions"
-                : entry
-                  ? "Modifier la saisie"
-                  : fromDetection
-                    ? `Nouvelle prévision à partir de « ${fromDetection.name} »`
-                    : "Nouvelle saisie"}
-            </DialogTitle>
-            {fromDetection && activeTab !== "DETAILS" && (
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Cette prévision remplace la récurrence détectée : à
-                l&apos;enregistrement, la détection sera masquée
-                {isScenario ? " dans ce scénario" : ""} pour ne pas compter le
-                montant deux fois.
-              </p>
-            )}
-            {scenarioHint && activeTab !== "DETAILS" && (
-              <p className="flex items-center gap-1.5 text-[11px] text-[#5b4fff]/90 mt-1">
-                <GitBranch size={11} />
-                {scenarioHint}
-              </p>
-            )}
-          </DialogHeader>
+              {scenarioHint && activeTab !== "DETAILS" && (
+                <p className="flex items-center gap-1.5 text-[11px] text-[#5b4fff]/90 mt-1">
+                  <GitBranch size={11} />
+                  {scenarioHint}
+                </p>
+              )}
+            </DialogHeader>
 
-          {/* Onglets : Sortie / Entrée (formulaire) + Détails prévisions —
+            {/* Onglets : Sortie / Entrée (formulaire) + Détails prévisions —
               hors zone scrollable pour rester visibles en permanence. */}
-          <div className="px-5 pt-4 shrink-0">
-            <div className="flex gap-1.5 p-1 bg-muted/50 rounded-lg w-fit">
-              <button
-                type="button"
-                onClick={() => selectTab("EXPENSE")}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
-                  activeTab === "EXPENSE"
-                    ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Sortie
-              </button>
-              <button
-                type="button"
-                onClick={() => selectTab("INCOME")}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
-                  activeTab === "INCOME"
-                    ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Entrée
-              </button>
-              {showDetailsTab && (
+            <div className="px-5 pt-4 shrink-0">
+              <div className="flex gap-1.5 p-1 bg-muted/50 rounded-lg w-fit">
                 <button
                   type="button"
-                  onClick={() => selectTab("DETAILS")}
+                  onClick={() => selectTab("EXPENSE")}
                   className={cn(
                     "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
-                    activeTab === "DETAILS"
+                    activeTab === "EXPENSE"
                       ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  Détails prévisions
+                  Sortie
                 </button>
-              )}
-            </div>
-          </div>
-
-          {activeTab === "DETAILS" ? (
-            <div className="flex flex-1 min-h-0 flex-col px-5 pt-4 pb-4">
-              <ForecastDetailsList
-                rangeStart={detailsMonth || rangeStart}
-                rangeEnd={detailsMonth || rangeEnd}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              {/* min-h-full + footer en mt-auto : le footer reste collé en
-                  bas quand le formulaire est plus court que la modal. */}
-              <div className="flex min-h-full flex-col gap-4 px-5 pt-4 pb-0">
-                {/* Name + Amount on same row */}
-                <div className="grid grid-cols-[1fr,140px] gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-sm text-muted-foreground">
-                      Libellé
-                    </label>
-                    <Input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Ex: Loyer bureau"
-                      maxLength={120}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm text-muted-foreground">
-                      Montant prévu
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        min="0"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="0,00"
-                        className="pr-8"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                        €
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Category */}
-                <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    Catégorie
-                    <span className="text-muted-foreground/50 ml-1">
-                      optionnel
-                    </span>
-                  </label>
-                  <CategorySearchSelect
-                    type={type}
-                    value={category}
-                    onValueChange={(value) => setCategory(value)}
-                    triggerClassName="w-full"
-                  />
-                </div>
-
-                {/* Date */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    Date prévue
-                  </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-fit justify-start text-left font-normal",
-                          !startDate && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="size-3.5 text-muted-foreground" />
-                        {formatDateLabel(startDate) || "Sélectionner une date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={parseDate(startDate)}
-                        onSelect={(date) => {
-                          if (date)
-                            setStartDate(toDateInput(date.toISOString()));
-                        }}
-                        defaultMonth={parseDate(startDate)}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Frequency */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-muted-foreground">
-                      Configurer une prévision récurrente
-                    </label>
-                    <Switch
-                      checked={hasFrequency}
-                      onCheckedChange={setHasFrequency}
-                    />
-                  </div>
-                  {hasFrequency && (
-                    <div className="space-y-3">
-                      {/* Augmenter ou diminuer de (style Qonto) */}
-                      <div className="space-y-1.5">
-                        <label className="text-sm text-muted-foreground">
-                          Augmenter ou diminuer de
-                        </label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            step="0.01"
-                            value={amountDelta}
-                            onChange={(e) => setAmountDelta(e.target.value)}
-                            placeholder="0"
-                            className="flex-1"
-                          />
-                          <Select
-                            value={amountDeltaType}
-                            onValueChange={(value) => setAmountDeltaType(value)}
-                          >
-                            <SelectTrigger className="w-24 shrink-0">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="AMOUNT">EUR</SelectItem>
-                              <SelectItem value="PERCENT">%</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <p className="text-xs text-muted-foreground/60">
-                          Ajoutez un «&nbsp;-&nbsp;» pour diminuer
-                        </p>
-                      </div>
-
-                      {/* Récurrence + Répéter jusqu'en */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <label className="text-sm text-muted-foreground">
-                            Récurrence
-                          </label>
-                          <Select
-                            value={frequency}
-                            onValueChange={(value) => setFrequency(value)}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FREQUENCIES.map((f) => (
-                                <SelectItem key={f.value} value={f.value}>
-                                  {f.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-sm text-muted-foreground">
-                            Répéter jusqu'en
-                            <span className="text-muted-foreground/50 ml-1">
-                              optionnel
-                            </span>
-                          </label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  !endDate && "text-muted-foreground",
-                                )}
-                              >
-                                <CalendarIcon className="size-3.5 text-muted-foreground" />
-                                {formatDateLabel(endDate) || "Aucune"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={parseDate(endDate)}
-                                onSelect={(date) => {
-                                  if (date)
-                                    setEndDate(toDateInput(date.toISOString()));
-                                }}
-                                disabled={(date) => {
-                                  const start = parseDate(startDate);
-                                  return start ? date < start : false;
-                                }}
-                                defaultMonth={
-                                  parseDate(endDate) || parseDate(startDate)
-                                }
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                    </div>
+                <button
+                  type="button"
+                  onClick={() => selectTab("INCOME")}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                    activeTab === "INCOME"
+                      ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    Note
-                    <span className="text-muted-foreground/50 ml-1">
-                      optionnel
-                    </span>
-                  </label>
-                  <Input
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Ajouter un commentaire..."
-                    maxLength={500}
-                  />
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between border-t border-border/40 mt-auto px-5 py-3 -mx-5">
-                  <div>
-                    {entry?.id && canDeleteForecast && (
-                      <button
-                        type="button"
-                        onClick={handleDelete}
-                        disabled={deleting}
-                        className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer disabled:opacity-50"
-                      >
-                        {deleting ? "Suppression..." : "Supprimer"}
-                      </button>
+                >
+                  Entrée
+                </button>
+                {showDetailsTab && (
+                  <button
+                    type="button"
+                    onClick={() => selectTab("DETAILS")}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                      activeTab === "DETAILS"
+                        ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
-                  </div>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!canSubmit || saving}
-                    className="gap-2"
                   >
-                    {saving ? (
-                      <>
-                        <LoaderCircle className="size-4 animate-spin" />
-                        Enregistrement...
-                      </>
-                    ) : (
-                      <>
-                        {entry ? "Enregistrer" : "Ajouter"}
-                        <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
-                          <CornerDownLeft className="size-3" />
-                        </kbd>
-                      </>
-                    )}
-                  </Button>
-                </div>
+                    Détails prévisions
+                  </button>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+
+            {activeTab === "DETAILS" ? (
+              <div className="flex flex-1 min-h-0 flex-col px-5 pt-4 pb-4">
+                <ForecastDetailsList
+                  rangeStart={detailsMonth || rangeStart}
+                  rangeEnd={detailsMonth || rangeEnd}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {/* min-h-full + footer en mt-auto : le footer reste collé en
+                  bas quand le formulaire est plus court que la modal. */}
+                <div className="flex min-h-full flex-col gap-4 px-5 pt-4 pb-0">
+                  {/* Name + Amount on same row */}
+                  <div className="grid grid-cols-[1fr,140px] gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-sm text-muted-foreground">
+                        Libellé
+                      </label>
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Ex: Loyer bureau"
+                        maxLength={120}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm text-muted-foreground">
+                        Montant prévu
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          min="0"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="0,00"
+                          className="pr-8"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          €
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-muted-foreground">
+                      Catégorie
+                      <span className="text-muted-foreground/50 ml-1">
+                        optionnel
+                      </span>
+                    </label>
+                    <CategorySearchSelect
+                      type={type}
+                      value={category}
+                      onValueChange={(value) => setCategory(value)}
+                      triggerClassName="w-full"
+                    />
+                  </div>
+
+                  {/* Date */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-muted-foreground">
+                      Date prévue
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-fit justify-start text-left font-normal",
+                            !startDate && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="size-3.5 text-muted-foreground" />
+                          {formatDateLabel(startDate) ||
+                            "Sélectionner une date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={parseDate(startDate)}
+                          onSelect={(date) => {
+                            if (date)
+                              setStartDate(toDateInput(date.toISOString()));
+                          }}
+                          defaultMonth={parseDate(startDate)}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Frequency */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm text-muted-foreground">
+                        Configurer une prévision récurrente
+                      </label>
+                      <Switch
+                        checked={hasFrequency}
+                        onCheckedChange={setHasFrequency}
+                      />
+                    </div>
+                    {hasFrequency && (
+                      <div className="space-y-3">
+                        {/* Augmenter ou diminuer de (style Qonto) */}
+                        <div className="space-y-1.5">
+                          <label className="text-sm text-muted-foreground">
+                            Augmenter ou diminuer de
+                          </label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              step="0.01"
+                              value={amountDelta}
+                              onChange={(e) => setAmountDelta(e.target.value)}
+                              placeholder="0"
+                              className="flex-1"
+                            />
+                            <Select
+                              value={amountDeltaType}
+                              onValueChange={(value) =>
+                                setAmountDeltaType(value)
+                              }
+                            >
+                              <SelectTrigger className="w-24 shrink-0">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="AMOUNT">EUR</SelectItem>
+                                <SelectItem value="PERCENT">%</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <p className="text-xs text-muted-foreground/60">
+                            Ajoutez un «&nbsp;-&nbsp;» pour diminuer
+                          </p>
+                        </div>
+
+                        {/* Récurrence + Répéter jusqu'en */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="text-sm text-muted-foreground">
+                              Récurrence
+                            </label>
+                            <Select
+                              value={frequency}
+                              onValueChange={(value) => setFrequency(value)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {FREQUENCIES.map((f) => (
+                                  <SelectItem key={f.value} value={f.value}>
+                                    {f.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm text-muted-foreground">
+                              Répéter jusqu'en
+                              <span className="text-muted-foreground/50 ml-1">
+                                optionnel
+                              </span>
+                            </label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !endDate && "text-muted-foreground",
+                                  )}
+                                >
+                                  <CalendarIcon className="size-3.5 text-muted-foreground" />
+                                  {formatDateLabel(endDate) || "Aucune"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={parseDate(endDate)}
+                                  onSelect={(date) => {
+                                    if (date)
+                                      setEndDate(
+                                        toDateInput(date.toISOString()),
+                                      );
+                                  }}
+                                  disabled={(date) => {
+                                    const start = parseDate(startDate);
+                                    return start ? date < start : false;
+                                  }}
+                                  defaultMonth={
+                                    parseDate(endDate) || parseDate(startDate)
+                                  }
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-muted-foreground">
+                      Note
+                      <span className="text-muted-foreground/50 ml-1">
+                        optionnel
+                      </span>
+                    </label>
+                    <Input
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Ajouter un commentaire..."
+                      maxLength={500}
+                    />
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between border-t border-border/40 mt-auto px-5 py-3 -mx-5">
+                    <div>
+                      {entry?.id && canDeleteForecast && (
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={deleting}
+                          className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {deleting ? "Suppression..." : "Supprimer"}
+                        </button>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!canSubmit || saving}
+                      className="gap-2"
+                    >
+                      {saving ? (
+                        <>
+                          <LoaderCircle className="size-4 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        <>
+                          {entry ? "Enregistrer" : "Ajouter"}
+                          <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                            <CornerDownLeft className="size-3" />
+                          </kbd>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <ConfirmDeleteDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Supprimer cette saisie ?"
+        description={`« ${entry?.name ?? ""} » sera supprimée de la prévision, avec toutes ses occurrences.`}
+        onConfirm={confirmDelete}
+        loading={deleting}
+      />
+    </>
   );
 }

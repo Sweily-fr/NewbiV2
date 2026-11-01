@@ -56,6 +56,11 @@ const PREFIXES = {
   importee: "e2e4e",
   diversFactures: "e2e4f",
   avoirLot: "e2eba",
+  // Espaces de contrôle du lot (contrôles, soldes, facturation électronique),
+  // leurs membres et leurs documents (voir lot-factures.mjs)
+  membreFactures: "e2ebb",
+  espaceFactures: "e2ebc",
+  pieceFactures: "e2ebd",
   // ── fin du lot factures ──
   // ── Lot devis-bc-bl (e2e8a à e2e8f, e2e9a à e2e9f, e2eaa à e2eaf) ──
   clientVentes: "e2e8a",
@@ -68,6 +73,12 @@ const PREFIXES = {
   blVentes: "e2eaa",
   devisImporte: "e2e8e",
   bcImporte: "e2e9d",
+  // Comptes, rôles personnalisés et documents partagés propres au lot.
+  utilisateurVentes: "e2eab",
+  organisationVentes: "e2eac",
+  roleVentes: "e2ead",
+  automatisationVentes: "e2eae",
+  dossierVentes: "e2eaf",
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (e2e0a à e2e0f, e2eca à e2ecf) ──
   produit: "e2e0a",
@@ -114,6 +125,38 @@ const PREFIXES = {
   signatureMail: "e2e6e",
   // Sous-documents et données annexes (commentaires, étiquettes, codes de visiteur…).
   annexeCollab: "e2e6f",
+  // Comptes ajoutés par fonctionnalité (donnees/comptes-collaboration.mjs) : préfixes
+  // du lot prolongés par une lettre (e2e6f + lettre ≠ annexeCollab, toujours suivi d'un chiffre).
+  utilisateurLot: "e2e6fa",
+  espaceLot: "e2e6fb",
+  membreLot: "e2e6fc",
+  sessionLot: "e2e6fd",
+  abonnementLot: "e2e6fe",
+  roleLot: "e2e6ff",
+  // Kanban : tableau restreint, liens publics (lot-kanban.mjs).
+  kbTableau: "e2e5aa",
+  kbColonne: "e2e5ba",
+  kbTache: "e2e5ca",
+  kbPartage: "e2e5fa",
+  kbDivers: "e2e5fb",
+  // Calendrier (lot-calendrier.mjs).
+  calEvenement: "e2e5da",
+  calConnexion: "e2e5db",
+  calDivers: "e2e5dc",
+  // Prise de rendez-vous (lot-rendez-vous.mjs).
+  rdvPage: "e2e5ea",
+  rdvType: "e2e5eb",
+  rdvReservation: "e2e5ec",
+  rdvDivers: "e2e5ed",
+  // Posts réseaux sociaux (lot-reseaux-sociaux.mjs).
+  socialCompte: "e2e6aa",
+  socialPost: "e2e6ab",
+  socialMedia: "e2e6ac",
+  socialDivers: "e2e6ad",
+  // E-mails envoyés (lot-emails-envoyes.mjs).
+  emailEnvoi: "e2e6ba",
+  emailDocument: "e2e6bb",
+  emailDivers: "e2e6bc",
   // ── fin du lot collaboration ──
   // ── Lot pilotage (e2e7a à e2e7f, e2eda à e2edf) ──
   pilFacture: "e2e7a",
@@ -129,6 +172,27 @@ const PREFIXES = {
   pilAbonnement: "e2ede",
   pilDivers: "e2edf",
   // ── fin du lot pilotage ──
+  // ── Lot clients-catalogue (e2e3a à e2e3c) ──
+  // Espaces, membres et données de donnees/lot-clients-catalogue.mjs.
+  utilisateurCc: "e2e3aa",
+  espaceCc: "e2e3ab",
+  membreCc: "e2e3ac",
+  sessionCc: "e2e3ad",
+  abonnementCc: "e2e3ae",
+  roleCc: "e2e3af",
+  contactCc: "e2e3ba",
+  factureCc: "e2e3bb",
+  devisCc: "e2e3bc",
+  bcCc: "e2e3bd",
+  blCc: "e2e3be",
+  avoirCc: "e2e3bf",
+  listeCc: "e2e3ca",
+  segmentCc: "e2e3cb",
+  champCc: "e2e3cc",
+  automatisationCc: "e2e3cd",
+  produitCc: "e2e3ce",
+  diversCc: "e2e3cf",
+  // ── fin du lot clients-catalogue ──
 };
 
 export function oid(type, n) {
@@ -253,6 +317,30 @@ export const COMPTES = {
     utilisateur: { _id: oid("utilisateur", 17), email: "volume@e2e.test", name: "Victor Volume" },
     organisation: { ...organisation(17, "Volume Test SAS"), quoteAutoNumbering: true },
     token: SESSION_TOKEN_VOLUME,
+  },
+  // Signatures (webhook du prestataire), conversions et facturation, paramètres :
+  // tests qui modifient leurs documents, à l'écart des listes de « Ventes ».
+  controleVentes: {
+    utilisateur: { _id: oid("utilisateurVentes", 1), email: "controle-ventes@e2e.test", name: "Corentin Contrôle" },
+    organisation: { ...organisation(18, "Contrôles Ventes Test SASU"), _id: oid("organisationVentes", 1) },
+    // = SESSION_TOKEN_CONTROLE_VENTES (config.mjs)
+    token: "e2eSessionTokenNewbiControleVentesUniquement",
+    plan: "entreprise",
+  },
+  // Essai terminé, sans abonnement : espace en lecture seule.
+  ventesExpiree: {
+    utilisateur: { _id: oid("utilisateurVentes", 2), email: "ventes-expiree@e2e.test", name: "Estelle Expirée" },
+    organisation: {
+      ...organisation(19, "Ventes Expirée Test SASU"),
+      _id: oid("organisationVentes", 2),
+      trialStartDate: DANS(-45).toISOString(),
+      trialEndDate: DANS(-15).toISOString(),
+      isTrialActive: false,
+      hasUsedTrial: true,
+    },
+    // = SESSION_TOKEN_VENTES_EXPIREE (config.mjs)
+    token: "e2eSessionTokenNewbiVentesExpireeUniquement",
+    plan: null,
   },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (organisations et utilisateurs 20 à 24) ──
@@ -384,6 +472,38 @@ export const MEMBRES = {
     role: "member",
     token: SESSION_TOKEN_VENTES_EDITEUR,
   },
+  // Jetons : mêmes valeurs que SESSION_TOKEN_VENTES_* de config.mjs.
+  ventesComptable: {
+    utilisateur: { _id: oid("utilisateurVentes", 11), email: "ventes-comptable@e2e.test", name: "Constance Comptable" },
+    de: "ventes",
+    role: "accountant",
+    token: "e2eSessionTokenNewbiVentesComptableUniquement",
+  },
+  // Rôles personnalisés de « Ventes » (ROLES_VENTES, lot-devis-bc-bl.mjs).
+  ventesPersoBl: {
+    utilisateur: { _id: oid("utilisateurVentes", 12), email: "ventes-perso-bl@e2e.test", name: "Bastien Livraisons" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 1).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoBlUniquement",
+  },
+  ventesPersoDevis: {
+    utilisateur: { _id: oid("utilisateurVentes", 13), email: "ventes-perso-devis@e2e.test", name: "Diane Devis" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 2).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoDevisUniquement",
+  },
+  ventesPersoBc: {
+    utilisateur: { _id: oid("utilisateurVentes", 14), email: "ventes-perso-bc@e2e.test", name: "Boris Commandes" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 3).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoBcUniquement",
+  },
+  ventesPersoSaisie: {
+    utilisateur: { _id: oid("utilisateurVentes", 15), email: "ventes-perso-saisie@e2e.test", name: "Sasha Saisie" },
+    de: "ventes",
+    role: `role_${oid("roleVentes", 4).toHexString()}`,
+    token: "e2eSessionTokenNewbiVentesPersoSaisieUniquement",
+  },
   // ── fin du lot devis-bc-bl ──
   // ── Lot achats-banque (utilisateurs 20 à 24) ──
   // L'Éditeur est aussi membre de « Saisie Achats » (lot-achats-banque.mjs) : ses
@@ -489,6 +609,15 @@ export const MEMBRES = {
     role: "accountant",
     // = SESSION_TOKEN_CABINET (config.mjs)
     token: "e2eSessionTokenNewbiCabinetUniquement",
+  },
+  // Rôle personnalisé « Vue d'ensemble seule » de « Pilotage » (lot-pilotage.mjs) :
+  // indicateurs agrégés, sans Factures clients, Clients, Catalogue ni Prévision.
+  pilotageVueEnsemble: {
+    utilisateur: { _id: oid("utilisateur", 45), email: "pilotage-vue-ensemble@e2e.test", name: "Vic Synthèse" },
+    de: "pilotage",
+    role: "role_e2e2c0000000000000000040",
+    // = SESSION_TOKEN_PILOTAGE_VUE_ENSEMBLE (config.mjs)
+    token: "e2eSessionTokenNewbiPilotageVueEnsembleUniquement",
   },
   // ── fin du lot pilotage ──
 };
@@ -604,7 +733,8 @@ export function socle() {
       createdAt: MAINTENANT,
     });
     docs.member.push({ _id: oid("membre", n), userId: utilisateur._id, organizationId: org._id, role: "owner", createdAt: MAINTENANT });
-    docs.subscription.push({
+    // plan: null : aucun abonnement (espace en lecture seule une fois l'essai terminé).
+    if (plan !== null) docs.subscription.push({
       _id: oid("abonnement", n),
       referenceId: org._id.toHexString(),
       plan,

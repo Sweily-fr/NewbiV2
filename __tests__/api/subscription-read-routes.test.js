@@ -14,6 +14,7 @@ const m = vi.hoisted(() => ({
   getSession: vi.fn(),
   memberFindOne: vi.fn(),
   memberFind: vi.fn(async () => []),
+  memberFindQuery: vi.fn(),
   storedRoles: vi.fn(async () => []),
   subscriptionFindOne: vi.fn(),
   organizationFindOne: vi.fn(),
@@ -38,7 +39,10 @@ vi.mock("@/src/lib/mongodb", () => ({
       if (name === "member") {
         return {
           findOne: m.memberFindOne,
-          find: () => ({ toArray: m.memberFind }),
+          find: (query) => {
+            m.memberFindQuery(query);
+            return { toArray: m.memberFind };
+          },
         };
       }
       if (name === "organizationRole") {
@@ -210,7 +214,7 @@ describe("GET /api/organizations/[organizationId]/seats-info", () => {
     expect(body).toEqual({
       plan: "pme",
       includedSeats: 10,
-      currentMembers: 12,
+      currentMembers: 11,
       availableSeats: 0,
     });
   });
@@ -222,10 +226,30 @@ describe("GET /api/organizations/[organizationId]/seats-info", () => {
     expect(body).toEqual({
       plan: "pme",
       includedSeats: 10,
-      currentMembers: 12,
+      currentMembers: 11,
       availableSeats: 0,
-      additionalSeats: 2,
+      additionalSeats: 1,
       seatCost: 7.49,
+    });
+  });
+
+  it("membres Better Auth (sans champ status) : 11 facturables et un Comptable, 1 siège payant", async () => {
+    signIn();
+    asRole("admin");
+    m.memberFind.mockResolvedValue([
+      { role: "owner" },
+      ...Array.from({ length: 11 }, () => ({ role: "member" })),
+      { role: "accountant" },
+    ]);
+    const body = await (await call()).json();
+    expect(body).toMatchObject({
+      includedSeats: 10,
+      currentMembers: 11,
+      additionalSeats: 1,
+    });
+    // Aucun filtre sur un champ status que les membres n'ont pas
+    expect(m.memberFindQuery).toHaveBeenCalledWith({
+      organizationId: expect.anything(),
     });
   });
 });

@@ -148,3 +148,42 @@ describe("/api/organization/list-with-order — app trial recognition", () => {
     expect(body.organizations[0].subscriptionStatus).toBe("expired");
   });
 });
+
+describe("/api/organization/list-with-order : statut aligné sur le tableau de bord", () => {
+  beforeEach(() => {
+    mockOrganizations.mockReturnValue([{ _id: orgIdA, name: "Acme" }]);
+  });
+
+  it("past_due (relances de paiement) : actif, comme le tableau de bord et l'API", async () => {
+    mockSubscriptions.mockReturnValue([
+      { referenceId: orgIdA.toString(), status: "past_due" },
+    ]);
+    const body = await (await GET()).json();
+    expect(body.organizations[0].subscriptionStatus).toBe("active");
+  });
+
+  it("résilié avec une fin de période à venir : actif", async () => {
+    mockSubscriptions.mockReturnValue([
+      {
+        referenceId: orgIdA.toString(),
+        status: "canceled",
+        periodEnd: inFuture(10),
+      },
+    ]);
+    const body = await (await GET()).json();
+    expect(body.organizations[0].subscriptionStatus).toBe("active");
+  });
+
+  it("un ancien abonnement expiré lu après l'abonnement en cours : toujours actif", async () => {
+    mockSubscriptions.mockReturnValue([
+      { referenceId: orgIdA.toString(), status: "active" },
+      {
+        referenceId: orgIdA.toString(),
+        status: "canceled",
+        periodEnd: new Date(Date.now() - 86_400_000),
+      },
+    ]);
+    const body = await (await GET()).json();
+    expect(body.organizations[0].subscriptionStatus).toBe("active");
+  });
+});

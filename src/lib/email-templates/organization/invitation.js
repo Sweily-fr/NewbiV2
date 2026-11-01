@@ -1,5 +1,9 @@
+import { escapeEmailText, escapeOrganizationEmailData } from "./escape-data.js";
 // Template pour l'invitation d'organisation
-export const organizationInvitation = (data, inviteLink) => `
+export const organizationInvitation = (rawData, rawInviteLink) => {
+  const data = escapeOrganizationEmailData(rawData);
+  const inviteLink = escapeEmailText(rawInviteLink);
+  return `
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -221,3 +225,4 @@ export const organizationInvitation = (data, inviteLink) => `
     </body>
     </html>
   `;
+};
