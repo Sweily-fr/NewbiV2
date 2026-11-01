@@ -7,6 +7,7 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { isSafeDocumentColor } from "@/src/lib/organization-document-colors";
 
 /**
  * POST /api/invoices/preview-pdf
@@ -39,6 +40,19 @@ async function handler(request) {
 
   if (!invoiceData.client) {
     return apiError(400, "Les informations client sont requises");
+  }
+
+  // Couleurs reprises dans les styles du document rendu : valeurs de
+  // couleur seulement
+  const appearance = invoiceData.appearance;
+  if (
+    appearance &&
+    (typeof appearance !== "object" ||
+      ["textColor", "headerTextColor", "headerBgColor"].some(
+        (field) => !isSafeDocumentColor(appearance[field]),
+      ))
+  ) {
+    return apiError(400, "Couleur du document invalide");
   }
 
   let browser = null;

@@ -2216,9 +2216,28 @@ export const organizationPlugin = organization({
     // SIRET modifié dans les paramètres (web et mobile) : vérifié au registre
     // et refusé s'il appartient à un autre espace, cf. organization-siret-guard.
     beforeUpdateOrganization: async ({ organization: data, user, member }) => {
-      const [{ mongoDb }, { checkOrganizationSiretUpdate }] = await Promise.all(
-        [import("./mongodb.js"), import("./organization-siret-guard.js")],
-      );
+      const [
+        { mongoDb },
+        { checkOrganizationSiretUpdate },
+        { checkOrganizationColorsUpdate },
+      ] = await Promise.all([
+        import("./mongodb.js"),
+        import("./organization-siret-guard.js"),
+        import("./organization-document-colors.js"),
+      ]);
+      // Couleurs par défaut des documents : valeurs de couleur seulement
+      const colors = await checkOrganizationColorsUpdate({
+        mongoDb,
+        organizationId: member.organizationId,
+        data,
+      });
+      if (!colors.ok) {
+        const { APIError } = await import("better-auth/api");
+        throw new APIError("BAD_REQUEST", {
+          message: colors.message,
+          code: "DOCUMENT_COLOR_REJECTED",
+        });
+      }
       const result = await checkOrganizationSiretUpdate({
         mongoDb,
         organizationId: member.organizationId,
