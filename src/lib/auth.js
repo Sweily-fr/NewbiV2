@@ -280,6 +280,13 @@ export const auth = betterAuth({
     session: {
       create: {
         before: async (session) => {
+          // Compte désactivé : aucune session, quelle que soit la voie de
+          // connexion (Google, Apple, application mobile, lien de
+          // vérification…). Hors du try ci-dessous, qui avale les erreurs.
+          const { assertAccountActiveForSession } =
+            await import("./deactivated-account.js");
+          await assertAccountActiveForSession(session);
+
           try {
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");

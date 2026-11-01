@@ -1,5 +1,9 @@
 import { createAuthMiddleware } from "better-auth/api";
 import { sendReactivationEmail } from "./auth-utils";
+import {
+  DEACTIVATED_ACCOUNT_MESSAGE,
+  normalizeEmail,
+} from "./deactivated-account";
 
 // Routes Better Auth fermées (disabledPaths de auth.js, réponse 404).
 // Connexion et réinitialisation par code OTP (e-mail ou SMS) : aucun code
@@ -50,7 +54,16 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
 
   // ── 1. Comptes désactivés à la connexion ──
   if (ctx.path === "/sign-in/email") {
-    const email = ctx.body?.email;
+    // Adresse attendue en texte : un objet (ex. { "$regex": "^a" }) serait
+    // lu par MongoDB comme un opérateur et viserait un autre compte
+    if (ctx.body?.email !== undefined && typeof ctx.body.email !== "string") {
+      const { APIError } = await import("better-auth/api");
+      throw new APIError("BAD_REQUEST", {
+        message: "Adresse e-mail invalide.",
+      });
+    }
+    // Comme Better Auth l'enregistre : minuscules, sans espaces autour
+    const email = normalizeEmail(ctx.body?.email);
     if (email) {
       // DB lookup in try/catch — fail-open if DB is temporarily unavailable
       let user = null;
@@ -78,8 +91,7 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
 
         const { APIError } = await import("better-auth/api");
         throw new APIError("BAD_REQUEST", {
-          message:
-            "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
+          message: DEACTIVATED_ACCOUNT_MESSAGE,
         });
       }
     }

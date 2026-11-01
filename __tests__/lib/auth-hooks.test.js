@@ -117,6 +117,33 @@ describe("beforeSignInHook", () => {
     expect(sendReactivationEmailMock).toHaveBeenCalledWith(user);
   });
 
+  it("compte désactivé saisi en majuscules et avec des espaces : cherché en minuscules, refusé", async () => {
+    const user = { email: "u@x.fr", isActive: false };
+    findOneMock.mockResolvedValue(user);
+
+    await expect(
+      beforeSignInHook({
+        path: "/sign-in/email",
+        body: { email: "  U@X.FR " },
+      }),
+    ).rejects.toBeInstanceOf(APIErrorMock);
+
+    expect(findOneMock).toHaveBeenCalledWith({ email: "u@x.fr" });
+    expect(sendReactivationEmailMock).toHaveBeenCalledWith(user);
+  });
+
+  it("adresse envoyée comme un objet (opérateur MongoDB) : refusée sans lecture ni e-mail", async () => {
+    await expect(
+      beforeSignInHook({
+        path: "/sign-in/email",
+        body: { email: { $regex: "^a" }, password: "x" },
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    expect(findOneMock).not.toHaveBeenCalled();
+    expect(sendReactivationEmailMock).not.toHaveBeenCalled();
+  });
+
   it("swallows non-APIError exceptions (logs but does not block sign-in)", async () => {
     findOneMock.mockRejectedValue(new Error("DB down"));
     await expect(
