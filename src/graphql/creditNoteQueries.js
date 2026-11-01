@@ -36,6 +36,15 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     operationType
     createdAt
     updatedAt
+    superPdpInvoiceId
+    eInvoiceStatus
+    eInvoiceLastCode
+    eInvoiceSentAt
+    eInvoiceError
+    eInvoiceFlowType
+    eInvoiceFlowReason
+    eReportingStatus
+    eReportingError
     client {
       id
       name
