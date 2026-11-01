@@ -123,6 +123,21 @@ test.describe("Analytiques : rôle personnalisé « Vue d'ensemble seule »", ()
     sansFuite({ data: { ...r.data, kpi: null } }, "Vue d'ensemble seule");
   });
 
+  for (const [page_, operation] of [
+    ["/dashboard/outils/prevision", "treasuryForecastData"],
+    ["/dashboard/outils/analytiques", "financialAnalytics"],
+  ]) {
+    test(`${page_} : page hors du rôle annoncée, sans lecture des chiffres`, async ({ page }) => {
+      const lectures = [];
+      page.on("request", (r) => {
+        if (r.url().includes("/graphql") && (r.postData() || "").includes(operation)) lectures.push(r.url());
+      });
+      await ouvrir(page, page_, { pret: page.getByRole("heading", { name: "Cette page ne fait pas partie de votre rôle" }) });
+      await page.waitForTimeout(1_000);
+      expect(lectures, `Requête ${operation} envoyée par une page hors du rôle`).toEqual([]);
+    });
+  }
+
   test("Prévision de trésorerie refusée sans la page Prévision", async ({ page }) => {
     await ouvrir(page, "/dashboard/outils/analytiques/vue-densemble");
     const l = LECTURES.find((x) => x.champ === "treasuryForecastData");
