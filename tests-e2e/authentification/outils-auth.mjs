@@ -43,6 +43,8 @@ const QUOTAS = [
   [/^\/(sign-in|sign-up|change-password|change-email)/, 10_000, 3],
   [/^\/(request-password-reset|send-verification-email|forget-password)/, 60_000, 3],
   [/^\/two-factor\//, 10_000, 3],
+  // Codes OTP par e-mail (plugin emailOTP) : 3 demandes par minute.
+  [/^\/email-otp\//, 60_000, 3],
 ];
 
 function lireQuotas() {
