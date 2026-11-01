@@ -334,7 +334,14 @@ export const auth = betterAuth({
     // disableSettingJwtHeader : sans lui, chaque /get-session signait un JWT
     // renvoyé dans l'en-tête set-auth-jwt, que ni le web ni l'app mobile ne
     // lisent (les deux passent par /api/auth/token).
-    jwt({ disableSettingJwtHeader: true }),
+    jwt({
+      disableSettingJwtHeader: true,
+      jwt: {
+        // sid : id de la session qui émet le jeton. L'API refuse un jeton
+        // dont la session a été fermée (déconnexion, appareil révoqué).
+        definePayload: ({ user, session }) => ({ ...user, sid: session.id }),
+      },
+    }),
     oneTimeToken({
       expiresIn: 3, // 3 minutes
       storeToken: "hashed", // Ne pas stocker le token en clair en DB

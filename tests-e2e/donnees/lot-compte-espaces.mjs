@@ -75,6 +75,8 @@ export const COMPTES_CE = {
   expire: compte(123, { email: "lecture-seule-api@e2e.test", name: "Léo Lecture", espace: "Lecture Seule API Test SASU", plan: null, organisation: ESSAI_TERMINE, sessions: [{ nom: "LectureSeuleApi" }] }),
   // Fenêtre « Désactiver mon compte » (sans abonnement, le bouton est actif) : lue, jamais confirmée.
   desactivationTexte: compte(124, { email: "desactivation-texte@e2e.test", name: "Tara Texte", espace: "Désactivation Texte Test SASU", plan: null, organisation: ESSAI_TERMINE, sessions: [{ nom: "DesactivationTexte" }] }),
+  // Déconnexion : le jeton de l'API obtenu avant ne sert plus (claim sid).
+  jwtRevoque: compte(130, { email: "jwt-revoque@e2e.test", name: "Jade Révoquée", espace: "JWT Révoqué Test SASU", sessions: [{ nom: "JwtRevoque" }] }),
   // Inscription en cours (étape « Votre entreprise »).
   onboarding: compte(125, { email: "onboarding-etapes@e2e.test", name: "Odile Étapes", espace: "Mon entreprise", plan: null, sessions: [{ nom: "OnboardingEtapes" }], utilisateur: { onboardingStep: "workspace", hasSeenOnboarding: false }, organisation: { onboardingCompleted: false } }),
 };

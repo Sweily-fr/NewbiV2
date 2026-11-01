@@ -214,6 +214,31 @@ test.describe("Compte désactivé : le jeton de l'API obtenu avant ne sert plus"
   });
 });
 
+test.describe("Déconnexion : le jeton de l'API obtenu avant ne sert plus", () => {
+  test.use({ storageState: connecte(COMPTES_CE.jwtRevoque.token), erreursConsoleAutorisees: /status of 40\d/ });
+  test("Le jeton porte l'id de sa session ; une fois la session fermée, l'API le refuse", async ({ page }) => {
+    const compte = COMPTES_CE.jwtRevoque;
+    await surLeSite(page);
+    const jeton = await page.evaluate(() => fetch("/api/auth/token", { credentials: "include" }).then((r) => r.json()).then((d) => d.token));
+    expect(jeton, "Aucun jeton de l'API pour la session").toBeTruthy();
+    const charge = JSON.parse(Buffer.from(jeton.split(".")[1], "base64url").toString("utf8"));
+    expect(charge.sid, "Le jeton ne dit pas de quelle session il vient").toBe(compte.sessions[0]._id.toHexString());
+    expect((await graphql(page, "query { me { id } }", { jeton })).data?.me?.id).toBe(compte.utilisateur._id.toHexString());
+
+    const sortie = await appelAuth(page, "/sign-out", { corps: {} });
+    expect(sortie.statut).toBe(200);
+    expect(await sessionsDe(compte), "La session n'a pas été fermée").toHaveLength(0);
+    // L'API garde l'état d'une session 15 s au plus
+    await expect
+      .poll(async () => (await graphql(page, "query { me { id } }", { jeton })).data?.me ?? null, {
+        timeout: 30_000,
+        intervals: [2_000],
+        message: "L'API accepte encore le jeton d'une session fermée",
+      })
+      .toBeNull();
+  });
+});
+
 test.describe("Anciennes opérations de compte de l'API : absentes", () => {
   test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 400/ });
   const NOUVEAU = "ancienne-api-inscription@e2e.test";
