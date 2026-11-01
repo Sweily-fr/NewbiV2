@@ -430,8 +430,8 @@ const REMPLISSAGE_VOLUME = Array.from({ length: 600 }, (_, i) =>
   contactCc(2000 + i, V, { name: `Contact volume ${String(i + 1).padStart(3, "0")}`, email: `volume${i + 1}@volume.test` }),
 );
 const docsVolume = (type) => [
-  docCc(type, 2000, V, { client: VOLUME.ancien, statut: "PENDING", numero: "0001", creeIlYa: 200 }),
-  ...Array.from({ length: 60 }, (_, i) => docCc(type, 2001 + i, V, { client: VOLUME.recent, statut: "PENDING", numero: String(i + 2).padStart(4, "0"), creeIlYa: 60 - i })),
+  docCc(type, 2000, V, { client: VOLUME.ancien, statut: type === "bcCc" ? "CONFIRMED" : "PENDING", numero: "0001", creeIlYa: 200 }),
+  ...Array.from({ length: 60 }, (_, i) => docCc(type, 2001 + i, V, { client: VOLUME.recent, statut: type === "bcCc" ? "CONFIRMED" : "PENDING", numero: String(i + 2).padStart(4, "0"), creeIlYa: 60 - i })),
 ];
 export const DEVIS_VOLUME_ANCIEN = docsVolume("devisCc")[0];
 export const BC_VOLUME_ANCIEN = docsVolume("bcCc")[0];

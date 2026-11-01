@@ -49,6 +49,9 @@ test.describe("Contacts : documents émis jamais réécrits", () => {
       ["quotes", DEVIS_CC.annule],
       ["purchaseorders", BONS_COMMANDE_CC.annule],
     ];
+    // Dates de mise à jour telles que semées (le processus qui sème a sa propre horloge)
+    const datesAvant = new Map();
+    for (const [collection, doc] of emis) datesAvant.set(id(doc), (await enBase(collection, doc._id)).updatedAt.getTime());
     const reponse = await appel(page, `mutation($w: String, $id: ID!, $input: ClientInput!) { updateClient(workspaceId: $w, id: $id, input: $input) { id } }`, {
       id: id(C.documents),
       input: { type: "COMPANY", name: "Maison Renommée SARL", email: C.documents.email, siret: C.documents.siret, address: { street: "99 avenue Nouvelle", city: "Bordeaux", postalCode: "33000", country: "France" } },
@@ -59,7 +62,7 @@ test.describe("Contacts : documents émis jamais réécrits", () => {
         const apres = await enBase(collection, doc._id);
         expect.soft(apres.client.name, `${collection} ${doc.number} (${doc.status}) : nom du client réécrit`).toBe(C.documents.name);
         expect.soft(apres.client.address.city, `${collection} ${doc.number} : adresse réécrite`).toBe(C.documents.address.city);
-        expect.soft(apres.updatedAt.getTime(), `${collection} ${doc.number} : document modifié`).toBe(doc.updatedAt.getTime());
+        expect.soft(apres.updatedAt.getTime(), `${collection} ${doc.number} : document modifié`).toBe(datesAvant.get(id(doc)));
       }
     });
     const brouillon = await enBase("invoices", FACTURES_CC.brouillon._id);
@@ -69,6 +72,7 @@ test.describe("Contacts : documents émis jamais réécrits", () => {
   });
 
   test("Ouvrir la fiche, « Modifier » puis enregistrer sans rien changer : ni activité ni document modifié", async ({ page }) => {
+    const dateDevis = (await enBase("quotes", DEVIS_CC.brouillonInchange._id)).updatedAt.getTime();
     await ouvrir(page, `/dashboard/clients/${id(C.inchange)}`, { pret: page.getByText(C.inchange.email).first() });
     await page.getByRole("button", { name: "Modifier", exact: true }).click();
     const modification = page.getByRole("dialog", { name: "Modifier le client" });
@@ -81,7 +85,7 @@ test.describe("Contacts : documents émis jamais réécrits", () => {
     const contact = await contactEnBase(C.inchange);
     expect(contact.activity.map((a) => a.description), "Activité écrite alors que rien n'a changé").toEqual([]);
     const devis = await enBase("quotes", DEVIS_CC.brouillonInchange._id);
-    expect(devis.updatedAt.getTime(), "Brouillon du contact réécrit").toBe(DEVIS_CC.brouillonInchange.updatedAt.getTime());
+    expect(devis.updatedAt.getTime(), "Brouillon du contact réécrit").toBe(dateDevis);
   });
 });
 
