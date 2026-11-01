@@ -60,6 +60,10 @@ export function middleware(request) {
 // Valeurs écrites en dur : Next analyse ce matcher au build.
 export const config = {
   matcher: [
+    // Pages de développement : aussi pour les préchargements, sinon elles
+    // restent servies (statut 200) à une requête qui se dit préchargement
+    { source: "/dashboard/test-rbac" },
+    { source: "/dashboard/loaderTest" },
     {
       source: "/dashboard/:path*",
       missing: [
