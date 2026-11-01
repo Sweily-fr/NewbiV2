@@ -299,7 +299,8 @@ function facturesBoulangerie() {
       prefixe: "F-BOUL",
       numero: "0099",
       statut: "PENDING",
-      emise: DANS(-1),
+      // Dans le mois en cours, même le 1er (le cadre du mois en a besoin)
+      emise: ceMois(1),
       echeance: DANS(29),
       creeeLe: DANS(-1),
       client: C.piegeBoulangerie,
