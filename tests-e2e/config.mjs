@@ -152,6 +152,8 @@ export const SESSION_TOKEN_PILOTAGE = "e2eSessionTokenNewbiPilotageUniquement";
 export const SESSION_TOKEN_PILOTAGE_EDITEUR = "e2eSessionTokenNewbiPilotageEditeurUniquement";
 /** Membre (lecture seule) de « Pilotage ». */
 export const SESSION_TOKEN_PILOTAGE_MEMBRE = "e2eSessionTokenNewbiPilotageMembreUniquement";
+/** Rôle personnalisé de « Pilotage » limité à la Vue d'ensemble (ni factures, ni clients, ni catalogue, ni prévision). */
+export const SESSION_TOKEN_PILOTAGE_VUE_ENSEMBLE = "e2eSessionTokenNewbiPilotageVueEnsembleUniquement";
 /** Cabinet (compte gestionnaire) : Comptable dans « Boulangerie Cliente » et « Pilotage », ses deux clients. */
 export const SESSION_TOKEN_CABINET = "e2eSessionTokenNewbiCabinetUniquement";
 /** Client du cabinet : super admin de « Boulangerie Cliente » (suivie) et de deux espaces libres. */

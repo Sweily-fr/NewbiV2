@@ -10,6 +10,7 @@ import { test, expect, etape, verifierTextesPropres } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { connecte, SESSION_TOKEN_CLIENT_CABINET, SESSION_TOKEN_PILOTAGE, SESSION_TOKEN_PILOTAGE_EDITEUR, SESSION_TOKEN_PILOTAGE_MEMBRE } from "../config.mjs";
 import { COMPTES } from "../donnees/base.mjs";
+import { COMPTE_INACTIF_PILOTAGE, TRANSACTIONS_PILOTAGE } from "../donnees/lot-pilotage.mjs";
 import { aTraiter, dernieresFactures, euros, facturationDuMois, moisParis, soldeEtFlux, texteSimple } from "./attendus.mjs";
 import { cadreDuMois, cadreSolde, carte, compteur, montantApres, montantDans, ouvrirAccueil } from "./outils-accueil.mjs";
 
@@ -81,6 +82,31 @@ test.describe("Accueil : solde et flux (propriétaire)", () => {
     const { decaissement } = await soldeEtFlux(W);
     await ouvrirAccueil(page);
     expect(await montantApres(cadreSolde(page), "Décaissement")).toBe(euros(decaissement));
+  });
+});
+
+/**
+ * Ce qui n'a pas déplacé d'argent ne compte pas : une pré-autorisation de
+ * carte annulée par la banque (500 €, « cancelled ») et l'ancien compte
+ * « inactive » (1 000 €) que la liste des comptes et la Prévision ignorent.
+ */
+test.describe("Accueil : opération annulée et compte inactif hors des chiffres (propriétaire)", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_PILOTAGE) });
+
+  test("Décaissement : la pré-autorisation annulée par la banque n'est pas comptée", async ({ page }) => {
+    const { decaissement } = await soldeEtFlux(W);
+    const annulee = TRANSACTIONS_PILOTAGE.annulee;
+    expect(annulee.status, "Données de départ : une opération annulée").toBe("cancelled");
+    await ouvrirAccueil(page);
+    const affiche = await montantApres(cadreSolde(page), "Décaissement");
+    expect(affiche, `${euros(decaissement + Math.abs(annulee.amount))} affiché : l'opération annulée de ${euros(Math.abs(annulee.amount))} est comptée`).toBe(euros(decaissement));
+  });
+
+  test("Solde : le compte inactif n'est pas compté", async ({ page }) => {
+    const { solde } = await soldeEtFlux(W);
+    await ouvrirAccueil(page);
+    const affiche = await montantDans(cadreSolde(page).locator(".text-3xl"));
+    expect(affiche, `${euros(solde + COMPTE_INACTIF_PILOTAGE.balance)} affiché : le solde du compte inactif est compté`).toBe(euros(solde));
   });
 });
 
