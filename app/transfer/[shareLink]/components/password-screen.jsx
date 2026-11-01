@@ -109,6 +109,8 @@ export function PasswordModal({
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
+                aria-label="Mot de passe du transfert"
+                autoComplete="current-password"
                 placeholder="Mot de passe"
                 value={passwordInput}
                 onChange={(e) => {
@@ -123,10 +125,19 @@ export function PasswordModal({
               />
               <button
                 type="button"
+                aria-label={
+                  showPassword
+                    ? "Masquer le mot de passe"
+                    : "Afficher le mot de passe"
+                }
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? (
+                  <EyeOff size={18} aria-hidden="true" />
+                ) : (
+                  <Eye size={18} aria-hidden="true" />
+                )}
               </button>
             </div>
 

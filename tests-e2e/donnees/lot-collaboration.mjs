@@ -455,6 +455,44 @@ export const TRANSFERTS = {
     paymentReturnTokenConsumed: true,
     paymentReturnTokenExpiresAt: DANS(1),
   }),
+  // Jeton de retour de paiement VALIDE : renvoie le transfert une seule fois.
+  paiementValide: transfert(11, {
+    title: "Transfert payant (jeton valide)",
+    shareLink: "e2ecollabtransfertjetonvalide0000",
+    accessKey: "e2eclefjetonvalide00000000000000",
+    isPaymentRequired: true,
+    paymentAmount: 10,
+    paymentReturnToken: "e2eJetonRetourPaiementValide0000",
+    paymentReturnTokenConsumed: false,
+    paymentReturnTokenExpiresAt: DANS(1),
+  }),
+  // Protégé par mot de passe (empreinte quelconque : aucun mot de passe ne
+  // correspond, seul le refus sans jeton est éprouvé).
+  motDePasse: transfert(12, {
+    title: "Transfert protégé",
+    shareLink: "e2ecollabtransfertmotdepasse0000",
+    accessKey: "e2eclefmotdepasse000000000000000",
+    passwordProtected: true,
+    password: "$2a$10$e2eEmpreinteQuelconque0000000000000000000000000000000",
+  }),
+  // Filigrane : aperçu seulement, téléchargement bloqué.
+  filigrane: transfert(13, {
+    title: "Transfert filigrané",
+    shareLink: "e2ecollabtransfertfiligrane00000",
+    accessKey: "e2eclefligrane0000000000000000000",
+    hasWatermark: true,
+  }),
+  // Payant, d'un compte qui a un Stripe Connect opérationnel (« Factures ») :
+  // sans contrôle de la clé, la session de paiement poserait un jeton de
+  // retour avant d'appeler Stripe (coupé en CI).
+  paiementStripe: transfert(14, {
+    organisation: "factures",
+    title: "Transfert payant (Stripe connecté)",
+    shareLink: "e2ecollabtransfertstripe00000000",
+    accessKey: "e2eclefstripe0000000000000000000",
+    isPaymentRequired: true,
+    paymentAmount: 10,
+  }),
 };
 
 /* ------------------------------------------------------------------ */
@@ -517,6 +555,11 @@ export const DOSSIERS = {
   // Dossier actif (non corbeille) pour éprouver permanentlyDeleteFolders.
   suppressionDefinitive: dossier(5, "Dossier actif à supprimer définitivement"),
   intrus: dossier(6, "Dossier de l'intrus", { organisation: "intrus" }),
+  // Arborescence pour le refus des cycles (A contient B).
+  cycleA: dossier(11, "Dossier parent A"),
+  cycleB: dossier(12, "Sous-dossier B", { parentId: oid("dossierPartage", 11) }),
+  // Dossier privé réservé à son créateur (le propriétaire de Collab).
+  prive: dossier(13, "RH privé", { visibility: "private", allowedUserIds: [] }),
 };
 
 export const DOCUMENTS = {

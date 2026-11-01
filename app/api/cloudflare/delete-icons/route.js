@@ -23,6 +23,18 @@ async function handler(request) {
     );
   }
 
+  // Identifiant de signature repris dans le préfixe listé puis supprimé :
+  // lettres, chiffres, « - » et « _ » seulement (ni « / », ni « .. »)
+  if (
+    typeof signatureId !== "string" ||
+    !/^[a-zA-Z0-9_-]{1,128}$/.test(signatureId)
+  ) {
+    return NextResponse.json(
+      { success: false, message: "Identifiant de signature invalide" },
+      { status: 400 },
+    );
+  }
+
   // Vérifier que l'utilisateur peut modifier cette signature
   if (session.user.id !== userId) {
     return NextResponse.json(
