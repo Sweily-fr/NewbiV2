@@ -115,6 +115,21 @@ describe("/api/admin-service/managed-clients", () => {
     expect(state.created).toHaveLength(0);
   });
 
+  it("jeton configuré de moins de 32 caractères : route fermée, même avec ce jeton", async () => {
+    process.env.ADMIN_SERVICE_TOKEN = "court-0123456789";
+    expect((await adminCall({ token: "court-0123456789" })).status).toBe(503);
+    expect(state.created).toHaveLength(0);
+    expect(state.audit).toHaveLength(0);
+  });
+
+  it("adresse de l'admin mal formée : refusée, rien de journalisé", async () => {
+    for (const admin of ["pas-une-adresse", "a b@newbi.fr", " "]) {
+      expect((await adminCall({ admin })).status).toBe(400);
+    }
+    expect(state.created).toHaveLength(0);
+    expect(state.audit).toHaveLength(0);
+  });
+
   it("crée le client pour le gestionnaire désigné et journalise l'admin", async () => {
     const res = await adminCall();
     expect(res.status).toBe(201);

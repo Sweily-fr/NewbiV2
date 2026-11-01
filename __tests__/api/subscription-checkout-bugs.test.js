@@ -48,6 +48,8 @@ vi.mock("stripe", () => {
   return { default: Stripe };
 });
 
+vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()) }));
+
 vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: { collection: (name) => m.db.collection(name) },
 }));
@@ -375,5 +377,104 @@ describe("POST /api/change-subscription-plan : verrou", () => {
     expect(res.status).toBe(409);
     expect(lockState()._lock).toBe(true);
     expect(lockState()._lockId).toBe("verrou-de-l-autre-requete");
+  });
+});
+
+describe("POST /api/create-org-subscription : SIRET d'un autre espace", () => {
+  const otherOrgId = new ObjectId("507f1f77bcf86cd799439099");
+
+  beforeEach(() => {
+    m.customersCreate.mockImplementation(async () => ({ id: "cus_1" }));
+    m.checkoutCreate.mockImplementation(async () => ({
+      id: "cs_1",
+      url: "https://checkout.stripe.com/c/cs_1",
+      metadata: {},
+    }));
+    m.getSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr", stripeCustomerId: "cus_1" },
+      session: {},
+    });
+  });
+
+  const call = async (siret) => {
+    const { POST } = await import("@/app/api/create-org-subscription/route.js");
+    return POST(
+      new Request("http://localhost/api/create-org-subscription", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          organizationData: { type: "new", name: "Nouvel espace", siret },
+        }),
+      }),
+    );
+  };
+
+  it("SIRET porté par un espace dont l'utilisateur n'est pas membre : refus 409 avant tout paiement", async () => {
+    m.db = fakeDb({
+      user: [{ _id: new ObjectId(userId), email: "u@x.fr" }],
+      organization: [{ _id: otherOrgId, siret: "12345678900011" }],
+      member: [],
+    });
+    const res = await call("12345678900011");
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatch(
+      /déjà utilisé par un autre espace/,
+    );
+    expect(m.checkoutCreate).not.toHaveBeenCalled();
+  });
+
+  it("SIRET d'un espace dont il est membre : paiement proposé", async () => {
+    m.db = fakeDb({
+      user: [{ _id: new ObjectId(userId), email: "u@x.fr" }],
+      organization: [{ _id: otherOrgId, siret: "12345678900011" }],
+      member: [
+        {
+          userId: new ObjectId(userId),
+          organizationId: otherOrgId,
+          role: "owner",
+        },
+      ],
+    });
+    const res = await call("12345678900011");
+    expect(res.status).toBe(200);
+    expect(m.checkoutCreate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Identifiant d'espace mal formé : 400 au lieu d'une erreur serveur", () => {
+  beforeEach(() => {
+    m.getSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr" },
+      session: {},
+    });
+    m.db = fakeDb({ user: [{ _id: new ObjectId(userId), email: "u@x.fr" }] });
+  });
+
+  const ROUTES = {
+    "change-subscription-plan": () =>
+      import("@/app/api/change-subscription-plan/route.js"),
+    "preview-plan-change": () =>
+      import("@/app/api/preview-plan-change/route.js"),
+    "billing/sync-seats": () => import("@/app/api/billing/sync-seats/route.js"),
+  };
+
+  it.each([
+    ["change-subscription-plan", { newPlan: "entreprise", isAnnual: false }],
+    ["preview-plan-change", { newPlan: "entreprise", isAnnual: false }],
+    ["billing/sync-seats", {}],
+  ])("%s", async (route, corps) => {
+    const { POST } = await ROUTES[route]();
+    for (const organizationId of ["pas-un-id", { $ne: null }]) {
+      const res = await POST(
+        new Request(`http://localhost/api/${route}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...corps, organizationId }),
+        }),
+      );
+      expect(res.status).toBe(400);
+    }
+    expect(m.subscriptionsRetrieve).not.toHaveBeenCalled();
+    expect(m.subscriptionsUpdate).not.toHaveBeenCalled();
   });
 });

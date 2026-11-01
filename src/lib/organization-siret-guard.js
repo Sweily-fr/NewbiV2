@@ -5,6 +5,39 @@ import {
   SIRET_VERIFICATION_ERRORS,
 } from "./siret-verification.js";
 
+export const SIRET_TAKEN_MESSAGE =
+  "Ce numéro SIRET est déjà utilisé par un autre espace Newbi. Demandez une invitation à son administrateur.";
+
+/**
+ * Un SIRET appartient à un seul espace, sauf aux espaces dont l'utilisateur
+ * est déjà membre (même règle que /api/check-siret à l'inscription) : vrai
+ * quand un autre espace, dont il n'est pas membre, porte déjà ce SIRET.
+ * `excludeOrganizationId` : l'espace en cours de configuration.
+ */
+export async function isSiretTakenByAnotherWorkspace({
+  mongoDb,
+  siret,
+  userId,
+  excludeOrganizationId = null,
+}) {
+  const normalized = String(siret || "").replace(/\s/g, "");
+  if (!normalized) return false;
+  const filter = { siret: normalized };
+  if (excludeOrganizationId) {
+    filter._id = { $ne: new ObjectId(String(excludeOrganizationId)) };
+  }
+  const others = await mongoDb
+    .collection("organization")
+    .find(filter, { projection: { _id: 1 } })
+    .toArray();
+  if (others.length === 0) return false;
+  const membership = await mongoDb.collection("member").findOne({
+    userId: new ObjectId(String(userId)),
+    organizationId: { $in: others.map((o) => o._id) },
+  });
+  return !membership;
+}
+
 /**
  * Contrôle serveur d'un SIRET modifié dans les paramètres de l'espace.
  *
@@ -53,28 +86,15 @@ export async function checkOrganizationSiretUpdate({
     return { ok: true, data: { siret: "", siretVerifiedAt: null } };
   }
 
-  // Un SIRET appartient à un seul espace, sauf aux espaces dont l'utilisateur
-  // est déjà membre (même règle que /api/check-siret à l'inscription).
-  const otherOrganizations = await mongoDb
-    .collection("organization")
-    .find(
-      { siret: normalized, _id: { $ne: orgObjectId } },
-      { projection: { _id: 1 } },
-    )
-    .toArray();
-
-  if (otherOrganizations.length > 0) {
-    const membership = await mongoDb.collection("member").findOne({
-      userId: new ObjectId(String(userId)),
-      organizationId: { $in: otherOrganizations.map((o) => o._id) },
-    });
-    if (!membership) {
-      return {
-        ok: false,
-        message:
-          "Ce numéro SIRET est déjà utilisé par un autre espace Newbi. Demandez une invitation à son administrateur.",
-      };
-    }
+  if (
+    await isSiretTakenByAnotherWorkspace({
+      mongoDb,
+      siret: normalized,
+      userId,
+      excludeOrganizationId: orgObjectId,
+    })
+  ) {
+    return { ok: false, message: SIRET_TAKEN_MESSAGE };
   }
 
   const verification = await verifySiret(normalized);

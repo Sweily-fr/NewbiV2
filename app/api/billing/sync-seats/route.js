@@ -25,6 +25,17 @@ async function postHandler(request) {
     return Response.json({ error: "organizationId requis" }, { status: 400 });
   }
 
+  // Identifiant d'espace mal formé : refusé (il faisait échouer la route)
+  if (
+    typeof organizationId !== "string" ||
+    !/^[a-f\d]{24}$/i.test(organizationId)
+  ) {
+    return Response.json(
+      { error: "Identifiant d'espace invalide" },
+      { status: 400 },
+    );
+  }
+
   console.log(
     `🔄 Demande de synchronisation sièges pour organisation ${organizationId}`,
   );

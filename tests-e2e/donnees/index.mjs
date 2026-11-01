@@ -21,6 +21,7 @@ import { donneesReseauxSociaux } from "./lot-reseaux-sociaux.mjs";
 import { donneesEmailsEnvoyes } from "./lot-emails-envoyes.mjs";
 import { donneesPilotage } from "./lot-pilotage.mjs";
 import { donneesClientsCatalogue } from "./lot-clients-catalogue.mjs";
+import { donneesCompteEspaces } from "./lot-compte-espaces.mjs";
 
 /** Rassemble les données de plusieurs fonctionnalités, collection par collection. */
 function fusionner(...sources) {
@@ -54,6 +55,7 @@ export async function semer(db) {
     donneesEmailsEnvoyes(),
     donneesPilotage(),
     donneesClientsCatalogue(),
+    donneesCompteEspaces(),
   );
   for (const [nom, docs] of Object.entries(collections)) {
     if (docs.length) await db.collection(nom).insertMany(docs);
