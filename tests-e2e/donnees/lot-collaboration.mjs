@@ -556,10 +556,10 @@ export const DOSSIERS = {
   suppressionDefinitive: dossier(5, "Dossier actif à supprimer définitivement"),
   intrus: dossier(6, "Dossier de l'intrus", { organisation: "intrus" }),
   // Arborescence pour le refus des cycles (A contient B).
-  cycleA: dossier(8, "Dossier parent A"),
-  cycleB: dossier(9, "Sous-dossier B", { parentId: oid("dossierPartage", 8) }),
+  cycleA: dossier(11, "Dossier parent A"),
+  cycleB: dossier(12, "Sous-dossier B", { parentId: oid("dossierPartage", 11) }),
   // Dossier privé réservé à son créateur (le propriétaire de Collab).
-  prive: dossier(10, "RH privé", { visibility: "private", allowedUserIds: [] }),
+  prive: dossier(13, "RH privé", { visibility: "private", allowedUserIds: [] }),
 };
 
 export const DOCUMENTS = {
