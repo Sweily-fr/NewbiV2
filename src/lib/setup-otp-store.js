@@ -38,36 +38,52 @@ export const setupOtpStore = {
   },
 
   async verify(userId, code) {
-    const entry = await mongoDb.collection(COLLECTION).findOne({ userId });
-    if (!entry) return false;
+    const collection = mongoDb.collection(COLLECTION);
+
+    // Un essai est réservé de façon atomique (compteur incrémenté avant la
+    // comparaison) : des vérifications envoyées en même temps ne lisent
+    // jamais le même compteur et ne dépassent pas la limite d'essais.
+    const entry = await collection.findOneAndUpdate(
+      {
+        userId,
+        $or: [
+          { attempts: { $lt: MAX_SETUP_OTP_ATTEMPTS } },
+          { attempts: { $exists: false } },
+        ],
+      },
+      { $inc: { attempts: 1 } },
+      { returnDocument: "after" },
+    );
+    if (!entry) {
+      // Aucun code, ou plus aucun essai : un code épuisé est invalidé
+      await collection.deleteOne({
+        userId,
+        attempts: { $gte: MAX_SETUP_OTP_ATTEMPTS },
+      });
+      return false;
+    }
 
     // Expiré → on supprime et on refuse
     if (entry.expiresAt < new Date()) {
-      await mongoDb.collection(COLLECTION).deleteOne({ userId });
+      await collection.deleteOne({ userId });
       return false;
     }
 
     // Comparaison tolérante aux espaces éventuels
     const expected = String(entry.otp).trim();
     const received = String(code).trim();
-    const isValid = expected === received;
 
     // Usage unique : on ne supprime l'entrée qu'en cas de succès,
     // pour laisser la possibilité de corriger une faute de frappe.
-    if (isValid) {
-      await mongoDb.collection(COLLECTION).deleteOne({ userId });
+    if (expected === received) {
+      await collection.deleteOne({ userId });
       return true;
     }
 
-    // Mauvais code : compté ; au-delà de la limite, le code est invalidé
-    // et l'utilisateur doit en demander un nouveau.
-    const attempts = (entry.attempts || 0) + 1;
-    if (attempts >= MAX_SETUP_OTP_ATTEMPTS) {
-      await mongoDb.collection(COLLECTION).deleteOne({ userId });
-    } else {
-      await mongoDb
-        .collection(COLLECTION)
-        .updateOne({ userId }, { $inc: { attempts: 1 } });
+    // Mauvais code : au-delà de la limite, le code est invalidé et
+    // l'utilisateur doit en demander un nouveau.
+    if (entry.attempts >= MAX_SETUP_OTP_ATTEMPTS) {
+      await collection.deleteOne({ userId });
     }
     return false;
   },
