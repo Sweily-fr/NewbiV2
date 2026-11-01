@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { withErrorHandler } from "@/src/lib/security";
+import { readSignatureIconsBody } from "@/src/lib/signature-icons-input";
 
 async function handler(request) {
   // Vérifier l'authentification
@@ -14,14 +15,9 @@ async function handler(request) {
     );
   }
 
-  const { userId, signatureId } = await request.json();
-
-  if (!userId || !signatureId) {
-    return NextResponse.json(
-      { success: false, message: "Paramètres manquants" },
-      { status: 400 },
-    );
-  }
+  const { body, error } = await readSignatureIconsBody(request);
+  if (error) return error;
+  const { userId, signatureId } = body;
 
   // Vérifier que l'utilisateur peut modifier cette signature
   if (session.user.id !== userId) {
