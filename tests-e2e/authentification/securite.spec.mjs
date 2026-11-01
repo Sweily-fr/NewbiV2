@@ -333,9 +333,10 @@ test.describe("Lien de connexion qui porte une invitation", () => {
 
 test.describe("Compte créé par un tiers avec l'adresse d'un autre", () => {
   test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 40\d|\/api\/auth\/token/ });
-  // Défaut connu : quelqu'un inscrit l'adresse d'une autre personne avec son
-  // propre mot de passe ; quand la vraie titulaire valide son adresse par le
-  // lien reçu, le mot de passe du tiers ouvre toujours le compte.
+  // Quelqu'un inscrit l'adresse d'une autre personne avec son propre mot de
+  // passe ; quand la vraie titulaire valide son adresse par le lien reçu
+  // (dans un autre navigateur), ce mot de passe est retiré et elle choisit
+  // le sien.
   test("Après la vérification de l'adresse, le mot de passe posé par le tiers n'ouvre plus le compte", async ({ page, browser }) => {
     const email = "victime-precree@e2e.test";
     const motDePasseTiers = "Tiers-Pose-2026!";
@@ -348,6 +349,10 @@ test.describe("Compte créé par un tiers avec l'adresse d'un autre", () => {
       const p = await contexte.newPage();
       await p.goto(`/api/auth/verify-email?token=${await signJWT({ email }, SECRET, 3600)}`);
       await expect.poll(async () => (await (await db()).collection("user").findOne({ email }))?.emailVerified).toBe(true);
+      await expect(p.getByRole("heading", { name: "Email vérifié, choisissez votre mot de passe" })).toBeVisible({ timeout: 30_000 });
+      await p.getByLabel("Mot de passe").fill("Titulaire-Choisi-2026!");
+      await p.getByRole("button", { name: "Enregistrer le mot de passe" }).click();
+      await expect.poll(async () => (await (await db()).collection("user").findOne({ email }))?.passwordSetupRequired ?? null, { timeout: 15_000 }).toBeNull();
       await contexte.close();
     });
 
@@ -357,6 +362,8 @@ test.describe("Compte créé par un tiers avec l'adresse d'un autre", () => {
       await surLeSite(tiers);
       const r = await connexionApi(tiers, email, motDePasseTiers);
       expect(r.statut, "Le mot de passe posé avant la preuve de l'adresse ouvre toujours le compte").toBeGreaterThanOrEqual(400);
+      const titulaire = await connexionApi(tiers, email, "Titulaire-Choisi-2026!");
+      expect(titulaire.statut, "Le mot de passe choisi par la titulaire n'ouvre pas le compte").toBe(200);
     } finally {
       await contexteTiers.close();
     }

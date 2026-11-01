@@ -21,7 +21,11 @@ function VerifyEmailContent() {
       const error = searchParams.get("error");
       const verified = searchParams.get("verified");
 
-      console.log("🔍 [VERIFY PAGE] Params:", { token: !!token, error, verified });
+      console.log("🔍 [VERIFY PAGE] Params:", {
+        token: !!token,
+        error,
+        verified,
+      });
 
       if (error) {
         setVerificationStatus("error");
@@ -39,8 +43,10 @@ function VerifyEmailContent() {
 
       // ✅ Si verified=true, la vérification a déjà été faite par notre route
       if (verified === "true") {
-        console.log("✅ [VERIFY PAGE] Vérification déjà effectuée, vérification session...");
-        
+        console.log(
+          "✅ [VERIFY PAGE] Vérification déjà effectuée, vérification session...",
+        );
+
         try {
           // Vérifier que l'utilisateur est bien connecté
           const sessionResponse = await fetch("/api/auth/get-session", {
@@ -50,73 +56,93 @@ function VerifyEmailContent() {
           if (sessionResponse.ok) {
             const sessionData = await sessionResponse.json();
             console.log("📊 [VERIFY PAGE] Session:", sessionData ? "✅" : "❌");
-            
-            if (sessionData && sessionData.user) {
+
+            if (
+              sessionData &&
+              sessionData.user &&
+              searchParams.get("motdepasse") === "choisir"
+            ) {
+              // Lien ouvert dans un autre navigateur que l'inscription : le
+              // mot de passe d'avant la preuve a été retiré, la titulaire
+              // choisit le sien.
+              setVerificationStatus("password");
+            } else if (sessionData && sessionData.user) {
               // ✅ Utilisateur connecté après vérification
               setVerificationStatus("success");
               setMessage("Votre email a été vérifié avec succès !");
               toast.success(
-                "Email vérifié avec succès ! Redirection vers votre espace..."
+                "Email vérifié avec succès ! Redirection vers votre espace...",
               );
 
-          setTimeout(() => {
-            const duration = 3000;
-            const animationEnd = Date.now() + duration;
-            const defaults = {
-              startVelocity: 30,
-              spread: 360,
-              ticks: 60,
-              zIndex: 0,
-            };
+              setTimeout(() => {
+                const duration = 3000;
+                const animationEnd = Date.now() + duration;
+                const defaults = {
+                  startVelocity: 30,
+                  spread: 360,
+                  ticks: 60,
+                  zIndex: 0,
+                };
 
-            const randomInRange = (min, max) =>
-              Math.random() * (max - min) + min;
+                const randomInRange = (min, max) =>
+                  Math.random() * (max - min) + min;
 
-            const interval = setInterval(() => {
-              const timeLeft = animationEnd - Date.now();
+                const interval = setInterval(() => {
+                  const timeLeft = animationEnd - Date.now();
 
-              if (timeLeft <= 0) {
-                return clearInterval(interval);
-              }
+                  if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                  }
 
-              const particleCount = 50 * (timeLeft / duration);
+                  const particleCount = 50 * (timeLeft / duration);
 
-              confettiRef.current?.fire({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-              });
+                  confettiRef.current?.fire({
+                    ...defaults,
+                    particleCount,
+                    origin: {
+                      x: randomInRange(0.1, 0.3),
+                      y: Math.random() - 0.2,
+                    },
+                  });
 
-              confettiRef.current?.fire({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-              });
-            }, 250);
-          }, 300);
+                  confettiRef.current?.fire({
+                    ...defaults,
+                    particleCount,
+                    origin: {
+                      x: randomInRange(0.7, 0.9),
+                      y: Math.random() - 0.2,
+                    },
+                  });
+                }, 250);
+              }, 300);
 
-            // Redirection vers le dashboard (ou vers l'app sur téléphone)
-            setTimeout(() => {
-              window.location.href = isPhone() ? APP_DEEP_LINK : "/dashboard";
-            }, isPhone() ? 1500 : 3000);
+              // Redirection vers le dashboard (ou vers l'app sur téléphone)
+              setTimeout(
+                () => {
+                  window.location.href = isPhone()
+                    ? APP_DEEP_LINK
+                    : "/dashboard";
+                },
+                isPhone() ? 1500 : 3000,
+              );
+            } else {
+              // ❌ Pas de session = autoSignInAfterVerification n'a pas fonctionné
+              setVerificationStatus("error");
+              setMessage("Email vérifié, veuillez vous connecter");
+              toast.info("Email vérifié ! Connectez-vous pour continuer.");
+              setTimeout(() => {
+                if (isPhone()) {
+                  window.location.href = APP_DEEP_LINK;
+                } else {
+                  router.push("/auth/login?verified=true");
+                }
+              }, 2000);
+            }
           } else {
-            // ❌ Pas de session = autoSignInAfterVerification n'a pas fonctionné
             setVerificationStatus("error");
-            setMessage("Email vérifié, veuillez vous connecter");
-            toast.info("Email vérifié ! Connectez-vous pour continuer.");
-            setTimeout(() => {
-              if (isPhone()) {
-                window.location.href = APP_DEEP_LINK;
-              } else {
-                router.push("/auth/login?verified=true");
-              }
-            }, 2000);
+            setMessage("Erreur lors de la vérification");
+            toast.error("Erreur lors de la vérification");
           }
-        } else {
-          setVerificationStatus("error");
-          setMessage("Erreur lors de la vérification");
-          toast.error("Erreur lors de la vérification");
-        }
         } catch (error) {
           console.error("❌ [VERIFY PAGE] Erreur vérification session:", error);
           setVerificationStatus("error");
@@ -205,6 +231,15 @@ function VerifyEmailContent() {
           </div>
         )}
 
+        {/* Mot de passe à choisir après la preuve de l'adresse */}
+        {verificationStatus === "password" && (
+          <ChoosePasswordForm
+            onDone={() => {
+              window.location.href = isPhone() ? APP_DEEP_LINK : "/dashboard";
+            }}
+          />
+        )}
+
         {/* Error State */}
         {verificationStatus === "error" && (
           <div className="flex flex-col items-center text-center space-y-4">
@@ -239,6 +274,92 @@ function VerifyEmailContent() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ChoosePasswordForm({ onDone }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    try {
+      const response = await fetch("/api/account/choose-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error || "Impossible d'enregistrer le mot de passe");
+        return;
+      }
+      toast.success("Mot de passe enregistré");
+      onDone();
+    } catch {
+      setError("Impossible d'enregistrer le mot de passe");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      className="flex flex-col items-center text-center space-y-4"
+    >
+      <div className="bg-[#5a50ff] p-3 rounded-lg">
+        <CheckCircle className="h-5 w-5 text-white" />
+      </div>
+      <div className="space-y-2">
+        <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+          Email vérifié, choisissez votre mot de passe
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Ce compte a été créé depuis un autre navigateur. Par sécurité, le mot
+          de passe choisi à l'inscription a été retiré. Si c'est vous qui vous
+          êtes inscrit, vous pouvez saisir le même.
+        </p>
+      </div>
+      <div className="w-full space-y-1 text-left">
+        <label
+          htmlFor="nouveau-mot-de-passe"
+          className="text-sm font-medium text-gray-900 dark:text-white"
+        >
+          Mot de passe
+        </label>
+        <input
+          id="nouveau-mot-de-passe"
+          type="password"
+          autoComplete="new-password"
+          minLength={8}
+          maxLength={128}
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent px-3 text-sm"
+        />
+        {error && <p className="text-sm text-red-500">{error}</p>}
+      </div>
+      <Button
+        type="submit"
+        disabled={saving}
+        className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal h-10 rounded-lg"
+      >
+        {saving ? "Enregistrement..." : "Enregistrer le mot de passe"}
+      </Button>
+      <button
+        type="button"
+        onClick={onDone}
+        className="text-sm text-gray-500 underline"
+      >
+        Plus tard
+      </button>
+    </form>
   );
 }
 
