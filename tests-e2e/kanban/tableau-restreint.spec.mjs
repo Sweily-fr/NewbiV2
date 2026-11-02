@@ -7,9 +7,8 @@
  * invités). Réponse « introuvable », aucune donnée du tableau, base
  * inchangée.
  *
- * Défaut connu : seules les requêtes `boards` et `board` appliquent la liste
- * (newbi-api src/resolvers/kanban.js) ; les autres opérations ne filtrent
- * que sur l'espace. Ces tests restent rouges jusqu'à la correction.
+ * La liste est appliquée par toutes ces opérations (newbi-api
+ * src/services/kanbanBoardAccess.js), pas seulement par `boards` et `board`.
  * Contrôles : le propriétaire, l'Éditeur listé et l'Administrateur y ont
  * accès.
  */
@@ -77,7 +76,7 @@ const ECRITURES = [
   },
 ];
 
-test.describe("Kanban : un Éditeur absent de la liste d'un tableau restreint n'y a pas accès (défaut connu)", () => {
+test.describe("Kanban : un Éditeur absent de la liste d'un tableau restreint n'y a pas accès", () => {
   test.use({ storageState: connecte(MEMBRES_KANBAN.editeurHors.token) });
   test.beforeEach(async ({ page }) => ouvrir(page, "/dashboard"));
 

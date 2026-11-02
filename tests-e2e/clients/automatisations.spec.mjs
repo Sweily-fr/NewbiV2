@@ -18,7 +18,7 @@ const notification = (page, texte) => page.locator("[data-sonner-toast]").filter
 
 async function ouvrirAutomatisations(page) {
   await ouvrir(page, "/dashboard/clients", { pret: page.getByRole("button", { name: "Nouveau contact" }) });
-  await page.locator("main button:has(svg.lucide-zap)").first().click();
+  await page.getByRole("button", { name: "Automatisations", exact: true }).click();
   // Panneau sans nom accessible (titre non relié) : repéré par son titre visible.
   const panneau = page.getByRole("dialog").filter({ has: page.getByText("Automatisations", { exact: true }) });
   await expect(panneau).toBeVisible();
@@ -136,8 +136,26 @@ test.describe("Automatisations d'e-mails", () => {
     await panneau.getByPlaceholder("Bonjour {clientName},...").fill("Bonjour, toute l'équipe vous souhaite un bon anniversaire.");
     await panneau.getByRole("button", { name: /^(Créer|Enregistrer)$/ }).last().click();
     await expect
-      .poll(async () => (await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG }))?.email?.subject ?? null)
+      .poll(async () => (await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG, "email.subject": "Joyeux anniversaire de la part de l'équipe" }))?.email?.subject ?? null)
       .toBe("Joyeux anniversaire de la part de l'équipe");
+    // Champ « Date d'anniversaire » : relancée chaque année, option proposée d'office
+    const enregistree = await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG, "email.subject": "Joyeux anniversaire de la part de l'équipe" });
+    expect(enregistree.timing.repeatYearly).toBe(true);
+  });
+
+  test("Option « Chaque année » coupée à la main : relance unique enregistrée", async ({ page }) => {
+    const panneau = await nouvelleRelance(page);
+    await panneau.getByRole("combobox").filter({ hasText: "Sélectionner un champ date..." }).click();
+    await page.getByRole("option", { name: CHAMPS_REGLAGES.anniversaire.name }).click();
+    const annuelle = panneau.getByRole("switch", { name: "Chaque année" });
+    await expect(annuelle).toHaveAttribute("aria-checked", "true");
+    await annuelle.click();
+    await panneau.getByPlaceholder("Ex: Rappel - {customFieldName}").fill("Relance unique");
+    await panneau.getByPlaceholder("Bonjour {clientName},...").fill("Bonjour.");
+    await panneau.getByRole("button", { name: /^(Créer|Enregistrer)$/ }).last().click();
+    await expect
+      .poll(async () => (await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG, "email.subject": "Relance unique" }))?.timing?.repeatYearly ?? null)
+      .toBe(false);
   });
 
   for (const [manque, message] of [
@@ -159,4 +177,20 @@ test.describe("Automatisations d'e-mails", () => {
       expect(await (await base()).collection("crmemailautomations").countDocuments({ workspaceId: ORG })).toBe(avant);
     });
   }
+});
+
+test.describe("Automatisations : accessibilité", () => {
+  // Le bouton n'existe que sur la mise en page large (à partir de 768 px) :
+  // fenêtre la plus étroite où il est proposé.
+  test("bouton nommé « Automatisations », panneau sans défilement horizontal à 768 px", async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 900 });
+    const panneau = await ouvrirAutomatisations(page);
+    const { gauche, droite } = await panneau.evaluate((e) => {
+      const r = e.getBoundingClientRect();
+      return { gauche: r.left, droite: r.right };
+    });
+    expect(gauche).toBeGreaterThanOrEqual(0);
+    expect(droite).toBeLessThanOrEqual(768);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(768);
+  });
 });

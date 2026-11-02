@@ -15,9 +15,12 @@ const BASE_ORIGINS = [
   "https://newbi.fr",
   "https://www.newbi.fr",
   "https://newbi-v2.vercel.app",
-  "http://localhost:3000",
   "newbi://",
 ];
+
+// Site lancé sur le poste (développement, tests de bout en bout) : jamais
+// une origine de confiance du site de production
+const LOCAL_ORIGIN = "http://localhost:3000";
 
 const LOCAL_IP_ORIGIN =
   /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
@@ -41,6 +44,7 @@ export function isAcceptedExpoOrigin(value, env = process.env) {
 export function buildTrustedOrigins(request, env = process.env) {
   const origins = [
     ...BASE_ORIGINS,
+    ...(isProductionDeployment(env) ? [] : [LOCAL_ORIGIN]),
     ...mobileSchemes(env).filter((s) => !BASE_ORIGINS.includes(s)),
     ...(env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
       .map((o) => o.trim())

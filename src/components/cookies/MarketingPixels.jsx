@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
+import { isSecretLocation } from "@/src/lib/secret-pages";
 
 function getConsent() {
   try {
@@ -45,6 +46,15 @@ export default function MarketingPixels() {
     ? "lazyOnload"
     : "afterInteractive";
   const [hasConsent, setHasConsent] = useState(false);
+  // Page dont l'adresse porte un secret : aucune balise (secret-pages.js).
+  // Inconnu au premier rendu : rien n'est chargé avant de le savoir.
+  const [onSecretPage, setOnSecretPage] = useState(true);
+
+  useEffect(() => {
+    setOnSecretPage(
+      isSecretLocation(window.location.pathname, window.location.search),
+    );
+  }, [pathname]);
 
   useEffect(() => {
     // Check initial consent
@@ -74,7 +84,7 @@ export default function MarketingPixels() {
     };
   }, []);
 
-  if (!hasConsent) return null;
+  if (!hasConsent || onSecretPage) return null;
 
   return (
     <>

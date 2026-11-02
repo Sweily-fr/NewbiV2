@@ -4,15 +4,24 @@
  * du site après le paiement (/pay/invoice/[id]/success et /cancel), ouvertes
  * par le client de la facture, sans compte Newbi. Stripe est injoignable en
  * test : le passage par Stripe n'est pas couvert.
+ *
+ * Le lien porte un jeton signé par l'API (?t=) : sans lui, une facture créée
+ * depuis la mise en service des liens signés répond comme une inconnue.
  */
+import { createHmac } from "node:crypto";
 import { test, expect } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { API_URL, BASE_URL } from "../config.mjs";
+import { API_URL, BASE_URL, SECRET } from "../config.mjs";
 import { F, F_OFFRE } from "../donnees/lot-factures.mjs";
 
 test.use({ storageState: { cookies: [], origins: [] } });
 const id = (doc) => doc._id.toHexString();
-const lien = (doc) => `${API_URL}/pay/invoice/${typeof doc === "string" ? doc : id(doc)}`;
+const jeton = (identifiant) => createHmac("sha256", SECRET).update(`invoice-payment:v1:${identifiant}`).digest("base64url").slice(0, 32);
+const lienNu = (doc) => `${API_URL}/pay/invoice/${typeof doc === "string" ? doc : id(doc)}`;
+const lien = (doc) => {
+  const identifiant = typeof doc === "string" ? doc : id(doc);
+  return `${lienNu(identifiant)}?t=${jeton(identifiant)}`;
+};
 
 test.describe("Paiement en ligne : pages publiques", () => {
   test("Paiement reçu : page de remerciement, sans compte", async ({ page }) => {
@@ -23,9 +32,14 @@ test.describe("Paiement en ligne : pages publiques", () => {
   });
 
   test("Paiement annulé : message et lien pour réessayer vers le lien de paiement de la facture", async ({ page }) => {
-    await ouvrir(page, `/pay/invoice/${id(F.attente)}/cancel`);
+    await ouvrir(page, `/pay/invoice/${id(F.attente)}/cancel?t=${jeton(id(F.attente))}`);
     await expect(page.getByRole("heading", { name: "Paiement annulé" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Réessayer le paiement" })).toHaveAttribute("href", lien(F.attente));
+  });
+
+  test("Paiement annulé : un jeton mal formé n'est pas repris dans le lien", async ({ page }) => {
+    await ouvrir(page, `/pay/invoice/${id(F.attente)}/cancel?t=${encodeURIComponent('"><b>x')}`);
+    await expect(page.getByRole("link", { name: "Réessayer le paiement" })).toHaveAttribute("href", lienNu(F.attente));
   });
 
   test("Paiement annulé : un identifiant piégé dans l'adresse ne s'exécute pas et le lien reste sur l'API", async ({ page }) => {
@@ -65,6 +79,19 @@ test.describe("Paiement en ligne : lien de paiement de l'API", () => {
     expect(r.status()).toBe(409);
     expect(await r.text()).toContain("Paiement en ligne indisponible");
   });
+
+  for (const [cas, url] of [
+    ["sans jeton", () => lienNu(F.attente)],
+    ["jeton d'une autre facture", () => `${lienNu(F.attente)}?t=${jeton(id(F.payee))}`],
+  ]) {
+    test(`Lien ${cas} : « Facture introuvable » (404), rien sur la facture`, async ({ page }) => {
+      const r = await page.request.get(url(), sansSuivre);
+      expect(r.status()).toBe(404);
+      const texte = await r.text();
+      expect(texte).toContain("Facture introuvable");
+      expect(texte).not.toContain(F.attente.client.name);
+    });
+  }
 
   test("Facture inconnue : « Facture introuvable » (404)", async ({ page }) => {
     const r = await page.request.get(lien("e2e4b0000000000000000999"), sansSuivre);

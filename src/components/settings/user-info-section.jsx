@@ -248,8 +248,8 @@ export default function UserInfoSection({ onTabChange }) {
                 Désactiver mon compte
               </h4>
               <p className="text-xs text-gray-400">
-                Vous désactiverez définitivement le compte ainsi que l'accès à
-                tous les espaces de travail. Vos données seront conservées.
+                Vous suspendrez le compte ainsi que l'accès à tous les espaces
+                de travail. Vos données seront conservées.
               </p>
             </div>
             <Button

@@ -244,6 +244,11 @@ test.describe("Vérification de l'e-mail et pages d'information", () => {
     await page.goto(`/api/auth/verify-email?token=${jeton}`);
     await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 30_000 });
     expect(page.url(), "La vérification a échoué").not.toMatch(/error=/);
+    // Ouvert sans la session de l'inscription : le titulaire confirme avec
+    // le mot de passe choisi à l'inscription
+    await page.getByRole("button", { name: "J'ai créé ce compte" }).click();
+    await page.getByLabel("Mot de passe de l'inscription").fill(MOT_DE_PASSE);
+    await page.getByRole("button", { name: "Confirmer mon adresse" }).click();
     await expect.poll(async () => (await (await db()).collection("user").findOne({ _id: compte.utilisateur._id }))?.emailVerified).toBe(true);
   });
 

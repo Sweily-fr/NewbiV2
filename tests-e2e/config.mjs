@@ -31,6 +31,8 @@ export const BASE_DE_DONNEES = "newbi-e2e";
 export const FICHIER_ETAT = path.resolve(`tests-e2e/.serveur${SUFFIXE}.json`);
 export const SECRET = "e2e-secret-local-uniquement-jamais-en-prod-0123456789";
 export const SECRET_INTERNE = "e2e-secret-interne-local-uniquement";
+/** Secret du webhook Resend de l'API de test (format Svix : whsec_ + base64). */
+export const SECRET_WEBHOOK_RESEND = `whsec_${Buffer.from("e2e-webhook-resend-local-uniquement").toString("base64")}`;
 export const SESSION_TOKEN = "e2eSessionTokenNewbiLocalUniquement";
 /** Session du compte de l'organisation « Liste » (factures pré-remplies). */
 export const SESSION_TOKEN_LISTE = "e2eSessionTokenNewbiListeUniquement";

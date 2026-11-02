@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const CRM_EMAIL_AUTOMATION_FRAGMENT = gql`
   fragment CrmEmailAutomationFragment on CrmEmailAutomation {
@@ -16,6 +16,7 @@ export const CRM_EMAIL_AUTOMATION_FRAGMENT = gql`
       type
       daysOffset
       sendHour
+      repeatYearly
     }
     email {
       fromName
@@ -54,8 +55,16 @@ export const GET_CRM_EMAIL_AUTOMATION = gql`
 `;
 
 export const GET_CRM_EMAIL_AUTOMATION_LOGS = gql`
-  query GetCrmEmailAutomationLogs($workspaceId: ID!, $automationId: ID, $limit: Int) {
-    crmEmailAutomationLogs(workspaceId: $workspaceId, automationId: $automationId, limit: $limit) {
+  query GetCrmEmailAutomationLogs(
+    $workspaceId: ID!
+    $automationId: ID
+    $limit: Int
+  ) {
+    crmEmailAutomationLogs(
+      workspaceId: $workspaceId
+      automationId: $automationId
+      limit: $limit
+    ) {
       id
       automationId
       clientId

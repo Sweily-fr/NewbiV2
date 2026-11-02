@@ -6,6 +6,7 @@ import {
   captureAttributionFromLocation,
   rememberLastPage,
 } from "@/src/lib/attribution";
+import { rememberPartnerCodeFromLocation } from "@/src/lib/partner-code";
 
 // Monté une fois dans le layout racine : lit la provenance de la visite
 // (gclid/UTM, site d'origine, page d'arrivée) et la persiste (voir
@@ -18,6 +19,8 @@ export default function AttributionCapture() {
   // Déclaré avant le suivi de page : au premier rendu, la capture doit créer
   // l'enregistrement avant que la dernière page y soit notée.
   useEffect(() => {
+    // Code partenaire (?partner=) gardé jusqu'à l'inscription
+    rememberPartnerCodeFromLocation();
     captureAttributionFromLocation();
     const onConsent = () => captureAttributionFromLocation();
     window.addEventListener("cookieConsentUpdated", onConsent);

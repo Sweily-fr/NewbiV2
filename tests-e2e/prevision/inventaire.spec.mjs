@@ -13,7 +13,7 @@ test.skip(process.env.E2E_INVENTAIRE !== "1", "Relevé des pages : E2E_INVENTAIR
 
 const fenetre = (p) => p.getByRole("dialog").last();
 const URL = "/dashboard/outils/prevision";
-const ouvrirPrevision = (p) => ouvrir(p, URL, { pret: p.getByRole("button", { name: "Ajouter une prévision" }).or(p.getByText(SAISIES.loyer.name).first()).first() });
+const ouvrirPrevision = (p) => ouvrir(p, URL, { pret: p.getByRole("button", { name: "Ajouter une prévision", exact: true }).or(p.getByText(SAISIES.loyer.name).first()).first() });
 
 for (const [role, token] of [["proprietaire", SESSION_TOKEN_ACHATS], ["editeur", SESSION_TOKEN_EDITEUR_ACHATS], ["lecteur", SESSION_TOKEN_LECTEUR_ACHATS]]) {
   test.describe(`Relevé de la prévision (${role})`, () => {
@@ -37,7 +37,7 @@ test.describe("Relevé de la prévision (propriétaire, autres états)", () => {
   });
   releverEtat("prevision-saisie", async (p) => {
     await ouvrirPrevision(p);
-    await p.getByRole("button", { name: "Ajouter une prévision" }).click();
+    await p.getByRole("button", { name: "Ajouter une prévision", exact: true }).click();
     await p.waitForTimeout(800);
   }, { zone: fenetre });
   releverEtat("prevision-nouveau-scenario", async (p) => {

@@ -171,7 +171,7 @@ function MentionDropdown({ members, query, onSelect, position }) {
   );
 }
 
-function NoteComposer({
+export function NoteComposer({
   onSubmit,
   disabled,
   initialContent = "",
@@ -406,6 +406,10 @@ function NoteComposer({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
+                    aria-label={item.tooltip}
+                    aria-pressed={
+                      item.command === "createLink" ? undefined : !!isActive
+                    }
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -413,7 +417,11 @@ function NoteComposer({
                     }}
                     className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
                   >
-                    <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    <item.icon
+                      className="h-3.5 w-3.5"
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -427,6 +435,7 @@ function NoteComposer({
           <TooltipTrigger asChild>
             <button
               type="button"
+              aria-label="Effacer la note"
               className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] hover:bg-red-50 hover:text-red-500 transition-colors"
               onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => {

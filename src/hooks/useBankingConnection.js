@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { goToBankConnect } from "@/src/lib/bank-connect-return";
 
 // Auth cookie-only : le cookie better-auth.session_token est envoyé
 // automatiquement via credentials: "include" sur les routes same-origin.
@@ -124,7 +125,7 @@ export function useBankingConnection(workspaceId) {
       if (response.ok) {
         const data = await response.json();
         // Rediriger vers la page de connexion de la banque
-        window.location.href = data.connectUrl;
+        goToBankConnect(data.connectUrl);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || "Erreur de connexion");
@@ -164,7 +165,7 @@ export function useBankingConnection(workspaceId) {
 
       if (response.ok) {
         const data = await response.json();
-        window.location.href = data.connectUrl;
+        goToBankConnect(data.connectUrl);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || "Erreur de reconnexion");

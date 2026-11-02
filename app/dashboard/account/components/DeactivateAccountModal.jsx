@@ -82,9 +82,10 @@ export function DeactivateAccountModal({ isOpen, onClose, userEmail }) {
             </div>
           </div>
           <DialogDescription className="text-sm text-muted-foreground mt-4">
-            Cette action est irréversible. Une fois votre compte désactivé, vous
-            perdrez l'accès à toutes vos données et ne pourrez plus vous
-            connecter.
+            Votre compte sera suspendu : vos sessions seront fermées et vous
+            n'aurez plus accès à vos espaces de travail. Vous pourrez le
+            réactiver en vous connectant : un lien de réactivation vous sera
+            envoyé par e-mail.
           </DialogDescription>
         </DialogHeader>
 
@@ -118,9 +119,9 @@ export function DeactivateAccountModal({ isOpen, onClose, userEmail }) {
                   Attention
                 </p>
                 <p className="text-red-700 dark:text-red-300">
-                  La désactivation de votre compte supprimera définitivement
-                  toutes vos données, projets, factures et paramètres. Cette
-                  action ne peut pas être annulée.
+                  Vos données, factures et paramètres sont conservés. La
+                  désactivation ne résilie pas votre abonnement : pensez à le
+                  résilier avant si vous ne souhaitez plus être prélevé.
                 </p>
               </div>
             </div>

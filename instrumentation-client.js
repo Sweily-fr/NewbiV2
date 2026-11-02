@@ -1,3 +1,5 @@
+import { isSecretLocation, isSecretUrl } from "@/src/lib/secret-pages";
+
 // posthog-js (~430 KB) est chargé dynamiquement à l'idle : il sort du chemin
 // critique de toutes les pages (notamment les pages marketing/SEO qui n'ont
 // aucun autre lien avec PostHog). L'event $pageview initial est capturé à
@@ -13,12 +15,24 @@ const forceEnable = process.env.NEXT_PUBLIC_POSTHOG_FORCE_ENABLE === "true";
 
 const posthogToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 
+// Pages dont l'adresse porte un secret (lien de transfert, tableau public,
+// paiement, invitation…) : PostHog n'y est pas chargé et n'en envoie rien
+// (src/lib/secret-pages.js).
+const isSecretPage = () =>
+  typeof window !== "undefined" &&
+  isSecretLocation(window.location.pathname, window.location.search);
+
 function setupPostHog(posthog) {
   posthog.init(posthogToken, {
     api_host: "/ingest",
     ui_host: "https://eu.posthog.com",
     defaults: "2026-01-30",
     capture_exceptions: true,
+    // Rien n'est envoyé depuis une page à secret (navigation interne)
+    before_send: (event) =>
+      isSecretUrl(event?.properties?.$current_url) || isSecretPage()
+        ? null
+        : event,
     debug: process.env.NODE_ENV === "development",
     // RGPD: pas de capture tant que l'user n'a pas donné son consentement
     // analytics dans le CookieManager. L'opt-in se fait via applyConsent() ci-dessous.
@@ -100,7 +114,7 @@ function hasAnalyticsConsent() {
   }
 }
 
-if (typeof window !== "undefined" && posthogToken) {
+if (typeof window !== "undefined" && posthogToken && !isSecretPage()) {
   let started = false;
   const load = () => {
     if (started) return;

@@ -431,10 +431,11 @@ function EmailAutomationRow({
   const getTimingLabel = () => {
     const timingType = automation.timing?.type;
     const timing = EMAIL_TIMING_TYPES.find((t) => t.value === timingType);
+    const yearly = automation.timing?.repeatYearly ? ", chaque année" : "";
     if (timingType === "ON_DATE") {
-      return timing?.label || "";
+      return `${timing?.label || ""}${yearly}`;
     }
-    return `${automation.timing?.daysOffset || 0}j ${timing?.label?.toLowerCase() || ""}`;
+    return `${automation.timing?.daysOffset || 0}j ${timing?.label?.toLowerCase() || ""}${yearly}`;
   };
 
   return (
@@ -493,7 +494,12 @@ function EmailAutomationRow({
   );
 }
 
-function EmailAutomationForm({
+/** Champ dont la date se fête chaque année (anniversaire, naissance). */
+export function isBirthdayFieldName(name) {
+  return /anniversaire|naissance|birthday/i.test(name || "");
+}
+
+export function EmailAutomationForm({
   dateFields,
   automation,
   onSubmit,
@@ -507,9 +513,13 @@ function EmailAutomationForm({
     timing: automation?.timing?.type || "ON_DATE",
     daysOffset: automation?.timing?.daysOffset || 1,
     sendHour: automation?.timing?.sendHour ?? 9,
+    repeatYearly: automation?.timing?.repeatYearly ?? false,
     subject: automation?.email?.subject || "",
     body: automation?.email?.body || "",
   });
+  // Un champ d'anniversaire propose la relance annuelle, tant que l'option
+  // n'a pas été choisie à la main (ou enregistrée)
+  const [yearlyTouched, setYearlyTouched] = useState(isEditing);
 
   const selectedField = dateFields.find(
     (f) => f.id === formData.triggerFieldId,
@@ -545,6 +555,7 @@ function EmailAutomationForm({
         type: formData.timing,
         daysOffset: formData.timing === "ON_DATE" ? 0 : formData.daysOffset,
         sendHour: formData.sendHour,
+        repeatYearly: Boolean(formData.repeatYearly),
       },
       email: {
         subject: formData.subject,
@@ -572,7 +583,15 @@ function EmailAutomationForm({
         <Select
           value={formData.triggerFieldId}
           onValueChange={(value) =>
-            setFormData({ ...formData, triggerFieldId: value })
+            setFormData((prev) => ({
+              ...prev,
+              triggerFieldId: value,
+              repeatYearly: yearlyTouched
+                ? prev.repeatYearly
+                : isBirthdayFieldName(
+                    dateFields.find((f) => f.id === value)?.name,
+                  ),
+            }))
           }
         >
           <SelectTrigger className="w-full">
@@ -652,6 +671,30 @@ function EmailAutomationForm({
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <label
+            htmlFor="crm-email-repeat-yearly"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Chaque année
+          </label>
+          <p className="text-[11px] text-muted-foreground">
+            Relance à la même date tous les ans, quelle que soit l'année saisie
+            (anniversaire). Sinon, une seule fois à la date exacte.
+          </p>
+        </div>
+        <Switch
+          id="crm-email-repeat-yearly"
+          checked={Boolean(formData.repeatYearly)}
+          onCheckedChange={(checked) => {
+            setYearlyTouched(true);
+            setFormData((prev) => ({ ...prev, repeatYearly: checked }));
+          }}
+          className="data-[state=checked]:bg-[#5b50ff]"
+        />
       </div>
 
       <div className="space-y-2">
@@ -851,8 +894,19 @@ export default function AutomationsPopover({ trigger }) {
       >
         <PopoverTrigger asChild>
           {trigger || (
-            <Button variant="outline" size="icon" className="relative">
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative"
+              aria-label="Automatisations"
+              title={
+                activeCount > 0
+                  ? `${activeCount} automatisation${activeCount > 1 ? "s" : ""} active${activeCount > 1 ? "s" : ""}`
+                  : undefined
+              }
+            >
               <Zap
+                aria-hidden="true"
                 className={activeCount > 0 ? "text-[#5b50ff]" : ""}
                 style={{ width: "14px", height: "14px" }}
               />
@@ -864,7 +918,10 @@ export default function AutomationsPopover({ trigger }) {
             </Button>
           )}
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[720px] p-0">
+        <PopoverContent
+          align="end"
+          className="w-[min(720px,calc(100vw-2rem))] p-0"
+        >
           {!canReadAutomations ? (
             /* Sans « Voir » : demande d'accès au super admin */
             <AccessDeniedPage

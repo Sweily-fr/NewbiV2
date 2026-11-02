@@ -153,7 +153,7 @@ test.describe("Factures : actions du menu de la ligne", () => {
     ).toBeVisible({ timeout: 5_000 });
     await copier.click();
     await expect(succes(page, "Lien de paiement copié")).toBeVisible();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${API_URL}/pay/invoice/${id(f)}`);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`^${API_URL}/pay/invoice/${id(f)}\\?t=[A-Za-z0-9_-]{32}$`));
   });
 
   test("Le menu d'une facture payée propose l'avoir, ni « Marquer comme payée » ni « Annuler »", async ({ page }) => {
