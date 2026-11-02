@@ -1,4 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/src/lib/auth-utils", () => ({ sendReactivationEmail: vi.fn() }));
 import { DISABLED_AUTH_PATHS } from "@/src/lib/auth-hooks";
 
 describe("Routes d'administration de Better Auth", () => {
