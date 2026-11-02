@@ -370,7 +370,7 @@ test.describe("Lien de vérification ouvert ailleurs que dans le navigateur de l
         await p.getByRole("button", { name: "J'ai créé ce compte" }).click();
         await p.getByLabel("Mot de passe de l'inscription").fill("Devine-Pas-2026!");
         await p.getByRole("button", { name: "Confirmer mon adresse" }).click();
-        await expect(p.getByRole("alert")).toContainText("Mot de passe incorrect");
+        await expect(p.getByRole("alert").filter({ hasText: "Mot de passe incorrect" })).toBeVisible();
         expect((await utilisateurParEmail(email))?.emailVerified).not.toBe(true);
         await p.getByRole("button", { name: "Retour" }).click();
       });
