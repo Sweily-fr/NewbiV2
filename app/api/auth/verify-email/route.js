@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyJWT } from "better-auth/crypto";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { revokeUnprovenPassword } from "@/src/lib/unproven-account";
+import { needsOwnershipChoice } from "@/src/lib/unproven-account";
 
 // ✅ Route personnalisée pour intercepter la vérification Better Auth
 // et rediriger vers notre page avec confettis
@@ -28,20 +28,25 @@ export async function GET(request) {
     // 2. Mettre à jour user.emailVerified = true
     // 3. Créer une session si autoSignInAfterVerification: true
     // 4. Définir les cookies
-    // Mot de passe posé avant la preuve de l'adresse : retiré si le lien
-    // est ouvert ailleurs que dans le navigateur de l'inscription (voir
-    // unproven-account.js). Avant la vérification, qui ouvre la session.
-    let passwordRevoked = false;
+    // Compte avec un mot de passe, lien ouvert ailleurs que dans le
+    // navigateur de l'inscription : l'adresse n'est pas encore vérifiée, la
+    // page demande qui ouvre le lien (voir unproven-account.js).
     const payload = await verifyJWT(token, process.env.BETTER_AUTH_SECRET);
     if (payload?.email && !payload.updateTo) {
       const current = await auth.api
         .getSession({ headers: request.headers })
         .catch(() => null);
-      ({ revoked: passwordRevoked } = await revokeUnprovenPassword({
+      const { required } = await needsOwnershipChoice({
         mongoDb,
         email: String(payload.email),
         currentUserId: current?.user?.id || null,
-      }));
+      });
+      if (required) {
+        const choicePageUrl = new URL("/auth/verify-email", request.url);
+        choicePageUrl.searchParams.set("token", token);
+        choicePageUrl.searchParams.set("choix", "1");
+        return NextResponse.redirect(choicePageUrl);
+      }
     }
 
     console.log("🔄 [VERIFY EMAIL ROUTE] Appel Better Auth verifyEmail...");
@@ -61,9 +66,6 @@ export async function GET(request) {
       const verifyPageUrl = new URL("/auth/verify-email", request.url);
       verifyPageUrl.searchParams.set("token", token);
       verifyPageUrl.searchParams.set("verified", "true");
-      if (passwordRevoked) {
-        verifyPageUrl.searchParams.set("motdepasse", "choisir");
-      }
 
       const response = NextResponse.redirect(verifyPageUrl);
 

@@ -41,6 +41,13 @@ function VerifyEmailContent() {
         return;
       }
 
+      // Lien ouvert ailleurs que dans le navigateur de l'inscription :
+      // l'adresse n'est pas encore vérifiée, la personne dit qui elle est
+      if (searchParams.get("choix") === "1") {
+        setVerificationStatus("choice");
+        return;
+      }
+
       // ✅ Si verified=true, la vérification a déjà été faite par notre route
       if (verified === "true") {
         console.log(
@@ -57,16 +64,7 @@ function VerifyEmailContent() {
             const sessionData = await sessionResponse.json();
             console.log("📊 [VERIFY PAGE] Session:", sessionData ? "✅" : "❌");
 
-            if (
-              sessionData &&
-              sessionData.user &&
-              searchParams.get("motdepasse") === "choisir"
-            ) {
-              // Lien ouvert dans un autre navigateur que l'inscription : le
-              // mot de passe d'avant la preuve a été retiré, la titulaire
-              // choisit le sien.
-              setVerificationStatus("password");
-            } else if (sessionData && sessionData.user) {
+            if (sessionData && sessionData.user) {
               // ✅ Utilisateur connecté après vérification
               setVerificationStatus("success");
               setMessage("Votre email a été vérifié avec succès !");
@@ -231,13 +229,9 @@ function VerifyEmailContent() {
           </div>
         )}
 
-        {/* Mot de passe à choisir après la preuve de l'adresse */}
-        {verificationStatus === "password" && (
-          <ChoosePasswordForm
-            onDone={() => {
-              window.location.href = isPhone() ? APP_DEEP_LINK : "/dashboard";
-            }}
-          />
+        {/* Lien ouvert ailleurs que dans le navigateur de l'inscription */}
+        {verificationStatus === "choice" && (
+          <OwnershipChoiceForm token={searchParams.get("token")} />
         )}
 
         {/* Error State */}
@@ -277,7 +271,9 @@ function VerifyEmailContent() {
   );
 }
 
-function ChoosePasswordForm({ onDone }) {
+function OwnershipChoiceForm({ token }) {
+  // « confirm » : j'ai créé ce compte ; « replace » : choisir un mot de passe
+  const [mode, setMode] = useState(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -287,77 +283,125 @@ function ChoosePasswordForm({ onDone }) {
     setError("");
     setSaving(true);
     try {
-      const response = await fetch("/api/account/choose-password", {
+      const response = await fetch("/api/account/verify-email-choice", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ token, action: mode, password }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(data.error || "Impossible d'enregistrer le mot de passe");
+        setError(data.error || "Vérification impossible");
         return;
       }
-      toast.success("Mot de passe enregistré");
-      onDone();
+      // Adresse vérifiée, session ouverte : page de confirmation habituelle
+      const next = new URL("/auth/verify-email", window.location.href);
+      next.searchParams.set("token", token || "");
+      next.searchParams.set("verified", "true");
+      window.location.href = next.toString();
     } catch {
-      setError("Impossible d'enregistrer le mot de passe");
+      setError("Vérification impossible");
     } finally {
       setSaving(false);
     }
   };
 
+  if (!mode) {
+    return (
+      <div className="flex flex-col items-center text-center space-y-4">
+        <div className="bg-[#5a50ff] p-3 rounded-lg">
+          <CheckCircle className="h-5 w-5 text-white" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+            Confirmez votre adresse e-mail
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Ce compte a été créé depuis un autre appareil ou navigateur. Pour
+            terminer, saisissez le mot de passe choisi à l'inscription, ou
+            choisissez-en un nouveau.
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => setMode("confirm")}
+          className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal h-10 rounded-lg"
+        >
+          J'ai créé ce compte
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setMode("replace")}
+          className="w-full font-normal h-10 rounded-lg"
+        >
+          Choisir un mot de passe
+        </Button>
+      </div>
+    );
+  }
+
+  const confirm = mode === "confirm";
   return (
     <form
       onSubmit={submit}
       className="flex flex-col items-center text-center space-y-4"
     >
-      <div className="bg-[#5a50ff] p-3 rounded-lg">
-        <CheckCircle className="h-5 w-5 text-white" />
-      </div>
       <div className="space-y-2">
         <h1 className="text-lg font-medium text-gray-900 dark:text-white">
-          Email vérifié, choisissez votre mot de passe
+          {confirm ? "J'ai créé ce compte" : "Choisir un mot de passe"}
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Ce compte a été créé depuis un autre navigateur. Par sécurité, le mot
-          de passe choisi à l'inscription a été retiré. Si c'est vous qui vous
-          êtes inscrit, vous pouvez saisir le même.
+          {confirm
+            ? "Saisissez le mot de passe choisi à l'inscription."
+            : "Le mot de passe choisi à l'inscription sera remplacé et les connexions ouvertes avec lui seront fermées."}
         </p>
       </div>
       <div className="w-full space-y-1 text-left">
         <label
-          htmlFor="nouveau-mot-de-passe"
+          htmlFor="mot-de-passe-verification"
           className="text-sm font-medium text-gray-900 dark:text-white"
         >
-          Mot de passe
+          {confirm ? "Mot de passe de l'inscription" : "Nouveau mot de passe"}
         </label>
         <input
-          id="nouveau-mot-de-passe"
+          id="mot-de-passe-verification"
           type="password"
-          autoComplete="new-password"
-          minLength={8}
+          autoComplete={confirm ? "current-password" : "new-password"}
+          minLength={confirm ? undefined : 8}
           maxLength={128}
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent px-3 text-sm"
         />
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-red-500">
+            {error}
+          </p>
+        )}
       </div>
       <Button
         type="submit"
         disabled={saving}
         className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal h-10 rounded-lg"
       >
-        {saving ? "Enregistrement..." : "Enregistrer le mot de passe"}
+        {saving
+          ? "Vérification..."
+          : confirm
+            ? "Confirmer mon adresse"
+            : "Enregistrer et confirmer mon adresse"}
       </Button>
       <button
         type="button"
-        onClick={onDone}
+        onClick={() => {
+          setMode(null);
+          setPassword("");
+          setError("");
+        }}
         className="text-sm text-gray-500 underline"
       >
-        Plus tard
+        Retour
       </button>
     </form>
   );

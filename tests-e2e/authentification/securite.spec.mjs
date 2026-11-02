@@ -331,42 +331,105 @@ test.describe("Lien de connexion qui porte une invitation", () => {
   });
 });
 
-test.describe("Compte créé par un tiers avec l'adresse d'un autre", () => {
+/** Lien de vérification de l'adresse, tel qu'envoyé par e-mail. */
+const lienVerification = async (email) => `/api/auth/verify-email?token=${await signJWT({ email }, SECRET, 3600)}`;
+const utilisateurParEmail = async (email) => (await db()).collection("user").findOne({ email });
+
+/** Ouvre le lien dans un navigateur sans session : la page demande qui l'ouvre. */
+async function ouvrirLienAilleurs(browser, email) {
+  const contexte = await browser.newContext({ storageState: SANS_SESSION });
+  const p = await contexte.newPage();
+  await p.goto(await lienVerification(email));
+  await expect(p.getByRole("heading", { name: "Confirmez votre adresse e-mail" })).toBeVisible({ timeout: 30_000 });
+  return { contexte, p };
+}
+
+test.describe("Lien de vérification ouvert ailleurs que dans le navigateur de l'inscription", () => {
   test.use({ storageState: SANS_SESSION, erreursConsoleAutorisees: /status of 40\d|\/api\/auth\/token/ });
+
   // Quelqu'un inscrit l'adresse d'une autre personne avec son propre mot de
-  // passe ; quand la vraie titulaire valide son adresse par le lien reçu
-  // (dans un autre navigateur), ce mot de passe est retiré et elle choisit
-  // le sien.
-  test("Après la vérification de l'adresse, le mot de passe posé par le tiers n'ouvre plus le compte", async ({ page, browser }) => {
+  // passe. La titulaire ouvre le lien reçu : l'adresse n'est vérifiée
+  // qu'après son choix, et le mot de passe du tiers ne survit pas.
+  test("Compte créé par un tiers : pas de vérification sans choix, le mot de passe du tiers n'ouvre plus le compte", async ({ page, browser }) => {
     const email = "victime-precree@e2e.test";
     const motDePasseTiers = "Tiers-Pose-2026!";
     await surLeSite(page);
     const inscription = await appelAuth(page, "/sign-up/email", { corps: { email, password: motDePasseTiers, name: "Vraie Titulaire" } });
     expect(inscription.statut).toBe(200);
+    const sessionTiers = await (await db()).collection("session").findOne({ userId: (await utilisateurParEmail(email))._id });
+    expect(sessionTiers, "Pas de session ouverte par l'inscription du tiers").toBeTruthy();
 
-    await etape(page, "La titulaire ouvre le lien de vérification dans son navigateur", async () => {
-      const contexte = await browser.newContext({ storageState: SANS_SESSION });
-      const p = await contexte.newPage();
-      await p.goto(`/api/auth/verify-email?token=${await signJWT({ email }, SECRET, 3600)}`);
-      await expect.poll(async () => (await (await db()).collection("user").findOne({ email }))?.emailVerified).toBe(true);
-      await expect(p.getByRole("heading", { name: "Email vérifié, choisissez votre mot de passe" })).toBeVisible({ timeout: 30_000 });
-      await p.getByLabel("Mot de passe").fill("Titulaire-Choisi-2026!");
-      await p.getByRole("button", { name: "Enregistrer le mot de passe" }).click();
-      await expect.poll(async () => (await (await db()).collection("user").findOne({ email }))?.passwordSetupRequired ?? null, { timeout: 15_000 }).toBeNull();
+    const { contexte, p } = await ouvrirLienAilleurs(browser, email);
+    try {
+      await etape(p, "Lien ouvert : adresse pas encore vérifiée", async () => {
+        await p.waitForTimeout(1_500);
+        expect((await utilisateurParEmail(email))?.emailVerified, "Adresse vérifiée sans que la titulaire ait choisi").not.toBe(true);
+      });
+
+      await etape(p, "« J'ai créé ce compte » avec un mauvais mot de passe : refusé, toujours non vérifiée", async () => {
+        await p.getByRole("button", { name: "J'ai créé ce compte" }).click();
+        await p.getByLabel("Mot de passe de l'inscription").fill("Devine-Pas-2026!");
+        await p.getByRole("button", { name: "Confirmer mon adresse" }).click();
+        await expect(p.getByRole("alert")).toContainText("Mot de passe incorrect");
+        expect((await utilisateurParEmail(email))?.emailVerified).not.toBe(true);
+        await p.getByRole("button", { name: "Retour" }).click();
+      });
+
+      await etape(p, "« Choisir un mot de passe » : adresse vérifiée", async () => {
+        await p.getByRole("button", { name: "Choisir un mot de passe" }).click();
+        await p.getByLabel("Nouveau mot de passe").fill("Titulaire-Choisie-2026!");
+        await p.getByRole("button", { name: "Enregistrer et confirmer mon adresse" }).click();
+        await expect.poll(async () => (await utilisateurParEmail(email))?.emailVerified, { timeout: 15_000 }).toBe(true);
+      });
+    } finally {
       await contexte.close();
-    });
+    }
 
+    expect(await (await db()).collection("session").findOne({ _id: sessionTiers._id }), "La session ouverte par le tiers à l'inscription est toujours valable").toBeNull();
     const contexteTiers = await browser.newContext({ storageState: SANS_SESSION });
     const tiers = await contexteTiers.newPage();
     try {
       await surLeSite(tiers);
       const r = await connexionApi(tiers, email, motDePasseTiers);
       expect(r.statut, "Le mot de passe posé avant la preuve de l'adresse ouvre toujours le compte").toBeGreaterThanOrEqual(400);
-      const titulaire = await connexionApi(tiers, email, "Titulaire-Choisi-2026!");
+      const titulaire = await connexionApi(tiers, email, "Titulaire-Choisie-2026!");
       expect(titulaire.statut, "Le mot de passe choisi par la titulaire n'ouvre pas le compte").toBe(200);
     } finally {
       await contexteTiers.close();
     }
+  });
+
+  // Cas courant : inscription sur l'ordinateur, lien ouvert sur le téléphone
+  test("Inscription sur un appareil, lien ouvert sur un autre : « J'ai créé ce compte » garde le mot de passe et la session", async ({ page, browser }) => {
+    const email = "inscription-deux-appareils@e2e.test";
+    const motDePasse = "Deux-Appareils-2026!";
+    await surLeSite(page);
+    expect((await appelAuth(page, "/sign-up/email", { corps: { email, password: motDePasse, name: "Dora Deux" } })).statut).toBe(200);
+    const u = await utilisateurParEmail(email);
+    const sessionInscription = await (await db()).collection("session").findOne({ userId: u._id });
+    expect(sessionInscription, "Pas de session ouverte par l'inscription").toBeTruthy();
+
+    const { contexte, p } = await ouvrirLienAilleurs(browser, email);
+    try {
+      await p.getByRole("button", { name: "J'ai créé ce compte" }).click();
+      await p.getByLabel("Mot de passe de l'inscription").fill(motDePasse);
+      await p.getByRole("button", { name: "Confirmer mon adresse" }).click();
+      await expect.poll(async () => (await utilisateurParEmail(email))?.emailVerified, { timeout: 15_000 }).toBe(true);
+      await expect(p).toHaveURL(/verified=true/, { timeout: 15_000 });
+    } finally {
+      await contexte.close();
+    }
+    expect(await (await db()).collection("session").findOne({ _id: sessionInscription._id }), "La session de l'inscription a été fermée").toBeTruthy();
+    expect((await connexionApi(page, email, motDePasse)).statut, "Le mot de passe de l'inscription n'ouvre plus le compte").toBe(200);
+  });
+
+  test("Même navigateur que l'inscription : adresse vérifiée tout de suite, sans question", async ({ page }) => {
+    const email = "inscription-meme-navigateur@e2e.test";
+    await surLeSite(page);
+    expect((await appelAuth(page, "/sign-up/email", { corps: { email, password: "Meme-Navigateur-2026!", name: "Max Même" } })).statut).toBe(200);
+    await page.goto(await lienVerification(email));
+    await expect(page).toHaveURL(/verified=true/, { timeout: 30_000 });
+    await expect.poll(async () => (await utilisateurParEmail(email))?.emailVerified).toBe(true);
   });
 });
 
