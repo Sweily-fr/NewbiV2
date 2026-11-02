@@ -50,11 +50,18 @@ export function StorageOffer({
   onSetPacks,
   saving = false,
   onUpgrade,
+  packsUnavailableMessage = null,
 }) {
   const [confirming, setConfirming] = useState(false);
   const described = describeStorageOffer(offer, { packsAvailable, interval });
   const { packs, upgrade, recommended } = described;
-  if (!packs && !upgrade) return null;
+  // Packs proposables en principe mais pas achetables (prix non configurés,
+  // pas d'abonnement actif) : on le dit plutôt que de les cacher sans mot
+  const unavailableNote =
+    !packs && offer?.packs && packsUnavailableMessage
+      ? packsUnavailableMessage
+      : null;
+  if (!packs && !upgrade && !unavailableNote) return null;
 
   const confirmPacks = async () => {
     try {
@@ -117,7 +124,15 @@ export function StorageOffer({
           )}
         </OfferCard>
       )}
-      {!canManage && (
+      {unavailableNote && (
+        <p
+          className="text-sm text-muted-foreground sm:col-span-2"
+          data-testid="packs-indisponibles"
+        >
+          {unavailableNote}
+        </p>
+      )}
+      {!canManage && (packs || upgrade) && (
         <p className="text-xs text-muted-foreground sm:col-span-2">
           Seules les personnes qui gèrent l&apos;abonnement peuvent ajouter du
           stockage ou changer d&apos;offre.

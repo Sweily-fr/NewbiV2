@@ -11,7 +11,10 @@ import {
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useStoragePacks } from "@/src/hooks/useStoragePacks";
-import { STORAGE_QUOTA_EVENT } from "@/src/lib/storage-plans";
+import {
+  STORAGE_QUOTA_EVENT,
+  storagePacksUnavailableMessage,
+} from "@/src/lib/storage-plans";
 import { StorageOffer } from "@/src/components/storage/storage-offer";
 
 /**
@@ -61,6 +64,10 @@ export function StorageQuotaDialog({ onUpgrade }) {
               setRefusal(null);
               onUpgrade?.();
             }}
+            packsUnavailableMessage={storagePacksUnavailableMessage({
+              loaded: packs.loaded,
+              available: packs.isAvailableFor(details.interval),
+            })}
           />
         ) : (
           <p className="text-sm text-muted-foreground">

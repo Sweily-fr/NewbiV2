@@ -13,6 +13,7 @@ import {
   formatStorageBytes,
   packPriceLabel,
   STORAGE_PACK_GB,
+  storagePacksUnavailableMessage,
 } from "@/src/lib/storage-plans";
 import { StorageOffer } from "@/src/components/storage/storage-offer";
 
@@ -146,6 +147,11 @@ export function StorageSection({ onTabChange }) {
               onUpgrade={
                 onTabChange ? () => onTabChange("subscription") : undefined
               }
+              packsUnavailableMessage={storagePacksUnavailableMessage({
+                loaded: packs.loaded,
+                available: packsAvailable,
+                subscriptionActive: storage.subscriptionActive,
+              })}
             />
           </section>
 

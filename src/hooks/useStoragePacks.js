@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApolloClient } from "@apollo/client";
 
+const UNAVAILABLE = { month: false, year: false };
+
 /**
  * Packs de stockage : disponibilité (prix Stripe configurés pour l'intervalle
  * de l'abonnement) et modification du nombre de packs.
@@ -21,10 +23,12 @@ export function useStoragePacks(organizationId, { enabled = true } = {}) {
     )
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (!cancelled) setAvailable(data?.available || null);
+        // Réponse illisible ou refusée : packs indisponibles (et non « en
+        // attente » pour toujours)
+        if (!cancelled) setAvailable(data?.available || UNAVAILABLE);
       })
       .catch(() => {
-        if (!cancelled) setAvailable(null);
+        if (!cancelled) setAvailable(UNAVAILABLE);
       });
     return () => {
       cancelled = true;

@@ -154,6 +154,31 @@ describe("Paramètres > Stockage", () => {
     render(<StorageSection />);
     expect(screen.queryByTestId("offre-packs")).toBeNull();
     expect(screen.getByTestId("offre-superieure")).toBeTruthy();
+    expect(screen.getByTestId("packs-indisponibles").textContent).toContain(
+      "n'est pas disponible pour le moment",
+    );
+  });
+
+  it("offre Entreprise sans prix Stripe : le message reste, sans case vide", () => {
+    mockPacks.available = false;
+    mockStorage.value = storage({
+      plan: "entreprise",
+      planLabel: "Entreprise",
+      offer: { ...offer, upgrade: null, recommended: "packs" },
+    });
+    render(<StorageSection />);
+    expect(screen.queryByTestId("offre-packs")).toBeNull();
+    expect(screen.queryByTestId("offre-superieure")).toBeNull();
+    expect(screen.getByTestId("packs-indisponibles")).toBeTruthy();
+  });
+
+  it("sans abonnement actif : un abonnement est demandé pour les packs", () => {
+    mockStorage.value = storage({ subscriptionActive: false });
+    render(<StorageSection />);
+    expect(screen.queryByTestId("offre-packs")).toBeNull();
+    expect(screen.getByTestId("packs-indisponibles").textContent).toContain(
+      "abonnement actif est nécessaire",
+    );
   });
 
   it("montre les packs actifs", () => {
@@ -248,6 +273,23 @@ describe("Fenêtre de refus d'envoi", () => {
     expect(screen.getByTestId("offre-superieure").textContent).toContain(
       "48,99 € TTC/mois",
     );
+  });
+
+  it("prix des packs non configurés : la fenêtre le dit", () => {
+    mockPacks.available = false;
+    render(<StorageQuotaDialog />);
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(STORAGE_QUOTA_EVENT, {
+          detail: {
+            message: "Espace de stockage plein",
+            details: { offer, interval: "month" },
+          },
+        }),
+      );
+    });
+    expect(screen.queryByTestId("offre-packs")).toBeNull();
+    expect(screen.getByTestId("packs-indisponibles")).toBeTruthy();
   });
 
   it("n'offre pas d'achat aux membres qui ne gèrent pas l'abonnement", () => {

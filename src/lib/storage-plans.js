@@ -136,3 +136,18 @@ export function findStorageQuotaError(error) {
     ) || null
   );
 }
+
+/** Message affiché quand l'achat de packs n'est pas possible. */
+export function storagePacksUnavailableMessage({
+  loaded,
+  available,
+  subscriptionActive,
+}) {
+  if (subscriptionActive === false) {
+    return "Un abonnement actif est nécessaire pour ajouter des packs de stockage.";
+  }
+  if (loaded && !available) {
+    return "L'ajout de packs de stockage n'est pas disponible pour le moment.";
+  }
+  return null;
+}
