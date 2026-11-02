@@ -134,6 +134,10 @@ export default function SupprimerCompte() {
                 <li>
                   Vos justificatifs de dépenses stockés (photos, PDF, scans)
                 </li>
+                <li>
+                  Vos comptes de réseaux sociaux connectés et leurs jetons
+                  d'accès, vos posts programmés et leurs images et vidéos
+                </li>
               </ul>
             </section>
 
@@ -223,8 +227,9 @@ export default function SupprimerCompte() {
                 Les jetons d'accès du compte sont supprimés immédiatement et ses
                 posts pas encore publiés sont annulés. Si vous supprimez votre
                 compte Newbi (section 2) et que vous êtes le dernier membre de
-                l'espace, tous ses comptes de réseaux sociaux sont déconnectés
-                et les images et vidéos de ses posts sont supprimées.
+                l'espace, ses comptes de réseaux sociaux sont déconnectés, puis
+                toutes ses données de réseaux sociaux sont supprimées : comptes
+                connectés, posts, images et vidéos.
               </p>
               <p className="text-gray-600 leading-relaxed mb-4">
                 Vous pouvez aussi retirer l'accès depuis les réglages du réseau.

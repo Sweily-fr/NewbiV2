@@ -273,14 +273,24 @@ export default function PolitiqueDeConfidentialite() {
                     vous les conservez.
                   </li>
                   <li>
-                    Si vous supprimez votre compte Newbi et que vous êtes le
-                    dernier membre de l'espace, tous ses comptes de réseaux
-                    sociaux sont déconnectés de la même façon, et les images et
-                    vidéos de ses posts sont supprimées de notre stockage.
-                  </li>
-                  <li>
                     L'identifiant et le lien des posts publiés restent attachés
                     à la carte du tableau tant que vous la conservez.
+                  </li>
+                  <li>
+                    Quand vous supprimez la carte d'un post (ou sa colonne, ou
+                    le tableau), son texte, ses réglages (format,
+                    confidentialité, son), son auteur et les noms des comptes
+                    visés sont aussi effacés. Newbi ne garde qu'une fiche
+                    technique (dates, statut, réseau, identifiant du compte,
+                    identifiant et lien de la publication), qui sert notamment
+                    au décompte mensuel des posts X.
+                  </li>
+                  <li>
+                    Si vous supprimez votre compte Newbi et que vous êtes le
+                    dernier membre de l'espace, ses comptes de réseaux sociaux
+                    sont déconnectés de la même façon, puis toutes ses données
+                    de réseaux sociaux sont supprimées : comptes connectés,
+                    posts, images et vidéos.
                   </li>
                 </ul>
 
