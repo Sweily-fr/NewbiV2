@@ -25,7 +25,7 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.canAddPaidUsers).toBe(true);
     expect(plan.workspaces).toBe(1);
     expect(plan.bankAccounts).toBe(1);
-    expect(plan.storage).toBe(50);
+    expect(plan.storage).toBe(75);
     expect(plan.fileTransferMaxGB).toBe(5);
     expect(plan.availableRoles).toEqual(["viewer", "member", "accountant"]);
     expect(plan.exports).toEqual(["csv", "excel"]);
@@ -51,7 +51,7 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.canAddPaidUsers).toBe(true);
     expect(plan.workspaces).toBe(1);
     expect(plan.bankAccounts).toBe(3);
-    expect(plan.storage).toBe(200);
+    expect(plan.storage).toBe(400);
     expect(plan.fileTransferMaxGB).toBe(15);
     expect(plan.availableRoles).toEqual([
       "viewer",
@@ -82,7 +82,7 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.canAddPaidUsers).toBe(true);
     expect(plan.workspaces).toBe(1);
     expect(plan.bankAccounts).toBe(5);
-    expect(plan.storage).toBe(500);
+    expect(plan.storage).toBe(1000);
     expect(plan.fileTransferMaxGB).toBe(50);
     expect(plan.availableRoles).toEqual([
       "viewer",
