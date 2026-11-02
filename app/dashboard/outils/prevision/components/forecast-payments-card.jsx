@@ -110,6 +110,15 @@ const FR_MONTHS_3 = [
   "Déc",
 ];
 
+/** « 2026-11 » → « novembre 2026 » (nom complet, pour les lecteurs d'écran). */
+const fullMonthLabel = (monthStr) => {
+  const [y, m] = String(monthStr).split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
+};
+
 const formatMonthLabel = (monthStr) => {
   const [year, month] = monthStr.split("-");
   return `${FR_MONTHS_3[parseInt(month) - 1]}.${year.slice(2)}`;
@@ -871,15 +880,21 @@ function ForecastTable({
     badge,
     muted: isMuted,
     onClick: cellClick,
+    actionLabel,
   }) => {
     const isFutureClickable = !isPast && cellClick;
+    // Cellule future : un bouton, atteignable au clavier et nommé
+    const Tag = isFutureClickable ? "button" : "div";
     return (
-      <div
+      <Tag
+        {...(isFutureClickable
+          ? { type: "button", "aria-label": actionLabel }
+          : {})}
         className={cn(
           "px-2 py-3.5 text-center text-[13px] tabular-nums whitespace-nowrap group/cell relative",
           isCurrent && "bg-black/[0.04]",
           isFutureClickable &&
-            "cursor-pointer hover:bg-muted/40 transition-colors rounded",
+            "cursor-pointer hover:bg-muted/40 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
         onClick={isFutureClickable ? cellClick : undefined}
         title={
@@ -892,20 +907,47 @@ function ForecastTable({
             !isMuted && isPast && "font-semibold text-foreground",
             !isMuted && !isPast && "text-muted-foreground",
             isFutureClickable &&
-              "group-hover/cell:opacity-0 transition-opacity",
+              "group-hover/cell:opacity-0 group-focus-visible/cell:opacity-0 transition-opacity",
           )}
         >
           {value}
         </span>
         {badge}
         {isFutureClickable && (
-          <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/50 text-lg opacity-0 group-hover/cell:opacity-100 transition-opacity">
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center text-muted-foreground/50 text-lg opacity-0 group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100 transition-opacity"
+          >
             +
           </span>
         )}
-      </div>
+      </Tag>
     );
   };
+
+  // Titre de section repliable (Entrées, Sorties) : un bouton qui annonce
+  // son état ; la ligne entière reste cliquable à la souris
+  const SectionToggle = ({ label, expanded, onToggle }) => (
+    <button
+      type="button"
+      aria-expanded={expanded}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <ChevronDown
+        size={14}
+        aria-hidden="true"
+        className={cn(
+          "text-muted-foreground transition-transform",
+          !expanded && "-rotate-90",
+        )}
+      />
+      <span className="text-[13px] font-semibold text-foreground">{label}</span>
+    </button>
+  );
 
   const Badge = ({ pct }) => (
     <span
@@ -981,18 +1023,11 @@ function ForecastTable({
           {/* ── Entrées ── */}
           <Row
             label={
-              <div className="flex items-center gap-2">
-                <ChevronDown
-                  size={14}
-                  className={cn(
-                    "text-muted-foreground transition-transform",
-                    !incomeExpanded && "-rotate-90",
-                  )}
-                />
-                <span className="text-[13px] font-semibold text-foreground">
-                  Entrées
-                </span>
-              </div>
+              <SectionToggle
+                label="Entrées"
+                expanded={incomeExpanded}
+                onToggle={() => setIncomeExpanded((v) => !v)}
+              />
             }
             labelClass={labelTint}
             onClick={() => setIncomeExpanded((v) => !v)}
@@ -1099,6 +1134,7 @@ function ForecastTable({
                               ? () => onCellClick(cat.key, "INCOME", m.month)
                               : undefined
                           }
+                          actionLabel={`Ajouter une prévision « ${cat.label} » en ${fullMonthLabel(m.month)}`}
                         />
                       );
                     })}
@@ -1111,18 +1147,11 @@ function ForecastTable({
           {/* ── Sorties ── */}
           <Row
             label={
-              <div className="flex items-center gap-2">
-                <ChevronDown
-                  size={14}
-                  className={cn(
-                    "text-muted-foreground transition-transform",
-                    !expenseExpanded && "-rotate-90",
-                  )}
-                />
-                <span className="text-[13px] font-semibold text-foreground">
-                  Sorties
-                </span>
-              </div>
+              <SectionToggle
+                label="Sorties"
+                expanded={expenseExpanded}
+                onToggle={() => setExpenseExpanded((v) => !v)}
+              />
             }
             labelClass={labelTint}
             onClick={() => setExpenseExpanded((v) => !v)}
@@ -1230,6 +1259,7 @@ function ForecastTable({
                               ? () => onCellClick(cat.key, "EXPENSE", m.month)
                               : undefined
                           }
+                          actionLabel={`Ajouter une prévision « ${cat.label} » en ${fullMonthLabel(m.month)}`}
                         />
                       );
                     })}
