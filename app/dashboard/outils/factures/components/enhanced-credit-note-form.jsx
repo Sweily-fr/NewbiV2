@@ -511,6 +511,7 @@ export default function EnhancedCreditNoteForm({
                     <Textarea
                       id="reason"
                       {...register("reason")}
+                      maxLength={2000}
                       placeholder="Expliquez la raison de cet avoir..."
                       disabled={isReadOnly}
                       rows={3}
