@@ -31,6 +31,12 @@ const PAGES = [
   ["Invitation dans un espace", `/accept-invitation/${oid("invitationAuth", invitation.n).toHexString()}?email=${encodeURIComponent(invitation.email)}`, invitation.email],
 ];
 
+// Aperçu des fichiers du transfert : stockage injoignable dans les tests
+// (erreur 500 sans rapport avec les balises), réponse vide simulée
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/files/preview/**", (route) => route.fulfill({ status: 204, body: "" }));
+});
+
 const consentement = (accord) => ({
   cookies: [],
   origins: [
