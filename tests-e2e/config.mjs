@@ -60,6 +60,20 @@ export const SESSION_TOKEN_FACTURES_LECTEUR = "e2eSessionTokenNewbiFacturesLecte
 export const SESSION_TOKEN_FACTURES_REGLAGES = "e2eSessionTokenNewbiFacturesReglagesUniquement";
 /** Propriétaire de l'organisation « Offre Factures » (offre d'entrée : plafonds des factures). */
 export const SESSION_TOKEN_FACTURES_OFFRE = "e2eSessionTokenNewbiFacturesOffreUniquement";
+/** Propriétaire de « Contrôles Factures » (statuts, avoirs simultanés, montants, numérotation). */
+export const SESSION_TOKEN_FACTURES_CONTROLES = "e2eSessionTokenNewbiFacturesControlesUniquement";
+/** « Comptable » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_COMPTABLE = "e2eSessionTokenNewbiFacturesComptableUniquement";
+/** « Administrateur » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_ADMIN = "e2eSessionTokenNewbiFacturesAdminUniquement";
+/** Rôle personnalisé « Factures : voir, créer » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_ROLE_CREATION = "e2eSessionTokenNewbiFacturesRoleCreationUniquement";
+/** Rôle personnalisé « Avoirs : voir » de « Contrôles Factures ». */
+export const SESSION_TOKEN_FACTURES_ROLE_AVOIRS = "e2eSessionTokenNewbiFacturesRoleAvoirsUniquement";
+/** Propriétaire de « Soldes Factures » (factures créditées, lues seulement). */
+export const SESSION_TOKEN_FACTURES_SOLDES = "e2eSessionTokenNewbiFacturesSoldesUniquement";
+/** Propriétaire de « E-facturation Factures » (factures transmises à la plateforme). */
+export const SESSION_TOKEN_FACTURES_EFACTURATION = "e2eSessionTokenNewbiFacturesEFacturationUniquement";
 // ── fin du lot factures ──
 // ── Lot devis-bc-bl ──
 /** Propriétaire de l'organisation « Ventes » (offre Entreprise) : devis, bons de commande et de livraison par rôle. */
@@ -72,6 +86,18 @@ export const SESSION_TOKEN_VENTES_EDITEUR = "e2eSessionTokenNewbiVentesEditeurUn
 export const SESSION_TOKEN_FREELANCE_VENTES = "e2eSessionTokenNewbiFreelanceVentesUniquement";
 /** Propriétaire de l'organisation « Volume » (offre PME) : plus de 50 documents, quota de signatures atteint. */
 export const SESSION_TOKEN_VOLUME = "e2eSessionTokenNewbiVolumeUniquement";
+/** Membre « Comptable » de l'organisation « Ventes » (lit les ventes, n'écrit rien). */
+export const SESSION_TOKEN_VENTES_COMPTABLE = "e2eSessionTokenNewbiVentesComptableUniquement";
+/** Membres de « Ventes » aux rôles personnalisés : une seule page en lecture (bons de livraison, devis, bons de commande). */
+export const SESSION_TOKEN_VENTES_PERSO_BL = "e2eSessionTokenNewbiVentesPersoBlUniquement";
+export const SESSION_TOKEN_VENTES_PERSO_DEVIS = "e2eSessionTokenNewbiVentesPersoDevisUniquement";
+export const SESSION_TOKEN_VENTES_PERSO_BC = "e2eSessionTokenNewbiVentesPersoBcUniquement";
+/** Membre de « Ventes » au rôle personnalisé « Saisie » : crée devis, bons de commande et de livraison, sans statut ni factures. */
+export const SESSION_TOKEN_VENTES_PERSO_SAISIE = "e2eSessionTokenNewbiVentesPersoSaisieUniquement";
+/** Propriétaire de « Contrôles Ventes » : signatures, conversions et paramètres qui modifient les données. */
+export const SESSION_TOKEN_CONTROLE_VENTES = "e2eSessionTokenNewbiControleVentesUniquement";
+/** Propriétaire d'un espace sans abonnement (essai terminé) : lecture seule. */
+export const SESSION_TOKEN_VENTES_EXPIREE = "e2eSessionTokenNewbiVentesExpireeUniquement";
 // ── fin du lot devis-bc-bl ──
 // ── Lot achats-banque ──
 /** Propriétaire de l'organisation « Achats » (catalogue, factures d'achat, transactions, prévision de référence : jamais modifiés par les tests). */
@@ -84,6 +110,12 @@ export const SESSION_TOKEN_LECTEUR_ACHATS = "e2eSessionTokenNewbiLecteurAchatsUn
 export const SESSION_TOKEN_SAISIE_ACHATS = "e2eSessionTokenNewbiSaisieAchatsUniquement";
 /** Propriétaire d'une organisation sur l'offre d'entrée, pour les plafonds du lot. */
 export const SESSION_TOKEN_FREELANCE_ACHATS = "e2eSessionTokenNewbiFreelanceAchatsUniquement";
+/** « Comptable » d'« Achats » (et de « Saisie Achats ») : banque complète, factures d'achat en lecture. */
+export const SESSION_TOKEN_COMPTABLE_ACHATS = "e2eSessionTokenNewbiComptableAchatsUniquement";
+/** Membre de « Saisie Achats » au rôle personnalisé « Saisie sans paiement » (ajouter, modifier, sans « Marquer comme payée »). */
+export const SESSION_TOKEN_ROLE_ACHATS = "e2eSessionTokenNewbiRoleAchatsUniquement";
+/** Propriétaire de « Banque Test » : deux banques connectées, déconnectées par les tests. */
+export const SESSION_TOKEN_BANQUE_ACHATS = "e2eSessionTokenNewbiBanqueAchatsUniquement";
 // ── fin du lot achats-banque ──
 // ── Lot parametres-auth ──
 /** Propriétaire de « Paramètres » (un membre de chaque rôle, rien n'y change). */
@@ -120,6 +152,8 @@ export const SESSION_TOKEN_PILOTAGE = "e2eSessionTokenNewbiPilotageUniquement";
 export const SESSION_TOKEN_PILOTAGE_EDITEUR = "e2eSessionTokenNewbiPilotageEditeurUniquement";
 /** Membre (lecture seule) de « Pilotage ». */
 export const SESSION_TOKEN_PILOTAGE_MEMBRE = "e2eSessionTokenNewbiPilotageMembreUniquement";
+/** Rôle personnalisé de « Pilotage » limité à la Vue d'ensemble (ni factures, ni clients, ni catalogue, ni prévision). */
+export const SESSION_TOKEN_PILOTAGE_VUE_ENSEMBLE = "e2eSessionTokenNewbiPilotageVueEnsembleUniquement";
 /** Cabinet (compte gestionnaire) : Comptable dans « Boulangerie Cliente » et « Pilotage », ses deux clients. */
 export const SESSION_TOKEN_CABINET = "e2eSessionTokenNewbiCabinetUniquement";
 /** Client du cabinet : super admin de « Boulangerie Cliente » (suivie) et de deux espaces libres. */

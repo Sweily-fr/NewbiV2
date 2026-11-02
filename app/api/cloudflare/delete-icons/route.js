@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { withErrorHandler } from "@/src/lib/security";
+import { readSignatureIconsBody } from "@/src/lib/signature-icons-input";
 
 async function handler(request) {
   // Vérifier l'authentification
@@ -14,11 +15,18 @@ async function handler(request) {
     );
   }
 
-  const { userId, signatureId } = await request.json();
+  const { body, error } = await readSignatureIconsBody(request);
+  if (error) return error;
+  const { userId, signatureId } = body;
 
-  if (!userId || !signatureId) {
+  // Identifiant de signature repris dans le préfixe listé puis supprimé :
+  // lettres, chiffres, « - » et « _ » seulement (ni « / », ni « .. »)
+  if (
+    typeof signatureId !== "string" ||
+    !/^[a-zA-Z0-9_-]{1,128}$/.test(signatureId)
+  ) {
     return NextResponse.json(
-      { success: false, message: "Paramètres manquants" },
+      { success: false, message: "Identifiant de signature invalide" },
       { status: 400 },
     );
   }

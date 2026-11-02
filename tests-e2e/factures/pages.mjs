@@ -12,6 +12,8 @@ export const RECHERCHE = /Recherchez par numéro, client ou montant/;
 
 /** Date telle que l'éditeur l'écrit sur ses boutons (« 12 octobre 2026 », heure de Paris). */
 export const jourLong = (d) => new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" }).format(d);
+/** Date du bouton de l'éditeur d'avoir, au jour sur deux chiffres (« 01 novembre 2026 »). */
+export const jourLongAvoir = (d) => new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "long", year: "numeric", timeZone: "Europe/Paris" }).format(d);
 export const dansJours = (n) => new Date(Date.now() + n * 86_400_000);
 
 /** Les éditeurs demandent « Quitter sans enregistrer ? » à la fermeture : jamais entre deux pages d'un test. */

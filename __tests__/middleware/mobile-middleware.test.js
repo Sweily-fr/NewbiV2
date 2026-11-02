@@ -97,6 +97,8 @@ describe("mobile middleware — routes non concernées", () => {
 describe("mobile middleware — config matcher", () => {
   it("ne matche que les préfixes de l'app (transfert et site public exclus)", () => {
     expect(config.matcher.map((m) => m.source)).toEqual([
+      "/dashboard/test-rbac",
+      "/dashboard/loaderTest",
       "/dashboard/:path*",
       "/onboarding/:path*",
       "/create-workspace/:path*",
@@ -104,7 +106,8 @@ describe("mobile middleware — config matcher", () => {
   });
 
   it("laisse passer les préchargements sans les redirections mobiles", () => {
-    for (const m of config.matcher) {
+    // Sauf les pages de développement, introuvables même en préchargement
+    for (const m of config.matcher.filter((e) => e.source.includes(":path*"))) {
       expect(m.missing).toEqual([
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

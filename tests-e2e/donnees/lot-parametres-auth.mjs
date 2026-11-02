@@ -30,11 +30,11 @@ export const HACHAGE_MOT_DE_PASSE =
 export const SECRET_TOTP = "E2EDeuxFacteursNewbiSecretTotp01";
 // SECRET_TOTP chiffré par symmetricEncrypt de better-auth/crypto avec le
 // secret des tests (config.mjs, SECRET), comme le plugin twoFactor le stocke.
-const SECRET_TOTP_CHIFFRE =
+export const SECRET_TOTP_CHIFFRE =
   "0d71fe8ae9f0e8af9c1864580ac24d0917630972059f0991f2021ea7df09cbcf4120054354fce84a77d72cd863872a99aa9458097466d93bfd646e8098e429d54e2180b80e1c9d3c";
 /** Codes de secours de ces comptes (chacun ne sert qu'une fois). */
 export const CODES_SECOURS = ["e2eAa-11111", "e2eBb-22222", "e2eCc-33333", "e2eDd-44444", "e2eEe-55555"];
-const CODES_SECOURS_CHIFFRES =
+export const CODES_SECOURS_CHIFFRES =
   "744f56c2b92a541b4672b465ec273a076837a4022aac7e50039527dcdf1e502669006eee673c81c8752815ed9e95a6b4b7de4ed572945e517faa0036cfcf6cad1acc8c28bee1aa086736a90588b252f5af03712ab4ef9a5e823d56e745e770dafebd4ecdeaa0efc6fe83b33b958e8e";
 
 /** Texte piégé : s'il est interprété comme du HTML, il pose une marque et ouvre une alerte. */

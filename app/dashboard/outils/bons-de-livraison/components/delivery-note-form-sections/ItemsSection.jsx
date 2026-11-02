@@ -69,6 +69,7 @@ import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import { ItemImageControl } from "@/src/components/item-image-control";
 import { pickItemImage, productItemImage } from "@/src/utils/item-image";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { focusItemErrorField } from "@/src/utils/focus-item-error";
 
 // Mêmes unités que les devis / factures / bons de commande (une valeur hors
 // liste, ex. produit du catalogue, est affichée via une option de secours).
@@ -371,8 +372,7 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
       const el =
         document.querySelector(`[name="items.${index}.${field}"]`) ||
         document.querySelector(`[data-item-index="${index}"]`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      el?.focus?.({ preventScroll: true });
+      focusItemErrorField(el);
     }, 350);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps

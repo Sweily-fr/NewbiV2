@@ -165,7 +165,8 @@ const ECRITURES = [
     variables: (w, qui) => ({
       w,
       c: id(CONTACTS.cibleNoter),
-      input: { type: "note_added", description: `Activité de ${qui}` },
+      // Seul le rappel s'ajoute à la main (les autres types sont écrits par l'API)
+      input: { type: "reminder_created", description: `Activité de ${qui}` },
     }),
     temoin: () => ["clients", { _id: _id(CONTACTS.cibleNoter) }],
   },

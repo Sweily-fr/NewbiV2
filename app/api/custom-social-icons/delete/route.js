@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import CustomSocialIconService from "@/src/services/customSocialIconService.js";
 import { withErrorHandler } from "@/src/lib/security";
+import { readSignatureIconsBody } from "@/src/lib/signature-icons-input";
 
 async function handler(request) {
   // Vérifier l'authentification
@@ -15,16 +16,9 @@ async function handler(request) {
     );
   }
 
-  const body = await request.json();
+  const { body, error } = await readSignatureIconsBody(request);
+  if (error) return error;
   const { userId, signatureId } = body;
-
-  // Validation des données
-  if (!userId || !signatureId) {
-    return NextResponse.json(
-      { success: false, message: "userId et signatureId sont requis" },
-      { status: 400 },
-    );
-  }
 
   // Vérifier que l'utilisateur peut modifier cette signature
   if (session.user.id !== userId) {

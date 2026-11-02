@@ -17,7 +17,7 @@
  * (conversions) passent devant eux dans les listes, les tests les retrouvent
  * par la recherche.
  */
-import { COMPTES, DANS, MAINTENANT, oid } from "./base.mjs";
+import { CLIENTS, COMPTES, DANS, MAINTENANT, oid } from "./base.mjs";
 import { articles, entreprise, ligne, snapshotClient, totaux } from "./documents.mjs";
 
 /** Préfixe du mois en cours, comme le propose l'éditeur (« D-102026 »). */
@@ -632,18 +632,499 @@ const ROLES_IMPORTES = ["stable", "cibleModifier", "cibleValider", "cibleConvert
 export const DEVIS_IMPORTES = Object.fromEntries(ROLES_IMPORTES.map((r, i) => [r, importe("devisImporte", i + 1, { numero: `DEV-IMP-${String(i + 1).padStart(3, "0")}` })]));
 export const BC_IMPORTES = Object.fromEntries(ROLES_IMPORTES.map((r, i) => [r, importe("bcImporte", i + 1, { numero: `BC-IMP-${String(i + 1).padStart(3, "0")}` })]));
 
+// --- Contrôles de l'audit : rôles, signatures, conversions, abonnement ---------------
+//
+// « Ventes » : un rôle Comptable et quatre rôles personnalisés (une page en
+// lecture, ou la saisie sans statut ni factures), des documents liés entre eux
+// (devis → factures, bon de commande, bon de livraison) et un devis au PDF en
+// cache. Créés il y a plus d'un an : ils restent hors des 50 lignes chargées
+// par les listes.
+// « Contrôles Ventes » : devis en cours de signature (webhook du prestataire),
+// devis à facturer par un bon de livraison ou un bon de commande, répartitions,
+// facturation de situation. Une donnée par test.
+// « Ventes Expirée » : espace sans abonnement (lecture seule).
+
+const CTRL = "controleVentes";
+const EXPIREE = "ventesExpiree";
+
+export const CLIENT_CONTROLE = client(9, CTRL, {
+  name: "Menuiserie Contrôle SARL",
+  email: "atelier@menuiserie-controle.test",
+  type: "COMPANY",
+  siret: "12312312300015",
+  vatNumber: "FR12123123123",
+  address: { fullName: "Menuiserie Contrôle SARL", street: "7 rue des Copeaux", city: "Tours", postalCode: "37000", country: "France" },
+});
+export const CLIENT_EXPIREE = client(10, EXPIREE, {
+  name: "Client Lecture Seule SARL",
+  email: "contact@lecture-seule.test",
+  type: "COMPANY",
+  siret: "32132132100017",
+  vatNumber: "FR32321321321",
+  address: { fullName: "Client Lecture Seule SARL", street: "3 place du Gel", city: "Dijon", postalCode: "21000", country: "France" },
+});
+
+/** Facture « telle qu'enregistrée » (lien avec un devis, un bon de commande ou de livraison). */
+function facture(compte, n, { numero, statut = "PENDING", client: c, lignes, prefixe = `F-${MOIS}`, ...champs }) {
+  const emise = DANS(-3);
+  const { utilisateur, organisation } = COMPTES[compte];
+  return {
+    _id: oid("factureVentes", n),
+    prefix: prefixe,
+    number: numero,
+    status: statut,
+    issueDate: emise,
+    issueYear: emise.getFullYear(),
+    dueDate: DANS(27),
+    paymentDate: null,
+    invoiceType: "standard",
+    isDeposit: false,
+    situationNumber: 1,
+    progressMode: "uniform",
+    globalProgressPercentage: 100,
+    depositAmount: 0,
+    contractTotal: 0,
+    client: snapshotClient(c),
+    companyInfo: entreprise(compte),
+    items: articles(lignes),
+    discount: 0,
+    discountType: "PERCENTAGE",
+    ...totaux(lignes),
+    shipping: { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
+    showBankDetails: false,
+    headerNotes: "",
+    footerNotes: "",
+    termsAndConditions: "",
+    customFields: [],
+    isReverseCharge: false,
+    isVatExempt: false,
+    workspaceId: organisation._id,
+    createdBy: utilisateur._id,
+    createdAt: emise,
+    updatedAt: MAINTENANT,
+    ...champs,
+  };
+}
+
+/** Rôles personnalisés de « Ventes » (clé `role_<hex>`, comme l'API les crée). */
+const rolePerso = (n, name, actions) => ({
+  _id: oid("roleVentes", n),
+  organizationId: COMPTES.ventes.organisation._id,
+  role: `role_${oid("roleVentes", n).toHexString()}`,
+  permission: JSON.stringify({}),
+  actions,
+  catalogVersion: 2,
+  name,
+  description: "Rôle des contrôles de droits",
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+});
+export const ROLES_VENTES = {
+  bl: rolePerso(1, "Livraisons en lecture", { deliveryNotes: ["view"] }),
+  devis: rolePerso(2, "Devis en lecture", { quotes: ["view"] }),
+  bc: rolePerso(3, "Commandes en lecture", { purchaseOrders: ["view"] }),
+  // Crée devis, bons de commande et de livraison ; ni statut, ni factures.
+  saisie: rolePerso(4, "Saisie des ventes", {
+    quotes: ["view", "create", "edit"],
+    purchaseOrders: ["view", "create", "edit"],
+    deliveryNotes: ["view", "create", "edit"],
+  }),
+};
+
+// Documents liés de « Ventes » : devis → facture, bon de commande → facture, bon de livraison → facture.
+const ANCIEN = 480;
+const factureLiee = (n, numero, nom) => facture("ventes", n, { numero, client: C, lignes: [ligne(nom, 1, 700)], createdAt: DANS(-ANCIEN) });
+const F_DEVIS_LIE = factureLiee(14, "0002", "Facture du devis lié");
+const F_BC_LIE = factureLiee(15, "0003", "Facture du bon de commande lié");
+const F_BL_LIE = factureLiee(16, "0004", "Facture du bon de livraison lié");
+const DEVIS_LIE = dv(50, {
+  numero: "0036",
+  statut: "COMPLETED",
+  client: C,
+  lignes: [ligne("Devis lié aux factures", 1, 700)],
+  linkedInvoices: [F_DEVIS_LIE._id],
+  convertedToInvoice: F_DEVIS_LIE._id,
+  creeIlYa: ANCIEN,
+});
+F_DEVIS_LIE.sourceQuote = DEVIS_LIE._id;
+F_DEVIS_LIE.purchaseOrderNumber = reference(DEVIS_LIE);
+export const LIENS_VENTES = {
+  devis: DEVIS_LIE,
+  factureDevis: F_DEVIS_LIE,
+  factureBc: F_BC_LIE,
+  factureBl: F_BL_LIE,
+  bc: bc(40, {
+    numero: "0021",
+    statut: "DELIVERED",
+    client: C,
+    lignes: [ligne("Commande liée au devis", 1, 700)],
+    sourceQuoteId: DEVIS_LIE._id,
+    linkedInvoices: [F_BC_LIE._id],
+    creeIlYa: ANCIEN,
+  }),
+  bl: bl(40, {
+    numero: "0024",
+    statut: "DELIVERED",
+    client: C,
+    lignes: [["Livraison liée aux factures", 1, 700]],
+    sourceQuote: DEVIS_LIE._id,
+    sourceInvoice: F_DEVIS_LIE._id,
+    linkedInvoices: [F_BL_LIE._id],
+    recuPar: "Lou Réception",
+    creeIlYa: ANCIEN,
+  }),
+  // Devis en attente au PDF en cache (automatisation appelée par le Comptable).
+  devisPdfEnCache: dv(51, {
+    numero: "0037",
+    statut: "PENDING",
+    client: C,
+    lignes: [ligne("Devis au PDF en cache", 1, 640)],
+    cachedPdf: { key: "quotes/e2e/devis-en-cache.pdf", url: "https://fichiers.e2e.invalid/quotes/devis-en-cache.pdf", generatedAt: DANS(-1) },
+    creeIlYa: ANCIEN + 1,
+  }),
+};
+
+function reference(doc) {
+  return `${doc.prefix}-${doc.number}`;
+}
+
+// Documents partagés : un dossier et une automatisation (inactive : elle ne se
+// déclenche jamais d'elle-même) par organisation qui en a besoin.
+const dossierVentes = (n, compte, nom) => ({
+  _id: oid("dossierVentes", n),
+  name: nom,
+  description: "",
+  workspaceId: COMPTES[compte].organisation._id,
+  parentId: null,
+  color: "#6366f1",
+  icon: "folder",
+  isSharedWithAccountant: true,
+  order: 0,
+  isSystem: false,
+  visibility: "public",
+  allowedUserIds: [],
+  trashedAt: null,
+  originalParentId: null,
+  createdBy: COMPTES[compte].utilisateur._id,
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+});
+export const DOSSIERS_VENTES = {
+  ventes: dossierVentes(1, "ventes", "Devis envoyés"),
+  controle: dossierVentes(2, CTRL, "Devis acceptés"),
+  expiree: dossierVentes(3, EXPIREE, "Devis de l'espace en lecture seule"),
+};
+const automatisationVentes = (n, compte, nom, triggerType, dossier, isActive) => ({
+  _id: oid("automatisationVentes", n),
+  name: nom,
+  description: "",
+  workspaceId: COMPTES[compte].organisation._id,
+  createdBy: COMPTES[compte].utilisateur._id,
+  triggerType,
+  actionConfig: {
+    targetFolderId: dossier._id,
+    createSubfolder: false,
+    subfolderPattern: "year",
+    filterYear: null,
+    filterClientId: null,
+    filterClientName: null,
+    documentNaming: "{documentType}-{number}-{clientName}",
+    tags: [],
+    documentStatus: "classified",
+  },
+  isActive,
+  stats: { totalExecutions: 0, lastExecutedAt: null, lastDocumentId: null, failedExecutions: 0 },
+  createdAt: MAINTENANT,
+  updatedAt: MAINTENANT,
+});
+export const AUTOMATISATIONS_VENTES = {
+  ventes: automatisationVentes(1, "ventes", "Devis envoyés vers les documents partagés", "QUOTE_SENT", DOSSIERS_VENTES.ventes, false),
+  // Active : l'acceptation d'un devis signé doit la déclencher (et la journaliser).
+  controle: automatisationVentes(2, CTRL, "Devis acceptés vers les documents partagés", "QUOTE_ACCEPTED", DOSSIERS_VENTES.controle, true),
+  expiree: automatisationVentes(3, EXPIREE, "Devis envoyés (lecture seule)", "QUOTE_SENT", DOSSIERS_VENTES.expiree, false),
+};
+
+// --- « Contrôles Ventes » : signatures électroniques -------------------------------
+
+const dc = (n, o) => devis(CTRL, n, { client: CLIENT_CONTROLE, creeIlYa: 5, ...o });
+/** Demande de signature d'un devis de « Contrôles Ventes », transmise au prestataire. */
+const signatureControle = (n, document, statut, champs = {}) => ({
+  ...signature(CTRL, n, { document, statut, externe: `ext-controle-${n}` }),
+  ...champs,
+});
+const lien = (n) => `https://signature.e2e.invalid/s/${n}`;
+const jeton = (n) => `e2eJetonSuiviSignatureControle${n}`;
+const suivi = (n) => ({ emailTracking: { trackingToken: jeton(n), emailSentAt: DANS(-1), emailOpenCount: 0, emailClickCount: 0 } });
+
+export const DEVIS_SIGNATURE = {
+  modifier: dc(60, { numero: "0001", statut: "PENDING", lignes: [ligne("Devis signé puis modifié", 1, 1000)] }),
+  brouillon: dc(61, { numero: "0002", statut: "PENDING", lignes: [ligne("Devis repassé en brouillon pendant la signature", 1, 400)] }),
+  supprimer: dc(62, { numero: "0003", statut: "PENDING", lignes: [ligne("Devis supprimé pendant la signature", 1, 300)] }),
+  annuler: dc(63, { numero: "0004", statut: "PENDING", lignes: [ligne("Signature annulée puis terminée", 1, 350)] }),
+  terminee: dc(64, { numero: "0005", statut: "PENDING", lignes: [ligne("Devis signé par le client", 1, 1500)] }),
+  erreur: dc(65, { numero: "0006", statut: "PENDING", lignes: [ligne("Signature en erreur", 1, 250)] }),
+  inconnu: dc(66, { numero: "0007", statut: "PENDING", lignes: [ligne("État de signature inconnu", 1, 260)] }),
+  accepter: dc(67, { numero: "0008", statut: "PENDING", lignes: [ligne("Devis accepté pendant la signature", 1, 270)], ...suivi(607) }),
+  refuser: dc(68, { numero: "0009", statut: "PENDING", lignes: [ligne("Devis refusé pendant la signature", 1, 280)], ...suivi(608) }),
+  signataires: dc(69, { numero: "0010", statut: "PENDING", lignes: [ligne("Signataires refusés", 1, 290)] }),
+  cachet: dc(70, { numero: "0011", statut: "PENDING", lignes: [ligne("Cachet sans signature du client", 1, 300)] }),
+  accepteEnErreur: dc(71, { numero: "0012", statut: "COMPLETED", lignes: [ligne("Devis accepté, signature en erreur", 1, 310)] }),
+  importe: dc(72, { numero: "IMP-CTRL-01", statut: "IMPORTED", prefixe: "", lignes: [ligne("Devis importé à signer", 1, 320)] }),
+  brouillonASigner: dc(73, { numero: "DRAFT-0001", statut: "DRAFT", lignes: [ligne("Brouillon à signer", 1, 330)] }),
+  accepteASigner: dc(74, { numero: "0013", statut: "COMPLETED", lignes: [ligne("Devis accepté à signer", 1, 340)] }),
+  nomsReels: dc(75, { numero: "0014", statut: "PENDING", lignes: [ligne("Signataires aux noms réels", 1, 360)] }),
+  dialogue: dc(76, { numero: "0015", statut: "PENDING", lignes: [ligne("Fenêtre de signature au clavier", 1, 370)] }),
+};
+const S = DEVIS_SIGNATURE;
+export const SIGNATURES_CONTROLE = {
+  modifier: signatureControle(600, S.modifier, "WAIT_SIGNER"),
+  brouillon: signatureControle(601, S.brouillon, "WAIT_SIGN"),
+  supprimer: signatureControle(602, S.supprimer, "WAIT_SIGN"),
+  annuler: signatureControle(603, S.annuler, "WAIT_SIGN"),
+  terminee: signatureControle(604, S.terminee, "WAIT_SIGNER"),
+  erreur: signatureControle(605, S.erreur, "WAIT_SIGNER"),
+  inconnu: signatureControle(606, S.inconnu, "WAIT_SIGNER"),
+  accepter: signatureControle(607, S.accepter, "WAIT_SIGN", {
+    signingUrl: lien(607),
+    signers: [{ name: "Jean", surname: "Signataire", email: "signataire@e2e.test", authentication: ["email"], signingUrl: lien(607) }],
+  }),
+  refuser: signatureControle(608, S.refuser, "WAIT_SIGN", {
+    signingUrl: lien(608),
+    signers: [{ name: "Jean", surname: "Signataire", email: "signataire@e2e.test", authentication: ["email"], signingUrl: lien(608) }],
+  }),
+  accepteEnErreur: signatureControle(609, S.accepteEnErreur, "ERROR"),
+};
+export const LIENS_SIGNATURE = { lien, jeton };
+
+// --- « Contrôles Ventes » : facturation par bon de livraison, bon de commande, répartitions ---
+
+const dcFacture = (n, numero, nom, o = {}) => dc(n, { numero, statut: "COMPLETED", lignes: [ligne(nom, 1, 1000)], ...o });
+const blc = (n, numero, doc, o = {}) =>
+  bonLivraison(CTRL, n, {
+    numero,
+    statut: "PENDING",
+    client: CLIENT_CONTROLE,
+    lignes: doc.items.map((a) => [a.description, a.quantity, a.unitPrice]),
+    sourceQuote: doc._id,
+    transporteur: `Transport ${numero}`,
+    creeIlYa: 5,
+    ...o,
+  });
+
+const DEVIS_DEJA_FACTURE = dcFacture(80, "0020", "Prestation déjà facturée");
+const F_DEJA_FACTURE = facture(CTRL, 10, {
+  numero: "0001",
+  client: CLIENT_CONTROLE,
+  lignes: [ligne("Prestation déjà facturée", 1, 1000)],
+  sourceQuote: DEVIS_DEJA_FACTURE._id,
+  purchaseOrderNumber: reference(DEVIS_DEJA_FACTURE),
+});
+DEVIS_DEJA_FACTURE.linkedInvoices = [F_DEJA_FACTURE._id];
+DEVIS_DEJA_FACTURE.convertedToInvoice = F_DEJA_FACTURE._id;
+
+const DEVIS_DEUX_BL = dcFacture(81, "0021", "Prestation livrée en deux bons");
+// Autoliquidation, remise globale de 10 % et port facturé 50 € HT :
+// 1 000 € HT - 100 € de remise + 50 € de port = 950 € HT, TVA 0 €.
+const DEVIS_AUTOLIQUIDE = dc(82, {
+  numero: "0022",
+  statut: "COMPLETED",
+  lignes: [ligne("Pose autoliquidée", 1, 1000)],
+  isReverseCharge: true,
+  discount: 10,
+  discountType: "PERCENTAGE",
+  shipping: { billShipping: true, shippingAddress: null, shippingAmountHT: 50, shippingVatRate: 20 },
+  totalHT: 1050,
+  totalVAT: 0,
+  totalTTC: 1050,
+  finalTotalHT: 950,
+  finalTotalVAT: 0,
+  finalTotalTTC: 950,
+  discountAmount: 100,
+});
+const DEVIS_ATTENTE_ACCEPTER = dc(83, { numero: "0023", statut: "PENDING", lignes: [ligne("Devis en attente livré puis accepté", 1, 500)] });
+const DEVIS_ATTENTE_REFUSER = dc(84, { numero: "0024", statut: "PENDING", lignes: [ligne("Devis en attente livré puis refusé", 1, 520)] });
+
+export const FACTURATION_CONTROLE = {
+  dejaFacture: DEVIS_DEJA_FACTURE,
+  factureDejaFaite: F_DEJA_FACTURE,
+  blDejaFacture: blc(70, "0001", DEVIS_DEJA_FACTURE),
+  deuxBl: DEVIS_DEUX_BL,
+  blPremier: blc(71, "0002", DEVIS_DEUX_BL),
+  blSecond: blc(72, "0003", DEVIS_DEUX_BL),
+  autoliquide: DEVIS_AUTOLIQUIDE,
+  blAutoliquide: blc(73, "0004", DEVIS_AUTOLIQUIDE),
+  attenteAccepter: DEVIS_ATTENTE_ACCEPTER,
+  blAttenteAccepter: blc(74, "0005", DEVIS_ATTENTE_ACCEPTER),
+  attenteRefuser: DEVIS_ATTENTE_REFUSER,
+  blAttenteRefuser: blc(75, "0006", DEVIS_ATTENTE_REFUSER),
+  // Acompte de 30 %, puis bon de commande, puis facture du bon de commande.
+  acompteBc: dcFacture(85, "0025", "Chantier avec acompte"),
+  // Répartitions de convertQuoteToInvoice.
+  repartitionNegative: dcFacture(86, "0026", "Répartition 150 et -50"),
+  repartitionNulle: dcFacture(87, "0027", "Répartition 0"),
+  repartitionDouble: dcFacture(88, "0028", "Répartition 200 sans contrôle"),
+  repartitionMoitie: dcFacture(89, "0029", "Répartition 50 et 50"),
+  // Appels simultanés.
+  concurrentLie: dcFacture(90, "0030", "Facture liée demandée deux fois"),
+  concurrentConversion: dcFacture(91, "0031", "Conversion demandée deux fois"),
+  blConcurrent: bonLivraison(CTRL, 76, {
+    numero: "0007",
+    statut: "DELIVERED",
+    client: CLIENT_CONTROLE,
+    lignes: [["Livraison facturée deux fois", 2, 90]],
+    transporteur: "Transport concurrent",
+    recuPar: "Réception concurrente",
+    creeIlYa: 5,
+  }),
+};
+
+// Facturation de situation : devis de 10 000 € TTC, une situation annulée (10 000 €),
+// une en brouillon (2 000 €), et une facture d'une autre organisation à la même référence.
+const DEVIS_SITUATION = dc(92, { numero: "0032", statut: "COMPLETED", lignes: [ligne("Travaux en situation", 1, 8333.33)] });
+const situation = (compte, n, numero, statut, montantHT) =>
+  facture(compte, n, {
+    numero,
+    statut,
+    client: compte === CTRL ? CLIENT_CONTROLE : CLIENTS.alpha,
+    lignes: [ligne("Situation de travaux", 1, montantHT)],
+    invoiceType: "situation",
+    purchaseOrderNumber: reference(DEVIS_SITUATION),
+    situationReference: reference(DEVIS_SITUATION),
+  });
+export const SITUATION_CONTROLE = {
+  devis: DEVIS_SITUATION,
+  annulee: situation(CTRL, 11, "0002", "CANCELED", 8333.33),
+  brouillon: situation(CTRL, 12, "DRAFT-0001", "DRAFT", 1666.67),
+  autreOrganisation: situation("intrus", 13, "0001", "PENDING", 2500),
+};
+
+// --- « Contrôles Ventes » : documents numérotés, réception, envois, archives ----------
+
+const bcc = (n, numero, statut, nom, o = {}) =>
+  bonCommande(CTRL, n, { numero, statut, client: CLIENT_CONTROLE, lignes: [ligne(nom, 1, 400)], creeIlYa: 5, ...o });
+const blcs = (n, numero, statut, nom, o = {}) =>
+  bonLivraison(CTRL, n, { numero, statut, client: CLIENT_CONTROLE, lignes: [[nom, 1, 40]], transporteur: `Transport ${nom}`, creeIlYa: 5, ...o });
+const archive = (type, n) => ({ archivedPdfKey: `${type}/e2e/archive-${n}.pdf`, archivedPdfStoredAt: DANS(-1), archivedPdfSource: "NEWBI" });
+/** Image PNG d'un pixel : signature manuscrite du réceptionnaire. */
+export const SIGNATURE_RECEPTION = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
+export const DOCUMENTS_CONTROLE = {
+  // Suppression par l'API de documents numérotés (l'écran ne supprime que les brouillons).
+  devisEnAttente: dc(93, { numero: "0033", statut: "PENDING", lignes: [ligne("Devis numéroté en attente", 1, 410)] }),
+  devisRefuse: dc(94, { numero: "0034", statut: "CANCELED", lignes: [ligne("Devis numéroté refusé", 1, 420)] }),
+  bcConfirme: bcc(41, "0001", "CONFIRMED", "Commande numérotée confirmée"),
+  blExpedie: blcs(78, "0009", "SHIPPED", "Livraison numérotée expédiée"),
+  // Verrou des documents annulés.
+  devisRefuseAModifier: dc(95, { numero: "0035", statut: "CANCELED", lignes: [ligne("Devis refusé à modifier", 1, 430)] }),
+  bcAnnuleAModifier: bcc(42, "0002", "CANCELED", "Commande annulée à modifier"),
+  // Bon de commande vers facture : statuts proposés à l'écran.
+  bcValide: bcc(43, "0003", "VALIDATED", "Commande validée à facturer"),
+  bcConfirmeAFacturer: bcc(44, "0004", "CONFIRMED", "Commande confirmée à facturer"),
+  // Envoi d'un brouillon par e-mail.
+  devisBrouillon: dc(96, { numero: "DRAFT-0002", statut: "DRAFT", lignes: [ligne("Brouillon de devis à envoyer", 1, 440)] }),
+  bcBrouillon: bcc(45, "DRAFT-0001", "DRAFT", "Brouillon de commande à envoyer"),
+  blBrouillon: blcs(82, "DRAFT-0001", "DRAFT", "Brouillon de livraison à envoyer"),
+  // Réception d'un bon de livraison.
+  blLivre: blcs(79, "0010", "DELIVERED", "Livraison déjà réceptionnée", { recuPar: "Claire Réception", signatureDataUrl: SIGNATURE_RECEPTION }),
+  blReceptionFuture: blcs(80, "0011", "SHIPPED", "Réception datée dans le futur"),
+  blReceptionAvantEmission: blcs(81, "0012", "SHIPPED", "Réception datée avant l'émission"),
+  blReceptionClavier: blcs(84, "0015", "SHIPPED", "Réception notée au clavier"),
+  // Archives PDF.
+  devisBrouillonArchive: dc(97, { numero: "DRAFT-0003", statut: "DRAFT", lignes: [ligne("Brouillon à archiver", 1, 450)] }),
+  devisArchiveHtml: dc(98, { numero: "0036", statut: "PENDING", lignes: [ligne("Archive qui n'est pas un PDF", 1, 460)] }),
+  devisAccepteArchive: dc(99, { numero: "0037", statut: "COMPLETED", lignes: [ligne("Devis accepté archivé", 1, 470)], ...archive("quotes", 99) }),
+  blLivreArchive: blcs(83, "0013", "DELIVERED", "Livraison archivée", { recuPar: "Hugo Archive", ...archive("deliveryNotes", 83) }),
+  // Transporteur et numéro de suivi réels.
+  blTransporteur: blcs(77, "0014", "PENDING", "Livraison au transporteur réel"),
+};
+
+/** Paramètres des devis de « Ventes » (lus par ses membres, jamais par une autre entreprise). */
+export const PARAMETRES_DEVIS_VENTES = {
+  _id: oid("devisVentes", 300),
+  documentType: "QUOTE",
+  defaultHeaderNotes: "Notes d'en-tête réservées à Ventes",
+  defaultFooterNotes: "",
+  defaultTermsAndConditions: CGV_DEVIS,
+  defaultTermsAndConditionsLinkTitle: "Conditions générales",
+  defaultTermsAndConditionsLink: "https://ventes.e2e.test/cgv",
+  workspaceId: COMPTES.ventes.organisation._id,
+  createdBy: COMPTES.ventes.utilisateur._id,
+  createdAt: DANS(-30),
+  updatedAt: DANS(-30),
+};
+
+// --- Espace sans abonnement ---------------------------------------------------------
+
+const de = (n, o) => devis(EXPIREE, n, { client: CLIENT_EXPIREE, creeIlYa: 5, ...o });
+const DEVIS_EXPIREE_ACCEPTE = de(121, { numero: "0002", statut: "COMPLETED", lignes: [ligne("Devis accepté en lecture seule", 1, 800)] });
+export const DOCUMENTS_EXPIREE = {
+  enAttente: de(120, { numero: "0001", statut: "PENDING", lignes: [ligne("Devis en attente en lecture seule", 1, 600)] }),
+  accepte: DEVIS_EXPIREE_ACCEPTE,
+  bl: bonLivraison(EXPIREE, 60, {
+    numero: "0001",
+    statut: "PENDING",
+    client: CLIENT_EXPIREE,
+    lignes: [["Livraison en lecture seule", 1, 800]],
+    sourceQuote: DEVIS_EXPIREE_ACCEPTE._id,
+    transporteur: "Transport lecture seule",
+    creeIlYa: 5,
+  }),
+};
+
 /** Documents à écrire en base, par collection : { clients: [...], invoices: [...] }. */
 export function donneesDevisBcBl() {
+  const F = FACTURATION_CONTROLE;
   return {
-    clients: Object.values(CLIENTS_VENTES).map(enBaseClient),
-    quotes: [...Object.values(DEVIS_VENTES), ...Object.values(DEVIS_FREELANCE), ...DEVIS_VOLUME, DEVIS_VOLUME_BROUILLON, DEVIS_VOLUME_SIGNATURE],
-    purchaseorders: [...Object.values(BC_VENTES), ...BC_VOLUME],
-    deliverynotes: [...Object.values(BL_VENTES), ...BL_VOLUME],
-    invoices: [FACTURE_VENTES],
-    signaturerequests: [...SIGNATURES_FREELANCE, ...SIGNATURES_VOLUME, ...SIGNATURES_VENTES, ...Object.values(SIGNATURES_CIBLES)],
+    clients: [...Object.values(CLIENTS_VENTES), CLIENT_CONTROLE, CLIENT_EXPIREE].map(enBaseClient),
+    quotes: [
+      ...Object.values(DEVIS_VENTES),
+      ...Object.values(DEVIS_FREELANCE),
+      ...DEVIS_VOLUME,
+      DEVIS_VOLUME_BROUILLON,
+      DEVIS_VOLUME_SIGNATURE,
+      LIENS_VENTES.devis,
+      LIENS_VENTES.devisPdfEnCache,
+      ...Object.values(DEVIS_SIGNATURE),
+      ...[F.dejaFacture, F.deuxBl, F.autoliquide, F.attenteAccepter, F.attenteRefuser, F.acompteBc],
+      ...[F.repartitionNegative, F.repartitionNulle, F.repartitionDouble, F.repartitionMoitie, F.concurrentLie, F.concurrentConversion],
+      SITUATION_CONTROLE.devis,
+      ...Object.values(DOCUMENTS_CONTROLE).filter((d) => d._id.toHexString().startsWith("e2e8b")),
+      DOCUMENTS_EXPIREE.enAttente,
+      DOCUMENTS_EXPIREE.accepte,
+    ],
+    purchaseorders: [...Object.values(BC_VENTES), ...BC_VOLUME, LIENS_VENTES.bc, ...Object.values(DOCUMENTS_CONTROLE).filter((d) => d._id.toHexString().startsWith("e2e9a"))],
+    deliverynotes: [
+      ...Object.values(BL_VENTES),
+      ...BL_VOLUME,
+      LIENS_VENTES.bl,
+      ...[F.blDejaFacture, F.blPremier, F.blSecond, F.blAutoliquide, F.blAttenteAccepter, F.blAttenteRefuser, F.blConcurrent],
+      ...Object.values(DOCUMENTS_CONTROLE).filter((d) => d._id.toHexString().startsWith("e2eaa")),
+      DOCUMENTS_EXPIREE.bl,
+    ],
+    invoices: [
+      FACTURE_VENTES,
+      LIENS_VENTES.factureDevis,
+      LIENS_VENTES.factureBc,
+      LIENS_VENTES.factureBl,
+      F.factureDejaFaite,
+      SITUATION_CONTROLE.annulee,
+      SITUATION_CONTROLE.brouillon,
+      SITUATION_CONTROLE.autreOrganisation,
+    ],
+    signaturerequests: [
+      ...SIGNATURES_FREELANCE,
+      ...SIGNATURES_VOLUME,
+      ...SIGNATURES_VENTES,
+      ...Object.values(SIGNATURES_CIBLES),
+      ...Object.values(SIGNATURES_CONTROLE),
+    ],
     quotetemplates: [...MODELES_FREELANCE, MODELE_VENTES, MODELE_DEVIS_A_SUPPRIMER],
     purchaseordertemplates: [MODELE_BC_VENTES],
     imported_quotes: Object.values(DEVIS_IMPORTES),
     imported_purchase_orders: Object.values(BC_IMPORTES),
+    organizationRole: Object.values(ROLES_VENTES),
+    sharedfolders: Object.values(DOSSIERS_VENTES),
+    documentautomations: Object.values(AUTOMATISATIONS_VENTES),
+    documentsettings: [PARAMETRES_DEVIS_VENTES],
   };
 }

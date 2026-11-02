@@ -4,9 +4,24 @@ import { headers } from "next/headers";
 import { emailTemplates } from "@/src/lib/email-templates";
 import { sendEmail } from "@/src/lib/auth-utils";
 import { withErrorHandler } from "@/src/lib/security";
+import { createIpRateLimiter } from "@/src/lib/security/ip-rate-limit";
+
+// Lecture publique (page d'invitation avant connexion) : 60 lectures par
+// quart d'heure et par adresse. AUTH_RATE_LIMIT_MAX ne sert qu'à la relever
+// (tests de bout en bout, où toutes les pages viennent de la même adresse).
+const isRateLimited = createIpRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: Math.max(60, Number(process.env.AUTH_RATE_LIMIT_MAX) || 0),
+});
 
 export async function GET(request, { params }) {
   try {
+    if (isRateLimited(request)) {
+      return Response.json(
+        { error: "Trop de requêtes, réessayez dans quelques minutes" },
+        { status: 429 },
+      );
+    }
     const { id } = await params;
 
     // Accès direct à MongoDB pour récupérer l'invitation

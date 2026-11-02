@@ -77,6 +77,7 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { useGoToCreation } from "@/src/components/company-info-gate";
+import { addRecent, getRecents } from "@/src/lib/search-recents";
 
 // --- Helpers ---
 
@@ -121,30 +122,6 @@ const formatRelativeDate = (date) => {
     month: "2-digit",
     year: "numeric",
   });
-};
-
-// --- Recents (localStorage) ---
-
-const RECENTS_KEY = "newbi-search-recents";
-const MAX_RECENTS = 5;
-
-const getRecents = () => {
-  try {
-    return JSON.parse(localStorage.getItem(RECENTS_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const addRecent = (item) => {
-  try {
-    const recents = getRecents().filter((r) => r.id !== item.id);
-    recents.unshift(item);
-    localStorage.setItem(
-      RECENTS_KEY,
-      JSON.stringify(recents.slice(0, MAX_RECENTS)),
-    );
-  } catch {}
 };
 
 // --- Icon components ---
@@ -386,9 +363,9 @@ export function SearchCommand() {
   // Load recents on open
   React.useEffect(() => {
     if (open) {
-      setRecents(getRecents());
+      setRecents(getRecents(workspaceId));
     }
-  }, [open]);
+  }, [open, workspaceId]);
 
   // Debounced search
   React.useEffect(() => {
@@ -452,12 +429,15 @@ export function SearchCommand() {
     };
   }, []);
 
-  const runCommand = React.useCallback((command, recentItem) => {
-    setOpen(false);
-    setSearchQuery("");
-    if (recentItem) addRecent(recentItem);
-    command();
-  }, []);
+  const runCommand = React.useCallback(
+    (command, recentItem) => {
+      setOpen(false);
+      setSearchQuery("");
+      if (recentItem) addRecent(workspaceId, recentItem);
+      command();
+    },
+    [workspaceId],
+  );
 
   // Les résultats de l'API sont déjà filtrés par la recherche (sans accents,
   // numéro complet compris) : leur valeur contient la saisie pour que le

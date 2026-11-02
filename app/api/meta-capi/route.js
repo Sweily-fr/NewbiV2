@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
+import {
+  createRelayRateLimiter,
+  readRelayEvent,
+  tooManyRelayCalls,
+} from "@/src/lib/security/tracking-relay";
 
 const PIXEL_ID = process.env.META_PIXEL_ID;
 const ACCESS_TOKEN = process.env.META_CAPI_TOKEN;
+
+const isRateLimited = createRelayRateLimiter();
 
 async function hashData(data) {
   const encoder = new TextEncoder();
@@ -16,8 +23,14 @@ async function hashData(data) {
 }
 
 export async function POST(request) {
-  const { eventName, email, phone, eventId, value, currency } =
-    await request.json();
+  if (isRateLimited(request)) return tooManyRelayCalls();
+  const { body, error } = await readRelayEvent(request);
+  if (error) return error;
+  const { eventName, email, phone, eventId, value, currency } = body;
+
+  if (!PIXEL_ID || !ACCESS_TOKEN) {
+    return NextResponse.json({ skipped: true });
+  }
 
   const payload = {
     data: [
@@ -50,6 +63,9 @@ export async function POST(request) {
     },
   );
 
-  const data = await response.json();
-  return NextResponse.json(data);
+  // Réponse de Meta gardée pour le serveur : le navigateur n'en a pas l'usage
+  if (!response.ok) {
+    console.error("[META CAPI] Événement refusé :", response.status);
+  }
+  return NextResponse.json({ success: response.ok });
 }

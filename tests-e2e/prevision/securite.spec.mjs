@@ -12,7 +12,8 @@ import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_SAISIE_ACHATS } f
 import { ORGANISATION_BORNES, ORGANISATION_SCENARIOS, PREVISIONS_MENSUELLES, RECURRENCES, SAISIES, SAISIES_SAISIE, SCENARIOS } from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { base } from "../base.mjs";
-import { ORG, ORG_SAISIE, PIEGE, avecSession, connecteAchats, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
+import { oid } from "../donnees/base.mjs";
+import { ORG, ORG_SAISIE, PIEGE, avecSession, connecteAchats, photo, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
 
 /** Données visées : « Achats » (Membre, intrus, visiteur) ou « Saisie Achats » (écritures permises de l'Éditeur). */
 const CIBLES = {
@@ -21,6 +22,7 @@ const CIBLES = {
 };
 const cibles = (w) => CIBLES[w] || CIBLES[ORG];
 const parId = (doc) => ({ _id: doc._id });
+const sansId = ({ _id, ...reste }) => reste;
 const mois = (n = 0) => {
   const d = new Date();
   d.setUTCDate(1);
@@ -330,5 +332,174 @@ test.describe("Prévision : un nom piégé ne s'exécute jamais", () => {
       await page.waitForTimeout(1_000);
       await verifierPiegeInerte(page);
     }, { capture: "ecran" });
+  });
+});
+
+/**
+ * Identifiants de scénario d'un autre espace : depuis « Saisie Achats », ses
+ * propres saisies et récurrences avec le scénario « Optimiste » d'« Achats »
+ * (et l'inverse) sont refusés, sans rien écrire ni d'un côté ni de l'autre.
+ */
+test.describe("Prévision : scénario d'un autre espace refusé", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+  const AUTRE = SCENARIOS.optimiste;
+  const scenarioIntact = async (scenario, avant, contexte) => expect(await photo(["forecastscenarios", parId(scenario)]), `${contexte} : le scénario a changé`).toBe(avant);
+  const refuse = (r, champ, contexte) => {
+    expect(r.data?.[champ] ?? null, `${contexte} : accepté par l'API`).toBeNull();
+    expect(r.errors.map((e) => e.message).join(" | "), `${contexte} : refus sans message`).toMatch(/non trouv/i);
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+  });
+
+  test("Nouvelle saisie rattachée au scénario d'un autre espace : refusée, rien créé", async ({ page }) => {
+    const nom = "Saisie vers le scénario des autres";
+    const r = await appelApi(
+      page,
+      `mutation($input: UpsertManualCashflowEntryInput!) { upsertManualCashflowEntry(input: $input) { id scenarioId } }`,
+      { input: { workspaceId: ORG_SAISIE, scenarioId: id(AUTRE), name: nom, type: "EXPENSE", category: "OTHER_EXPENSE", amount: 10, startDate: aujourdhui(), frequency: "MONTHLY" } },
+      { organisation: ORG_SAISIE },
+    );
+    refuse(r, "upsertManualCashflowEntry", "Saisie dans le scénario d'« Achats »");
+    expect(await (await base()).collection("manualcashflowentries").countDocuments({ name: nom })).toBe(0);
+  });
+
+  test("Masquer sa saisie dans le scénario d'un autre espace : refusé", async ({ page }) => {
+    const avant = await photo(["forecastscenarios", parId(AUTRE)]);
+    const r = await appelApi(
+      page,
+      `mutation($id: ID!, $s: ID!) { hideManualCashflowEntryInScenario(id: $id, scenarioId: $s, hidden: true) { id } }`,
+      { id: id(SAISIES_SAISIE.bornes), s: id(AUTRE) },
+      { organisation: ORG_SAISIE },
+    );
+    refuse(r, "hideManualCashflowEntryInScenario", "Masquage dans le scénario d'« Achats »");
+    await scenarioIntact(AUTRE, avant, "Masquage");
+  });
+
+  test("Retirer un mois de sa saisie dans le scénario d'un autre espace : refusé", async ({ page }) => {
+    const avant = await photo(["forecastscenarios", parId(AUTRE)]);
+    const saisieAvant = await photo(["manualcashflowentries", parId(SAISIES_SAISIE.bornes)]);
+    const r = await appelApi(
+      page,
+      `mutation($id: ID!, $m: String!, $s: ID) { excludeForecastOccurrence(kind: MANUAL, id: $id, month: $m, scenarioId: $s) }`,
+      { id: id(SAISIES_SAISIE.bornes), m: mois(2), s: id(AUTRE) },
+      { organisation: ORG_SAISIE },
+    );
+    refuse(r, "excludeForecastOccurrence", "Exclusion dans le scénario d'« Achats »");
+    await scenarioIntact(AUTRE, avant, "Exclusion");
+    expect(await photo(["manualcashflowentries", parId(SAISIES_SAISIE.bornes)]), "La saisie a changé").toBe(saisieAvant);
+  });
+
+  test("Masquer sa récurrence dans le scénario d'un autre espace : refusé", async ({ page }) => {
+    const avant = await photo(["forecastscenarios", parId(AUTRE)]);
+    const r = await appelApi(
+      page,
+      `mutation($id: ID!, $s: ID) { muteDetectedRecurrence(id: $id, muted: true, scenarioId: $s) { id isMuted } }`,
+      { id: id(RECURRENCES.editeurModifier), s: id(AUTRE) },
+      { organisation: ORG_SAISIE },
+    );
+    refuse(r, "muteDetectedRecurrence", "Récurrence dans le scénario d'« Achats »");
+    await scenarioIntact(AUTRE, avant, "Récurrence");
+  });
+
+  test("L'inverse : la saisie d'« Achats » dans son propre scénario, refusée", async ({ page }) => {
+    const sien = SCENARIOS.aRenommer;
+    const r = await appelApi(
+      page,
+      `mutation($id: ID!, $s: ID!) { hideManualCashflowEntryInScenario(id: $id, scenarioId: $s, hidden: true) { id } }`,
+      { id: id(SAISIES.loyer), s: id(sien) },
+      { organisation: ORG_SAISIE },
+    );
+    refuse(r, "hideManualCashflowEntryInScenario", "Saisie d'« Achats » masquée dans son scénario");
+    const scenario = await (await base()).collection("forecastscenarios").findOne(parId(sien));
+    expect((scenario?.hiddenManualEntryIds || []).map(String)).not.toContain(id(SAISIES.loyer));
+  });
+});
+
+/**
+ * Montants et dates hors limites : une saisie de 1e308 €, une progression de
+ * +100 000 % par semaine ou une fin avant le début sont refusées avec un
+ * message ; une saisie démesurée déjà en base ne rend pas la prévision de
+ * l'espace illisible (« Float cannot represent non numeric value »).
+ */
+test.describe("Prévision : montants extrêmes et dates incohérentes", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+  const SAISIE = `mutation($input: UpsertManualCashflowEntryInput!) { upsertManualCashflowEntry(input: $input) { id amount } }`;
+  const base_ = (nom) => ({ workspaceId: ORG_SAISIE, name: nom, type: "EXPENSE", category: "OTHER_EXPENSE", amount: 100, startDate: aujourdhui(), frequency: "MONTHLY" });
+
+  for (const [cas, nom, modif, motif] of [
+    ["montant de 1e308 €", "Saisie démesurée", { amount: 1e308 }, /1 000 000 000/],
+    ["progression de +100 000 % par semaine", "Saisie à progression démesurée", { frequency: "WEEKLY", amountDelta: 100000, amountDeltaType: "PERCENT" }, /progression/i],
+    ["fin avant le début", "Saisie qui finit avant de commencer", { startDate: `${mois(2)}-01`, endDate: `${mois(0)}-01` }, /postérieure/],
+  ]) {
+    test(`${cas} : refusée avec un message, rien en base`, async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      const r = await appelApi(page, SAISIE, { input: { ...base_(nom), ...modif } }, { organisation: ORG_SAISIE });
+      expect(r.data?.upsertManualCashflowEntry ?? null, `Saisie avec ${cas} acceptée`).toBeNull();
+      expect(r.errors.map((e) => e.message).join(" | ")).toMatch(motif);
+      expect(await (await base()).collection("manualcashflowentries").countDocuments({ name: nom })).toBe(0);
+    });
+  }
+
+  test("Une saisie démesurée déjà en base : la prévision de l'espace répond quand même", async ({ page }) => {
+    const db = await base();
+    const W = ORGANISATION_BORNES._id;
+    await db.collection("manualcashflowentries").updateOne(
+      { _id: oid("saisiePrevision", 990) },
+      { $setOnInsert: { ...sansId(SAISIES_SAISIE.bornes), workspaceId: W, name: "Saisie démesurée en base", amount: 1e308, amountDelta: 1e6, amountDeltaType: "PERCENT", frequency: "WEEKLY" } },
+      { upsert: true },
+    );
+    await ouvrir(page, "/dashboard");
+    const r = await appelApi(
+      page,
+      `query($w: ID, $d: String!, $f: String!) { treasuryForecastData(workspaceId: $w, startDate: $d, endDate: $f) { kpi { currentBalance projectedBalance3Months } months { month forecastExpense closingBalance } } }`,
+      { w: W.toHexString(), d: `${mois(0)}-01`, f: `${mois(6)}-01` },
+      { organisation: W.toHexString() },
+    );
+    expect(r.errors.map((e) => e.message), "La prévision de l'espace échoue").toEqual([]);
+    for (const m of r.data.treasuryForecastData.months) expect.soft(Number.isFinite(m.forecastExpense), `Sorties prévues de ${m.month}`).toBe(true);
+  });
+});
+
+/**
+ * Nom de scénario déjà pris (organisation « Bornes ») : « Nouveau scénario »
+ * modifiait en silence le scénario existant ; renommer renvoyait l'erreur
+ * brute de l'index unique (E11000).
+ */
+test.describe("Prévision : nom de scénario déjà pris", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
+  const W = ORGANISATION_BORNES._id.toHexString();
+  const SCENARIO = `mutation($input: UpsertForecastScenarioInput!) { upsertForecastScenario(input: $input) { id name incomeMultiplier expenseMultiplier } }`;
+
+  /** Scénario de départ (créé une fois, retrouvé lors d'une nouvelle tentative). */
+  async function scenarioDeDepart(page, nom, multiplicateurs) {
+    const existant = await (await base()).collection("forecastscenarios").findOne({ workspaceId: ORGANISATION_BORNES._id, name: nom });
+    if (existant) return existant;
+    const r = await appelApi(page, SCENARIO, { input: { workspaceId: W, name: nom, ...multiplicateurs } }, { organisation: W });
+    expect(r.errors, `Création de « ${nom} »`).toEqual([]);
+    return (await base()).collection("forecastscenarios").findOne({ workspaceId: ORGANISATION_BORNES._id, name: nom });
+  }
+
+  test("Nouveau scénario au nom d'un existant : refusé, l'existant inchangé", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    const ref = await scenarioDeDepart(page, "Prudence", { incomeMultiplier: 1.2, expenseMultiplier: 0.9 });
+    const r = await appelApi(page, SCENARIO, { input: { workspaceId: W, name: "Prudence", incomeMultiplier: 1.5, expenseMultiplier: 1 } }, { organisation: W });
+    expect(r.data?.upsertForecastScenario ?? null, "Le scénario existant a été réutilisé (création annoncée)").toBeNull();
+    expect(r.errors.map((e) => e.message).join(" | ")).toMatch(/Un scénario porte déjà ce nom/);
+    const apres = await (await base()).collection("forecastscenarios").findOne({ _id: ref._id });
+    expect({ entrees: apres.incomeMultiplier, sorties: apres.expenseMultiplier }).toEqual({ entrees: 1.2, sorties: 0.9 });
+  });
+
+  test("Renommer un scénario avec le nom d'un autre : refusé avec le même message, sans erreur technique", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    await scenarioDeDepart(page, "Ambition", { incomeMultiplier: 1.3, expenseMultiplier: 1 });
+    const autre = await scenarioDeDepart(page, "Repli", { incomeMultiplier: 0.8, expenseMultiplier: 1 });
+    const r = await appelApi(page, SCENARIO, { input: { id: autre._id.toHexString(), workspaceId: W, name: "Ambition", incomeMultiplier: 0.8, expenseMultiplier: 1 } }, { organisation: W });
+    const messages = r.errors.map((e) => e.message).join(" | ");
+    expect(r.data?.upsertForecastScenario ?? null).toBeNull();
+    expect(messages).not.toMatch(/E11000|duplicate key/);
+    expect(messages).toMatch(/Un scénario porte déjà ce nom/);
+    expect((await (await base()).collection("forecastscenarios").findOne({ _id: autre._id })).name).toBe("Repli");
   });
 });

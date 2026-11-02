@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import {
   requireSession,
   requireOrgAction,
-  requireActiveSubscription,
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
@@ -11,7 +10,9 @@ import {
  * POST /api/banking-connect/disconnect
  *
  * Proxy to backend to disconnect banking provider.
- * Auth: session + droit integrations.manage + active subscription.
+ * Auth: session + droit integrations.manage. Sans abonnement actif aussi :
+ * couper la banque reste possible (l'API ne l'exige pas, comme pour Qonto),
+ * la synchronisation bancaire ne doit pas continuer faute de pouvoir partir.
  */
 async function handler(request) {
   const { user, cookieHeader } = await requireSession(request);
@@ -25,7 +26,6 @@ async function handler(request) {
   // Même droit que les boutons de l'interface : un Membre ou un Comptable
   // ne connecte ni ne coupe la banque de l'espace
   await requireOrgAction(user.id, workspaceId, "integrations", "manage");
-  await requireActiveSubscription(user.id, workspaceId);
 
   // Transmettre le body envoyé par le client (accountId / itemId / provider).
   // Sans ça, le backend recevait un body vide et déconnectait TOUT.

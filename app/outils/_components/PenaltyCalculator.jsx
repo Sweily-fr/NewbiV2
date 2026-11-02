@@ -6,6 +6,7 @@ import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Check, Copy } from "lucide-react";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { parseNombre } from "./nombres";
 
 // Calcul des pénalités de retard entre professionnels.
 //
@@ -22,15 +23,6 @@ const EUR = getNumberFormat("fr-FR", {
   style: "currency",
   currency: "EUR",
 });
-
-// « 1 200 », « 1 200,50 » (espaces de milliers, y compris insécables) :
-// lus comme des nombres, pas coupés au premier espace
-function parseNombre(valeur) {
-  const n = Number.parseFloat(
-    String(valeur).replace(/\s/g, "").replace(",", "."),
-  );
-  return Number.isFinite(n) ? n : 0;
-}
 
 // Jour à Paris (AAAA-MM-JJ) : en UTC, entre minuit et 2 h, la date de
 // paiement proposée était la veille (un jour de retard en moins)
@@ -55,7 +47,8 @@ export default function PenaltyCalculator() {
 
   const resultat = useMemo(() => {
     const montantTTC = parseNombre(montant);
-    const tauxAnnuel = parseNombre(taux);
+    // Un taux négatif ne réduit pas le montant dû : compté comme 0 %
+    const tauxAnnuel = Math.max(0, parseNombre(taux));
     // Un montant négatif ne donne pas de montant dû
     if (!(montantTTC > 0) || !echeance || !paiement) return null;
 

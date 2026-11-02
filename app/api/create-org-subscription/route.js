@@ -116,6 +116,23 @@ async function handler(request) {
   const planName = organizationData.planName;
   const isAnnual = organizationData.isAnnual;
 
+  // Nouvel espace : un SIRET appartient à un seul espace (même règle que
+  // l'inscription et les paramètres), vérifié avant tout paiement
+  if (organizationData.type !== "existing" && organizationData.siret) {
+    const { mongoDb } = await import("@/src/lib/mongodb");
+    const { isSiretTakenByAnotherWorkspace, SIRET_TAKEN_MESSAGE } =
+      await import("@/src/lib/organization-siret-guard");
+    if (
+      await isSiretTakenByAnotherWorkspace({
+        mongoDb,
+        siret: organizationData.siret,
+        userId: session.user.id,
+      })
+    ) {
+      return apiError(409, SIRET_TAKEN_MESSAGE);
+    }
+  }
+
   // Le cabinet du client a arrêté sa prise en charge et sa dernière période
   // court encore : le client souscrit, premier prélèvement à sa fin
   let cabinetHandBack = null;

@@ -14,7 +14,12 @@ import { donneesDevisBcBl } from "./lot-devis-bc-bl.mjs";
 import { donneesAchatsBanque } from "./lot-achats-banque.mjs";
 import { donneesParametresAuth } from "./lot-parametres-auth.mjs";
 import { donneesCollaboration } from "./lot-collaboration.mjs";
+import { donneesKanban } from "./lot-kanban.mjs";
+import { donneesCalendrier } from "./lot-calendrier.mjs";
+import { donneesEmailsEnvoyes } from "./lot-emails-envoyes.mjs";
 import { donneesPilotage } from "./lot-pilotage.mjs";
+import { donneesClientsCatalogue } from "./lot-clients-catalogue.mjs";
+import { donneesCompteEspaces } from "./lot-compte-espaces.mjs";
 
 /** Rassemble les données de plusieurs fonctionnalités, collection par collection. */
 function fusionner(...sources) {
@@ -41,7 +46,12 @@ export async function semer(db) {
     donneesAchatsBanque(),
     donneesParametresAuth(),
     donneesCollaboration(),
+    donneesKanban(),
+    donneesCalendrier(),
+    donneesEmailsEnvoyes(),
     donneesPilotage(),
+    donneesClientsCatalogue(),
+    donneesCompteEspaces(),
   );
   for (const [nom, docs] of Object.entries(collections)) {
     if (docs.length) await db.collection(nom).insertMany(docs);

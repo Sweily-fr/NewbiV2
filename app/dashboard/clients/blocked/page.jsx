@@ -37,7 +37,7 @@ import {
   BlockedPageSkeleton,
   BlockedTableSkeleton,
 } from "./components/blocked-page-skeleton";
-import { useClients, useUnblockClient } from "@/src/hooks/useClients";
+import { useBlockedClients, useUnblockClient } from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { createSearchMatcher } from "@/src/utils/search-text";
@@ -65,7 +65,7 @@ function BlockedContent() {
   const [pageSize, setPageSize] = useState(10);
   const inputRef = useRef(null);
   const { workspaceId } = useWorkspace();
-  const { clients, loading } = useClients(1, 500, "");
+  const { clients, loading } = useBlockedClients();
   const { unblockClient, loading: unblocking } = useUnblockClient();
   const { canDo, isReady } = useMyPermissions();
   // Débloquer = action « block » des clients (tout autorisé tant que la

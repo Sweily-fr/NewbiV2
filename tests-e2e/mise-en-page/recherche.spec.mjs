@@ -6,8 +6,8 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir, cliquer } from "../navigation.mjs";
-import { connecte, SESSION_TOKEN_INTRUS, SESSION_TOKEN_PILOTAGE, SESSION_TOKEN_PILOTAGE_MEMBRE } from "../config.mjs";
-import { CONTACTS_PILOTAGE, FACTURES_PILOTAGE } from "../donnees/lot-pilotage.mjs";
+import { connecte, sessionCookie, SESSION_TOKEN_INTRUS, SESSION_TOKEN_PILOTAGE, SESSION_TOKEN_PILOTAGE_MEMBRE } from "../config.mjs";
+import { AVOIRS_PILOTAGE, BONS_COMMANDE_PILOTAGE, BONS_LIVRAISON_PILOTAGE, CONTACTS_PILOTAGE, DEVIS_PILOTAGE, FACTURES_PILOTAGE } from "../donnees/lot-pilotage.mjs";
 
 const F = FACTURES_PILOTAGE.aEncaisser;
 const REFERENCE = `${F.prefix}-${F.number}`;
@@ -110,5 +110,61 @@ test.describe("Recherche globale (autre entreprise)", () => {
       await expect.soft(fenetreRecherche(page), `« ${texte} » : résultat de « Pilotage »`).not.toContainText(CONTACTS_PILOTAGE.pilote.name);
       await expect.soft(fenetreRecherche(page), `« ${texte} »`).not.toContainText(`${F.prefix}`);
     }
+  });
+});
+
+test.describe("Recherche globale : autres documents et saisies piégeuses (propriétaire)", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_PILOTAGE) });
+
+  for (const [type, doc, operation, groupeAttendu, url] of [
+    ["Un devis", DEVIS_PILOTAGE.enAttente, "GetQuotes", "Devis", /\/dashboard\/outils\/devis\?id=/],
+    ["Un bon de commande", BONS_COMMANDE_PILOTAGE.pilotage, "GetPurchaseOrders", "Bons de commande", /\/dashboard\/outils\/bons-commande\?id=/],
+    ["Un bon de livraison", BONS_LIVRAISON_PILOTAGE.pilotage, "GetDeliveryNotes", "Bons de livraison", /\/dashboard\/outils\/bons-de-livraison\?id=/],
+    ["Un avoir", AVOIRS_PILOTAGE.surPayee, "GetCreditNotes", "Avoirs", /\/dashboard\/outils\/factures\?avoir=/],
+  ]) {
+    test(`${type} retrouvé par son numéro ; le choisir l'ouvre`, async ({ page }) => {
+      await ouvrirRecherche(page);
+      const reponse = await rechercher(page, doc.number, operation);
+      expect(JSON.stringify(reponse?.errors ?? []), "L'API a refusé la recherche").toBe("[]");
+      const zone = groupe(page, groupeAttendu);
+      await etape(page, `Groupe « ${groupeAttendu} »`, async () => expect(zone, `Aucun résultat « ${groupeAttendu} » pour « ${doc.number} »`).toBeVisible({ timeout: 5_000 }), { capture: "ecran" });
+      await zone.getByRole("option").first().click();
+      await expect(page).toHaveURL(url, { timeout: 30_000 });
+    });
+  }
+
+  test("Saisies piégeuses ( * [ antislash, 300 caractères, espaces seuls : aucune erreur", async ({ page }) => {
+    await ouvrirRecherche(page);
+    for (const texte of ["(", "*", "[", "\\", "a(b", "x".repeat(300), "     "]) {
+      const reponse = await rechercher(page, texte);
+      expect.soft(JSON.stringify(reponse?.errors ?? []), `« ${texte.slice(0, 20)} » : refus de l'API`).toBe("[]");
+      await expect.soft(page.locator("[data-sonner-toast][data-type=error]"), `« ${texte.slice(0, 20)} » : message d'erreur affiché`).toHaveCount(0);
+    }
+    await expect(page.getByPlaceholder("Rechercher ou aller à...")).toBeVisible();
+  });
+});
+
+/**
+ * « Récents » : un client ouvert depuis la recherche par le propriétaire de
+ * « Pilotage » n'apparaît pas dans la recherche d'un autre compte qui se
+ * connecte ensuite dans le même navigateur.
+ */
+test.describe("Recherche globale : récents propres à chaque espace", () => {
+  test.use({ storageState: connecte(SESSION_TOKEN_PILOTAGE) });
+
+  test("Un autre compte dans le même navigateur ne voit pas les récents de « Pilotage »", async ({ page, context }) => {
+    const nom = CONTACTS_PILOTAGE.pilote.name;
+    await ouvrirRecherche(page);
+    await rechercher(page, "societe pilote");
+    await groupe(page, "Clients").getByRole("option", { name: new RegExp(nom) }).click();
+    await expect(page).toHaveURL(/\/dashboard\/clients\?id=/, { timeout: 30_000 });
+    await page.keyboard.press("Control+k");
+    await etape(page, "Récents du propriétaire", async () => expect(groupe(page, "Récents"), "Le client ouvert n'apparaît pas dans les récents").toContainText(nom), { capture: "ecran" });
+    await page.keyboard.press("Escape");
+
+    await context.clearCookies();
+    await context.addCookies([sessionCookie(SESSION_TOKEN_INTRUS)]);
+    await ouvrirRecherche(page);
+    await etape(page, "Récents de l'autre compte", async () => expect(fenetreRecherche(page), `« ${nom} » de « Pilotage » visible dans les récents d'un autre compte`).not.toContainText(nom), { capture: "ecran" });
   });
 });
