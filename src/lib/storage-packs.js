@@ -152,7 +152,7 @@ export async function setStoragePacks({
   organizationId,
   quantity,
 }) {
-  const target = Math.floor(Number(quantity));
+  const target = typeof quantity === "number" ? quantity : Number.NaN;
   if (!Number.isInteger(target) || target < 0 || target > 200) {
     throw new StoragePackError(400, "Nombre de packs invalide.");
   }
