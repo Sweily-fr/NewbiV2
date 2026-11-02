@@ -30,6 +30,7 @@ import { PackagePlusIcon } from "lucide-react";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
 import ProductCustomFieldsForm from "./product-custom-fields-form";
 import ProductLinkedProductsForm from "./product-linked-products-form";
+import { linkedRuleError } from "@/src/utils/linked-products";
 import ProductImageField from "./product-image-field";
 
 // Unités utilisées dans les devis
@@ -213,14 +214,11 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         .filter(([_, v]) => v !== "" && v !== null && v !== undefined)
         .map(([fieldId, value]) => ({ fieldId, value }));
 
-      const invalidLink = linkedProducts.find(
-        (link) =>
-          !(parseFloat(link.quantity) > 0) || !(parseFloat(link.per) > 0),
-      );
-      if (invalidLink) {
-        toast.error(
-          `Les quantités du produit lié « ${invalidLink.product?.name || ""} » doivent être supérieures à 0`,
-        );
+      const linkError = linkedProducts
+        .map((link) => linkedRuleError(link))
+        .find(Boolean);
+      if (linkError) {
+        toast.error(linkError);
         return;
       }
 
