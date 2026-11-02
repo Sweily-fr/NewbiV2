@@ -576,12 +576,6 @@ export const DELETE_QUOTE = gql`
   }
 `;
 
-export const SEND_QUOTE = gql`
-  mutation SendQuote($id: ID!, $email: String!) {
-    sendQuote(id: $id, email: $email)
-  }
-`;
-
 export const CHANGE_QUOTE_STATUS = gql`
   mutation ChangeQuoteStatus($id: ID!, $status: QuoteStatus!) {
     changeQuoteStatus(id: $id, status: $status) {
@@ -866,32 +860,6 @@ export const useDeleteQuote = () => {
   };
 
   return { deleteQuote, loading };
-};
-
-// Hook pour envoyer un devis par email
-export const useSendQuote = () => {
-  const [sendQuoteMutation, { loading }] = useMutation(SEND_QUOTE, {
-    onCompleted: () => {
-      toast.success("Devis envoyé avec succès");
-    },
-    onError: (error) => {
-      console.error("Erreur lors de l'envoi du devis:", error);
-      toast.error(error.message || "Erreur lors de l'envoi du devis");
-    },
-  });
-
-  const sendQuote = async (id, email) => {
-    try {
-      await sendQuoteMutation({
-        variables: { id, email },
-      });
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  return { sendQuote, loading };
 };
 
 // Hook pour changer le statut d'un devis

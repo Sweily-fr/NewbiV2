@@ -520,12 +520,6 @@ export const CONVERT_PURCHASE_ORDER_TO_INVOICE = gql`
   }
 `;
 
-export const SEND_PURCHASE_ORDER = gql`
-  mutation SendPurchaseOrder($id: ID!, $workspaceId: ID!, $email: String!) {
-    sendPurchaseOrder(id: $id, workspaceId: $workspaceId, email: $email)
-  }
-`;
-
 // ==================== HOOKS PERSONNALISÉS ====================
 
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
@@ -950,34 +944,6 @@ export const useConvertPurchaseOrderToInvoice = () => {
   };
 
   return { convertToInvoice, loading };
-};
-
-// Hook pour envoyer un bon de commande par email
-export const useSendPurchaseOrder = () => {
-  const { workspaceId } = useRequiredWorkspace();
-
-  const [sendMutation, { loading }] = useMutation(SEND_PURCHASE_ORDER, {
-    onCompleted: () => {
-      toast.success("Bon de commande envoyé avec succès");
-    },
-    onError: (error) => {
-      console.error("Erreur lors de l'envoi du bon de commande:", error);
-      toast.error(error.message || "Erreur lors de l'envoi du bon de commande");
-    },
-  });
-
-  const sendPurchaseOrder = async (id, email) => {
-    try {
-      await sendMutation({
-        variables: { id, workspaceId, email },
-      });
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  return { sendPurchaseOrder, loading };
 };
 
 // ==================== CONSTANTES ====================
