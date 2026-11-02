@@ -286,10 +286,19 @@ test.describe("Agendas connectés : retours OAuth refusés avant tout échange a
       const state = stateSigne(purpose, { userId: id(membre), workspaceId: ORG });
       for (const essai of ["Premier retour", "Même state rejoué"]) {
         await etape(page, essai, async () => {
-          expect(codeErreur(await appelRoute(page, retour(state)), "calendar_error")).toMatch(/^(forbidden|invalid_state|Service momentanément indisponible, veuillez réessayer)$/);
+          expect(codeErreur(await appelRoute(page, retour(state)), "calendar_error")).toMatch(/^(forbidden|invalid_state|other_browser|Service momentanément indisponible, veuillez réessayer)$/);
         });
       }
       expect(await connexionsDe(membre._id)).toBe(avant);
+    });
+
+    // Adresse d'autorisation transmise à quelqu'un d'autre : son navigateur
+    // n'a pas le cookie posé par /authorize chez celui qui a lancé la connexion
+    test(`${fournisseur} : state valide terminé dans un autre navigateur refusé, rien de connecté`, async ({ page }) => {
+      const avant = await connexionsDe(AGENDA.utilisateur._id);
+      const state = stateSigne(purpose, { userId: id(AGENDA.utilisateur), workspaceId: ORG });
+      expect(codeErreur(await appelRoute(page, retour(state)), "calendar_error")).toBe("other_browser");
+      expect(await connexionsDe(AGENDA.utilisateur._id)).toBe(avant);
     });
 
     test(`${fournisseur} : state émis pour un autre parcours (Gmail) refusé`, async ({ page }) => {
