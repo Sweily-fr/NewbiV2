@@ -27,11 +27,6 @@ import {
   Send,
 } from "lucide-react";
 
-/** Champ dont la date se fête chaque année (anniversaire, naissance). */
-export function isBirthdayFieldName(name) {
-  return /anniversaire|naissance|birthday/i.test(name || "");
-}
-
 // Configuration des types de timing
 const TIMING_TYPES = [
   {
@@ -117,7 +112,6 @@ export default function EmailAutomationForm({
       type: automation?.timing?.type || "ON_DATE",
       daysOffset: automation?.timing?.daysOffset || 0,
       sendHour: automation?.timing?.sendHour || 9,
-      repeatYearly: automation?.timing?.repeatYearly ?? false,
     },
     email: {
       fromName: automation?.email?.fromName || "",
@@ -189,7 +183,6 @@ Cordialement,
         type: formData.timing.type,
         daysOffset: parseInt(formData.timing.daysOffset) || 0,
         sendHour: parseInt(formData.timing.sendHour) || 9,
-        repeatYearly: Boolean(formData.timing.repeatYearly),
       },
       email: {
         fromName: formData.email.fromName.trim(),
@@ -220,22 +213,7 @@ Cordialement,
         break;
     }
 
-    const yearly = formData.timing.repeatYearly ? ", chaque année" : "";
-    return `${desc}${yearly} à ${sendHour}h00`;
-  };
-
-  // Choix du champ : un champ d'anniversaire ou de naissance propose la
-  // relance annuelle, tant que l'option n'a pas été touchée à la main
-  const [yearlyTouched, setYearlyTouched] = useState(Boolean(automation));
-  const selectCustomField = (value) => {
-    const field = dateFields.find((f) => f.id === value);
-    setFormData((prev) => ({
-      ...prev,
-      customFieldId: value,
-      timing: yearlyTouched
-        ? prev.timing
-        : { ...prev.timing, repeatYearly: isBirthdayFieldName(field?.name) },
-    }));
+    return `${desc} à ${sendHour}h00`;
   };
 
   const renderStepContent = () => {
@@ -278,7 +256,9 @@ Cordialement,
               <Label>Champ date *</Label>
               <Select
                 value={formData.customFieldId}
-                onValueChange={selectCustomField}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, customFieldId: value })
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionner un champ date" />
@@ -426,29 +406,6 @@ Cordialement,
                     : `L'email sera envoyé ${formData.timing.daysOffset || 0} jour${formData.timing.daysOffset > 1 ? "s" : ""} après la date du champ personnalisé`}{" "}
                 (fuseau horaire Paris)
               </p>
-            </div>
-
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <Label htmlFor="repeat-yearly">Chaque année</Label>
-                <p className="text-xs text-muted-foreground">
-                  Relance à la même date tous les ans, quelle que soit l'année
-                  saisie (anniversaire, date de naissance). Sinon, une seule
-                  fois à la date exacte.
-                </p>
-              </div>
-              <Switch
-                id="repeat-yearly"
-                checked={Boolean(formData.timing.repeatYearly)}
-                onCheckedChange={(checked) => {
-                  setYearlyTouched(true);
-                  setFormData((prev) => ({
-                    ...prev,
-                    timing: { ...prev.timing, repeatYearly: checked },
-                  }));
-                }}
-                className="data-[state=checked]:bg-[#5b50ff]"
-              />
             </div>
           </div>
         );

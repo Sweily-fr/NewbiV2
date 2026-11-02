@@ -136,8 +136,26 @@ test.describe("Automatisations d'e-mails", () => {
     await panneau.getByPlaceholder("Bonjour {clientName},...").fill("Bonjour, toute l'équipe vous souhaite un bon anniversaire.");
     await panneau.getByRole("button", { name: /^(Créer|Enregistrer)$/ }).last().click();
     await expect
-      .poll(async () => (await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG }))?.email?.subject ?? null)
+      .poll(async () => (await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG, "email.subject": "Joyeux anniversaire de la part de l'équipe" }))?.email?.subject ?? null)
       .toBe("Joyeux anniversaire de la part de l'équipe");
+    // Champ « Date d'anniversaire » : relancée chaque année, option proposée d'office
+    const enregistree = await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG, "email.subject": "Joyeux anniversaire de la part de l'équipe" });
+    expect(enregistree.timing.repeatYearly).toBe(true);
+  });
+
+  test("Option « Chaque année » coupée à la main : relance unique enregistrée", async ({ page }) => {
+    const panneau = await nouvelleRelance(page);
+    await panneau.getByRole("combobox").filter({ hasText: "Sélectionner un champ date..." }).click();
+    await page.getByRole("option", { name: CHAMPS_REGLAGES.anniversaire.name }).click();
+    const annuelle = panneau.getByRole("switch", { name: "Chaque année" });
+    await expect(annuelle).toHaveAttribute("aria-checked", "true");
+    await annuelle.click();
+    await panneau.getByPlaceholder("Ex: Rappel - {customFieldName}").fill("Relance unique");
+    await panneau.getByPlaceholder("Bonjour {clientName},...").fill("Bonjour.");
+    await panneau.getByRole("button", { name: /^(Créer|Enregistrer)$/ }).last().click();
+    await expect
+      .poll(async () => (await (await base()).collection("crmemailautomations").findOne({ workspaceId: ORG, "email.subject": "Relance unique" }))?.timing?.repeatYearly ?? null)
+      .toBe(false);
   });
 
   for (const [manque, message] of [
