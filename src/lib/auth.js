@@ -16,7 +16,6 @@ import { beforeSignInHook, afterHook, DISABLED_AUTH_PATHS } from "./auth-hooks";
 import { buildTrustedOrigins } from "./trusted-origins";
 import {
   sendChangeEmailConfirmation,
-  sendReactivationEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
 } from "./auth-utils";
@@ -394,29 +393,6 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // ✅ Désactivé pour permettre l'accès au dashboard sans validation email
-    async signInRateLimit() {
-      return {
-        window: 60,
-        max: 5,
-      };
-    },
-    async beforeSignIn({ user }) {
-      // Vérifier si le compte est actif
-      if (user.isActive === false) {
-        // Envoyer un email de réactivation
-        await sendReactivationEmail(user);
-
-        throw new Error(
-          "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
-        );
-      }
-
-      // ✅ Ne plus bloquer la connexion si l'email n'est pas vérifié
-      // L'utilisateur peut accéder au dashboard et vérifier son email plus tard
-      // Note: On peut ajouter un bandeau d'avertissement dans le dashboard si nécessaire
-
-      return user;
-    },
     sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail(user, url);
     },
