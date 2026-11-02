@@ -50,6 +50,8 @@ test.describe("Stockage : écran et bandeaux (propriétaire, espace plein)", () 
   test("Sans prix Stripe des packs, seule l'offre supérieure est proposée, avec son prix", async ({ page }) => {
     await ouvrirStockage(page);
     await expect(page.getByTestId("offre-packs")).toHaveCount(0);
+    // L'absence de packs est expliquée, pas seulement cachée
+    await expect(page.getByTestId("packs-indisponibles")).toBeVisible();
     const offre = page.getByTestId("offre-superieure");
     await expect(offre).toContainText("Passer à l'offre TPE");
     await expect(offre).toContainText("400 Go de stockage, 48,99 € TTC/mois");
