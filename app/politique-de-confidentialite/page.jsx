@@ -186,8 +186,9 @@ export default function PolitiqueDeConfidentialite() {
                 </p>
                 <ul className="text-gray-600 space-y-2 mb-6">
                   <li>
-                    l'identifiant technique, le nom, le nom d'utilisateur et la
-                    photo de profil du compte ou de la page que vous connectez ;
+                    l'identifiant technique, le nom, le nom d'utilisateur et,
+                    s'il y en a une, l'adresse de la photo de profil du compte
+                    ou de la page que vous connectez ;
                   </li>
                   <li>
                     pour Facebook et LinkedIn, la liste des pages que vous gérez
@@ -231,15 +232,23 @@ export default function PolitiqueDeConfidentialite() {
                 <h3 className="text-xl font-semibold text-gray-700 mb-3">
                   5.3 Contenu de vos posts
                 </h3>
-                <p className="text-gray-600 leading-relaxed mb-6">
+                <p className="text-gray-600 leading-relaxed mb-4">
                   Le texte, les images, les vidéos et le son de votre post sont
                   transmis au réseau choisi au moment de la publication. Une
                   fois publiés, ils relèvent des règles de ce réseau. Les images
                   et vidéos sont stockées chez notre prestataire de stockage
                   (Cloudflare) et servies par notre serveur à une adresse
                   impossible à deviner, pour que le réseau puisse les récupérer.
-                  Elles sont supprimées de notre stockage quand vous supprimez
-                  le post ou la carte du tableau.
+                  Elles sont conservées tant que la carte du post existe, et
+                  supprimées de notre stockage dans les minutes qui suivent la
+                  suppression de la carte, de sa colonne ou du tableau (après la
+                  fin d'une publication en cours). Une image ou une vidéo
+                  envoyée sans être utilisée, ou retirée d'un post, est
+                  supprimée au bout de 7 jours.
+                </p>
+                <p className="text-gray-600 leading-relaxed mb-6">
+                  Newbi ne supprime pas les publications déjà en ligne : pour
+                  retirer une publication, supprimez-la depuis le réseau.
                 </p>
 
                 <h3 className="text-xl font-semibold text-gray-700 mb-3">
@@ -250,16 +259,24 @@ export default function PolitiqueDeConfidentialite() {
                     Les jetons d'accès sont chiffrés et ne sont jamais affichés.
                   </li>
                   <li>
-                    Le nom et la photo des comptes connectés sont mis à jour
-                    automatiquement au moins toutes les quatre semaines.
+                    Le nom, le nom d'utilisateur et la photo des comptes
+                    connectés sont relus auprès du réseau au moins toutes les
+                    quatre semaines, tant que le compte reste connecté.
                   </li>
                   <li>
                     Quand vous déconnectez un compte (Paramètres &gt;
                     Intégrations &gt; Applications &gt; Réseaux sociaux &gt;
                     Connexions &gt; Déconnecter), ses jetons sont effacés
-                    immédiatement et ses posts pas encore publiés sont annulés.
-                    Le nom du compte reste affiché sur les posts de vos tableaux
-                    tant que vous les conservez.
+                    immédiatement, l'accès est révoqué auprès de TikTok et de X,
+                    et ses posts pas encore publiés sont annulés. Le nom du
+                    compte reste affiché sur les posts de vos tableaux tant que
+                    vous les conservez.
+                  </li>
+                  <li>
+                    Si vous supprimez votre compte Newbi et que vous êtes le
+                    dernier membre de l'espace, tous ses comptes de réseaux
+                    sociaux sont déconnectés de la même façon, et les images et
+                    vidéos de ses posts sont supprimées de notre stockage.
                   </li>
                   <li>
                     L'identifiant et le lien des posts publiés restent attachés

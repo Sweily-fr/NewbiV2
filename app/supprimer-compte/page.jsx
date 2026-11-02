@@ -221,7 +221,10 @@ export default function SupprimerCompte() {
               </ol>
               <p className="text-gray-600 leading-relaxed mb-4">
                 Les jetons d'accès du compte sont supprimés immédiatement et ses
-                posts pas encore publiés sont annulés.
+                posts pas encore publiés sont annulés. Si vous supprimez votre
+                compte Newbi (section 2) et que vous êtes le dernier membre de
+                l'espace, tous ses comptes de réseaux sociaux sont déconnectés
+                et les images et vidéos de ses posts sont supprimées.
               </p>
               <p className="text-gray-600 leading-relaxed mb-4">
                 Vous pouvez aussi retirer l'accès depuis les réglages du réseau.
