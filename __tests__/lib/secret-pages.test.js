@@ -10,6 +10,9 @@ import {
 const inline = new Function(
   `${SECRET_PAGE_INLINE_SOURCE}; return __isSecretPage;`,
 )();
+const rechargement = new Function(
+  `${SECRET_PAGE_INLINE_SOURCE}; return __needsFullReload;`,
+)();
 
 const SECRETES = [
   "/transfer/abc123?key=xyz",
@@ -49,6 +52,17 @@ describe("Pages à secret : aucune balise tierce", () => {
     const url = new URL(adresse, "https://www.newbi.fr");
     expect(isSecretLocation(url.pathname, url.search)).toBe(false);
     expect(inline(url)).toBe(false);
+  });
+
+  it("navigation interne : rechargement complet pour un lien secret, pas pour une adresse e-mail seule", () => {
+    const u = (a) => new URL(a, "https://www.newbi.fr");
+    expect(rechargement(u("/transfer/abc?key=x"))).toBe(true);
+    expect(rechargement(u("/auth/reset-password?token=x"))).toBe(true);
+    expect(rechargement(u("/auth/verify?email=a%40b.fr"))).toBe(false);
+    expect(rechargement(u("/auth/login?invitation=x&email=a%40b.fr"))).toBe(
+      false,
+    );
+    expect(rechargement(u("/tarifs"))).toBe(false);
   });
 
   it("adresse illisible : pas de plantage", () => {

@@ -171,7 +171,7 @@ export default function RootLayout({ children }) {
                     try {
                       if (url !== undefined && url !== null) {
                         var next = new URL(url, window.location.href);
-                        if (next.origin === window.location.origin && __isSecretPage(next)) {
+                        if (next.origin === window.location.origin && __needsFullReload(next)) {
                           window.location.assign(next.href);
                           return;
                         }

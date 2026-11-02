@@ -60,12 +60,32 @@ export function isSecretUrl(url) {
   }
 }
 
+// Secrets proprement dits (jetons, clés) : une navigation interne vers une
+// adresse qui en porte recharge la page entière, sans les balises déjà
+// chargées. Une adresse e-mail seule (?email=, ?invitation=) n'empêche que
+// leur chargement : la navigation interne reste fluide (PostHog n'envoie
+// rien depuis ces adresses).
+export const RELOAD_QUERY_KEYS = [
+  "token",
+  "key",
+  "t",
+  "ott",
+  "code",
+  "accessKey",
+];
+
 /**
  * Même règle, en texte, pour le script du <head> (avant React) :
- * `__isSecretPage(location)`.
+ * `__isSecretPage(location)` et `__needsFullReload(url)`.
  */
-export const SECRET_PAGE_INLINE_SOURCE = `function __isSecretPage(loc){try{var p=loc.pathname||"",s=new URLSearchParams(loc.search||""),pre=${JSON.stringify(
-  SECRET_PATH_PREFIXES,
-)},keys=${JSON.stringify(
+const INLINE_MATCH = (fn, keys) =>
+  `function ${fn}(loc){try{var p=loc.pathname||"",s=new URLSearchParams(loc.search||""),pre=${JSON.stringify(
+    SECRET_PATH_PREFIXES,
+  )},keys=${JSON.stringify(
+    keys,
+  )};for(var i=0;i<pre.length;i++){if(p.indexOf(pre[i])===0)return true}for(var j=0;j<keys.length;j++){if(s.has(keys[j]))return true}return false}catch(e){return false}}`;
+
+export const SECRET_PAGE_INLINE_SOURCE = `${INLINE_MATCH(
+  "__isSecretPage",
   SECRET_QUERY_KEYS,
-)};for(var i=0;i<pre.length;i++){if(p.indexOf(pre[i])===0)return true}for(var j=0;j<keys.length;j++){if(s.has(keys[j]))return true}return false}catch(e){return false}}`;
+)}${INLINE_MATCH("__needsFullReload", RELOAD_QUERY_KEYS)}`;
