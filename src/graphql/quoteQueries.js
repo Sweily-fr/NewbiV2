@@ -426,6 +426,18 @@ export const GET_LAST_QUOTE_PREFIX = gql`
   }
 `;
 
+// Liens des documents d'une signature terminée : URL présignées d'une heure,
+// relues au clic (le devis affiché peut venir du cache)
+export const QUOTE_SIGNED_FILES = gql`
+  query QuoteSignedFiles($workspaceId: ID!, $id: ID!) {
+    quote(workspaceId: $workspaceId, id: $id) {
+      id
+      signedDocumentUrl
+      auditTrailUrl
+    }
+  }
+`;
+
 export const GET_QUOTE = gql`
   query GetQuote($workspaceId: ID!, $id: ID!) {
     quote(workspaceId: $workspaceId, id: $id) {
