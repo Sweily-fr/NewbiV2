@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  baseItemOf,
+  storagePackItemOf,
+  storagePackPriceFor,
+} from "@/src/lib/storage-packs";
 import Stripe from "stripe";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
@@ -446,9 +451,8 @@ async function handler(request) {
     console.log(`💳 [CHANGE PLAN] Nouveau Price ID: ${newPriceId}`);
 
     // 7. Trouver l'item du plan de base (pas les sièges)
-    const basePlanItem = stripeSubscription.items.data.find(
-      (item) => item.price.id !== process.env.STRIPE_SEAT_PRICE_ID,
-    );
+    // Article de l'offre : ni siège ni pack de stockage
+    const basePlanItem = baseItemOf(stripeSubscription.items.data);
 
     if (!basePlanItem) {
       return NextResponse.json(
@@ -458,6 +462,30 @@ async function handler(request) {
     }
 
     console.log(`🔄 [CHANGE PLAN] Mise à jour de l'item: ${basePlanItem.id}`);
+
+    const storagePackItem = storagePackItemOf(stripeSubscription.items.data);
+    const storagePackPrice = storagePackPriceFor(isAnnual ? "year" : "month");
+    const storagePackSwap =
+      storagePackItem &&
+      storagePackPrice &&
+      storagePackItem.price?.id !== storagePackPrice
+        ? [
+            {
+              id: storagePackItem.id,
+              price: storagePackPrice,
+              quantity: storagePackItem.quantity,
+            },
+          ]
+        : [];
+    if (storagePackItem && !storagePackPrice) {
+      return NextResponse.json(
+        {
+          error:
+            "Changement d'intervalle impossible : le prix des packs de stockage n'est pas configuré.",
+        },
+        { status: 409 },
+      );
+    }
 
     // ✅ CRITIQUE #4: Clé d'idempotence pour éviter les doubles charges
     const idempotencyKey = `plan_change_${organizationId}_${newPlan}_${isAnnual}_${Date.now()}`;
@@ -473,6 +501,9 @@ async function handler(request) {
               id: basePlanItem.id,
               price: newPriceId,
             },
+            // Packs de stockage : même intervalle que l'offre (exigé par
+            // Stripe), donc prix mensuel ou annuel selon le nouvel intervalle
+            ...storagePackSwap,
           ],
           proration_behavior: "create_prorations",
           metadata: {

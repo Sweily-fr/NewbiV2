@@ -6,6 +6,10 @@ import {
   Observable,
 } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
+import {
+  findStorageQuotaError,
+  STORAGE_QUOTA_EVENT,
+} from "@/src/lib/storage-plans";
 import { setContext } from "@apollo/client/link/context";
 import { RetryLink } from "@apollo/client/link/retry";
 import { WebSocketLink } from "@apollo/client/link/ws";
@@ -324,6 +328,22 @@ const errorLink = onError(
         // informe déjà l'utilisateur et il peut naviguer en lecture seule). On
         // avale silencieusement l'erreur d'écriture refusée par le backend —
         // pas de toast ni de modale.
+        return;
+      }
+
+      // Envoi refusé faute de stockage : une seule fenêtre de proposition
+      // (packs ou offre supérieure) pour tous les écrans d'envoi, qui
+      // gardent leur propre message d'échec
+      const storageRefusal = findStorageQuotaError({ graphQLErrors });
+      if (storageRefusal && typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent(STORAGE_QUOTA_EVENT, {
+            detail: {
+              message: storageRefusal.message,
+              details: storageRefusal.extensions?.details || null,
+            },
+          }),
+        );
         return;
       }
 

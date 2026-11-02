@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   DollarSign,
   Wallet,
+  HardDrive,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -55,6 +56,7 @@ import InformationsLegalesSection from "./settings/informations-legales-section"
 import EspacesSection from "./settings/espaces-section";
 import FacturationSection from "./settings/facturation-section";
 import { SubscriptionSection } from "./settings/subscription-section";
+import { StorageSection } from "./settings/storage-section";
 import { SecuritySection } from "./settings/security-section";
 import RolesSection from "./settings/roles-section";
 import UserInfoSection from "./settings/user-info-section";
@@ -608,6 +610,8 @@ export function SettingsModal({
         return (
           <SubscriptionSection canManageSubscription={canManageSubscription} />
         );
+      case "stockage":
+        return <StorageSection onTabChange={handleTabChange} />;
       case "securite":
         return (
           <SecuritySection
@@ -717,6 +721,13 @@ export function SettingsModal({
           label: "Facturation",
           icon: DollarSign,
         },
+        // Visible par tous : l'état du stockage ; détail et achats selon le
+        // rôle (« Voir » / « Gérer l'abonnement »)
+        {
+          id: "stockage",
+          label: "Stockage",
+          icon: HardDrive,
+        },
       ],
     },
     isAccountManager && {
@@ -760,6 +771,7 @@ export function SettingsModal({
           showBilling={showBilling}
           showOrgSettings={showOrgSettings}
           isAccountManager={isAccountManager}
+          initialTab={initialTab}
         />
       </FormProvider>
     );

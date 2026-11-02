@@ -188,6 +188,8 @@ const PASSTHROUGH_ERROR_CODES = [
   "VALIDATION_ERROR",
   "RESOURCE_LOCKED",
   "DUPLICATE_DOCUMENT_NUMBER",
+  // Espace de stockage plein : le message dit l'espace utilisé et le quota
+  "STORAGE_QUOTA_EXCEEDED",
 ];
 
 // Fragments qui trahissent un message technique (Mongoose brut, exception

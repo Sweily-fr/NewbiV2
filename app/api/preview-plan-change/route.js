@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { baseItemOf } from "@/src/lib/storage-packs";
 import Stripe from "stripe";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
@@ -319,9 +320,8 @@ async function handler(request) {
   }
 
   // 7. Trouver l'item du plan de base
-  const basePlanItem = stripeSubscription.items.data.find(
-    (item) => item.price.id !== process.env.STRIPE_SEAT_PRICE_ID,
-  );
+  // Article de l'offre : ni siège ni pack de stockage
+  const basePlanItem = baseItemOf(stripeSubscription.items.data);
 
   if (!basePlanItem) {
     return NextResponse.json(
