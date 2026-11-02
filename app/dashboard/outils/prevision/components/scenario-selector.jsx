@@ -13,6 +13,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Button } from "@/src/components/ui/button";
@@ -193,7 +196,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                       e.stopPropagation();
                       openEdit(s);
                     }}
-                    className="text-[10px] text-muted-foreground/40 hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity px-1"
+                    className="text-[10px] text-muted-foreground/40 hover:text-foreground opacity-0 group-hover:opacity-100 group-data-[highlighted]:opacity-100 transition-opacity px-1"
                   >
                     Modifier
                   </button>
@@ -206,7 +209,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                       handleDelete(s);
                     }}
                     disabled={deleting}
-                    className="text-[10px] text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity px-1 disabled:opacity-50"
+                    className="text-[10px] text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 group-data-[highlighted]:opacity-100 transition-opacity px-1 disabled:opacity-50"
                   >
                     Supprimer
                   </button>
@@ -229,6 +232,32 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                 <span className="text-xs">Nouveau scénario</span>
               </DropdownMenuItem>
             </>
+          )}
+
+          {/* Modifier ou supprimer au clavier : les boutons d'une ligne ne
+              s'atteignent qu'à la souris, ce sous-menu les reprend */}
+          {scenarios.length > 0 && (canEditForecast || canDeleteForecast) && (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="text-xs cursor-pointer">
+                {canEditForecast
+                  ? "Modifier un scénario"
+                  : "Supprimer un scénario"}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {scenarios.map((s) => (
+                  <DropdownMenuItem
+                    key={s.id}
+                    disabled={!canEditForecast && deleting}
+                    onClick={() =>
+                      canEditForecast ? openEdit(s) : handleDelete(s)
+                    }
+                    className="text-xs cursor-pointer"
+                  >
+                    {s.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

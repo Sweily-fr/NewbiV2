@@ -36,10 +36,15 @@ const COMMUNS = {
   ...MOIS,
 };
 const ECRITURE = {
-  "button Base": { menu: ["Base", "Optimiste +20% / -10% Modifier", "Nouveau scénario"] },
+  "button Base": { menu: ["Base", "Optimiste +20% / -10% Modifier", "Nouveau scénario", "Modifier un scénario"] },
   "button Base > Base": { sansEffet: "Base déjà affichée" },
   "button Base > Optimiste +20% / -10% Modifier": { contenu: true },
   "button Base > Nouveau scénario": { fenetre: "Nouveau scénario" },
+  // Sous-menu qui reprend « Modifier » de chaque ligne, atteignable au clavier
+  "button Base > Modifier un scénario": { menu: ["Optimiste"] },
+  // Sections repliables, et cellules des mois à venir (une par ligne de catégorie)
+  "button Entrées": { etat: /expanded/ },
+  "button Sorties": { etat: /expanded/ },
   "button Ajouter une prévision": { fenetre: "Nouvelle saisie" },
   "button Exporter": { fenetre: "Exporter la prévision" },
   // Saisies (« Modifier la saisie ») et récurrence détectée (« Modifier la récurrence ») : même nom, la première ligne est une saisie.
@@ -85,5 +90,35 @@ test.describe("Prévision (membre, lecture seule)", () => {
     const dialogue = page.getByRole("dialog").last();
     await expect(dialogue).toBeVisible();
     await expect(dialogue.getByRole("button", { name: /Ajouter|Supprimer|Modifier/ })).toHaveCount(0);
+  });
+});
+
+test.describe("Prévision au clavier", () => {
+  test.use({ storageState: connecteAchats(SESSION_TOKEN_ACHATS) });
+
+  test("replier Entrées, ajouter depuis une cellule, modifier un scénario : sans la souris", async ({ page }) => {
+    await ouvrirPrevision(page);
+    const entrees = page.getByRole("button", { name: "Entrées", exact: true });
+    await expect(entrees).toHaveAttribute("aria-expanded", "true");
+    await entrees.focus();
+    await page.keyboard.press("Enter");
+    await expect(entrees).toHaveAttribute("aria-expanded", "false");
+    await page.keyboard.press("Space");
+    await expect(entrees).toHaveAttribute("aria-expanded", "true");
+
+    const cellule = page.getByRole("button", { name: /^Ajouter une prévision « .+ » en \S+ \d{4}$/ }).first();
+    await cellule.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog", { name: "Nouvelle saisie" })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: "Base" }).focus();
+    await page.keyboard.press("Enter");
+    const sousMenu = page.getByRole("menuitem", { name: "Modifier un scénario" });
+    await sousMenu.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.getByRole("menuitem", { name: "Optimiste", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog", { name: "Modifier le scénario" })).toBeVisible();
   });
 });
