@@ -18,6 +18,7 @@ import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 import { capture, identify } from "@/src/lib/analytics";
 import { startupPagePath } from "@/src/lib/startup-page";
 import { safeInternalPath } from "@/src/lib/safe-redirect";
+import { invitationPagePath } from "@/src/lib/invitation-link";
 
 // Compte gestionnaire (cabinet) : il arrive sur son espace, la liste de ses
 // clients, plutôt que sur le tableau de bord d'une entreprise
@@ -300,46 +301,13 @@ const LoginForm = () => {
           }
         }
 
-        if (invitationId && invitationEmail) {
-          try {
-            const response = await fetch(`/api/invitations/${invitationId}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "accept" }),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-              if (result.organizationId) {
-                localStorage.setItem(
-                  "active_organization_id",
-                  result.organizationId,
-                );
-                await authClient.organization.setActive({
-                  organizationId: result.organizationId,
-                });
-              }
-              toast.success(
-                "Invitation acceptée ! Bienvenue dans l'organisation.",
-              );
-              localStorage.removeItem("pendingInvitation");
-
-              if (session?.user?.isInvitedUser) {
-                // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
-                router.push("/dashboard?welcome=invited");
-                return;
-              }
-            } else {
-              if (response.status === 410 || response.status === 400) {
-                localStorage.removeItem("pendingInvitation");
-              }
-              toast.error(
-                result.error || "Erreur lors de l'acceptation de l'invitation",
-              );
-            }
-          } catch (error) {
-            toast.error("Erreur lors de l'acceptation de l'invitation");
+        // Invitation : jamais acceptée à la place de l'utilisateur. Il est
+        // conduit à la page de l'invitation, où il l'accepte ou la refuse.
+        if (invitationId) {
+          localStorage.removeItem("pendingInvitation");
+          if (/^[0-9a-f]{24}$/i.test(invitationId)) {
+            router.push(invitationPagePath(invitationId, invitationEmail));
+            return;
           }
         }
 
@@ -531,70 +499,11 @@ const LoginForm = () => {
       const invitationEmail = urlParams.get("email");
       const callbackUrl = safeInternalPath(urlParams.get("callbackUrl"));
 
-      // Si c'est une connexion via invitation, accepter automatiquement l'invitation
-      if (invitationId && invitationEmail) {
-        try {
-          const response = await fetch(`/api/invitations/${invitationId}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ action: "accept" }),
-          });
-
-          const result = await response.json();
-
-          if (response.ok) {
-            // ✅ CRITIQUE: Stocker l'organizationId dans localStorage pour Apollo Client
-            if (result.organizationId) {
-              localStorage.setItem(
-                "active_organization_id",
-                result.organizationId,
-              );
-              console.log(
-                `📦 [2FA] Organization ID stocké: ${result.organizationId}`,
-              );
-
-              // ✅ Définir l'organisation active côté client Better Auth
-              await authClient.organization.setActive({
-                organizationId: result.organizationId,
-              });
-              console.log(`🔄 [2FA] Organisation active définie côté client`);
-            }
-
-            toast.success(
-              "Invitation acceptée ! Bienvenue dans l'organisation.",
-            );
-
-            // ✅ Nettoyer le localStorage après succès
-            localStorage.removeItem("pendingInvitation");
-
-            // ✅ Vérifier si l'utilisateur est un invité (pas d'org propre)
-            const { data: session } = await authClient.getSession();
-            const isInvitedUser = session?.user?.isInvitedUser;
-
-            if (isInvitedUser) {
-              console.log(
-                `📨 [2FA] Utilisateur invité détecté, skip onboarding`,
-              );
-              await authClient.updateUser({
-                hasSeenOnboarding: true,
-              });
-              router.push("/dashboard?welcome=invited");
-              return true;
-            }
-          } else {
-            // ✅ Nettoyer le localStorage en cas d'erreur définitive
-            if (response.status === 410 || response.status === 400) {
-              localStorage.removeItem("pendingInvitation");
-            }
-            toast.error(
-              result.error || "Erreur lors de l'acceptation de l'invitation",
-            );
-          }
-        } catch (error) {
-          toast.error("Erreur lors de l'acceptation de l'invitation");
-        }
+      // Invitation : acceptée seulement sur sa page, par l'utilisateur
+      if (invitationId && /^[0-9a-f]{24}$/i.test(invitationId)) {
+        localStorage.removeItem("pendingInvitation");
+        router.push(invitationPagePath(invitationId, invitationEmail));
+        return true;
       }
 
       if (callbackUrl) {

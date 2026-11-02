@@ -114,8 +114,8 @@ test.describe("Double authentification : sans session, rien", () => {
 
 test.describe("Durée de session de l'espace", () => {
   test.use({ storageState: connecte(COMPTES_CE.dureeSession.token), erreursConsoleAutorisees: REFUS_CONSOLE });
-  // Défaut connu : la durée choisie dans Sécurité (7, 30 ou 90 jours) est
-  // enregistrée mais jamais appliquée (toutes les sessions valent 30 jours).
+  // La durée choisie dans Sécurité (7, 30 ou 90 jours) borne la session
+  // depuis la connexion, renouvellement compris.
   test("Durée de 7 jours : une session ouverte il y a 8 jours n'est plus valable", async ({ page }) => {
     await surLeSite(page);
     const r = await appelAuth(page, "/get-session", { methode: "GET" });
@@ -126,9 +126,8 @@ test.describe("Durée de session de l'espace", () => {
 test.describe("Désactiver le compte : la fenêtre dit ce qui se passe", () => {
   // L'espace, sans abonnement, est en lecture seule (402 des comptes bancaires, défaut dédié).
   test.use({ storageState: connecte(COMPTES_CE.desactivationTexte.token), erreursConsoleAutorisees: /401|status of 402/ });
-  // Défaut connu : la fenêtre annonce une suppression définitive et
-  // irréversible, alors que le compte est seulement suspendu (réactivable par
-  // le lien envoyé à la prochaine connexion, données conservées).
+  // Le compte est seulement suspendu (réactivable par le lien envoyé à la
+  // prochaine connexion, données conservées) : la fenêtre le dit.
   test("Le texte n'annonce pas une suppression définitive d'un compte réactivable", async ({ page }) => {
     await ouvrirParametres(page, "user-info");
     await contenuParametres(page).getByRole("button", { name: "Désactiver", exact: true }).click();
@@ -136,6 +135,8 @@ test.describe("Désactiver le compte : la fenêtre dit ce qui se passe", () => {
     await expect(fenetre).toBeVisible();
     const texte = (await fenetre.innerText()).replace(/\s+/g, " ");
     expect(texte, "La fenêtre promet une suppression définitive").not.toMatch(/définitivement|irréversible/i);
+    expect(texte).toMatch(/suspendu/i);
+    expect(texte).toMatch(/réactiver/i);
     await fenetre.getByRole("button", { name: "Annuler" }).click();
     expect((await utilisateur(COMPTES_CE.desactivationTexte)).isActive).toBe(true);
   });

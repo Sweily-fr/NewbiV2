@@ -9,6 +9,7 @@ import { ForceDesktopViewport } from "@/src/components/force-desktop-viewport";
 import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 import { SITE_URL } from "@/src/lib/site";
+import { SECRET_PAGE_INLINE_SOURCE } from "@/src/lib/secret-pages";
 
 // Même police et même variable que geist/font/mono, mais sans préchargement :
 // la variante mono (71 kB) était préchargée sur toutes les pages alors qu'elle
@@ -137,26 +138,49 @@ export default function RootLayout({ children }) {
             head pour que Google détecte le tag, mais en Consent Mode v2 :
             tout est « denied » par défaut (pas de cookie publicitaire avant
             consentement, RGPD/CNIL) et MarketingPixels passe en « granted »
-            dès que l'utilisateur accepte les cookies marketing/analytics. */}
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=AW-18448267727"
-        />
+            dès que l'utilisateur accepte les cookies marketing/analytics.
+            Jamais chargé sur une page dont l'adresse porte un secret
+            (src/lib/secret-pages.js) : Google recevrait l'adresse complète.
+            Une navigation interne vers une telle page recharge la page
+            entière, sans les balises déjà chargées. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('consent', 'default', {
-                'ad_storage': 'denied',
-                'ad_user_data': 'denied',
-                'ad_personalization': 'denied',
-                'analytics_storage': 'denied',
-                'wait_for_update': 500
-              });
-              gtag('js', new Date());
-
-              gtag('config', 'AW-18448267727');
+              (function() {
+                ${SECRET_PAGE_INLINE_SOURCE}
+                window.__isSecretPage = __isSecretPage;
+                if (__isSecretPage(window.location)) return;
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = function gtag(){dataLayer.push(arguments);};
+                gtag('consent', 'default', {
+                  'ad_storage': 'denied',
+                  'ad_user_data': 'denied',
+                  'ad_personalization': 'denied',
+                  'analytics_storage': 'denied',
+                  'wait_for_update': 500
+                });
+                gtag('js', new Date());
+                gtag('config', 'AW-18448267727');
+                var tag = document.createElement('script');
+                tag.async = true;
+                tag.src = 'https://www.googletagmanager.com/gtag/js?id=AW-18448267727';
+                document.head.appendChild(tag);
+                ['pushState', 'replaceState'].forEach(function(method) {
+                  var original = history[method];
+                  history[method] = function(state, title, url) {
+                    try {
+                      if (url !== undefined && url !== null) {
+                        var next = new URL(url, window.location.href);
+                        if (next.origin === window.location.origin && __needsFullReload(next)) {
+                          window.location.assign(next.href);
+                          return;
+                        }
+                      }
+                    } catch (e) {}
+                    return original.apply(this, arguments);
+                  };
+                });
+              })();
             `,
           }}
         />
