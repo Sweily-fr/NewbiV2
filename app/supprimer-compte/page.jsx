@@ -23,7 +23,7 @@ export default function SupprimerCompte() {
             Désactivation et suppression de votre compte Newbi
           </h1>
           <p className="text-sm text-gray-500 mb-8">
-            Dernière mise à jour : 22 juillet 2026
+            Dernière mise à jour : 02 novembre 2026
           </p>
 
           <div className="prose prose-gray max-w-none">
@@ -184,6 +184,72 @@ export default function SupprimerCompte() {
                 >
                   contact@newbi.fr
                 </a>
+                .
+              </p>
+            </section>
+
+            {/* Ancre donnée à Meta comme « Data deletion instructions URL » */}
+            <section id="reseaux-sociaux" className="mb-8 scroll-mt-32">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                6. Réseaux sociaux connectés (Facebook, Instagram, LinkedIn,
+                TikTok, X)
+              </h2>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                Pour retirer à Newbi l'accès à un compte de réseau social et
+                supprimer les données que nous en avons reçues :
+              </p>
+              <ol className="list-decimal list-inside text-gray-600 leading-relaxed space-y-2 mb-4">
+                <li>
+                  Connectez-vous sur{" "}
+                  <a
+                    href="https://www.newbi.fr"
+                    className="text-blue-600 underline"
+                  >
+                    https://www.newbi.fr
+                  </a>
+                </li>
+                <li>
+                  Accédez à <strong>Paramètres</strong> →{" "}
+                  <strong>Intégrations</strong> → <strong>Applications</strong>{" "}
+                  → <strong>Réseaux sociaux</strong> →{" "}
+                  <strong>Connexions</strong>
+                </li>
+                <li>
+                  Cliquez sur <strong>Déconnecter</strong> à côté du compte
+                  concerné
+                </li>
+              </ol>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                Les jetons d'accès du compte sont supprimés immédiatement et ses
+                posts pas encore publiés sont annulés.
+              </p>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                Vous pouvez aussi retirer l'accès depuis les réglages du réseau.
+                Pour Facebook et Instagram, une demande de suppression de vos
+                données faite depuis ces réseaux est traitée automatiquement :
+                vos comptes sont déconnectés, leurs jetons effacés, et le réseau
+                vous donne un code de suivi.
+              </p>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                Si vous n'avez plus accès à Newbi, écrivez à{" "}
+                <a
+                  href="mailto:contact@newbi.fr?subject=Suppression%20des%20donn%C3%A9es%20r%C3%A9seaux%20sociaux"
+                  className="text-blue-600 underline"
+                >
+                  contact@newbi.fr
+                </a>{" "}
+                depuis l'adresse de votre compte, objet{" "}
+                <em>Suppression des données réseaux sociaux</em> : nous traitons
+                la demande sous 30 jours.
+              </p>
+              <p className="text-gray-600 leading-relaxed">
+                Le détail des données concernées figure dans notre{" "}
+                <Link
+                  href="/politique-de-confidentialite#reseaux-sociaux"
+                  className="text-blue-600 underline"
+                >
+                  Politique de confidentialité
+                </Link>
                 .
               </p>
             </section>
