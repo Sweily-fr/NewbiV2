@@ -1,24 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { toast } from '@/src/components/ui/sonner';
-import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Badge } from '@/src/components/ui/badge';
-import { Switch } from '@/src/components/ui/switch';
-import { Textarea } from '@/src/components/ui/textarea';
+import React, { useState } from "react";
+import { toast } from "@/src/components/ui/sonner";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Badge } from "@/src/components/ui/badge";
+import { Switch } from "@/src/components/ui/switch";
+import { Textarea } from "@/src/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
-import {
-  Card,
-  CardContent,
-} from '@/src/components/ui/card';
+} from "@/src/components/ui/select";
+import { Card, CardContent } from "@/src/components/ui/card";
 import {
   Mail,
   Calendar,
@@ -28,33 +25,48 @@ import {
   Check,
   Loader2,
   Send,
-} from 'lucide-react';
+} from "lucide-react";
+
+/** Champ dont la date se fête chaque année (anniversaire, naissance). */
+export function isBirthdayFieldName(name) {
+  return /anniversaire|naissance|birthday/i.test(name || "");
+}
 
 // Configuration des types de timing
 const TIMING_TYPES = [
   {
-    value: 'ON_DATE',
-    label: 'Le jour même',
-    description: 'Envoyer l\'email le jour de la date',
+    value: "ON_DATE",
+    label: "Le jour même",
+    description: "Envoyer l'email le jour de la date",
   },
   {
-    value: 'BEFORE_DATE',
-    label: 'Avant la date',
-    description: 'Envoyer l\'email X jours avant la date',
+    value: "BEFORE_DATE",
+    label: "Avant la date",
+    description: "Envoyer l'email X jours avant la date",
   },
   {
-    value: 'AFTER_DATE',
-    label: 'Après la date',
-    description: 'Envoyer l\'email X jours après la date',
+    value: "AFTER_DATE",
+    label: "Après la date",
+    description: "Envoyer l'email X jours après la date",
   },
 ];
 
 // Configuration des étapes du wizard
 const WIZARD_STEPS = [
-  { id: 1, title: 'Informations', description: 'Nom et description', icon: Mail },
-  { id: 2, title: 'Déclencheur', description: 'Champ date et timing', icon: Calendar },
-  { id: 3, title: 'Email', description: 'Contenu de l\'email', icon: Send },
-  { id: 4, title: 'Confirmation', description: 'Résumé', icon: Check },
+  {
+    id: 1,
+    title: "Informations",
+    description: "Nom et description",
+    icon: Mail,
+  },
+  {
+    id: 2,
+    title: "Déclencheur",
+    description: "Champ date et timing",
+    icon: Calendar,
+  },
+  { id: 3, title: "Email", description: "Contenu de l'email", icon: Send },
+  { id: 4, title: "Confirmation", description: "Résumé", icon: Check },
 ];
 
 function StepSidebar({ currentStep, steps, onStepClick }) {
@@ -65,7 +77,7 @@ function StepSidebar({ currentStep, steps, onStepClick }) {
           const Icon = step.icon;
           const isActive = currentStep === step.id;
           const isCompleted = currentStep > step.id;
-          
+
           return (
             <button
               key={step.id}
@@ -73,10 +85,10 @@ function StepSidebar({ currentStep, steps, onStepClick }) {
               onClick={() => isCompleted && onStepClick(step.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
                 isActive
-                  ? 'bg-primary text-primary-foreground'
+                  ? "bg-primary text-primary-foreground"
                   : isCompleted
-                  ? 'hover:bg-muted cursor-pointer text-foreground'
-                  : 'text-muted-foreground cursor-default'
+                    ? "hover:bg-muted cursor-pointer text-foreground"
+                    : "text-muted-foreground cursor-default"
               }`}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
@@ -89,29 +101,32 @@ function StepSidebar({ currentStep, steps, onStepClick }) {
   );
 }
 
-export default function EmailAutomationForm({ 
-  automation, 
-  dateFields, 
-  onSave, 
-  onCancel, 
-  isLoading 
+export default function EmailAutomationForm({
+  automation,
+  dateFields,
+  onSave,
+  onCancel,
+  isLoading,
 }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: automation?.name || '',
-    description: automation?.description || '',
-    customFieldId: automation?.customFieldId || '',
+    name: automation?.name || "",
+    description: automation?.description || "",
+    customFieldId: automation?.customFieldId || "",
     timing: {
-      type: automation?.timing?.type || 'ON_DATE',
+      type: automation?.timing?.type || "ON_DATE",
       daysOffset: automation?.timing?.daysOffset || 0,
       sendHour: automation?.timing?.sendHour || 9,
+      repeatYearly: automation?.timing?.repeatYearly ?? false,
     },
     email: {
-      fromName: automation?.email?.fromName || '',
-      fromEmail: automation?.email?.fromEmail || '',
-      replyTo: automation?.email?.replyTo || '',
-      subject: automation?.email?.subject || 'Rappel - {customFieldName}',
-      body: automation?.email?.body || `Bonjour {clientName},
+      fromName: automation?.email?.fromName || "",
+      fromEmail: automation?.email?.fromEmail || "",
+      replyTo: automation?.email?.replyTo || "",
+      subject: automation?.email?.subject || "Rappel - {customFieldName}",
+      body:
+        automation?.email?.body ||
+        `Bonjour {clientName},
 
 Nous vous rappelons que la date de {customFieldName} est prévue pour le {customFieldValue}.
 
@@ -121,30 +136,32 @@ Cordialement,
     isActive: automation?.isActive ?? true,
   });
 
-  const selectedField = dateFields.find(f => f.id === formData.customFieldId);
-  const selectedTiming = TIMING_TYPES.find(t => t.value === formData.timing.type);
+  const selectedField = dateFields.find((f) => f.id === formData.customFieldId);
+  const selectedTiming = TIMING_TYPES.find(
+    (t) => t.value === formData.timing.type,
+  );
 
   const validateStep = (step) => {
     switch (step) {
       case 1:
         if (!formData.name.trim()) {
-          toast.error('Le nom est requis');
+          toast.error("Le nom est requis");
           return false;
         }
         return true;
       case 2:
         if (!formData.customFieldId) {
-          toast.error('Veuillez sélectionner un champ date');
+          toast.error("Veuillez sélectionner un champ date");
           return false;
         }
         return true;
       case 3:
         if (!formData.email.subject.trim()) {
-          toast.error('L\'objet de l\'email est requis');
+          toast.error("L'objet de l'email est requis");
           return false;
         }
         if (!formData.email.body.trim()) {
-          toast.error('Le corps de l\'email est requis');
+          toast.error("Le corps de l'email est requis");
           return false;
         }
         return true;
@@ -172,6 +189,7 @@ Cordialement,
         type: formData.timing.type,
         daysOffset: parseInt(formData.timing.daysOffset) || 0,
         sendHour: parseInt(formData.timing.sendHour) || 9,
+        repeatYearly: Boolean(formData.timing.repeatYearly),
       },
       email: {
         fromName: formData.email.fromName.trim(),
@@ -188,21 +206,36 @@ Cordialement,
 
   const getTimingDescription = () => {
     const { type, daysOffset, sendHour } = formData.timing;
-    let desc = '';
-    
+    let desc = "";
+
     switch (type) {
-      case 'ON_DATE':
-        desc = 'Le jour même';
+      case "ON_DATE":
+        desc = "Le jour même";
         break;
-      case 'BEFORE_DATE':
-        desc = `${daysOffset} jour${daysOffset > 1 ? 's' : ''} avant`;
+      case "BEFORE_DATE":
+        desc = `${daysOffset} jour${daysOffset > 1 ? "s" : ""} avant`;
         break;
-      case 'AFTER_DATE':
-        desc = `${daysOffset} jour${daysOffset > 1 ? 's' : ''} après`;
+      case "AFTER_DATE":
+        desc = `${daysOffset} jour${daysOffset > 1 ? "s" : ""} après`;
         break;
     }
-    
-    return `${desc} à ${sendHour}h00`;
+
+    const yearly = formData.timing.repeatYearly ? ", chaque année" : "";
+    return `${desc}${yearly} à ${sendHour}h00`;
+  };
+
+  // Choix du champ : un champ d'anniversaire ou de naissance propose la
+  // relance annuelle, tant que l'option n'a pas été touchée à la main
+  const [yearlyTouched, setYearlyTouched] = useState(Boolean(automation));
+  const selectCustomField = (value) => {
+    const field = dateFields.find((f) => f.id === value);
+    setFormData((prev) => ({
+      ...prev,
+      customFieldId: value,
+      timing: yearlyTouched
+        ? prev.timing
+        : { ...prev.timing, repeatYearly: isBirthdayFieldName(field?.name) },
+    }));
   };
 
   const renderStepContent = () => {
@@ -216,7 +249,9 @@ Cordialement,
                 id="name"
                 className="w-full"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Ex: Rappel anniversaire client"
               />
             </div>
@@ -226,7 +261,9 @@ Cordialement,
                 id="description"
                 className="w-full"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Décrivez ce que fait cette automatisation..."
                 rows={3}
               />
@@ -241,7 +278,7 @@ Cordialement,
               <Label>Champ date *</Label>
               <Select
                 value={formData.customFieldId}
-                onValueChange={(value) => setFormData({ ...formData, customFieldId: value })}
+                onValueChange={selectCustomField}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionner un champ date" />
@@ -265,7 +302,8 @@ Cordialement,
               </Select>
               {dateFields.length === 0 && (
                 <p className="text-xs text-amber-600">
-                  Vous devez d'abord créer un champ personnalisé de type "Date" dans les paramètres des champs.
+                  Vous devez d'abord créer un champ personnalisé de type "Date"
+                  dans les paramètres des champs.
                 </p>
               )}
             </div>
@@ -273,14 +311,16 @@ Cordialement,
             <div className="space-y-2">
               <Label>Quand envoyer l'email *</Label>
 
-              {formData.timing.type === 'ON_DATE' ? (
+              {formData.timing.type === "ON_DATE" ? (
                 <div className="flex items-center gap-2 flex-wrap">
                   <Select
                     value={formData.timing.type}
-                    onValueChange={(value) => setFormData({
-                      ...formData,
-                      timing: { ...formData.timing, type: value }
-                    })}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        timing: { ...formData.timing, type: value },
+                      })
+                    }
                   >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue />
@@ -304,7 +344,7 @@ Cordialement,
                       if (!isNaN(hour) && hour >= 0 && hour <= 23) {
                         setFormData({
                           ...formData,
-                          timing: { ...formData.timing, sendHour: hour }
+                          timing: { ...formData.timing, sendHour: hour },
                         });
                       }
                     }}
@@ -319,21 +359,28 @@ Cordialement,
                     min="1"
                     max="365"
                     value={formData.timing.daysOffset}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      timing: { ...formData.timing, daysOffset: e.target.value }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        timing: {
+                          ...formData.timing,
+                          daysOffset: e.target.value,
+                        },
+                      })
+                    }
                     className="w-16 text-center flex-shrink-0"
                   />
                   <span className="text-sm text-muted-foreground flex-shrink-0 whitespace-nowrap">
-                    jour{formData.timing.daysOffset > 1 ? 's' : ''}
+                    jour{formData.timing.daysOffset > 1 ? "s" : ""}
                   </span>
                   <Select
                     value={formData.timing.type}
-                    onValueChange={(value) => setFormData({
-                      ...formData,
-                      timing: { ...formData.timing, type: value }
-                    })}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        timing: { ...formData.timing, type: value },
+                      })
+                    }
                   >
                     <SelectTrigger className="w-[130px] flex-shrink-0">
                       <SelectValue />
@@ -346,7 +393,9 @@ Cordialement,
                       ))}
                     </SelectContent>
                   </Select>
-                  <span className="text-sm text-muted-foreground flex-shrink-0">à</span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0">
+                    à
+                  </span>
                   <Input
                     type="number"
                     min="0"
@@ -357,24 +406,49 @@ Cordialement,
                       if (!isNaN(hour) && hour >= 0 && hour <= 23) {
                         setFormData({
                           ...formData,
-                          timing: { ...formData.timing, sendHour: hour }
+                          timing: { ...formData.timing, sendHour: hour },
                         });
                       }
                     }}
                     className="w-16 text-center flex-shrink-0"
                   />
-                  <span className="text-sm text-muted-foreground flex-shrink-0">h00</span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0">
+                    h00
+                  </span>
                 </div>
               )}
 
               <p className="text-xs text-muted-foreground">
-                {formData.timing.type === 'ON_DATE'
-                  ? 'L\'email sera envoyé le jour même de la date du champ personnalisé'
-                  : formData.timing.type === 'BEFORE_DATE'
-                  ? `L'email sera envoyé ${formData.timing.daysOffset || 0} jour${formData.timing.daysOffset > 1 ? 's' : ''} avant la date du champ personnalisé`
-                  : `L'email sera envoyé ${formData.timing.daysOffset || 0} jour${formData.timing.daysOffset > 1 ? 's' : ''} après la date du champ personnalisé`}
-                {' '}(fuseau horaire Paris)
+                {formData.timing.type === "ON_DATE"
+                  ? "L'email sera envoyé le jour même de la date du champ personnalisé"
+                  : formData.timing.type === "BEFORE_DATE"
+                    ? `L'email sera envoyé ${formData.timing.daysOffset || 0} jour${formData.timing.daysOffset > 1 ? "s" : ""} avant la date du champ personnalisé`
+                    : `L'email sera envoyé ${formData.timing.daysOffset || 0} jour${formData.timing.daysOffset > 1 ? "s" : ""} après la date du champ personnalisé`}{" "}
+                (fuseau horaire Paris)
               </p>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label htmlFor="repeat-yearly">Chaque année</Label>
+                <p className="text-xs text-muted-foreground">
+                  Relance à la même date tous les ans, quelle que soit l'année
+                  saisie (anniversaire, date de naissance). Sinon, une seule
+                  fois à la date exacte.
+                </p>
+              </div>
+              <Switch
+                id="repeat-yearly"
+                checked={Boolean(formData.timing.repeatYearly)}
+                onCheckedChange={(checked) => {
+                  setYearlyTouched(true);
+                  setFormData((prev) => ({
+                    ...prev,
+                    timing: { ...prev.timing, repeatYearly: checked },
+                  }));
+                }}
+                className="data-[state=checked]:bg-[#5b50ff]"
+              />
             </div>
           </div>
         );
@@ -384,7 +458,9 @@ Cordialement,
           <div className="space-y-4">
             <div className="p-3 bg-[#5b50ff]/10 border border-[#5b50ff]/20 rounded-lg">
               <p className="text-xs text-[#5b50ff]">
-                Variables disponibles: {'{clientName}'}, {'{clientFirstName}'}, {'{clientLastName}'}, {'{clientEmail}'}, {'{customFieldName}'}, {'{customFieldValue}'}, {'{companyName}'}
+                Variables disponibles: {"{clientName}"}, {"{clientFirstName}"},{" "}
+                {"{clientLastName}"}, {"{clientEmail}"}, {"{customFieldName}"},{" "}
+                {"{customFieldValue}"}, {"{companyName}"}
               </p>
             </div>
 
@@ -394,10 +470,12 @@ Cordialement,
                 <Input
                   id="fromName"
                   value={formData.email.fromName}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    email: { ...formData.email, fromName: e.target.value }
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      email: { ...formData.email, fromName: e.target.value },
+                    })
+                  }
                   placeholder="Mon Entreprise"
                 />
               </div>
@@ -407,10 +485,12 @@ Cordialement,
                   id="fromEmail"
                   type="email"
                   value={formData.email.fromEmail}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    email: { ...formData.email, fromEmail: e.target.value }
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      email: { ...formData.email, fromEmail: e.target.value },
+                    })
+                  }
                   placeholder="contact@entreprise.fr"
                 />
               </div>
@@ -422,10 +502,12 @@ Cordialement,
                 id="replyTo"
                 type="email"
                 value={formData.email.replyTo}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  email: { ...formData.email, replyTo: e.target.value }
-                })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: { ...formData.email, replyTo: e.target.value },
+                  })
+                }
                 placeholder="reponse@entreprise.fr"
               />
             </div>
@@ -435,10 +517,12 @@ Cordialement,
               <Input
                 id="subject"
                 value={formData.email.subject}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  email: { ...formData.email, subject: e.target.value }
-                })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: { ...formData.email, subject: e.target.value },
+                  })
+                }
                 placeholder="Rappel - {customFieldName}"
               />
             </div>
@@ -449,10 +533,12 @@ Cordialement,
                 id="body"
                 rows={8}
                 value={formData.email.body}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  email: { ...formData.email, body: e.target.value }
-                })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: { ...formData.email, body: e.target.value },
+                  })
+                }
                 placeholder="Bonjour {clientName},..."
                 className="font-mono text-sm"
               />
@@ -467,7 +553,9 @@ Cordialement,
               </div>
               <Switch
                 checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isActive: checked })
+                }
                 className="data-[state=checked]:bg-[#5b50ff]"
               />
             </div>
@@ -478,7 +566,9 @@ Cordialement,
         return (
           <div className="flex flex-col h-full">
             {formData.description && (
-              <p className="text-sm text-muted-foreground mb-4 flex-shrink-0">{formData.description}</p>
+              <p className="text-sm text-muted-foreground mb-4 flex-shrink-0">
+                {formData.description}
+              </p>
             )}
 
             <div className="flex-1 overflow-y-auto">
@@ -486,33 +576,56 @@ Cordialement,
                 {/* Étape 1: Champ date */}
                 <div className="w-full max-w-sm">
                   <div className="flex justify-center">
-                    <Badge 
-                      className="text-xs px-3 py-1" 
-                      style={{ backgroundColor: '#5b50ff', color: 'white', borderRadius: '4px 4px 0 0' }}
+                    <Badge
+                      className="text-xs px-3 py-1"
+                      style={{
+                        backgroundColor: "#5b50ff",
+                        color: "white",
+                        borderRadius: "4px 4px 0 0",
+                      }}
                     >
                       Déclencheur
                     </Badge>
                   </div>
                   <Card className="border shadow-sm relative rounded-lg">
                     <CardContent className="p-3 flex items-center gap-3">
-                      <div className="p-2 rounded-md" style={{ backgroundColor: '#5b50ff20' }}>
-                        <Calendar className="w-4 h-4" style={{ color: '#5b50ff' }} />
+                      <div
+                        className="p-2 rounded-md"
+                        style={{ backgroundColor: "#5b50ff20" }}
+                      >
+                        <Calendar
+                          className="w-4 h-4"
+                          style={{ color: "#5b50ff" }}
+                        />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-sm">{selectedField?.name || 'Champ date'}</p>
-                        <p className="text-xs text-muted-foreground">{getTimingDescription()}</p>
+                        <p className="font-medium text-sm">
+                          {selectedField?.name || "Champ date"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {getTimingDescription()}
+                        </p>
                       </div>
                     </CardContent>
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white" style={{ backgroundColor: '#5b50ff' }} />
+                    <div
+                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white"
+                      style={{ backgroundColor: "#5b50ff" }}
+                    />
                   </Card>
                 </div>
 
-                <div className="h-6 border-l-2 border-dashed" style={{ borderColor: '#5b50ff50' }} />
+                <div
+                  className="h-6 border-l-2 border-dashed"
+                  style={{ borderColor: "#5b50ff50" }}
+                />
 
                 {/* Étape 2: Email */}
                 <div className="w-full max-w-sm pb-4">
                   <Card className="border shadow-sm relative">
-                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white" style={{ backgroundColor: '#5b50ff' }} />
+                    <div
+                      className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white"
+                      style={{ backgroundColor: "#5b50ff" }}
+                    />
                     <CardContent className="p-3 flex items-center gap-3">
                       <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-900/30">
                         <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -531,11 +644,11 @@ Cordialement,
 
             <div className="flex items-center justify-center gap-2 pt-4 flex-shrink-0 bg-background">
               <span className="text-sm text-muted-foreground">Statut :</span>
-              <Badge 
-                variant={formData.isActive ? 'default' : 'secondary'}
-                style={formData.isActive ? { backgroundColor: '#5b50ff' } : {}}
+              <Badge
+                variant={formData.isActive ? "default" : "secondary"}
+                style={formData.isActive ? { backgroundColor: "#5b50ff" } : {}}
               >
-                {formData.isActive ? 'Active' : 'Inactive'}
+                {formData.isActive ? "Active" : "Inactive"}
               </Badge>
             </div>
           </div>
@@ -555,23 +668,23 @@ Cordialement,
   return (
     <div className="flex flex-col h-[500px]">
       <div className="flex flex-1 min-h-0">
-        <StepSidebar 
-          currentStep={currentStep} 
-          steps={WIZARD_STEPS} 
+        <StepSidebar
+          currentStep={currentStep}
+          steps={WIZARD_STEPS}
           onStepClick={handleStepClick}
         />
 
         <div className="flex-1 pl-6 flex flex-col min-h-0 min-w-0">
           <div className="mb-4 flex-shrink-0">
             <h3 className="text-lg font-semibold">
-              {currentStep === 4 && formData.name ? formData.name : WIZARD_STEPS.find(s => s.id === currentStep)?.title}
+              {currentStep === 4 && formData.name
+                ? formData.name
+                : WIZARD_STEPS.find((s) => s.id === currentStep)?.title}
             </h3>
           </div>
 
           <div className="flex-1 overflow-y-auto py-1 w-full">
-            <div className="px-1 w-full">
-              {renderStepContent()}
-            </div>
+            <div className="px-1 w-full">{renderStepContent()}</div>
           </div>
         </div>
       </div>
@@ -586,9 +699,10 @@ Cordialement,
               <div
                 key={step.id}
                 className="h-1 w-6 rounded-full transition-colors"
-                style={{ 
-                  backgroundColor: step.id <= currentStep ? '#5b50ff' : 'transparent',
-                  border: step.id > currentStep ? '1px solid #e5e7eb' : 'none'
+                style={{
+                  backgroundColor:
+                    step.id <= currentStep ? "#5b50ff" : "transparent",
+                  border: step.id > currentStep ? "1px solid #e5e7eb" : "none",
                 }}
               />
             ))}
@@ -611,7 +725,7 @@ Cordialement,
           ) : (
             <Button type="button" onClick={handleSubmit} disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {automation ? 'Modifier' : 'Créer'}
+              {automation ? "Modifier" : "Créer"}
             </Button>
           )}
         </div>
