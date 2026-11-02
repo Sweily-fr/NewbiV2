@@ -18,7 +18,7 @@ const notification = (page, texte) => page.locator("[data-sonner-toast]").filter
 
 async function ouvrirAutomatisations(page) {
   await ouvrir(page, "/dashboard/clients", { pret: page.getByRole("button", { name: "Nouveau contact" }) });
-  await page.locator("main button:has(svg.lucide-zap)").first().click();
+  await page.getByRole("button", { name: "Automatisations", exact: true }).click();
   // Panneau sans nom accessible (titre non relié) : repéré par son titre visible.
   const panneau = page.getByRole("dialog").filter({ has: page.getByText("Automatisations", { exact: true }) });
   await expect(panneau).toBeVisible();
@@ -177,4 +177,14 @@ test.describe("Automatisations d'e-mails", () => {
       expect(await (await base()).collection("crmemailautomations").countDocuments({ workspaceId: ORG })).toBe(avant);
     });
   }
+});
+
+test.describe("Automatisations : accessibilité", () => {
+  test("bouton nommé « Automatisations », panneau sans défilement horizontal à 375 px", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    const panneau = await ouvrirAutomatisations(page);
+    const largeur = await panneau.evaluate((e) => e.getBoundingClientRect().width);
+    expect(largeur).toBeLessThanOrEqual(375);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+  });
 });

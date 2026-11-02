@@ -894,8 +894,19 @@ export default function AutomationsPopover({ trigger }) {
       >
         <PopoverTrigger asChild>
           {trigger || (
-            <Button variant="outline" size="icon" className="relative">
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative"
+              aria-label="Automatisations"
+              title={
+                activeCount > 0
+                  ? `${activeCount} automatisation${activeCount > 1 ? "s" : ""} active${activeCount > 1 ? "s" : ""}`
+                  : undefined
+              }
+            >
               <Zap
+                aria-hidden="true"
                 className={activeCount > 0 ? "text-[#5b50ff]" : ""}
                 style={{ width: "14px", height: "14px" }}
               />
@@ -907,7 +918,10 @@ export default function AutomationsPopover({ trigger }) {
             </Button>
           )}
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[720px] p-0">
+        <PopoverContent
+          align="end"
+          className="w-[min(720px,calc(100vw-2rem))] p-0"
+        >
           {!canReadAutomations ? (
             /* Sans « Voir » : demande d'accès au super admin */
             <AccessDeniedPage
