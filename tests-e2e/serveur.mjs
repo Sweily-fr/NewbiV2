@@ -15,7 +15,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { MongoClient } from "mongodb";
 import { chromium } from "@playwright/test";
-import { API_DIR, API_URL, BASE_DE_DONNEES, BASE_URL, DOSSIERS, FICHIER_ETAT, PORT, PORT_API, SECRET, SECRET_INTERNE } from "./config.mjs";
+import { API_DIR, API_URL, BASE_DE_DONNEES, BASE_URL, DOSSIERS, FICHIER_ETAT, PORT, PORT_API, SECRET, SECRET_INTERNE, SECRET_WEBHOOK_RESEND } from "./config.mjs";
 import { semer } from "./donnees/index.mjs";
 
 const RACINE_SITE = process.cwd();
@@ -117,6 +117,8 @@ const envApi = {
   // Instance 1 : aucun cron ni planificateur (server.js).
   NODE_APP_INSTANCE: "1",
   JWT_SECRET: "e2e-jwt-local-uniquement",
+  // Comme en prod : le webhook Resend n'accepte que les événements signés
+  RESEND_WEBHOOK_SECRET: SECRET_WEBHOOK_RESEND,
   DATA_ENCRYPTION_KEY: "e2e-chiffrement-local-uniquement",
   SMTP_ENCRYPTION_KEY: "e2e-smtp-local-uniquement",
   CALENDAR_ENCRYPTION_KEY: "e2e-agenda-local-uniquement",

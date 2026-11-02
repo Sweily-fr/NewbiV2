@@ -12,7 +12,8 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
-import { API_URL, BASE_URL, connecte } from "../config.mjs";
+import { createHmac } from "node:crypto";
+import { API_URL, BASE_URL, SECRET_WEBHOOK_RESEND, connecte } from "../config.mjs";
 import { base } from "../base.mjs";
 import { photo } from "../securite-collaboration.mjs";
 import { COMPTES_ENVOIS, ENVOIS, FACTURES_ENVOIS, SUIVI } from "../donnees/lot-emails-envoyes.mjs";
@@ -115,13 +116,12 @@ test.describe("E-mails envoyés : webhook de Resend", () => {
   });
 
   /**
-   * Défaut connu : sans RESEND_WEBHOOK_SECRET (cas de l'API de test, et de
-   * la prod au dernier relevé), l'API traite les événements sans aucune
-   * signature (newbi-api src/routes/resendWebhook.js) : n'importe qui peut
-   * marquer un e-mail rejeté (alerte envoyée à l'émetteur) ou ouvert.
-   * Corriger suppose de configurer le secret en prod avant de refuser.
+   * L'API de test a un RESEND_WEBHOOK_SECRET (serveur.mjs), comme la prod
+   * doit en avoir un : tout événement sans signature valide est refusé
+   * (newbi-api src/routes/resendWebhook.js). Sans secret, l'API traite
+   * encore les événements, avec un avertissement dans ses journaux.
    */
-  test("Un événement non signé est refusé et ne change ni la remise ni l'ouverture (défaut connu)", async ({ page }) => {
+  test("Un événement non signé ou mal signé est refusé et ne change ni la remise ni l'ouverture", async ({ page }) => {
     const avantRejet = await photo("invoices", { _id: FACTURES_ENVOIS.rejet._id });
     const avantJournal = await photo("document_email_logs", { _id: ENVOIS.rejet._id });
     const avantOuverture = await photo("invoices", { _id: FACTURES_ENVOIS.ouvertureWebhook._id });
@@ -138,7 +138,27 @@ test.describe("E-mails envoyés : webhook de Resend", () => {
     expect.soft(await photo("invoices", { _id: FACTURES_ENVOIS.rejet._id }), "Rejet non signé : la facture est passée « non remise »").toBe(avantRejet);
     expect.soft(await photo("document_email_logs", { _id: ENVOIS.rejet._id }), "Rejet non signé : l'envoi a changé").toBe(avantJournal);
     expect.soft(await photo("invoices", { _id: FACTURES_ENVOIS.ouvertureWebhook._id }), "Ouverture non signée : la facture est passée « ouverte »").toBe(avantOuverture);
+    const fausseSignature = await webhook(
+      page,
+      { type: "email.bounced", created_at: new Date().toISOString(), data: { email_id: SUIVI.resendRejet } },
+      { "svix-id": "msg_e2e_faux", "svix-timestamp": String(Math.floor(Date.now() / 1000)), "svix-signature": "v1,ZmF1c3NlLXNpZ25hdHVyZQ==" },
+    );
+    expect.soft(await photo("invoices", { _id: FACTURES_ENVOIS.rejet._id }), "Rejet non signé : la facture est passée « non remise »").toBe(avantRejet);
+    expect.soft(await photo("document_email_logs", { _id: ENVOIS.rejet._id }), "Rejet non signé : l'envoi a changé").toBe(avantJournal);
+    expect.soft(await photo("invoices", { _id: FACTURES_ENVOIS.ouvertureWebhook._id }), "Ouverture non signée : la facture est passée « ouverte »").toBe(avantOuverture);
     expect.soft(rejet.status(), "Rejet non signé accepté").toBe(401);
     expect.soft(ouverture.status(), "Ouverture non signée acceptée").toBe(401);
+    expect.soft(fausseSignature.status(), "Rejet mal signé accepté").toBe(401);
+  });
+
+  test("Un événement signé avec le secret est accepté", async ({ page }) => {
+    // Événement sans document connu : accepté (200) sans rien modifier
+    const corps = JSON.stringify({ type: "email.delivered", created_at: new Date().toISOString(), data: { email_id: "e2e-resend-inconnu" } });
+    const id = `msg_e2e_${Date.now()}`;
+    const horodatage = String(Math.floor(Date.now() / 1000));
+    const cle = Buffer.from(SECRET_WEBHOOK_RESEND.replace(/^whsec_/, ""), "base64");
+    const signature = createHmac("sha256", cle).update(`${id}.${horodatage}.${corps}`).digest("base64");
+    const reponse = await webhook(page, corps, { "svix-id": id, "svix-timestamp": horodatage, "svix-signature": `v1,${signature}` });
+    expect(reponse.status(), `Statut reçu : ${reponse.status()}`).toBe(200);
   });
 });
