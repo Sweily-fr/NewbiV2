@@ -27,7 +27,7 @@ import {
   TRANSACTIONS_SAISIE,
   TRANSACTION_QUOTA,
 } from "../donnees/lot-achats-banque.mjs";
-import { appelApi, id } from "../securite.mjs";
+import { appelApi, id, messages } from "../securite.mjs";
 import { base } from "../base.mjs";
 import { ORG, ORG_INTRUS, ORG_SAISIE, PIEGE, appelApiFichier, avecSession, connecteAchats, photo, verifierDroits, verifierDroitsComptable, verifierPiegeInerte } from "../achats-banque.mjs";
 
@@ -632,8 +632,11 @@ test.describe("Factures d'achat : fusion de fiches fournisseurs", () => {
 
 /**
  * Quota d'analyses (OCR) de l'offre d'entrée : 50 par mois, déjà consommés.
- * L'analyse d'une facture d'achat et le dépôt d'un justificatif (analysé
- * aussitôt) doivent être refusés avant d'appeler le moteur d'analyse.
+ * L'analyse d'une facture d'achat est refusée avant d'appeler le moteur
+ * d'analyse. Un justificatif reste joint à sa dépense (pièce comptable), mais
+ * il n'est pas analysé : la réponse le dit et le compteur ne bouge pas.
+ * Refuser le justificatif lui-même retirerait aux offres d'entrée la
+ * possibilité de justifier leurs dépenses une fois le quota atteint.
  */
 test.describe("Factures d'achat : quota d'analyses de l'offre épuisé", () => {
   test.use({ storageState: connecte(SESSION_TOKEN_FREELANCE_ACHATS), erreursConsoleAutorisees: /Quota OCR/ });
@@ -649,10 +652,11 @@ test.describe("Factures d'achat : quota d'analyses de l'offre épuisé", () => {
     expect((await quota()).usedQuota).toBe(QUOTA_OCR_EPUISE.usedQuota);
   });
 
-  test("Déposer un justificatif sur une dépense : refusé « Quota OCR épuisé », rien n'est ajouté", async ({ page }) => {
+  test("Déposer un justificatif sur une dépense : joint sans analyse, « Quota OCR » annoncé, le compteur ne bouge pas", async ({ page }) => {
     await ouvrir(page, "/dashboard");
-    const temoin = ["transactions", { _id: TRANSACTION_QUOTA._id }];
-    const avant = await photo(temoin);
+    const justificatifs = async () =>
+      ((await base().then((db) => db.collection("transactions").findOne({ _id: TRANSACTION_QUOTA._id })))?.receiptFiles || []).length;
+    const avant = await justificatifs();
     const reponse = await appelApiFichier(
       page,
       `mutation($t: ID!, $w: ID!, $files: [Upload!]!) { uploadTransactionReceipt(transactionId: $t, workspaceId: $w, files: $files) { success message } }`,
@@ -660,9 +664,21 @@ test.describe("Factures d'achat : quota d'analyses de l'offre épuisé", () => {
       { cle: "files.0", nom: "ticket.pdf", type: "application/pdf", contenu: PDF },
       { organisation: ESPACE },
     );
-    const texte = [reponse.data?.uploadTransactionReceipt?.message, ...reponse.errors.map((e) => e.message)].filter(Boolean).join(" | ");
-    expect(texte, "Le justificatif est envoyé à l'analyse malgré le quota épuisé").toMatch(/Quota OCR/i);
-    expect(await photo(temoin)).toBe(avant);
+    expect(reponse.errors, messages(reponse)).toEqual([]);
+    const { success, message } = reponse.data.uploadTransactionReceipt;
+    // Le stockage de fichiers (R2) n'existe pas dans l'environnement e2e
+    // (serveur.mjs) : l'envoi du fichier y échoue avant toute analyse. Avec un
+    // stockage, le justificatif est joint et le quota atteint est annoncé
+    // (couvert par les tests unitaires de l'API).
+    if (success) {
+      expect(message, "Le quota atteint n'est pas annoncé").toMatch(/Quota OCR/i);
+      expect(await justificatifs()).toBe(avant + 1);
+    } else {
+      expect(message, "Justificatif refusé pour le quota").not.toMatch(/Quota OCR/i);
+    }
+    // Analyse en tâche de fond : le compteur reste à 50
+    await page.waitForTimeout(3000);
+    expect((await quota()).usedQuota).toBe(QUOTA_OCR_EPUISE.usedQuota);
   });
 });
 

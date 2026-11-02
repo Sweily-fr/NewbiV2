@@ -34,6 +34,10 @@ import { useCreditNotes } from "@/src/graphql/creditNoteQueries";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import {
+  EInvoiceStatusBadge,
+  EReportingErrorBadge,
+} from "./einvoice-status-badge";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 
@@ -364,15 +368,26 @@ export default function CreditNotesTable({
                         className="p-2 align-middle text-[13px]"
                         style={{ width: 120 }}
                       >
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap",
-                            "bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
-                          )}
-                        >
-                          <FileText className="w-3 h-3" />
-                          Avoir
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap",
+                              "bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
+                            )}
+                          >
+                            <FileText className="w-3 h-3" />
+                            Avoir
+                          </span>
+                          {/* Statut e-invoicing (SuperPDP), masqué si non transmis */}
+                          <EInvoiceStatusBadge
+                            status={creditNote.eInvoiceStatus}
+                            lastCode={creditNote.eInvoiceLastCode}
+                          />
+                          <EReportingErrorBadge
+                            status={creditNote.eReportingStatus}
+                            error={creditNote.eReportingError}
+                          />
+                        </div>
                       </td>
 
                       {/* Suivi (N/A pour le moment) */}

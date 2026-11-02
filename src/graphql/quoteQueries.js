@@ -426,6 +426,18 @@ export const GET_LAST_QUOTE_PREFIX = gql`
   }
 `;
 
+// Liens des documents d'une signature terminée : URL présignées d'une heure,
+// relues au clic (le devis affiché peut venir du cache)
+export const QUOTE_SIGNED_FILES = gql`
+  query QuoteSignedFiles($workspaceId: ID!, $id: ID!) {
+    quote(workspaceId: $workspaceId, id: $id) {
+      id
+      signedDocumentUrl
+      auditTrailUrl
+    }
+  }
+`;
+
 export const GET_QUOTE = gql`
   query GetQuote($workspaceId: ID!, $id: ID!) {
     quote(workspaceId: $workspaceId, id: $id) {
@@ -561,12 +573,6 @@ export const UPDATE_QUOTE = gql`
 export const DELETE_QUOTE = gql`
   mutation DeleteQuote($id: ID!) {
     deleteQuote(id: $id)
-  }
-`;
-
-export const SEND_QUOTE = gql`
-  mutation SendQuote($id: ID!, $email: String!) {
-    sendQuote(id: $id, email: $email)
   }
 `;
 
@@ -854,32 +860,6 @@ export const useDeleteQuote = () => {
   };
 
   return { deleteQuote, loading };
-};
-
-// Hook pour envoyer un devis par email
-export const useSendQuote = () => {
-  const [sendQuoteMutation, { loading }] = useMutation(SEND_QUOTE, {
-    onCompleted: () => {
-      toast.success("Devis envoyé avec succès");
-    },
-    onError: (error) => {
-      console.error("Erreur lors de l'envoi du devis:", error);
-      toast.error(error.message || "Erreur lors de l'envoi du devis");
-    },
-  });
-
-  const sendQuote = async (id, email) => {
-    try {
-      await sendQuoteMutation({
-        variables: { id, email },
-      });
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  return { sendQuote, loading };
 };
 
 // Hook pour changer le statut d'un devis
