@@ -97,18 +97,6 @@ const ECRITURES = [
     temoin: () => ["invoices", _id(F.cibleBrouillon)],
   },
   {
-    nom: "Envoyer une facture (sendInvoice)",
-    champ: "sendInvoice",
-    editeur: "permis",
-    // L'API ne fait rien de plus que répondre « vrai » (envoi non implémenté).
-    sansEffetEnBase: true,
-    cible: true,
-    workspace: true,
-    requete: `mutation($w: ID!, $id: ID!, $e: String!) { sendInvoice(id: $id, workspaceId: $w, email: $e) }`,
-    variables: (w, qui) => ({ w, id: id(F.cibleAttente), e: `${qui}@e2e.test` }),
-    temoin: () => ["invoices", _id(F.cibleAttente)],
-  },
-  {
     nom: "Marquer une facture comme payée",
     champ: "markInvoiceAsPaid",
     editeur: "permis",

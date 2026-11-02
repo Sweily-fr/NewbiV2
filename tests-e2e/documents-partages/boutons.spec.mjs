@@ -26,6 +26,18 @@ test.describe("Documents partagés (propriétaire) : les commandes agissent", ()
     await expect(menu.getByRole("menuitem", { name: "Importer un dossier" })).toBeVisible();
   });
 
+  // Aucune tâche ne vide la corbeille : l'écran n'annonce plus de
+  // suppression au bout de 30 jours ni de décompte de jours
+  test("La corbeille ne promet pas de suppression automatique", async ({ page }) => {
+    await ouvrirDocs(page);
+    await page.getByRole("button", { name: /^Corbeille/ }).first().click();
+    const corbeille = page.locator("main");
+    await expect(corbeille.getByText("en-corbeille.pdf").first()).toBeVisible();
+    await expect(corbeille.getByText("Jours restants")).toHaveCount(0);
+    await expect(corbeille.getByText(/30 jours/)).toHaveCount(0);
+    await expect(corbeille.getByText(/^\d+j$/)).toHaveCount(0);
+  });
+
   test("Le bouton « Nouveau dossier » ouvre sa fenêtre", async ({ page }) => {
     await ouvrirDocs(page);
     await boutonIcone(page, "folder-plus").first().click();

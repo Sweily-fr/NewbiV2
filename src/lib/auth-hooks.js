@@ -31,6 +31,22 @@ export const DISABLED_AUTH_PATHS = [
   // membre est retiré par un rôle qui gère les membres
   // (/organization/remove-member).
   "/organization/leave",
+  // Administration Better Auth : aucun écran ni outil ne s'en sert (le
+  // back-office est newbi-admin, en lecture seule). Seule la suppression
+  // d'un compte reste ouverte au super administrateur.
+  "/admin/impersonate-user",
+  "/admin/stop-impersonating",
+  "/admin/set-role",
+  "/admin/set-user-password",
+  "/admin/create-user",
+  "/admin/update-user",
+  "/admin/ban-user",
+  "/admin/unban-user",
+  "/admin/list-users",
+  "/admin/get-user",
+  "/admin/list-user-sessions",
+  "/admin/revoke-user-session",
+  "/admin/revoke-user-sessions",
 ];
 
 // Seul usage des codes OTP envoyés par e-mail : vérification de l'adresse

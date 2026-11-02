@@ -6,7 +6,8 @@
  *     brouillons), même avec un préfixe fait d'espaces insécables ;
  *   - un devis refusé ou un bon de commande annulé ne se modifie plus, comme
  *     un bon de livraison annulé ;
- *   - un brouillon ne part pas par e-mail (numéro provisoire) ;
+ *   - un brouillon ne part pas par e-mail avec son numéro provisoire (devis
+ *     validé d'abord, bon de commande et de livraison refusés) ;
  *   - préfixes et numéros hostiles : refusés avec un message, ou affichés
  *     tels quels dans la liste.
  *
@@ -114,21 +115,37 @@ test.describe("Devis et bons de commande : documents annulés", () => {
 });
 
 test.describe("Devis, bons de commande et de livraison : envoi d'un brouillon par e-mail", () => {
+  const envoyer = (page, champ, doc) =>
+    appelControle(page, `mutation($w: ID!, $input: SendDocumentEmailInput!) { ${champ}(workspaceId: $w, input: $input) { success } }`, {
+      w: ORG_CONTROLE,
+      input: { documentId: id(doc), emailSubject: "Document en brouillon", emailBody: "Bonjour", recipientEmail: "client-brouillon@e2e.test" },
+    });
+
   for (const [titre, champ, doc] of [
-    ["Devis", "sendQuoteEmail", C.devisBrouillon],
     ["Bon de commande", "sendPurchaseOrderEmail", C.bcBrouillon],
     ["Bon de livraison", "sendDeliveryNoteEmail", C.blBrouillon],
   ]) {
     test(`${titre} en brouillon : l'envoi par l'API est refusé avec un message, aucun envoi journalisé`, async ({ page }) => {
-      const reponse = await appelControle(page, `mutation($w: ID!, $input: SendDocumentEmailInput!) { ${champ}(workspaceId: $w, input: $input) { success } }`, {
-        w: ORG_CONTROLE,
-        input: { documentId: id(doc), emailSubject: "Document en brouillon", emailBody: "Bonjour", recipientEmail: "client-brouillon@e2e.test" },
-      });
+      const reponse = await envoyer(page, champ, doc);
       expect(reponse.data?.[champ]?.success ?? null, "Brouillon envoyé").not.toBe(true);
       expect(messages(reponse), "Le refus doit dire que le document est un brouillon").toMatch(/brouillon/i);
       expect(await (await collection("documentemaillogs")).countDocuments({ documentId: doc._id }), "Envoi journalisé").toBe(0);
     });
   }
+
+  // L'application mobile installée propose « Envoyer » sur un devis brouillon
+  // et appelle sendQuoteEmail directement : refuser casserait cette action.
+  // L'API valide d'abord le devis (comme « Finaliser ») : le client ne reçoit
+  // jamais de numéro provisoire.
+  test("Devis en brouillon : validé avant l'envoi, il part avec son numéro définitif", async ({ page }) => {
+    const doc = C.devisBrouillon;
+    await envoyer(page, "sendQuoteEmail", doc);
+    const devis = await relire("quotes", doc._id);
+    expect(devis.status, "Le devis envoyé est resté brouillon").toBe("PENDING");
+    expect(devis.number, "Numéro provisoire envoyé au client").toMatch(/^\d+$/);
+    const journal = await (await collection("documentemaillogs")).find({ documentId: doc._id }).toArray();
+    for (const envoi of journal) expect(JSON.stringify(envoi), "Numéro provisoire dans l'envoi").not.toMatch(/DRAFT-/);
+  });
 });
 
 test.describe("Devis et bons de livraison : préfixes et numéros", () => {

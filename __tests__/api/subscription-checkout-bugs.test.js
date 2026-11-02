@@ -50,6 +50,13 @@ vi.mock("stripe", () => {
 
 vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()) }));
 
+// Registre des entreprises simulé (pas d'appel réseau)
+const registre = vi.hoisted(() => ({ result: { ok: true, company: {} } }));
+vi.mock("@/src/lib/siret-verification", async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, verifySiret: vi.fn(async () => registre.result) };
+});
+
 vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: { collection: (name) => m.db.collection(name) },
 }));
@@ -421,6 +428,34 @@ describe("POST /api/create-org-subscription : SIRET d'un autre espace", () => {
       /déjà utilisé par un autre espace/,
     );
     expect(m.checkoutCreate).not.toHaveBeenCalled();
+  });
+
+  it("SIRET introuvable ou fermé au registre : refus 400 avant tout paiement", async () => {
+    m.db = fakeDb({
+      user: [{ _id: new ObjectId(userId), email: "u@x.fr" }],
+      organization: [],
+      member: [],
+    });
+    for (const reason of ["not_found", "inactive"]) {
+      registre.result = { ok: false, reason };
+      const res = await call("12345678900029");
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(/registre/);
+    }
+    expect(m.checkoutCreate).not.toHaveBeenCalled();
+    registre.result = { ok: true, company: {} };
+  });
+
+  it("registre injoignable : le paiement n'est pas bloqué", async () => {
+    m.db = fakeDb({
+      user: [{ _id: new ObjectId(userId), email: "u@x.fr" }],
+      organization: [],
+      member: [],
+    });
+    registre.result = { ok: false, reason: "service_unavailable" };
+    const res = await call("12345678900029");
+    expect(res.status).toBe(200);
+    registre.result = { ok: true, company: {} };
   });
 
   it("SIRET d'un espace dont il est membre : paiement proposé", async () => {

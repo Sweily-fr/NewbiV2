@@ -82,16 +82,6 @@ const ECRITURES = [
     temoin: () => ["deliverynotes", { "items.description": "Facture à livrer" }],
   },
   {
-    nom: "Envoyer un bon de livraison par e-mail",
-    droit: "send",
-    externe: true,
-    champ: "sendDeliveryNote",
-    cible: true,
-    requete: `mutation($id: ID!, $w: ID!) { sendDeliveryNote(id: $id, workspaceId: $w, email: "destinataire-controle@e2e.test") }`,
-    variables: (w) => ({ id: id(B.cibleEnvoyer), w }),
-    temoin: () => bl(B.cibleEnvoyer),
-  },
-  {
     nom: "Envoyer un bon de livraison par e-mail (envoi réel, avec le PDF)",
     droit: "send",
     externe: true,

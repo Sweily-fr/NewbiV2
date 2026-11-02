@@ -363,10 +363,15 @@ export async function inventorier(page, { ouvrir, zone = contenu, problemes = []
 function parNom(zone, role, nom, { nomsVariables = false } = {}) {
   // Noms qui changent avec les données ou le jour : « Brouillons # » (compteur,
   // « Brouillons 8 »), « (date) » (une date en toutes lettres, « 20 octobre 2026 »).
-  if (nom.endsWith(" #") || nom.includes("(date)")) {
+  if (nom.endsWith(" #") || nom.includes("(date)") || nom.includes("(mois)")) {
     const motif = nom
       .split("(date)")
-      .map((morceau) => morceau.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .map((morceau) =>
+        morceau
+          .split("(mois)")
+          .map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join(MOIS_EN_LETTRES.source),
+      )
       .join(DATE_EN_LETTRES.source)
       .replace(/ #$/, " \\d+");
     return zone.getByRole(role, { name: new RegExp(`^${motif}$`) });
@@ -399,11 +404,17 @@ export const cleElement = (e) => (e.role === "link" ? `link ${e.lien}` : `${e.ro
  * d'un compteur variable, ex. « tab Brouillons # » pour « tab Brouillons 8 »).
  */
 const DATE_EN_LETTRES = /\d{1,2} (?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre) \d{4}/;
+// Mois et année sans jour (« novembre 2026 ») : une colonne de mois
+const MOIS_EN_LETTRES = /(?<!\d )(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre) \d{4}/;
 
 function cleDecrite(e, attendus) {
   const cle = cleElement(e);
   if (cle in attendus) return cle;
-  for (const variante of [cle.replace(/ \d+$/, " #"), cle.replace(new RegExp(DATE_EN_LETTRES.source, "g"), "(date)")]) {
+  for (const variante of [
+    cle.replace(/ \d+$/, " #"),
+    cle.replace(new RegExp(DATE_EN_LETTRES.source, "g"), "(date)"),
+    cle.replace(new RegExp(MOIS_EN_LETTRES.source, "g"), "(mois)"),
+  ]) {
     if (variante !== cle && variante in attendus) return variante;
   }
   return cle;

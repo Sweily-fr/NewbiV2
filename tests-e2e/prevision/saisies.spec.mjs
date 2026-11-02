@@ -48,7 +48,7 @@ function lettres(cas) {
 
 async function ouvrirSaisie(page) {
   await ouvrirPrevision(page);
-  await page.getByRole("button", { name: "Ajouter une prévision" }).click();
+  await page.getByRole("button", { name: "Ajouter une prévision", exact: true }).click();
   const dialogue = fenetre(page, "Nouvelle saisie");
   await expect(dialogue).toBeVisible();
   return dialogue;
@@ -190,7 +190,7 @@ test.describe("Prévision : chaque action vérifiée en base", () => {
     await page.getByRole("button", { name: "Base" }).click();
     await page.getByRole("menuitem", { name: new RegExp(SCENARIOS.aRenommer.name) }).click();
     await attendreCalme(page);
-    await page.getByRole("button", { name: "Ajouter une prévision" }).click();
+    await page.getByRole("button", { name: "Ajouter une prévision", exact: true }).click();
     const dialogue = fenetre(page, "Nouvelle saisie");
     await remplir(dialogue, { nom: "Prévision propre au scénario", montant: "320" });
     await dialogue.getByRole("button", { name: "Ajouter", exact: true }).click();

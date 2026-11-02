@@ -49,6 +49,7 @@ import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import { goToBankConnect } from "@/src/lib/bank-connect-return";
 
 /**
  * Formate un IBAN pour l'affichage (groupes de 4)
@@ -329,7 +330,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
 
       if (response.ok) {
         const data = await response.json();
-        window.location.href = data.connectUrl;
+        goToBankConnect(data.connectUrl);
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || "Erreur de connexion");

@@ -16,7 +16,6 @@ import { beforeSignInHook, afterHook, DISABLED_AUTH_PATHS } from "./auth-hooks";
 import { buildTrustedOrigins } from "./trusted-origins";
 import {
   sendChangeEmailConfirmation,
-  sendReactivationEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
 } from "./auth-utils";
@@ -69,6 +68,22 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Code partenaire envoyé avec l'inscription (referredBy, non
+        // modifiable ensuite) : gardé seulement s'il est celui d'un
+        // partenaire existant.
+        before: async (user, context) => {
+          const raw = context?.body?.referredBy;
+          if (raw === undefined || raw === null || raw === "") return;
+          try {
+            const { mongoDb } = await import("./mongodb.js");
+            const { resolvePartnerCode } =
+              await import("./partner-referral.js");
+            const code = await resolvePartnerCode(mongoDb, raw);
+            if (code) return { data: { ...user, referredBy: code } };
+          } catch (error) {
+            console.error("❌ [USER CREATE] Code partenaire:", error);
+          }
+        },
         after: async (user) => {
           // ✅ NOUVEAU FLUX : NE PAS créer d'organisation au signup
           // L'organisation sera créée APRÈS le paiement Stripe dans le webhook
@@ -273,11 +288,17 @@ export const auth = betterAuth({
               console.log(
                 `✅ [SESSION CREATE] Organisation trouvée: ${member.organizationId}`,
               );
+              // Durée de session choisie par l'espace (Paramètres > Sécurité)
+              const { capNewSessionExpiry } =
+                await import("./session-duration.js");
               return {
-                data: {
-                  ...session,
-                  activeOrganizationId: member.organizationId.toString(),
-                },
+                data: await capNewSessionExpiry(
+                  {
+                    ...session,
+                    activeOrganizationId: member.organizationId.toString(),
+                  },
+                  { mongoDb },
+                ),
               };
             }
 
@@ -327,6 +348,19 @@ export const auth = betterAuth({
           }
         },
       },
+      update: {
+        // Renouvellement d'une session : jamais au-delà de la durée de
+        // session choisie par l'espace (voir session-duration.js)
+        before: async (data, context) => {
+          try {
+            const { capSessionRenewal } = await import("./session-duration.js");
+            return await capSessionRenewal(data, context);
+          } catch (error) {
+            console.error("❌ [SESSION UPDATE] Durée de session:", error);
+            return undefined;
+          }
+        },
+      },
     },
   },
 
@@ -334,7 +368,14 @@ export const auth = betterAuth({
     // disableSettingJwtHeader : sans lui, chaque /get-session signait un JWT
     // renvoyé dans l'en-tête set-auth-jwt, que ni le web ni l'app mobile ne
     // lisent (les deux passent par /api/auth/token).
-    jwt({ disableSettingJwtHeader: true }),
+    jwt({
+      disableSettingJwtHeader: true,
+      jwt: {
+        // sid : id de la session qui émet le jeton. L'API refuse un jeton
+        // dont la session a été fermée (déconnexion, appareil révoqué).
+        definePayload: ({ user, session }) => ({ ...user, sid: session.id }),
+      },
+    }),
     oneTimeToken({
       expiresIn: 3, // 3 minutes
       storeToken: "hashed", // Ne pas stocker le token en clair en DB
@@ -352,29 +393,6 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // ✅ Désactivé pour permettre l'accès au dashboard sans validation email
-    async signInRateLimit() {
-      return {
-        window: 60,
-        max: 5,
-      };
-    },
-    async beforeSignIn({ user }) {
-      // Vérifier si le compte est actif
-      if (user.isActive === false) {
-        // Envoyer un email de réactivation
-        await sendReactivationEmail(user);
-
-        throw new Error(
-          "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
-        );
-      }
-
-      // ✅ Ne plus bloquer la connexion si l'email n'est pas vérifié
-      // L'utilisateur peut accéder au dashboard et vérifier son email plus tard
-      // Note: On peut ajouter un bandeau d'avertissement dans le dashboard si nécessaire
-
-      return user;
-    },
     sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail(user, url);
     },

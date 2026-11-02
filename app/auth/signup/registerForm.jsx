@@ -14,6 +14,10 @@ import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  normalizePartnerCode,
+  readStoredPartnerCode,
+} from "@/src/lib/partner-code";
 
 const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
   const {
@@ -32,8 +36,11 @@ const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
   const invitationId = searchParams.get("invitation");
   const invitationEmail = searchParams.get("email");
 
-  // Récupérer le code partenaire
-  const partnerCode = searchParams.get("partner");
+  // Code partenaire : celui de l'adresse, sinon celui gardé depuis l'arrivée
+  // sur le site (voir partner-code.js)
+  const partnerCode =
+    normalizePartnerCode(searchParams.get("partner")) ||
+    readStoredPartnerCode();
 
   const onSubmit = async (formData) => {
     // Ajouter le code partenaire si présent

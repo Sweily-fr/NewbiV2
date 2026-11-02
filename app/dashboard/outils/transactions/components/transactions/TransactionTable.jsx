@@ -1086,7 +1086,14 @@ export default function TransactionTable({
         .slice(-files.length)
         .filter((id) => !knownReceiptIds.has(id));
 
-      if (isExpense) {
+      // Quota d'analyses OCR atteint : justificatif joint, facture d'achat
+      // créée sans analyse (message de l'API)
+      const quotaReached = /Quota OCR/i.test(
+        data.uploadTransactionReceipt.message || "",
+      );
+      if (isExpense && quotaReached) {
+        toast.info(data.uploadTransactionReceipt.message);
+      } else if (isExpense) {
         toast.success(
           files.length === 1
             ? "Justificatif ajouté, création de la facture d'achat en cours (OCR)"

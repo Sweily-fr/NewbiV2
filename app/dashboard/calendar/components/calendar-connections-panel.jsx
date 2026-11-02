@@ -23,6 +23,10 @@ import { cn } from "@/src/lib/utils";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+).replace(/\/+$/, "");
+
 const providers = [
   {
     id: "google",
@@ -131,11 +135,22 @@ export function CalendarConnectionsPanel({ canManage = true }) {
 
       setConnecting(provider);
       try {
+        // Appel direct de l'API (et non du proxy du site) : elle pose le
+        // cookie qui lie le retour du fournisseur à ce navigateur (une
+        // adresse d'autorisation ouverte ailleurs est refusée)
+        const tokenRes = await fetch("/api/auth/token", {
+          credentials: "include",
+        });
+        const { token } = await tokenRes.json().catch(() => ({}));
+        if (!token) throw new Error("Session expirée, reconnectez-vous.");
         const response = await fetch(
-          `/api/calendar-connect/${provider}/authorize`,
+          `${API_URL}/calendar-connect/${provider}/authorize`,
           {
             credentials: "include",
-            headers: { "x-workspace-id": workspaceId },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "x-workspace-id": workspaceId,
+            },
           },
         );
 

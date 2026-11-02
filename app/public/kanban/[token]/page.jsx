@@ -2870,6 +2870,8 @@ function PublicTaskModal({
 
   // Trouver le créateur de la tâche
   const getCreatorName = () => {
+    // Nom donné par l'API (l'identifiant du créateur n'est plus transmis)
+    if (task.createdByName) return task.createdByName;
     if (!task.userId || !boardMembers?.length) return "Inconnu";
     const creator = boardMembers.find(
       (m) =>

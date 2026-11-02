@@ -21,7 +21,11 @@ function VerifyEmailContent() {
       const error = searchParams.get("error");
       const verified = searchParams.get("verified");
 
-      console.log("🔍 [VERIFY PAGE] Params:", { token: !!token, error, verified });
+      console.log("🔍 [VERIFY PAGE] Params:", {
+        token: !!token,
+        error,
+        verified,
+      });
 
       if (error) {
         setVerificationStatus("error");
@@ -37,10 +41,19 @@ function VerifyEmailContent() {
         return;
       }
 
+      // Lien ouvert ailleurs que dans le navigateur de l'inscription :
+      // l'adresse n'est pas encore vérifiée, la personne dit qui elle est
+      if (searchParams.get("choix") === "1") {
+        setVerificationStatus("choice");
+        return;
+      }
+
       // ✅ Si verified=true, la vérification a déjà été faite par notre route
       if (verified === "true") {
-        console.log("✅ [VERIFY PAGE] Vérification déjà effectuée, vérification session...");
-        
+        console.log(
+          "✅ [VERIFY PAGE] Vérification déjà effectuée, vérification session...",
+        );
+
         try {
           // Vérifier que l'utilisateur est bien connecté
           const sessionResponse = await fetch("/api/auth/get-session", {
@@ -50,73 +63,84 @@ function VerifyEmailContent() {
           if (sessionResponse.ok) {
             const sessionData = await sessionResponse.json();
             console.log("📊 [VERIFY PAGE] Session:", sessionData ? "✅" : "❌");
-            
+
             if (sessionData && sessionData.user) {
               // ✅ Utilisateur connecté après vérification
               setVerificationStatus("success");
               setMessage("Votre email a été vérifié avec succès !");
               toast.success(
-                "Email vérifié avec succès ! Redirection vers votre espace..."
+                "Email vérifié avec succès ! Redirection vers votre espace...",
               );
 
-          setTimeout(() => {
-            const duration = 3000;
-            const animationEnd = Date.now() + duration;
-            const defaults = {
-              startVelocity: 30,
-              spread: 360,
-              ticks: 60,
-              zIndex: 0,
-            };
+              setTimeout(() => {
+                const duration = 3000;
+                const animationEnd = Date.now() + duration;
+                const defaults = {
+                  startVelocity: 30,
+                  spread: 360,
+                  ticks: 60,
+                  zIndex: 0,
+                };
 
-            const randomInRange = (min, max) =>
-              Math.random() * (max - min) + min;
+                const randomInRange = (min, max) =>
+                  Math.random() * (max - min) + min;
 
-            const interval = setInterval(() => {
-              const timeLeft = animationEnd - Date.now();
+                const interval = setInterval(() => {
+                  const timeLeft = animationEnd - Date.now();
 
-              if (timeLeft <= 0) {
-                return clearInterval(interval);
-              }
+                  if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                  }
 
-              const particleCount = 50 * (timeLeft / duration);
+                  const particleCount = 50 * (timeLeft / duration);
 
-              confettiRef.current?.fire({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-              });
+                  confettiRef.current?.fire({
+                    ...defaults,
+                    particleCount,
+                    origin: {
+                      x: randomInRange(0.1, 0.3),
+                      y: Math.random() - 0.2,
+                    },
+                  });
 
-              confettiRef.current?.fire({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-              });
-            }, 250);
-          }, 300);
+                  confettiRef.current?.fire({
+                    ...defaults,
+                    particleCount,
+                    origin: {
+                      x: randomInRange(0.7, 0.9),
+                      y: Math.random() - 0.2,
+                    },
+                  });
+                }, 250);
+              }, 300);
 
-            // Redirection vers le dashboard (ou vers l'app sur téléphone)
-            setTimeout(() => {
-              window.location.href = isPhone() ? APP_DEEP_LINK : "/dashboard";
-            }, isPhone() ? 1500 : 3000);
+              // Redirection vers le dashboard (ou vers l'app sur téléphone)
+              setTimeout(
+                () => {
+                  window.location.href = isPhone()
+                    ? APP_DEEP_LINK
+                    : "/dashboard";
+                },
+                isPhone() ? 1500 : 3000,
+              );
+            } else {
+              // ❌ Pas de session = autoSignInAfterVerification n'a pas fonctionné
+              setVerificationStatus("error");
+              setMessage("Email vérifié, veuillez vous connecter");
+              toast.info("Email vérifié ! Connectez-vous pour continuer.");
+              setTimeout(() => {
+                if (isPhone()) {
+                  window.location.href = APP_DEEP_LINK;
+                } else {
+                  router.push("/auth/login?verified=true");
+                }
+              }, 2000);
+            }
           } else {
-            // ❌ Pas de session = autoSignInAfterVerification n'a pas fonctionné
             setVerificationStatus("error");
-            setMessage("Email vérifié, veuillez vous connecter");
-            toast.info("Email vérifié ! Connectez-vous pour continuer.");
-            setTimeout(() => {
-              if (isPhone()) {
-                window.location.href = APP_DEEP_LINK;
-              } else {
-                router.push("/auth/login?verified=true");
-              }
-            }, 2000);
+            setMessage("Erreur lors de la vérification");
+            toast.error("Erreur lors de la vérification");
           }
-        } else {
-          setVerificationStatus("error");
-          setMessage("Erreur lors de la vérification");
-          toast.error("Erreur lors de la vérification");
-        }
         } catch (error) {
           console.error("❌ [VERIFY PAGE] Erreur vérification session:", error);
           setVerificationStatus("error");
@@ -205,6 +229,11 @@ function VerifyEmailContent() {
           </div>
         )}
 
+        {/* Lien ouvert ailleurs que dans le navigateur de l'inscription */}
+        {verificationStatus === "choice" && (
+          <OwnershipChoiceForm token={searchParams.get("token")} />
+        )}
+
         {/* Error State */}
         {verificationStatus === "error" && (
           <div className="flex flex-col items-center text-center space-y-4">
@@ -239,6 +268,142 @@ function VerifyEmailContent() {
         </div>
       </div>
     </div>
+  );
+}
+
+function OwnershipChoiceForm({ token }) {
+  // « confirm » : j'ai créé ce compte ; « replace » : choisir un mot de passe
+  const [mode, setMode] = useState(null);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    try {
+      const response = await fetch("/api/account/verify-email-choice", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, action: mode, password }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error || "Vérification impossible");
+        return;
+      }
+      // Adresse vérifiée, session ouverte : page de confirmation habituelle
+      const next = new URL("/auth/verify-email", window.location.href);
+      next.searchParams.set("token", token || "");
+      next.searchParams.set("verified", "true");
+      window.location.href = next.toString();
+    } catch {
+      setError("Vérification impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!mode) {
+    return (
+      <div className="flex flex-col items-center text-center space-y-4">
+        <div className="bg-[#5a50ff] p-3 rounded-lg">
+          <CheckCircle className="h-5 w-5 text-white" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+            Confirmez votre adresse e-mail
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Ce compte a été créé depuis un autre appareil ou navigateur. Pour
+            terminer, saisissez le mot de passe choisi à l'inscription, ou
+            choisissez-en un nouveau.
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => setMode("confirm")}
+          className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal h-10 rounded-lg"
+        >
+          J'ai créé ce compte
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setMode("replace")}
+          className="w-full font-normal h-10 rounded-lg"
+        >
+          Choisir un mot de passe
+        </Button>
+      </div>
+    );
+  }
+
+  const confirm = mode === "confirm";
+  return (
+    <form
+      onSubmit={submit}
+      className="flex flex-col items-center text-center space-y-4"
+    >
+      <div className="space-y-2">
+        <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+          {confirm ? "J'ai créé ce compte" : "Choisir un mot de passe"}
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {confirm
+            ? "Saisissez le mot de passe choisi à l'inscription."
+            : "Le mot de passe choisi à l'inscription sera remplacé et les connexions ouvertes avec lui seront fermées."}
+        </p>
+      </div>
+      <div className="w-full space-y-1 text-left">
+        <label
+          htmlFor="mot-de-passe-verification"
+          className="text-sm font-medium text-gray-900 dark:text-white"
+        >
+          {confirm ? "Mot de passe de l'inscription" : "Nouveau mot de passe"}
+        </label>
+        <input
+          id="mot-de-passe-verification"
+          type="password"
+          autoComplete={confirm ? "current-password" : "new-password"}
+          minLength={confirm ? undefined : 8}
+          maxLength={128}
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent px-3 text-sm"
+        />
+        {error && (
+          <p role="alert" className="text-sm text-red-500">
+            {error}
+          </p>
+        )}
+      </div>
+      <Button
+        type="submit"
+        disabled={saving}
+        className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal h-10 rounded-lg"
+      >
+        {saving
+          ? "Vérification..."
+          : confirm
+            ? "Confirmer mon adresse"
+            : "Enregistrer et confirmer mon adresse"}
+      </Button>
+      <button
+        type="button"
+        onClick={() => {
+          setMode(null);
+          setPassword("");
+          setError("");
+        }}
+        className="text-sm text-gray-500 underline"
+      >
+        Retour
+      </button>
+    </form>
   );
 }
 

@@ -12,6 +12,7 @@
  *   - facture transmise en facturation électronique.
  * Aucune page n'est ouverte : la requête part du navigateur connecté.
  */
+import { createHmac } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { test, expect, etape } from "../outils.mjs";
 import { base } from "../base.mjs";
@@ -25,6 +26,7 @@ import {
   SESSION_TOKEN_FACTURES_EFACTURATION,
   SESSION_TOKEN_FACTURES_ROLE_AVOIRS,
   SESSION_TOKEN_FACTURES_ROLE_CREATION,
+  SECRET,
   SESSION_TOKEN_FACTURES_SOLDES,
 } from "../config.mjs";
 import { AVOIRS_CONTROLES, C, CLIENTS_CONTROLES, DEVIS_CONTROLES, E, ESPACES_FACTURES, IMPORTEE_CONTROLES, S } from "../donnees/lot-factures.mjs";
@@ -479,7 +481,9 @@ test.describe("Factures : facture créditée (soldes, paiement en ligne, relance
     const r = await appelApiDirect(page, LIEN, { w: ORG_SOLDES, id: id(S.soldee) }, { organisation: ORG_SOLDES });
     expect(r.errors, messages(r)).toEqual([]);
     expect(r.data.invoice.paymentLink, "Lien de paiement proposé pour une facture soldée").toBeNull();
-    const lien = await page.request.get(`${API_URL}/pay/invoice/${id(S.soldee)}`, { maxRedirects: 0, failOnStatusCode: false });
+    // Lien signé (?t=), comme ceux envoyés au client : sans jeton, la facture répond comme une inconnue
+    const jeton = createHmac("sha256", SECRET).update(`invoice-payment:v1:${id(S.soldee)}`).digest("base64url").slice(0, 32);
+    const lien = await page.request.get(`${API_URL}/pay/invoice/${id(S.soldee)}?t=${jeton}`, { maxRedirects: 0, failOnStatusCode: false });
     expect(lien.status()).toBe(409);
     expect(await lien.text()).toContain("Facture soldée par avoir");
   });

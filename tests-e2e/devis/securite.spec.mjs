@@ -92,16 +92,6 @@ const ECRITURES = [
     temoin: () => ["deliverynotes", { "items.description": "Cible bon de livraison" }],
   },
   {
-    nom: "Envoyer un devis par e-mail",
-    droit: "send",
-    externe: true,
-    champ: "sendQuote",
-    cible: true,
-    requete: `mutation($id: ID!) { sendQuote(id: $id, email: "destinataire-controle@e2e.test") }`,
-    variables: () => ({ id: id(D.cibleEnvoyer) }),
-    temoin: () => devis(D.cibleEnvoyer),
-  },
-  {
     nom: "Envoyer un devis par e-mail (envoi réel, avec le PDF)",
     droit: "send",
     externe: true,
