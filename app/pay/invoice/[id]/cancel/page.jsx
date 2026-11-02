@@ -4,13 +4,21 @@ export const metadata = {
   title: "Paiement annulé",
 };
 
-export default async function InvoicePaymentCancelPage({ params }) {
+export default async function InvoicePaymentCancelPage({
+  params,
+  searchParams,
+}) {
   const { id } = await params;
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/").replace(
-    /\/$/,
-    "",
-  );
-  const retryUrl = `${apiBase}/pay/invoice/${id}`;
+  // Jeton du lien de paiement signé, repris pour réessayer
+  const { t } = (await searchParams) || {};
+  const token =
+    typeof t === "string" && /^[A-Za-z0-9_-]{32}$/.test(t) ? t : null;
+  const apiBase = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/"
+  ).replace(/\/$/, "");
+  const retryUrl = `${apiBase}/pay/invoice/${encodeURIComponent(id)}${
+    token ? `?t=${token}` : ""
+  }`;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
