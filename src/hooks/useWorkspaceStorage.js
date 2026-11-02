@@ -7,10 +7,10 @@ import { GET_WORKSPACE_STORAGE } from "@/src/graphql/queries/storage";
 
 /**
  * Stockage de l'espace actif (utilisé, quota, détail, proposition).
- * Tant que le premier calcul n'est pas terminé (`ready: false`), la requête
- * est relancée toutes les 10 secondes.
+ * Avec `poll`, tant que le premier calcul n'est pas terminé (`ready: false`),
+ * la requête est relancée toutes les 10 secondes.
  */
-export function useWorkspaceStorage({ skip = false } = {}) {
+export function useWorkspaceStorage({ skip = false, poll = false } = {}) {
   const { workspaceId } = useWorkspace();
   const query = useQuery(GET_WORKSPACE_STORAGE, {
     variables: { workspaceId },
@@ -21,7 +21,8 @@ export function useWorkspaceStorage({ skip = false } = {}) {
     context: { skipErrorToast: true },
   });
   const storage = query.data?.workspaceStorage || null;
-  const pending = Boolean(storage && !storage.ready);
+  // Relance seulement sur l'écran Stockage (pas dans le bandeau)
+  const pending = poll && Boolean(storage && !storage.ready);
   const { startPolling, stopPolling } = query;
 
   useEffect(() => {
