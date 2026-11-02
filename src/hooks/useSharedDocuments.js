@@ -4,6 +4,7 @@ import React from "react";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
+import { findStorageQuotaError } from "@/src/lib/storage-plans";
 
 // Queries
 export const GET_SHARED_DOCUMENTS = gql`
@@ -655,12 +656,22 @@ export function useUploadSharedDocument() {
         toast.success("Document uploadé avec succès");
         return result.data.uploadSharedDocument.document;
       } else {
-        throw new Error(
-          result.data?.uploadSharedDocument?.message || "Erreur upload",
+        // Refus de l'API (espace de stockage plein…) : son message, pas
+        // « Erreur upload »
+        const refusal = findStorageQuotaError(result);
+        const error = new Error(
+          result.data?.uploadSharedDocument?.message ||
+            result.errors?.[0]?.message ||
+            "Erreur upload",
         );
+        if (refusal) error.storageQuotaExceeded = true;
+        throw error;
       }
     } catch (error) {
-      toast.error(error.message || "Erreur lors de l'upload");
+      // Refus faute de stockage : la fenêtre de proposition s'en charge
+      if (!error.storageQuotaExceeded && !findStorageQuotaError(error)) {
+        toast.error(error.message || "Erreur lors de l'upload");
+      }
       throw error;
     }
   };

@@ -23,7 +23,8 @@ export const PLAN_LIMITS = {
     seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 1,
-    storage: 50,
+    // Stockage de l'espace, en Go (packs de 50 Go en plus)
+    storage: 75,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 5,
     // Rôles prédéfinis proposés à l'invitation (viewer = Membre, member =
@@ -68,7 +69,7 @@ export const PLAN_LIMITS = {
     seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 3,
-    storage: 200,
+    storage: 400,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 15,
     // Rôles prédéfinis proposés à l'invitation (+ rôles personnalisés)
@@ -110,7 +111,7 @@ export const PLAN_LIMITS = {
     seatPrice: 5.99,
     workspaces: 1,
     bankAccounts: 5,
-    storage: 500,
+    storage: 1000,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 50,
     // Rôles prédéfinis proposés à l'invitation (+ rôles personnalisés)
@@ -163,7 +164,7 @@ export function getSeatPrice(planName) {
  * @returns {Object} Limites du plan
  */
 export function getPlanLimits(planName) {
-  const normalizedPlan = planName?.toLowerCase() || 'freelance';
+  const normalizedPlan = planName?.toLowerCase() || "freelance";
   return PLAN_LIMITS[normalizedPlan] || PLAN_LIMITS.freelance;
 }
 

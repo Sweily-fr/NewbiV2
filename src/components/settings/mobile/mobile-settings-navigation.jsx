@@ -13,6 +13,7 @@ import {
   Crown,
   User,
   Wallet,
+  HardDrive,
   ChevronRight,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ const iconMap = {
   Crown,
   Shield,
   Wallet,
+  HardDrive,
 };
 
 export default function MobileSettingsNavigation({
