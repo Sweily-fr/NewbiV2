@@ -8,9 +8,7 @@
  *
  * Les appels vers l'extérieur sont coupés pendant les tests (outils.mjs) :
  * une balise n'envoie donc rien ici, mais toute requête vers ces services
- * est relevée, même bloquée. Défaut connu tant que la balise Google Ads
- * (app/layout.jsx) et les pixels (MarketingPixels.jsx) sont chargés sur
- * toutes les pages : tests rouges jusqu'à la décision.
+ * est relevée, même bloquée. Liste des pages : src/lib/secret-pages.js.
  */
 import { test, expect, etape } from "../outils.mjs";
 import { BASE_URL } from "../config.mjs";
@@ -74,3 +72,27 @@ for (const [libelle, accord] of [
     }
   });
 }
+
+test.describe("Navigation interne vers une page à secret", () => {
+  test.use({ storageState: consentement(true), erreursConsoleAutorisees: /status of 4\d\d|Failed to load resource|401|403|404|token|jeton|Erreur/i });
+
+  test("Depuis une page publique (balises chargées) : la page à secret est rechargée entière, sans balise", async ({ page }) => {
+    await page.goto("/mentions-legales");
+    await page.waitForLoadState("load");
+    expect(await page.evaluate(() => typeof window.gtag), "gtag absent d'une page publique").toBe("function");
+    await page.evaluate(() => {
+      window.__avantNavigation = true;
+    });
+    const traceurs = [];
+    page.on("request", (req) => {
+      if (TRACEURS.test(req.url())) traceurs.push(req.url());
+    });
+    await page.evaluate((chemin) => window.history.pushState({}, "", chemin), `/transfer/${TRANSFERT.shareLink}?key=${TRANSFERT.accessKey}`);
+    await page.waitForURL(/\/transfer\//);
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(3_000);
+    expect(await page.evaluate(() => window.__avantNavigation ?? null), "La page n'a pas été rechargée entière").toBeNull();
+    expect(await page.evaluate(() => typeof window.gtag)).toBe("undefined");
+    expect(traceurs.filter((u) => u.includes(TRANSFERT.accessKey)), "La clé du transfert part chez un tiers").toEqual([]);
+  });
+});
