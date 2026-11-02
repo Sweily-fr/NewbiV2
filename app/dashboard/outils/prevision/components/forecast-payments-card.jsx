@@ -832,6 +832,123 @@ const formatNumber = (value) => {
   }).format(Math.round(value));
 };
 
+// Titre de section repliable (Entrées, Sorties) : un bouton qui annonce
+// son état ; la ligne entière reste cliquable à la souris. Défini hors du
+// tableau : recréé à chaque rendu, il perdrait le focus au premier repli.
+const SectionToggle = ({ label, expanded, onToggle }) => (
+  <button
+    type="button"
+    aria-expanded={expanded}
+    onClick={(e) => {
+      e.stopPropagation();
+      onToggle();
+    }}
+    className="flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  >
+    <ChevronDown
+      size={14}
+      aria-hidden="true"
+      className={cn(
+        "text-muted-foreground transition-transform",
+        !expanded && "-rotate-90",
+      )}
+    />
+    <span className="text-[13px] font-semibold text-foreground">{label}</span>
+  </button>
+);
+
+// Ligne, cellule et pourcentage du tableau : définis hors de ForecastTable
+// pour garder les mêmes éléments d'un rendu à l'autre (focus clavier gardé).
+const Row = ({
+  label,
+  labelClass,
+  onClick,
+  borderClass,
+  columns,
+  children,
+}) => (
+  <div className={cn("flex items-center", borderClass)} onClick={onClick}>
+    <div
+      className={cn(
+        "shrink-0 px-4 py-3.5 overflow-hidden sticky left-0 z-10 bg-background",
+        labelClass,
+      )}
+      style={{ width: LABEL_COL_WIDTH }}
+    >
+      {label}
+    </div>
+    <div
+      className="flex-1 grid pr-6"
+      style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+    >
+      {children}
+    </div>
+  </div>
+);
+
+const Cell = ({
+  value,
+  isPast,
+  isCurrent,
+  badge,
+  muted: isMuted,
+  onClick: cellClick,
+  actionLabel,
+}) => {
+  const isFutureClickable = !isPast && cellClick;
+  // Cellule future : un bouton, atteignable au clavier et nommé
+  const Tag = isFutureClickable ? "button" : "div";
+  return (
+    <Tag
+      {...(isFutureClickable
+        ? { type: "button", "aria-label": actionLabel }
+        : {})}
+      className={cn(
+        "px-2 py-3.5 text-center text-[13px] tabular-nums whitespace-nowrap group/cell relative",
+        isCurrent && "bg-black/[0.04]",
+        isFutureClickable &&
+          "cursor-pointer hover:bg-muted/40 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      )}
+      onClick={isFutureClickable ? cellClick : undefined}
+      title={
+        isFutureClickable ? "Cliquer pour ajouter une prévision" : undefined
+      }
+    >
+      <span
+        className={cn(
+          isMuted && "text-muted-foreground",
+          !isMuted && isPast && "font-semibold text-foreground",
+          !isMuted && !isPast && "text-muted-foreground",
+          isFutureClickable &&
+            "group-hover/cell:opacity-0 group-focus-visible/cell:opacity-0 transition-opacity",
+        )}
+      >
+        {value}
+      </span>
+      {badge}
+      {isFutureClickable && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 flex items-center justify-center text-muted-foreground/50 text-lg opacity-0 group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100 transition-opacity"
+        >
+          +
+        </span>
+      )}
+    </Tag>
+  );
+};
+
+const Badge = ({ pct }) => (
+  <span
+    className={cn(
+      "ml-2 text-[11px] px-1.5 py-0.5 rounded tabular-nums",
+      getBadgeStyle(pct),
+    )}
+  >
+    {pct} %
+  </span>
+);
+
 function ForecastTable({
   months,
   currentMonth,
@@ -852,113 +969,6 @@ function ForecastTable({
   // pour que le libellé reste raccord avec le reste de la ligne.
   const labelTint =
     "after:absolute after:inset-0 after:bg-muted/40 after:-z-10 after:pointer-events-none";
-
-  const Row = ({ label, labelClass, onClick, borderClass, children }) => (
-    <div className={cn("flex items-center", borderClass)} onClick={onClick}>
-      <div
-        className={cn(
-          "shrink-0 px-4 py-3.5 overflow-hidden sticky left-0 z-10 bg-background",
-          labelClass,
-        )}
-        style={{ width: LABEL_COL_WIDTH }}
-      >
-        {label}
-      </div>
-      <div
-        className="flex-1 grid pr-6"
-        style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-
-  const Cell = ({
-    value,
-    isPast,
-    isCurrent,
-    badge,
-    muted: isMuted,
-    onClick: cellClick,
-    actionLabel,
-  }) => {
-    const isFutureClickable = !isPast && cellClick;
-    // Cellule future : un bouton, atteignable au clavier et nommé
-    const Tag = isFutureClickable ? "button" : "div";
-    return (
-      <Tag
-        {...(isFutureClickable
-          ? { type: "button", "aria-label": actionLabel }
-          : {})}
-        className={cn(
-          "px-2 py-3.5 text-center text-[13px] tabular-nums whitespace-nowrap group/cell relative",
-          isCurrent && "bg-black/[0.04]",
-          isFutureClickable &&
-            "cursor-pointer hover:bg-muted/40 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        )}
-        onClick={isFutureClickable ? cellClick : undefined}
-        title={
-          isFutureClickable ? "Cliquer pour ajouter une prévision" : undefined
-        }
-      >
-        <span
-          className={cn(
-            isMuted && "text-muted-foreground",
-            !isMuted && isPast && "font-semibold text-foreground",
-            !isMuted && !isPast && "text-muted-foreground",
-            isFutureClickable &&
-              "group-hover/cell:opacity-0 group-focus-visible/cell:opacity-0 transition-opacity",
-          )}
-        >
-          {value}
-        </span>
-        {badge}
-        {isFutureClickable && (
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 flex items-center justify-center text-muted-foreground/50 text-lg opacity-0 group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100 transition-opacity"
-          >
-            +
-          </span>
-        )}
-      </Tag>
-    );
-  };
-
-  // Titre de section repliable (Entrées, Sorties) : un bouton qui annonce
-  // son état ; la ligne entière reste cliquable à la souris
-  const SectionToggle = ({ label, expanded, onToggle }) => (
-    <button
-      type="button"
-      aria-expanded={expanded}
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-      className="flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <ChevronDown
-        size={14}
-        aria-hidden="true"
-        className={cn(
-          "text-muted-foreground transition-transform",
-          !expanded && "-rotate-90",
-        )}
-      />
-      <span className="text-[13px] font-semibold text-foreground">{label}</span>
-    </button>
-  );
-
-  const Badge = ({ pct }) => (
-    <span
-      className={cn(
-        "ml-2 text-[11px] px-1.5 py-0.5 rounded tabular-nums",
-        getBadgeStyle(pct),
-      )}
-    >
-      {pct} %
-    </span>
-  );
 
   return (
     <div className="overflow-x-auto">
@@ -995,6 +1005,7 @@ function ForecastTable({
 
         {/* ── Solde début de mois (header séparé) ── */}
         <Row
+          columns={N}
           label={
             <span className="text-[13px] font-medium text-foreground">
               Solde début de mois
@@ -1022,6 +1033,7 @@ function ForecastTable({
         <div className="border border-border rounded-lg overflow-clip">
           {/* ── Entrées ── */}
           <Row
+            columns={N}
             label={
               <SectionToggle
                 label="Entrées"
@@ -1057,6 +1069,7 @@ function ForecastTable({
             <>
               {/* Estimation */}
               <Row
+                columns={N}
                 label={
                   <div className="flex items-center gap-2 pl-6">
                     <Clock
@@ -1088,6 +1101,7 @@ function ForecastTable({
                 const Icon = cat.icon;
                 return (
                   <Row
+                    columns={N}
                     key={cat.key}
                     label={
                       <div className="flex items-center gap-2 pl-6">
@@ -1146,6 +1160,7 @@ function ForecastTable({
 
           {/* ── Sorties ── */}
           <Row
+            columns={N}
             label={
               <SectionToggle
                 label="Sorties"
@@ -1182,6 +1197,7 @@ function ForecastTable({
           {expenseExpanded && (
             <>
               <Row
+                columns={N}
                 label={
                   <div className="flex items-center gap-2 pl-6">
                     <Clock
@@ -1213,6 +1229,7 @@ function ForecastTable({
                 const Icon = cat.icon;
                 return (
                   <Row
+                    columns={N}
                     key={cat.key}
                     label={
                       <div className="flex items-center gap-2 pl-6">
@@ -1274,6 +1291,7 @@ function ForecastTable({
 
         {/* ── Solde fin de mois (footer séparé) ── */}
         <Row
+          columns={N}
           label={
             <span className="text-[13px] font-medium text-foreground">
               Solde fin de mois

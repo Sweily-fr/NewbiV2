@@ -180,11 +180,17 @@ test.describe("Automatisations d'e-mails", () => {
 });
 
 test.describe("Automatisations : accessibilité", () => {
-  test("bouton nommé « Automatisations », panneau sans défilement horizontal à 375 px", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 800 });
+  // Le bouton n'existe que sur la mise en page large (à partir de 768 px) :
+  // fenêtre la plus étroite où il est proposé.
+  test("bouton nommé « Automatisations », panneau sans défilement horizontal à 768 px", async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 900 });
     const panneau = await ouvrirAutomatisations(page);
-    const largeur = await panneau.evaluate((e) => e.getBoundingClientRect().width);
-    expect(largeur).toBeLessThanOrEqual(375);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    const { gauche, droite } = await panneau.evaluate((e) => {
+      const r = e.getBoundingClientRect();
+      return { gauche: r.left, droite: r.right };
+    });
+    expect(gauche).toBeGreaterThanOrEqual(0);
+    expect(droite).toBeLessThanOrEqual(768);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(768);
   });
 });

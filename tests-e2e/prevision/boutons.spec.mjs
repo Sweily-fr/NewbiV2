@@ -34,6 +34,9 @@ const COMMUNS = {
   "button 12 mois > 24 mois": { contenu: true },
   "button 12 mois > Période personnalisée": { contenu: true },
   ...MOIS,
+  // Sections repliables, ouvertes aussi en lecture seule
+  "button Entrées": { etat: /expanded/ },
+  "button Sorties": { etat: /expanded/ },
 };
 const ECRITURE = {
   "button Base": { menu: ["Base", "Optimiste +20% / -10% Modifier", "Nouveau scénario", "Modifier un scénario"] },
@@ -42,9 +45,13 @@ const ECRITURE = {
   "button Base > Nouveau scénario": { fenetre: "Nouveau scénario" },
   // Sous-menu qui reprend « Modifier » de chaque ligne, atteignable au clavier
   "button Base > Modifier un scénario": { menu: ["Optimiste"] },
-  // Sections repliables, et cellules des mois à venir (une par ligne de catégorie)
-  "button Entrées": { etat: /expanded/ },
-  "button Sorties": { etat: /expanded/ },
+  // Cellules des mois à venir : une par ligne de catégorie et par mois
+  ...Object.fromEntries(
+    ["Autres revenus", "Loyer", "Abonnements", "Logiciels", "Marketing", "Services publics"].map((categorie) => [
+      `button Ajouter une prévision « ${categorie} » en (mois)`,
+      { fenetre: "Nouvelle saisie" },
+    ]),
+  ),
   "button Ajouter une prévision": { fenetre: "Nouvelle saisie" },
   "button Exporter": { fenetre: "Exporter la prévision" },
   // Saisies (« Modifier la saisie ») et récurrence détectée (« Modifier la récurrence ») : même nom, la première ligne est une saisie.
