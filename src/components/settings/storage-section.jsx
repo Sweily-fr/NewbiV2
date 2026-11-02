@@ -38,7 +38,9 @@ function UsageRow({ label, bytes, total }) {
  * les autres membres voient l'état seulement.
  */
 export function StorageSection({ onTabChange }) {
-  const { storage, loading, workspaceId } = useWorkspaceStorage();
+  const { storage, loading, workspaceId } = useWorkspaceStorage({
+    poll: true,
+  });
   const { canDo, isReady } = useMyPermissions();
   const canManage = isReady && canDo("billing", "manage");
   const details = Boolean(storage?.canViewDetails);
