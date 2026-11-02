@@ -8,9 +8,8 @@
  *     l'adresse e-mail de l'autre, ni le taux horaire des tâches.
  *   - Lien créé sans les commentaires, les pièces jointes ni les membres :
  *     rien de tout cela n'est renvoyé.
- * Les deux derniers points sont des défauts connus (getPublicBoard renvoie
- * userEmail, hourlyRate, et n'applique que canComment) : tests rouges
- * jusqu'à la correction.
+ * Le visiteur ne reçoit que sa propre adresse, ni taux horaire ni
+ * identifiant interne (newbi-api src/utils/publicBoardVisitorView.js).
  */
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
@@ -83,7 +82,7 @@ test.describe("Kanban : lien public protégé par mot de passe", () => {
 
 /* --- Données renvoyées au visiteur ------------------------------------------ */
 
-test.describe("Kanban : un visiteur ne reçoit pas les données des autres visiteurs (défaut connu)", () => {
+test.describe("Kanban : un visiteur ne reçoit pas les données des autres visiteurs", () => {
   test("Témoin : Claire lit le tableau et les commentaires", async ({ page }) => {
     const reponse = await lire(page, { t: PARTAGES_KANBAN.clients.token, s: sessionVisiteur("claire", "clients") });
     const resultat = verifierReussite(reponse, "getPublicBoard", "Lien des clients (Claire)");
@@ -111,7 +110,7 @@ test.describe("Kanban : un visiteur ne reçoit pas les données des autres visit
   });
 });
 
-test.describe("Kanban : un lien sans commentaires, pièces jointes ni membres ne les renvoie pas (défaut connu)", () => {
+test.describe("Kanban : un lien sans commentaires, pièces jointes ni membres ne les renvoie pas", () => {
   test("Permissions du lien appliquées par l'API", async ({ page }) => {
     const reponse = await lire(page, { t: PARTAGES_KANBAN.reduit.token, s: sessionVisiteur("claire", "reduit") });
     const resultat = verifierReussite(reponse, "getPublicBoard", "Lien aux permissions réduites");

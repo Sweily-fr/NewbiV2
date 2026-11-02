@@ -41,6 +41,7 @@ import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
   QUOTE_DOCUMENT_URL,
+  QUOTE_SIGNED_FILES,
 } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
@@ -129,6 +130,30 @@ export default function QuoteSidebar({
   const [fetchClient] = useLazyQuery(GET_CLIENT, {
     fetchPolicy: "network-only",
   });
+
+  // Document signé, certificat : liens à durée limitée, relus au clic. La
+  // fenêtre est ouverte tout de suite (sinon bloquée), puis dirigée.
+  const [fetchSignedFiles] = useLazyQuery(QUOTE_SIGNED_FILES, {
+    fetchPolicy: "network-only",
+  });
+  const openSignedFile = async (field) => {
+    const target = window.open("", "_blank");
+    let url = quote?.[field];
+    try {
+      const { data } = await fetchSignedFiles({
+        variables: { workspaceId, id: quote.id },
+      });
+      url = data?.quote?.[field] || url;
+    } catch {
+      // lien déjà chargé avec le devis
+    }
+    if (!url) {
+      target?.close();
+      return;
+    }
+    if (target) target.location.href = url;
+    else window.open(url, "_blank");
+  };
 
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [isMobile, setIsMobile] = useState(() =>
@@ -1139,9 +1164,7 @@ export default function QuoteSidebar({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          window.open(quote.signedDocumentUrl, "_blank")
-                        }
+                        onClick={() => openSignedFile("signedDocumentUrl")}
                         className="w-full font-normal"
                       >
                         <Download className="h-4 w-4 mr-2" />
@@ -1152,9 +1175,7 @@ export default function QuoteSidebar({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          window.open(quote.auditTrailUrl, "_blank")
-                        }
+                        onClick={() => openSignedFile("auditTrailUrl")}
                         className="w-full font-normal"
                       >
                         <ScrollText className="h-4 w-4 mr-2" />

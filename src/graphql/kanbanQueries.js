@@ -1498,6 +1498,7 @@ export const GET_PUBLIC_BOARD = gql`
             }
           }
           userId
+          createdByName
           createdAt
           updatedAt
         }
@@ -1897,6 +1898,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
           createdAt
         }
         userId
+        createdByName
         createdAt
         updatedAt
       }
@@ -2060,6 +2062,7 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
           }
         }
         userId
+        createdByName
         createdAt
         updatedAt
       }

@@ -47,6 +47,7 @@ import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { createSearchMatcher } from "@/src/utils/search-text";
+import { goToBankConnect } from "@/src/lib/bank-connect-return";
 
 function BankBalanceCardInner(
   {
@@ -255,7 +256,7 @@ function BankBalanceCardInner(
       if (response.ok) {
         const data = await response.json();
         // Rediriger vers Bridge Connect avec la banque pré-sélectionnée
-        window.location.href = data.connectUrl;
+        goToBankConnect(data.connectUrl);
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || "Erreur de connexion");

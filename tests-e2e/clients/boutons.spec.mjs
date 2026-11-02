@@ -96,7 +96,7 @@ test.describe("Contacts (propriétaire)", () => {
     titre: "Contacts",
     ouvrir: ouvrirContacts,
     boutons: {
-      "button icône zap": { fenetre: "Automatisations" },
+      "button Automatisations": { fenetre: "Automatisations" },
       "button Champs": { fenetre: "Champs personnalisés clients" },
       "button Importer": { fenetre: "Importer des contacts" },
       ...EXPORT,
@@ -262,7 +262,7 @@ test.describe("Contacts (éditeur)", () => {
     titre: "Contacts",
     ouvrir: ouvrirContacts,
     boutons: {
-      "button icône zap": { fenetre: "Automatisations" },
+      "button Automatisations": { fenetre: "Automatisations" },
       "button Champs": { fenetre: "Champs personnalisés clients" },
       "button Importer": { fenetre: "Importer des contacts" },
       ...EXPORT,
@@ -340,7 +340,7 @@ test.describe("Contacts (membre, lecture seule)", () => {
     titre: "Contacts",
     ouvrir: ouvrirContacts,
     boutons: {
-      "button icône zap": { fenetre: "Automatisations" },
+      "button Automatisations": { fenetre: "Automatisations" },
       "button Champs": { fenetre: "Champs personnalisés clients" },
       ...RECHERCHE_EXACTE,
       ...FILTRES(6),
@@ -395,7 +395,7 @@ test.describe("Contacts (membre, lecture seule)", () => {
   test.describe("Rien à modifier dans les fenêtres ouvertes", () => {
     test("Automatisations : consultables, pas d'ajout", async ({ page }) => {
       await ouvrirContacts(page);
-      await page.locator("main button:has(svg.lucide-zap)").first().click();
+      await page.getByRole("button", { name: "Automatisations", exact: true }).click();
       await expect(page.getByRole("dialog").filter({ has: page.getByText("Automatisations", { exact: true }) })).toBeVisible();
       await expect(page.getByRole("button", { name: "Ajouter une automatisation" })).toHaveCount(0);
     });

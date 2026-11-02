@@ -58,7 +58,10 @@ export function formatQuantity(n) {
  * de démonstration : « Pour 90 m² de Peinture, vous obtenez 5 unités de Pot
  * de peinture (4,5 arrondi au supérieur). »
  */
-export function linkedRuleExample(rule, { mainName, mainUnit, unit, sampleQuantity } = {}) {
+export function linkedRuleExample(
+  rule,
+  { mainName, mainUnit, unit, sampleQuantity } = {},
+) {
   const per = Number(rule?.linkedPer ?? rule?.per) || 1;
   const quantity = Number(rule?.linkedQuantity ?? rule?.quantity) || 0;
   const rounding = rule?.linkedRounding ?? rule?.rounding ?? LINKED_ROUNDING.UP;
@@ -100,6 +103,29 @@ export function newLinkKey() {
   return `lk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+// Bornes des deux nombres d'une règle (« quantity » pour « per »), comme
+// l'API : affichées sur deux décimales, « 1 pour 0,0001 » donnait « 1 pour 0 »
+export const LINKED_RATIO_MIN = 0.01;
+export const LINKED_RATIO_MAX = 1000000;
+
+/**
+ * Message d'erreur d'une règle de produit lié saisie dans la fiche produit,
+ * ou null si elle est valide.
+ */
+export function linkedRuleError(link) {
+  const name = link?.product?.name || "";
+  const quantity = parseFloat(link?.quantity);
+  const per = parseFloat(link?.per);
+  if (!(quantity > 0) || !(per > 0)) {
+    return `Les quantités du produit lié « ${name} » doivent être supérieures à 0`;
+  }
+  const inRange = (n) => n >= LINKED_RATIO_MIN && n <= LINKED_RATIO_MAX;
+  if (!inRange(quantity) || !inRange(per)) {
+    return `Les quantités du produit lié « ${name} » vont de 0,01 à 1\u00a0000\u00a0000`;
+  }
+  return null;
+}
+
 /**
  * Quantité d'un produit lié pour une quantité donnée du produit principal.
  * Exemple : 1 pot pour 20 m², 90 m² → 4,5 → 5 (UP), 4 (DOWN), 4,5 (NONE).
@@ -117,7 +143,8 @@ export function computeLinkedQuantity(mainQuantity, rule) {
   // On neutralise le bruit flottant (ex. 100 × 0,1 / 1 = 10,000000000000002)
   const cleaned = Math.round(raw * 1e6) / 1e6;
   if (rounding === LINKED_ROUNDING.UP) return Math.ceil(cleaned);
-  if (rounding === LINKED_ROUNDING.DOWN) return Math.max(1, Math.floor(cleaned));
+  if (rounding === LINKED_ROUNDING.DOWN)
+    return Math.max(1, Math.floor(cleaned));
   return Math.round(cleaned * 100) / 100;
 }
 
@@ -126,7 +153,10 @@ export function computeLinkedQuantity(mainQuantity, rule) {
  * calculées pour `mainQuantity` unités du produit principal et rattachées à
  * `parentKey`. Les liens dont le produit cible n'existe plus sont ignorés.
  */
-export function buildLinkedItems(product, { mainQuantity = 1, parentKey } = {}) {
+export function buildLinkedItems(
+  product,
+  { mainQuantity = 1, parentKey } = {},
+) {
   const links = product?.linkedProducts || [];
   return links
     .filter((link) => link && link.product)
@@ -161,7 +191,12 @@ export function buildLinkedItems(product, { mainQuantity = 1, parentKey } = {}) 
  * quand la quantité principale devient `mainQuantity`.
  * `negative` : les quantités vivent en négatif (avoir).
  */
-export function linkedQuantityUpdates(items, parentKey, mainQuantity, { negative = false } = {}) {
+export function linkedQuantityUpdates(
+  items,
+  parentKey,
+  mainQuantity,
+  { negative = false } = {},
+) {
   if (!parentKey) return [];
   const updates = [];
   (items || []).forEach((item, index) => {

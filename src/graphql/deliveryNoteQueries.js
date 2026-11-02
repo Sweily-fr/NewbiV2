@@ -416,12 +416,6 @@ export const RECORD_DELIVERY_NOTE_RECEPTION = gql`
   ${DELIVERY_NOTE_FRAGMENT}
 `;
 
-export const SEND_DELIVERY_NOTE = gql`
-  mutation SendDeliveryNote($id: ID!, $workspaceId: ID!, $email: String!) {
-    sendDeliveryNote(id: $id, workspaceId: $workspaceId, email: $email)
-  }
-`;
-
 // Archive le PDF du bon de livraison (généré côté frontend) sur R2
 export const ARCHIVE_DELIVERY_NOTE_PDF = gql`
   mutation ArchiveDeliveryNotePdf(

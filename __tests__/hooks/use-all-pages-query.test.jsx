@@ -93,6 +93,30 @@ describe("useAllPagesQuery", () => {
     ]);
   });
 
+  it("plus de 1 000 documents : relus par pages de 1 000 (plafond de l'API)", async () => {
+    const BEAUCOUP = Array.from({ length: 2350 }, (_, i) => ({
+      __typename: "Doc",
+      id: `doc-${2350 - i}`,
+      number: String(2350 - i).padStart(4, "0"),
+    }));
+    const demandes = servirParPages(BEAUCOUP);
+    render(
+      <ApolloProvider client={makeClient()}>
+        <Liste />
+      </ApolloProvider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("2350 chargés : 0001")).toBeInTheDocument(),
+    );
+    expect(demandes.map((v) => [v.page, v.limit])).toEqual([
+      [1, 50],
+      [1, 1000],
+      [2, 1000],
+      [3, 1000],
+    ]);
+  });
+
   it("une seule requête quand tout tient dans la première page", async () => {
     const demandes = servirParPages(TOUS.slice(0, 12));
     render(

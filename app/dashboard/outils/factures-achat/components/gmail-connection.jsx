@@ -111,9 +111,12 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
       const tokenData = await tokenRes.json();
       if (!tokenData.token) throw new Error("Non authentifié");
 
+      // credentials : l'API pose le cookie qui lie le retour de Google à ce
+      // navigateur (une adresse d'autorisation ouverte ailleurs est refusée)
       const res = await fetch(
         `${API_URL}/gmail-connect/authorize?scanPeriodMonths=${scanPeriod}`,
         {
+          credentials: "include",
           headers: {
             Authorization: `Bearer ${tokenData.token}`,
             "x-organization-id": workspaceId,

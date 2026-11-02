@@ -3223,7 +3223,8 @@ export default function DocumentsPartagesPage() {
                       <Trash2 className="h-8 w-8" />
                       <p className="text-sm">La corbeille est vide</p>
                       <p className="text-xs">
-                        Les éléments supprimés apparaîtront ici pendant 30 jours
+                        Les éléments supprimés restent ici jusqu'à leur
+                        suppression définitive
                       </p>
                     </div>
                   </div>
@@ -3270,9 +3271,6 @@ export default function DocumentsPartagesPage() {
                       </span>
                       <span className="w-40 text-right hidden lg:block">
                         Supprimé le
-                      </span>
-                      <span className="w-24 text-right hidden md:block">
-                        Jours restants
                       </span>
                       {canManageTrash && <span className="w-8 sm:w-10"></span>}
                     </div>
@@ -3376,18 +3374,6 @@ export default function DocumentsPartagesPage() {
                                 },
                               )}
                             </span>
-                            <span className="w-24 text-right hidden md:block">
-                              <Badge
-                                variant={
-                                  folder.daysUntilPermanentDeletion <= 7
-                                    ? "destructive"
-                                    : "secondary"
-                                }
-                                className="text-xs"
-                              >
-                                {folder.daysUntilPermanentDeletion}j
-                              </Badge>
-                            </span>
                             {/* Restaurer (« edit ») / supprimer : menu absent
                                 en lecture seule */}
                             {canManageTrash && (
@@ -3479,9 +3465,6 @@ export default function DocumentsPartagesPage() {
                                   {formatFileSize(doc.fileSize)}
                                 </span>
                                 <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
-                                  —
-                                </span>
-                                <span className="w-24 text-right hidden md:block">
                                   —
                                 </span>
                                 {canManageTrash && (
@@ -3583,18 +3566,6 @@ export default function DocumentsPartagesPage() {
                           {format(new Date(doc.trashedAt), "d MMM yyyy HH:mm", {
                             locale: fr,
                           })}
-                        </span>
-                        <span className="w-24 text-right hidden md:block">
-                          <Badge
-                            variant={
-                              doc.daysUntilPermanentDeletion <= 7
-                                ? "destructive"
-                                : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {doc.daysUntilPermanentDeletion}j
-                          </Badge>
                         </span>
                         {canManageTrash && (
                           <DropdownMenu>
@@ -4524,7 +4495,7 @@ export default function DocumentsPartagesPage() {
               <AlertDialogTitle>Mettre à la corbeille ?</AlertDialogTitle>
               <AlertDialogDescription>
                 {selectedDocuments.length} document(s) seront déplacé(s) vers la
-                corbeille. Vous pourrez les restaurer pendant 30 jours.
+                corbeille. Vous pourrez les restaurer depuis la corbeille.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -4576,8 +4547,8 @@ export default function DocumentsPartagesPage() {
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {multiDeletePending
-                  ? "Les dossiers sélectionnés et tous les documents qu'ils contiennent seront déplacés vers la corbeille. Vous pourrez les restaurer pendant 30 jours."
-                  : "Le dossier et tous les documents qu'il contient seront déplacés vers la corbeille. Vous pourrez les restaurer pendant 30 jours."}
+                  ? "Les dossiers sélectionnés et tous les documents qu'ils contiennent seront déplacés vers la corbeille. Vous pourrez les restaurer depuis la corbeille."
+                  : "Le dossier et tous les documents qu'il contient seront déplacés vers la corbeille. Vous pourrez les restaurer depuis la corbeille."}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

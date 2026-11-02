@@ -6,6 +6,12 @@ import { useQuery } from "@apollo/client";
 /** Première page : la liste s'affiche aussitôt, le reste suit. */
 export const FIRST_PAGE_SIZE = 50;
 
+/**
+ * Taille maximale d'une page servie par l'API (plafond des listes). Au-delà,
+ * la liste complète est relue par pages de cette taille.
+ */
+export const MAX_PAGE_SIZE = 1000;
+
 /** Requêtes complètes restées incomplètes avant d'abandonner (pas de boucle). */
 const MAX_INCOMPLETE_FETCHES = 2;
 
@@ -14,7 +20,8 @@ const MAX_INCOMPLETE_FETCHES = 2;
  * par pages, mais le site compte, filtre, cherche, trie et exporte sur la
  * liste chargée. La première page s'affiche aussitôt ; quand le total en
  * annonce davantage, la liste entière est relue d'une requête (limite =
- * total) et remplace la première page. Sans cela, onglets, recherche,
+ * total, ou par pages de 1 000 au-delà : plafond de l'API) et remplace la
+ * première page. Sans cela, onglets, recherche,
  * exports et chiffres de l'accueil s'arrêtaient aux 50 documents créés en
  * dernier.
  *
@@ -54,18 +61,44 @@ export function useAllPagesQuery(
     }
     if (state.inFlight || state.incomplete >= MAX_INCOMPLETE_FETCHES) return;
     state.inFlight = true;
-    fetchMore({
-      variables: { page: 1, limit: total },
-      // La liste complète remplace la première page
-      updateQuery: (previous, { fetchMoreResult }) =>
-        fetchMoreResult?.[field] ? fetchMoreResult : previous,
-    })
-      .then(({ data: complete }) => {
-        const page = complete?.[field];
-        if ((page?.[listField]?.length ?? 0) < (page?.totalCount ?? 0)) {
-          state.incomplete += 1;
-        }
-      })
+    const pageSize = Math.min(total, MAX_PAGE_SIZE);
+    const pageCount = Math.ceil(total / pageSize);
+    const loadPages = async () => {
+      let loadedCount = 0;
+      let expected = total;
+      for (let page = 1; page <= pageCount; page++) {
+        const { data: chunk } = await fetchMore({
+          variables: { page, limit: pageSize },
+          // Page 1 : remplace la première page ; suivantes : ajoutées
+          updateQuery: (previous, { fetchMoreResult }) => {
+            const next = fetchMoreResult?.[field];
+            if (!next) return previous;
+            if (page === 1) return fetchMoreResult;
+            const seen = new Set(
+              (previous?.[field]?.[listField] || []).map((item) => item?.id),
+            );
+            return {
+              ...fetchMoreResult,
+              [field]: {
+                ...next,
+                [listField]: [
+                  ...(previous?.[field]?.[listField] || []),
+                  ...(next[listField] || []).filter(
+                    (item) => !seen.has(item?.id),
+                  ),
+                ],
+              },
+            };
+          },
+        });
+        const received = chunk?.[field]?.[listField]?.length ?? 0;
+        loadedCount += received;
+        expected = chunk?.[field]?.totalCount ?? expected;
+        if (received < pageSize) break;
+      }
+      if (loadedCount < expected) state.incomplete += 1;
+    };
+    loadPages()
       .catch(() => {
         state.incomplete += 1;
       })

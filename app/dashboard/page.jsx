@@ -99,6 +99,11 @@ import {
   useCreationLinkClick,
   useGoToCreation,
 } from "@/src/components/company-info-gate";
+import {
+  hasBankConnectReturnParams,
+  hasPendingBankConnect,
+  clearBankConnectStarted,
+} from "@/src/lib/bank-connect-return";
 
 // Animation d'abonnement Pro (framer-motion) chargée seulement quand elle se
 // joue.
@@ -350,20 +355,29 @@ function DashboardContent() {
   useEffect(() => {
     if (hasHandledBridgeReturn.current) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const isFromBridge = urlParams.has("item_id") || urlParams.has("status");
+    // Paramètres de retour de Bridge dans l'adresse : seul un retour réel
+    // (connexion ouverte depuis ce navigateur peu avant) synchronise ; un
+    // simple lien vers /dashboard?status=… ne lance rien
+    const hasReturnParams = hasBankConnectReturnParams(window.location.search);
+    if (hasReturnParams && !hasPendingBankConnect()) {
+      hasHandledBridgeReturn.current = true;
+      return;
+    }
+    const isFromBridge = hasReturnParams;
 
     // Synchroniser les comptes : action « sync » des transactions. On attend
     // la grille des droits ; sans ce droit, on se contente de nettoyer l'URL
     if (isFromBridge && workspaceId && permissionsPending) return;
     if (isFromBridge && permissionsReady && !canDo("banking", "sync")) {
       hasHandledBridgeReturn.current = true;
+      clearBankConnectStarted();
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
 
     if (isFromBridge && workspaceId) {
       hasHandledBridgeReturn.current = true;
+      clearBankConnectStarted();
       // Afficher l'overlay de chargement immédiatement
       setIsBankSyncing(true);
 

@@ -1352,6 +1352,8 @@ export function getSocialConnectErrorMessage(code, platform) {
       return `La connexion à ${label} n'est pas disponible pour le moment.`;
     case "invalid_state":
       return "Le lien de connexion a expiré. Recommencez la connexion.";
+    case "other_browser":
+      return "Terminez la connexion dans le navigateur qui l'a lancée.";
     default:
       return `La connexion à ${label} a échoué. Réessayez.`;
   }

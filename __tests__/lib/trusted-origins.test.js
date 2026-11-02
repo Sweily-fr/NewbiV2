@@ -23,6 +23,18 @@ describe("Origines de confiance", () => {
     }
   });
 
+  it("http://localhost:3000 : de confiance hors production seulement", () => {
+    expect(buildTrustedOrigins(requete(), PROD)).not.toContain(
+      "http://localhost:3000",
+    );
+    expect(buildTrustedOrigins(requete(), PREVIEW)).toContain(
+      "http://localhost:3000",
+    );
+    expect(
+      buildTrustedOrigins(requete(), { NODE_ENV: "development" }),
+    ).toContain("http://localhost:3000");
+  });
+
   it("production : « exp:// » (Expo Go) n'est plus de confiance", () => {
     expect(buildTrustedOrigins(requete(), PROD)).not.toContain("exp://");
     expect(

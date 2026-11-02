@@ -131,6 +131,19 @@ async function handler(request) {
     ) {
       return apiError(409, SIRET_TAKEN_MESSAGE);
     }
+
+    // SIRET au registre des entreprises, comme à la fin de l'inscription :
+    // un numéro introuvable ou d'un établissement fermé est refusé avant le
+    // paiement. Registre injoignable : le paiement n'est pas bloqué.
+    const { verifySiret, siretVerificationMessage, SIRET_VERIFICATION_ERRORS } =
+      await import("@/src/lib/siret-verification");
+    const verification = await verifySiret(organizationData.siret);
+    if (
+      !verification.ok &&
+      verification.reason !== SIRET_VERIFICATION_ERRORS.SERVICE_UNAVAILABLE
+    ) {
+      return apiError(400, siretVerificationMessage(verification.reason));
+    }
   }
 
   // Le cabinet du client a arrêté sa prise en charge et sa dernière période
