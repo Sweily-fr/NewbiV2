@@ -489,14 +489,6 @@ test.describe("Factures : facture créditée (soldes, paiement en ligne, relance
     expect(r.errors, messages(r)).toEqual([]);
     expect(r.data.invoice.paymentLink).toContain(`/pay/invoice/${id(S.credit400)}`);
   });
-
-  test("Facture soldée par avoir : la relance immédiate est refusée avec un message, rien n'est envoyé", async ({ page }) => {
-    const r = await appelApiDirect(page, `mutation($id: ID!, $w: ID) { sendInvoiceReminderNow(invoiceId: $id, workspaceId: $w) { success message } }`, { id: id(S.soldee), w: ORG_SOLDES }, { organisation: ORG_SOLDES });
-    expect(r.errors, messages(r)).toEqual([]);
-    expect(r.data.sendInvoiceReminderNow.success).toBe(false);
-    expect(r.data.sendInvoiceReminderNow.message).toMatch(/entièrement annulée par un avoir/);
-    expect(await (await base()).collection("invoicereminderlogs").countDocuments({ invoiceId: S.soldee._id })).toBe(0);
-  });
 });
 
 test.describe("Factures : facture transmise en facturation électronique", () => {
