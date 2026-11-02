@@ -43,7 +43,9 @@ export default function Component() {
       toast.error(
         calendarError === "forbidden"
           ? "Votre rôle ne permet pas de connecter un calendrier dans cet espace."
-          : `Erreur de connexion calendrier: ${calendarError}`,
+          : calendarError === "other_browser"
+            ? "Terminez la connexion dans le navigateur qui l'a lancée."
+            : `Erreur de connexion calendrier: ${calendarError}`,
       );
       window.history.replaceState({}, "", window.location.pathname);
     }
