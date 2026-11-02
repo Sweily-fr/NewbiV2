@@ -87,10 +87,19 @@ export const PLAN_FEATURES_SECTIONS = [
       },
       {
         name: "Stockage documents",
-        tooltip: "Espace de stockage pour vos documents et fichiers",
-        freelance: "50 Go",
-        pme: "200 Go",
-        entreprise: "500 Go",
+        tooltip:
+          "Espace de stockage de l'organisation pour tous ses documents et fichiers",
+        freelance: "75 Go",
+        pme: "400 Go",
+        entreprise: "1 To",
+      },
+      {
+        name: "Stockage supplémentaire",
+        tooltip:
+          "Packs de 50 Go cumulables, ajoutés à votre abonnement : 2,99 € TTC/mois ou 29,90 € TTC/an",
+        freelance: "+50 Go : 2,99 €/mois",
+        pme: "+50 Go : 2,99 €/mois",
+        entreprise: "+50 Go : 2,99 €/mois",
       },
       {
         name: "Création d'organisation",

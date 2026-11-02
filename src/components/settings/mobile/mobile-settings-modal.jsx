@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import MobileSettingsNavigation from "./mobile-settings-navigation";
@@ -13,6 +13,7 @@ import InformationsLegalesSection from "../informations-legales-section";
 import EspacesSection from "../espaces-section";
 import FacturationSection from "../facturation-section";
 import { SubscriptionSection } from "../subscription-section";
+import { StorageSection } from "../storage-section";
 import { SecuritySection } from "../security-section";
 import PersonnesSection from "../personnes-section";
 import UserInfoSection from "../user-info-section";
@@ -36,9 +37,20 @@ export function MobileSettingsModal({
   showBilling = true,
   showOrgSettings = true,
   isAccountManager = false,
+  initialTab = null,
 }) {
-  const [activeTab, setActiveTab] = useState("generale");
-  const [showNavigation, setShowNavigation] = useState(true);
+  // Lien direct vers le stockage (bandeau, notification) : onglet ouvert
+  const opensStorage = initialTab === "stockage";
+  const [activeTab, setActiveTab] = useState(
+    opensStorage ? "stockage" : "generale",
+  );
+  const [showNavigation, setShowNavigation] = useState(!opensStorage);
+  useEffect(() => {
+    if (open && opensStorage) {
+      setActiveTab("stockage");
+      setShowNavigation(false);
+    }
+  }, [open, opensStorage]);
 
   if (!open) return null;
 
@@ -63,6 +75,7 @@ export function MobileSettingsModal({
     { id: "notifications", label: "Notifications", icon: "Bell" },
     { id: "security", label: "Sécurité", icon: "Shield" },
     { id: "subscription", label: "Abonnement", icon: "Crown" },
+    { id: "stockage", label: "Stockage", icon: "HardDrive" },
     { id: "depenses-clients", label: "Dépenses clients", icon: "Wallet" },
   ]
     // Dépenses clients : comptes gestionnaires seulement. Abonnement et
@@ -185,6 +198,8 @@ export function MobileSettingsModal({
         );
       case "depenses-clients":
         return isAccountManager ? <ManagerSpendingSection /> : null;
+      case "stockage":
+        return <StorageSection onTabChange={handleTabChange} />;
       case "subscription":
         return (
           <SubscriptionSection

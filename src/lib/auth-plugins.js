@@ -992,6 +992,22 @@ export const stripePlugin = stripe({
 
           const updatedSub = event.data.object;
 
+          // Packs de stockage : nombre recopié pour le quota de l'API
+          // (achat ou retrait depuis le site ou le portail Stripe)
+          try {
+            const { mongoDb: storageDb } = await import("./mongodb.js");
+            const { syncStoragePacksFromStripe } =
+              await import("./storage-packs.js");
+            await syncStoragePacksFromStripe(storageDb, updatedSub, {
+              deleted: false,
+            });
+          } catch (storageError) {
+            console.error(
+              "⚠️ [STRIPE WEBHOOK] Packs de stockage non recopiés:",
+              storageError.message,
+            );
+          }
+
           try {
             // Import MongoDB directement
             const { mongoDb } = await import("./mongodb.js");
@@ -1169,6 +1185,22 @@ export const stripePlugin = stripe({
 
         case "customer.subscription.deleted":
           const deletedSub = event.data.object;
+
+          // Packs de stockage : nombre recopié pour le quota de l'API
+          // (achat ou retrait depuis le site ou le portail Stripe)
+          try {
+            const { mongoDb: storageDb } = await import("./mongodb.js");
+            const { syncStoragePacksFromStripe } =
+              await import("./storage-packs.js");
+            await syncStoragePacksFromStripe(storageDb, deletedSub, {
+              deleted: true,
+            });
+          } catch (storageError) {
+            console.error(
+              "⚠️ [STRIPE WEBHOOK] Packs de stockage non recopiés:",
+              storageError.message,
+            );
+          }
 
           // ✅ Déduplication atomique avec MongoDB
           if (await isEventAlreadyProcessed(event.id, event.type)) {

@@ -30,6 +30,8 @@ import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
 import { TrialBanner } from "@/src/components/trial-banner";
+import { StorageBanner } from "@/src/components/storage/storage-banner";
+import { StorageQuotaDialog } from "@/src/components/storage/storage-quota-dialog";
 import { GestionnaireBanner } from "@/src/components/gestionnaire/gestionnaire-banner";
 import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
 import { GestionnaireBottomNav } from "@/src/components/gestionnaire/gestionnaire-bottom-nav";
@@ -339,9 +341,21 @@ function DashboardContent({ children }) {
                     setSettingsModalOpen(true);
                   }}
                 />
+                <StorageBanner
+                  onOpenStorage={() => {
+                    setSettingsInitialTab("stockage");
+                    setSettingsModalOpen(true);
+                  }}
+                />
               </>
             )}
           </div>
+          <StorageQuotaDialog
+            onUpgrade={() => {
+              setSettingsInitialTab("subscription");
+              setSettingsModalOpen(true);
+            }}
+          />
           <div
             ref={contentScrollRef}
             className="flex flex-1 flex-col overflow-y-auto"

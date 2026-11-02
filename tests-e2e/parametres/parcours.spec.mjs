@@ -40,6 +40,7 @@ test.describe("Paramètres : la fenêtre et ses onglets", () => {
       ["Facturation électronique", "Facturation électronique"],
       ["Abonnement", "Abonnement"],
       ["Facturation", "Facturation"],
+      ["Stockage", "Stockage"],
       ["Notifications", "Notifications"],
       [`N ${COMPTES.parametres.utilisateur.name}`, "Mon compte"],
     ]) {
