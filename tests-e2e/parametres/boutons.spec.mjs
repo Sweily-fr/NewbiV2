@@ -80,6 +80,7 @@ const MENU = (initiale, nom) => ({
       "Facturation électronique",
       "Abonnement",
       "Facturation",
+      "Stockage",
     ].map((n) => [`button ${n}`, ONGLET]),
   ),
 });
