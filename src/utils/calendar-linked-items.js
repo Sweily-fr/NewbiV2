@@ -287,6 +287,12 @@ export function linkedItemHref(item) {
         : `/dashboard/outils/bons-commande?id=${item.entityId}`;
     case "FILE_TRANSFER":
       return "/dashboard/outils/transferts-fichiers";
+    // Déclaration de TVA : sa période dans la page TVA ; les autres échéances
+    // fiscales n'ont pas de page dans l'application
+    case "FISCAL":
+      return item.vatPeriodKey
+        ? `/dashboard/outils/tva?periode=${encodeURIComponent(item.vatPeriodKey)}`
+        : null;
     default:
       return null;
   }

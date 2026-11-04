@@ -1,6 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 
+const permissions = vi.hoisted(() => ({ canViewVat: true }));
+vi.mock("@/src/hooks/useMyPermissions", () => ({
+  useMyPermissions: () => ({
+    isReady: true,
+    canDo: (module) => module !== "vat" || permissions.canViewVat,
+  }),
+}));
+
 import { LinkedItemSheet } from "@/app/dashboard/calendar/components/linked-item-sheet";
 import { FiscalSetupMenuItem } from "@/app/dashboard/calendar/components/fiscal-setup-hint";
 import {
@@ -39,6 +47,48 @@ const item = {
   isConditional: true,
   note: "La date exacte figure dans votre espace professionnel.",
 };
+
+describe("fiche d'une déclaration de TVA", () => {
+  const vatItem = { ...item, vatPeriodKey: "2026-10", isDeclared: false };
+
+  it("ouvre sa période dans la page TVA, en gardant la page officielle", () => {
+    permissions.canViewVat = true;
+    render(<LinkedItemSheet item={vatItem} onClose={() => {}} />);
+    const sheet = screen.getByRole("dialog");
+    expect(
+      within(sheet).getByRole("link", { name: /Préparer la déclaration/ }),
+    ).toHaveAttribute("href", "/dashboard/outils/tva?periode=2026-10");
+    expect(
+      within(sheet).getByRole("link", { name: /Voir la page officielle/ }),
+    ).toHaveAttribute("href", item.infoUrl);
+  });
+
+  it("une fois confirmée : « Déclarée » et lien vers la déclaration", () => {
+    permissions.canViewVat = true;
+    render(
+      <LinkedItemSheet
+        item={{ ...vatItem, isDeclared: true, state: "DONE" }}
+        onClose={() => {}}
+      />,
+    );
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByText("Déclarée")).toBeInTheDocument();
+    expect(
+      within(sheet).getByRole("link", { name: /Voir la déclaration/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("sans le droit « Voir » de la page TVA : pas de lien vers elle", () => {
+    permissions.canViewVat = false;
+    render(<LinkedItemSheet item={vatItem} onClose={() => {}} />);
+    const sheet = screen.getByRole("dialog");
+    expect(
+      within(sheet).queryByRole("link", { name: /Préparer la déclaration/ }),
+    ).not.toBeInTheDocument();
+    expect(within(sheet).getAllByRole("link")).toHaveLength(1);
+    permissions.canViewVat = true;
+  });
+});
 
 describe("fiche d'une échéance fiscale", () => {
   it("période, organisme, mentions et lien externe vers la page officielle", () => {

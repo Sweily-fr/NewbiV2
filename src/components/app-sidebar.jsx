@@ -122,6 +122,11 @@ const data = {
       url: "/dashboard/outils/analytiques",
       icon: DiagramIcon,
     },
+    {
+      title: "TVA",
+      url: "/dashboard/outils/tva",
+      icon: Landmark,
+    },
   ],
   navVentes: [
     {

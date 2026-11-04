@@ -8,6 +8,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/analytiques/vue-densemble", "overview"],
   ["/dashboard/outils/analytiques", "analytics"],
   ["/dashboard/outils/prevision", "forecast"],
+  ["/dashboard/outils/tva", "vat"],
   ["/dashboard/analytics", "analytics"],
   ["/dashboard/outils/factures-achat", "purchaseInvoices"],
   ["/dashboard/outils/factures", "invoices"],

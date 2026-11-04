@@ -245,6 +245,7 @@ export const PRIORITY_LABELS = {
  */
 export function linkedStateLabel(item) {
   const meta = LINKED_SOURCE_META[item?.kind];
+  if (item?.kind === "FISCAL" && item.isDeclared) return "Déclarée";
   if (item?.kind === "TASK" && item.state === "UPCOMING" && item.columnTitle) {
     return item.columnTitle;
   }

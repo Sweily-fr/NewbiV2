@@ -28,6 +28,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { cn } from "@/src/lib/utils";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { dayToDate } from "@/src/utils/recurrenceDays";
 import {
   formatLinkedAmount,
@@ -323,7 +324,11 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
   const amountSign =
     item.kind === "FORECAST" ? (item.flowType === "EXPENSE" ? "- " : "+ ") : "";
   const detail = linkedKindDetail(item);
-  const href = linkedItemHref(item);
+  // Page TVA sans le droit « Voir » : l'échéance reste affichée, sans lien
+  const { canDo, isReady } = useMyPermissions();
+  const canOpenVatPage = !isReady || canDo("vat", "view");
+  const href =
+    item.kind === "FISCAL" && !canOpenVatPage ? null : linkedItemHref(item);
   const externalUrl = linkedItemExternalUrl(item);
   const hint = hintFor(item, longDate);
   const members = item.assignedMembersInfo || [];
@@ -522,7 +527,11 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
               className="w-full gap-1.5 bg-[#5a50ff] hover:bg-[#5a50ff]/90"
             >
               <Link href={href}>
-                {meta.openLabel}
+                {item.kind === "FISCAL"
+                  ? item.isDeclared
+                    ? "Voir la déclaration"
+                    : "Préparer la déclaration"
+                  : meta.openLabel}
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             </Button>
@@ -531,7 +540,11 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
             <Button
               asChild
               size="sm"
-              className="w-full gap-1.5 bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+              variant={href ? "outline" : "default"}
+              className={cn(
+                "w-full gap-1.5",
+                !href && "bg-[#5a50ff] hover:bg-[#5a50ff]/90",
+              )}
             >
               <a href={externalUrl} target="_blank" rel="noopener noreferrer">
                 {meta.openLabel}
