@@ -509,5 +509,12 @@
       "retenue-de-garantie-btp-facture",
       "verifier-numero-tva-intracommunautaire-vies"
     ]
+  },
+  {
+    "date": "2026-11-04",
+    "articles": [
+      "facture-peintre-batiment-guide",
+      "alternatives-tiime"
+    ]
   }
 ]
