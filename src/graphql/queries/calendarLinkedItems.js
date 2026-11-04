@@ -39,6 +39,8 @@ const CALENDAR_LINKED_ITEM_FIELDS = gql`
     isIndicative
     isConditional
     note
+    vatPeriodKey
+    isDeclared
     assignedMembersInfo {
       id
       userId

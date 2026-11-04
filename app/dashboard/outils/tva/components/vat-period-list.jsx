@@ -1,0 +1,58 @@
+"use client";
+
+import { cn } from "@/src/lib/utils";
+import {
+  VAT_PERIOD_STATUS,
+  formatVatDay,
+  formatVatEuros,
+} from "@/src/utils/vat-declaration";
+
+function periodDetail(period) {
+  if (period.status === "DECLARED") {
+    if (period.totalToPay > 0)
+      return `${formatVatEuros(period.totalToPay)} payés`;
+    if (period.creditToCarry > 0) {
+      return `Crédit de ${formatVatEuros(period.creditToCarry)}`;
+    }
+    return "Rien à payer";
+  }
+  return `Limite : ${formatVatDay(period.dueDate)}${period.isIndicative ? " (indicative)" : ""}`;
+}
+
+export function VatPeriodList({ periods, selectedKey, onSelect }) {
+  return (
+    <nav aria-label="Périodes de déclaration">
+      <ul className="flex flex-col gap-1">
+        {periods.map((period) => {
+          const status = VAT_PERIOD_STATUS[period.status];
+          const selected = period.key === selectedKey;
+          return (
+            <li key={period.key}>
+              <button
+                type="button"
+                onClick={() => onSelect(period.key)}
+                aria-current={selected ? "true" : undefined}
+                className={cn(
+                  "hover:bg-accent focus-visible:ring-ring w-full cursor-pointer rounded-md px-3 py-2.5 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                  selected && "bg-accent",
+                )}
+              >
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-medium">
+                    {period.label}
+                  </span>
+                  <span className={cn("shrink-0 text-xs", status?.className)}>
+                    {status?.label}
+                  </span>
+                </span>
+                <span className="text-muted-foreground mt-0.5 block text-xs">
+                  {periodDetail(period)}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
