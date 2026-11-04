@@ -200,7 +200,7 @@ function AdjustmentsForm({ fields, values, onChange }) {
           <div key={field.key} className="flex flex-col gap-1.5">
             <Label htmlFor={id} className="text-sm font-normal">
               {field.code && (
-                <span className="text-muted-foreground tabular-nums">
+                <span className="text-muted-foreground mr-1.5 tabular-nums">
                   {field.code}
                 </span>
               )}
