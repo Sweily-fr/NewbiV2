@@ -18,6 +18,7 @@ import {
   File,
   Check,
   Lock,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { ancestorIds, isFolderInAncestry } from "@/src/utils/folder-tree";
@@ -844,6 +845,13 @@ function TreeItem({
           <Lock className="size-3 text-muted-foreground/60 shrink-0" />
         )}
 
+        {item.hasClientLink && (
+          <Link2
+            className="size-3 text-[#5a50ff]/80 shrink-0"
+            aria-label="Partagé au client"
+          />
+        )}
+
         <Tooltip delayDuration={500}>
           <TooltipTrigger asChild>
             <span className="truncate text-sm flex-1 min-w-0">{item.name}</span>
@@ -879,6 +887,8 @@ export function DraggableTree({
   onToggleFolderSelection,
   // false : glisser-déposer désactivé (rôle sans droit de modification)
   dragEnabled = true,
+  // Dossiers qui ont un lien client actif (repère dans l'arbre)
+  linkedFolderIds,
 }) {
   const [expandedFolders, setExpandedFolders] = useState(
     new Set(["inbox", "my-folders"]),
@@ -911,6 +921,7 @@ export function DraggableTree({
         name: folder.name,
         isFolder: true,
         isSystem: folder.isSystem || false,
+        hasClientLink: Boolean(linkedFolderIds?.has(folder.id)),
         color: folder.color,
         parentId: folder.parentId,
         order: folder.order || 0,
@@ -935,7 +946,7 @@ export function DraggableTree({
       .sort((a, b) => (a.order || 0) - (b.order || 0))
       .map((f) => f.id);
     return { items, rootItems: ["inbox", ...rootFolders] };
-  }, [folders, documents, pendingCount]);
+  }, [folders, documents, pendingCount, linkedFolderIds]);
 
   const treeDataRef = useRef(treeData);
   treeDataRef.current = treeData;
