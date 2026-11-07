@@ -5,6 +5,7 @@ const hook = vi.hoisted(() => ({
   shares: [],
   createShare: vi.fn(async () => ({})),
   updateShare: vi.fn(async () => ({})),
+  revokeShare: vi.fn(async () => ({})),
   deleteShare: vi.fn(async () => ({})),
 }));
 
@@ -118,9 +119,7 @@ describe("Fenêtre des liens clients", () => {
     renderDialog();
     fireEvent.click(screen.getByRole("switch", { name: "Lien actif" }));
     await waitFor(() =>
-      expect(hook.updateShare).toHaveBeenCalledWith("lien-1", {
-        isActive: false,
-      }),
+      expect(hook.revokeShare).toHaveBeenCalledWith("lien-1"),
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Supprimer le lien" }));
@@ -149,13 +148,25 @@ describe("Fenêtre des liens clients", () => {
 
   it("signale un dossier devenu privé et affiche le refus de l'API", async () => {
     hook.shares = [share({ isFolderAvailable: false })];
-    hook.updateShare.mockRejectedValueOnce(new Error("Refusé par l'API"));
+    hook.revokeShare.mockRejectedValueOnce(new Error("Refusé par l'API"));
     renderDialog();
     expect(screen.getByText("Dossier fermé")).toBeTruthy();
     fireEvent.click(screen.getByRole("switch", { name: "Lien actif" }));
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("Refusé par l'API"),
     );
+  });
+
+  it("réactive un lien désactivé", async () => {
+    hook.shares = [share({ isActive: false })];
+    renderDialog();
+    fireEvent.click(screen.getByRole("switch", { name: "Lien actif" }));
+    await waitFor(() =>
+      expect(hook.updateShare).toHaveBeenCalledWith("lien-1", {
+        isActive: true,
+      }),
+    );
+    expect(hook.revokeShare).not.toHaveBeenCalled();
   });
 
   it("en lecture seule : ni création ni modification, mais on peut supprimer", () => {

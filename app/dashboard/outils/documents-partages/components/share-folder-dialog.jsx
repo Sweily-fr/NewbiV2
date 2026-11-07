@@ -94,8 +94,15 @@ export default function ShareFolderDialog({
   onOpenChange,
   isReadOnly,
 }) {
-  const { shares, loading, saving, createShare, updateShare, deleteShare } =
-    useDocumentShares();
+  const {
+    shares,
+    loading,
+    saving,
+    createShare,
+    updateShare,
+    revokeShare,
+    deleteShare,
+  } = useDocumentShares();
   const folderShares = shares.filter((share) => share.folderId === folder?.id);
 
   const [form, setForm] = useState(null);
@@ -292,7 +299,9 @@ export default function ShareFolderDialog({
                         disabled={isReadOnly && !share.isActive}
                         onCheckedChange={(checked) =>
                           runWithToast(() =>
-                            updateShare(share.id, { isActive: checked }),
+                            checked
+                              ? updateShare(share.id, { isActive: true })
+                              : revokeShare(share.id),
                           )
                         }
                       />

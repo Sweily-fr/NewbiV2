@@ -54,6 +54,15 @@ const UPDATE_DOCUMENT_SHARE = gql`
   }
 `;
 
+const REVOKE_DOCUMENT_SHARE = gql`
+  ${DOCUMENT_SHARE_FIELDS}
+  mutation RevokeDocumentShare($workspaceId: ID!, $id: ID!) {
+    revokeDocumentShare(workspaceId: $workspaceId, id: $id) {
+      ...DocumentShareFields
+    }
+  }
+`;
+
 const DELETE_DOCUMENT_SHARE = gql`
   mutation DeleteDocumentShare($workspaceId: ID!, $id: ID!) {
     deleteDocumentShare(workspaceId: $workspaceId, id: $id)
@@ -79,6 +88,7 @@ export function useDocumentShares({ enabled = true } = {}) {
     awaitRefetchQueries: true,
   });
   const [updateMutation, updateState] = useMutation(UPDATE_DOCUMENT_SHARE);
+  const [revokeMutation] = useMutation(REVOKE_DOCUMENT_SHARE);
   const [deleteMutation] = useMutation(DELETE_DOCUMENT_SHARE, {
     refetchQueries,
     awaitRefetchQueries: true,
@@ -92,6 +102,7 @@ export function useDocumentShares({ enabled = true } = {}) {
       createMutation({ variables: { workspaceId, input } }),
     updateShare: (id, input) =>
       updateMutation({ variables: { workspaceId, id, input } }),
+    revokeShare: (id) => revokeMutation({ variables: { workspaceId, id } }),
     deleteShare: (id) => deleteMutation({ variables: { workspaceId, id } }),
   };
 }
