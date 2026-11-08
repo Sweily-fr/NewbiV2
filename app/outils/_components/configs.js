@@ -26,7 +26,7 @@ export const FACTURE_CONFIG = {
     defaultDays: 30,
   },
   defaultTerms:
-    "Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros.",
+    "Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros. Pas d'escompte pour paiement anticipé.",
   warnings: {
     title: "Trois points restent à votre charge",
     consent:

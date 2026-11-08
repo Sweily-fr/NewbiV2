@@ -34,7 +34,7 @@ const OUTILS = [
     href: "/outils/generateur-de-facture",
     icon: FileText,
     title: "Générateur de facture",
-    desc: "Remplissez, prévisualisez et téléchargez une facture conforme en PDF. Sans inscription, rien n'est enregistré.",
+    desc: "Remplissez, prévisualisez et téléchargez en PDF une facture avec les mentions obligatoires. Sans inscription, rien n'est enregistré.",
     tag: "En ligne",
   },
   {
@@ -83,7 +83,12 @@ const jsonLd = [
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Accueil", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Outils", item: `${SITE_URL}/outils` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Outils",
+        item: `${SITE_URL}/outils`,
+      },
     ],
   },
 ];
