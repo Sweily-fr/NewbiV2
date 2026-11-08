@@ -6,6 +6,7 @@ import { SIGNUP_HREF, CTA_LABEL, CTA_SUBLABEL } from "./lp-config";
 // `dark` = variante noire (sections claires), `light` = variante blanche
 // (sections sombres), sinon violet Newbi.
 export default function LpCtaButton({
+  href = SIGNUP_HREF,
   label = CTA_LABEL,
   sublabel = CTA_SUBLABEL,
   dark = false,
@@ -15,7 +16,7 @@ export default function LpCtaButton({
 }) {
   return (
     <Link
-      href={SIGNUP_HREF}
+      href={href}
       className={cn(
         "inline-flex flex-col items-center justify-center rounded-xl px-8 py-3 text-center transition duration-200 active:scale-[0.98]",
         light

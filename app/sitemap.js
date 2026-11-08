@@ -87,6 +87,11 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/experts-comptables`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/photographes-creatifs`,
       changeFrequency: "weekly",
       priority: 0.9,

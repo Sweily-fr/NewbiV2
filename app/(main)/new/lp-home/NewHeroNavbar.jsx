@@ -17,6 +17,7 @@ import {
   ArrowUpRight,
   Award,
   BookOpen,
+  Calculator,
   Building2,
   Camera,
   ChevronDown,
@@ -198,6 +199,12 @@ const menuItems = [
             description: "Honoraires, provisions et débours",
             icon: <Scale size={18} />,
             href: "/avocats",
+          },
+          {
+            name: "Experts-comptables",
+            description: "Le suivi de vos clients dans un espace cabinet",
+            icon: <Calculator size={18} />,
+            href: "/experts-comptables",
           },
           {
             name: "Photographes et créatifs",

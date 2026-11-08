@@ -452,6 +452,14 @@ const Footer7 = ({
                       Photographes et créatifs
                     </a>
                   </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/experts-comptables"
+                    >
+                      Experts-comptables
+                    </a>
+                  </li>
                 </ul>
               </div>
               <div className="col-span-1">
