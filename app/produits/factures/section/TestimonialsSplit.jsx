@@ -12,7 +12,7 @@ const testimonials = [
     name: "Mustafa Gokmen",
     role: "Directeur général",
     company: "MGE couverture",
-    image: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    image: "/lp/factures/mustafa.webp",
   },
   {
     id: 2,

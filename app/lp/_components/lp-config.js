@@ -25,6 +25,6 @@ export const REVIEWS = [
     text: "Tout est automatisé et professionnel. Un vrai gain de temps pour mon entreprise de bâtiment.",
     name: "Mustafa G.",
     role: "Artisan BTP",
-    image: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    image: "/lp/factures/mustafa.webp",
   },
 ];

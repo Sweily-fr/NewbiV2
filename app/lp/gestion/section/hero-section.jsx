@@ -16,7 +16,7 @@ gsap.registerPlugin(ScrollTrigger);
 // monte depuis le bas et prend la place du texte, les cartes s'écartent.
 // Sur mobile : pas d'épinglage, le mockup suit simplement le texte.
 
-const DEVICE_IMAGE = "/lp/facturation-electronique/hero-ipad-factures.png";
+const DEVICE_IMAGE = "/lp/facturation-electronique/hero-ipad-factures.webp";
 
 // Direction de sortie des cartes flottantes pendant le scroll
 // (assez loin pour sortir complètement de l'écran, sans fondu)
