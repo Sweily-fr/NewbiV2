@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import SEOHead from "@/src/components/seo/seo-head";
@@ -17,6 +17,12 @@ const REASONS = [
   "Signaler un problème ou un comportement inattendu",
   "Faire une suggestion ou un retour",
 ];
+
+// Sujets qu'un lien peut préremplir : une clé courte dans l'URL, le libellé
+// complet dans le formulaire.
+const SUJETS = {
+  "espace-cabinet": "Ouvrir un espace cabinet (expert-comptable)",
+};
 
 const INITIAL_FORM = {
   name: "",
@@ -36,6 +42,16 @@ export default function Contact() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+
+  // Sujet prérempli depuis un lien (?sujet=…), par exemple la demande
+  // d'espace cabinet de /experts-comptables. Lu après le montage : le rendu
+  // serveur n'a pas l'URL et un état initial différent casserait l'hydratation.
+  useEffect(() => {
+    const sujet =
+      SUJETS[new URLSearchParams(window.location.search).get("sujet")];
+    if (sujet)
+      setForm((prev) => (prev.subject ? prev : { ...prev, subject: sujet }));
+  }, []);
 
   const handleChange = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));

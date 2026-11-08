@@ -9,6 +9,9 @@ export default function LpFinalCta({
   subtitle,
   image,
   imageAlt = "",
+  // Autre destination que l'inscription : bouton, texte et ligne de
+  // réassurance se remplacent ensemble.
+  cta,
   maxWidth = "max-w-6xl",
   // Rythme vertical : par défaut celui des LP. Les pages produits passent le
   // leur pour que l'écart entre sections reste uniforme.
@@ -35,10 +38,16 @@ export default function LpFinalCta({
             <p className="max-w-lg text-base md:text-lg text-white/85 leading-relaxed mb-8">
               {subtitle}
             </p>
-            <LpCtaButton light sublabel={null} className="w-full sm:w-auto" />
+            <LpCtaButton
+              light
+              href={cta?.href}
+              label={cta?.label}
+              sublabel={null}
+              className="w-full sm:w-auto"
+            />
             <p className="mt-3 text-xs text-white/60">
-              30 jours offerts · sans carte bancaire · aucun prélèvement à la
-              fin de l'essai
+              {cta?.note ??
+                "30 jours offerts · sans carte bancaire · aucun prélèvement à la fin de l'essai"}
             </p>
           </div>
         </div>

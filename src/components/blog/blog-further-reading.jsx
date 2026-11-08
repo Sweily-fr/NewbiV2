@@ -20,6 +20,11 @@ const FURTHER_READING = {
     "facturation-cabinet-avocat-gestion",
     "facture-electronique-professions-liberales",
   ],
+  "experts-comptables": [
+    "logiciel-comptabilite-expert-comptable",
+    "comment-partager-documents-expert-comptable",
+    "facture-electronique-expert-comptable-role",
+  ],
   "professions-medicales": [
     "facture-osteopathe-guide",
     "facture-electronique-professions-liberales",
