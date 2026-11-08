@@ -60,7 +60,16 @@ function Carte({ icon: Icone, titre, texte, placement }) {
 
 // Hero commun aux pages de statut : le titre à gauche, la photo à droite dans
 // un cadre arrondi, avec les cartes d'information posées sur ses bords.
-export default function StatutHero({ titre, chapo, image, imageAlt, cartes }) {
+// `cta` remplace le bouton d'inscription quand la page vise une autre action
+// (l'espace cabinet s'ouvre sur demande, pas par l'inscription).
+export default function StatutHero({
+  titre,
+  chapo,
+  image,
+  imageAlt,
+  cartes,
+  cta = { href: "/auth/signup", label: "Essayer 30 jours offerts" },
+}) {
   return (
     /* Même cadrage que les heros des LP produits : à partir de lg la section
        occupe la hauteur de l'écran et son contenu se centre dedans, ce qui le
@@ -88,8 +97,8 @@ export default function StatutHero({ titre, chapo, image, imageAlt, cartes }) {
                 variant="primary"
                 className="h-auto w-full px-4 py-1.5 text-[17px] sm:w-auto"
               >
-                <Link href="/auth/signup">
-                  <span>Essayer 30 jours offerts</span>
+                <Link href={cta.href}>
+                  <span>{cta.label}</span>
                 </Link>
               </Button>
               <WhatsAppContactButton
