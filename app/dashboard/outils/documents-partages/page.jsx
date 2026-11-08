@@ -45,7 +45,7 @@ import { DraggableTree } from "./components/DraggableTree";
 import { MemberSelector } from "../kanban/[id]/components/MemberSelector";
 import DocumentAutomationsModal from "./components/document-automations-modal";
 import TransferFromDocsModal from "./components/transfer-from-docs-modal";
-import ShareFolderDialog from "./components/share-folder-dialog";
+import ClientAccessDialog from "./components/client-access-dialog";
 import { useDocumentShares } from "@/src/hooks/useDocumentShares";
 import {
   TagSelector,
@@ -344,9 +344,10 @@ export default function DocumentsPartagesPage() {
   const canManageTrash = canEditSharedDocuments || canDeleteSharedDocuments;
   // « Transférer » crée un transfert de fichiers (module fileTransfers)
   const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
-  // Liens clients : l'URL donne accès aux documents sans compte
+  // Accès clients : l'adresse ouvre des dossiers sans compte Newbi
   const canShareFolders = isReady && canDo("sharedDocuments", "share");
-  const [folderToShare, setFolderToShare] = useState(null);
+  // null : fenêtre fermée ; { folderId } : ouverte (depuis un dossier ou non)
+  const [clientAccess, setClientAccess] = useState(null);
   const { shares: documentShares } = useDocumentShares({
     enabled: canShareFolders,
   });
@@ -354,10 +355,18 @@ export default function DocumentsPartagesPage() {
     () =>
       new Set(
         documentShares
-          .filter((share) => share.isActive && share.isFolderAvailable)
-          .map((share) => share.folderId),
+          .filter((share) => share.isActive)
+          .flatMap((share) =>
+            share.folders
+              .filter((folder) => folder.available)
+              .map((folder) => folder.id),
+          ),
       ),
     [documentShares],
+  );
+  const pendingAccessRequests = documentShares.reduce(
+    (total, share) => total + share.pendingRequestsCount,
+    0,
   );
   // Les automatisations de classement relèvent de l'action « edit »
   const canEditAutomations = canEditSharedDocuments;
@@ -1897,30 +1906,42 @@ export default function DocumentsPartagesPage() {
               </div>
               {/* Actions masquées si le rôle ne permet pas de modifier */}
               <div className="flex items-center gap-1.5 sm:gap-2">
-                {canShareFolders &&
-                  selectedFolderData &&
-                  selectedFolderData.visibility !== "private" && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            aria-label="Partager au client"
-                            onClick={() => setFolderToShare(selectedFolderData)}
-                          >
-                            <Link2 className="h-4 w-4" strokeWidth={1.5} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
+                {canShareFolders && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="relative"
+                          aria-label={
+                            pendingAccessRequests > 0
+                              ? `Accès clients, ${pendingAccessRequests} demande(s) en attente`
+                              : "Accès clients"
+                          }
+                          onClick={() =>
+                            setClientAccess({
+                              folderId: selectedFolderData?.id || null,
+                            })
+                          }
                         >
-                          <p>Partager au client</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+                          <Link2 className="h-4 w-4" strokeWidth={1.5} />
+                          {pendingAccessRequests > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#5b50ff] text-white text-[10px] font-semibold">
+                              {pendingAccessRequests}
+                            </span>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>Accès clients</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
                 {canEditAutomations && (
                   <TooltipProvider>
                     <Tooltip>
@@ -2303,9 +2324,9 @@ export default function DocumentsPartagesPage() {
                                           ?.visibility === "private"
                                       }
                                       onClick={() => {
-                                        setFolderToShare(
-                                          treeContextMenu.item.data,
-                                        );
+                                        setClientAccess({
+                                          folderId: treeContextMenu.itemId,
+                                        });
                                         setTreeContextMenu(null);
                                       }}
                                     >
@@ -5498,12 +5519,13 @@ export default function DocumentsPartagesPage() {
       />
 
       {canShareFolders && (
-        <ShareFolderDialog
-          folder={folderToShare}
-          open={Boolean(folderToShare)}
+        <ClientAccessDialog
+          open={Boolean(clientAccess)}
           onOpenChange={(open) => {
-            if (!open) setFolderToShare(null);
+            if (!open) setClientAccess(null);
           }}
+          folders={folders}
+          initialFolderId={clientAccess?.folderId || null}
           isReadOnly={isReadOnly}
         />
       )}

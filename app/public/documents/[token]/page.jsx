@@ -11,33 +11,57 @@ import {
   FolderClosed,
   LoaderCircle,
   Lock,
+  Mail,
+  UserX,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
+import { InputOTP } from "@/src/components/ui/input-otp";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
 import { PdfPreview } from "@/src/components/pdf/pdf-preview";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 ).replace(/\/$/, "");
 
-// Le jeton remis après le mot de passe évite de le redemander au rechargement
-const accessStorageKey = (token) => `document-share-access:${token}`;
+/**
+ * Stockage du navigateur, toujours protégé : en navigation privée ou avec les
+ * données bloquées, il manque et le visiteur s'identifie à chaque visite.
+ * - jeton du mot de passe : le temps de l'onglet ;
+ * - session visiteur : 30 jours, comme pour un tableau kanban partagé.
+ */
+const store = (kind) => ({
+  get(key) {
+    try {
+      return window[kind].getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      if (value) window[kind].setItem(key, value);
+      else window[kind].removeItem(key);
+    } catch {
+      // Stockage indisponible
+    }
+  },
+});
+const accessStore = store("sessionStorage");
+const sessionStore = store("localStorage");
+const accessKey = (token) => `document-share-access:${token}`;
+const sessionKey = (token) => `document-share-session:${token}`;
 
-function readStoredAccess(token) {
-  try {
-    return sessionStorage.getItem(accessStorageKey(token));
-  } catch {
-    return null;
-  }
-}
-
-function storeAccess(token, value) {
-  try {
-    sessionStorage.setItem(accessStorageKey(token), value);
-  } catch {
-    // Stockage indisponible : le mot de passe sera redemandé au rechargement
-  }
+async function postJson(url, body) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json().catch(() => ({}));
+  return { ok: response.ok && data.success !== false, data };
 }
 
 function formatFileSize(bytes) {
@@ -79,8 +103,33 @@ function previewKind(document) {
 function Screen({ children }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm text-center space-y-3">{children}</div>
+      <div className="w-full max-w-sm space-y-4">{children}</div>
     </div>
+  );
+}
+
+function ScreenHeader({ icon: Icon, title, children }) {
+  return (
+    <div className="text-center space-y-2">
+      {Icon && (
+        <div className="flex justify-center">
+          <div className="size-12 rounded-full bg-[#5b4fff]/10 flex items-center justify-center">
+            <Icon className="size-5 text-[#5b4fff]" />
+          </div>
+        </div>
+      )}
+      <h1 className="text-lg font-medium">{title}</h1>
+      {children && <p className="text-sm text-muted-foreground">{children}</p>}
+    </div>
+  );
+}
+
+function ErrorText({ children }) {
+  if (!children) return null;
+  return (
+    <p role="alert" className="text-sm text-destructive">
+      {children}
+    </p>
   );
 }
 
@@ -103,51 +152,40 @@ function WorkspaceIdentity({ workspace }) {
   );
 }
 
-function PasswordScreen({ token, workspace, onUnlocked }) {
+const sharedBy = (workspace) =>
+  workspace?.name ? `Documents partagés par ${workspace.name}.` : null;
+
+function PasswordStep({ token, workspace, onDone }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [checking, setChecking] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
-    setChecking(true);
+    setBusy(true);
     setError("");
     try {
-      const response = await fetch(
+      const { ok, data } = await postJson(
         `${API_URL}/api/public-documents/${token}/unlock`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
-        },
+        { password },
       );
-      const data = await response.json().catch(() => ({}));
-      if (response.ok && data.success) {
-        onUnlocked(data.accessToken);
-        return;
-      }
-      setError(data.message || "Une erreur est survenue");
+      if (ok) onDone(data.accessToken);
+      else setError(data.message || "Une erreur est survenue");
     } catch {
       setError("Connexion impossible. Réessayez.");
     } finally {
-      setChecking(false);
+      setBusy(false);
     }
   };
 
   return (
     <Screen>
-      <div className="flex justify-center">
-        <div className="size-12 rounded-full bg-[#5b4fff]/10 flex items-center justify-center">
-          <Lock className="size-5 text-[#5b4fff]" />
-        </div>
-      </div>
-      <h1 className="text-lg font-medium">Documents protégés</h1>
-      <p className="text-sm text-muted-foreground">
+      <ScreenHeader icon={Lock} title="Documents protégés">
         {workspace?.name
           ? `${workspace.name} a protégé ces documents par un mot de passe.`
           : "Ces documents sont protégés par un mot de passe."}
-      </p>
-      <form onSubmit={submit} className="space-y-3 pt-2 text-left">
+      </ScreenHeader>
+      <form onSubmit={submit} className="space-y-3">
         <Input
           type="password"
           aria-label="Mot de passe"
@@ -157,20 +195,279 @@ function PasswordScreen({ token, workspace, onUnlocked }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
+        <ErrorText>{error}</ErrorText>
+        <Button type="submit" className="w-full" disabled={busy || !password}>
+          {busy && <LoaderCircle className="size-4 mr-2 animate-spin" />}
+          Continuer
+        </Button>
+      </form>
+    </Screen>
+  );
+}
+
+/** E-mail, puis code reçu par e-mail (comme un tableau kanban partagé). */
+function IdentifyStep({ token, workspace, access, onDone }) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const call = async (path, body) => {
+    setBusy(true);
+    setError("");
+    try {
+      return await postJson(`${API_URL}/api/public-documents/${token}${path}`, {
+        ...body,
+        access,
+      });
+    } catch {
+      return {
+        ok: false,
+        data: { message: "Connexion impossible. Réessayez." },
+      };
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendCode = async (event) => {
+    event?.preventDefault();
+    const { ok, data } = await call("/identify/code", { email });
+    if (!ok) {
+      setError(data.message || "Une erreur est survenue");
+      return;
+    }
+    setCodeSent(true);
+    setCode("");
+    setInfo(`Un code à 6 chiffres a été envoyé à ${email.trim()}.`);
+  };
+
+  const verify = async (value = code) => {
+    if (value.length !== 6) return;
+    const { ok, data } = await call("/identify/verify", { email, code: value });
+    if (ok) onDone(data.session, data.needsProfile);
+    else setError(data.message || "Code incorrect ou expiré");
+  };
+
+  if (!codeSent) {
+    return (
+      <Screen>
+        <ScreenHeader icon={Mail} title="Accéder aux documents">
+          {sharedBy(workspace)} Saisissez votre adresse e-mail pour recevoir un
+          code d&apos;accès.
+        </ScreenHeader>
+        <form onSubmit={sendCode} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="visitor-email">Adresse e-mail</Label>
+            <Input
+              id="visitor-email"
+              type="email"
+              autoComplete="email"
+              placeholder="votre@email.com"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <ErrorText>{error}</ErrorText>
+          <Button type="submit" className="w-full" disabled={busy || !email}>
+            {busy && <LoaderCircle className="size-4 mr-2 animate-spin" />}
+            Recevoir un code
+          </Button>
+        </form>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen>
+      <ScreenHeader icon={Mail} title="Vérifiez votre e-mail">
+        {info}
+      </ScreenHeader>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          verify();
+        }}
+        className="space-y-3"
+      >
+        <div className="flex justify-center">
+          <InputOTP
+            value={code}
+            onChange={setCode}
+            onComplete={verify}
+            disabled={busy}
+            autoFocus
+          />
+        </div>
+        <ErrorText>{error}</ErrorText>
         <Button
           type="submit"
           className="w-full"
-          disabled={checking || !password}
+          disabled={busy || code.length !== 6}
         >
-          {checking && <LoaderCircle className="size-4 mr-2 animate-spin" />}
+          {busy && <LoaderCircle className="size-4 mr-2 animate-spin" />}
+          Valider
+        </Button>
+        <div className="flex justify-between text-sm">
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setCodeSent(false);
+              setError("");
+            }}
+          >
+            Changer d&apos;adresse
+          </button>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground"
+            disabled={busy}
+            onClick={() => sendCode()}
+          >
+            Renvoyer le code
+          </button>
+        </div>
+      </form>
+    </Screen>
+  );
+}
+
+function ProfileStep({ token, session, onDone }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      await postJson(`${API_URL}/api/public-documents/${token}/profile`, {
+        session,
+        firstName,
+        lastName,
+      });
+    } finally {
+      setBusy(false);
+      onDone();
+    }
+  };
+
+  return (
+    <Screen>
+      <ScreenHeader title="Faisons connaissance">
+        Votre nom permet à votre interlocuteur de savoir qui consulte les
+        documents.
+      </ScreenHeader>
+      <form onSubmit={submit} className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="visitor-first-name">Prénom</Label>
+            <Input
+              id="visitor-first-name"
+              autoComplete="given-name"
+              maxLength={60}
+              autoFocus
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="visitor-last-name">Nom</Label>
+            <Input
+              id="visitor-last-name"
+              autoComplete="family-name"
+              maxLength={60}
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
+          </div>
+        </div>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={busy || (!firstName.trim() && !lastName.trim())}
+        >
           Accéder aux documents
         </Button>
       </form>
+    </Screen>
+  );
+}
+
+function BannedStep({ token, session, state, onSignOut, onRequested }) {
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const { ok, data } = await postJson(
+        `${API_URL}/api/public-documents/${token}/access-request`,
+        { session, message },
+      );
+      if (ok) onRequested();
+      else setError(data.message || "Une erreur est survenue");
+    } catch {
+      setError("Connexion impossible. Réessayez.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const signOut = (
+    <button
+      type="button"
+      className="block mx-auto text-sm text-muted-foreground hover:text-foreground"
+      onClick={onSignOut}
+    >
+      Utiliser une autre adresse
+    </button>
+  );
+
+  if (state.accessRequest === "pending") {
+    return (
+      <Screen>
+        <ScreenHeader icon={UserX} title="Demande envoyée">
+          Votre demande d&apos;accès est en attente. Vous recevrez un e-mail dès
+          que {state.workspace?.name || "votre interlocuteur"} y aura répondu.
+        </ScreenHeader>
+        {signOut}
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen>
+      <ScreenHeader icon={UserX} title="Accès retiré">
+        {state.accessRequest === "rejected"
+          ? "Votre demande précédente n'a pas été acceptée. Vous pouvez en faire une nouvelle."
+          : `Votre accès à ces documents a été retiré. Vous pouvez demander à ${state.workspace?.name || "votre interlocuteur"} de le rétablir.`}
+      </ScreenHeader>
+      <form onSubmit={submit} className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="access-message">Message (facultatif)</Label>
+          <Textarea
+            id="access-message"
+            maxLength={500}
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+        </div>
+        <ErrorText>{error}</ErrorText>
+        <Button type="submit" className="w-full" disabled={busy}>
+          {busy && <LoaderCircle className="size-4 mr-2 animate-spin" />}
+          Demander l&apos;accès
+        </Button>
+      </form>
+      {signOut}
     </Screen>
   );
 }
@@ -228,51 +525,62 @@ function PreviewDialog({ document, previewUrl, downloadUrl, onClose }) {
   );
 }
 
-function SharedFiles({ token, access, content }) {
-  const { folders, documents, rootFolderId, workspace } = content;
-  const [currentId, setCurrentId] = useState(rootFolderId);
+// Plusieurs dossiers partagés : accueil commun qui les liste
+const HOME = "__accueil__";
+
+function SharedFiles({ token, session, content, onSignOut }) {
+  const { folders, documents, rootFolderIds, workspace, visitor } = content;
+  const hasHome = rootFolderIds.length > 1;
+  const [currentId, setCurrentId] = useState(hasHome ? HOME : rootFolderIds[0]);
   const [previewed, setPreviewed] = useState(null);
 
   const folderById = useMemo(
     () => new Map(folders.map((folder) => [folder.id, folder])),
     [folders],
   );
+  const roots = new Set(rootFolderIds);
+  const homeLabel = content.name || "Documents";
 
   const breadcrumb = useMemo(() => {
     const path = [];
     let folder = folderById.get(currentId);
     while (folder) {
-      path.unshift(folder);
-      folder =
-        folder.id === rootFolderId ? null : folderById.get(folder.parentId);
+      path.unshift({ id: folder.id, name: folder.name });
+      folder = roots.has(folder.id) ? null : folderById.get(folder.parentId);
     }
-    return path;
-  }, [currentId, folderById, rootFolderId]);
+    return hasHome ? [{ id: HOME, name: homeLabel }, ...path] : path;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId, folderById, hasHome, homeLabel]);
 
-  const subfolders = folders
-    .filter((folder) => folder.parentId === currentId)
-    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "fr"));
+  const byOrder = (a, b) =>
+    a.order - b.order || a.name.localeCompare(b.name, "fr");
+  const subfolders =
+    currentId === HOME
+      ? rootFolderIds.map((id) => folderById.get(id)).filter(Boolean)
+      : folders.filter((folder) => folder.parentId === currentId).sort(byOrder);
   const files = documents.filter((document) => document.folderId === currentId);
 
-  const accessQuery = access ? `?access=${encodeURIComponent(access)}` : "";
+  const sessionQuery = `?session=${encodeURIComponent(session)}`;
   const fileUrl = (document, kind) =>
-    `${API_URL}/api/public-documents/${token}/files/${document.id}/${kind}${accessQuery}`;
+    `${API_URL}/api/public-documents/${token}/files/${document.id}/${kind}${sessionQuery}`;
 
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <WorkspaceIdentity workspace={workspace} />
-          {documents.length > 0 && (
-            <Button size="sm" className="shrink-0" asChild>
-              <a
-                href={`${API_URL}/api/public-documents/${token}/download-all${accessQuery}`}
-              >
-                <Download className="size-4 sm:mr-2" />
-                <span className="hidden sm:inline">Tout télécharger</span>
-              </a>
-            </Button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {documents.length > 0 && (
+              <Button size="sm" asChild>
+                <a
+                  href={`${API_URL}/api/public-documents/${token}/download-all${sessionQuery}`}
+                >
+                  <Download className="size-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Tout télécharger</span>
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -281,24 +589,22 @@ function SharedFiles({ token, access, content }) {
           aria-label="Dossiers"
           className="flex items-center flex-wrap gap-1 text-sm mb-4"
         >
-          {breadcrumb.map((folder, index) => {
+          {breadcrumb.map((item, index) => {
             const isLast = index === breadcrumb.length - 1;
             return (
-              <span key={folder.id} className="flex items-center gap-1 min-w-0">
+              <span key={item.id} className="flex items-center gap-1 min-w-0">
                 {index > 0 && (
                   <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
                 )}
                 {isLast ? (
-                  <h1 className="text-lg font-medium truncate">
-                    {folder.name}
-                  </h1>
+                  <h1 className="text-lg font-medium truncate">{item.name}</h1>
                 ) : (
                   <button
                     type="button"
                     className="text-muted-foreground hover:text-foreground truncate"
-                    onClick={() => setCurrentId(folder.id)}
+                    onClick={() => setCurrentId(item.id)}
                   >
-                    {folder.name}
+                    {item.name}
                   </button>
                 )}
               </span>
@@ -369,8 +675,18 @@ function SharedFiles({ token, access, content }) {
         )}
       </main>
 
-      <footer className="py-4 text-center text-xs text-muted-foreground">
-        Partagé avec Newbi
+      <footer className="py-4 text-center text-xs text-muted-foreground space-y-1">
+        <p>
+          Connecté en tant que {visitor?.email}.{" "}
+          <button
+            type="button"
+            className="underline hover:text-foreground"
+            onClick={onSignOut}
+          >
+            Se déconnecter
+          </button>
+        </p>
+        <p>Partagé avec Newbi</p>
       </footer>
 
       <PreviewDialog
@@ -387,89 +703,120 @@ export default function PublicDocumentsPage({ params }) {
   const { token } = use(params);
   const [state, setState] = useState({ status: "loading" });
 
-  const load = useCallback(
-    async (access) => {
-      setState({ status: "loading" });
-      const query = access ? `?access=${encodeURIComponent(access)}` : "";
-      try {
-        const response = await fetch(
-          `${API_URL}/api/public-documents/${token}${query}`,
-        );
-        if (response.status === 404 || response.status === 410) {
-          setState({ status: "closed" });
-          return;
-        }
-        const data = await response.json();
-        if (!response.ok) {
-          setState({ status: "error" });
-        } else if (data.requiresPassword) {
-          setState({ status: "password", workspace: data.workspace });
-        } else {
-          setState({ status: "ready", access, content: data });
-        }
-      } catch {
-        setState({ status: "error" });
+  const load = useCallback(async () => {
+    setState({ status: "loading" });
+    const session = sessionStore.get(sessionKey(token));
+    const access = accessStore.get(accessKey(token));
+    const query = new URLSearchParams();
+    if (session) query.set("session", session);
+    if (access) query.set("access", access);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/public-documents/${token}?${query}`,
+      );
+      if (response.status === 404 || response.status === 410) {
+        setState({ status: "closed" });
+        return;
       }
-    },
-    [token],
-  );
+      const data = await response.json();
+      if (!response.ok) {
+        setState({ status: "error" });
+        return;
+      }
+      // Session refusée (expirée, mot de passe changé) : on l'oublie
+      if (session && ["password", "identify"].includes(data.status)) {
+        sessionStore.set(sessionKey(token), null);
+      }
+      setState({ ...data, session, access });
+    } catch {
+      setState({ status: "error" });
+    }
+  }, [token]);
 
   useEffect(() => {
-    load(readStoredAccess(token));
-  }, [load, token]);
+    load();
+  }, [load]);
 
-  if (state.status === "loading") {
-    return (
-      <Screen>
-        <div className="flex justify-center">
-          <LoaderCircle className="size-6 animate-spin text-muted-foreground" />
-        </div>
-      </Screen>
-    );
+  const signOut = () => {
+    sessionStore.set(sessionKey(token), null);
+    load();
+  };
+
+  switch (state.status) {
+    case "loading":
+      return (
+        <Screen>
+          <div className="flex justify-center">
+            <LoaderCircle className="size-6 animate-spin text-muted-foreground" />
+          </div>
+        </Screen>
+      );
+    case "closed":
+      return (
+        <Screen>
+          <ScreenHeader title="Ce lien n'est plus disponible">
+            Il a expiré ou a été désactivé. Demandez un nouveau lien à votre
+            interlocuteur.
+          </ScreenHeader>
+        </Screen>
+      );
+    case "password":
+      return (
+        <PasswordStep
+          token={token}
+          workspace={state.workspace}
+          onDone={(accessToken) => {
+            accessStore.set(accessKey(token), accessToken);
+            load();
+          }}
+        />
+      );
+    case "identify":
+      return (
+        <IdentifyStep
+          token={token}
+          workspace={state.workspace}
+          access={state.access}
+          onDone={(session, needsProfile) => {
+            sessionStore.set(sessionKey(token), session);
+            if (needsProfile) setState({ status: "profile", session });
+            else load();
+          }}
+        />
+      );
+    case "profile":
+      return (
+        <ProfileStep token={token} session={state.session} onDone={load} />
+      );
+    case "banned":
+      return (
+        <BannedStep
+          token={token}
+          session={state.session}
+          state={state}
+          onSignOut={signOut}
+          onRequested={load}
+        />
+      );
+    case "ready":
+      return (
+        <SharedFiles
+          token={token}
+          session={state.session}
+          content={state}
+          onSignOut={signOut}
+        />
+      );
+    default:
+      return (
+        <Screen>
+          <ScreenHeader title="Chargement impossible">
+            Vérifiez votre connexion et réessayez.
+          </ScreenHeader>
+          <Button variant="outline" className="w-full" onClick={load}>
+            Réessayer
+          </Button>
+        </Screen>
+      );
   }
-
-  if (state.status === "closed") {
-    return (
-      <Screen>
-        <h1 className="text-lg font-medium">
-          Ce lien n&apos;est plus disponible
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Il a expiré ou a été désactivé. Demandez un nouveau lien à votre
-          interlocuteur.
-        </p>
-      </Screen>
-    );
-  }
-
-  if (state.status === "error") {
-    return (
-      <Screen>
-        <h1 className="text-lg font-medium">Chargement impossible</h1>
-        <p className="text-sm text-muted-foreground">
-          Vérifiez votre connexion et réessayez.
-        </p>
-        <Button variant="outline" onClick={() => load(readStoredAccess(token))}>
-          Réessayer
-        </Button>
-      </Screen>
-    );
-  }
-
-  if (state.status === "password") {
-    return (
-      <PasswordScreen
-        token={token}
-        workspace={state.workspace}
-        onUnlocked={(accessToken) => {
-          storeAccess(token, accessToken);
-          load(accessToken);
-        }}
-      />
-    );
-  }
-
-  return (
-    <SharedFiles token={token} access={state.access} content={state.content} />
-  );
 }
