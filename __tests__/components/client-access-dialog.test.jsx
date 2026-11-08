@@ -243,6 +243,39 @@ describe("Fenêtre des accès clients", () => {
     ).toBe(false);
   });
 
+  it("affiche un refus de l'API dans la fenêtre, sans « Accès créé »", async () => {
+    actions.createShare.mockRejectedValueOnce(
+      new Error("Le mot de passe doit contenir entre 6 et 72 caractères"),
+    );
+    renderDialog({ initialFolderId: "f-dupont" });
+    fireEvent.click(screen.getByRole("button", { name: /Nouvel accès/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Créer l'accès" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe(
+      "Le mot de passe doit contenir entre 6 et 72 caractères",
+    );
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Créer l'accès" })).toBeTruthy();
+  });
+
+  it("bloque un mot de passe trop court avant l'envoi", async () => {
+    renderDialog({ initialFolderId: "f-dupont" });
+    fireEvent.click(screen.getByRole("button", { name: /Nouvel accès/ }));
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), {
+      target: { value: "abc" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Créer l'accès" }));
+    expect(
+      await screen.findByText(
+        "Le mot de passe doit contenir au moins 6 caractères.",
+      ),
+    ).toBeTruthy();
+    expect(actions.createShare).not.toHaveBeenCalled();
+    expect(
+      screen.getByLabelText(/Mot de passe/).getAttribute("aria-invalid"),
+    ).toBe("true");
+  });
+
   it("refuse un accès sans dossier", async () => {
     renderDialog();
     fireEvent.click(screen.getByRole("button", { name: /Nouvel accès/ }));
