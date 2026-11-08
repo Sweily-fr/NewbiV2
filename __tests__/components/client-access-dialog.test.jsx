@@ -45,6 +45,8 @@ const folders = [
     visibility: "private",
   },
   { id: "f-sous-rh", name: "Sous RH", parentId: "f-rh", order: 0 },
+  { id: "f-devis", name: "Devis", parentId: "f-dupont", order: 2 },
+  { id: "f-signes", name: "Signés", parentId: "f-devis", order: 0 },
   { id: "f-factures", name: "Factures", parentId: null, order: 1 },
 ];
 
@@ -136,9 +138,6 @@ describe("Fenêtre des accès clients", () => {
     fireEvent.change(screen.getByLabelText(/Mot de passe/), {
       target: { value: "secret-123" },
     });
-    fireEvent.change(screen.getByLabelText(/expiration/), {
-      target: { value: "2030-03-15" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Créer l'accès" }));
 
     await waitFor(() => expect(actions.createShare).toHaveBeenCalledTimes(1));
@@ -148,9 +147,83 @@ describe("Fenêtre des accès clients", () => {
       name: "Client Dupont",
       password: "secret-123",
     });
-    expect(new Date(input.expiresAt).toISOString()).toBe(
-      new Date("2030-03-15T23:59:59").toISOString(),
+    expect(input.expiresAt).toBeUndefined();
+  });
+
+  it("coche les sous-dossiers avec leur dossier et n'envoie que le dossier", async () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: /Nouvel accès/ }));
+    fireEvent.click(folderCheckbox("Client Dupont"));
+    const state = (name) => folderCheckbox(name).getAttribute("data-state");
+    expect(state("Contrats")).toBe("checked");
+    expect(state("Devis")).toBe("checked");
+    expect(state("Signés")).toBe("checked");
+    // Les dossiers privés restent exclus
+    expect(state("RH")).toBe("unchecked");
+    expect(state("Sous RH")).toBe("unchecked");
+
+    fireEvent.click(screen.getByRole("button", { name: "Créer l'accès" }));
+    await waitFor(() => expect(actions.createShare).toHaveBeenCalledTimes(1));
+    expect(actions.createShare.mock.calls[0][0].folderIds).toEqual([
+      "f-dupont",
+    ]);
+  });
+
+  it("décocher un sous-dossier garde les autres et décoche le parent", async () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: /Nouvel accès/ }));
+    fireEvent.click(folderCheckbox("Client Dupont"));
+    fireEvent.click(folderCheckbox("Signés"));
+    const state = (name) => folderCheckbox(name).getAttribute("data-state");
+    expect(state("Client Dupont")).toBe("indeterminate");
+    // Devis n'a plus aucun sous-dossier coché : il n'est plus partagé
+    expect(state("Devis")).toBe("unchecked");
+    expect(state("Contrats")).toBe("checked");
+    expect(state("Signés")).toBe("unchecked");
+
+    // Recocher le parent recoche toute la branche
+    fireEvent.click(folderCheckbox("Devis"));
+    expect(state("Signés")).toBe("checked");
+    fireEvent.click(folderCheckbox("Client Dupont"));
+    expect(state("Client Dupont")).toBe("checked");
+
+    fireEvent.click(folderCheckbox("Client Dupont"));
+    expect(state("Contrats")).toBe("unchecked");
+    expect(state("Signés")).toBe("unchecked");
+  });
+
+  it("choisit la date d'expiration avec le calendrier et peut la retirer", async () => {
+    hook.shares = [share({ expiresAt: "2030-03-15T22:59:59.000Z" })];
+    renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: "Modifier l'accès" }));
+    const expiry = screen.getByRole("button", { name: /^Date d.expiration/ });
+    expect(expiry.textContent).toBe("15 mars 2030");
+    fireEvent.click(expiry);
+    const day = await screen.findByRole("button", { name: /20 mars 2030/ });
+    fireEvent.click(day);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /^Date d.expiration/ }).textContent,
+      ).toBe("20 mars 2030"),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await waitFor(() => expect(actions.updateShare).toHaveBeenCalledTimes(1));
+    expect(actions.updateShare.mock.calls[0][1].expiresAt).toBe(
+      new Date("2030-03-20T23:59:59").toISOString(),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Modifier l'accès" }),
+      ).toBeTruthy(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Modifier l'accès" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Retirer la date d'expiration" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await waitFor(() => expect(actions.updateShare).toHaveBeenCalledTimes(2));
+    expect(actions.updateShare.mock.calls[1][1].expiresAt).toBeNull();
   });
 
   it("ne laisse pas cocher un dossier privé ni ce qu'il contient", () => {
