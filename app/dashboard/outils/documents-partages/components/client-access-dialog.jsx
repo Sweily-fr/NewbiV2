@@ -690,7 +690,7 @@ export default function ClientAccessDialog({
                       </p>
                     )}
                     {form.hadPassword && (
-                      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <label className="flex items-center gap-2 pt-2 text-sm text-muted-foreground cursor-pointer">
                         <Switch
                           aria-label="Retirer le mot de passe"
                           checked={form.removePassword}
