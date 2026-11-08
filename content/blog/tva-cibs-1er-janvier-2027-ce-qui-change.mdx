@@ -1,0 +1,301 @@
+---
+title: 'TVA dans le CIBS au 1er janvier 2027 : ce qui change (et ce qui ne change pas)'
+description: >-
+  Au 1er janvier 2027, la TVA quitte le CGI pour le Code des impositions sur
+  les biens et services. Nouvelle numérotation, références valables jusqu'en
+  2028, factures, contrats et table de correspondance.
+date: '2026-12-21'
+category: reglementaire
+sector: null
+keyword: tva cibs 2027
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-12-21'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# TVA dans le CIBS au 1er janvier 2027 : ce qui change (et ce qui ne change pas)
+
+Au 1er janvier 2027, les dispositions législatives sur la TVA quittent le Code général des impôts (CGI) et rejoignent le livre II du Code des impositions sur les biens et services (CIBS). Pour une entreprise, le fond des règles ne change pas : taux, exonérations, franchise, exigibilité et droit à déduction restent les mêmes. Ce qui change, ce sont les numéros d'articles que vous citez sur vos factures, vos contrats et vos conditions générales. Les anciennes références au CGI restent utilisables jusqu'au 30 juin 2028, et les règles de forme des factures, dont la facturation électronique, restent pour l'instant dans les annexes du CGI.
+
+Cet article fait le point sur le calendrier, la nouvelle organisation du code, les correspondances les plus utiles pour une petite entreprise et ce que vous devez réellement mettre à jour.
+
+<ArticleCta variant="compact" />
+
+## D'où vient la réforme
+
+Le CIBS a été créé en 2021 pour regrouper, dans un code plus lisible, des impositions jusque-là dispersées : accises sur l'énergie, les alcools et les tabacs, taxes sur les transports, et d'autres. La TVA devait suivre. Deux ordonnances ont organisé ce transfert :
+
+- l'ordonnance n° 2025-1247 du 17 décembre 2025 a recodifié la TVA dans le CIBS, avec une entrée en vigueur prévue le 1er septembre 2026 ;
+- l'ordonnance n° 2026-671 du 27 juillet 2026, publiée au Journal officiel du 28 juillet, a reporté cette entrée en vigueur au 1er janvier 2027, regroupé les règles du droit à déduction dans un titre dédié, renuméroté une partie du code et repoussé au 30 juin 2028 la fin de la période pendant laquelle les références au CGI restent utilisables.
+
+Le rapport au Président de la République qui accompagne la seconde ordonnance explique le report par la proximité avec l'entrée en vigueur de la facturation électronique, jugée source de confusion. Il souligne aussi que le transfert est dépourvu de tout changement des obligations des opérateurs.
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="Les numéros de 2025 sont périmés">
+    Beaucoup de guides publiés en 2026 citent les numéros prévus par l'ordonnance de décembre 2025. Une partie d'entre eux a changé en juillet 2026 : la franchise en base, annoncée à l'article L. 223-3, se trouve en réalité à l'article L. 233-3 ; l'autoliquidation de la sous-traitance du BTP, annoncée à L. 221-38, se trouve à L. 231-38. Vérifiez toujours un numéro sur la table de concordance publiée au Journal officiel du 28 juillet 2026.
+  </Callout>
+</div>
+
+## Ce qui change au 1er janvier 2027
+
+### Les numéros d'articles
+
+C'est le changement principal. Une même règle porte désormais un numéro du CIBS, de la forme L. 2xx-yy, à la place de son numéro du CGI. Les articles du CGI sont souvent découpés : un seul article de l'ancien code peut être réparti entre plusieurs articles du nouveau, chacun traitant d'un aspect précis (définition, conditions, exceptions, obligations).
+
+### L'organisation du code
+
+Le livre II du CIBS, consacré à la TVA, s'étend des articles L. 200-1 à L. 256-12 et suit un plan logique :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Plan du livre II du CIBS au 1er janvier 2027</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Titre</TableHead>
+        <TableHead>Contenu</TableHead>
+        <TableHead>Articles</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Titre Ier</TableCell>
+        <TableCell>Régime général de la taxe due : champ d'application, fait générateur, montant (exonérations, base, taux), exigibilité, redevables, factures et déclarations, paiement</TableCell>
+        <TableCell>L. 211-1 à L. 219-1</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Titre II</TableCell>
+        <TableCell>Droit à déduction de la taxe</TableCell>
+        <TableCell>L. 221-1 à L. 228-1</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Titre III</TableCell>
+        <TableCell>Régimes particuliers transversaux : immeubles et travaux immobiliers, petits acteurs du commerce intra-européen, entreprises franchisées, assujetti unique</TableCell>
+        <TableCell>L. 231-1 à L. 234-26</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Titre IV</TableCell>
+        <TableCell>Régimes spécifiques à certains échanges intra-européens ou internationaux</TableCell>
+        <TableCell>L. 241-1 à L. 245-34</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Titre V</TableCell>
+        <TableCell>Régimes sectoriels : énergies, alcools et tabacs, biens d'occasion et objets d'art, opérateurs de voyage, or, agriculture, droits d'auteur</TableCell>
+        <TableCell>L. 251-1 à L. 256-12</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le livre Ier du CIBS, qui contient les règles communes à toutes les impositions du code, devient aussi applicable à la TVA. Ce livre emploie un vocabulaire propre, défini dans un glossaire que l'administration a intégré au BOFiP (BOI-ANNX-000514). Vous croiserez par exemple les notions de « territoire de taxation » ou d'« entreprise franchisée ».
+
+### Quelques ajustements ponctuels
+
+La recodification se fait à droit constant, mais quelques adaptations techniques l'accompagnent. Le rescrit publié par l'administration cite par exemple les régimes suspensifs de l'article 277 A du CGI, qui deviennent des régimes d'exonération. Certaines dispositions issues de directives européennes récentes n'entreront en vigueur que plus tard, au 1er juillet 2028 et au 1er juillet 2030. Pour la facturation courante d'un indépendant ou d'une TPE, ces ajustements n'ont pas d'effet visible.
+
+## Ce qui ne change pas
+
+- Les taux de TVA : 20 %, 10 %, 5,5 % et 2,1 % restent applicables aux mêmes opérations. Notre [guide des taux de TVA](/blog/taux-tva-france-guide-complet) reste valable.
+- Les exonérations et leurs conditions, notamment pour les professions de santé, l'enseignement et la formation.
+- La franchise en base et ses plafonds.
+- Les règles d'exigibilité : TVA sur les encaissements par défaut pour les prestations de services, avec la possibilité d'opter pour les débits. Notre article sur [la TVA sur les débits ou les encaissements](/blog/tva-sur-les-debits-ou-encaissements) reste à jour.
+- Le droit à déduction et ses exclusions.
+- Les mentions obligatoires des factures, qui relèvent de la partie réglementaire. Le rescrit précise que les règles de forme et de transmission électronique des factures restent régies par le CGI après le 1er janvier 2027, jusqu'à leur reprise dans la partie réglementaire du CIBS.
+- La doctrine administrative : le rapport au Président réaffirme que la doctrine opposable reste inchangée.
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Ce qui change aussi au 1er janvier 2027, mais pour une autre raison">
+    La suppression du régime simplifié de TVA au 1er janvier 2027 ne vient pas de la recodification : elle résulte de l'article 38 de la loi de finances pour 2025. Les deux réformes tombent le même jour, ce qui entretient la confusion. Voyez notre article sur [la fin du régime simplifié de TVA](/blog/fin-regime-simplifie-tva-2027).
+  </Callout>
+</div>
+
+## La période transitoire jusqu'au 30 juin 2028
+
+L'administration a précisé les règles de transition dans un rescrit publié au BOFiP le 7 octobre 2026 (BOI-RES-TVA-000253), après consultation publique :
+
+- jusqu'au 31 décembre 2026, la TVA reste régie par le CGI ;
+- à compter du 1er janvier 2027, elle est régie par le livre II du CIBS ;
+- les références au CGI figurant dans les actes de l'administration et dans les actes de droit privé, comme les contrats, sont remplacées de plein droit par les références correspondantes du CIBS ;
+- pour les mentions juridiques portées sur les factures, les renvois au CGI restent possibles jusqu'au 30 juin 2028.
+
+En pratique, un contrat signé en 2025 qui cite l'article 293 B ou l'article 283 du CGI ne devient pas caduc et n'a pas besoin d'avenant : la référence est lue comme renvoyant à l'article correspondant du CIBS. Et une facture émise en 2027 avec une mention qui cite le CGI reste régulière jusqu'au 30 juin 2028.
+
+## Correspondances utiles pour une petite entreprise
+
+Légifrance publie des tables de concordance complètes. Voici les lignes qui concernent le plus souvent un indépendant ou une TPE, telles qu'elles figurent dans la table « ancienne / nouvelle numérotation » publiée au Journal officiel du 28 juillet 2026.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Extrait de la table de concordance CGI vers CIBS applicable au 1er janvier 2027</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Sujet</TableHead>
+        <TableHead>Article du CGI</TableHead>
+        <TableHead>Article du CIBS</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Franchise en base (définition)</TableCell>
+        <TableCell>293 B, I, al. 1</TableCell>
+        <TableCell>L. 233-3</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Franchise en base (dispense de paiement)</TableCell>
+        <TableCell>293 B, I, al. 1</TableCell>
+        <TableCell>L. 233-21</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Option pour le paiement d'après les débits</TableCell>
+        <TableCell>269, 2, c, al. 1</TableCell>
+        <TableCell>L. 214-9</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Autoliquidation de la sous-traitance de travaux de construction</TableCell>
+        <TableCell>283, 2 nonies</TableCell>
+        <TableCell>L. 231-38</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Exonération des soins des professions médicales et paramédicales</TableCell>
+        <TableCell>261, 4, 1°</TableCell>
+        <TableCell>L. 213-100</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Exonération des livraisons de biens hors du territoire (exportations, livraisons intracommunautaires)</TableCell>
+        <TableCell>262, I et 262 ter, I</TableCell>
+        <TableCell>L. 213-12, L. 213-13 et suivants</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Régime de la marge des biens d'occasion</TableCell>
+        <TableCell>297 A, I</TableCell>
+        <TableCell>L. 252-12</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Obligation de facturer</TableCell>
+        <TableCell>289, I, 1, a et b</TableCell>
+        <TableCell>L. 216-30</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facturation électronique</TableCell>
+        <TableCell>289 bis, I et IV</TableCell>
+        <TableCell>L. 216-36</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Deux remarques pour lire ce tableau. D'abord, une même disposition du CGI peut correspondre à plusieurs articles du CIBS selon l'aspect visé : c'est le cas de l'article 293 B, partagé entre la définition de l'entreprise franchisée et la dispense de paiement. Ensuite, la table détaille souvent un article du CGI alinéa par alinéa : pour une référence précise, ouvrez la table officielle et l'article du CIBS lui-même sur Légifrance, dans sa version au 1er janvier 2027.
+
+## Ce que vous devez mettre à jour
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les mentions de vos modèles de factures, devis et avoirs qui citent un article du CGI : franchise en base, exonération, régime de la marge. Vous avez jusqu'au 30 juin 2028.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vos conditions générales de vente, si elles citent des articles du CGI. Aucune urgence juridique, puisque la substitution est automatique, mais une mise à jour évite les questions de vos clients.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les paramètres de votre logiciel de facturation : demandez à votre éditeur quand et comment les références seront modifiées.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vos contrats en cours : rien à faire, les références au CGI sont remplacées de plein droit.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les mentions qui ne citent aucun article, comme « Autoliquidation » ou « Option pour le paiement de la taxe d'après les débits » : rien à changer.</span>
+  </div>
+</div>
+
+Pour la mention de franchise en base, qui concerne la plupart des micro-entrepreneurs, tout est détaillé dans notre article sur [la mention TVA non applicable au 1er janvier 2027](/blog/tva-non-applicable-article-l-233-3-cibs). Pour l'autoliquidation, la mention reste « Autoliquidation », comme l'explique notre article sur [l'autoliquidation de la TVA](/blog/autoliquidation-tva-facture-mention). Les autres [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) ne changent pas.
+
+## Exemple : une agence de communication et une consultante
+
+Deux entreprises voisines n'ont pas les mêmes mises à jour à faire.
+
+Nadia est consultante en franchise en base. Sa seule mention fiscale est « TVA non applicable, art. 293 B du CGI ». Elle prépare un modèle 2027 avec « art. L. 233-3 du CIBS » et met à jour ses conditions générales, qui citaient l'article 293 B. Elle n'a pas d'autre changement à faire.
+
+L'agence de communication de Marc facture la TVA à 20 % sur ses prestations. Ses factures ne citent aucun article : la recodification ne change rien pour elle. En revanche, l'agence relevait du régime simplifié de TVA : à partir de 2027, elle déposera des déclarations CA3 trimestrielles. C'est la loi de finances pour 2025, et non la recodification, qui produit ce changement.
+
+## Et la facture électronique ?
+
+Les deux sujets sont distincts. La recodification change les références juridiques ; la facturation électronique change la manière dont les factures sont émises et transmises. La table de concordance place l'obligation de facturation électronique, aujourd'hui à l'article 289 bis du CGI, à l'article L. 216-36 du CIBS, mais les modalités pratiques (formats, données, plateformes agréées) restent fixées par les textes réglementaires, rattachés au CGI jusqu'à leur reprise. Le calendrier ne change pas : émission obligatoire au 1er septembre 2027 pour les PME et micro-entreprises, réception obligatoire depuis le 1er septembre 2026 pour toutes.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Avec Newbi">
+    Dans Newbi, les mentions fiscales de vos documents se règlent dans les paramètres. Quand vous passez à une référence du CIBS, vous la modifiez une fois et elle s'applique à vos prochains documents ; les documents déjà émis gardent la mention qu'ils portaient.
+  </Callout>
+</div>
+
+## En résumé
+
+- Au 1er janvier 2027, la TVA passe du CGI au livre II du CIBS (articles L. 200-1 à L. 256-12).
+- Les règles de fond ne changent pas : taux, exonérations, franchise, exigibilité, déduction.
+- Les numéros changent : ceux de l'ordonnance de 2025 ont été en partie modifiés en juillet 2026, fiez-vous à la table de concordance du 28 juillet 2026.
+- Les références au CGI restent utilisables sur les factures jusqu'au 30 juin 2028 et sont remplacées de plein droit dans les contrats.
+- Les règles de forme des factures et de la facturation électronique restent dans les annexes du CGI jusqu'à leur reprise.
+- Mettez à jour les mentions qui citent un article ; celles qui n'en citent aucun ne changent pas.
+
+## Sources officielles
+
+- Légifrance, [rapport au Président de la République relatif à l'ordonnance n° 2026-671 du 27 juillet 2026](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000054497139).
+- Légifrance, [Code des impositions sur les biens et services, version au 1er janvier 2027](https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000044595989/2027-01-01) (plan du livre II).
+- Légifrance, [tables de concordance du CIBS](https://www.legifrance.gouv.fr/contenu/menu/autour-de-la-loi/codification/tables-de-concordance/code-des-impositions-sur-les-biens-et-services), table « ancienne / nouvelle numérotation » du JO du 28 juillet 2026.
+- BOFiP, [BOI-RES-TVA-000253 du 7 octobre 2026](https://bofip.impots.gouv.fr/bofip/14901-PGP.html/identifiant=BOI-RES-TVA-000253-20261007), dispositions transitoires.
+- BOFiP, [ACTU-2026-00126 du 7 octobre 2026](https://bofip.impots.gouv.fr/bofip/15140-PGP.html/ACTU-2026-00126) et [glossaire du CIBS, BOI-ANNX-000514](https://bofip.impots.gouv.fr/bofip/15203-PGP.html/identifiant=BOI-ANNX-000514-20261007).
+
+<ArticleCta />
+
+## Questions fréquentes sur la TVA dans le CIBS
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quand la TVA passe-t-elle dans le CIBS ?</AccordionTrigger>
+      <AccordionContent>
+        Le 1er janvier 2027. La date initiale du 1er septembre 2026, prévue par l'ordonnance du 17 décembre 2025, a été reportée par l'ordonnance n° 2026-671 du 27 juillet 2026. Jusqu'au 31 décembre 2026, la TVA reste régie par le Code général des impôts.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>La recodification change-t-elle les règles de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Non sur le fond. Le transfert se fait à droit constant : les taux, les exonérations, la franchise en base, l'exigibilité et le droit à déduction restent les mêmes. Seuls les numéros d'articles et une partie du vocabulaire changent, avec quelques ajustements techniques sans effet sur la facturation courante.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Jusqu'à quand peut-on citer le CGI sur une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Jusqu'au 30 juin 2028. Le rescrit BOI-RES-TVA-000253 du 7 octobre 2026 indique que les renvois au CGI restent possibles dans les mentions juridiques des factures jusqu'à cette date. La date initialement prévue, le 31 décembre 2027, a été repoussée par l'ordonnance du 27 juillet 2026.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Faut-il modifier les contrats qui citent le CGI ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Les références au CGI figurant dans les actes de droit privé, comme les contrats, sont remplacées de plein droit par les références correspondantes du CIBS. Un avenant n'est pas nécessaire, même si vous pouvez mettre à jour vos modèles pour vos prochains contrats.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Où trouver la correspondance entre un article du CGI et le CIBS ?</AccordionTrigger>
+      <AccordionContent>
+        Sur Légifrance, rubrique « Autour de la loi », puis « Codification » et « Tables de concordance », page du Code des impositions sur les biens et services. Utilisez la table publiée au Journal officiel du 28 juillet 2026, qui donne la numérotation définitive : celle de décembre 2025 a été en partie modifiée.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

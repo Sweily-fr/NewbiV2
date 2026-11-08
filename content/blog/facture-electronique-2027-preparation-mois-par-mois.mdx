@@ -1,0 +1,287 @@
+---
+title: 'Facturation électronique 2027 : le plan de préparation mois par mois'
+description: >-
+  Émission obligatoire des factures électroniques au 1er septembre 2027 pour
+  les PME et micro-entreprises : un plan de janvier à septembre pour être prêt,
+  étape par étape.
+date: '2027-01-06'
+category: guide
+sector: null
+keyword: facturation électronique 2027
+author: Newbi
+image: ''
+published: false
+publishDate: '2027-01-06'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Facturation électronique 2027 : le plan de préparation mois par mois
+
+Le 1er septembre 2027, les PME et les micro-entreprises, y compris les auto-entrepreneurs, devront émettre leurs factures destinées à d'autres entreprises assujetties à la TVA en France au format électronique, par l'intermédiaire d'une plateforme agréée, et transmettre à l'administration les données de leurs autres opérations (e-reporting). Depuis le 1er septembre 2026, elles doivent déjà être en mesure de recevoir des factures électroniques. Il reste donc huit mois : assez pour se préparer sans précipitation, à condition de commencer en janvier.
+
+Ce plan découpe la préparation en étapes mensuelles, de janvier à septembre 2027. Chaque mois correspond à une à trois tâches précises, avec ce qu'il faut avoir terminé à la fin du mois. Il est conçu pour un indépendant ou une TPE qui émet quelques dizaines à quelques centaines de factures par an.
+
+<ArticleCta variant="compact" />
+
+## Ce que vous devez savoir avant de commencer
+
+La réforme comporte trois volets, tels que l'administration les présente sur impots.gouv.fr :
+
+- la facturation électronique, pour les factures entre entreprises assujetties à la TVA établies en France, y compris celles en franchise en base ;
+- l'e-reporting des transactions, pour les ventes à des clients qui ne sont pas des entreprises assujetties, comme les particuliers, et pour les opérations avec des entreprises étrangères, dont les exportations et les échanges intracommunautaires ;
+- l'e-reporting des paiements, pour les opérations dont la TVA est exigible à l'encaissement, ce qui concerne la plupart des prestations de services, sauf option pour les débits ou autoliquidation.
+
+Une facture électronique au sens de la réforme n'est pas un simple PDF envoyé par e-mail. Elle doit respecter un format accepté (UBL, CII, ou un format mixte associant des données structurées et une image, comme Factur-X), contenir les mentions obligatoires dans des champs dédiés et transiter par une plateforme agréée. Une facture papier scannée, un PDF ordinaire ou une facture envoyée par e-mail ne seront plus conformes pour les opérations entrant dans le champ de la réforme.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Le calendrier de la réforme</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Date</TableHead>
+        <TableHead>Obligation</TableHead>
+        <TableHead>Entreprises concernées</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Depuis le 1er septembre 2026</TableCell>
+        <TableCell>Réception des factures électroniques</TableCell>
+        <TableCell>Toutes, quelle que soit leur taille</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Depuis le 1er septembre 2026</TableCell>
+        <TableCell>Émission et e-reporting</TableCell>
+        <TableCell>Grandes entreprises et ETI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">1er septembre 2027</TableCell>
+        <TableCell>Émission et e-reporting</TableCell>
+        <TableCell>PME et micro-entreprises, dont les micro-entrepreneurs</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Le plan en un coup d'œil
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Préparer l'émission de factures électroniques de janvier à septembre 2027</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Mois</TableHead>
+        <TableHead>Objectif</TableHead>
+        <TableHead>Résultat attendu en fin de mois</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Janvier</TableCell>
+        <TableCell>État des lieux</TableCell>
+        <TableCell>Vos flux classés : clients professionnels en France, particuliers, étranger</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Février</TableCell>
+        <TableCell>Données clients et catalogue</TableCell>
+        <TableCell>SIREN et adresses complets, prestations et ventes distinguées</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mars</TableCell>
+        <TableCell>Choix de la plateforme agréée</TableCell>
+        <TableCell>Deux ou trois offres comparées</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Avril</TableCell>
+        <TableCell>Contrat et annuaire</TableCell>
+        <TableCell>Plateforme choisie, adresse de facturation vérifiée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mai</TableCell>
+        <TableCell>Paramétrage</TableCell>
+        <TableCell>Logiciel de facturation relié à la plateforme</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Juin</TableCell>
+        <TableCell>E-reporting</TableCell>
+        <TableCell>Ventes aux particuliers, à l'étranger et encaissements identifiés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Juillet</TableCell>
+        <TableCell>Tests et procédures</TableCell>
+        <TableCell>Premières factures de test, gestion des rejets définie</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Août</TableCell>
+        <TableCell>Communication et derniers réglages</TableCell>
+        <TableCell>Clients informés, archivage organisé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Septembre</TableCell>
+        <TableCell>Démarrage</TableCell>
+        <TableCell>Premières factures conformes, suivi des statuts</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Janvier : faire l'état des lieux
+
+Commencez par regarder vos factures de 2026. Pour chacune, notez à qui elle s'adresse : une entreprise assujettie établie en France, un particulier, une entreprise ou un particulier établi à l'étranger, une administration. Cette répartition détermine ce que vous aurez à faire en septembre : facture électronique pour la première catégorie, e-reporting pour les deux suivantes. Les factures aux administrations passent déjà par Chorus Pro et ne changent pas.
+
+Profitez-en pour vérifier deux sujets propres au début de l'année 2027. La mention de franchise en base, si vous êtes concerné, peut désormais citer le Code des impositions sur les biens et services : voyez notre article sur [la mention TVA non applicable en 2027](/blog/tva-non-applicable-article-l-233-3-cibs). Et si vous étiez au régime simplifié de TVA, vous êtes passé au régime réel normal au 1er janvier : notre article sur [la fin du régime simplifié de TVA](/blog/fin-regime-simplifie-tva-2027) explique ce qui change.
+
+## Février : fiabiliser vos données clients et votre catalogue
+
+La facture électronique repose sur des données structurées. Une fiche client incomplète, qui passait inaperçue sur un PDF, peut bloquer une facture électronique. Pour chaque client professionnel, vérifiez :
+
+- sa dénomination exacte et son numéro SIREN, qui devient une mention obligatoire ;
+- son adresse de facturation, et l'adresse de livraison des biens si elle est différente ;
+- son numéro de TVA intracommunautaire s'il en a un.
+
+Côté catalogue, distinguez clairement les ventes de biens et les prestations de services : la facture devra indiquer si elle porte sur des livraisons de biens, des prestations de services ou les deux. Si vous avez opté pour le paiement de la TVA d'après les débits, la mention correspondante devra aussi figurer sur vos factures. Les nouvelles mentions sont détaillées dans notre article sur [les nouvelles mentions obligatoires de la facture électronique](/blog/nouvelles-mentions-obligatoires-facture-electronique).
+
+## Mars : choisir votre plateforme agréée
+
+Toutes les factures électroniques transitent par une plateforme agréée par l'État, anciennement appelée plateforme de dématérialisation partenaire (PDP). Vous choisissez librement la vôtre, qui peut être différente de celle de vos clients et fournisseurs. La liste des plateformes agréées est publiée sur impots.gouv.fr.
+
+Si vous utilisez déjà un logiciel de facturation, la première question à lui poser est simple : est-il lui-même plateforme agréée, ou connecté à une plateforme agréée, et à quel coût ? Comparez ensuite deux ou trois offres sur des critères concrets : formats pris en charge, gestion de l'e-reporting, réception des factures fournisseurs, archivage, prix par facture ou au forfait, possibilité de changer de plateforme. Nos articles sur [les critères de choix d'une plateforme](/blog/comment-choisir-sa-pdp-plateforme-dematerialisation) et sur [le coût de la facturation électronique](/blog/combien-coute-facturation-electronique) vous aideront à comparer.
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="Vous recevez déjà des factures électroniques">
+    Depuis le 1er septembre 2026, vous devez pouvoir recevoir les factures électroniques de vos fournisseurs soumis à l'obligation d'émission. Si vous avez déjà choisi une plateforme pour la réception, vérifiez qu'elle couvre aussi l'émission et l'e-reporting avant d'en chercher une autre.
+  </Callout>
+</div>
+
+## Avril : signer et vérifier votre inscription à l'annuaire
+
+Une fois la plateforme choisie, signez le contrat et donnez-lui les autorisations nécessaires. Vérifiez ensuite comment votre entreprise apparaît dans l'annuaire de la facturation électronique, qui indique pour chaque entreprise la plateforme qui gère ses factures et ses adresses de facturation. C'est grâce à cet annuaire que les factures de vos fournisseurs vous parviennent, et que les vôtres parviennent à vos clients. Notre article sur [l'annuaire de la facturation électronique](/blog/annuaire-facturation-electronique-a-quoi-sert) explique son fonctionnement.
+
+## Mai : relier votre logiciel à la plateforme
+
+C'est l'étape technique. Selon votre configuration, votre logiciel de facturation transmet les factures à la plateforme de façon automatique, ou vous déposez les fichiers vous-même. Vérifiez :
+
+- le format produit par votre logiciel et sa compatibilité avec la plateforme, en sachant que Factur-X associe un PDF lisible et des données structurées ([UBL, CII ou Factur-X : les différences](/blog/formats-ubl-cii-facturx-comparatif)) ;
+- la reprise de vos mentions habituelles dans les bons champs : franchise, exonération, autoliquidation, conditions de paiement ;
+- la remontée des statuts de vos factures dans votre logiciel : déposée, rejetée, refusée, encaissée.
+
+## Juin : préparer l'e-reporting
+
+L'e-reporting est souvent la partie oubliée de la préparation. Il concerne trois types d'informations :
+
+- vos ventes à des particuliers, qui ne donnent pas lieu à une facture électronique mais dont les données doivent être transmises ;
+- vos opérations avec des clients ou fournisseurs établis à l'étranger ;
+- les données de paiement de vos prestations de services, lorsque la TVA est exigible à l'encaissement.
+
+La fréquence de transmission dépend de votre régime de TVA. L'administration demande d'ailleurs aux entreprises qui ont quitté le régime simplifié au 1er janvier 2027 d'indiquer leur nouveau régime à leur plateforme agréée, pour que les données soient transmises au bon rythme. Pour le détail des données et des échéances, consultez notre article sur [l'e-reporting](/blog/e-reporting-definition-obligations-calendrier), et celui sur [les clients particuliers](/blog/facture-electronique-b2c-particuliers-concerne) si vous en avez beaucoup.
+
+## Juillet : tester et écrire vos procédures
+
+Émettez quelques factures de test avec votre plateforme, idéalement vers un client de confiance ou dans l'environnement de test proposé par la plateforme. Vérifiez qu'elles sont acceptées, que les données sont correctes et que les statuts remontent.
+
+Définissez aussi qui fait quoi en cas de problème. Une facture peut être rejetée pour un défaut technique, ou refusée par le client sur le fond. Dans les deux cas, il faut savoir comment la corriger, par une nouvelle facture ou un avoir selon la situation. Nos articles sur [les rejets et refus de factures électroniques](/blog/rejet-facture-electronique-que-faire) et sur [les statuts du cycle de vie](/blog/statuts-cycle-de-vie-facture-electronique) détaillent les cas.
+
+## Août : informer et organiser l'archivage
+
+Prévenez vos principaux clients que vos factures arriveront désormais par leur plateforme, et non plus par e-mail. Ceux qui sont déjà organisés pour recevoir des factures électroniques n'auront rien à faire ; les autres apprécieront d'être prévenus.
+
+Organisez enfin la conservation : vos factures électroniques doivent être archivées dans leur format d'origine, de façon à garantir leur intégrité et leur lisibilité pendant toute la durée de conservation. Vérifiez ce que votre plateforme conserve, pendant combien de temps, et comment récupérer vos données en cas de changement de prestataire. Notre article sur [l'archivage à valeur probante](/blog/archivage-factures-valeur-probante) précise les exigences.
+
+## Septembre : démarrer et surveiller
+
+À partir du 1er septembre 2027, chaque facture à un client professionnel français assujetti passe par votre plateforme. Les premières semaines, consultez les statuts tous les jours : une facture rejetée et non corrigée est une facture que votre client ne paiera pas. Vérifiez aussi la première transmission de données d'e-reporting, à l'échéance fixée selon votre régime.
+
+## Cas pratique : une agence de traduction de deux personnes
+
+L'agence de Sophie, au régime réel normal de TVA, émet environ 400 factures par an : 70 % à des entreprises françaises, 20 % à des clients européens et 10 % à des particuliers.
+
+- En janvier, elle classe ses flux : environ 280 factures par an passeront par la facture électronique, le reste relèvera de l'e-reporting.
+- En février, elle s'aperçoit que 35 fiches clients n'ont pas de SIREN. Elle les complète grâce à l'annuaire des entreprises.
+- En mars, elle compare trois offres et retient celle qui est intégrée à son logiciel de facturation, ce qui évite une double saisie.
+- En mai et en juin, elle vérifie que ses factures aux clients européens portent bien la mention « Autoliquidation » et que les ventes aux particuliers remontent dans l'e-reporting.
+- En juillet, elle émet cinq factures de test vers un client fidèle, dont une volontairement incomplète pour voir comment le rejet s'affiche.
+- En août, elle envoie un message à ses vingt principaux clients.
+
+Le 1er septembre, la bascule se fait sans incident : les factures partent depuis le même logiciel qu'avant, seul le canal change.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Avec Newbi">
+    Newbi conserve vos fiches clients avec leur SIREN et leurs adresses, et prépare vos factures avec leurs mentions obligatoires : les données dont la facture électronique a besoin sont en place avant même le choix de votre plateforme.
+  </Callout>
+</div>
+
+## Les erreurs à éviter
+
+- Attendre l'été : les plateformes et les éditeurs seront très sollicités à l'approche du 1er septembre.
+- Confondre facture électronique et PDF : un PDF envoyé par e-mail ne sera plus conforme pour une facture entre entreprises assujetties en France.
+- Oublier l'e-reporting : vos ventes aux particuliers et à l'étranger sont concernées, même si elles ne donnent pas lieu à une facture électronique.
+- Négliger les données clients : un SIREN manquant peut bloquer une facture.
+- Choisir une plateforme sans vérifier la réversibilité : demandez comment récupérer vos factures et vos données si vous en changez.
+
+Pour une liste de contrôle complémentaire, reprenez notre [checklist facture électronique en 12 points](/blog/facture-electronique-checklist-tpe-12-points). Si vous êtes micro-entrepreneur, notre article sur [la facture électronique pour les auto-entrepreneurs](/blog/facture-electronique-auto-entrepreneur-2027) détaille votre situation.
+
+## En résumé
+
+- 1er septembre 2027 : émission des factures électroniques et e-reporting obligatoires pour les PME et micro-entreprises.
+- Réception obligatoire pour toutes les entreprises depuis le 1er septembre 2026.
+- Janvier à février : état des lieux et données clients ; mars à avril : plateforme agréée ; mai à juin : paramétrage et e-reporting ; juillet à août : tests, procédures, communication.
+- Une facture électronique passe par une plateforme agréée, dans un format structuré : un PDF par e-mail ne suffit plus.
+- Indiquez votre régime de TVA à votre plateforme, surtout si vous avez quitté le régime simplifié au 1er janvier 2027.
+
+## Sources officielles
+
+- impots.gouv.fr, [je découvre la facturation électronique](https://www.impots.gouv.fr/professionnel/je-decouvre-la-facturation-electronique), mise à jour du 26 mai 2026.
+- impots.gouv.fr, [à partir de quand suis-je concerné par la réforme de la facturation électronique ?](https://www.impots.gouv.fr/professionnel/questions/partir-de-quand-suis-je-concerne-par-la-reforme-de-la-facturation)
+- impots.gouv.fr, [le régime simplifié d'imposition à la TVA est supprimé à compter du 1er janvier 2027](https://www.impots.gouv.fr/actualite/le-regime-simplifie-dimposition-la-tva-est-supprime-compter-du-1er-janvier-2027), paragraphe consacré à l'e-reporting.
+- Légifrance, [article 242 nonies A de l'annexe II au CGI](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000050811276), mentions obligatoires des factures.
+
+<ArticleCta />
+
+## Questions fréquentes sur la facturation électronique en 2027
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quand la facturation électronique devient-elle obligatoire pour une TPE ?</AccordionTrigger>
+      <AccordionContent>
+        Le 1er septembre 2027 pour l'émission des factures électroniques et l'e-reporting, pour les PME et les micro-entreprises, y compris les micro-entrepreneurs. Depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA établies en France doivent déjà pouvoir recevoir des factures électroniques.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Un PDF envoyé par e-mail est-il une facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Une facture électronique au sens de la réforme doit être émise dans un format accepté (UBL, CII ou format mixte comme Factur-X), contenir les mentions obligatoires dans des champs structurés et transiter par une plateforme agréée. Un PDF ordinaire envoyé par e-mail ne sera plus conforme pour les factures entre entreprises assujetties en France.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Les auto-entrepreneurs en franchise de TVA sont-ils concernés ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. La réforme concerne toutes les entreprises assujetties à la TVA, y compris celles qui bénéficient de la franchise en base. Un auto-entrepreneur devra émettre ses factures à des clients professionnels français au format électronique à partir du 1er septembre 2027, et transmettre les données de ses ventes aux particuliers par l'e-reporting.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quand faut-il choisir sa plateforme agréée ?</AccordionTrigger>
+      <AccordionContent>
+        Le plus tôt possible, et idéalement au printemps 2027, pour disposer de plusieurs mois de paramétrage et de tests avant le 1er septembre. Si vous recevez déjà vos factures fournisseurs via une plateforme depuis septembre 2026, vérifiez d'abord qu'elle couvre aussi l'émission et l'e-reporting.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Mes ventes aux particuliers passent-elles par la facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Les ventes à des particuliers ne donnent pas lieu à une facture électronique au sens de la réforme, mais leurs données doivent être transmises à l'administration par l'e-reporting, via votre plateforme agréée. Vous continuez à remettre une facture ou une note à votre client particulier dans les conditions habituelles.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
