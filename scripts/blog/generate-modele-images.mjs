@@ -296,7 +296,7 @@ const EXEMPLES = {
         {
           texte: "Fourniture et pose d'une chaudière à condensation",
           detail:
-            "Taux de TVA de 10 % : travaux d'amélioration énergétique dans un logement de plus de deux ans",
+            "Taux de TVA de 10 % : travaux d'amélioration dans un logement achevé depuis plus de deux ans",
         },
         "1",
         eur(devisHt),
@@ -445,7 +445,7 @@ const EXEMPLES = {
     gabarit: "document",
     titre: "Facture",
     emetteur: {
-      nom: "Julie Martin",
+      nom: "Julie Martin EI",
       lignes: ["Développement web", "12 rue des Lilas, 44000 Nantes", "SIREN 812 345 678", "06 39 98 44 12"],
     },
     client: {
@@ -472,7 +472,7 @@ const EXEMPLES = {
       ["Conditions de règlement", `Paiement à 30 jours, par virement. ${MENTION_RETARD}`],
       ["Coordonnées bancaires", `IBAN ${IBAN} · BIC ${BIC}`],
     ],
-    pied: "Julie Martin · 12 rue des Lilas, 44000 Nantes · SIREN 812 345 678",
+    pied: "Julie Martin EI · 12 rue des Lilas, 44000 Nantes · SIREN 812 345 678",
   },
 
   "modele-facture-gratuit-word-excel-pdf": {
@@ -525,7 +525,7 @@ const EXEMPLES = {
     gabarit: "document",
     titre: "Facture",
     emetteur: {
-      nom: "Inès Morel",
+      nom: "Inès Morel EI",
       lignes: ["Graphiste indépendante", "3 rue des Capucins, 49100 Angers", `SIRET ${SIRET_GRAPHISTE_MICRO}`, "06 39 98 63 41"],
     },
     client: {
@@ -553,7 +553,7 @@ const EXEMPLES = {
       ["Conditions de règlement", `Paiement à 30 jours, par virement. ${MENTION_RETARD}`],
       ["Coordonnées bancaires", `IBAN ${IBAN} · BIC ${BIC}`],
     ],
-    pied: `Inès Morel · 3 rue des Capucins, 49100 Angers · SIRET ${SIRET_GRAPHISTE_MICRO}`,
+    pied: `Inès Morel EI · 3 rue des Capucins, 49100 Angers · SIRET ${SIRET_GRAPHISTE_MICRO}`,
   },
 
   "modele-recu-paiement-quittance": {
@@ -641,7 +641,7 @@ const EXEMPLES = {
       "Conformément aux articles L441-10 et L441-16 du Code de commerce, ce retard entraîne de plein droit :",
       {
         liste: [
-          "Des <strong>pénalités de retard</strong> calculées au taux de 14,25 % l'an, courant depuis le lendemain de la date d'échéance ;",
+          "Des <strong>pénalités de retard</strong> calculées au taux de 8,25 % l'an, courant depuis le lendemain de la date d'échéance ;",
           "Une <strong>indemnité forfaitaire de recouvrement</strong> de <strong>40 €</strong>, due sans qu'un rappel soit nécessaire.",
         ],
       },
