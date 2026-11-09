@@ -2,6 +2,7 @@
 
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { throwIfMutationErrors } from "@/src/graphql/mutationErrors";
 
 const DOCUMENT_SHARE_FIELDS = gql`
   fragment DocumentShareFields on DocumentShare {
@@ -133,8 +134,13 @@ export function useDocumentShares({ enabled = true, poll = false } = {}) {
     refetchQueries,
     awaitRefetchQueries: true,
   });
-  const run = (mutation, variables) =>
-    mutation({ variables: { workspaceId, ...variables } });
+  // errorPolicy « all » par défaut : un refus de l'API ne rejette pas, il
+  // faut le relancer pour ne pas afficher « Accès créé » à tort
+  const run = async (mutation, variables) => {
+    const result = await mutation({ variables: { workspaceId, ...variables } });
+    throwIfMutationErrors(result);
+    return result;
+  };
 
   return {
     shares: data?.documentShares || [],

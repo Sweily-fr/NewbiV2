@@ -51,6 +51,7 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { Switch } from "@/src/components/ui/switch";
 import { useDocumentShares } from "@/src/hooks/useDocumentShares";
+import { apiRefusalMessage } from "@/src/graphql/mutationErrors";
 import { cn } from "@/src/lib/utils";
 
 const EMPTY_FORM = {
@@ -61,7 +62,19 @@ const EMPTY_FORM = {
   removePassword: false,
   hadPassword: false,
   expiresOn: "",
+  passwordError: null,
+  error: null,
 };
+
+// Même règle que l'API : vide, ou 6 à 72 octets (limite de bcrypt)
+function passwordProblem(password) {
+  if (!password) return null;
+  const bytes = new TextEncoder().encode(password).length;
+  if (bytes < 6) return "Le mot de passe doit contenir au moins 6 caractères.";
+  if (bytes > 72)
+    return "Le mot de passe est trop long (72 caractères maximum).";
+  return null;
+}
 
 const formatDay = (value) =>
   format(new Date(value), "d MMM yyyy", { locale: fr });
@@ -485,8 +498,21 @@ export default function ClientAccessDialog({
       if (successMessage) toast.success(successMessage);
       return true;
     } catch (error) {
-      toast.error(error.message || "Une erreur est survenue");
+      toast.error(apiRefusalMessage(error) || "Une erreur est survenue");
       return false;
+    }
+  };
+
+  // Le formulaire reste ouvert sur un refus : le message s'affiche dedans
+  const saveForm = async (action, successMessage) => {
+    try {
+      await action();
+      toast.success(successMessage);
+      closeForm();
+    } catch (error) {
+      updateForm({
+        error: apiRefusalMessage(error) || "Une erreur est survenue",
+      });
     }
   };
 
@@ -518,10 +544,17 @@ export default function ClientAccessDialog({
       toast.error("Choisissez au moins un dossier");
       return;
     }
+    const passwordError = passwordProblem(
+      form.removePassword ? "" : form.password,
+    );
+    if (passwordError) {
+      updateForm({ passwordError, error: null });
+      return;
+    }
     const expiresAt = form.expiresOn ? endOfDay(form.expiresOn) : null;
 
     if (!form.id) {
-      const saved = await runWithToast(
+      await saveForm(
         () =>
           createShare({
             folderIds,
@@ -531,18 +564,13 @@ export default function ClientAccessDialog({
           }),
         "Accès créé",
       );
-      if (saved) closeForm();
       return;
     }
 
     const input = { name: form.name, folderIds, expiresAt };
     if (form.removePassword) input.password = null;
     else if (form.password) input.password = form.password;
-    const saved = await runWithToast(
-      () => updateShare(form.id, input),
-      "Accès modifié",
-    );
-    if (saved) closeForm();
+    await saveForm(() => updateShare(form.id, input), "Accès modifié");
   };
 
   const confirmAction = async () => {
@@ -641,10 +669,28 @@ export default function ClientAccessDialog({
                       }
                       disabled={form.removePassword}
                       value={form.password}
-                      onChange={(e) => updateForm({ password: e.target.value })}
+                      aria-invalid={Boolean(form.passwordError)}
+                      aria-describedby={
+                        form.passwordError ? "access-password-error" : undefined
+                      }
+                      onChange={(e) =>
+                        updateForm({
+                          password: e.target.value,
+                          passwordError: null,
+                          error: null,
+                        })
+                      }
                     />
+                    {form.passwordError && (
+                      <p
+                        id="access-password-error"
+                        className="text-xs text-destructive"
+                      >
+                        {form.passwordError}
+                      </p>
+                    )}
                     {form.hadPassword && (
-                      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <label className="flex items-center gap-2 pt-2 text-sm text-muted-foreground cursor-pointer">
                         <Switch
                           aria-label="Retirer le mot de passe"
                           checked={form.removePassword}
@@ -652,6 +698,8 @@ export default function ClientAccessDialog({
                             updateForm({
                               removePassword: checked,
                               password: "",
+                              passwordError: null,
+                              error: null,
                             })
                           }
                         />
@@ -670,6 +718,14 @@ export default function ClientAccessDialog({
                   </div>
                 </div>
               </div>
+              {form.error && (
+                <p
+                  role="alert"
+                  className="shrink-0 border-t px-6 py-2 text-sm text-destructive"
+                >
+                  {form.error}
+                </p>
+              )}
               <div className="shrink-0 flex justify-end gap-2 border-t px-6 py-3">
                 <Button type="button" variant="outline" onClick={closeForm}>
                   Annuler
