@@ -5,6 +5,13 @@
 // docProps) et on écrit à la main word/document.xml et word/footer1.xml.
 // Le pied de page est un VRAI pied de page Word, référencé dans sectPr, pour
 // qu'il reste en bas de page comme sur le PDF.
+//
+// Deux familles de documents :
+//   - les documents chiffrés de rendus.json (facture, devis, avoir, reçu...),
+//     au gabarit des factures : titre à droite, adresses, tableau, totaux ;
+//   - les documents rédigés de textes.json (contrat, lettre de mise en
+//     demeure), faits de titres, de paragraphes et de blocs de signature,
+//     avec le même pied de page en bande grise.
 
 const fs = require("fs");
 const path = require("path");
@@ -42,8 +49,26 @@ function run(texte, { gras = false, size = 18, couleur = NOIR } = {}) {
   return `<w:r><w:rPr>${rpr}</w:rPr><w:t xml:space="preserve">${esc(texte)}</w:t></w:r>`;
 }
 
-function para(contenu, { apres = 100, align = null, avant = 0 } = {}) {
-  let ppr = `<w:spacing w:before="${avant}" w:after="${apres}" w:line="240" w:lineRule="auto"/>`;
+// Texte avec passages en **gras** : une suite de runs. Les guillemets
+// français sont liés à leur contenu par une espace insécable, pour qu'un
+// « ne parte pas seul en fin de ligne.
+function runs(texte, opts = {}) {
+  return String(texte)
+    .replace(/« /g, "«\u00a0")
+    .replace(/ »/g, "\u00a0»")
+    .split(/(\*\*[^*]+\*\*)/)
+    .filter((m) => m !== "")
+    .map((m) =>
+      m.startsWith("**") ? run(m.slice(2, -2), { ...opts, gras: true }) : run(m, opts)
+    )
+    .join("");
+}
+
+function para(contenu, { apres = 100, align = null, avant = 0, retrait = null, garderSuivant = false } = {}) {
+  // Ordre imposé dans pPr : keepNext, spacing, ind, jc.
+  let ppr = garderSuivant ? "<w:keepNext/>" : "";
+  ppr += `<w:spacing w:before="${avant}" w:after="${apres}" w:line="240" w:lineRule="auto"/>`;
+  if (retrait) ppr += `<w:ind w:left="${retrait.gauche}" w:hanging="${retrait.suspendu}"/>`;
   if (align) ppr += `<w:jc w:val="${align}"/>`;
   return `<w:p><w:pPr>${ppr}</w:pPr>${contenu || ""}</w:p>`;
 }
@@ -110,6 +135,46 @@ function tableau(lignes, largeurs, { indent = 0 } = {}) {
 // Largeur utile d'une A4 avec des marges de 20 mm : 9752 twips.
 const UTILE = 9752;
 
+// Tableau à en-tête noir, texte blanc, filet clair sous chaque ligne, aucune
+// bordure verticale. `lignes` : tableaux de textes ; `vides` lignes vierges
+// sont ajoutées à la fin, à remplir.
+function tableauNoir(colonnes, lignes, { vides = 0, taille = 18 } = {}) {
+  const largeurs = colonnes.map((c) => c.docx);
+  const total = largeurs.reduce((s, l) => s + l, 0);
+  const alignements = colonnes.map((c) => c.align || null);
+  const rangs = [];
+  rangs.push(
+    colonnes
+      .map((c, i) =>
+        cellule(run(c.libelle, { gras: true, size: 16, couleur: "FFFFFF" }), {
+          largeur: largeurs[i],
+          total,
+          fond: NOIR,
+          align: alignements[i],
+        })
+      )
+      .join("")
+  );
+  const cellulesLigne = (valeurs, { fort = false } = {}) =>
+    valeurs
+      .map((v, i) =>
+        cellule(v === "" ? "" : runs(v, { size: taille, gras: fort }), {
+          largeur: largeurs[i],
+          total,
+          bordureBas: fort ? null : FILET,
+          fond: fort ? GRIS_TTC : null,
+          align: alignements[i],
+        })
+      )
+      .join("");
+  for (const l of lignes) {
+    if (l && l.fort) rangs.push(cellulesLigne(l.valeurs, { fort: true }));
+    else rangs.push(cellulesLigne(l));
+  }
+  for (let i = 0; i < vides; i++) rangs.push(cellulesLigne(colonnes.map(() => "")));
+  return tableau(rangs, largeurs);
+}
+
 function corps(m) {
   const b = [];
 
@@ -125,8 +190,10 @@ function corps(m) {
   }
   b.push(texte("", { apres: 320 }));
 
-  // Émetteur et client côte à côte, sans bordure.
-  const colonne = (lignes) =>
+  // Émetteur et client côte à côte, sans bordure. Certains modèles (facture en
+  // anglais, reçu) les coiffent d'un intitulé discret.
+  const colonne = (lignes, intitule) =>
+    (intitule ? para(run(intitule, { size: 15, couleur: GRIS_TEXTE }), { apres: 60 }) : "") +
     lignes
       .map((l, i) =>
         i === 0
@@ -134,59 +201,21 @@ function corps(m) {
           : para(run(l, { size: 17 }), { apres: 30 })
       )
       .join("");
+  const [intE, intC] = m.intitulesBlocs || [];
   b.push(
     tableau(
       [
-        cellule(colonne(m.emetteur), { largeur: 4876, total: 9752, marges: false }) +
-          cellule(colonne(m.client), { largeur: 4876, total: 9752, marges: false }),
+        cellule(colonne(m.emetteur, intE), { largeur: 4876, total: 9752, marges: false }) +
+          cellule(colonne(m.client, intC), { largeur: 4876, total: 9752, marges: false }),
       ],
       [4876, 4876]
     )
   );
   b.push(texte("", { apres: 260 }));
 
-  // Tableau des lignes : en-tête noir, texte blanc, filet clair sous chaque
-  // ligne, aucune bordure verticale.
-  const largeurs = [4352, 1100, 1500, 1100, 1700];
-  const alignements = [null, "right", "right", "right", "right"];
-  const rangs = [];
-  rangs.push(
-    m.colonnes
-      .map((c, i) =>
-        cellule(run(c, { gras: true, size: 16, couleur: "FFFFFF" }), {
-          largeur: largeurs[i],
-          total: UTILE,
-          fond: NOIR,
-          align: alignements[i],
-        })
-      )
-      .join("")
-  );
-  const cellulesLigne = (valeurs) =>
-    valeurs
-      .map((v, i) =>
-        cellule(v === "" ? "" : run(v, { size: 18 }), {
-          largeur: largeurs[i],
-          total: UTILE,
-          bordureBas: FILET,
-          align: alignements[i],
-        })
-      )
-      .join("");
-  for (const l of m.lignes) {
-    rangs.push(
-      cellulesLigne([
-        l.description,
-        `${l.quantite} ${l.unite}`,
-        EUR.format(l.prixUnitaire),
-        `${l.tva} %`,
-        EUR.format(l.totalHt),
-      ])
-    );
-  }
-  // Trois lignes vides : le fichier est un modèle, on le remplit.
-  for (let i = 0; i < 3; i++) rangs.push(cellulesLigne(["", "", "", "", ""]));
-  b.push(tableau(rangs, largeurs));
+  // Tableau des lignes, puis trois lignes vides : le fichier est un modèle,
+  // on le remplit.
+  b.push(tableauNoir(m.tableau.colonnes, m.lignes.map((l) => l.docx), { vides: 3 }));
   b.push(texte("", { apres: 200 }));
 
   // Totaux, alignés à droite sous le tableau.
@@ -209,16 +238,99 @@ function corps(m) {
   b.push(tableau(rangsTot, largeursTot));
   b.push(texte("", { apres: 300 }));
 
-  if (m.conditions) b.push(texte(m.conditions, { size: 16, apres: 200 }));
+  // Conditions : un texte (modèles historiques) ou une liste de paragraphes.
+  if (Array.isArray(m.conditions)) {
+    for (const c of m.conditions) b.push(para(runs(c, { size: 16 }), { apres: 120 }));
+  } else if (m.conditions) {
+    b.push(texte(m.conditions, { size: 16, apres: 200 }));
+  }
+
+  if (m.signature) {
+    b.push(texte("", { apres: 200 }));
+    for (const l of m.signature) b.push(para(runs(l, { size: 18 }), { apres: 80 }));
+    b.push(texte("", { apres: 900 }));
+  }
 
   return b.join("");
 }
 
+// ------------------------------------------------- documents rédigés ---
+// Blocs de textes.json :
+//   { "t": "titre", "texte" }            grand titre centré
+//   { "t": "sousTitre", "texte" }        ligne grise sous le titre
+//   { "t": "h", "texte" }                intitulé d'article ou de section
+//   { "t": "p", "texte", "align" }       paragraphe, **gras** permis
+//   { "t": "liste", "items": [] }        puces
+//   { "t": "colonnes", "gauche": [], "droite": [], "intitules": [] }
+//   { "t": "tableau", "colonnes": [], "lignes": [] }  en-tête noir
+//   { "t": "note", "titre", "items": [] } encadré gris d'aide à supprimer
+//   { "t": "espace", "h" }                espace vertical (twips)
+function blocTexte(bloc) {
+  switch (bloc.t) {
+    case "titre":
+      return para(run(bloc.texte, { size: 40 }), { align: "center", apres: 80 });
+    case "sousTitre":
+      return para(runs(bloc.texte, { size: 17, couleur: GRIS_TEXTE }), { align: "center", apres: 360 });
+    case "h":
+      return para(run(bloc.texte, { gras: true, size: 20 }), { avant: 220, apres: 100, garderSuivant: true });
+    case "p":
+      return para(runs(bloc.texte, { size: 19 }), { apres: 120, align: bloc.align || "both" });
+    case "liste":
+      return bloc.items
+        .map((it) =>
+          para(run("•", { size: 19 }) + "<w:r><w:tab/></w:r>" + runs(it, { size: 19 }), {
+            apres: 60,
+            retrait: { gauche: 360, suspendu: 240 },
+          })
+        )
+        .join("") + texte("", { apres: 60 });
+    case "colonnes": {
+      const [ig, id] = bloc.intitules || [];
+      const col = (lignes, intitule, align) =>
+        (intitule ? para(run(intitule, { size: 15, couleur: GRIS_TEXTE }), { apres: 60, align }) : "") +
+        lignes.map((l) => para(runs(l, { size: 18 }), { apres: 30, align })).join("");
+      return (
+        tableau(
+          [
+            cellule(col(bloc.gauche, ig, null), { largeur: 4876, total: UTILE, marges: false }) +
+              cellule(col(bloc.droite, id, bloc.droiteAlign || null), {
+                largeur: 4876,
+                total: UTILE,
+                marges: false,
+              }),
+          ],
+          [4876, 4876]
+        ) + texte("", { apres: bloc.apres ?? 240 })
+      );
+    }
+    case "tableau":
+      return tableauNoir(bloc.colonnes, bloc.lignes, { taille: 18 }) + texte("", { apres: 200 });
+    case "note": {
+      const contenu =
+        para(run(bloc.titre, { gras: true, size: 17 }), { apres: 80 }) +
+        bloc.items
+          .map((it, i) =>
+            para(runs(it, { size: 16 }), { apres: i === bloc.items.length - 1 ? 0 : 60 })
+          )
+          .join("");
+      return (
+        texte("", { apres: 200 }) +
+        tableau([cellule(contenu, { largeur: UTILE, total: UTILE, fond: GRIS_TTC })], [UTILE])
+      );
+    }
+    case "espace":
+      return texte("", { apres: bloc.h || 200 });
+    default:
+      throw new Error(`Bloc inconnu : ${bloc.t}`);
+  }
+}
+
 function documentXml(m) {
+  const contenu = m.blocs ? m.blocs.map(blocTexte).join("") : corps(m);
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     `<w:document ${NS}><w:body>` +
-    corps(m) +
+    contenu +
     '<w:sectPr><w:footerReference w:type="default" r:id="rId100"/>' +
     '<w:pgSz w:w="11906" w:h="16838"/>' +
     '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" ' +
@@ -277,14 +389,22 @@ async function ecrireDocx(m, squelette, sortie) {
 module.exports = { ecrireDocx };
 
 if (require.main === module) {
+  // node generate-docx-newbi.cjs [racine] [rendus.json] [slug...]
+  // Sans slug, tous les modèles sont régénérés.
   const racine = process.argv[2] || path.join(__dirname, "..", "..");
   const spec = JSON.parse(
     fs.readFileSync(process.argv[3] || path.join(__dirname, "rendus.json"), "utf8")
   );
+  const textes = JSON.parse(fs.readFileSync(path.join(__dirname, "textes.json"), "utf8"));
+  const filtre = process.argv.slice(4);
+  const garder = (slug) => !filtre.length || filtre.includes(slug);
   const squelette = path.join(__dirname, "squelette.docx");
   (async () => {
-    for (const rendu of spec.rendus) {
-      const m = modeleDocument(rendu);
+    const modeles = [
+      ...spec.rendus.filter((r) => garder(r.slug)).map(modeleDocument),
+      ...textes.textes.filter((t) => garder(t.slug)),
+    ];
+    for (const m of modeles) {
       const f = await ecrireDocx(
         m,
         squelette,

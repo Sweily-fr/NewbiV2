@@ -1,355 +1,517 @@
 {
- "rendus": [
-  {
-   "slug": "modele-facture",
-   "type": "invoice",
-   "data": {
-    "issueDate": "2026-01-15",
-    "executionDate": "2026-01-15",
-    "dueDate": "2026-02-14",
-    "prefix": "F-2026",
-    "number": "001",
-    "status": "PENDING",
-    "companyInfo": {
-     "name": "[Votre entreprise]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[contact@votre-entreprise.fr]",
-     "phone": "[01 23 45 67 89]",
-     "siren": "[9 chiffres]",
-     "legalForm": "[Forme juridique]",
-     "bankDetails": {
-      "bankName": "[Nom de la banque]",
-      "iban": "[FR76 0000 0000 0000 0000 0000 000]",
-      "bic": "[XXXXFRPP]"
-     },
-     "vatNumber": "[FR00 000000000]"
+  "rendus": [
+    {
+      "slug": "modele-facture",
+      "type": "invoice",
+      "data": {
+        "issueDate": "2026-01-15",
+        "executionDate": "2026-01-15",
+        "dueDate": "2026-02-14",
+        "prefix": "F-2026",
+        "number": "001",
+        "status": "PENDING",
+        "companyInfo": {
+          "name": "[Votre entreprise]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siren": "[9 chiffres]",
+          "legalForm": "[Forme juridique]",
+          "bankDetails": {
+            "bankName": "[Nom de la banque]",
+            "iban": "[FR76 0000 0000 0000 0000 0000 000]",
+            "bic": "[XXXXFRPP]"
+          },
+          "vatNumber": "[FR00 000000000]"
+        },
+        "client": {
+          "name": "[Nom ou dénomination du client]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[client@exemple.fr]",
+          "siret": "000 000 000 00000"
+        },
+        "items": [
+          {
+            "description": "[Description de la prestation ou du produit]",
+            "quantity": 1,
+            "unitPrice": 1000,
+            "vatRate": 20,
+            "unit": "unité"
+          },
+          {
+            "description": "[Deuxième ligne]",
+            "quantity": 2,
+            "unitPrice": 250,
+            "vatRate": 20,
+            "unit": "unité"
+          }
+        ],
+        "termsAndConditions": "Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros."
+      }
     },
-    "client": {
-     "name": "[Nom ou dénomination du client]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[client@exemple.fr]",
-     "siret": "000 000 000 00000"
+    {
+      "slug": "modele-devis",
+      "type": "quote",
+      "data": {
+        "issueDate": "2026-01-15",
+        "executionDate": "2026-01-15",
+        "dueDate": "2026-02-14",
+        "prefix": "D-2026",
+        "number": "001",
+        "status": "PENDING",
+        "validUntil": "2026-04-15",
+        "companyInfo": {
+          "name": "[Votre entreprise]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siren": "[9 chiffres]",
+          "legalForm": "[Forme juridique]",
+          "bankDetails": {
+            "bankName": "[Nom de la banque]",
+            "iban": "[FR76 0000 0000 0000 0000 0000 000]",
+            "bic": "[XXXXFRPP]"
+          },
+          "vatNumber": "[FR00 000000000]"
+        },
+        "client": {
+          "name": "[Nom ou dénomination du client]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[client@exemple.fr]",
+          "siret": "000 000 000 00000"
+        },
+        "items": [
+          {
+            "description": "[Description de la prestation ou du produit]",
+            "quantity": 1,
+            "unitPrice": 1000,
+            "vatRate": 20,
+            "unit": "unité"
+          },
+          {
+            "description": "[Deuxième ligne]",
+            "quantity": 2,
+            "unitPrice": 250,
+            "vatRate": 20,
+            "unit": "unité"
+          }
+        ],
+        "termsAndConditions": "Devis valable 3 mois. À retourner daté et signé avec la mention « Bon pour accord ». Acompte de 30 % à la commande, solde à la livraison."
+      }
     },
-    "items": [
-     {
-      "description": "[Description de la prestation ou du produit]",
-      "quantity": 1,
-      "unitPrice": 1000,
-      "vatRate": 20,
-      "unit": "unité"
-     },
-     {
-      "description": "[Deuxième ligne]",
-      "quantity": 2,
-      "unitPrice": 250,
-      "vatRate": 20,
-      "unit": "unité"
-     }
-    ],
-    "termsAndConditions": "Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros."
-   }
-  },
-  {
-   "slug": "modele-devis",
-   "type": "quote",
-   "data": {
-    "issueDate": "2026-01-15",
-    "executionDate": "2026-01-15",
-    "dueDate": "2026-02-14",
-    "prefix": "D-2026",
-    "number": "001",
-    "status": "PENDING",
-    "validUntil": "2026-04-15",
-    "companyInfo": {
-     "name": "[Votre entreprise]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[contact@votre-entreprise.fr]",
-     "phone": "[01 23 45 67 89]",
-     "siren": "[9 chiffres]",
-     "legalForm": "[Forme juridique]",
-     "bankDetails": {
-      "bankName": "[Nom de la banque]",
-      "iban": "[FR76 0000 0000 0000 0000 0000 000]",
-      "bic": "[XXXXFRPP]"
-     },
-     "vatNumber": "[FR00 000000000]"
+    {
+      "slug": "modele-facture-auto-entrepreneur",
+      "type": "invoice",
+      "data": {
+        "issueDate": "2026-01-15",
+        "executionDate": "2026-01-15",
+        "dueDate": "2026-02-14",
+        "prefix": "F-2026",
+        "number": "001",
+        "status": "PENDING",
+        "companyInfo": {
+          "name": "[Votre entreprise]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siren": "[9 chiffres]",
+          "legalForm": "[Forme juridique]",
+          "bankDetails": {
+            "bankName": "[Nom de la banque]",
+            "iban": "[FR76 0000 0000 0000 0000 0000 000]",
+            "bic": "[XXXXFRPP]"
+          },
+          "vatFranchise": true
+        },
+        "client": {
+          "name": "[Nom ou dénomination du client]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[client@exemple.fr]",
+          "siret": "000 000 000 00000"
+        },
+        "items": [
+          {
+            "description": "[Description de la prestation]",
+            "quantity": 1,
+            "unitPrice": 800,
+            "vatRate": 0,
+            "unit": "unité"
+          },
+          {
+            "description": "[Deuxième ligne]",
+            "quantity": 2,
+            "unitPrice": 150,
+            "vatRate": 0,
+            "unit": "unité"
+          }
+        ],
+        "termsAndConditions": "TVA non applicable, article 293 B du Code général des impôts. Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros."
+      }
     },
-    "client": {
-     "name": "[Nom ou dénomination du client]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[client@exemple.fr]",
-     "siret": "000 000 000 00000"
+    {
+      "slug": "modele-facture-acompte",
+      "type": "invoice",
+      "data": {
+        "issueDate": "2026-01-15",
+        "executionDate": "2026-01-15",
+        "dueDate": "2026-02-14",
+        "prefix": "F-2026",
+        "number": "001-A",
+        "status": "PENDING",
+        "invoiceType": "deposit",
+        "isDepositInvoice": true,
+        "companyInfo": {
+          "name": "[Votre entreprise]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siren": "[9 chiffres]",
+          "legalForm": "[Forme juridique]",
+          "bankDetails": {
+            "bankName": "[Nom de la banque]",
+            "iban": "[FR76 0000 0000 0000 0000 0000 000]",
+            "bic": "[XXXXFRPP]"
+          },
+          "vatNumber": "[FR00 000000000]"
+        },
+        "client": {
+          "name": "[Nom ou dénomination du client]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[client@exemple.fr]",
+          "siret": "000 000 000 00000"
+        },
+        "items": [
+          {
+            "description": "Acompte de 30 % sur le devis [D-2026-001]",
+            "quantity": 1,
+            "unitPrice": 1500,
+            "vatRate": 20,
+            "unit": "unité"
+          }
+        ],
+        "termsAndConditions": "Facture d'acompte se rapportant au devis [D-2026-001], d'un montant total de 5 000,00 euros HT. La facture de solde déduira cet acompte. Paiement à réception."
+      }
     },
-    "items": [
-     {
-      "description": "[Description de la prestation ou du produit]",
-      "quantity": 1,
-      "unitPrice": 1000,
-      "vatRate": 20,
-      "unit": "unité"
-     },
-     {
-      "description": "[Deuxième ligne]",
-      "quantity": 2,
-      "unitPrice": 250,
-      "vatRate": 20,
-      "unit": "unité"
-     }
-    ],
-    "termsAndConditions": "Devis valable 3 mois. À retourner daté et signé avec la mention « Bon pour accord ». Acompte de 30 % à la commande, solde à la livraison."
-   }
-  },
-  {
-   "slug": "modele-facture-auto-entrepreneur",
-   "type": "invoice",
-   "data": {
-    "issueDate": "2026-01-15",
-    "executionDate": "2026-01-15",
-    "dueDate": "2026-02-14",
-    "prefix": "F-2026",
-    "number": "001",
-    "status": "PENDING",
-    "companyInfo": {
-     "name": "[Votre entreprise]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[contact@votre-entreprise.fr]",
-     "phone": "[01 23 45 67 89]",
-     "siren": "[9 chiffres]",
-     "legalForm": "[Forme juridique]",
-     "bankDetails": {
-      "bankName": "[Nom de la banque]",
-      "iban": "[FR76 0000 0000 0000 0000 0000 000]",
-      "bic": "[XXXXFRPP]"
-     },
-     "vatFranchise": true
+    {
+      "slug": "modele-facture-sans-tva",
+      "type": "invoice",
+      "data": {
+        "issueDate": "2026-01-15",
+        "executionDate": "2026-01-15",
+        "dueDate": "2026-02-14",
+        "prefix": "F-2026",
+        "number": "001",
+        "status": "PENDING",
+        "companyInfo": {
+          "name": "[Votre entreprise]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siren": "[9 chiffres]",
+          "legalForm": "[Forme juridique]",
+          "bankDetails": {
+            "bankName": "[Nom de la banque]",
+            "iban": "[FR76 0000 0000 0000 0000 0000 000]",
+            "bic": "[XXXXFRPP]"
+          },
+          "vatFranchise": true
+        },
+        "client": {
+          "name": "[Nom ou dénomination du client]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[client@exemple.fr]",
+          "siret": "000 000 000 00000"
+        },
+        "items": [
+          {
+            "description": "[Description de la prestation ou du produit]",
+            "quantity": 1,
+            "unitPrice": 1200,
+            "vatRate": 0,
+            "unit": "unité"
+          },
+          {
+            "description": "[Deuxième ligne]",
+            "quantity": 3,
+            "unitPrice": 100,
+            "vatRate": 0,
+            "unit": "unité"
+          }
+        ],
+        "termsAndConditions": "TVA non applicable, article 293 B du Code général des impôts. Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros."
+      }
     },
-    "client": {
-     "name": "[Nom ou dénomination du client]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[client@exemple.fr]",
-     "siret": "000 000 000 00000"
+    {
+      "slug": "modele-bon-de-commande",
+      "type": "purchaseOrder",
+      "data": {
+        "issueDate": "2026-01-15",
+        "executionDate": "2026-01-15",
+        "dueDate": "2026-02-14",
+        "prefix": "BC-2026",
+        "number": "001",
+        "status": "PENDING",
+        "validUntil": "2026-04-15",
+        "companyInfo": {
+          "name": "[Votre entreprise]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siren": "[9 chiffres]",
+          "legalForm": "[Forme juridique]",
+          "bankDetails": {
+            "bankName": "[Nom de la banque]",
+            "iban": "[FR76 0000 0000 0000 0000 0000 000]",
+            "bic": "[XXXXFRPP]"
+          },
+          "vatNumber": "[FR00 000000000]"
+        },
+        "client": {
+          "name": "[Nom ou dénomination du client]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[client@exemple.fr]",
+          "siret": "000 000 000 00000"
+        },
+        "items": [
+          {
+            "description": "[Désignation de l'article ou de la prestation commandée]",
+            "quantity": 1,
+            "unitPrice": 1000,
+            "vatRate": 20,
+            "unit": "unité"
+          },
+          {
+            "description": "[Deuxième ligne]",
+            "quantity": 2,
+            "unitPrice": 250,
+            "vatRate": 20,
+            "unit": "unité"
+          }
+        ],
+        "termsAndConditions": "Bon de commande à retourner daté et signé avec la mention « Bon pour accord ». Livraison sous [délai] à compter de la réception du bon signé. Toute modification de la commande fera l'objet d'un nouveau bon de commande."
+      }
     },
-    "items": [
-     {
-      "description": "[Description de la prestation]",
-      "quantity": 1,
-      "unitPrice": 800,
-      "vatRate": 0,
-      "unit": "unité"
-     },
-     {
-      "description": "[Deuxième ligne]",
-      "quantity": 2,
-      "unitPrice": 150,
-      "vatRate": 0,
-      "unit": "unité"
-     }
-    ],
-    "termsAndConditions": "TVA non applicable, article 293 B du Code général des impôts. Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros."
-   }
-  },
-  {
-   "slug": "modele-facture-acompte",
-   "type": "invoice",
-   "data": {
-    "issueDate": "2026-01-15",
-    "executionDate": "2026-01-15",
-    "dueDate": "2026-02-14",
-    "prefix": "F-2026",
-    "number": "001-A",
-    "status": "PENDING",
-    "invoiceType": "deposit",
-    "isDepositInvoice": true,
-    "companyInfo": {
-     "name": "[Votre entreprise]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[contact@votre-entreprise.fr]",
-     "phone": "[01 23 45 67 89]",
-     "siren": "[9 chiffres]",
-     "legalForm": "[Forme juridique]",
-     "bankDetails": {
-      "bankName": "[Nom de la banque]",
-      "iban": "[FR76 0000 0000 0000 0000 0000 000]",
-      "bic": "[XXXXFRPP]"
-     },
-     "vatNumber": "[FR00 000000000]"
+    {
+      "slug": "modele-avoir",
+      "type": "creditNote",
+      "data": {
+        "issueDate": "2026-01-20",
+        "prefix": "AV-2026",
+        "number": "001",
+        "originalInvoice": {
+          "number": "[F-2026-001]",
+          "issueDate": "2026-01-15"
+        },
+        "reason": "[Erreur, remise, retour ou annulation partielle]",
+        "companyInfo": {
+          "name": "[Raison sociale, ou nom suivi de « EI »]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siret": "[14 chiffres]",
+          "legalForm": "[Forme juridique]",
+          "vatNumber": "[FR00 000000000]"
+        },
+        "client": {
+          "name": "[Nom ou dénomination du client]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[client@exemple.fr]",
+          "siret": "[14 chiffres]"
+        },
+        "items": [
+          {
+            "description": "[Ligne créditée, libellé repris de la facture d'origine]",
+            "quantity": 1,
+            "unitPrice": 600,
+            "vatRate": 20,
+            "unit": "unité"
+          }
+        ],
+        "conditions": [
+          "**Facture d'origine :** avoir se rapportant à la facture n° [F-2026-001] du [15/01/2026], qui reste inchangée. Les montants crédités sont présentés en négatif.",
+          "**TVA :** le taux appliqué est celui de la facture d'origine, même si le taux légal a changé depuis. [En franchise en base, supprimez la TVA et indiquez « TVA non applicable, art. 293 B du CGI », comme sur la facture d'origine.]",
+          "**Modalités de règlement du crédit :** [montant déduit de votre prochaine facture / remboursé par virement sous 15 jours / conservé en solde créditeur sur votre compte client]."
+        ]
+      }
     },
-    "client": {
-     "name": "[Nom ou dénomination du client]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[client@exemple.fr]",
-     "siret": "000 000 000 00000"
+    {
+      "slug": "modele-facture-anglais",
+      "type": "invoiceEn",
+      "data": {
+        "issueDate": "2026-10-19",
+        "executionDate": "2026-10-16",
+        "dueDate": "2026-11-18",
+        "prefix": "F-2026",
+        "number": "001",
+        "companyInfo": {
+          "name": "[Your company / Votre entreprise]",
+          "address": {
+            "street": "[Street / Numéro et rue]",
+            "postalCode": "[Postcode / Code postal]",
+            "city": "[City / Ville]",
+            "country": "France"
+          },
+          "email": "[contact@your-company.fr]",
+          "siren": "[9 digits / 9 chiffres]",
+          "legalForm": "[Legal form / Forme juridique]",
+          "vatNumber": "[FR00 000000000]"
+        },
+        "client": {
+          "name": "[Client company name / Nom du client]",
+          "address": {
+            "street": "[Street]",
+            "postalCode": "[Postcode]",
+            "city": "[City]",
+            "country": "[Country, e.g. United Kingdom]"
+          },
+          "email": "[client@example.com]",
+          "registration": "[Client company number]",
+          "vatNumber": "[Client VAT number, if any]"
+        },
+        "items": [
+          {
+            "description": "[Description of services / Description de la prestation]",
+            "quantity": 15,
+            "unitPrice": 500,
+            "vatRate": 0,
+            "unit": "days"
+          },
+          {
+            "description": "[Second line / Deuxième ligne]",
+            "quantity": 1,
+            "unitPrice": 500,
+            "vatRate": 0,
+            "unit": "unit"
+          }
+        ],
+        "conditions": [
+          "**VAT / TVA :** VAT not applicable - export of services, article 259-1 of the French General Tax Code / TVA non applicable, art. 259-1 du CGI.",
+          "[Keep the VAT mention that matches your client / Conservez la mention adaptée à votre client : professionnel établi dans l'Union européenne, « Autoliquidation / Reverse charge » avec son numéro de TVA intracommunautaire ; client en France, TVA française au taux applicable ; franchise en base, « TVA non applicable, art. 293 B du CGI ».]",
+          "**Payment terms / Conditions de paiement :** payment due within 30 days of the issue date (Net 30), no discount for early payment / paiement à 30 jours à compter de la date d'émission, pas d'escompte pour paiement anticipé.",
+          "**Late payment / Retard de paiement :** late payment penalties at three times the French legal interest rate and a fixed recovery compensation of EUR 40 (article L441-10 of the French Commercial Code) / pénalités de retard au taux de trois fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros.",
+          "**Bank details / Coordonnées bancaires :** [Bank name / Banque] • IBAN [FR76 0000 0000 0000 0000 0000 000] • BIC [XXXXFRPP]"
+        ]
+      }
     },
-    "items": [
-     {
-      "description": "Acompte de 30 % sur le devis [D-2026-001]",
-      "quantity": 1,
-      "unitPrice": 1500,
-      "vatRate": 20,
-      "unit": "unité"
-     }
-    ],
-    "termsAndConditions": "Facture d'acompte se rapportant au devis [D-2026-001], d'un montant total de 5 000,00 euros HT. La facture de solde déduira cet acompte. Paiement à réception."
-   }
-  },
-  {
-   "slug": "modele-facture-sans-tva",
-   "type": "invoice",
-   "data": {
-    "issueDate": "2026-01-15",
-    "executionDate": "2026-01-15",
-    "dueDate": "2026-02-14",
-    "prefix": "F-2026",
-    "number": "001",
-    "status": "PENDING",
-    "companyInfo": {
-     "name": "[Votre entreprise]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[contact@votre-entreprise.fr]",
-     "phone": "[01 23 45 67 89]",
-     "siren": "[9 chiffres]",
-     "legalForm": "[Forme juridique]",
-     "bankDetails": {
-      "bankName": "[Nom de la banque]",
-      "iban": "[FR76 0000 0000 0000 0000 0000 000]",
-      "bic": "[XXXXFRPP]"
-     },
-     "vatFranchise": true
-    },
-    "client": {
-     "name": "[Nom ou dénomination du client]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[client@exemple.fr]",
-     "siret": "000 000 000 00000"
-    },
-    "items": [
-     {
-      "description": "[Description de la prestation ou du produit]",
-      "quantity": 1,
-      "unitPrice": 1200,
-      "vatRate": 0,
-      "unit": "unité"
-     },
-     {
-      "description": "[Deuxième ligne]",
-      "quantity": 3,
-      "unitPrice": 100,
-      "vatRate": 0,
-      "unit": "unité"
-     }
-    ],
-    "termsAndConditions": "TVA non applicable, article 293 B du Code général des impôts. Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros."
-   }
-  },
-  {
-   "slug": "modele-bon-de-commande",
-   "type": "purchaseOrder",
-   "data": {
-    "issueDate": "2026-01-15",
-    "executionDate": "2026-01-15",
-    "dueDate": "2026-02-14",
-    "prefix": "BC-2026",
-    "number": "001",
-    "status": "PENDING",
-    "validUntil": "2026-04-15",
-    "companyInfo": {
-     "name": "[Votre entreprise]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[contact@votre-entreprise.fr]",
-     "phone": "[01 23 45 67 89]",
-     "siren": "[9 chiffres]",
-     "legalForm": "[Forme juridique]",
-     "bankDetails": {
-      "bankName": "[Nom de la banque]",
-      "iban": "[FR76 0000 0000 0000 0000 0000 000]",
-      "bic": "[XXXXFRPP]"
-     },
-     "vatNumber": "[FR00 000000000]"
-    },
-    "client": {
-     "name": "[Nom ou dénomination du client]",
-     "address": {
-      "street": "[Numéro et rue]",
-      "postalCode": "[Code postal]",
-      "city": "[Ville]",
-      "country": "France"
-     },
-     "email": "[client@exemple.fr]",
-     "siret": "000 000 000 00000"
-    },
-    "items": [
-     {
-      "description": "[Désignation de l'article ou de la prestation commandée]",
-      "quantity": 1,
-      "unitPrice": 1000,
-      "vatRate": 20,
-      "unit": "unité"
-     },
-     {
-      "description": "[Deuxième ligne]",
-      "quantity": 2,
-      "unitPrice": 250,
-      "vatRate": 20,
-      "unit": "unité"
-     }
-    ],
-    "termsAndConditions": "Bon de commande à retourner daté et signé avec la mention « Bon pour accord ». Livraison sous [délai] à compter de la réception du bon signé. Toute modification de la commande fera l'objet d'un nouveau bon de commande."
-   }
-  }
- ]
+    {
+      "slug": "modele-recu-paiement",
+      "type": "receipt",
+      "data": {
+        "issueDate": "2026-11-12",
+        "prefix": "R-2026",
+        "number": "001",
+        "companyInfo": {
+          "name": "[Raison sociale, ou nom suivi de « EI »]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[contact@votre-entreprise.fr]",
+          "phone": "[01 23 45 67 89]",
+          "siret": "[14 chiffres]",
+          "legalForm": "[Forme juridique]"
+        },
+        "client": {
+          "name": "[Nom du payeur]",
+          "address": {
+            "street": "[Numéro et rue]",
+            "postalCode": "[Code postal]",
+            "city": "[Ville]",
+            "country": "France"
+          },
+          "email": "[payeur@exemple.fr]"
+        },
+        "payments": [
+          {
+            "reason": "[Paiement de la facture]",
+            "date": "2026-11-12",
+            "method": "[Espèces]",
+            "reference": "[F-2026-0342]",
+            "amount": 450
+          }
+        ],
+        "conditions": [
+          "Je soussigné(e) [nom du professionnel ou de l'entreprise], reconnais avoir reçu de [nom du payeur] la somme de [450,00] EUR ([quatre cent cinquante] euros), le [12/11/2026], par [mode de règlement], en paiement de [la facture n° F-2026-0342].",
+          "Ce reçu atteste l'encaissement. Il ne remplace pas la facture, qui reste obligatoire pour toute vente ou prestation réalisée dans le cadre d'une activité professionnelle.",
+          "[Paiement en espèces : interdit au-delà de 1 000 € lorsque le payeur a son domicile fiscal en France ou agit pour les besoins d'une activité professionnelle (article L112-6 du Code monétaire et financier). Supprimez cette ligne avant de remettre le reçu.]"
+        ],
+        "signature": [
+          "Fait à [ville], le [12/11/2026]",
+          "**Signature de l'émetteur :**"
+        ]
+      }
+    }
+  ]
 }

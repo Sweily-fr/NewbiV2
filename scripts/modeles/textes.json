@@ -1,0 +1,358 @@
+{
+  "textes": [
+    {
+      "slug": "modele-contrat-prestation-de-services",
+      "pied": [
+        "[Raison sociale, ou nom suivi de « EI »] • [Forme juridique] • Siège : [adresse] • SIREN : [9 chiffres]",
+        "Contrat de prestation de services n° [CP-2026-001] • Paraphes des Parties :"
+      ],
+      "blocs": [
+        {
+          "t": "titre",
+          "texte": "Contrat de prestation de services"
+        },
+        {
+          "t": "sousTitre",
+          "texte": "N° [CP-2026-001] • Conclu le [date]"
+        },
+        {
+          "t": "h",
+          "texte": "Entre les soussignés"
+        },
+        {
+          "t": "p",
+          "texte": "**Le Prestataire :** [raison sociale, ou nom et prénom suivis de « EI »], [forme juridique] au capital de [montant] €, dont le siège est situé [adresse], immatriculé(e) sous le numéro SIREN [9 chiffres] [au RCS de [ville] / au Registre national des entreprises], numéro de TVA intracommunautaire [FR00 000000000], représenté(e) par [nom, prénom] en qualité de [fonction], ci-après « le Prestataire » ;"
+        },
+        {
+          "t": "p",
+          "texte": "**Le Client :** [raison sociale], [forme juridique] au capital de [montant] €, dont le siège est situé [adresse], immatriculée sous le numéro SIREN [9 chiffres], représentée par [nom, prénom] en qualité de [fonction], ci-après « le Client »."
+        },
+        {
+          "t": "p",
+          "texte": "Ensemble ci-après « les Parties »."
+        },
+        {
+          "t": "h",
+          "texte": "Préambule"
+        },
+        {
+          "t": "p",
+          "texte": "Le Client souhaite confier au Prestataire [contexte de la mission, par exemple : l'audit de son système d'information et des préconisations d'évolution]. Le Prestataire dispose des compétences nécessaires et a remis une proposition (devis n° [D-2026-001] du [date]) acceptée par le Client. Les Parties ont donc convenu de ce qui suit."
+        },
+        {
+          "t": "h",
+          "texte": "Article 1. Objet"
+        },
+        {
+          "t": "p",
+          "texte": "Le présent contrat définit les conditions dans lesquelles le Prestataire réalise pour le Client la prestation suivante : [description précise de la prestation]."
+        },
+        {
+          "t": "liste",
+          "items": [
+            "**Livrables :** [liste des livrables, par exemple : rapport d'audit, plan de préconisations, support de restitution].",
+            "**Révisions incluses :** [nombre] allers-retours de correction par livrable.",
+            "**Exclusions :** [ce qui ne fait pas partie de la mission, par exemple : la mise en œuvre des préconisations]. Toute demande hors de ce périmètre fait l'objet d'un devis complémentaire."
+          ]
+        },
+        {
+          "t": "h",
+          "texte": "Article 2. Durée et délais"
+        },
+        {
+          "t": "p",
+          "texte": "La prestation débute le [date de début] et prend fin le [date de fin ou de livraison], selon le calendrier suivant : [étapes et dates]. [Pour une mission facturée au temps passé : la mission représente [20] jours d'intervention répartis sur [trois] mois.]"
+        },
+        {
+          "t": "p",
+          "texte": "Les délais sont reportés d'autant si le Client tarde à fournir les informations, accès ou validations nécessaires. Tout autre report fait l'objet d'un accord écrit des Parties."
+        },
+        {
+          "t": "h",
+          "texte": "Article 3. Obligations des Parties"
+        },
+        {
+          "t": "p",
+          "texte": "Le Prestataire s'engage à exécuter la prestation avec soin, conformément aux règles de l'art, dans le cadre d'une obligation de moyens. Il organise librement son travail et intervient en toute indépendance, sans lien de subordination avec le Client."
+        },
+        {
+          "t": "p",
+          "texte": "Le Client s'engage à collaborer activement : fournir en temps utile les informations, documents et accès nécessaires, désigner un interlocuteur disposant d'un pouvoir de décision ([nom, fonction]) et valider les livrables dans un délai de [8] jours à compter de leur remise. À défaut de réserve écrite dans ce délai, le livrable est réputé accepté."
+        },
+        {
+          "t": "h",
+          "texte": "Article 4. Prix"
+        },
+        {
+          "t": "p",
+          "texte": "En contrepartie de la prestation, le Client verse au Prestataire [un prix forfaitaire de [montant] € HT / un tarif de [650] € HT par jour d'intervention, pour un volume estimé à [20] jours, soit [13 000] € HT]. Ce prix est majoré de la TVA au taux de [20] %. [En franchise en base de TVA, remplacez cette phrase par : « TVA non applicable, art. 293 B du CGI ».]"
+        },
+        {
+          "t": "p",
+          "texte": "Les frais de déplacement [sont inclus dans le prix / sont refacturés au réel sur justificatifs, après accord préalable du Client]."
+        },
+        {
+          "t": "h",
+          "texte": "Article 5. Facturation et modalités de paiement"
+        },
+        {
+          "t": "liste",
+          "items": [
+            "**Acompte :** [20] % du prix, soit [2 600] € HT, facturé à la signature du présent contrat et déduit des factures suivantes.",
+            "**Facturation :** [mensuelle, sur relevé des jours effectivement réalisés / à la livraison / selon l'échéancier suivant : [échéances]].",
+            "**Délai de paiement :** [30] jours à compter de la date d'émission de chaque facture, par virement bancaire. Aucun escompte n'est accordé en cas de paiement anticipé."
+          ]
+        },
+        {
+          "t": "p",
+          "texte": "Conformément à l'article L441-10 du Code de commerce, tout retard de paiement entraîne de plein droit, dès le lendemain de la date d'échéance et sans rappel préalable, des pénalités de retard au taux annuel de [taux] %, ce taux ne pouvant être inférieur à trois fois le taux d'intérêt légal, ainsi qu'une indemnité forfaitaire pour frais de recouvrement de 40 € (article D441-5 du même code). Une indemnité complémentaire peut être demandée sur justificatifs lorsque les frais de recouvrement exposés sont supérieurs à ce montant."
+        },
+        {
+          "t": "p",
+          "texte": "En cas de défaut de paiement persistant après une mise en demeure restée sans effet pendant [8] jours, le Prestataire peut suspendre l'exécution de la prestation jusqu'au complet paiement, sans que cette suspension puisse lui être reprochée."
+        },
+        {
+          "t": "h",
+          "texte": "Article 6. Propriété intellectuelle"
+        },
+        {
+          "t": "p",
+          "texte": "Le Prestataire cède au Client, à titre [exclusif / non exclusif], les droits patrimoniaux d'auteur sur les livrables, à savoir les droits de reproduction, de représentation, d'adaptation et de traduction, pour la destination suivante : [par exemple : usage interne et communication de l'entreprise], sur [tous supports / les supports suivants : [liste]], pour [le monde entier / [territoire]] et pour une durée de [durée]."
+        },
+        {
+          "t": "p",
+          "texte": "**La cession des droits de propriété intellectuelle sur les livrables n'est effective qu'à compter du paiement intégral du prix convenu** [ou, pour une facturation par période : au paiement de chaque facture, pour les livrables qu'elle couvre]. Jusqu'à cette date, le Prestataire conserve l'ensemble de ses droits sur les livrables produits."
+        },
+        {
+          "t": "p",
+          "texte": "Le Prestataire conserve la propriété de ses savoir-faire, méthodes, outils et éléments préexistants, qu'il peut réutiliser librement. Sauf refus écrit du Client, il peut citer la mission à titre de référence commerciale."
+        },
+        {
+          "t": "h",
+          "texte": "Article 7. Confidentialité"
+        },
+        {
+          "t": "p",
+          "texte": "Chaque Partie garde confidentielles les informations de l'autre Partie dont elle a connaissance à l'occasion du contrat, pendant toute sa durée et [deux] ans après son terme. [Si la mission implique le traitement de données personnelles, les obligations de chaque Partie au titre du RGPD sont précisées dans une annexe.]"
+        },
+        {
+          "t": "h",
+          "texte": "Article 8. Responsabilité et force majeure"
+        },
+        {
+          "t": "p",
+          "texte": "La responsabilité du Prestataire ne peut être engagée qu'en cas de faute prouvée. Sauf faute lourde ou dolosive, elle est limitée, tous préjudices confondus, au montant total HT perçu au titre du présent contrat, et exclut les dommages indirects (perte de chiffre d'affaires, de clientèle ou de données)."
+        },
+        {
+          "t": "p",
+          "texte": "Aucune Partie n'est responsable d'un manquement causé par un cas de force majeure au sens de l'article 1218 du Code civil. Si l'empêchement dure plus de [30] jours, chaque Partie peut résilier le contrat par lettre recommandée avec accusé de réception, les prestations réalisées restant dues."
+        },
+        {
+          "t": "h",
+          "texte": "Article 9. Résiliation"
+        },
+        {
+          "t": "liste",
+          "items": [
+            "**Pour convenance :** chaque Partie peut mettre fin au contrat à tout moment, par lettre recommandée avec accusé de réception, moyennant un préavis de [15] jours. Aucune indemnité n'est due si le préavis est respecté [sauf engagement de durée minimale : indemnité de rupture égale à [modalité de calcul]].",
+            "**Pour manquement :** en cas de manquement grave d'une Partie à ses obligations, non réparé dans les [15] jours suivant une mise en demeure par lettre recommandée avec accusé de réception, l'autre Partie peut résilier le contrat de plein droit, sans préjudice de dommages et intérêts (articles 1224 et 1225 du Code civil).",
+            "**Conséquences :** quelle que soit la cause de la rupture, le Client règle les prestations réalisées jusqu'à la date effective de fin du contrat. L'acompte s'impute sur ces sommes et le solde éventuel est remboursé."
+          ]
+        },
+        {
+          "t": "h",
+          "texte": "Article 10. Documents contractuels"
+        },
+        {
+          "t": "p",
+          "texte": "Le contrat est formé, par ordre de priorité décroissant, du présent document, de ses annexes, du devis n° [D-2026-001] et des conditions générales de vente du Prestataire. En cas de contradiction, le document de rang supérieur prévaut. Toute modification du contrat fait l'objet d'un avenant écrit signé des deux Parties."
+        },
+        {
+          "t": "h",
+          "texte": "Article 11. Droit applicable et litiges"
+        },
+        {
+          "t": "p",
+          "texte": "Le présent contrat est soumis au droit français. En cas de différend, les Parties recherchent d'abord une solution amiable. À défaut d'accord dans un délai de [30] jours, le litige est porté devant [le tribunal compétent / le tribunal de commerce de [ville], si les deux Parties sont commerçantes]."
+        },
+        {
+          "t": "espace",
+          "h": 200
+        },
+        {
+          "t": "p",
+          "texte": "Fait à [ville], le [date], en deux exemplaires originaux.",
+          "align": "left"
+        },
+        {
+          "t": "colonnes",
+          "intitules": ["Le Prestataire", "Le Client"],
+          "gauche": ["[Nom, prénom, qualité]", "Signature :"],
+          "droite": ["[Nom, prénom, qualité]", "Signature :"],
+          "apres": 1200
+        },
+        {
+          "t": "note",
+          "titre": "Notes à supprimer avant signature",
+          "items": [
+            "Remplacez chaque passage entre crochets et supprimez les options inutiles. Annexez si besoin le cahier des charges et le calendrier détaillé.",
+            "Entrepreneur individuel : faites suivre votre nom de « EI » ou « entrepreneur individuel ». Une micro-entreprise n'a ni capital ni inscription au RCS : indiquez seulement votre SIREN.",
+            "Pénalités de retard : entre professionnels, au moins trois fois le taux d'intérêt légal, soit 8,25 % par an au second semestre 2026 (taux légal de 2,75 %). L'indemnité forfaitaire de recouvrement est de 40 €.",
+            "Délai de paiement : 60 jours au plus à compter de la date d'émission de la facture, ou 45 jours fin de mois si le contrat le prévoit (article L441-10 du Code de commerce).",
+            "Propriété intellectuelle : chaque droit cédé doit être mentionné distinctement, avec son étendue, sa destination, son lieu et sa durée (article L131-3 du Code de la propriété intellectuelle).",
+            "Ce modèle couvre une mission courante. Pour un contrat à fort enjeu, faites-le relire par un avocat."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "modele-mise-en-demeure-facture-impayee",
+      "pied": [
+        "[Raison sociale, ou nom suivi de « EI »] • [Forme juridique] • [Adresse] • SIRET : [14 chiffres]"
+      ],
+      "blocs": [
+        {
+          "t": "colonnes",
+          "intitules": ["Expéditeur", "Destinataire"],
+          "gauche": [
+            "**[Raison sociale, ou nom suivi de « EI »]**",
+            "[Adresse complète]",
+            "[Code postal] [Ville]",
+            "SIRET : [14 chiffres]",
+            "[Téléphone] • [E-mail]"
+          ],
+          "droite": [
+            "**[Nom ou raison sociale du client]**",
+            "[À l'attention de : nom, fonction]",
+            "[Adresse complète]",
+            "[Code postal] [Ville]"
+          ],
+          "apres": 360
+        },
+        {
+          "t": "p",
+          "texte": "[Ville], le [date du jour]",
+          "align": "right"
+        },
+        {
+          "t": "p",
+          "texte": "**Lettre recommandée avec accusé de réception n° [numéro]**",
+          "align": "left"
+        },
+        {
+          "t": "p",
+          "texte": "**Objet : Mise en demeure de payer, facture n° [FA-2026-XXX]**",
+          "align": "left"
+        },
+        {
+          "t": "espace",
+          "h": 120
+        },
+        {
+          "t": "p",
+          "texte": "Madame, Monsieur,",
+          "align": "left"
+        },
+        {
+          "t": "p",
+          "texte": "Malgré nos relances des [date relance 1] et [date relance 2], nous constatons que la facture n° **[FA-2026-XXX]**, d'un montant de **[montant] EUR TTC**, émise le **[date d'émission]** et échue depuis le **[date d'échéance]**, demeure impayée à ce jour, soit un retard de **[nombre] jours**."
+        },
+        {
+          "t": "p",
+          "texte": "Par la présente, nous vous **mettons en demeure** de procéder au règlement intégral des sommes détaillées ci-dessous dans un délai de **8 jours** à compter de la réception de ce courrier."
+        },
+        {
+          "t": "tableau",
+          "colonnes": [
+            {
+              "libelle": "Élément",
+              "docx": 2900
+            },
+            {
+              "libelle": "Détail",
+              "docx": 5052
+            },
+            {
+              "libelle": "Montant",
+              "docx": 1800,
+              "align": "right"
+            }
+          ],
+          "lignes": [
+            [
+              "Facture n° [FA-2026-XXX]",
+              "Montant TTC restant dû",
+              "[3 200,00 €]"
+            ],
+            [
+              "Pénalités de retard",
+              "[8,25] % l'an sur [30] jours, depuis le lendemain de l'échéance",
+              "[21,70 €]"
+            ],
+            [
+              "Indemnité forfaitaire",
+              "Frais de recouvrement, par facture payée en retard",
+              "40,00 €"
+            ],
+            {
+              "fort": true,
+              "valeurs": [
+                "Total réclamé",
+                "Arrêté au [date du jour]",
+                "[3 261,70 €]"
+              ]
+            }
+          ]
+        },
+        {
+          "t": "p",
+          "texte": "Conformément à l'article L441-10 du Code de commerce, ce retard entraîne de plein droit :"
+        },
+        {
+          "t": "liste",
+          "items": [
+            "des **pénalités de retard** calculées au taux de [taux] % l'an, courant depuis le lendemain de la date d'échéance jusqu'au paiement complet ;",
+            "une **indemnité forfaitaire pour frais de recouvrement** de **40 €** (article D441-5 du Code de commerce), due sans qu'un rappel soit nécessaire."
+          ]
+        },
+        {
+          "t": "p",
+          "texte": "À défaut de règlement dans le délai imparti, nous nous verrons contraints d'engager toute action utile au recouvrement de cette créance, y compris une procédure d'injonction de payer, sans autre préavis, et aux frais de votre société."
+        },
+        {
+          "t": "p",
+          "texte": "Nous restons naturellement à votre disposition pour tout échange permettant de régulariser cette situation avant l'expiration de ce délai. Le règlement peut être effectué par virement sur le compte IBAN [FR76 0000 0000 0000 0000 0000 000], BIC [XXXXFRPP], en rappelant la référence de la facture."
+        },
+        {
+          "t": "p",
+          "texte": "Veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées."
+        },
+        {
+          "t": "espace",
+          "h": 200
+        },
+        {
+          "t": "colonnes",
+          "gauche": [""],
+          "droite": ["[Nom, prénom]", "[Fonction]", "Signature :"],
+          "apres": 900
+        },
+        {
+          "t": "p",
+          "texte": "Pièce jointe : copie de la facture n° [FA-2026-XXX].",
+          "align": "left"
+        },
+        {
+          "t": "note",
+          "titre": "Notes à supprimer avant envoi",
+          "items": [
+            "Envoyez ce courrier en lettre recommandée avec accusé de réception (ou en lettre recommandée électronique) et conservez le récépissé : c'est votre preuve.",
+            "Pénalités : indiquez le taux prévu par vos conditions générales ou vos factures, au moins trois fois le taux d'intérêt légal entre professionnels, soit 8,25 % l'an au second semestre 2026. Calcul : montant TTC x taux x jours de retard / 365, par exemple 3 200 € x 8,25 % x 30 / 365 = 21,70 €.",
+            "Plusieurs factures impayées : ajoutez une ligne par facture dans le tableau. L'indemnité de 40 € est due pour chacune.",
+            "Débiteur particulier : retirez l'indemnité forfaitaire de 40 € et les références au Code de commerce, qui ne valent qu'entre professionnels. Ne réclamez des pénalités que si vos conditions générales ou votre devis les prévoyaient ; à défaut, seuls les intérêts au taux légal peuvent être demandés."
+          ]
+        }
+      ]
+    }
+  ]
+}

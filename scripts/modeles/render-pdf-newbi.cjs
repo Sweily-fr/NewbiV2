@@ -19,7 +19,10 @@ const SPEC = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
-  for (const m of SPEC.rendus) {
+  // La page /pdf-generator/<type>/preview n'existe que pour les factures et
+  // les devis : le bon de commande, l'avoir, la facture en anglais et le reçu
+  // n'ont pas de PDF (voir README).
+  for (const m of SPEC.rendus.filter((r) => ["invoice", "quote"].includes(r.type))) {
     const page = await browser.newPage();
     await page.evaluateOnNewDocument((d) => {
       window.__PREVIEW_DATA = d;
