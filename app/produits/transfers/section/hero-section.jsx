@@ -10,22 +10,22 @@ import TransfersDemo from "./hero-demo/TransfersDemo";
 // produits. `position` recadre chaque photo sur le visage.
 const PROOF_AVATARS = [
   {
-    src: "/lp/avis/maeva.jpg",
+    src: "/lp/avis/mini/maeva.webp",
     alt: "Maëva, graphiste, cliente Newbi",
     position: "50% 18%",
   },
   {
-    src: "/lp/avis/pedro-avatar.jpg",
+    src: "/lp/avis/mini/pedro.webp",
     alt: "Pedro, commerçant, client Newbi",
     position: "50% 35%",
   },
   {
-    src: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    src: "/lp/avis/mini/mustafa.webp",
     alt: "Mustafa, artisan du bâtiment, client Newbi",
     position: "50% 20%",
   },
   {
-    src: "/lp/about/about-11.jpeg",
+    src: "/lp/avis/mini/cliente.webp",
     alt: "Une cliente Newbi",
     position: "50% 25%",
   },

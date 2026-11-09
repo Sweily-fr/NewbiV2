@@ -21,24 +21,24 @@ const BUSINESSES = [
 // visage (les cadrages d'origine sont très différents).
 const PROOF_AVATARS = [
   {
-    src: "/lp/avis/maeva.jpg",
+    src: "/lp/avis/mini/maeva.webp",
     alt: "Maëva, graphiste, cliente Newbi",
     position: "50% 18%",
   },
   {
     // Vignette carrée dédiée : dans la photo d'origine son visage est trop bas
     // pour tenir dans un rond.
-    src: "/lp/avis/pedro-avatar.jpg",
+    src: "/lp/avis/mini/pedro.webp",
     alt: "Pedro, commerçant, client Newbi",
     position: "50% 35%",
   },
   {
-    src: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    src: "/lp/avis/mini/mustafa.webp",
     alt: "Mustafa, artisan du bâtiment, client Newbi",
     position: "50% 20%",
   },
   {
-    src: "/lp/about/about-11.jpeg",
+    src: "/lp/avis/mini/cliente.webp",
     alt: "Une cliente Newbi",
     position: "50% 25%",
   },
@@ -137,7 +137,7 @@ export default function HeroSection() {
           <div className="col-span-12">
             <div className="relative mx-auto mt-10 md:mt-14 w-full">
               <img
-                src="/lp/facturation-electronique/hero-ipad-factures.png"
+                src="/lp/facturation-electronique/hero-ipad-factures.webp"
                 alt="Interface Newbi : liste des factures clients avec statuts"
                 width="2200"
                 height="1268"

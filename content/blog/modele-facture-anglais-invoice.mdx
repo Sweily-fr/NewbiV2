@@ -11,7 +11,7 @@ author: Joaquim
 image: /blog/modele-facture-anglais-invoice/exemple.webp
 published: true
 publishDate: '2026-10-19'
-updated: '2026-10-31'
+updated: '2026-11-09'
 ---
 
 import Link from "next/link"
@@ -39,7 +39,7 @@ Ce guide vous donne la structure complète d'une invoice conforme, le lexique fa
 
 ## Pourquoi les mentions obligatoires françaises restent nécessaires
 
-Une entreprise française qui émet une facture en anglais reste soumise à l'article 289 du Code général des impôts (CGI), qui fixe la liste des mentions obligatoires d'une facture. Rédiger votre document en anglais, pour la lisibilité de votre client, ne vous dispense d'aucune mention : numéro de facture, SIREN, TVA intracommunautaire le cas échéant, date, montants HT et TTC doivent toujours figurer sur le document, quelle que soit la langue utilisée.
+Une entreprise française qui émet une facture en anglais reste soumise à l'article 289 du Code général des impôts (CGI), qui fixe la liste des mentions obligatoires d'une facture. Rédiger votre document en anglais, pour la lisibilité de votre client, ne vous dispense d'aucune mention : numéro de facture, SIREN, TVA intracommunautaire le cas échéant, date, montants HT et TTC doivent toujours figurer sur le document, quelle que soit la langue utilisée. Une facture rédigée en langue étrangère est admise, mais l'administration fiscale peut en exiger une traduction en français lors d'un contrôle : un modèle bilingue, avec les libellés en anglais et en français, vous évite ce travail.
 
 En pratique, la solution la plus sûre consiste à conserver l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique, simplement traduites ou doublées en anglais pour les libellés (numéro de facture / invoice number, date d'émission / issue date, etc.). Cela évite toute contestation en cas de contrôle fiscal, tout en restant lisible pour votre interlocuteur étranger.
 
@@ -142,6 +142,24 @@ Votre invoice doit reprendre l'ensemble des blocs d'une facture classique, dans 
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
     <span><strong>Bank details</strong> : IBAN et BIC pour le règlement</span>
   </div>
+</div>
+
+<div className="not-prose my-8 rounded-xl border border-gray-200 p-6">
+  <p className="text-base font-medium text-gray-900 mb-1">Télécharger le modèle de facture en anglais</p>
+  <p className="text-sm text-gray-600 mb-4">
+    Invoice prête à remplir, aux libellés doublés en anglais et en français, avec les mentions obligatoires françaises et la mention de TVA à choisir selon le pays et le statut du client. Le classeur Excel calcule les totaux.
+  </p>
+  <div className="flex flex-wrap gap-3">
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture-anglais.docx" download>Word (.docx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture-anglais.xlsx" download>Excel (.xlsx)</a>
+    </Button>
+  </div>
+  <p className="text-xs text-gray-500 mt-4">
+    Sans inscription. Les autres modèles (facture, devis, avoir, reçu de paiement) sont réunis sur la page des <a href="/modeles" className="underline">modèles gratuits à télécharger</a>. Pour générer vos documents automatiquement et suivre vos paiements, <a href="/produits/factures" className="underline">essayez Newbi gratuitement 30 jours</a>.
+  </p>
 </div>
 
 ## La TVA selon la destination de votre client

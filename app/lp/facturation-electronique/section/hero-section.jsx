@@ -78,7 +78,7 @@ export default function HeroSection({
             LP est en overflow-x-clip, pas de scroll horizontal). */}
         <div className="relative mx-auto mt-10 md:mt-14 w-full max-w-6xl">
           <img
-            src="/lp/facturation-electronique/hero-ipad-factures.png"
+            src="/lp/facturation-electronique/hero-ipad-factures.webp"
             alt="Interface Newbi sur iPad : liste des factures clients avec statuts"
             width="2200"
             height="1268"

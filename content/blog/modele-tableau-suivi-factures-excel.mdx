@@ -11,6 +11,7 @@ keyword: tableau suivi factures excel
 author: Newbi
 image: /blog/modele-tableau-suivi-factures-excel/exemple.webp
 published: false
+updated: '2026-11-09'
 publishDate: '2026-11-09'
 ---
 
@@ -97,7 +98,7 @@ Un tableau de suivi devient réellement efficace quand il automatise les calculs
 
 ### Calcul automatique du retard
 
-En supposant que la date d'échéance figure en colonne D et que la date du jour serve de référence, la formule `=SI(D2<AUJOURDHUI();AUJOURDHUI()-D2;0)` affiche le nombre de jours de retard uniquement si la facture n'a pas été payée et que l'échéance est dépassée.
+En supposant que la date d'échéance figure en colonne D et la date de paiement en colonne H (vide tant que la facture n'est pas réglée), la formule `=SI(ET(H2="";D2<AUJOURDHUI());AUJOURDHUI()-D2;0)` affiche le nombre de jours de retard uniquement si la facture n'a pas été payée et que l'échéance est dépassée.
 
 ### Alerte visuelle par mise en forme conditionnelle
 
@@ -138,6 +139,21 @@ Voici un exemple de structure minimale que vous pouvez reproduire directement da
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
     <span>Une sauvegarde régulière, idéalement sur un espace partagé ou dans le cloud</span>
   </div>
+</div>
+
+<div className="not-prose my-8 rounded-xl border border-gray-200 p-6">
+  <p className="text-base font-medium text-gray-900 mb-1">Télécharger le modèle de tableau de suivi des factures</p>
+  <p className="text-sm text-gray-600 mb-4">
+    Classeur prêt à remplir : statut et retard calculés, alerte en rouge au-delà de 15 jours de retard, filtres, volet figé, listes déroulantes, indemnité de 40 €, et un onglet de tableau de bord avec le taux d'impayés.
+  </p>
+  <div className="flex flex-wrap gap-3">
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-tableau-suivi-factures.xlsx" download>Excel (.xlsx)</a>
+    </Button>
+  </div>
+  <p className="text-xs text-gray-500 mt-4">
+    Sans inscription. Les autres modèles (facture, devis, mise en demeure, plan de trésorerie) sont réunis sur la page des <a href="/modeles" className="underline">modèles gratuits à télécharger</a>. Pour générer vos documents automatiquement et suivre vos paiements, <a href="/produits/factures" className="underline">essayez Newbi gratuitement 30 jours</a>.
+  </p>
 </div>
 
 ## Les limites d'un tableau Excel pour le suivi des factures

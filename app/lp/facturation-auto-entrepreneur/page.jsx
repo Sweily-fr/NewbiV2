@@ -129,7 +129,7 @@ const STEPS = [
 // Cartes de réassurance sous les témoignages.
 const PROOFS = [
   {
-    avatar: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    avatar: "/lp/factures/mustafa.webp",
     icon: <Star size={22} strokeWidth={1.75} />,
     title: "+ 140 indépendants",
     desc: "facturent déjà avec Newbi, auto-entrepreneurs compris, prêts pour 2026.",

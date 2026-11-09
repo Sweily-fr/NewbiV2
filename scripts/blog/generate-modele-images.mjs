@@ -638,7 +638,7 @@ const EXEMPLES = {
       "Madame, Monsieur,",
       `Malgré nos relances des 7 septembre 2026 et 21 septembre 2026, nous constatons que la facture n° <strong>FA-2026-087</strong>, d'un montant de <strong>3 200,00 EUR TTC</strong>, émise le <strong>1er août 2026</strong> et échue depuis le <strong>31 août 2026</strong>, demeure impayée à ce jour, soit un retard de <strong>${medRetard} jours</strong>.`,
       "Par la présente, nous vous <strong>mettons en demeure</strong> de procéder au règlement intégral de cette somme dans un délai de <strong>8 jours</strong> à compter de la réception de ce courrier.",
-      "Conformément aux articles L441-10 et L441-16 du Code de commerce, ce retard entraîne de plein droit :",
+      "Conformément aux articles L441-10 et D441-5 du Code de commerce, ce retard entraîne de plein droit :",
       {
         liste: [
           "Des <strong>pénalités de retard</strong> calculées au taux de 8,25 % l'an, courant depuis le lendemain de la date d'échéance ;",
