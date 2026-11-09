@@ -23,12 +23,12 @@ export const metadata = {
       "Modèles de facture et de devis gratuits à télécharger (Word, Excel, PDF) | Newbi",
   },
   description:
-    "Six modèles gratuits à remplir : facture, devis, acompte, auto-entrepreneur, sans TVA et bon de commande. Word, Excel, PDF.",
+    "Quatorze modèles gratuits à remplir : facture, devis, avoir, reçu, contrat, mise en demeure, note de frais, plan de trésorerie et suivi des factures. Word, Excel, PDF.",
   alternates: { canonical: "/modeles" },
   openGraph: {
     title: "Modèles de facture et de devis gratuits | Newbi",
     description:
-      "Facture, devis, acompte, auto-entrepreneur, franchise en base, bon de commande : six modèles conformes à télécharger en Word, Excel et PDF.",
+      "Facture, devis, avoir, reçu, contrat, mise en demeure, note de frais, trésorerie, suivi des factures : quatorze modèles à télécharger en Word, Excel et PDF.",
     url: "/modeles",
     siteName: "Newbi",
     type: "website",
@@ -86,6 +86,73 @@ const MODELES = [
     // mobile, ce qui dépasse le cadre de ce modèle téléchargeable.
     formats: ["docx", "xlsx"],
   },
+  // Modèles ajoutés le 09/11/2026 pour les articles qui en promettaient un.
+  // Pas de PDF : la route /pdf-generator/<type>/preview ne rend que les
+  // factures et les devis en français (voir scripts/modeles/README.md).
+  {
+    slug: "modele-avoir",
+    nom: "Modèle d'avoir",
+    desc: "La note de crédit qui corrige une facture déjà émise, avec la référence de la facture d'origine, le motif et les montants crédités en négatif.",
+    pour: "Remise, retour ou erreur de facturation",
+    article: "modele-avoir-note-de-credit-gratuit",
+    formats: ["docx", "xlsx"],
+  },
+  {
+    slug: "modele-facture-anglais",
+    nom: "Modèle de facture en anglais",
+    desc: "Une invoice aux libellés doublés en anglais et en français, qui garde les mentions obligatoires françaises et la bonne mention de TVA selon le pays du client.",
+    pour: "Clients à l'étranger",
+    article: "modele-facture-anglais-invoice",
+    formats: ["docx", "xlsx"],
+  },
+  {
+    slug: "modele-recu-paiement",
+    nom: "Modèle de reçu de paiement",
+    desc: "La preuve d'un encaissement, en espèces notamment : montant, date, mode de règlement, facture concernée et signature. Il complète la facture sans la remplacer.",
+    pour: "Attester un paiement reçu",
+    article: "modele-recu-paiement-quittance",
+    formats: ["docx", "xlsx"],
+  },
+  {
+    slug: "modele-contrat-prestation-de-services",
+    nom: "Modèle de contrat de prestation de services",
+    desc: "Les clauses à faire signer avant une mission : objet, délais, prix et pénalités de retard, propriété intellectuelle, résiliation et responsabilité.",
+    pour: "Encadrer une mission",
+    article: "modele-contrat-prestation-de-services",
+    formats: ["docx"],
+  },
+  {
+    slug: "modele-mise-en-demeure-facture-impayee",
+    nom: "Lettre de mise en demeure pour facture impayée",
+    desc: "Le courrier recommandé à envoyer quand les relances n'ont rien donné, avec le décompte de la facture, des pénalités de retard et de l'indemnité de 40 euros.",
+    pour: "Recouvrer une facture impayée",
+    article: "modele-mise-en-demeure-facture-impayee",
+    formats: ["docx"],
+  },
+  {
+    slug: "modele-note-de-frais",
+    nom: "Modèle de note de frais",
+    desc: "Un onglet par mois, le barème kilométrique calculé sur le cumul annuel, les totaux par catégorie, la TVA récupérable et une synthèse annuelle.",
+    pour: "Rembourser des frais professionnels",
+    article: "modele-note-de-frais-excel-gratuit",
+    formats: ["xlsx"],
+  },
+  {
+    slug: "modele-plan-de-tresorerie",
+    nom: "Modèle de plan de trésorerie",
+    desc: "Douze mois d'encaissements et de décaissements, TVA et charges sociales comprises, avec le solde de chaque mois reporté sur le suivant et trois scénarios.",
+    pour: "Anticiper sa trésorerie",
+    article: "modele-plan-de-tresorerie-excel-gratuit",
+    formats: ["xlsx"],
+  },
+  {
+    slug: "modele-tableau-suivi-factures",
+    nom: "Tableau de suivi des factures",
+    desc: "Échéances, paiements, retards et relances au même endroit : statut calculé, alerte en rouge, indemnité de 40 euros et tableau de bord des impayés.",
+    pour: "Suivre ses créances clients",
+    article: "modele-tableau-suivi-factures-excel",
+    formats: ["xlsx"],
+  },
 ];
 
 const FORMATS = [
@@ -97,7 +164,7 @@ const FORMATS = [
 const FAQ = [
   {
     q: "Ces modèles de facture sont-ils vraiment gratuits ?",
-    r: "Oui. Les dix-sept fichiers se téléchargent sans compte, sans adresse e-mail et sans limite d'utilisation. Vous pouvez les modifier, y mettre votre logo et les réutiliser autant de fois que vous voulez.",
+    r: "Oui. Les vingt-huit fichiers se téléchargent sans compte, sans adresse e-mail et sans limite d'utilisation. Vous pouvez les modifier, y mettre votre logo et les réutiliser autant de fois que vous voulez.",
   },
   {
     q: "Une facture faite sous Word ou Excel est-elle légale ?",
@@ -141,8 +208,18 @@ const jsonLd = [
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Accueil", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Outils", item: `${SITE_URL}/outils` },
-      { "@type": "ListItem", position: 3, name: "Modèles", item: `${SITE_URL}/modeles` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Outils",
+        item: `${SITE_URL}/outils`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "Modèles",
+        item: `${SITE_URL}/modeles`,
+      },
     ],
   },
   {
@@ -180,11 +257,12 @@ export default function ModelesPage() {
               Modèles de facture et de devis à télécharger
             </h1>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Six modèles prêts à remplir, chacun au format Word et Excel, et
-              en PDF pour les cinq modèles de facture et de devis. Ils
-              contiennent déjà toutes les mentions obligatoires et les formules
-              de calcul. Téléchargement immédiat, sans inscription et sans
-              adresse e-mail à laisser.
+              Quatorze modèles prêts à remplir : les documents de facturation en
+              Word et Excel (et en PDF pour les cinq modèles de facture et de
+              devis), le contrat et la lettre de mise en demeure en Word, les
+              tableaux de suivi en Excel. Ils contiennent déjà les mentions
+              obligatoires et les formules de calcul. Téléchargement immédiat,
+              sans inscription et sans adresse e-mail à laisser.
             </p>
           </header>
 
@@ -198,14 +276,16 @@ export default function ModelesPage() {
                 <p className="text-[11px] uppercase tracking-wide text-gray-400">
                   {pour}
                 </p>
-                <h2 className="mt-2 text-lg font-medium text-gray-900">{nom}</h2>
+                <h2 className="mt-2 text-lg font-medium text-gray-900">
+                  {nom}
+                </h2>
                 <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">
                   {desc}
                 </p>
 
                 <div className="mt-5 flex flex-wrap items-center gap-2">
                   {FORMATS.filter(
-                    ({ ext }) => !formats || formats.includes(ext)
+                    ({ ext }) => !formats || formats.includes(ext),
                   ).map(({ ext, label, icon: Icon }) => (
                     <a
                       key={ext}

@@ -6,22 +6,22 @@ import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button"
 // Mêmes portraits que les autres LP produits, recadrés sur le visage.
 const PROOF_AVATARS = [
   {
-    src: "/lp/avis/maeva.jpg",
+    src: "/lp/avis/mini/maeva.webp",
     alt: "Maëva, graphiste, cliente Newbi",
     position: "50% 18%",
   },
   {
-    src: "/lp/avis/pedro-avatar.jpg",
+    src: "/lp/avis/mini/pedro.webp",
     alt: "Pedro, commerçant, client Newbi",
     position: "50% 35%",
   },
   {
-    src: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    src: "/lp/avis/mini/mustafa.webp",
     alt: "Mustafa, artisan du bâtiment, client Newbi",
     position: "50% 20%",
   },
   {
-    src: "/lp/about/about-11.jpeg",
+    src: "/lp/avis/mini/cliente.webp",
     alt: "Une cliente Newbi",
     position: "50% 25%",
   },
@@ -137,6 +137,8 @@ export default function StatutHero({
                 width={1600}
                 height={1069}
                 className="aspect-[4/3] size-full object-cover"
+                // Image principale de la page (LCP) : chargée en premier.
+                fetchPriority="high"
               />
             </div>
 

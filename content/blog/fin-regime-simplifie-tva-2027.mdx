@@ -1,0 +1,297 @@
+---
+title: 'Fin du régime simplifié de TVA au 1er janvier 2027 : ce qui change pour vous'
+description: >-
+  Le régime simplifié de TVA disparaît au 1er janvier 2027 : passage
+  automatique aux déclarations CA3, seuil du trimestriel à 1 000 000 €,
+  dernière CA12, acomptes 2027 et exercices décalés.
+date: '2026-12-14'
+category: reglementaire
+sector: null
+keyword: suppression régime simplifié tva 2027
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-12-14'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Fin du régime simplifié de TVA au 1er janvier 2027 : ce qui change pour vous
+
+Oui, le régime simplifié d'imposition (RSI) en matière de TVA est supprimé à compter du 1er janvier 2027, en application de l'article 38 de la loi de finances pour 2025. Les entreprises qui en relevaient passent automatiquement au régime réel normal : elles ne déposent plus une déclaration annuelle CA12 accompagnée de deux acomptes, mais des déclarations CA3 trimestrielles, ou mensuelles si leur chiffre d'affaires dépasse 1 000 000 € ou si elles le choisissent. Aucune démarche n'est nécessaire pour la bascule, mais votre organisation de 2027 change.
+
+Cet article détaille qui est concerné, le nouveau calendrier déclaratif, le sort des acomptes de 2027, la dernière CA12, le cas des exercices décalés et les points à préparer avec votre plateforme de facturation électronique.
+
+<ArticleCta variant="compact" />
+
+## Qui est concerné par la suppression
+
+La mesure vise toutes les entreprises redevables de la TVA qui déclarent aujourd'hui selon le régime simplifié : artisans, commerçants, professions libérales, sociétés, dès lors qu'elles ne relèvent ni de la franchise en base ni déjà du régime réel normal. En pratique, ce sont surtout les petites entreprises qui facturent la TVA et dont le chiffre d'affaires reste sous les seuils du régime simplifié.
+
+Ne sont pas concernés :
+
+- les entreprises en franchise en base de TVA, qui ne déclarent pas de TVA ;
+- les entreprises déjà au régime réel normal, mensuel ou trimestriel ;
+- les exploitants agricoles relevant du régime simplifié de l'agriculture (RSA), que la DGFiP exclut expressément de la mesure.
+
+La loi vise le régime simplifié « en matière de TVA ». Elle ne porte pas sur le régime réel simplifié d'imposition des bénéfices, qui obéit à ses propres règles.
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Si vous sortez de la franchise en base en 2027">
+    Une entreprise qui perd la franchise en base en 2027, par exemple parce que son chiffre d'affaires 2026 a dépassé le plafond, ne pourra plus rejoindre le régime simplifié : elle relèvera directement du régime réel normal. L'administration le résume ainsi sur sa page consacrée aux micro-entrepreneurs : il ne sera alors possible d'opter que pour le régime réel normal.
+  </Callout>
+</div>
+
+## Ce qui change concrètement
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Régime simplifié de TVA jusqu'en 2026 et régime réel normal à partir de 2027</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Élément</TableHead>
+        <TableHead>Régime simplifié (jusqu'à fin 2026)</TableHead>
+        <TableHead>Régime réel normal (à partir de 2027)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Déclaration</TableCell>
+        <TableCell>Une déclaration annuelle n° 3517-S (CA12)</TableCell>
+        <TableCell>Déclarations n° 3310-CA3</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Rythme</TableCell>
+        <TableCell>Annuel</TableCell>
+        <TableCell>Trimestriel si le chiffre d'affaires ne dépasse pas 1 000 000 €, mensuel au-delà ou sur option</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Paiement</TableCell>
+        <TableCell>Deux acomptes, en juillet et en décembre, puis régularisation avec la CA12</TableCell>
+        <TableCell>Paiement de la TVA due avec chaque CA3</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA déductible</TableCell>
+        <TableCell>Imputée une fois par an, sur la CA12</TableCell>
+        <TableCell>Imputée à chaque déclaration</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Démarche</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Aucune : la bascule est automatique</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le changement le plus visible est le rythme. Une entreprise qui faisait sa TVA une fois par an, avec l'aide de son comptable au moment de la clôture, devra désormais déclarer au moins quatre fois par an. En contrepartie, la TVA payée correspond à l'activité réelle du trimestre, et non plus à des acomptes calculés sur l'année précédente, ce qui évite les régularisations importantes en fin d'exercice.
+
+## Trimestriel ou mensuel : la règle à partir de 2027
+
+L'article 287 du CGI, dans sa rédaction issue de la loi de finances pour 2025 applicable au 1er janvier 2027, fixe la périodicité ainsi :
+
+- par principe, la déclaration CA3 est mensuelle ;
+- elle est trimestrielle lorsque le chiffre d'affaires, majoré des acquisitions taxables, ne dépasse pas 1 000 000 € au titre de l'année civile précédente et 1 100 000 € au titre de l'année en cours ;
+- ces seuils sont révisés tous les trois ans et arrondis au millier d'euros.
+
+Pour la grande majorité des indépendants et des TPE, le rythme sera donc trimestriel. C'est une différence importante avec la règle applicable jusqu'en 2026 au régime réel normal, où la déclaration trimestrielle était réservée aux entreprises dont la taxe exigible annuellement était inférieure à 4 000 €.
+
+### En cas de dépassement en cours d'année
+
+Si votre chiffre d'affaires de l'année dépasse 1 100 000 €, vous passez à la déclaration mensuelle à compter du premier jour du mois du dépassement. La première déclaration mensuelle reprend alors les opérations réalisées depuis le début du trimestre civil en cours.
+
+### Opter pour le mensuel
+
+Une entreprise qui remplit les conditions du trimestriel peut préférer déclarer chaque mois, par exemple pour obtenir plus vite l'imputation d'un crédit de TVA. L'option se demande auprès de votre service des impôts. Elle prend effet au premier jour du mois qui suit le trimestre au cours duquel vous l'exercez, ou à une date ultérieure que vous choisissez, et s'applique pendant au moins quatre trimestres civils. Si vous êtes régulièrement en crédit de TVA, par exemple parce que vous investissez beaucoup, notre article sur [le remboursement du crédit de TVA](/blog/credit-de-tva-remboursement-demande) vous aidera à arbitrer.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Déjà au réel normal mensuel ?">
+    La DGFiP précise que les entreprises déjà au réel normal mensuel qui remplissent les conditions du trimestriel au 1er janvier 2027 peuvent changer de périodicité sur simple demande à leur service des impôts.
+  </Callout>
+</div>
+
+## Les acomptes de 2027 et la dernière CA12
+
+C'est le point qui suscite le plus de questions. Pour un exercice qui coïncide avec l'année civile, le calendrier de transition est le suivant.
+
+### Décembre 2026 : rien ne change
+
+L'exercice 2026 reste entièrement régi par le régime simplifié. L'acompte de décembre 2026 est dû selon les règles habituelles, à l'échéance indiquée dans votre espace professionnel.
+
+### Mai 2027 : la dernière CA12
+
+La dernière déclaration annuelle, la CA12 au titre de l'exercice 2026, est à déposer au plus tard le 4 mai 2027 pour les exercices clos le 31 décembre 2026. Elle régularise l'année 2026 comme d'habitude, en tenant compte des acomptes versés en juillet et en décembre 2026.
+
+### 2027 : plus d'acomptes semestriels
+
+Pour les exercices civils, l'acompte de juillet 2027 n'est pas dû, et l'acompte de décembre 2027 n'est dû par personne, quelle que soit la date de clôture de l'exercice. La TVA de 2027 est payée au fil des déclarations CA3, dont la première porte sur janvier 2027 si vous êtes au mensuel, ou sur le premier trimestre 2027 si vous êtes au trimestriel.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Calendrier de transition pour un exercice clos le 31 décembre</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Échéance</TableHead>
+        <TableHead>Ce qu'il faut faire</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Décembre 2026</TableCell>
+        <TableCell>Payer l'acompte de décembre 2026 du régime simplifié</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Avril 2027</TableCell>
+        <TableCell>Déposer la première CA3 trimestrielle, portant sur janvier à mars 2027, à l'échéance fixée par votre calendrier fiscal</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">4 mai 2027 au plus tard</TableCell>
+        <TableCell>Déposer la dernière CA12, au titre de l'exercice 2026</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Juillet et décembre 2027</TableCell>
+        <TableCell>Plus aucun acompte semestriel</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Le cas des exercices décalés
+
+Si votre exercice ne coïncide pas avec l'année civile, la loi prévoit une transition adaptée : les assujettis qui relèvent du régime simplifié au 31 décembre 2026 continuent de l'appliquer jusqu'à la clôture de l'exercice en cours à cette date. Les nouvelles règles s'appliquent aux opérations réalisées après cette clôture.
+
+Concrètement, pour un exercice du 1er juillet 2026 au 30 juin 2027 :
+
+- l'exercice 2026-2027 reste au régime simplifié jusqu'au 30 juin 2027 ;
+- l'acompte de juillet 2027 n'est pas dû pour les exercices clos entre janvier et juin 2027 ;
+- la dernière déclaration annuelle, la CA12E, est à déposer dans les trois mois de la clôture ;
+- la première CA3 porte sur le premier mois ou le premier trimestre qui suit la clôture, soit juillet 2027 ou le troisième trimestre 2027.
+
+Pour un exercice clos entre juillet et novembre 2027, l'acompte de juillet 2027 reste dû si la TVA exigible au titre de l'exercice précédent dépasse 1 000 €. L'acompte de décembre 2027, lui, n'est jamais dû.
+
+## Exemple chiffré : un menuisier au régime simplifié
+
+Julien est menuisier, en entreprise individuelle, au régime simplifié de TVA. Son exercice coïncide avec l'année civile. En 2026, il a réalisé 180 000 € de chiffre d'affaires hors taxe et versé deux acomptes de TVA en juillet et en décembre.
+
+- En décembre 2026, il paie son acompte comme les années précédentes.
+- Au 1er janvier 2027, il passe automatiquement au réel normal. Son chiffre d'affaires est très inférieur à 1 000 000 € : il déclare chaque trimestre.
+- En avril 2027, il dépose sa première CA3, pour janvier à mars. Il y déclare la TVA collectée sur ses factures du trimestre, ou sur ses encaissements pour ses prestations de services, et déduit la TVA de ses achats du trimestre, notamment le bois et une scie achetée en février.
+- Début mai 2027, il dépose sa dernière CA12, au titre de 2026, qui régularise ses deux acomptes de l'année précédente.
+- Il ne verse plus d'acompte en juillet ni en décembre 2027.
+
+En 2027, Julien paie sa TVA en quatre fois, au plus près de son activité. Il doit en revanche suivre plus régulièrement sa TVA collectée et déductible : un outil qui calcule ces montants à partir de ses factures et de ses dépenses lui évite de tout reprendre à la main chaque trimestre.
+
+## Ce que vous devez préparer avant le premier trimestre 2027
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier dans votre espace professionnel sur impots.gouv.fr le régime et la périodicité qui vous sont attribués après la bascule.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Noter les dates de dépôt de vos CA3 de 2027 dans votre calendrier, ainsi que la date limite de la dernière CA12.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Organiser la collecte trimestrielle des factures de vente et d'achat, au lieu d'une collecte annuelle.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Convenir avec votre expert-comptable de qui prépare et dépose les CA3, et à quel coût.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Prévoir la trésorerie de chaque échéance trimestrielle, qui remplace les deux acomptes.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquer votre nouveau régime de TVA à votre plateforme de facturation électronique.</span>
+  </div>
+</div>
+
+Pour le remplissage du formulaire, ligne par ligne, notre guide [CA3 ou CA12 : comment déclarer sa TVA](/blog/declaration-tva-ca3-ca12-guide) présente la CA3. Si vous hésitez entre la TVA sur les débits et sur les encaissements pour vos prestations, notre article sur [ces deux options](/blog/tva-sur-les-debits-ou-encaissements) détaille leurs effets sur le montant de chaque déclaration.
+
+## Le lien avec la facture électronique et l'e-reporting
+
+La suppression du régime simplifié intervient l'année où les PME et micro-entreprises doivent passer à l'émission de factures électroniques, au 1er septembre 2027. Les deux réformes se rejoignent sur un point : la fréquence de transmission des données d'e-reporting dépend du régime de TVA de l'entreprise. La DGFiP demande donc aux entreprises qui quittent le régime simplifié d'indiquer leur nouveau régime à leur plateforme agréée, pour que les données soient transmises au bon rythme.
+
+À terme, les données transmises via la facturation électronique doivent aussi permettre à l'administration de préremplir les déclarations de TVA. Notre article sur [la déclaration de TVA préremplie](/blog/declaration-tva-pre-remplie-facture-electronique) explique ce mécanisme, et celui sur [l'e-reporting](/blog/e-reporting-definition-obligations-calendrier) les données concernées.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Avec Newbi">
+    Newbi centralise vos factures de vente et vos dépenses avec leurs montants de TVA. Pour préparer une CA3 trimestrielle, ou la transmettre à votre comptable, vous retrouvez les documents du trimestre sans les rechercher un par un.
+  </Callout>
+</div>
+
+## En résumé
+
+- Le régime simplifié de TVA est supprimé au 1er janvier 2027 (article 38 de la loi de finances pour 2025), sauf pour le régime simplifié agricole.
+- La bascule vers le régime réel normal est automatique, sans démarche.
+- La CA3 devient trimestrielle si le chiffre d'affaires ne dépasse pas 1 000 000 € l'année précédente et 1 100 000 € l'année en cours, mensuelle au-delà ou sur option.
+- L'acompte de décembre 2026 reste dû ; la dernière CA12 est à déposer au plus tard le 4 mai 2027 pour un exercice clos le 31 décembre 2026.
+- Plus aucun acompte semestriel en 2027 pour les exercices civils.
+- Indiquez votre nouveau régime à votre plateforme agréée avant le 1er septembre 2027.
+
+## Sources officielles
+
+- impots.gouv.fr, [le régime simplifié d'imposition à la TVA est supprimé à compter du 1er janvier 2027](https://www.impots.gouv.fr/actualite/le-regime-simplifie-dimposition-la-tva-est-supprime-compter-du-1er-janvier-2027), actualité du 22 septembre 2026 mise à jour le 23 septembre 2026.
+- Légifrance, [article 38 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025](https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000051168586).
+- Légifrance, [article 287 du CGI dans sa version applicable au 1er janvier 2027](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000051190827/2027-01-01), périodicité des déclarations.
+- impots.gouv.fr, [je suis micro-entrepreneur : ai-je des obligations déclaratives en matière de TVA ?](https://www.impots.gouv.fr/professionnel/questions/je-suis-micro-entrepreneur-ou-la-tete-dune-micro-entreprise-ai-je-des)
+
+<ArticleCta />
+
+## Questions fréquentes sur la fin du régime simplifié de TVA
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Le régime simplifié de TVA est-il vraiment supprimé en 2027 ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. L'article 38 de la loi de finances pour 2025 supprime le régime simplifié d'imposition en matière de TVA à compter du 1er janvier 2027. Les entreprises concernées passent au régime réel normal et déposent des déclarations CA3. Seul le régime simplifié de l'agriculture est maintenu.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Dois-je faire une démarche pour passer au régime réel normal ?</AccordionTrigger>
+      <AccordionContent>
+        Non. La DGFiP réalise une bascule automatique à partir du chiffre d'affaires de votre dernière déclaration annuelle. En l'absence de déclaration, le régime réel normal trimestriel s'applique d'office. Vous pouvez ensuite demander le passage au mensuel si vous le souhaitez.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Vais-je déclarer ma TVA chaque mois ou chaque trimestre ?</AccordionTrigger>
+      <AccordionContent>
+        Chaque trimestre si votre chiffre d'affaires, majoré des acquisitions taxables, ne dépasse pas 1 000 000 € l'année précédente et 1 100 000 € l'année en cours. Au-delà, la déclaration devient mensuelle. Vous pouvez aussi opter pour le mensuel, pour une durée minimale de quatre trimestres civils.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Dois-je encore payer des acomptes de TVA en juillet et décembre 2027 ?</AccordionTrigger>
+      <AccordionContent>
+        Pour un exercice civil, non : l'acompte de juillet 2027 n'est pas dû et l'acompte de décembre 2027 n'est dû par aucune entreprise. Pour un exercice clos entre juillet et novembre 2027, l'acompte de juillet reste dû si la TVA exigible de l'exercice précédent dépasse 1 000 €. L'acompte de décembre 2026, lui, reste dû normalement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quand déposer la dernière déclaration CA12 ?</AccordionTrigger>
+      <AccordionContent>
+        Pour un exercice clos le 31 décembre 2026, la dernière CA12 est à déposer au plus tard le 4 mai 2027. Pour un exercice clos entre janvier et novembre 2027, la dernière déclaration annuelle, la CA12E, est à déposer dans les trois mois qui suivent la clôture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Les micro-entrepreneurs sont-ils concernés ?</AccordionTrigger>
+      <AccordionContent>
+        Un micro-entrepreneur en franchise en base de TVA n'est pas concerné, puisqu'il ne déclare pas de TVA. En revanche, s'il perd la franchise en 2027 ou y renonce, il ne pourra plus rejoindre le régime simplifié : il relèvera directement du régime réel normal, avec des déclarations CA3.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
