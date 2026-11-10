@@ -11,7 +11,7 @@ author: Holany
 image: /blog/tiime-vs-newbi-comparatif/hero.webp
 published: true
 publishDate: '2026-06-29'
-updated: '2026-09-23'
+updated: '2026-11-10'
 ---
 
 import Image from "next/image"
@@ -30,7 +30,7 @@ import { Check } from "lucide-react"
 
 # Tiime vs Newbi : fonctionnalités, tarifs et gratuité en 2026
 
-Tiime est gratuit à une condition : votre cabinet d'expertise comptable doit appartenir à son réseau de partenaires. Newbi s'utilise sans dépendance à un comptable, avec un [essai gratuit de 30 jours](/logiciel-facturation-gratuit) sans carte bancaire puis un abonnement, et couvre un périmètre plus large : devis, factures, achats, trésorerie, projets et signatures email.
+Tiime propose une offre gratuite sans cabinet comptable exigé (la condition affichée est l'inscription à la plateforme agréée Tiime), puis des offres payantes de 9,99 à 24,99 € HT par mois avec compte professionnel. Newbi s'utilise avec un [essai gratuit de 30 jours](/logiciel-facturation-gratuit) sans carte bancaire puis un abonnement à partir de 17,99 € TTC par mois, et couvre un périmètre plus large : devis, factures, achats, trésorerie, projets et signatures email.
 
 Le comparatif ci-dessous passe en revue la facturation, le suivi client, l'OCR des justificatifs, l'export comptable et la facturation électronique, pour trancher selon votre mode de fonctionnement réel.
 
@@ -54,24 +54,23 @@ Le comparatif ci-dessous passe en revue la facturation, le suivi client, l'OCR d
 
 ## Tiime : présentation rapide
 
-Tiime est un logiciel de gestion et de comptabilité lancé en France, principalement utilisé via un réseau de cabinets d'experts-comptables partenaires. Son modèle repose sur une offre gratuite pour les entrepreneurs dont le cabinet comptable est partenaire Tiime. L'outil couvre la facturation de base, la connexion bancaire et l'export comptable vers le cabinet.
+Tiime est un logiciel de gestion et de comptabilité lancé en France, principalement utilisé via un réseau de cabinets d'experts-comptables partenaires. Son modèle repose sur une offre gratuite, sans engagement ni carte bancaire, conditionnée à l'inscription à la plateforme agréée Tiime, et sur des offres payantes avec compte professionnel. L'outil couvre la facturation de base, la connexion bancaire, la facturation électronique et l'export comptable vers le cabinet.
 
 **Points forts de Tiime :**
-- Gratuité pour les clients de cabinets partenaires
+- Offre gratuite sans engagement ni carte bancaire
+- Facturation électronique incluse dans l'offre gratuite (plateforme agréée Tiime)
 - Synchronisation bancaire automatique
 - Interface simple et épurée
 - Export comptable natif vers les logiciels des cabinets
 
 **Limites de Tiime :**
 - Fonctionnalités avancées limitées (pas de CRM, pas de Kanban, pas de signatures email)
-- Gratuité conditionnelle : liée à votre expert-comptable
 - Pas de gestion de projet intégrée
 - OCR basique sur les justificatifs
-- Pas de Factur-X natif pour la facturation électronique
 
 <div className="not-prose my-6">
   <Callout type="info" title="Le modele gratuit de Tiime">
-    La gratuité de Tiime est conditionnée à l'utilisation d'un cabinet d'expertise comptable partenaire. Si vous changez de cabinet ou si vous gérez votre comptabilité seul, vous perdez l'accès gratuit. Avant de vous engager, vérifiez que votre expert-comptable fait bien partie du réseau Tiime.
+    L'offre gratuite de Tiime est sans engagement et sans carte bancaire ; la condition affichée sur sa page tarifs est l'inscription à la plateforme agréée Tiime, sans cabinet comptable exigé. Les offres payantes (Initial 9,99 € HT, Smart 17,99 € HT, Business 24,99 € HT par mois) ajoutent notamment un compte professionnel.
   </Callout>
 </div>
 
@@ -83,7 +82,6 @@ Newbi est une plateforme tout-en-un pensée pour les auto-entrepreneurs, freelan
 - Suite complète : facturation, devis, CRM, Kanban, OCR, signatures
 - Factur-X natif et raccordement à une plateforme agréée (PDP)
 - OCR avancée pour la saisie automatique des dépenses
-- Aucune dépendance à un cabinet comptable
 - Interface intuitive et design moderne
 - Export comptable vers n'importe quel cabinet
 
@@ -93,7 +91,7 @@ Voici le tableau comparatif complet des fonctionnalités clés pour vous aider �
 
 <div className="not-prose my-8">
   <Table>
-    <TableCaption>Comparatif complet Tiime vs Newbi - Mis à jour en septembre 2026</TableCaption>
+    <TableCaption>Comparatif complet Tiime vs Newbi - Mis à jour le 10/11/2026</TableCaption>
     <TableHeader>
       <TableRow>
         <TableHead className="w-[220px]">Fonctionnalité</TableHead>
@@ -134,12 +132,12 @@ Voici le tableau comparatif complet des fonctionnalités clés pour vous aider �
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Facturation électronique (Factur-X)</TableCell>
-        <TableCell className="text-center">Non natif</TableCell>
-        <TableCell className="text-center">Oui, Factur-X natif</TableCell>
+        <TableCell className="text-center">Oui, plateforme agréée Tiime (gratuite)</TableCell>
+        <TableCell className="text-center">Oui, Factur-X via la plateforme agréée SuperPDP</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Export comptable</TableCell>
-        <TableCell className="text-center">Vers cabinets partenaires uniquement</TableCell>
+        <TableCell className="text-center">Vers le cabinet comptable</TableCell>
         <TableCell className="text-center">Export universel (FEC, CSV, tout cabinet)</TableCell>
       </TableRow>
       <TableRow>
@@ -149,11 +147,12 @@ Voici le tableau comparatif complet des fonctionnalités clés pour vous aider �
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Prix</TableCell>
-        <TableCell className="text-center">Gratuit si cabinet partenaire, sinon payant</TableCell>
-        <TableCell className="text-center">Essai gratuit 30 jours sans carte bancaire, puis abonnement</TableCell>
+        <TableCell className="text-center">Offre Free gratuite, puis de 9,99 à 24,99 € HT/mois avec compte pro</TableCell>
+        <TableCell className="text-center">Essai gratuit 30 jours sans carte bancaire, puis à partir de 17,99 € TTC/mois</TableCell>
       </TableRow>
     </TableBody>
   </Table>
+  <p className="mt-2 text-xs text-muted-foreground">Tarifs relevés le 10/11/2026 sur les sites des éditeurs, hors taxes sauf mention contraire.</p>
 </div>
 
 ## Facturation et devis : avantage Newbi
@@ -194,7 +193,7 @@ Depuis le 1er septembre 2026, toutes les entreprises doivent être en mesure de 
 
 Newbi intègre nativement le format **Factur-X**, le standard franco-allemand de facture électronique mixte (PDF lisible et données XML structurées), et s'appuie sur une plateforme agréée pour la [facturation électronique](/produits/facturation-electronique). Vos factures sont conformes dès leur création, sans manipulation supplémentaire.
 
-Tiime n'offre pas cette conformité de manière native, ce qui suppose une solution complémentaire pour émettre et recevoir vos factures au format normalisé.
+Tiime est lui-même plateforme agréée et inclut la facturation électronique, émission et réception, dans son offre gratuite.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure className="my-8">
@@ -219,9 +218,9 @@ Tiime n'offre pas cette conformité de manière native, ce qui suppose une solut
 
 ## Export comptable et collaboration avec votre expert-comptable
 
-Le modèle de Tiime est pensé pour fonctionner en symbiose avec un cabinet partenaire. L'export comptable est fluide, mais uniquement vers les logiciels des cabinets faisant partie du réseau. Si vous changez de comptable ou si vous souhaitez travailler avec un cabinet non partenaire, la transition peut être contraignante.
+Le modèle de Tiime est pensé pour fonctionner en symbiose avec un cabinet comptable, vers lequel l'export est fluide.
 
-Newbi adopte une approche universelle : export FEC (Fichier des Ecritures Comptables), export CSV et compatibilité avec tous les logiciels comptables du marché. Vous restez libre de travailler avec le cabinet de votre choix, sans verrouillage. Pour approfondir ce sujet, consultez notre guide sur [comment partager vos documents avec votre expert-comptable](/blog/comment-partager-documents-expert-comptable).
+Newbi adopte une approche universelle : export FEC (Fichier des Ecritures Comptables), export CSV et compatibilité avec tous les logiciels comptables du marché. Vous restez libre de travailler avec le cabinet de votre choix. Pour approfondir ce sujet, consultez notre guide sur [comment partager vos documents avec votre expert-comptable](/blog/comment-partager-documents-expert-comptable).
 
 ## Signatures email professionnelles
 
@@ -235,14 +234,6 @@ Tiime ne propose pas cette fonctionnalité. Il faudra passer par un outil dédi�
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
     <span>Suite tout-en-un : facturation, devis, CRM, Kanban, OCR et signatures dans un seul outil</span>
-  </div>
-  <div className="flex items-start gap-3">
-    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Aucune dépendance à un cabinet comptable pour bénéficier de la plateforme</span>
-  </div>
-  <div className="flex items-start gap-3">
-    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Factur-X natif et plateforme agréée : prêt pour la réception depuis 2026 et l'émission en 2027</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -264,9 +255,9 @@ Tiime ne propose pas cette fonctionnalité. Il faudra passer par un outil dédi�
 
 ## En résumé
 
-**Tiime** convient si vous travaillez déjà avec un cabinet comptable partenaire et que vos besoins se limitent à la facturation de base et la synchronisation bancaire. Le modèle gratuit est attractif, mais il crée une dépendance forte envers le réseau de cabinets.
+**Tiime** convient si vos besoins se limitent à la facturation de base, la synchronisation bancaire et la facturation électronique, ou si vous voulez un compte professionnel intégré : son offre gratuite est attractive et ne demande pas de cabinet partenaire.
 
-**Newbi** est le choix idéal si vous cherchez un outil complet qui centralise toute votre gestion : facturation avancée, CRM, gestion de projet, OCR intelligente, signatures email et facturation électronique. Vous gardez votre liberté tout en disposant d'une plateforme professionnelle et performante.
+**Newbi** est le choix idéal si vous cherchez un outil complet qui centralise toute votre gestion : facturation avancée, CRM, gestion de projet, OCR intelligente, signatures email et facturation électronique. Vous disposez d'une plateforme professionnelle et performante, à partir de 17,99 € TTC par mois.
 
 Pour aller plus loin dans votre réflexion, découvrez aussi nos comparatifs [Henrri vs Newbi](/blog/henrri-vs-newbi-comparatif), notre article sur les [logiciels de gestion tout-en-un pour TPE](/blog/logiciel-gestion-tout-en-un-tpe) et notre guide des [alternatives à Excel pour la gestion d'entreprise](/blog/alternatives-excel-gestion-entreprise).
 
@@ -279,7 +270,7 @@ Pour aller plus loin dans votre réflexion, découvrez aussi nos comparatifs [He
     <AccordionItem value="faq-1">
       <AccordionTrigger>Tiime est-il vraiment gratuit ?</AccordionTrigger>
       <AccordionContent>
-        Tiime propose une offre gratuite, mais celle-ci est conditionnée à l'utilisation d'un cabinet d'expertise comptable partenaire du réseau Tiime. Si votre cabinet ne fait pas partie du réseau, ou si vous décidez de gérer votre comptabilité seul, vous devrez passer sur une offre payante. Newbi, de son côté, s'essaie gratuitement pendant 30 jours sans carte bancaire et sans condition liée à un tiers, puis passe en abonnement.
+        Oui, Tiime propose une offre gratuite (Free), sans engagement ni carte bancaire ; la condition affichée est l'inscription à la plateforme agréée Tiime, sans cabinet comptable exigé. Des offres payantes de 9,99 à 24,99 € HT par mois ajoutent notamment un compte professionnel. Newbi, de son côté, s'essaie gratuitement pendant 30 jours sans carte bancaire, puis passe en abonnement à partir de 17,99 € TTC par mois.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-2">
@@ -303,13 +294,13 @@ Pour aller plus loin dans votre réflexion, découvrez aussi nos comparatifs [He
     <AccordionItem value="faq-5">
       <AccordionTrigger>Tiime ou Newbi pour un freelance ?</AccordionTrigger>
       <AccordionContent>
-        Si votre expert-comptable fait partie du réseau Tiime et que vous vous contentez de factures simples et d'une synchronisation bancaire, Tiime suffit et ne vous coûte rien. Si vous gérez seul votre activité, changez de cabinet ou avez besoin de devis, d'acomptes, de factures récurrentes, du suivi de vos projets et de la facturation électronique, Newbi couvre l'ensemble sans dépendre d'un tiers, avec un essai gratuit de 30 jours sans carte bancaire.
+        Si vous vous contentez de factures simples, d'une synchronisation bancaire et de la facturation électronique, l'offre gratuite de Tiime peut suffire. Si vous avez besoin d'acomptes, de factures récurrentes, d'un CRM ou du suivi de vos projets, Newbi couvre l'ensemble, avec un essai gratuit de 30 jours sans carte bancaire.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-6">
       <AccordionTrigger>Quelle différence entre Tiime et Newbi ?</AccordionTrigger>
       <AccordionContent>
-        Tiime est un outil de collecte pensé pour alimenter un cabinet comptable partenaire : facturation de base, justificatifs, connexion bancaire et export vers les logiciels du réseau. Newbi est une plateforme de gestion autonome : devis, factures avec acomptes et récurrences, suivi client, achats, trésorerie, Kanban, signatures email, Factur-X et export comptable universel au format FEC ou CSV, vers le cabinet de votre choix.
+        Tiime est un outil pensé pour travailler avec un cabinet comptable : facturation, justificatifs, connexion bancaire, facturation électronique (plateforme agréée) et, dans ses offres payantes, compte professionnel. Newbi est une plateforme de gestion autonome : devis, factures avec acomptes et récurrences, suivi client, achats, trésorerie, Kanban, signatures email, Factur-X et export comptable universel au format FEC ou CSV, vers le cabinet de votre choix.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -327,7 +318,7 @@ Pour aller plus loin dans votre réflexion, découvrez aussi nos comparatifs [He
           "name": "Tiime est-il vraiment gratuit ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Tiime propose une offre gratuite, mais celle-ci est conditionnée à l'utilisation d'un cabinet d'expertise comptable partenaire du réseau Tiime. Si votre cabinet ne fait pas partie du réseau, ou si vous décidez de gérer votre comptabilité seul, vous devrez passer sur une offre payante. Newbi, de son côté, s'essaie gratuitement pendant 30 jours sans carte bancaire et sans condition liée à un tiers, puis passe en abonnement."
+            "text": "Oui, Tiime propose une offre gratuite (Free), sans engagement ni carte bancaire ; la condition affichée est l'inscription à la plateforme agréée Tiime, sans cabinet comptable exigé. Des offres payantes de 9,99 à 24,99 € HT par mois ajoutent notamment un compte professionnel. Newbi, de son côté, s'essaie gratuitement pendant 30 jours sans carte bancaire, puis passe en abonnement à partir de 17,99 € TTC par mois."
           }
         },
         {
@@ -359,7 +350,7 @@ Pour aller plus loin dans votre réflexion, découvrez aussi nos comparatifs [He
           "name": "Tiime ou Newbi pour un freelance ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Si votre expert-comptable fait partie du réseau Tiime et que vous vous contentez de factures simples et d'une synchronisation bancaire, Tiime suffit et ne vous coûte rien. Si vous gérez seul votre activité ou avez besoin de devis, d'acomptes, de factures récurrentes, du suivi de vos projets et de la facturation électronique, Newbi couvre l'ensemble sans dépendre d'un tiers, avec un essai gratuit de 30 jours sans carte bancaire."
+            "text": "Si vous vous contentez de factures simples, d'une synchronisation bancaire et de la facturation électronique, l'offre gratuite de Tiime peut suffire. Si vous avez besoin d'acomptes, de factures récurrentes, d'un CRM ou du suivi de vos projets, Newbi couvre l'ensemble, avec un essai gratuit de 30 jours sans carte bancaire."
           }
         },
         {
@@ -367,7 +358,7 @@ Pour aller plus loin dans votre réflexion, découvrez aussi nos comparatifs [He
           "name": "Quelle différence entre Tiime et Newbi ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Tiime est un outil de collecte pensé pour alimenter un cabinet comptable partenaire : facturation de base, justificatifs, connexion bancaire et export vers les logiciels du réseau. Newbi est une plateforme de gestion autonome : devis, factures avec acomptes et récurrences, suivi client, achats, trésorerie, Kanban, signatures email, Factur-X et export comptable universel au format FEC ou CSV, vers le cabinet de votre choix."
+            "text": "Tiime est un outil pensé pour travailler avec un cabinet comptable : facturation, justificatifs, connexion bancaire, facturation électronique (plateforme agréée) et, dans ses offres payantes, compte professionnel. Newbi est une plateforme de gestion autonome : devis, factures avec acomptes et récurrences, suivi client, achats, trésorerie, Kanban, signatures email, Factur-X et export comptable universel au format FEC ou CSV, vers le cabinet de votre choix."
           }
         }
       ]

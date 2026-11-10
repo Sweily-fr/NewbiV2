@@ -11,6 +11,7 @@ author: Holany
 image: ''
 published: true
 publishDate: '2026-10-28'
+updated: '2026-11-10'
 ---
 
 import Link from "next/link"
@@ -36,9 +37,9 @@ Dans cet article, vous trouverez un comparatif concret des deux approches : ce q
 
 ## Qonto, à l'origine une banque, pas un logiciel de facturation
 
-Qonto est né comme une néobanque pour professionnels : ouverture de compte rapide, cartes physiques et virtuelles, virements, IBAN français. Au fil des années, l'éditeur a ajouté des fonctionnalités de gestion autour du compte, dont un module de facturation simple permettant de créer des factures et de les rapprocher automatiquement des mouvements bancaires du même compte.
+Qonto est né comme une néobanque pour professionnels : ouverture de compte rapide, cartes physiques et virtuelles, virements, IBAN français. Au fil des années, l'éditeur a ajouté des fonctionnalités de gestion autour du compte, dont un module de facturation permettant de créer devis, factures, acomptes et avoirs, et de les rapprocher automatiquement des mouvements bancaires du même compte.
 
-Cette intégration native est un vrai atout pour la vue d'ensemble de la trésorerie : chaque paiement reçu peut être associé à la facture correspondante sans ressaisie. En revanche, le module reste pensé pour accompagner le compte bancaire, pas pour couvrir l'ensemble du cycle de gestion commerciale d'une entreprise : devis détaillés, avoirs, bons de commande, catalogue de produits, suivi des achats fournisseurs ou facturation électronique conforme aux futures obligations.
+Cette intégration native est un vrai atout pour la vue d'ensemble de la trésorerie : chaque paiement reçu peut être associé à la facture correspondante sans ressaisie. Le module reste pensé pour accompagner le compte bancaire. Il inclut l'OCR des factures d'achat et la facturation électronique (Qonto propose une plateforme agréée gratuite pour envoyer et recevoir des factures) ; les relances automatiques passent en revanche par un module à part, « Facturation automatisée » (12 € HT par mois).
 
 ## Ce que couvre un logiciel de gestion dédié
 
@@ -47,8 +48,8 @@ Un logiciel comme Newbi part du problème inverse : il couvre l'ensemble du cycl
 Cette approche a un avantage direct : vous n'êtes pas obligé de changer de compte bancaire pour changer d'outil de gestion, et inversement. Vous pouvez garder votre compte Qonto, votre compte historique ou en changer plus tard sans perdre l'historique de vos documents commerciaux, qui vit dans le logiciel de gestion et non dans la banque.
 
 <div className="not-prose my-8">
-  <Callout type="info" title="Le compte bancaire n'est pas le bon endroit pour la conformité documentaire">
-    Un module de facturation intégré à une banque évolue au rythme de la roadmap bancaire. Un logiciel de gestion dédié est construit spécifiquement pour suivre les obligations documentaires françaises : mentions obligatoires, numérotation séquentielle, conservation légale, et bientôt facturation électronique via une plateforme de dématérialisation partenaire (PDP).
+  <Callout type="info" title="Conformité documentaire : ce qu'il faut vérifier">
+    Quel que soit l'outil, vérifiez qu'il suit les obligations documentaires françaises : mentions obligatoires, numérotation séquentielle, conservation légale et facturation électronique via une plateforme agréée. Qonto propose sa propre plateforme agréée gratuite ; Newbi est raccordé à la plateforme agréée SuperPDP.
   </Callout>
 </div>
 
@@ -72,12 +73,12 @@ Cette approche a un avantage direct : vous n'êtes pas obligé de changer de com
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Factures et devis</TableCell>
-        <TableCell>Facturation simple, liée au compte</TableCell>
+        <TableCell>Devis, factures, acomptes, avoirs (relances dans un module payant)</TableCell>
         <TableCell>Devis, factures, avoirs, bons de commande</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Gestion des achats</TableCell>
-        <TableCell>Suivi des dépenses par carte, sans OCR dédié</TableCell>
+        <TableCell>Import et collecte des factures, OCR des factures d'achat</TableCell>
         <TableCell>Justificatifs avec OCR, factures fournisseurs</TableCell>
       </TableRow>
       <TableRow>
@@ -87,13 +88,13 @@ Cette approche a un avantage direct : vous n'êtes pas obligé de changer de com
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Catalogue produits</TableCell>
-        <TableCell>Non</TableCell>
+        <TableCell>Non mentionné sur la page tarifs</TableCell>
         <TableCell>Oui, réutilisable sur devis et factures</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Facturation électronique (PDP)</TableCell>
-        <TableCell>Dépend de la roadmap bancaire</TableCell>
-        <TableCell>Fonctionnalité dédiée au socle Factur-X, UBL, CII</TableCell>
+        <TableCell>Oui, plateforme agréée gratuite (envoi et réception)</TableCell>
+        <TableCell>Oui, via la plateforme agréée SuperPDP (socle Factur-X, UBL, CII)</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Portabilité</TableCell>
@@ -102,13 +103,14 @@ Cette approche a un avantage direct : vous n'êtes pas obligé de changer de com
       </TableRow>
     </TableBody>
   </Table>
+  <p className="mt-2 text-xs text-muted-foreground">Offres relevées le 10/11/2026 sur les sites des éditeurs.</p>
 </div>
 
 ## Le cas de la facturation électronique 2026-2027
 
-C'est le point le plus structurant pour choisir entre les deux approches. Depuis le 1er septembre 2026, toutes les entreprises françaises, quelle que soit leur taille, doivent être en mesure de **recevoir** des factures électroniques au format structuré. L'émission devient obligatoire à la même date pour les grandes entreprises et les ETI, puis s'étend aux PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+C'est un point structurant pour tous les outils. Depuis le 1er septembre 2026, toutes les entreprises françaises, quelle que soit leur taille, doivent être en mesure de **recevoir** des factures électroniques au format structuré. L'émission devient obligatoire à la même date pour les grandes entreprises et les ETI, puis s'étend aux PME, TPE et micro-entreprises à partir du 1er septembre 2027.
 
-Cette réforme impose de passer par une plateforme de dématérialisation partenaire (PDP), immatriculée par l'administration fiscale, capable de générer des factures aux formats du socle : Factur-X, UBL ou CII. Le portail public de facturation (PPF) ne joue plus le rôle de plateforme d'échange gratuite : il agit comme annuaire et concentrateur des données transmises à l'administration. Un module de facturation intégré à une banque doit lui aussi respecter ces contraintes techniques, ce qui suppose un investissement spécifique de l'éditeur bancaire sur un métier qui n'est pas son cœur historique. Un logiciel de gestion dédié construit sa feuille de route directement autour de cette obligation, ce qui réduit le risque de dépendre d'une mise à jour tardive.
+Cette réforme impose de passer par une plateforme de dématérialisation partenaire (PDP), immatriculée par l'administration fiscale, capable de générer des factures aux formats du socle : Factur-X, UBL ou CII. Le portail public de facturation (PPF) ne joue plus le rôle de plateforme d'échange gratuite : il agit comme annuaire et concentrateur des données transmises à l'administration. Qonto propose une plateforme agréée gratuite pour envoyer et recevoir des factures. Newbi est raccordé à la plateforme agréée SuperPDP, avec l'émission et la réception incluses dans l'abonnement.
 
 <div className="not-prose my-8">
   <Callout type="warning" title="Sanctions en cas de non-conformité">
@@ -118,7 +120,7 @@ Cette réforme impose de passer par une plateforme de dématérialisation parten
 
 ## Exemple chiffré : le coût caché d'un outil trop limité
 
-Prenez le cas d'une consultante indépendante qui facture 15 clients par mois avec des devis préalables dans un tiers des cas. Avec un module de facturation basique, elle doit recréer chaque devis manuellement, sans conversion automatique en facture, et gérer ses justificatifs d'achat (logiciels, déplacements, matériel) à part, dans un tableur.
+Prenez le cas d'une consultante indépendante qui facture 15 clients par mois avec des devis préalables dans un tiers des cas. Avec un outil de facturation basique, elle doit recréer chaque devis manuellement, sans conversion automatique en facture, et gérer ses justificatifs d'achat (logiciels, déplacements, matériel) à part, dans un tableur.
 
 Si elle passe 20 minutes par semaine à ressaisir des informations qu'un outil dédié aurait automatisées (conversion devis-facture, catalogue de prestations, rapprochement des justificatifs), cela représente environ 17 heures par an. Valorisées à son taux journalier moyen de 450 € HT (soit environ 65 € de l'heure), ce temps perdu équivaut à plus de 1 100 € par an, sans compter le risque d'erreur sur les mentions obligatoires ou la numérotation des factures.
 
@@ -143,7 +145,7 @@ Newbi couvre l'ensemble du cycle de gestion commerciale d'un indépendant ou d'u
 <div className="not-prose my-6 space-y-3">
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Vous émettez moins de 5 factures par mois, sans devis ni avoirs : le module intégré peut suffire un temps.</span>
+    <span>Vos besoins se limitent aux devis, factures et avoirs sur un seul compte Qonto : le module intégré peut suffire.</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -151,15 +153,11 @@ Newbi couvre l'ensemble du cycle de gestion commerciale d'un indépendant ou d'u
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Vous gérez des achats fournisseurs et des notes de frais : l'OCR des justificatifs devient utile dès quelques dizaines de pièces par mois.</span>
+    <span>Vous gérez des achats fournisseurs payés depuis plusieurs comptes : l'OCR des justificatifs et le rapprochement multi-banques évitent la ressaisie.</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
     <span>Vous utilisez ou envisagez plusieurs comptes bancaires : un outil multi-banques évite de dépendre d'une seule offre.</span>
-  </div>
-  <div className="flex items-start gap-3">
-    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Vous anticipez la facturation électronique obligatoire : mieux vaut un outil construit spécifiquement pour le socle Factur-X, UBL, CII.</span>
   </div>
 </div>
 
@@ -175,7 +173,7 @@ Qonto n'est pas la seule banque à avoir ajouté un module de facturation à son
 
 ## En résumé
 
-Qonto reste une excellente banque professionnelle, et son module de facturation convient pour un usage ponctuel et peu volumineux. Dès que votre activité implique des devis réguliers, des avoirs, un suivi structuré des achats, plusieurs comptes bancaires ou la nécessité de vous conformer à la facturation électronique obligatoire, un logiciel de gestion dédié comme Newbi devient plus pertinent, sans pour autant vous obliger à changer de banque : les deux outils se connectent et se complètent naturellement.
+Qonto reste une excellente banque professionnelle, et son module de facturation couvre devis, factures, avoirs, OCR des achats et facturation électronique. Dès que votre activité implique plusieurs comptes bancaires ou que vous voulez une gestion commerciale indépendante de votre banque, un logiciel de gestion dédié comme Newbi devient plus pertinent, sans pour autant vous obliger à changer de banque : les deux outils se connectent et se complètent naturellement.
 
 <ArticleCta />
 
@@ -192,13 +190,13 @@ Qonto reste une excellente banque professionnelle, et son module de facturation 
     <AccordionItem value="item-2">
       <AccordionTrigger>Le module de facturation de Qonto est-il conforme à la facturation électronique 2026 ?</AccordionTrigger>
       <AccordionContent>
-        La conformité dépend de la roadmap propre à chaque éditeur bancaire. Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures électroniques structurées, et l'émission devient obligatoire progressivement selon la taille de l'entreprise, jusqu'en 2027 pour les TPE et micro-entreprises. Vérifiez auprès de votre outil qu'il s'appuie sur une plateforme de dématérialisation partenaire immatriculée.
+        Oui : Qonto propose une plateforme agréée gratuite pour envoyer et recevoir des factures électroniques. Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures électroniques structurées, et l'émission devient obligatoire progressivement selon la taille de l'entreprise, jusqu'en 2027 pour les TPE et micro-entreprises.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
       <AccordionTrigger>Peut-on gérer des devis et des avoirs avec Qonto ?</AccordionTrigger>
       <AccordionContent>
-        Le module de facturation de Qonto est principalement orienté vers la création de factures simples liées au compte bancaire. La gestion complète de devis convertibles en factures, d'avoirs et de bons de commande relève davantage d'un logiciel de gestion dédié comme Newbi.
+        Oui. Le module de facturation de Qonto inclut les devis, les factures, les acomptes et les avoirs ; les relances automatiques passent par le module « Facturation automatisée » (12 € HT par mois). Newbi inclut aussi les bons de commande, un catalogue de produits réutilisable et les relances automatiques dans l'abonnement.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-4">
