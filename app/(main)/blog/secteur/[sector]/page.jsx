@@ -17,7 +17,10 @@ export async function generateMetadata({ params }) {
   const data = getSectorBySlug(sector);
   if (!data) return { title: "Secteur introuvable" };
   return {
-    title: `Facturation et gestion pour ${data.label} | Blog Newbi`,
+    // `absolute` : sans lui le template du layout racine ajoute « | Newbi ».
+    title: {
+      absolute: `Facturation et gestion pour ${data.label} | Blog Newbi`,
+    },
     description: describe(data.label, data.posts.length),
     alternates: { canonical: `/blog/secteur/${sector}` },
   };

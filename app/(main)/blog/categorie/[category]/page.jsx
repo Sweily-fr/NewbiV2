@@ -20,7 +20,9 @@ export async function generateMetadata({ params }) {
   if (posts.length === 0) return { title: "Catégorie introuvable" };
   const label = categoryLabel(category);
   return {
-    title: `${label} : ${posts.length} articles | Blog Newbi`,
+    // `absolute` : sans lui le template du layout racine ajoute « | Newbi »
+    // (titre servi « … | Blog Newbi | Newbi »).
+    title: { absolute: `${label} : ${posts.length} articles | Blog Newbi` },
     description:
       CATEGORY_DESCRIPTIONS[category] ??
       `Tous les articles du blog Newbi dans la catégorie ${label}.`,

@@ -12,7 +12,7 @@ export const metadata = {
       "Facturation électronique : suis-je concerné ? Simulateur gratuit par SIREN | Newbi",
   },
   description:
-    "Simulateur gratuit : vérifie en 10 secondes si ton entreprise est concernée par la facturation électronique obligatoire et à quelle date. Réception au 1er septembre 2026 pour toutes les entreprises, émission en 2026 ou 2027 selon la taille. Recherche par nom ou SIREN.",
+    "Simulateur gratuit : ton entreprise est-elle concernée par la facturation électronique, et à quelle date ? Recherche par nom ou SIREN.",
   keywords: [
     "suis-je concerné facturation électronique",
     "simulateur facturation électronique",

@@ -63,7 +63,7 @@ export default function LpShell({
         <header className="fixed top-0 inset-x-0 z-40 bg-[#FDFDFD]/90 backdrop-blur border-b border-gray-200">
           <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
             <img
-              src="/newbiLetter.png"
+              src="/newbiLetter.webp"
               alt="Newbi"
               width="90"
               height="36"

@@ -415,7 +415,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                 className="flex gap-2 items-center"
               >
                 <img
-                  src="/newbiLetter.png"
+                  src="/newbiLetter.webp"
                   alt="Logo newbi"
                   width="90"
                   height="36"
@@ -576,7 +576,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                               >
                                 <div className="relative flex-1 min-h-[180px] overflow-hidden rounded-xl">
                                   <img
-                                    src="/images/lp-home/tools/projets.png"
+                                    src="/images/lp-home/tools/projets.webp"
                                     alt=""
                                     className="absolute inset-0 size-full object-cover"
                                   />
@@ -599,8 +599,10 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                                     droit de la photo */}
                                   <span className="absolute bottom-3 right-3 rounded-md bg-white px-2 py-1.5 shadow-sm">
                                     <img
-                                      src="/logo_Compatible_Facturation_electronique-footer.png"
+                                      src="/logo_Compatible_Facturation_electronique-footer.webp"
                                       alt="Solution compatible Facturation électronique"
+                                      width={275}
+                                      height={128}
                                       className="h-7 w-auto object-contain"
                                     />
                                   </span>

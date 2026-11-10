@@ -26,6 +26,8 @@ export default function LpFinalCta({
           <img
             src={image}
             alt={imageAlt}
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 size-full object-cover object-[60%_center]"
           />
           {/* Voile : vertical et plus dense sur mobile (texte au-dessus de l'écran),

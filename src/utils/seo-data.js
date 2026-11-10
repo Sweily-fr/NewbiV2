@@ -269,7 +269,7 @@ export const seoData = {
     title:
       "Gestion des achats et notes de frais : factures fournisseurs | Newbi",
     description:
-      "Scannez vos factures d'achat et vos notes de frais, laissez l'OCR remplir les montants et la TVA, et rapprochez-les de vos transactions bancaires. Inclus dans Newbi, 30 jours gratuits.",
+      "Scannez factures d'achat et notes de frais : l'OCR remplit montants et TVA, puis les rapproche de vos transactions bancaires.",
     keywords:
       "gestion des achats, facture fournisseur, note de frais, OCR facture, justificatif comptable, rapprochement bancaire, dépenses entreprise, TPE",
     canonical: `${baseUrl}/produits/gestion-des-achats`,

@@ -69,6 +69,8 @@ export default function LpTestimonials({
                 key={index}
                 src={active.image}
                 alt={`${active.name}, ${active.role}`}
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 size-full object-cover object-top"
                 initial={{ opacity: 0, scale: 1.03 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -114,6 +116,8 @@ export default function LpTestimonials({
                 <img
                   src={item.avatar}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="size-14 rounded-full object-cover ring-4 ring-white"
                 />
                 <span className="-ml-4 flex size-14 items-center justify-center rounded-full bg-white border border-gray-200 ring-4 ring-white text-gray-950 text-sm font-medium">

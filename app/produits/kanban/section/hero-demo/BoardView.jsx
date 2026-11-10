@@ -82,7 +82,7 @@ export default function BoardView() {
       <div className={s.projectHead}>
         <img
           className={s.clientLogo}
-          src="/lp/home/logos/sweily.png"
+          src="/lp/home/logos/sweily.webp"
           alt="Sweily"
           width={104}
           height={34}

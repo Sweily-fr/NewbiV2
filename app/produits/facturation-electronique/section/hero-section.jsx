@@ -118,7 +118,7 @@ export function HeroSection({ hasBanner = false }) {
               </div>
               <p className="text-xs sm:text-sm text-gray-600 text-left">
                 <span className="text-gray-900 font-medium">
-                  +1 000 indépendants
+                  + 140 indépendants
                 </span>{" "}
                 nous font confiance
               </p>

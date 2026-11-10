@@ -17,7 +17,7 @@ export const seo = {
   slug: "sasu-eurl",
   titreSeo: "Logiciel de gestion SASU et EURL | Newbi",
   description:
-    "Gérez votre SASU ou votre EURL au même endroit : devis et factures, achats et justificatifs, TVA, trésorerie et accès comptable inclus. Facturation électronique comprise, 30 jours offerts.",
+    "Devis et factures, achats, TVA, trésorerie et accès comptable de votre SASU ou EURL au même endroit. Facturation électronique comprise.",
   motsCles:
     "logiciel gestion SASU, logiciel EURL, facturation SASU, comptabilité EURL, société associé unique, accès expert-comptable, export FEC société",
 };
