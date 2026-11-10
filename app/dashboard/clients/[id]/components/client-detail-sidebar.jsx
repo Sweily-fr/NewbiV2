@@ -359,6 +359,16 @@ export default function ClientDetailSidebar({
                 />
                 <InfoRow icon={Hash} label="SIRET" value={client.siret} />
                 <InfoRow
+                  icon={CalendarDays}
+                  label="Création de l'entreprise"
+                  value={
+                    client.prospect?.companyCreatedAt &&
+                    new Date(
+                      `${client.prospect.companyCreatedAt}T00:00:00`,
+                    ).toLocaleDateString("fr-FR")
+                  }
+                />
+                <InfoRow
                   icon={Receipt}
                   label="N° TVA"
                   value={client.vatNumber}

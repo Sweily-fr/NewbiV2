@@ -157,6 +157,11 @@ export const GET_CLIENT = gql`
   query GetClient($workspaceId: String!, $id: ID!) {
     client(workspaceId: $workspaceId, id: $id) {
       ...ClientFragment
+      # Prospect généré : origine et date de création de l'entreprise
+      prospect {
+        provider
+        companyCreatedAt
+      }
     }
   }
   ${CLIENT_FRAGMENT}
