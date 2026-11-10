@@ -33,7 +33,7 @@ export const seo = {
   slug: "sci",
   titreSeo: "Logiciel de gestion pour SCI | Newbi",
   description:
-    "Gérez votre SCI sans tableur : appels de loyer et de charges, factures de travaux avec leur justificatif, comptes rapprochés et dossier prêt pour l'expert-comptable. 30 jours offerts.",
+    "Appels de loyer et de charges, factures de travaux et justificatifs, comptes rapprochés et dossier prêt pour l'expert-comptable.",
   motsCles:
     "logiciel SCI, gestion SCI, comptabilité SCI, appel de loyer SCI, SCI à l'IR, SCI à l'IS, déclaration 2072, société civile immobilière",
 };

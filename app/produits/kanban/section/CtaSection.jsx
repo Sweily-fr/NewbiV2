@@ -17,7 +17,7 @@ export default function CtaSection() {
           <div className="flex flex-col items-center text-center px-6 lg:px-12 pt-10 md:pt-12 pb-0">
             {/* Logo */}
             <img
-              src="/newbiLetter.png"
+              src="/newbiLetter.webp"
               alt="Newbi"
               className="h-6 mb-8 brightness-0 invert"
             />
@@ -35,7 +35,7 @@ export default function CtaSection() {
               size="lg"
               className="bg-white text-[#212121] hover:bg-neutral-100 text-base font-semibold px-6 py-3 rounded-xl mb-6 md:mb-8"
             >
-              <Link href="/auth/register">Commencer gratuitement</Link>
+              <Link href="/auth/signup">Commencer gratuitement</Link>
             </Button>
           </div>
 

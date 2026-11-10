@@ -7,6 +7,8 @@ const BLOG_DIR = path.join(process.cwd(), "content", "blog");
 export interface BlogPost {
   slug: string;
   title: string;
+  /** Titre complet de la balise <title> (frontmatter `seoTitle`), sinon « titre | Newbi ». Le H1 garde `title`. */
+  seoTitle: string | null;
   description: string;
   date: string;
   category: string;
@@ -160,6 +162,10 @@ function parsePost(slug: string): BlogPost | null {
   return {
     slug,
     title: data.title ?? "",
+    seoTitle:
+      typeof data.seoTitle === "string" && data.seoTitle.trim()
+        ? data.seoTitle.trim()
+        : null,
     description: data.description ?? "",
     date: toDateString(data.date) ?? "",
     category: data.category ?? "",

@@ -61,10 +61,10 @@ export default function PurchaseInvoicesDemo({ className = "" }) {
             destination est celle sur laquelle le badge est affiché. */}
         <span className="absolute left-[6.4%] top-[51.6%] z-10 flex w-[11.7%] items-center justify-center rounded-sm bg-white p-[0.9%]">
           <img
-            src="/logo_Compatible_Facturation_electronique-footer.png"
+            src="/logo_Compatible_Facturation_electronique-footer.webp"
             alt="Conforme Facturation électronique 2026"
-            width={621}
-            height={289}
+            width={275}
+            height={128}
             className="h-auto w-full object-contain"
           />
         </span>

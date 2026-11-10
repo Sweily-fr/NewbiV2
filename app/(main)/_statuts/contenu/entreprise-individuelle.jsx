@@ -19,9 +19,9 @@ const PHOTO = "/lp/statuts/entreprise-individuelle-hero.jpg";
 
 export const seo = {
   slug: "entreprise-individuelle",
-  titreSeo: "Logiciel de gestion entreprise individuelle | Newbi",
+  titreSeo: "Logiciel de gestion entreprise individuelle (EI) | Newbi",
   description:
-    "Gérez votre entreprise individuelle au même endroit : devis et factures, achats et justificatifs, TVA, trésorerie et export comptable. Facturation électronique incluse, 30 jours offerts.",
+    "Devis et factures, achats, TVA, trésorerie et export comptable de votre entreprise individuelle au même endroit. 30 jours offerts.",
   motsCles:
     "logiciel entreprise individuelle, gestion entreprise individuelle, facturation EI, comptabilité entreprise individuelle, régime réel, export FEC, charges déductibles indépendant",
 };

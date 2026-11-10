@@ -563,7 +563,7 @@ export default function SignaturesDemo({ className = "" }) {
                 </div>
                 <img
                   className={s.pvLogo}
-                  src="/newbiLetter.png"
+                  src="/newbiLetter.webp"
                   alt="Agence Delabre"
                 />
               </div>

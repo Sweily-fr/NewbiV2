@@ -59,7 +59,7 @@ const TRUST_FEATURES = [
   {
     icon: (
       <img
-        src="/logo_Compatible_Facturation_electronique-footer.png"
+        src="/logo_Compatible_Facturation_electronique-footer.webp"
         alt="Solution compatible facturation électronique"
         className="h-16 w-auto object-contain"
       />

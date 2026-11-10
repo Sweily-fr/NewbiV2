@@ -32,7 +32,7 @@ export const metadata = {
       "Générateur de devis gratuit en ligne, PDF sans inscription | Newbi",
   },
   description:
-    "Faites un devis en ligne gratuit : détaillez vos prestations, vérifiez l'aperçu et téléchargez le PDF, sans inscription. Durée de validité, TVA et mention d'accord.",
+    "Faites un devis gratuit en ligne : prestations, TVA, durée de validité, aperçu puis PDF à télécharger, sans inscription.",
   alternates: { canonical: "/outils/generateur-de-devis" },
   openGraph: {
     title: "Générateur de devis gratuit en ligne | Newbi",

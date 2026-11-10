@@ -473,8 +473,12 @@ function PurchaseVisual() {
 
       {/* Le badge officiel, posé par-dessus comme sur la référence */}
       <img
-        src="/logo-facturation-electronique.png"
+        src="/logo-facturation-electronique.webp"
         alt="Solution compatible facturation électronique"
+        width={202}
+        height={80}
+        loading="lazy"
+        decoding="async"
         className="absolute right-4 top-5 h-[52px] w-auto rounded-md bg-white p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       />
     </>

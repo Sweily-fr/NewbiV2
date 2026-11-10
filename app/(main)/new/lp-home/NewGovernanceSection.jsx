@@ -168,6 +168,8 @@ export default function NewGovernanceSection() {
             <img
               src="/lp/facturation-electronique/cta-laptop.jpg"
               alt=""
+              loading="lazy"
+              decoding="async"
               className="absolute inset-0 size-full object-cover object-[60%_center]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/10" />
@@ -224,8 +226,12 @@ function DashboardVisual() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <img
-        src="/sectionNewGov1.png"
+        src="/sectionNewGov1.webp"
         alt="Tableau de bord Newbi"
+        width={1920}
+        height={1087}
+        loading="lazy"
+        decoding="async"
         className="absolute left-10 top-10 w-[130%] max-w-none rounded-tl-2xl object-cover object-left-top shadow-xs border border-neutral-200"
       />
     </div>
