@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@apollo/client";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -38,6 +39,7 @@ import {
   CircleAlertIcon,
   Upload,
   Settings2,
+  Target,
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
@@ -58,6 +60,8 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { ClientsPageSkeleton } from "./components/clients-page-skeleton";
 import ClientImportDialog from "./components/client-import-dialog";
 import ClientExportButton from "./components/client-export-button";
+import GenerateProspectsDialog from "./components/generate-prospects-dialog";
+import { GET_PROSPECT_SETTINGS } from "@/src/graphql/prospectQueries";
 import CreateListDialog from "./components/create-list-dialog";
 import AssignMembersDialog from "./components/assign-members-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -134,6 +138,18 @@ function ClientsContent() {
   const canCreateClientLists = !isReady || canDo("clientLists", "create");
   const canEditClientLists = !isReady || canDo("clientLists", "edit");
   const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  // Générer des prospects : bouton affiché seulement quand l'API l'ouvre
+  const [prospectsDialogOpen, setProspectsDialogOpen] = useState(false);
+  const { data: prospectData, refetch: refetchProspectSettings } = useQuery(
+    GET_PROSPECT_SETTINGS,
+    {
+      variables: { workspaceId },
+      skip: !workspaceId || !canCreateClients,
+      fetchPolicy: "cache-and-network",
+    },
+  );
+  const prospectSettings = prospectData?.prospectSettings;
+  const showProspects = Boolean(prospectSettings?.enabled) && canCreateClients;
   const { fields: customFieldDefinitions } = useClientCustomFields(
     canReadCustomFields ? workspaceId : null,
   );
@@ -335,6 +351,18 @@ function ClientsContent() {
                 <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
                 Champs
               </Button>
+              {showProspects && (
+                <Button
+                  variant="outline"
+                  onClick={() => setProspectsDialogOpen(true)}
+                  className="self-start gap-1.5 cursor-pointer"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
+                  <Target size={14} strokeWidth={2} aria-hidden="true" />
+                  Générer des prospects
+                </Button>
+              )}
               {canImportClients && (
                 <Button
                   variant="outline"
@@ -659,6 +687,19 @@ function ClientsContent() {
                 >
                   <Settings2 className="h-4 w-4" />
                 </Button>
+                {showProspects && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setProspectsDialogOpen(true)}
+                    className="cursor-pointer"
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip || "Générer des prospects"}
+                    aria-label="Générer des prospects"
+                  >
+                    <Target className="h-4 w-4" />
+                  </Button>
+                )}
                 {canImportClients && (
                   <Button
                     variant="outline"
@@ -712,6 +753,17 @@ function ClientsContent() {
       )}
 
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
+      {showProspects && (
+        <GenerateProspectsDialog
+          open={prospectsDialogOpen}
+          onOpenChange={setProspectsDialogOpen}
+          workspaceId={workspaceId}
+          settings={prospectSettings}
+          canCreateLists={canCreateClientLists}
+          canEditLists={canEditClientLists}
+          onQuotaChange={() => refetchProspectSettings()}
+        />
+      )}
       <ClientImportDialog
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
