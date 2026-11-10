@@ -1,8 +1,8 @@
 ---
-title: 'Facture en anglais : invoice ou bill ? Modèle et lexique'
+title: 'Facture en anglais : invoice, exemple et modèle gratuit'
 description: >-
-  Invoice ou bill ? Le bon terme, la structure d'une facture en anglais
-  conforme au droit français, un lexique français-anglais et les mentions de TVA.
+  Facture se dit invoice en anglais, pas bill. Exemple de facture en anglais,
+  modèle Word et Excel gratuit, lexique bilingue et mentions de TVA à l'étranger.
 date: '2026-10-19'
 category: modele
 sector: null
@@ -11,7 +11,7 @@ author: Joaquim
 image: /blog/modele-facture-anglais-invoice/exemple.webp
 published: true
 publishDate: '2026-10-19'
-updated: '2026-11-09'
+updated: '2026-11-10'
 ---
 
 import Link from "next/link"
@@ -27,11 +27,13 @@ import { Check } from "lucide-react"
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-# Modèle de facture en anglais (invoice) : vocabulaire et mentions
+# Facture en anglais : invoice, exemple et modèle gratuit
+
+**Facture** se dit **invoice** en anglais, et **invoice** se traduit par « facture » en français. C'est le seul terme à employer sur un document émis par un professionnel. Vous trouverez plus bas un exemple complet de facture en anglais et un modèle gratuit à télécharger en Word et en Excel, aux libellés doublés en anglais et en français.
 
 Un **modèle de facture en anglais** devient indispensable dès que vous facturez un client basé au Royaume-Uni, aux Etats-Unis ou dans tout autre pays anglophone. Mais attention : une facture en anglais destinée à un client étranger reste soumise aux règles françaises si vous êtes établi en France. Il ne suffit pas de traduire les mots, il faut aussi conserver toutes les mentions obligatoires du droit français.
 
-Invoice ou bill ? Sur un document émis par un professionnel, le terme à utiliser est **invoice**. **Bill** désigne plutôt la note à régler par un consommateur (électricité, téléphone, restaurant) et n'apparaît sur une invoice que dans la rubrique « Bill to », qui identifie le client facturé.
+Invoice ou bill ? Sur un document émis par un professionnel, le terme à utiliser est **invoice**. **Bill** désigne plutôt la note à régler par un consommateur (électricité, téléphone, addition au restaurant) et n'apparaît sur une invoice que dans la rubrique « Bill to », qui identifie le client facturé. Aux Etats-Unis, « bill » s'emploie aussi dans le langage courant pour toute somme à payer, mais l'en-tête du document reste « Invoice ».
 
 Ce guide vous donne la structure complète d'une invoice conforme, le lexique facture-invoice à connaître, et les règles de TVA applicables lorsque vous facturez à l'étranger.
 
@@ -105,6 +107,34 @@ Voici les termes anglais les plus utiles pour construire votre modèle de factur
         <TableCell className="font-medium">Exonération de TVA</TableCell>
         <TableCell>VAT exempt</TableCell>
       </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facturé à (client)</TableCell>
+        <TableCell>Bill to</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Désignation, quantité, prix unitaire</TableCell>
+        <TableCell>Description, quantity, unit price</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Devis</TableCell>
+        <TableCell>Quote / Estimate</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Bon de commande</TableCell>
+        <TableCell>Purchase order (PO)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture d'acompte</TableCell>
+        <TableCell>Deposit invoice / Down payment invoice</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Avoir</TableCell>
+        <TableCell>Credit note</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Reçu de paiement</TableCell>
+        <TableCell>Receipt</TableCell>
+      </TableRow>
     </TableBody>
   </Table>
 </div>
@@ -162,6 +192,14 @@ Votre invoice doit reprendre l'ensemble des blocs d'une facture classique, dans 
   </p>
 </div>
 
+## Exemple de facture en anglais
+
+Voici une facture en anglais remplie : un développeur freelance établi en France facture 8 000 € HT de développement à une entreprise de Londres. On y retrouve, avec leurs libellés anglais, toutes les mentions françaises : Invoice number, Issue date et Due date, les coordonnées de l'émetteur avec son SIREN et son VAT number, Bill to avec le pays du client, le détail de la prestation, puis les Payment terms et les Bank details. Le client étant une entreprise hors Union européenne, aucune TVA n'est ajoutée et la mention justifiant son absence figure sous le total.
+
+<Image src="/blog/modele-facture-anglais-invoice/exemple.webp" alt="Modèle facture en anglais : invoice de 8 000 € à un client de Londres, sans TVA" width="1600" height="2216" className="rounded-lg border" />
+
+Pour un client établi dans l'Union européenne, le même modèle s'utilise en remplaçant cette mention par l'autoliquidation (reverse charge) et en ajoutant le numéro de TVA intracommunautaire du client, comme détaillé ci-dessous.
+
 ## La TVA selon la destination de votre client
 
 La règle de TVA applicable dépend de la localisation de votre client et de son statut. C'est le point le plus fréquemment mal maîtrisé lorsqu'on [facture un client étranger](/blog/facturer-client-etranger-ue-hors-ue).
@@ -174,9 +212,7 @@ La règle de TVA applicable dépend de la localisation de votre client et de son
 
 ### Cas pratique : facturer un client au Royaume-Uni
 
-Vous êtes développeur freelance et facturez une prestation de 8 000 € HT à une entreprise basée à Londres. Le Royaume-Uni n'étant plus membre de l'Union européenne, cette prestation est hors du champ d'application de la TVA française. Votre facture doit porter la mention "VAT not applicable - export of services" ou une formulation équivalente, et aucun montant de TVA n'est ajouté : le client paie 8 000 € au total.
-
-<Image src="/blog/modele-facture-anglais-invoice/exemple.webp" alt="Modèle facture en anglais : invoice de 8 000 € à un client de Londres, sans TVA" width="1600" height="2216" className="rounded-lg border" />
+Vous êtes développeur freelance et facturez une prestation de 8 000 € HT à une entreprise basée à Londres. Le Royaume-Uni n'étant plus membre de l'Union européenne, cette prestation est hors du champ d'application de la TVA française. Votre facture doit porter la mention "VAT not applicable - export of services" ou une formulation équivalente, et aucun montant de TVA n'est ajouté : le client paie 8 000 € au total. C'est l'exemple de facture en anglais présenté plus haut.
 
 ### Cas pratique : facturer un client en Allemagne
 
@@ -274,6 +310,24 @@ Un modèle de facture en anglais destiné à un client étranger doit conserver 
 
 <div className="not-prose my-8">
   <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-0a">
+      <AccordionTrigger>Comment dit-on facture en anglais ?</AccordionTrigger>
+      <AccordionContent>
+        Facture se dit « invoice » en anglais, au Royaume-Uni comme aux Etats-Unis. A l'inverse, « invoice » se traduit par « facture » en français. Le numéro de facture devient « invoice number », la date de facture « invoice date » et la date d'échéance « due date ».
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-0b">
+      <AccordionTrigger>Invoice ou bill : quelle différence ?</AccordionTrigger>
+      <AccordionContent>
+        « Invoice » désigne la facture émise par un professionnel pour une vente ou une prestation : c'est le titre à mettre sur votre document. « Bill » désigne plutôt une note à payer par un consommateur, comme une facture d'électricité ou l'addition au restaurant. Sur une invoice, « bill » n'apparaît que dans la rubrique « Bill to », qui indique le client facturé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-0c">
+      <AccordionTrigger>Comment faire une facture en anglais ?</AccordionTrigger>
+      <AccordionContent>
+        Reprenez une facture française complète et traduisez ses libellés : Invoice number, Issue date, Due date, Bill to, Description, Unit price, Subtotal, VAT, Total due, Payment terms et Bank details. Gardez toutes les mentions obligatoires françaises (SIREN, numéro de TVA, pénalités de retard) et ajoutez la mention de TVA adaptée au pays du client. Le plus simple est de partir d'un modèle bilingue, comme celui à télécharger dans cet article.
+      </AccordionContent>
+    </AccordionItem>
     <AccordionItem value="item-1">
       <AccordionTrigger>Une facture en anglais doit-elle respecter les mentions obligatoires françaises ?</AccordionTrigger>
       <AccordionContent>
