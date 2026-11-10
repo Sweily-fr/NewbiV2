@@ -98,6 +98,11 @@ function describeOutcome(outcome) {
       `${plural(outcome.opposedCount, "entreprise")} écartée${outcome.opposedCount > 1 ? "s" : ""} car opposée${outcome.opposedCount > 1 ? "s" : ""} à la prospection`,
     );
   }
+  if (outcome.closedCount) {
+    parts.push(
+      `${plural(outcome.closedCount, "entreprise")} écartée${outcome.closedCount > 1 ? "s" : ""} car fermée${outcome.closedCount > 1 ? "s" : ""}`,
+    );
+  }
   const notCreated = (outcome.skipped || []).filter(
     (s) => s.reason !== "ALREADY_IN_CLIENTS",
   ).length;
@@ -463,9 +468,9 @@ export default function GenerateProspectsDialog({
                 ` Pour ${plural(count, "prospect")} : ${count + 1} crédits, un de plus par page supplémentaire si besoin.`}
             </p>
             <p>
-              Seules les entreprises joignables comme demandé sont ajoutées.
-              Celles qui refusent la prospection commerciale ou qui sont déjà
-              dans vos contacts sont écartées.
+              Seules les entreprises en activité et joignables comme demandé
+              sont ajoutées. Celles qui refusent la prospection commerciale ou
+              qui sont déjà dans vos contacts sont écartées.
             </p>
           </div>
 

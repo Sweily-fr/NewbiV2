@@ -115,6 +115,7 @@ export const GENERATE_PROSPECTS = gql`
       requested
       matching
       opposedCount
+      closedCount
       unlockedCount
       listId
       providerError
