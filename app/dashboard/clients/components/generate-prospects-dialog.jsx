@@ -44,6 +44,26 @@ const STAFF_RANGES = [
   { id: "large", label: "50 salariés et plus", minStaff: 50 },
 ];
 
+// Ancienneté de l'entreprise, en années révolues (bornes de date de création)
+const AGE_RANGES = [
+  { id: "all", label: "Toutes dates" },
+  { id: "lt1", label: "Moins d'un an", maxYears: 1 },
+  { id: "1to3", label: "1 à 3 ans", minYears: 1, maxYears: 3 },
+  { id: "3to10", label: "3 à 10 ans", minYears: 3, maxYears: 10 },
+  { id: "gt10", label: "Plus de 10 ans", minYears: 10 },
+];
+
+/** Date du jour il y a `years` ans, au format AAAA-MM-JJ. */
+function yearsAgo(years) {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - years);
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 const CONTACT_MODES = [
   { id: "phone", label: "Téléphone" },
   { id: "email", label: "Email" },
@@ -115,6 +135,7 @@ export default function GenerateProspectsDialog({
   const [places, setPlaces] = useState([]);
   const [placeQuery, setPlaceQuery] = useState("");
   const [staffRange, setStaffRange] = useState("all");
+  const [ageRange, setAgeRange] = useState("all");
   const [contact, setContact] = useState("phone");
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [destination, setDestination] = useState(NEW_LIST);
@@ -137,6 +158,7 @@ export default function GenerateProspectsDialog({
     setPlaces([]);
     setPlaceQuery("");
     setStaffRange("all");
+    setAgeRange("all");
     setContact("phone");
     setNewListName("");
     setListNameTouched(false);
@@ -173,6 +195,7 @@ export default function GenerateProspectsDialog({
 
   const handleGenerate = async () => {
     const range = STAFF_RANGES.find((r) => r.id === staffRange);
+    const age = AGE_RANGES.find((r) => r.id === ageRange);
     const toList =
       destination === NEW_LIST
         ? { newListName: newListName.trim() || null }
@@ -189,6 +212,9 @@ export default function GenerateProspectsDialog({
           contact,
           minStaff: range?.minStaff ?? null,
           maxStaff: range?.maxStaff ?? null,
+          // Créée il y a moins de N ans : après la date d'il y a N ans
+          createdAfter: age?.maxYears ? yearsAgo(age.maxYears) : null,
+          createdBefore: age?.minYears ? yearsAgo(age.minYears) : null,
         },
         ...toList,
       },
@@ -334,6 +360,24 @@ export default function GenerateProspectsDialog({
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Date de création</Label>
+              <Select value={ageRange} onValueChange={setAgeRange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {AGE_RANGES.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
               <Label>Joignables par</Label>
               <ToggleGroup
                 type="single"
@@ -353,9 +397,6 @@ export default function GenerateProspectsDialog({
                 ))}
               </ToggleGroup>
             </div>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="prospect-count">Nombre de prospects</Label>
               <Input
@@ -374,6 +415,9 @@ export default function GenerateProspectsDialog({
                   : "Plus de prospects disponibles"}
               </p>
             </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Ajouter à</Label>
               <Select value={destination} onValueChange={setDestination}>
@@ -394,23 +438,22 @@ export default function GenerateProspectsDialog({
                 </SelectContent>
               </Select>
             </div>
+            {destination === NEW_LIST && (
+              <div className="space-y-2">
+                <Label htmlFor="prospect-list-name">Nom de la liste</Label>
+                <Input
+                  id="prospect-list-name"
+                  value={newListName}
+                  onChange={(e) => {
+                    setListNameTouched(true);
+                    setNewListName(e.target.value);
+                  }}
+                  maxLength={100}
+                  placeholder="Ex. Menuisiers Vienne"
+                />
+              </div>
+            )}
           </div>
-
-          {destination === NEW_LIST && (
-            <div className="space-y-2">
-              <Label htmlFor="prospect-list-name">Nom de la liste</Label>
-              <Input
-                id="prospect-list-name"
-                value={newListName}
-                onChange={(e) => {
-                  setListNameTouched(true);
-                  setNewListName(e.target.value);
-                }}
-                maxLength={100}
-                placeholder="Ex. Menuisiers Vienne"
-              />
-            </div>
-          )}
 
           <div className="space-y-1 rounded-md bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground">
             <p>
