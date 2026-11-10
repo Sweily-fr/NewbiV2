@@ -119,6 +119,34 @@ const cspValue = [
   "form-action 'self'",
 ].join("; ");
 
+// Versions WebP allégées des images des pages publiques (10/11/2026), créées à
+// côté des PNG/JPG d'origine, qui restent en place : les e-mails et l'app
+// mobile pointent sur certains d'entre eux par URL absolue. Seuls ces fichiers
+// reçoivent un cache immutable (voir headers()).
+const IMMUTABLE_WEBP = [
+  "/newbiLetter.webp",
+  "/sectionNewGov1.webp",
+  "/logo-facturation-electronique.webp",
+  "/logo-france-num-activateur.webp",
+  "/logo_Compatible_Facturation_electronique-footer.webp",
+  "/images/lp-home/tools/projets.webp",
+  "/images/lp-home/tools/tresorerie.webp",
+  "/images/lp-home/tools/pre-comptabilite.webp",
+  "/lp/home/ipad-panneau-vide.webp",
+  "/lp/home/trio/nouvelle-facture.webp",
+  "/lp/home/logos/sweily.webp",
+  "/lp/home/integrations/pennylane.webp",
+  "/lp/metiers/btp-hero.webp",
+  "/lp/factures/carte-bureau.webp",
+  "/lp/factures/iphone-main.webp",
+  "/lp/factures/ipad-mockup.webp",
+  "/lp/company/1.webp",
+  "/lp/company/4.webp",
+  "/lp/company/5.webp",
+  "/lp/avis/maeva.webp",
+  "/lp/avis/pedro.webp",
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Dossier de build isolable via NEXT_DIST_DIR. Deux processus Next qui
@@ -269,6 +297,36 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Images de public/ : servies jusque-là en max-age=0 (chaque visite
+        // revalidait chaque image, constat P5 de l'audit du 10/11/2026). Un
+        // jour de cache navigateur, puis une semaine de revalidation en
+        // arrière-plan : ces fichiers peuvent changer sans changer de nom,
+        // donc pas d'immutable ici. Le motif ne vise que les fichiers à
+        // extension d'image hors /_next/, /api/ et /ingest/ : ni les pages
+        // HTML ni les routes d'API ne sont concernées.
+        source:
+          "/:path((?!_next/|api/|ingest/).*\\.(?:png|jpg|jpeg|svg|webp|avif|ico))",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      // WebP créés le 10/11/2026 (allègement des images, constats P1 à P4) :
+      // cache d'un an, immutable. Placées après la règle ci-dessus, elles la
+      // remplacent pour ces seuls fichiers. Si l'un d'eux doit changer, le
+      // renommer (suffixe -v2…) plutôt que l'écraser.
+      ...IMMUTABLE_WEBP.map((source) => ({
+        source,
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      })),
     ];
   },
 
@@ -308,6 +366,14 @@ const nextConfig = {
       {
         source: "/blog/auteur/:author(trevis|joaquim|dylan)",
         destination: "/blog/auteur/holany",
+        permanent: true,
+      },
+      // QuickBooks a fermé en France le 31/12/2023 : le comparatif
+      // « QuickBooks vs Newbi » décrivait un produit qui n'existe plus
+      // (audit SEO du 10/11/2026). Fusionné dans l'article sur la fermeture.
+      {
+        source: "/blog/quickbooks-vs-newbi-comparatif",
+        destination: "/blog/alternatives-quickbooks-france-arret",
         permanent: true,
       },
       // URLs d'une version antérieure du site, absentes du dépôt actuel mais
