@@ -7,6 +7,7 @@ const PROSPECT_QUOTA_FIELDS = gql`
     quota
     used
     remaining
+    available
     resetsAt
   }
 `;
@@ -81,6 +82,39 @@ export const UNLOCK_PROSPECTS = gql`
       listId: $listId
       newListName: $newListName
     ) {
+      unlockedCount
+      listId
+      providerError
+      skipped {
+        siren
+        reason
+      }
+      quota {
+        ...ProspectQuotaFields
+      }
+    }
+  }
+`;
+
+export const GENERATE_PROSPECTS = gql`
+  ${PROSPECT_QUOTA_FIELDS}
+  mutation GenerateProspects(
+    $workspaceId: String!
+    $input: ProspectSearchInput!
+    $count: Int!
+    $listId: ID
+    $newListName: String
+  ) {
+    generateProspects(
+      workspaceId: $workspaceId
+      input: $input
+      count: $count
+      listId: $listId
+      newListName: $newListName
+    ) {
+      requested
+      matching
+      opposedCount
       unlockedCount
       listId
       providerError
