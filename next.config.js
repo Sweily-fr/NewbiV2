@@ -303,6 +303,13 @@ const nextConfig = {
         destination: "https://www.newbi.fr/:path*",
         permanent: true,
       },
+      // Depuis le 10/11/2026, tous les articles sont signés Holany : les
+      // anciennes pages auteur renvoient vers la sienne.
+      {
+        source: "/blog/auteur/:author(trevis|joaquim|dylan)",
+        destination: "/blog/auteur/holany",
+        permanent: true,
+      },
       // URLs d'une version antérieure du site, absentes du dépôt actuel mais
       // toujours connues de Google 16 mois après. Relevé le 26/09/2026 dans le
       // rapport de performances : /blog/guide-facturation-freelance tient
