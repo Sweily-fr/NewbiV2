@@ -15,7 +15,7 @@ const LOGOS = [
   { file: "googlecalendar.svg", label: "Google Agenda", bg: "#FFFFFF" },
   { file: "stripe.svg", label: "Stripe", bg: "#FFFFFF" },
   { file: "outlook.png", label: "Outlook", bg: "#FFFFFF" },
-  { file: "pennylane.png", label: "Pennylane", bg: "#FFFFFF" },
+  { file: "pennylane.webp", label: "Pennylane", bg: "#FFFFFF" },
   { file: "apple.svg", label: "Agenda Apple", bg: "#FFFFFF" },
   { file: "abby.png", label: "Abby", bg: "#FFFFFF" },
 ];
@@ -94,8 +94,12 @@ export default function IntegrationsSection() {
               {/* Newbi au centre */}
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 grid place-items-center size-[160px] md:size-[196px] rounded-full bg-[#17171A] shadow-lg">
                 <img
-                  src="/newbiLetter.png"
+                  src="/newbiLetter.webp"
                   alt=""
+                  width={224}
+                  height={56}
+                  loading="lazy"
+                  decoding="async"
                   /* le logo est noir : on l'inverse en blanc pour le cercle */
                   className="w-[92px] md:w-[112px] brightness-0 invert"
                 />
@@ -145,6 +149,8 @@ function Orbit({ items, radius, duration }) {
         <img
           src={`/lp/home/integrations/${item.file}`}
           alt={item.label}
+          loading="lazy"
+          decoding="async"
           className={
             item.fill
               ? "size-full object-cover"

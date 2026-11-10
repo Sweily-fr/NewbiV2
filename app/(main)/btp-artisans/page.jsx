@@ -41,7 +41,7 @@ const poppins = Poppins({
 
 const TITRE = "Logiciel de devis et facture bâtiment | Newbi";
 const DESCRIPTION =
-  "Logiciel de devis et factures pour artisans du bâtiment : factures d'acompte et de situation, avancement global ou ligne par ligne, retenue de garantie et TVA choisie à la ligne. 30 jours offerts.";
+  "Devis de chantier, acomptes, factures de situation, retenue de garantie et TVA à la ligne : le logiciel des artisans du bâtiment. 30 jours offerts.";
 
 export const metadata = {
   title: { absolute: TITRE },
@@ -139,7 +139,11 @@ const HERO = {
       , avec la numérotation qui suit. Depuis le camion comme depuis le bureau.
     </>
   ),
-  image: "/lp/metiers/btp-hero.jpg",
+  // WebP recadré en 4:3 comme le cadre du hero (1216 x 912, 2x l'affichage) :
+  // l'original btp-hero.jpg (1400 x 2100, 395 Ko) reste dans public/.
+  image: "/lp/metiers/btp-hero.webp",
+  imageWidth: 1216,
+  imageHeight: 912,
   imageAlt: "Un artisan découpe un carreau sur un chantier de rénovation",
   cartes: [
     {

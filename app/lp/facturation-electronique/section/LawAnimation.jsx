@@ -56,7 +56,7 @@ export default function LawAnimation() {
       {/* Badge officiel */}
       <div className="law-badge rounded-2xl bg-white px-7 py-5 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.25)]">
         <img
-          src="/logo_Compatible_Facturation_electronique-footer.png"
+          src="/logo_Compatible_Facturation_electronique-footer.webp"
           alt="Solution compatible facturation électronique"
           className="h-16 w-auto object-contain"
         />

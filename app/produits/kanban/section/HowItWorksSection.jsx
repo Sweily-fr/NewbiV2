@@ -33,7 +33,7 @@ export default function HowItWorksSection() {
                 Glissez-déposez pour mettre à jour le statut en un instant.
               </p>
               <Link
-                href="/auth/register"
+                href="/auth/signup"
                 className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-medium text-white bg-[#212121] hover:bg-[#333333] transition-colors"
               >
                 Essayer le Board

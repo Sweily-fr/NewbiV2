@@ -34,7 +34,7 @@ export const seo = {
   slug: "sas-sarl",
   titreSeo: "Logiciel de gestion SAS et SARL | Newbi",
   description:
-    "Gérez votre SAS ou votre SARL à plusieurs : factures aux mentions de la société, achats et justificatifs, comptes bancaires rapprochés et dossier d'exercice pour l'expert-comptable. 30 jours offerts.",
+    "Factures aux mentions de la société, achats, comptes bancaires rapprochés et dossier pour l'expert-comptable. 30 jours offerts.",
   motsCles:
     "logiciel gestion SAS, logiciel SARL, facturation SAS, comptabilité SARL, mentions obligatoires facture société, approbation des comptes, export FEC société",
 };

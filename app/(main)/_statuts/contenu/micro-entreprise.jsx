@@ -31,7 +31,7 @@ export const seo = {
   slug: "micro-entreprise",
   titreSeo: "Logiciel pour micro-entreprise | Newbi",
   description:
-    "Tenez les obligations comptables de votre micro-entreprise sans tableur : livre des recettes généré depuis vos factures, justificatifs conservés 10 ans, chiffre d'affaires prêt à déclarer. 30 jours offerts.",
+    "Devis et factures conformes, clients, dépenses, trésorerie et facturation électronique de votre micro-entreprise. 30 jours offerts.",
   motsCles:
     "logiciel micro-entreprise, obligations comptables micro-entreprise, livre des recettes, registre des achats, compte bancaire dédié micro-entrepreneur, déclaration URSSAF",
 };

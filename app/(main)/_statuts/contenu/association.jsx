@@ -20,7 +20,7 @@ export const seo = {
   slug: "association",
   titreSeo: "Logiciel de gestion pour association | Newbi",
   description:
-    "Gérez votre association au même endroit : factures et devis aux bonnes mentions, dépenses et justificatifs, trésorerie et accès gratuit pour votre comptable. 30 jours offerts, sans carte bancaire.",
+    "Factures et devis aux bonnes mentions, dépenses, justificatifs et trésorerie de votre association, accès gratuit pour le comptable.",
   motsCles:
     "logiciel gestion association, facturation association loi 1901, mention TVA 261-7, numéro RNA facture, trésorerie association, dépenses association",
 };

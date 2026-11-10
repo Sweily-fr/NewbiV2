@@ -434,7 +434,7 @@ export default function PurchasesDemo({ className = "" }) {
         <div className={`${s.deviceGroup} ${s.uiIdle}`} data-anim="ui">
           <img
             className={s.device}
-            src="/lp/home/ipad-panneau-vide.png"
+            src="/lp/home/ipad-panneau-vide.webp"
             alt="Interface Newbi : factures d'achat, justificatifs scannés et catégorisés"
             width={2400}
             height={1286}

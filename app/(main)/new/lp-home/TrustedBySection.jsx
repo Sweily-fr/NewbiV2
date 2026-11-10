@@ -4,22 +4,23 @@ import React from "react";
 // `width` et `height` sont les dimensions réelles des fichiers : la hauteur
 // rendue vient de la classe `height`, mais sans ces attributs le navigateur
 // ignore la largeur jusqu'au chargement et la ligne se réorganise à l'arrivée
-// de chaque logo.
+// de chaque logo. Les .webp sont réduits à 2x la hauteur affichée (les .png
+// d'origine faisaient de 29 à 46 Ko pour 20 à 48 px de haut).
 const logos = [
   {
     name: "L'Héritage",
-    src: "/lp/company/4.png",
+    src: "/lp/company/4.webp",
     height: "h-12",
-    w: 490,
-    h: 254,
+    w: 185,
+    h: 96,
   },
-  { name: "New3dge", src: "/lp/company/1.png", height: "h-5", w: 493, h: 63 },
+  { name: "New3dge", src: "/lp/company/1.webp", height: "h-5", w: 313, h: 40 },
   {
     name: "Mardy Studio",
-    src: "/lp/company/5.png",
+    src: "/lp/company/5.webp",
     height: "h-6",
-    w: 481,
-    h: 105,
+    w: 220,
+    h: 48,
   },
 ];
 

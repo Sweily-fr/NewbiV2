@@ -162,10 +162,12 @@ const Footer7 = ({
               <div className="col-span-1 sm:col-span-2 md:col-span-2 flex flex-col items-center md:items-start mb-6 sm:mb-4 md:mb-0">
                 <div className="lg:pb-6 group/item relative">
                   <img
-                    src="/newbiLetter.png"
+                    src="/newbiLetter.webp"
                     alt="Logo newbi"
                     width="100"
                     height="40"
+                    loading="lazy"
+                    decoding="async"
                     className="object-contain"
                   />
                 </div>
@@ -182,6 +184,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/instagram.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className={SOCIAL_ICON_CLASS}
                     />
@@ -195,6 +199,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/tiktok.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className={SOCIAL_ICON_CLASS}
                     />
@@ -208,6 +214,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/linkedin.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className={SOCIAL_ICON_CLASS}
                     />
@@ -221,6 +229,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/youtube.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className={SOCIAL_ICON_CLASS}
                     />
@@ -244,6 +254,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/trustpilot-star.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className="size-5 object-contain shrink-0"
                     />
@@ -257,6 +269,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/google.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className="size-5 object-contain shrink-0"
                     />
@@ -273,6 +287,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/app-store.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className="size-5 object-contain shrink-0 rounded-[5px]"
                     />
@@ -286,6 +302,8 @@ const Footer7 = ({
                   >
                     <img
                       src="/social/google-play.svg"
+                      loading="lazy"
+                      decoding="async"
                       alt=""
                       className="size-5 object-contain shrink-0"
                     />
@@ -702,10 +720,12 @@ const Footer7 = ({
             className="inline-block"
           >
             <img
-              src="/logo_Compatible_Facturation_electronique-footer.png"
+              src="/logo_Compatible_Facturation_electronique-footer.webp"
               alt="Solution compatible Facturation électronique"
-              width={621}
-              height={289}
+              width={275}
+              height={128}
+              loading="lazy"
+              decoding="async"
               className="h-16 w-auto object-contain rounded-lg"
             />
           </Link>
@@ -721,6 +741,8 @@ const Footer7 = ({
               alt="Badge FranceSaaS"
               width="200"
               height="44"
+              loading="lazy"
+              decoding="async"
               className="h-16 w-auto object-contain"
             />
           </a>
@@ -732,10 +754,12 @@ const Footer7 = ({
             className="inline-block"
           >
             <img
-              src="/logo-france-num-activateur.png"
+              src="/logo-france-num-activateur.webp"
               alt="Activateur France Num"
-              width={400}
-              height={364}
+              width={141}
+              height={128}
+              loading="lazy"
+              decoding="async"
               className="h-16 w-auto object-contain"
             />
           </a>

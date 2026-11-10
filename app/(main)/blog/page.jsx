@@ -13,7 +13,10 @@ import { getAllPosts, getCategories, getSectors } from "@/src/lib/blog";
 import { formatPostForList } from "@/src/lib/blog-format";
 
 export const metadata = {
-  title: "Blog Newbi - Guides et conseils pour entrepreneurs et freelances",
+  title: {
+    absolute:
+      "Blog Newbi : guides et conseils pour entrepreneurs et freelances",
+  },
   description:
     "Découvrez nos articles sur la facturation, la gestion d'entreprise, la comptabilité et les outils pour freelances et auto-entrepreneurs.",
   alternates: {

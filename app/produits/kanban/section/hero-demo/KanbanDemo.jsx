@@ -467,7 +467,7 @@ export default function KanbanDemo({ className = "" }) {
       >
         <img
           className={s.device}
-          src="/lp/home/ipad-panneau-vide.png"
+          src="/lp/home/ipad-panneau-vide.webp"
           alt="Interface Newbi : tableau de suivi d'un projet client"
           width={2400}
           height={1286}

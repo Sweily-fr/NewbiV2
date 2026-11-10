@@ -287,7 +287,7 @@ export default function GuideFacturationElectroniquePage({ related = [] }) {
                     >
                       J'accepte les{" "}
                       <Link
-                        href="/conditions-generales"
+                        href="/cgv"
                         className="text-indigo-600 underline"
                         target="_blank"
                       >
@@ -424,10 +424,7 @@ export default function GuideFacturationElectroniquePage({ related = [] }) {
 
       {/* Pour approfondir : articles du cluster facturation électronique */}
       {related.length > 0 && (
-        <section
-          aria-labelledby="guide-related-heading"
-          className="px-5 pb-16"
-        >
+        <section aria-labelledby="guide-related-heading" className="px-5 pb-16">
           <div className="max-w-[1200px] mx-auto">
             <h2
               id="guide-related-heading"

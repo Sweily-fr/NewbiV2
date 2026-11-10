@@ -119,8 +119,12 @@ export function ReadyToInvoiceSection() {
             {/* À partir de lg, l'image sort du flux et se colle dans l'angle
                 bas droit du bloc noir, donc au bord de l'écran. */}
             <img
-              src="/lp/factures/iphone-main.png"
+              src="/lp/factures/iphone-main.webp"
               alt="Liste des factures clients dans Newbi sur mobile : montants, statuts et dates"
+              width={1024}
+              height={1536}
+              loading="lazy"
+              decoding="async"
               className="h-auto w-full max-w-[440px] lg:absolute lg:-bottom-40 lg:right-0 lg:w-[680px] lg:max-w-none"
             />
           </div>

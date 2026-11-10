@@ -36,8 +36,12 @@ export default function FacturesGovernanceSection() {
             {/* Texte en haut : le voile est donc dégradé depuis le haut */}
             <article className="relative flex-1 min-h-[520px] overflow-hidden rounded-3xl flex flex-col justify-start p-7 md:p-8 text-white">
               <img
-                src="/lp/factures/carte-bureau.png"
+                src="/lp/factures/carte-bureau.webp"
                 alt=""
+                width={1024}
+                height={1024}
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 size-full object-cover object-[60%_center]"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/10" />
@@ -130,11 +134,12 @@ function DocumentsVisual() {
           {/* « à votre logo » : plutôt qu'un bloc de couleur, le logo d'un
               vrai client, déjà servi par la démo du hero de la LP home. */}
           <img
-            src="/lp/home/logos/sweily.png"
+            src="/lp/home/logos/sweily.webp"
             alt=""
-            width={2000}
-            height={660}
+            width={208}
+            height={68}
             loading="lazy"
+            decoding="async"
             className="h-5 w-auto object-contain"
           />
           <span className="flex items-center gap-1">

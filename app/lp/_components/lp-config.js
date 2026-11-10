@@ -13,13 +13,13 @@ export const REVIEWS = [
     text: "Super expérience ! Interface hyper simple, très bon rapport qualité-prix et service client vraiment réactif. Je recommande !",
     name: "Maëva M.",
     role: "Graphiste",
-    image: "/lp/avis/maeva.jpg",
+    image: "/lp/avis/maeva.webp",
   },
   {
     text: "Le logiciel est indispensable pour une bonne gestion, très facile à prendre en main.",
     name: "Pedro Ds.",
     role: "Commerçant",
-    image: "/lp/avis/pedro.jpg",
+    image: "/lp/avis/pedro.webp",
   },
   {
     text: "Tout est automatisé et professionnel. Un vrai gain de temps pour mon entreprise de bâtiment.",
