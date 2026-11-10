@@ -412,11 +412,19 @@ export default function GenerateProspectsDialog({
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground">
-            Seules les entreprises joignables comme demandé sont ajoutées.
-            Celles qui refusent la prospection commerciale ou qui sont déjà dans
-            vos contacts sont écartées.
-          </p>
+          <div className="space-y-1 rounded-md bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground">
+            <p>
+              Chaque recherche dépense 1 crédit (25 entreprises parcourues),
+              puis chaque prospect ajouté dépense 1 crédit.
+              {countValid &&
+                ` Pour ${plural(count, "prospect")} : ${count + 1} crédits, un de plus par page supplémentaire si besoin.`}
+            </p>
+            <p>
+              Seules les entreprises joignables comme demandé sont ajoutées.
+              Celles qui refusent la prospection commerciale ou qui sont déjà
+              dans vos contacts sont écartées.
+            </p>
+          </div>
 
           <div className="flex justify-end gap-2">
             <Button
