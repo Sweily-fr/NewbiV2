@@ -67,6 +67,10 @@ export default function StatutHero({
   chapo,
   image,
   imageAlt,
+  // Dimensions du fichier image (1600 x 1069 par défaut, valeur historique
+  // proche du 3:2 des photos) ; le cadre est en 4:3 et recadre en object-cover.
+  imageWidth = 1600,
+  imageHeight = 1069,
   cartes,
   cta = { href: "/auth/signup", label: "Essayer 30 jours offerts" },
 }) {
@@ -122,7 +126,7 @@ export default function StatutHero({
               </div>
               <p className="text-left text-xs text-gray-600 sm:text-sm">
                 <span className="font-medium text-gray-900">
-                  +1 000 indépendants
+                  + 140 indépendants
                 </span>{" "}
                 nous font confiance
               </p>
@@ -134,8 +138,8 @@ export default function StatutHero({
               <img
                 src={image}
                 alt={imageAlt}
-                width={1600}
-                height={1069}
+                width={imageWidth}
+                height={imageHeight}
                 className="aspect-[4/3] size-full object-cover"
                 // Image principale de la page (LCP) : chargée en premier.
                 fetchPriority="high"

@@ -290,7 +290,7 @@ export default function HeroSection({
           >
             <div className="absolute -top-8 -right-6 rounded-xl bg-white border border-gray-200 shadow-md px-2 py-1.5">
               <img
-                src="/logo_Compatible_Facturation_electronique-footer.png"
+                src="/logo_Compatible_Facturation_electronique-footer.webp"
                 alt="Solution compatible facturation électronique"
                 className="h-9 w-auto object-contain"
               />

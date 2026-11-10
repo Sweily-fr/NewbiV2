@@ -136,10 +136,12 @@ function NewInvoiceVisual() {
           </span>
         </div>
         <img
-          src="/logo-facturation-electronique.png"
+          src="/logo-facturation-electronique.webp"
           alt="Solution compatible facturation électronique"
-          width={86}
-          height={34}
+          width={202}
+          height={80}
+          loading="lazy"
+          decoding="async"
           className="h-[34px] w-auto object-contain"
         />
       </div>
@@ -185,8 +187,12 @@ function NewInvoiceVisual() {
 function PhoneVisual() {
   return (
     <img
-      src="/lp/home/trio/nouvelle-facture.png"
+      src="/lp/home/trio/nouvelle-facture.webp"
       alt="Création d'une facture depuis l'application mobile Newbi"
+      width={840}
+      height={1188}
+      loading="lazy"
+      decoding="async"
       className="absolute left-1/2 -translate-x-1/2 top-6 w-[98%] max-w-none"
     />
   );

@@ -2,22 +2,29 @@ import React from "react";
 
 // Trois cartes photo plein cadre : le texte est posé en haut, sur un voile
 // sombre, et l'image occupe toute la carte. Les visuels définitifs se déposent
-// dans public/images/lp-home/tools/ sous les noms ci-dessous.
+// dans public/images/lp-home/tools/ sous les noms ci-dessous. Les .webp (840 px
+// de large, 2x l'affichage) remplacent les .png d'origine, de 1,8 à 3,2 Mo.
 const TOOLS = [
   {
     title: "Gestion de projets",
     desc: "Suis l'avancement de tes chantiers et de ceux de ton équipe, où que tu sois.",
-    image: "/images/lp-home/tools/projets.png",
+    image: "/images/lp-home/tools/projets.webp",
+    width: 840,
+    height: 1188,
   },
   {
     title: "Suivi de trésorerie",
     desc: "Anticipe tes rentrées et tes sorties grâce aux analyses et aux prévisions.",
-    image: "/images/lp-home/tools/tresorerie.png",
+    image: "/images/lp-home/tools/tresorerie.webp",
+    width: 840,
+    height: 1188,
   },
   {
     title: "Pré-comptabilité",
     desc: "Reçus, justificatifs et exports : tout est prêt pour ton expert-comptable.",
-    image: "/images/lp-home/tools/pre-comptabilite.png",
+    image: "/images/lp-home/tools/pre-comptabilite.webp",
+    width: 840,
+    height: 1041,
   },
 ];
 
@@ -30,7 +37,7 @@ export default function ToolsSection() {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-          {TOOLS.map(({ title, desc, image }) => (
+          {TOOLS.map(({ title, desc, image, width, height }) => (
             <article
               key={title}
               className="relative rounded-3xl overflow-hidden aspect-[3/4] bg-gradient-to-br from-[#D8D8DE] to-[#9A9AA5]"
@@ -38,6 +45,10 @@ export default function ToolsSection() {
               <img
                 src={image}
                 alt=""
+                width={width}
+                height={height}
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 size-full object-cover"
               />
               {/* Voile sombre en haut, pour que le texte reste lisible quelle

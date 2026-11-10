@@ -41,7 +41,7 @@ const poppins = Poppins({
 
 const TITRE = "Logiciel de facturation pour photographes | Newbi";
 const DESCRIPTION =
-  "Prestation à 20 % et cession de droits à 10 % sur la même facture, et livraison des fichiers par lien avec filigrane, paiement avant téléchargement et expiration. 30 jours offerts.";
+  "Prestation à 20 % et droits d'auteur à 10 % sur une même facture, livraison des fichiers par lien et paiement avant téléchargement.";
 
 export const metadata = {
   title: { absolute: TITRE },

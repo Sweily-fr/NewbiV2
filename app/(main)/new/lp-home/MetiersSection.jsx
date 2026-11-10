@@ -37,7 +37,7 @@ export default function MetiersSection({
   bottomTitle = "",
   bottomText = "",
   ctaText = "",
-  ctaHref = "/auth/register",
+  ctaHref = "/auth/signup",
   maxWidth,
 }) {
   const maxW = maxWidth || "max-w-6xl";

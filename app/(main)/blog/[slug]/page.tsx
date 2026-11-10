@@ -45,7 +45,7 @@ export async function generateMetadata({
   return {
     // `absolute` : sans lui le template du layout racine ajoute un second
     // « | Newbi » (titre affiché « … | Blog Newbi | Newbi », tronqué par Google).
-    title: { absolute: `${post.title} | Newbi` },
+    title: { absolute: post.seoTitle ?? `${post.title} | Newbi` },
     description: post.description,
     authors: [
       { name: author.name, url: `/blog/auteur/${authorSlug(post.author)}` },

@@ -11,7 +11,7 @@ author: Holany
 image: /blog/evoliz-vs-newbi-comparatif/hero.webp
 published: true
 publishDate: '2026-03-30'
-updated: '2026-09-23'
+updated: '2026-11-10'
 ---
 
 import Image from "next/image"
@@ -119,7 +119,7 @@ Voici un comparatif fonctionnalité par fonctionnalité pour vous aider à visua
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">OCR (reconnaissance documents)</TableCell>
-        <TableCell>Non</TableCell>
+        <TableCell>Oui, OCR par IA, quota mensuel selon l'offre</TableCell>
         <TableCell>Oui, multi-moteurs (IA et Tesseract)</TableCell>
       </TableRow>
       <TableRow>
@@ -129,8 +129,8 @@ Voici un comparatif fonctionnalité par fonctionnalité pour vous aider à visua
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Facturation électronique</TableCell>
-        <TableCell>En cours d'adaptation</TableCell>
-        <TableCell>Oui, émission et réception via une plateforme agréée</TableCell>
+        <TableCell>Oui, via la plateforme agréée Chaintrust (incluse)</TableCell>
+        <TableCell>Oui, émission et réception via la plateforme agréée SuperPDP</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Signatures email</TableCell>
@@ -149,11 +149,12 @@ Voici un comparatif fonctionnalité par fonctionnalité pour vous aider à visua
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Prix de départ</TableCell>
-        <TableCell>À partir de 15 EUR/mois</TableCell>
-        <TableCell>Essai gratuit 30 jours sans carte bancaire, puis abonnement</TableCell>
+        <TableCell>À partir de 29 EUR HT/mois (formule Essentielle), essai 15 jours</TableCell>
+        <TableCell>Essai gratuit 30 jours sans carte bancaire, puis à partir de 17,99 EUR TTC/mois</TableCell>
       </TableRow>
     </TableBody>
   </Table>
+  <p className="mt-2 text-xs text-muted-foreground">Tarifs relevés le 10/11/2026 sur les sites des éditeurs, hors taxes sauf mention contraire.</p>
 </div>
 
 ## Analyse détaillée des différences clés
@@ -175,15 +176,15 @@ C'est l'une des différences majeures dans ce comparatif Evoliz vs Newbi. Evoliz
 
 Cette intégration native évite de recourir à un outil CRM externe, ce qui représente un gain de temps et d'argent considérable pour les petites structures.
 
-### OCR et gestion des dépenses : exclusivité Newbi
+### OCR et gestion des dépenses : les deux le proposent
 
 Newbi embarque une fonctionnalité OCR multi-moteurs (moteurs d'intelligence artificielle et Tesseract) qui permet de numériser automatiquement les justificatifs de dépenses. Il suffit de photographier ou d'importer un ticket de caisse, une facture fournisseur ou un relevé pour que les informations soient extraites et classées automatiquement.
 
-Evoliz ne propose pas cette fonctionnalité nativement, ce qui oblige les utilisateurs à saisir manuellement leurs dépenses ou à utiliser un outil tiers.
+Evoliz propose aussi un traitement OCR par IA, avec un quota mensuel selon l'offre (500 documents par mois en formule Essentielle, 2 500 en Avancée).
 
 <div className="not-prose my-8">
   <Callout type="tip">
-    L'OCR intégré de Newbi vous fait gagner en moyenne 3 heures par mois sur la saisie de vos dépenses. Un atout majeur pour les indépendants qui gèrent seuls leur administratif.
+    L'OCR de Newbi lit automatiquement montant, date, fournisseur et TVA de vos justificatifs. Un atout majeur pour les indépendants qui gèrent seuls leur administratif.
   </Callout>
 </div>
 
@@ -193,11 +194,11 @@ Avec ses tableaux Kanban intégrés, Newbi permet de gérer vos projets directem
 
 Evoliz ne propose aucune fonctionnalité de gestion de projet, ce qui nécessite l'utilisation d'un outil supplémentaire comme Trello ou Asana.
 
-### Facturation électronique : Newbi déjà raccordé
+### Facturation électronique : les deux sont raccordés
 
 Depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA doivent être en mesure de recevoir des factures électroniques. L'émission, elle, est obligatoire depuis le 1er septembre 2026 pour les grandes entreprises et les ETI, et le deviendra le 1er septembre 2027 pour les PME, TPE et micro-entreprises. Ces échanges passent obligatoirement par une plateforme agréée (PDP), le portail public ne jouant plus que le rôle d'annuaire. Consultez le [calendrier de la facturation électronique](/blog/facturation-electronique-obligatoire-2026) et la page [facturation électronique de Newbi](/produits/facturation-electronique) pour vérifier votre échéance.
 
-Evoliz travaille également sur sa mise en conformité, mais la solution n'est pas encore finalisée à ce stade. Pour les entreprises qui souhaitent anticiper sans stress, Newbi offre une longueur d'avance.
+Evoliz inclut une plateforme agréée dans ses offres : l'e-invoicing et l'e-reporting passent par Chaintrust by Visma. Newbi est raccordé à la plateforme agréée SuperPDP, avec l'émission et la réception incluses dans l'abonnement.
 
 ### Fonctionnalités bonus de Newbi
 
@@ -234,14 +235,6 @@ Voici les raisons principales pour lesquelles les entrepreneurs choisissent Newb
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>L'OCR multi-moteurs pour automatiser la saisie des dépenses et justificatifs</span>
-  </div>
-  <div className="flex items-start gap-3">
-    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>L'émission et la réception de factures électroniques via une plateforme agréée</span>
-  </div>
-  <div className="flex items-start gap-3">
-    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
     <span>Les tableaux Kanban pour gérer vos projets sans outil supplémentaire</span>
   </div>
   <div className="flex items-start gap-3">
@@ -262,7 +255,7 @@ Voici les raisons principales pour lesquelles les entrepreneurs choisissent Newb
 
 Evoliz conserve des atouts dans certains cas précis. Si votre priorité absolue est la pré-comptabilité avec exports FEC et la collaboration directe avec votre expert-comptable via un portail dédié, Evoliz est un choix pertinent. Son API REST est également un avantage pour les entreprises qui souhaitent connecter leur facturation à un écosystème existant de manière programmatique.
 
-Cependant, dès que vos besoins dépassent la facturation pure (CRM, gestion de projet, OCR, facturation électronique), le rapport qualité-fonctionnalités de Newbi devient difficile à concurrencer.
+Cependant, dès que vos besoins dépassent la facturation pure (CRM, gestion de projet), le rapport qualité-fonctionnalités de Newbi devient difficile à concurrencer.
 
 Pour un autre comparatif détaillé, consultez notre analyse [Axonaut vs Newbi](/blog/axonaut-vs-newbi-comparatif) qui confronte deux approches tout-en-un différentes.
 
@@ -273,9 +266,9 @@ Pour un autre comparatif détaillé, consultez notre analyse [Axonaut vs Newbi](
 | **Facturation** | Les deux solutions se valent |
 | **Comptabilité** | Evoliz, plus avancé sur la pré-compta |
 | **CRM** | Newbi, CRM complet intégré |
-| **Automatisation** | Newbi, grâce à l'OCR et au rapprochement bancaire |
+| **Automatisation** | Les deux, OCR et rapprochement bancaire de chaque côté |
 | **Gestion de projet** | Newbi, Kanban intégré |
-| **Facturation électronique** | Newbi, plateforme agréée raccordée |
+| **Facturation électronique** | Les deux : Evoliz via Chaintrust, Newbi raccordé à une plateforme agréée (SuperPDP) |
 | **Rapport qualité-prix** | Newbi, plus de fonctionnalités incluses dans l'abonnement |
 
 **Evoliz** convient aux entreprises centrées sur la facturation et la collaboration comptable. **Newbi** s'impose comme le choix le plus complet pour les entrepreneurs qui veulent une solution unique couvrant facturation, CRM, gestion de projet, OCR et facturation électronique.
@@ -289,7 +282,7 @@ Pour un autre comparatif détaillé, consultez notre analyse [Axonaut vs Newbi](
     <AccordionItem value="item-1">
       <AccordionTrigger>Evoliz vs Newbi : lequel est le moins cher ?</AccordionTrigger>
       <AccordionContent>
-        Evoliz démarre à environ 15 EUR par mois. Newbi se teste pendant 30 jours gratuitement, sans carte bancaire, avant de passer à un abonnement. Au-delà du prix d'entrée, Newbi inclut davantage de fonctionnalités (CRM, OCR, Kanban, signatures email), ce qui évite de cumuler plusieurs abonnements à des outils tiers.
+        Evoliz démarre à 29 EUR HT par mois (formule Essentielle), après un essai de 15 jours. Newbi se teste pendant 30 jours gratuitement, sans carte bancaire, puis démarre à 17,99 EUR TTC par mois (14,99 EUR HT). Au-delà du prix d'entrée, Newbi inclut davantage de fonctionnalités (CRM, Kanban, signatures email), ce qui évite de cumuler plusieurs abonnements à des outils tiers.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-2">
@@ -307,13 +300,13 @@ Pour un autre comparatif détaillé, consultez notre analyse [Axonaut vs Newbi](
     <AccordionItem value="item-4">
       <AccordionTrigger>Evoliz propose-t-il un CRM ou la gestion de projet ?</AccordionTrigger>
       <AccordionContent>
-        Non, Evoliz se concentre sur la facturation et la pré-comptabilité. Il ne propose ni CRM intégré, ni gestion de projet, ni OCR, ni signatures email. Si vous avez besoin de ces fonctionnalités, il faudra souscrire à des outils supplémentaires. Newbi regroupe toutes ces fonctionnalités dans une seule plateforme, ce qui simplifie la gestion au quotidien et réduit les coûts.
+        Non, Evoliz se concentre sur la facturation et la pré-comptabilité. Il ne propose ni CRM intégré, ni gestion de projet, ni signatures email ; il inclut en revanche un OCR par IA pour les justificatifs. Si vous avez besoin de ces fonctionnalités, il faudra souscrire à des outils supplémentaires. Newbi regroupe toutes ces fonctionnalités dans une seule plateforme, ce qui simplifie la gestion au quotidien et réduit les coûts.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-5">
       <AccordionTrigger>Evoliz ou Newbi : lequel choisir pour une TPE ou un freelance ?</AccordionTrigger>
       <AccordionContent>
-        Choisissez Evoliz si votre priorité est la pré-comptabilité, les exports FEC et un accès dédié pour votre expert-comptable. Choisissez Newbi si vous voulez un seul outil pour les devis, les factures, les achats, la trésorerie, le suivi client et les projets, sans multiplier les abonnements. Les deux répondent aux mentions obligatoires françaises : la différence se joue sur le périmètre fonctionnel et sur le temps de saisie économisé.
+        Choisissez Evoliz si votre priorité est la pré-comptabilité, les exports FEC et un accès dédié pour votre expert-comptable. Choisissez Newbi si vous voulez un seul outil pour les devis, les factures, les achats, la trésorerie, le suivi client et les projets, sans multiplier les abonnements. Les deux répondent aux mentions obligatoires françaises : la différence se joue sur le périmètre fonctionnel.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -331,7 +324,7 @@ Pour un autre comparatif détaillé, consultez notre analyse [Axonaut vs Newbi](
           "name": "Evoliz vs Newbi : lequel est le moins cher ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Evoliz démarre à environ 15 EUR par mois. Newbi se teste pendant 30 jours gratuitement, sans carte bancaire, avant de passer à un abonnement. Au-delà du prix d'entrée, Newbi inclut davantage de fonctionnalités (CRM, OCR, Kanban, signatures email), ce qui évite de cumuler plusieurs abonnements à des outils tiers."
+            "text": "Evoliz démarre à 29 EUR HT par mois (formule Essentielle), après un essai de 15 jours. Newbi se teste pendant 30 jours gratuitement, sans carte bancaire, puis démarre à 17,99 EUR TTC par mois (14,99 EUR HT). Au-delà du prix d'entrée, Newbi inclut davantage de fonctionnalités (CRM, Kanban, signatures email), ce qui évite de cumuler plusieurs abonnements à des outils tiers."
           }
         },
         {
@@ -355,7 +348,7 @@ Pour un autre comparatif détaillé, consultez notre analyse [Axonaut vs Newbi](
           "name": "Evoliz propose-t-il un CRM ou la gestion de projet ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Non, Evoliz se concentre sur la facturation et la pré-comptabilité. Il ne propose ni CRM intégré, ni gestion de projet, ni OCR, ni signatures email. Si vous avez besoin de ces fonctionnalités, il faudra souscrire à des outils supplémentaires. Newbi regroupe toutes ces fonctionnalités dans une seule plateforme, ce qui simplifie la gestion au quotidien et réduit les coûts."
+            "text": "Non, Evoliz se concentre sur la facturation et la pré-comptabilité. Il ne propose ni CRM intégré, ni gestion de projet, ni signatures email ; il inclut en revanche un OCR par IA pour les justificatifs. Si vous avez besoin de ces fonctionnalités, il faudra souscrire à des outils supplémentaires. Newbi regroupe toutes ces fonctionnalités dans une seule plateforme, ce qui simplifie la gestion au quotidien et réduit les coûts."
           }
         },
         {

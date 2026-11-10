@@ -766,7 +766,7 @@ export default function TransfersDemo({ className = "" }) {
         <div className={s.group} data-group>
           <img
             className={s.device}
-            src="/lp/home/ipad-panneau-vide.png"
+            src="/lp/home/ipad-panneau-vide.webp"
             alt="Interface Newbi : envoi d'un transfert de fichiers volumineux"
             width={2400}
             height={1286}

@@ -35,7 +35,7 @@ const poppins = Poppins({
 
 const TITRE = "Logiciel de facturation profession médicale | Newbi";
 const DESCRIPTION =
-  "Facturez vos consultations avec la mention d'exonération de TVA portée à la ligne, suivez vos encaissements et les dépenses du cabinet, et donnez l'accès à votre comptable. 30 jours offerts.";
+  "Honoraires avec exonération de TVA à la ligne, encaissements, dépenses du cabinet et accès comptable. 30 jours offerts, sans carte.";
 
 export const metadata = {
   title: { absolute: TITRE },

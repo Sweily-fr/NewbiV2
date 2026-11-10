@@ -118,7 +118,7 @@ export function HeroSection({ hasBanner = false }) {
               </div>
               <p className="text-xs sm:text-sm text-gray-600 text-left">
                 <span className="text-gray-900 font-medium">
-                  +1 000 indépendants
+                  + 140 indépendants
                 </span>{" "}
                 nous font confiance
               </p>
@@ -132,8 +132,10 @@ export function HeroSection({ hasBanner = false }) {
           <div className="col-span-12">
             <div className="relative mx-auto mt-10 md:mt-14 w-full">
               <img
-                src="/lp/factures/ipad-mockup.png"
+                src="/lp/factures/ipad-mockup.webp"
                 alt="Liste des factures clients dans Newbi : statuts, échéances et suivi"
+                width={2400}
+                height={1286}
                 className="w-[150%] max-w-none ml-0 h-auto md:w-full"
                 loading="eager"
                 fetchPriority="high"
@@ -145,8 +147,10 @@ export function HeroSection({ hasBanner = false }) {
                 className="absolute left-[6.4%] top-[51.6%] z-50 hidden lg:flex w-[11.7%] items-center justify-center rounded-sm bg-white p-[0.9%] transition-colors hover:bg-gray-50"
               >
                 <img
-                  src="/logo_Compatible_Facturation_electronique-footer.png"
+                  src="/logo_Compatible_Facturation_electronique-footer.webp"
                   alt="Conforme Facturation électronique 2026"
+                  width={275}
+                  height={128}
                   className="w-full h-auto object-contain"
                 />
               </Link>

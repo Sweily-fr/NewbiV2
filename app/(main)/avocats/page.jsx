@@ -35,7 +35,7 @@ const poppins = Poppins({
 
 const TITRE = "Logiciel de facturation pour avocats | Newbi";
 const DESCRIPTION =
-  "Facturez vos honoraires au temps passé, au forfait ou sur provision : TVA à 20 % et débours à 0 % sur le même document, chronomètre par dossier et champs personnalisés. 30 jours offerts.";
+  "Honoraires au temps passé, au forfait ou sur provision, TVA à 20 % et débours à 0 % sur la même facture, chronomètre par dossier.";
 
 export const metadata = {
   title: { absolute: TITRE },

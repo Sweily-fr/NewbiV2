@@ -774,7 +774,7 @@ export default function HeroDemo({ view = "board", className = "" }) {
       >
         <img
           className={s.device}
-          src="/lp/home/ipad-panneau-vide.png"
+          src="/lp/home/ipad-panneau-vide.webp"
           alt={
             view === "board"
               ? "Interface Newbi : tableau de suivi d'un projet client"

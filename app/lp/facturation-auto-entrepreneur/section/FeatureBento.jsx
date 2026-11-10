@@ -175,7 +175,7 @@ function InvoiceVisual() {
       </div>
       <div className="absolute -top-4 -right-3 rounded-xl bg-white border border-gray-200/80 shadow-md px-2.5 py-1.5">
         <img
-          src="/logo_Compatible_Facturation_electronique-footer.png"
+          src="/logo_Compatible_Facturation_electronique-footer.webp"
           alt="Solution compatible facturation électronique"
           className="h-10 w-auto object-contain"
         />
@@ -268,7 +268,7 @@ export default function FeatureBento({
             <div className="mt-8 flex-1 flex items-end justify-center">
               <div className="rounded-2xl bg-white border border-gray-200/80 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.25)] px-6 py-4">
                 <img
-                  src="/logo_Compatible_Facturation_electronique-footer.png"
+                  src="/logo_Compatible_Facturation_electronique-footer.webp"
                   alt="Solution compatible facturation électronique"
                   className="h-14 w-auto object-contain"
                 />
