@@ -16,7 +16,9 @@ export async function generateMetadata({ params }) {
   if (posts.length === 0) return { title: "Auteur introuvable" };
   const profile = getAuthor(posts[0].author);
   return {
-    title: `${profile.name} : ${posts.length} articles | Blog Newbi`,
+    title: {
+      absolute: `${profile.name} : ${posts.length} articles | Blog Newbi`,
+    },
     description: profile.bio,
     alternates: { canonical: `/blog/auteur/${author}` },
   };

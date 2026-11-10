@@ -5,10 +5,9 @@ const { execSync } = require("child_process");
 
 const BLOG_DIR = path.join(__dirname, "..", "content", "blog");
 
-// Signatures du blog. Doit rester aligné sur AUTHORS dans
-// src/lib/blog-authors.ts : un nom absent de ce fichier retomberait sur
-// l'auteur par défaut à l'affichage.
-const SIGNATURES = ["Holany", "Trévis", "Joaquim", "Dylan"];
+// Signature du blog : tous les articles sont signés Holany (aligné sur
+// SIGNATURES dans src/lib/blog-authors.ts).
+const SIGNATURES = ["Holany"];
 
 // Le frontmatter historique vaut « Newbi » : c'est un fourre-tout, pas une
 // signature. On le remplace au moment de publier.

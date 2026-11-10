@@ -9,9 +9,9 @@ export interface AuthorProfile {
 
 /**
  * Profils des auteurs du blog. La clé est le slug du nom (frontmatter `author`).
- * Le frontmatter historique vaut « Newbi » : il est affiché sous le nom de la
- * rédactrice réelle pour rester cohérent avec ce que la page article montre
- * depuis le départ.
+ * Depuis le 10/11/2026, tous les articles sont signés Holany, avec son avatar.
+ * Les anciennes pages /blog/auteur/{trevis,joaquim,dylan} redirigent vers la
+ * sienne (next.config.js). Un nom inconnu retombe aussi sur Holany.
  */
 export const AUTHORS: Record<string, AuthorProfile> = {
   holany: {
@@ -20,32 +20,13 @@ export const AUTHORS: Record<string, AuthorProfile> = {
     bio: "Rédige les guides du blog Newbi sur la facturation, la gestion et les obligations des indépendants et des TPE, en lien avec l'équipe produit.",
     image: "/lp/about/about-11.jpeg",
   },
-  trevis: {
-    name: "Trévis",
-    role: "Rédaction Newbi",
-    bio: "Suit la réforme de la facturation électronique et les échéances fiscales, et les traduit en articles directement utilisables par les TPE.",
-    image: null,
-  },
-  joaquim: {
-    name: "Joaquim",
-    role: "Rédaction Newbi",
-    bio: "Écrit sur la trésorerie, les achats et le suivi des paiements, avec les cas concrets rencontrés par les indépendants et les petites équipes.",
-    image: null,
-  },
-  dylan: {
-    name: "Dylan",
-    role: "Rédaction Newbi",
-    bio: "Compare les outils de facturation et de gestion, et documente les modèles et les bonnes pratiques du quotidien des entrepreneurs.",
-    image: null,
-  },
 };
 
 /**
- * Signatures utilisables à la publication. Le script
- * `scripts/publish-articles.js` en tire une au hasard et l'écrit dans le
- * frontmatter, pour que le blog ne soit pas signé d'un seul nom.
+ * Signature écrite dans le frontmatter par `scripts/publish-articles.js` à la
+ * publication. Le blog n'a qu'une signature : Holany.
  */
-export const SIGNATURES = ["Holany", "Trévis", "Joaquim", "Dylan"] as const;
+export const SIGNATURES = ["Holany"] as const;
 
 const DEFAULT_AUTHOR_KEY = "holany";
 
