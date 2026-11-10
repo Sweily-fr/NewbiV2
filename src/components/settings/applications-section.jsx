@@ -3019,7 +3019,11 @@ export function ApplicationsSection() {
 
               {/* Liste des catégories */}
               <div className="space-y-0.5">
-                {CATEGORIES.map((cat) => {
+                {/* « Réseaux sociaux » : vide tant que la publication n'est
+                    pas ouverte à l'espace (accès anticipé) */}
+                {CATEGORIES.filter(
+                  (cat) => cat.id !== "marketing" || socialStatus.enabled,
+                ).map((cat) => {
                   const Icon = cat.icon;
                   return (
                     <button

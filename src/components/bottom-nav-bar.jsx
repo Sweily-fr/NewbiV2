@@ -29,7 +29,12 @@ import {
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { isDeliveryNotesAllowed } from "@/src/hooks/useDeliveryNotesAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
+import {
+  featureForModule,
+  isHiddenForRole,
+  moduleForPath,
+} from "@/src/lib/route-modules";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import { useCreationLinkClick } from "@/src/components/company-info-gate";
 
@@ -277,14 +282,18 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
     role: permissionsRole,
     actions: permissionActions,
   } = useMyPermissions();
+  // Pages en accès anticipé (TVA, prise de rendez-vous) : masquées tant
+  // que l'espace n'y a pas accès
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
   // Comme dans le menu : toutes les pages sont listées, sauf celles
   // masquées au Comptable par défaut ; sans « Voir », la page affiche
   // qu'elle est inaccessible et propose de demander l'accès
   const isHiddenPage = (href) => {
     const moduleKey = moduleForPath(href);
+    if (!moduleKey) return false;
+    if (!isFeatureEnabled(featureForModule(moduleKey))) return true;
     return (
       permissionsReady &&
-      Boolean(moduleKey) &&
       isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
   };

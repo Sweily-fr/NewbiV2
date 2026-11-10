@@ -247,6 +247,8 @@ export const CalendarFiltersButton = memo(function CalendarFiltersButton({
   summary,
   eventsCount,
   appointmentsCount,
+  // Prise de rendez-vous en accès anticipé : ligne absente sans accès
+  showAppointments = true,
   period,
   loading,
   fiscalSetup = null,
@@ -260,7 +262,11 @@ export const CalendarFiltersButton = memo(function CalendarFiltersButton({
   // filtrer, pas de bouton
   if (!loading && allowed.length === 0) return null;
 
-  const availableKeys = [EVENTS_SOURCE, APPOINTMENTS_SOURCE, ...allowed];
+  const availableKeys = [
+    EVENTS_SOURCE,
+    ...(showAppointments ? [APPOINTMENTS_SOURCE] : []),
+    ...allowed,
+  ];
   const view = matchingView(hiddenSources, availableKeys);
   const viewLabel = view
     ? CALENDAR_VIEWS.find((candidate) => candidate.key === view)?.label
@@ -338,16 +344,18 @@ export const CalendarFiltersButton = memo(function CalendarFiltersButton({
             `${eventsCount} ${plural(eventsCount, "événement", "événements")} et agendas connectés`,
           ]}
         />
-        <SourceRow
-          sourceKey={APPOINTMENTS_SOURCE}
-          active={!hiddenSources.has(APPOINTMENTS_SOURCE)}
-          onToggle={onToggle}
-          value={String(appointmentsCount)}
-          alertCount={0}
-          lines={[
-            `${appointmentsCount} ${plural(appointmentsCount, "rendez-vous pris en ligne", "rendez-vous pris en ligne")}`,
-          ]}
-        />
+        {showAppointments && (
+          <SourceRow
+            sourceKey={APPOINTMENTS_SOURCE}
+            active={!hiddenSources.has(APPOINTMENTS_SOURCE)}
+            onToggle={onToggle}
+            value={String(appointmentsCount)}
+            alertCount={0}
+            lines={[
+              `${appointmentsCount} ${plural(appointmentsCount, "rendez-vous pris en ligne", "rendez-vous pris en ligne")}`,
+            ]}
+          />
+        )}
         {loading && allowed.length === 0 && (
           <div className="text-muted-foreground px-2 py-1.5 text-xs">
             Chargement des échéances…

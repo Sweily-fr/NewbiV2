@@ -47,6 +47,7 @@ import DocumentAutomationsModal from "./components/document-automations-modal";
 import TransferFromDocsModal from "./components/transfer-from-docs-modal";
 import ClientAccessDialog from "./components/client-access-dialog";
 import { useDocumentShares } from "@/src/hooks/useDocumentShares";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import {
   TagSelector,
   resolveTagColor,
@@ -344,8 +345,13 @@ export default function DocumentsPartagesPage() {
   const canManageTrash = canEditSharedDocuments || canDeleteSharedDocuments;
   // « Transférer » crée un transfert de fichiers (module fileTransfers)
   const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
-  // Accès clients : l'adresse ouvre des dossiers sans compte Newbi
-  const canShareFolders = isReady && canDo("sharedDocuments", "share");
+  // Accès clients : l'adresse ouvre des dossiers sans compte Newbi. En
+  // accès anticipé : seulement pour les espaces qui y ont accès
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
+  const canShareFolders =
+    isReady &&
+    canDo("sharedDocuments", "share") &&
+    isFeatureEnabled("documentShares");
   // null : fenêtre fermée ; { folderId } : ouverte (depuis un dossier ou non)
   const [clientAccess, setClientAccess] = useState(null);
   const { shares: documentShares } = useDocumentShares({
