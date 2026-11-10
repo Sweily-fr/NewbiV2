@@ -11,7 +11,7 @@ author: Holany
 image: /blog/abby-vs-newbi-comparatif/hero.webp
 published: true
 publishDate: '2026-08-17'
-updated: '2026-09-23'
+updated: '2026-11-10'
 ---
 
 import Image from "next/image"
@@ -30,7 +30,7 @@ import { Check } from "lucide-react"
 
 # Abby vs Newbi : fonctions, prix et conformité pour freelances
 
-Abby et Newbi ciblent les mêmes indépendants français, mais ne couvrent pas le même périmètre : Abby mise sur les simulateurs URSSAF et son compte professionnel intégré, Newbi sur une gestion complète, de la facturation au CRM, à l'OCR des dépenses, au Kanban et à la facturation électronique.
+Abby et Newbi ciblent les mêmes indépendants français, mais ne couvrent pas le même périmètre : Abby mise sur les simulateurs URSSAF et son compte professionnel annoncé, Newbi sur une gestion complète, de la facturation au CRM, à l'OCR des dépenses, au Kanban et à la facturation électronique.
 
 Ce comparatif détaille les fonctions ligne par ligne, les tarifs et les situations où chaque solution reste le meilleur choix. Vous verrez lequel convient à un auto-entrepreneur qui démarre et lequel suit une activité qui grandit.
 
@@ -53,7 +53,7 @@ Ce comparatif détaille les fonctions ligne par ligne, les tarifs et les situati
 
 ### Abby : le spécialiste des auto-entrepreneurs
 
-Abby est un logiciel français conçu principalement pour les **auto-entrepreneurs et micro-entrepreneurs**. La plateforme s'est fait connaître grâce à ses outils de simulation URSSAF et d'impôt sur le revenu, ainsi que par son approche communautaire. Abby propose la facturation, la gestion des devis, un suivi comptable simplifié et, plus récemment, un compte professionnel intégré.
+Abby est un logiciel français conçu principalement pour les **auto-entrepreneurs et micro-entrepreneurs**. La plateforme s'est fait connaître grâce à ses outils de simulation URSSAF et d'impôt sur le revenu, ainsi que par son approche communautaire. Abby propose la facturation, la gestion des devis, un suivi comptable simplifié et annonce un compte professionnel intégré (affiché « bientôt » sur sa page tarifs).
 
 Le positionnement d'Abby est clairement orienté vers les indépendants qui débutent et qui ont besoin d'un accompagnement sur les aspects administratifs et fiscaux de la micro-entreprise. La communauté d'entraide et les ressources pédagogiques constituent un atout majeur pour les nouveaux freelances.
 
@@ -99,23 +99,23 @@ Newbi cible aussi bien les freelances débutants que les TPE en croissance qui o
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Connexion bancaire</TableCell>
-        <TableCell className="text-center">Compte pro intégré</TableCell>
+        <TableCell className="text-center">Compte pro annoncé (bientôt)</TableCell>
         <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Synchronisation bancaire (Bridge API)</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">OCR (scan de dépenses)</TableCell>
         <TableCell className="text-center">Non</TableCell>
-        <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Oui (Mindee, Google AI, Tesseract)</TableCell>
+        <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Oui (lit montant, date, fournisseur et TVA)</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Gestion de projet (Kanban)</TableCell>
-        <TableCell className="text-center">Non</TableCell>
+        <TableCell className="text-center">Oui (tableau de suivi, limité selon l'offre)</TableCell>
         <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Tableaux Kanban intégrés</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">e-Facturation (Factur-X)</TableCell>
-        <TableCell className="text-center">Non confirmé</TableCell>
-        <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Factur-X natif</TableCell>
+        <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Oui (plateforme agréée, dès l'offre gratuite)</TableCell>
+        <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Oui (Factur-X, via la plateforme agréée SuperPDP)</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Simulation de charges (URSSAF/IR)</TableCell>
@@ -124,7 +124,7 @@ Newbi cible aussi bien les freelances débutants que les TPE en croissance qui o
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Compte professionnel intégré</TableCell>
-        <TableCell className="text-center"><Check className="inline h-5 w-5 text-green-600" /> Oui</TableCell>
+        <TableCell className="text-center">Annoncé (bientôt)</TableCell>
         <TableCell className="text-center">Non (connexion bancaire externe)</TableCell>
       </TableRow>
       <TableRow>
@@ -139,18 +139,19 @@ Newbi cible aussi bien les freelances débutants que les TPE en croissance qui o
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Prix</TableCell>
-        <TableCell className="text-center">Gratuit / à partir de 5,99 EUR/mois</TableCell>
-        <TableCell className="text-center">Essai 30 jours puis offres tout inclus</TableCell>
+        <TableCell className="text-center">Gratuit (Basique), puis 9 EUR HT/mois (Start), 15 EUR HT (Pro), 33 EUR HT (Business)</TableCell>
+        <TableCell className="text-center">Essai 30 jours, puis à partir de 17,99 EUR TTC/mois</TableCell>
       </TableRow>
     </TableBody>
   </Table>
+  <p className="mt-2 text-xs text-muted-foreground">Tarifs relevés le 10/11/2026 sur les sites des éditeurs, hors taxes sauf mention contraire.</p>
 </div>
 
 ## Analyse détaillée des différences clés
 
 ### Facturation et conformité
 
-Les deux plateformes proposent des fonctionnalités de facturation conformes à la législation française. Cependant, Newbi se démarque avec la **prise en charge native du format Factur-X**, essentielle pour la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026) : la réception s'impose à toutes les entreprises depuis le 1er septembre 2026 et l'émission le 1er septembre 2027 pour les TPE, PME et micro-entreprises. Abby, de son côté, n'a pas encore confirmé publiquement sa stratégie sur ce sujet.
+Les deux plateformes proposent des fonctionnalités de facturation conformes à la législation française, y compris pour la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026) : la réception s'impose à toutes les entreprises depuis le 1er septembre 2026 et l'émission le 1er septembre 2027 pour les TPE, PME et micro-entreprises. Abby se présente comme plateforme agréée et inclut la facturation électronique dès son offre gratuite ; Newbi passe par la plateforme agréée SuperPDP, émission et réception incluses dans l'abonnement.
 
 La gestion des avoirs, des acomptes et la conversion automatique de devis en factures sont également des atouts de Newbi qui facilitent le quotidien des freelances. Pour éviter les pièges classiques, consultez notre guide sur les [erreurs de facturation courantes chez les indépendants](/blog/erreurs-facturation-independants).
 
@@ -162,11 +163,11 @@ Pour les freelances qui gèrent plusieurs clients en parallèle ou qui souhaiten
 
 ### OCR et gestion des dépenses
 
-Newbi embarque une **technologie OCR multi-moteurs** (Mindee, Google Document AI, Tesseract) qui permet de scanner et catégoriser automatiquement vos justificatifs de dépenses depuis la [gestion des achats](/produits/gestion-des-achats). Il suffit de photographier un ticket ou une facture fournisseur pour que les informations soient extraites et classées automatiquement. Abby ne propose pas cette fonctionnalité à ce jour.
+Newbi embarque un **OCR intégré** qui lit montant, date, fournisseur et TVA pour scanner et catégoriser automatiquement vos justificatifs de dépenses depuis la [gestion des achats](/produits/gestion-des-achats). Il suffit de photographier un ticket ou une facture fournisseur pour que les informations soient extraites et classées automatiquement. Abby ne propose pas cette fonctionnalité à ce jour.
 
 ### Gestion de projet
 
-Les [tableaux Kanban intégrés](/produits/kanban) de Newbi permettent de gérer vos projets directement depuis la même interface que votre facturation. Suivi des tâches, colonnes personnalisables, assignation : tout est centralisé. Abby ne propose pas de module de gestion de projet, ce qui oblige les utilisateurs à se tourner vers des outils tiers comme Trello ou Notion.
+Les [tableaux Kanban intégrés](/produits/kanban) de Newbi permettent de gérer vos projets directement depuis la même interface que votre facturation. Suivi des tâches, colonnes personnalisables, assignation : tout est centralisé. Abby propose aussi un tableau de suivi des tâches, limité à 5 tâches dans l'offre gratuite et illimité à partir de l'offre Pro.
 
 ### Simulation fiscale et accompagnement
 
@@ -194,7 +195,7 @@ Newbi ne propose pas de simulateur de charges à ce stade, mais compense par une
 
 ### Compte professionnel vs connexion bancaire
 
-Abby a lancé son propre **compte professionnel intégré**, ce qui permet aux auto-entrepreneurs de gérer leur argent directement dans l'application. C'est un avantage pour ceux qui cherchent une solution bancaire simple sans ouvrir un compte chez une néobanque.
+Abby annonce son propre **compte professionnel intégré** (affiché « bientôt » sur sa page tarifs au 10/11/2026), qui doit permettre aux auto-entrepreneurs de gérer leur argent directement dans l'application. Ce sera un avantage pour ceux qui cherchent une solution bancaire simple sans ouvrir un compte chez une néobanque.
 
 Newbi a fait le choix d'une **connexion bancaire ouverte via Bridge API**, ce qui permet de synchroniser n'importe quel compte bancaire existant. Cette approche est plus flexible car elle n'oblige pas à changer de banque et permet de connecter plusieurs comptes.
 
@@ -215,10 +216,6 @@ Voici les raisons principales pour lesquelles Newbi s'impose comme la solution l
     <li className="flex items-start gap-3">
       <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
       <span><strong>Kanban de gestion de projet</strong> pour suivre vos missions directement dans l'outil</span>
-    </li>
-    <li className="flex items-start gap-3">
-      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-      <span><strong>e-Facturation Factur-X</strong> pour être conforme dès maintenant à la réforme 2026-2027</span>
     </li>
     <li className="flex items-start gap-3">
       <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -247,9 +244,9 @@ Voici les raisons principales pour lesquelles Newbi s'impose comme la solution l
 
 ## Quand Abby reste un bon choix
 
-Soyons honnêtes : Abby reste une excellente solution dans certains cas précis. Si vous êtes **auto-entrepreneur en début d'activité**, que vous avez principalement besoin de facturer et de simuler vos charges URSSAF, et que vous appréciez l'aspect communautaire, Abby remplit parfaitement son rôle. Le compte professionnel intégré peut également simplifier votre gestion bancaire si vous n'avez pas encore de compte dédié.
+Soyons honnêtes : Abby reste une excellente solution dans certains cas précis. Si vous êtes **auto-entrepreneur en début d'activité**, que vous avez principalement besoin de facturer et de simuler vos charges URSSAF, et que vous appréciez l'aspect communautaire, Abby remplit parfaitement son rôle. Le compte professionnel annoncé pourra également simplifier votre gestion bancaire si vous n'avez pas encore de compte dédié.
 
-Cependant, dès que votre activité se développe, que vous gérez davantage de clients ou que vous avez besoin d'outils de gestion de projet, les limites d'Abby se font sentir. C'est à ce moment que la transition vers une solution plus complète comme Newbi prend tout son sens.
+Cependant, dès que votre activité se développe, que vous gérez davantage de clients ou que vous avez besoin de l'OCR des dépenses, les limites d'Abby se font sentir. C'est à ce moment que la transition vers une solution plus complète comme Newbi prend tout son sens.
 
 ## En résumé
 
@@ -266,7 +263,7 @@ Pour aller plus loin dans votre réflexion, consultez également nos comparatifs
     <AccordionItem value="faq-1">
       <AccordionTrigger>Quelle est la principale différence entre Abby et Newbi ?</AccordionTrigger>
       <AccordionContent>
-        Abby est spécialisé dans l'accompagnement des auto-entrepreneurs avec des simulateurs fiscaux (URSSAF, impôt sur le revenu) et un compte professionnel intégré. Newbi est une plateforme tout-en-un plus complète qui intègre CRM, OCR, gestion de projet Kanban, signatures email, transfert de fichiers et conformité e-facturation Factur-X, en plus de la facturation classique.
+        Abby est spécialisé dans l'accompagnement des auto-entrepreneurs avec des simulateurs fiscaux (URSSAF, impôt sur le revenu) et un compte professionnel annoncé. Newbi est une plateforme tout-en-un plus complète qui intègre CRM, OCR, gestion de projet Kanban, signatures email, transfert de fichiers et conformité e-facturation Factur-X, en plus de la facturation classique.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-2">
@@ -284,19 +281,19 @@ Pour aller plus loin dans votre réflexion, consultez également nos comparatifs
     <AccordionItem value="faq-5">
       <AccordionTrigger>Newbi propose-t-il un simulateur de charges URSSAF comme Abby ?</AccordionTrigger>
       <AccordionContent>
-        Non. Le simulateur URSSAF et le calcul d'impôt sur le revenu restent le point fort d'Abby, et Newbi ne les propose pas. Newbi vous donne en revanche le chiffre d'affaires encaissé en temps réel, ce qui vous permet de suivre votre position face aux plafonds de la micro-entreprise : 77 700 EUR pour les prestations de services et les activités libérales, 188 700 EUR pour les ventes de marchandises.
+        Non. Le simulateur URSSAF et le calcul d'impôt sur le revenu restent le point fort d'Abby, et Newbi ne les propose pas. Newbi vous donne en revanche le chiffre d'affaires encaissé en temps réel, ce qui vous permet de suivre votre position face aux plafonds de la micro-entreprise, fixés pour 2026 à 2028 à 83 600 EUR pour les prestations de services et les activités libérales, 203 100 EUR pour les ventes de marchandises.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-6">
       <AccordionTrigger>Abby est-il gratuit ?</AccordionTrigger>
       <AccordionContent>
-        Abby propose une formule gratuite limitée, suffisante pour éditer quelques factures et utiliser les simulateurs, puis des abonnements payants à partir d'environ 5,99 EUR par mois pour débloquer les fonctions complètes et le compte professionnel. Newbi ne propose pas de version gratuite à vie : l'essai dure 30 jours, sans carte bancaire, et donne accès à toutes les fonctions avant de choisir un abonnement.
+        Abby propose une formule gratuite limitée, suffisante pour éditer quelques factures et utiliser les simulateurs, puis des abonnements payants à partir de 9 EUR HT par mois (offre Start) pour débloquer les fonctions complètes. Newbi ne propose pas de version gratuite à vie : l'essai dure 30 jours, sans carte bancaire, et donne accès à toutes les fonctions avant de choisir un abonnement.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-4">
       <AccordionTrigger>Abby ou Newbi : lequel est le moins cher ?</AccordionTrigger>
       <AccordionContent>
-        Abby propose une offre gratuite limitée, Newbi un essai de 30 jours sans carte bancaire puis un abonnement. En rapport qualité-prix, Newbi inclut beaucoup plus de fonctions (CRM, OCR, Kanban, e-facturation, signatures) pour un tarif équivalent ou inférieur. Quand on additionne le coût des outils tiers nécessaires pour compléter Abby (gestion de projet, CRM, OCR), Newbi revient souvent moins cher au global.
+        Abby propose une offre gratuite limitée, Newbi un essai de 30 jours sans carte bancaire puis un abonnement. En rapport qualité-prix, Newbi inclut beaucoup plus de fonctions (CRM, OCR, Kanban, signatures) pour un tarif proche de l'offre Pro d'Abby (17,99 EUR TTC par mois, soit 14,99 EUR HT, contre 15 EUR HT). Quand on additionne le coût des outils tiers nécessaires pour compléter Abby (CRM, OCR), Newbi revient souvent moins cher au global.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -311,7 +308,7 @@ Pour aller plus loin dans votre réflexion, consultez également nos comparatifs
       "name": "Quelle est la principale différence entre Abby et Newbi ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Abby est spécialisé dans l'accompagnement des auto-entrepreneurs avec des simulateurs fiscaux (URSSAF, impôt sur le revenu) et un compte professionnel intégré. Newbi est une plateforme tout-en-un plus complète qui intègre CRM, OCR, gestion de projet Kanban, signatures email, transfert de fichiers et conformité e-facturation Factur-X, en plus de la facturation classique."
+        "text": "Abby est spécialisé dans l'accompagnement des auto-entrepreneurs avec des simulateurs fiscaux (URSSAF, impôt sur le revenu) et un compte professionnel annoncé. Newbi est une plateforme tout-en-un plus complète qui intègre CRM, OCR, gestion de projet Kanban, signatures email, transfert de fichiers et conformité e-facturation Factur-X, en plus de la facturation classique."
       }
     },
     {
@@ -327,7 +324,7 @@ Pour aller plus loin dans votre réflexion, consultez également nos comparatifs
       "name": "Newbi propose-t-il un simulateur de charges URSSAF comme Abby ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Non. Le simulateur URSSAF et le calcul d'impôt sur le revenu restent le point fort d'Abby. Newbi vous donne en revanche le chiffre d'affaires encaissé en temps réel, ce qui permet de suivre votre position face aux plafonds de la micro-entreprise : 77 700 EUR pour les prestations de services et les activités libérales, 188 700 EUR pour les ventes de marchandises."
+        "text": "Non. Le simulateur URSSAF et le calcul d'impôt sur le revenu restent le point fort d'Abby. Newbi vous donne en revanche le chiffre d'affaires encaissé en temps réel, ce qui permet de suivre votre position face aux plafonds de la micro-entreprise, fixés pour 2026 à 2028 à 83 600 EUR pour les prestations de services et les activités libérales, 203 100 EUR pour les ventes de marchandises."
       }
     },
     {
@@ -335,7 +332,7 @@ Pour aller plus loin dans votre réflexion, consultez également nos comparatifs
       "name": "Abby est-il gratuit ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Abby propose une formule gratuite limitée, puis des abonnements payants à partir d'environ 5,99 EUR par mois pour débloquer les fonctions complètes et le compte professionnel. Newbi ne propose pas de version gratuite à vie : l'essai dure 30 jours, sans carte bancaire, et donne accès à toutes les fonctions."
+        "text": "Abby propose une formule gratuite limitée, puis des abonnements payants à partir de 9 EUR HT par mois (offre Start) pour débloquer les fonctions complètes. Newbi ne propose pas de version gratuite à vie : l'essai dure 30 jours, sans carte bancaire, et donne accès à toutes les fonctions."
       }
     },
     {
@@ -351,7 +348,7 @@ Pour aller plus loin dans votre réflexion, consultez également nos comparatifs
       "name": "Abby ou Newbi : lequel est le moins cher ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Abby propose une offre gratuite limitée, Newbi un essai de 30 jours sans carte bancaire puis un abonnement. En rapport qualité-prix, Newbi inclut beaucoup plus de fonctions pour un tarif équivalent ou inférieur. Quand on additionne le coût des outils tiers nécessaires pour compléter Abby, Newbi revient souvent moins cher au global."
+        "text": "Abby propose une offre gratuite limitée, Newbi un essai de 30 jours sans carte bancaire puis un abonnement. En rapport qualité-prix, Newbi inclut beaucoup plus de fonctions pour un tarif proche de l'offre Pro d'Abby (17,99 EUR TTC par mois, soit 14,99 EUR HT, contre 15 EUR HT). Quand on additionne le coût des outils tiers nécessaires pour compléter Abby, Newbi revient souvent moins cher au global."
       }
     }
   ]
