@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useApolloClient, useLazyQuery, useMutation } from "@apollo/client";
+import {
+  useApolloClient,
+  useLazyQuery,
+  useMutation,
+  useQuery,
+} from "@apollo/client";
 import {
   Dialog,
   DialogContent,
@@ -27,14 +32,24 @@ import { useClientLists } from "@/src/hooks/useClientLists";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { getUserFacingRefusal } from "@/src/utils/errorMessages";
 import {
+  GET_PROSPECT_ACTIVITIES,
   GET_PROSPECT_PLACES,
   GENERATE_PROSPECTS,
 } from "@/src/graphql/prospectQueries";
+import ProspectActivityPicker from "./prospect-activity-picker";
 
 const MAX_PLACES = 5;
 const DEFAULT_COUNT = 10;
 const NEW_LIST = "__new__";
 const NO_LIST = "__none__";
+
+// Rayon possible autour d'une ville ou d'un code postal (pas d'un
+// département ni d'une région, déjà larges)
+const RADIUS_PLACE_TYPES = ["locality", "postal_code"];
+const RADIUS_OPTIONS = [
+  { id: "0", label: "Ville seule" },
+  ...[5, 10, 20, 30, 50].map((km) => ({ id: String(km), label: `${km} km` })),
+];
 
 // Tranches d'effectif proposées (bornes envoyées au fournisseur)
 const STAFF_RANGES = [
@@ -91,8 +106,13 @@ export function describeProspectQuota(quota) {
 }
 
 /** Bilan d'une génération, en une phrase. */
-function describeOutcome(outcome) {
+function describeOutcome(outcome, requestedRadiusKm) {
   const parts = [];
+  if (outcome.radiusKm && outcome.radiusKm < requestedRadiusKm) {
+    parts.push(
+      `Grande ville : la recherche a couvert ${outcome.radiusKm} km autour du centre au lieu de ${requestedRadiusKm} km`,
+    );
+  }
   if (outcome.opposedCount) {
     parts.push(
       `${plural(outcome.opposedCount, "entreprise")} écartée${outcome.opposedCount > 1 ? "s" : ""} car opposée${outcome.opposedCount > 1 ? "s" : ""} à la prospection`,
@@ -113,7 +133,7 @@ function describeOutcome(outcome) {
   }
   if (outcome.unlockedCount < outcome.requested) {
     parts.push(
-      "Moins d'entreprises que demandé correspondent à ces critères : élargissez la zone ou le mode de contact",
+      "Moins d'entreprises que demandé correspondent à ces critères : élargissez l'activité, la zone, le rayon ou le mode de contact",
     );
   }
   return parts.join(". ");
@@ -136,8 +156,9 @@ export default function GenerateProspectsDialog({
     settings?.maxPerUnlock || 50,
   );
 
-  const [tradeId, setTradeId] = useState("");
+  const [activities, setActivities] = useState([]);
   const [places, setPlaces] = useState([]);
+  const [radiusKm, setRadiusKm] = useState("0");
   const [placeQuery, setPlaceQuery] = useState("");
   const [staffRange, setStaffRange] = useState("all");
   const [ageRange, setAgeRange] = useState("all");
@@ -152,6 +173,14 @@ export default function GenerateProspectsDialog({
     useLazyQuery(GET_PROSPECT_PLACES, { fetchPolicy: "cache-first" });
   const [generate, { loading: generating }] = useMutation(GENERATE_PROSPECTS);
   const { lists } = useClientLists(open ? workspaceId : null);
+  const { data: activitiesData, loading: loadingActivities } = useQuery(
+    GET_PROSPECT_ACTIVITIES,
+    {
+      variables: { workspaceId },
+      skip: !open || !workspaceId,
+      fetchPolicy: "cache-first",
+    },
+  );
 
   useEffect(() => {
     if (open) {
@@ -159,8 +188,9 @@ export default function GenerateProspectsDialog({
       setCount(Math.max(1, Math.min(DEFAULT_COUNT, maxCount)));
       return;
     }
-    setTradeId("");
+    setActivities([]);
     setPlaces([]);
+    setRadiusKm("0");
     setPlaceQuery("");
     setStaffRange("all");
     setAgeRange("all");
@@ -177,15 +207,33 @@ export default function GenerateProspectsDialog({
     }
   }, [debouncedPlaceQuery, workspaceId, loadPlaces]);
 
-  const tradeLabel = trades.find((t) => t.id === tradeId)?.label || "";
+  // Centre possible d'un rayon : une seule zone, ville ou code postal
+  const radiusCenter =
+    places.length === 1 && RADIUS_PLACE_TYPES.includes(places[0].type)
+      ? places[0]
+      : null;
+  useEffect(() => {
+    if (!radiusCenter) setRadiusKm("0");
+  }, [radiusCenter]);
 
-  // Nom de liste proposé à partir du métier et de la première zone, tant
-  // que l'utilisateur ne l'a pas écrit lui-même
+  // Libellé court de la première activité : « Menuisier », ou le début du
+  // libellé NAF (« Commerce de détail de fleurs »)
+  const activityLabel = (() => {
+    const first = activities[0];
+    if (!first) return "";
+    if (first.type === "trade") return first.label;
+    const short = first.label.split(/[,(]/)[0].trim();
+    return short.length > 40 ? `${short.slice(0, 40).trim()}…` : short;
+  })();
+
+  // Nom de liste proposé à partir de l'activité, de la première zone et du
+  // rayon, tant que l'utilisateur ne l'a pas écrit lui-même
   useEffect(() => {
     if (listNameTouched) return;
     const where = places[0]?.label?.split(",")[0];
-    setNewListName([tradeLabel, where].filter(Boolean).join(" "));
-  }, [tradeLabel, places, listNameTouched]);
+    const around = radiusKm !== "0" ? `${radiusKm} km` : "";
+    setNewListName([activityLabel, where, around].filter(Boolean).join(" "));
+  }, [activityLabel, places, radiusKm, listNameTouched]);
 
   const placeSuggestions = useMemo(() => {
     if (debouncedPlaceQuery.length < 2) return [];
@@ -212,8 +260,20 @@ export default function GenerateProspectsDialog({
         workspaceId,
         count,
         input: {
-          tradeIds: [tradeId],
+          tradeIds: activities
+            .filter((a) => a.type === "trade")
+            .map((a) => a.id),
+          nafCodes: activities.filter((a) => a.type === "naf").map((a) => a.id),
           placeIds: places.map((p) => p.id),
+          radiusKm: radiusCenter ? Number(radiusKm) : 0,
+          aroundPlace:
+            radiusCenter && radiusKm !== "0"
+              ? {
+                  id: radiusCenter.id,
+                  label: radiusCenter.label,
+                  type: radiusCenter.type,
+                }
+              : null,
           contact,
           minStaff: range?.minStaff ?? null,
           maxStaff: range?.maxStaff ?? null,
@@ -246,7 +306,7 @@ export default function GenerateProspectsDialog({
     } else {
       toast.info("Aucun nouveau prospect ne correspond à ces critères.");
     }
-    const details = describeOutcome(outcome);
+    const details = describeOutcome(outcome, Number(radiusKm));
     if (details && outcome.unlockedCount > 0) toast.info(details);
     if (outcome.providerError) toast.error(outcome.providerError);
     onOpenChange(false);
@@ -255,7 +315,7 @@ export default function GenerateProspectsDialog({
   const countValid = Number.isInteger(count) && count >= 1 && count <= maxCount;
   const listNameMissing = destination === NEW_LIST && !newListName.trim();
   const canGenerate =
-    Boolean(tradeId) && countValid && !listNameMissing && !generating;
+    activities.length > 0 && countValid && !listNameMissing && !generating;
 
   return (
     <Dialog open={open} onOpenChange={generating ? undefined : onOpenChange}>
@@ -269,19 +329,14 @@ export default function GenerateProspectsDialog({
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-1 pb-5">
           <div className="space-y-2">
-            <Label>Métier</Label>
-            <Select value={tradeId} onValueChange={setTradeId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choisissez un métier" />
-              </SelectTrigger>
-              <SelectContent>
-                {trades.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Activité</Label>
+            <ProspectActivityPicker
+              trades={trades}
+              activities={activitiesData?.prospectActivities || []}
+              loadingActivities={loadingActivities}
+              value={activities}
+              onChange={setActivities}
+            />
           </div>
 
           <div className="space-y-2">
@@ -347,6 +402,34 @@ export default function GenerateProspectsDialog({
                     </div>
                   )}
               </div>
+            )}
+            {radiusCenter ? (
+              <div className="flex items-center gap-3 pt-1">
+                <Label
+                  htmlFor="prospect-radius"
+                  className="shrink-0 font-normal"
+                >
+                  Rayon autour de {radiusCenter.label.split(",")[0]}
+                </Label>
+                <Select value={radiusKm} onValueChange={setRadiusKm}>
+                  <SelectTrigger id="prospect-radius" className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RADIUS_OPTIONS.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              places.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Choisissez une ville pour chercher dans un rayon autour.
+                </p>
+              )
             )}
           </div>
 
