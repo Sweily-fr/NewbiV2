@@ -259,13 +259,15 @@ export default function GenerateProspectsDialog({
 
   return (
     <Dialog open={open} onOpenChange={generating ? undefined : onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader>
+      {/* Hauteur bornée à l'écran (2rem de marge en haut et en bas) : titre et
+          boutons restent visibles, seuls les champs défilent */}
+      <DialogContent className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[560px]">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-4">
           <DialogTitle>Générer des prospects</DialogTitle>
           <DialogDescription>{describeProspectQuota(quota)}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-1 pb-5">
           <div className="space-y-2">
             <Label>Métier</Label>
             <Select value={tradeId} onValueChange={setTradeId}>
@@ -473,33 +475,33 @@ export default function GenerateProspectsDialog({
               qui sont déjà dans vos contacts sont écartées.
             </p>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={generating}
-            >
-              Annuler
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleGenerate}
-              disabled={!canGenerate}
-              className="gap-2"
-            >
-              {generating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Target className="h-4 w-4" />
-              )}
-              {generating
-                ? "Recherche en cours…"
-                : countValid
-                  ? `Générer ${plural(count, "prospect")}`
-                  : "Générer"}
-            </Button>
-          </div>
+        <div className="flex shrink-0 justify-end gap-2 border-t px-6 py-4">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={generating}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleGenerate}
+            disabled={!canGenerate}
+            className="gap-2"
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Target className="h-4 w-4" />
+            )}
+            {generating
+              ? "Recherche en cours…"
+              : countValid
+                ? `Générer ${plural(count, "prospect")}`
+                : "Générer"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
