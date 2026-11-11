@@ -75,7 +75,12 @@ import {
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
+import {
+  featureForModule,
+  isHiddenForRole,
+  moduleForPath,
+} from "@/src/lib/route-modules";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 import { useGoToCreation } from "@/src/components/company-info-gate";
 import { addRecent, getRecents } from "@/src/lib/search-recents";
@@ -291,8 +296,14 @@ export function SearchCommand() {
     !permissionsReady || can(moduleKey, "read");
   const canCreate = (moduleKey) =>
     !permissionsReady || canDo(moduleKey, "create");
+  // Pages en accès anticipé (TVA, prise de rendez-vous) : absentes tant
+  // que l'espace n'y a pas accès
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
+  const featureClosed = (moduleKey) =>
+    !isFeatureEnabled(featureForModule(moduleKey));
   const canSee = (url) => {
     const moduleKey = moduleForPath(url);
+    if (moduleKey && featureClosed(moduleKey)) return false;
     if (!permissionsReady || !moduleKey) return true;
     return (
       can(moduleKey, "read") &&
@@ -304,6 +315,7 @@ export function SearchCommand() {
   // de demander l'accès)
   const canList = (url) => {
     const moduleKey = moduleForPath(url);
+    if (moduleKey && featureClosed(moduleKey)) return false;
     if (!permissionsReady || !moduleKey) return true;
     return !isHiddenForRole(permissionsRole, permissionActions, moduleKey);
   };

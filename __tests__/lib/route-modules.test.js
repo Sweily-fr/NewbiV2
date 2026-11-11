@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
+import {
+  featureForModule,
+  isHiddenForRole,
+  moduleForPath,
+} from "@/src/lib/route-modules";
 
 describe("pages masquées au Comptable par défaut", () => {
   it("masque les pages tant qu'il n'a rien de plus que ses droits par défaut", () => {
@@ -44,5 +48,23 @@ describe("pages masquées au Comptable par défaut", () => {
 
   it("l'accueil n'est rattaché à aucune page filtrée", () => {
     expect(moduleForPath("/dashboard")).toBe(null);
+  });
+});
+
+describe("pages en accès anticipé", () => {
+  it("rattache la TVA et la prise de rendez-vous à leur fonctionnalité", () => {
+    expect(featureForModule(moduleForPath("/dashboard/outils/tva"))).toBe(
+      "vat",
+    );
+    expect(
+      featureForModule(moduleForPath("/dashboard/outils/rendez-vous?type=1")),
+    ).toBe("appointments");
+  });
+
+  it("aucune fonctionnalité pour les autres pages", () => {
+    expect(featureForModule(moduleForPath("/dashboard/outils/factures"))).toBe(
+      null,
+    );
+    expect(featureForModule(null)).toBe(null);
   });
 });

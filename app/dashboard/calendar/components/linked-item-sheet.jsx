@@ -29,6 +29,7 @@ import { Button } from "@/src/components/ui/button";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { cn } from "@/src/lib/utils";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import { dayToDate } from "@/src/utils/recurrenceDays";
 import {
   formatLinkedAmount,
@@ -324,9 +325,12 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
   const amountSign =
     item.kind === "FORECAST" ? (item.flowType === "EXPENSE" ? "- " : "+ ") : "";
   const detail = linkedKindDetail(item);
-  // Page TVA sans le droit « Voir » : l'échéance reste affichée, sans lien
+  // Page TVA sans le droit « Voir », ou pas encore ouverte à l'espace
+  // (accès anticipé) : l'échéance reste affichée, sans lien
   const { canDo, isReady } = useMyPermissions();
-  const canOpenVatPage = !isReady || canDo("vat", "view");
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
+  const canOpenVatPage =
+    isFeatureEnabled("vat") && (!isReady || canDo("vat", "view"));
   const href =
     item.kind === "FISCAL" && !canOpenVatPage ? null : linkedItemHref(item);
   const externalUrl = linkedItemExternalUrl(item);

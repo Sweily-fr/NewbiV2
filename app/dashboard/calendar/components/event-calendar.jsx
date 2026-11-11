@@ -50,6 +50,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import {
   useCalendarLinkedItems,
   useCalendarOverdueItems,
@@ -137,6 +138,8 @@ export function EventCalendar({
   // Droits du rôle sur le calendrier (tout autorisé tant que la grille
   // n'est pas chargée, l'API refuse de toute façon)
   const { canDo, isReady: permissionsReady } = useMyPermissions();
+  // Prise de rendez-vous en accès anticipé (ligne des filtres)
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
   const canCreateEvents = !permissionsReady || canDo("calendar", "create");
   // Modifier, glisser-déposer, étiquettes et synchronisation = « edit »
   const canEditEvents = !permissionsReady || canDo("calendar", "edit");
@@ -754,6 +757,7 @@ export function EventCalendar({
               summary={linkedSummary}
               eventsCount={periodEventCounts.events}
               appointmentsCount={periodEventCounts.appointments}
+              showAppointments={isFeatureEnabled("appointments")}
               period={period}
               loading={linkedLoading}
               fiscalSetup={linkedFiscalSetup}

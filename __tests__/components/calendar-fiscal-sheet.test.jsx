@@ -1,11 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 
-const permissions = vi.hoisted(() => ({ canViewVat: true }));
+const permissions = vi.hoisted(() => ({ canViewVat: true, vatOpen: true }));
 vi.mock("@/src/hooks/useMyPermissions", () => ({
   useMyPermissions: () => ({
     isReady: true,
     canDo: (module) => module !== "vat" || permissions.canViewVat,
+  }),
+}));
+vi.mock("@/src/hooks/useWorkspaceFeatures", () => ({
+  useWorkspaceFeatures: () => ({
+    isReady: true,
+    isEnabled: (feature) => feature !== "vat" || permissions.vatOpen,
   }),
 }));
 
@@ -87,6 +93,17 @@ describe("fiche d'une déclaration de TVA", () => {
     ).not.toBeInTheDocument();
     expect(within(sheet).getAllByRole("link")).toHaveLength(1);
     permissions.canViewVat = true;
+  });
+
+  it("page TVA pas encore ouverte à l'espace : pas de lien vers elle", () => {
+    permissions.vatOpen = false;
+    render(<LinkedItemSheet item={vatItem} onClose={() => {}} />);
+    const sheet = screen.getByRole("dialog");
+    expect(
+      within(sheet).queryByRole("link", { name: /Préparer la déclaration/ }),
+    ).not.toBeInTheDocument();
+    expect(within(sheet).getAllByRole("link")).toHaveLength(1);
+    permissions.vatOpen = true;
   });
 });
 

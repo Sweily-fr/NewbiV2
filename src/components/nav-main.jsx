@@ -46,7 +46,12 @@ import Link from "@/src/components/nav-link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
+import {
+  featureForModule,
+  isHiddenForRole,
+  moduleForPath,
+} from "@/src/lib/route-modules";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import {
   DiagramLineIcon as Landmark,
   UsersIcon as Users,
@@ -95,11 +100,16 @@ export function NavMain({
       !isHiddenForRole(permissionsRole, permissionActions, moduleKey)
     );
   };
+  // Pages en accès anticipé (TVA, prise de rendez-vous) : hors du menu
+  // tant que l'espace n'y a pas accès, chargement compris
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
   // Pages masquées au Comptable tant qu'il garde ses droits par défaut :
   // seules à rester hors du menu
   const isHiddenPage = (url) => {
     const moduleKey = moduleForPath(url);
-    if (!permissionsReady || !moduleKey) return false;
+    if (!moduleKey) return false;
+    if (!isFeatureEnabled(featureForModule(moduleKey))) return true;
+    if (!permissionsReady) return false;
     return isHiddenForRole(permissionsRole, permissionActions, moduleKey);
   };
   // Raccourcis « Nouveau … » : action « create » du module
