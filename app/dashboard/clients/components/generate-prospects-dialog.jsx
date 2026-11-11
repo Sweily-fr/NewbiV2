@@ -32,6 +32,7 @@ import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { getUserFacingRefusal } from "@/src/utils/errorMessages";
 import {
   GET_PROSPECT_ACTIVITIES,
+  GET_PROSPECT_COUNT,
   GET_PROSPECT_PLACES,
   GENERATE_PROSPECTS,
 } from "@/src/graphql/prospectQueries";
@@ -111,12 +112,27 @@ export function describeProspectQuota(quota) {
  * Crédits d'une génération : 1 par prospect ajouté et 1 par page de 25
  * entreprises lues. Le nombre de pages n'est connu qu'en les lisant (une
  * page de plus seulement si la précédente ne suffit pas) : on annonce le cas
- * normal, les pages strictement nécessaires, et le maximum.
+ * normal, les pages strictement nécessaires, et le maximum. Avec le compteur
+ * du registre (`total`), on ne compte ni plus de fiches ni plus de pages
+ * qu'il n'existe d'entreprises : demander 50 là où il y en a 4 coûte au
+ * plus 4 fiches et 1 page.
  */
-export function estimateCredits(count, maxPages) {
-  const pages = Math.min(maxPages, Math.ceil(count / 25));
-  return { pages, expected: count + pages, max: count + maxPages };
+export function estimateCredits(count, maxPages, total = null) {
+  const known = Number.isFinite(total);
+  const fiches = known ? Math.min(count, total) : count;
+  const pagesAvailable = known
+    ? Math.max(1, Math.min(maxPages, Math.ceil(total / 25)))
+    : maxPages;
+  const pages = Math.max(1, Math.min(pagesAvailable, Math.ceil(fiches / 25)));
+  return {
+    fiches,
+    pages,
+    expected: fiches + pages,
+    max: fiches + pagesAvailable,
+  };
 }
+
+const formatCount = (n) => n.toLocaleString("fr-FR");
 
 /** Bilan d'une génération, en une phrase. */
 function describeOutcome(outcome, requestedRadiusKm) {
@@ -288,6 +304,52 @@ export default function GenerateProspectsDialog({
 
   const clampCount = (n) => Math.max(1, Math.min(n, Math.max(1, maxCount)));
 
+  // Compteur gratuit : relu une demi-seconde après le dernier changement
+  const staff = STAFF_RANGES.find((r) => r.id === staffRange);
+  const countKey = JSON.stringify(
+    activities.length
+      ? {
+          input: {
+            tradeIds: activities
+              .filter((a) => a.type === "trade")
+              .map((a) => a.id),
+            nafCodes: activities
+              .filter((a) => a.type === "naf")
+              .map((a) => a.id),
+            placeIds: places.map((p) => p.id),
+            radiusKm: radiusCenter ? Number(radiusKm) : 0,
+            aroundPlace:
+              radiusCenter && radiusKm !== "0"
+                ? {
+                    id: radiusCenter.id,
+                    label: radiusCenter.label,
+                    type: radiusCenter.type,
+                  }
+                : null,
+            minStaff: staff?.minStaff ?? null,
+            maxStaff: staff?.maxStaff ?? null,
+          },
+          places: places.map(({ id, label, type }) => ({ id, label, type })),
+        }
+      : null,
+  );
+  const debouncedCountKey = useDebouncedValue(countKey, 500);
+  const countArgs = JSON.parse(debouncedCountKey);
+  const { data: countData, loading: countLoading } = useQuery(
+    GET_PROSPECT_COUNT,
+    {
+      variables: { workspaceId, ...(countArgs || {}) },
+      skip: !open || !workspaceId || !countArgs,
+      fetchPolicy: "cache-first",
+    },
+  );
+  const counting =
+    countLoading || (activities.length > 0 && countKey !== debouncedCountKey);
+  const countResult = countArgs && !counting ? countData?.prospectCount : null;
+  const companiesTotal = Number.isFinite(countResult?.total)
+    ? countResult.total
+    : null;
+
   const handleGenerate = async () => {
     const range = STAFF_RANGES.find((r) => r.id === staffRange);
     const age = AGE_RANGES.find((r) => r.id === ageRange);
@@ -363,9 +425,19 @@ export default function GenerateProspectsDialog({
 
   const countValid = Number.isInteger(count) && count >= 1 && count <= maxCount;
   const listNameMissing = destination === NEW_LIST && !newListName.trim();
+  // Aucune entreprise au registre : rien à chercher, pas de crédit à dépenser
+  const noCompany = companiesTotal === 0;
   const canGenerate =
-    activities.length > 0 && countValid && !listNameMissing && !generating;
-  const cost = countValid ? estimateCredits(count, maxPages) : null;
+    activities.length > 0 &&
+    countValid &&
+    !listNameMissing &&
+    !generating &&
+    !noCompany;
+  const cost = countValid
+    ? estimateCredits(count, maxPages, companiesTotal)
+    : null;
+  const tooMany =
+    companiesTotal != null && companiesTotal > 0 && count > companiesTotal;
 
   return (
     <Dialog open={open} onOpenChange={generating ? undefined : onOpenChange}>
@@ -583,6 +655,43 @@ export default function GenerateProspectsDialog({
 
             {/* Récapitulatif */}
             <aside className="flex min-w-0 flex-col gap-6 border-t border-border/40 bg-[#fafafa] px-5 py-6 md:border-t-0 md:border-l dark:bg-[#141414]">
+              {/* Compteur gratuit du registre public */}
+              <div className="flex flex-col gap-1 rounded-xl border border-border/60 bg-background p-4">
+                <p className={FIELD_LABEL}>Entreprises correspondantes</p>
+                {!activities.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    Choisissez une activité pour les compter
+                  </p>
+                ) : counting ? (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Comptage…
+                  </p>
+                ) : companiesTotal == null ? (
+                  <p className="text-sm text-muted-foreground">
+                    Compteur indisponible pour cette zone
+                  </p>
+                ) : (
+                  <>
+                    <p
+                      className={cn(
+                        "text-2xl font-semibold tracking-tight tabular-nums",
+                        noCompany && "text-[#E5484D]",
+                      )}
+                    >
+                      {countResult.capped
+                        ? "10 000+"
+                        : formatCount(companiesTotal)}
+                    </p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {noCompany
+                        ? "Aucune entreprise active ne correspond : élargissez l'activité ou la zone."
+                        : "Actives au registre public. Celles joignables comme demandé sont un peu moins nombreuses."}
+                    </p>
+                  </>
+                )}
+              </div>
+
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prospect-count" className={FIELD_LABEL}>
                   Nombre de prospects
@@ -620,11 +729,29 @@ export default function GenerateProspectsDialog({
                     <Plus className="size-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {maxCount > 0
-                    ? `${maxCount} au maximum`
-                    : "Plus de prospects disponibles"}
-                </p>
+                {tooMany ? (
+                  <div className="flex flex-col gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:bg-amber-900/15 dark:text-amber-300">
+                    <p>
+                      Seulement {plural(companiesTotal, "entreprise")} au
+                      registre : vous n&apos;obtiendrez pas plus de{" "}
+                      {plural(companiesTotal, "prospect")}. Les autres ne
+                      coûtent rien.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setCount(clampCount(companiesTotal))}
+                      className="self-start font-medium underline underline-offset-2 hover:no-underline"
+                    >
+                      Demander {Math.min(companiesTotal, Math.max(1, maxCount))}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {maxCount > 0
+                      ? `${maxCount} au maximum`
+                      : "Plus de prospects disponibles"}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -694,7 +821,7 @@ export default function GenerateProspectsDialog({
                         </span>
                       </dt>
                       <dd className="shrink-0 font-medium tabular-nums">
-                        {count}
+                        {cost.fiches}
                       </dd>
                     </div>
                     <div className="flex items-start justify-between gap-3">
