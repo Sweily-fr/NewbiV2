@@ -3,12 +3,15 @@ import { gql } from "@apollo/client";
 const PROSPECT_QUOTA_FIELDS = gql`
   fragment ProspectQuotaFields on ProspectQuota {
     plan
-    bucket
-    quota
-    used
-    remaining
+    monthlyCredits
+    monthlyUsed
+    monthlyRemaining
+    purchasedRemaining
     available
     resetsAt
+    nextPlan
+    nextPlanCredits
+    canPurchase
   }
 `;
 

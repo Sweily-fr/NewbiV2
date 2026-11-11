@@ -24,7 +24,16 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import { Loader2, MapPin, Minus, Plus, Target, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  Coins,
+  Loader2,
+  MapPin,
+  Minus,
+  Plus,
+  Target,
+  X,
+} from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { useClientLists } from "@/src/hooks/useClientLists";
@@ -37,6 +46,7 @@ import {
   GENERATE_PROSPECTS,
 } from "@/src/graphql/prospectQueries";
 import ProspectActivityPicker from "./prospect-activity-picker";
+import BuyProspectCreditsDialog from "./buy-prospect-credits-dialog";
 
 const MAX_PLACES = 5;
 const DEFAULT_COUNT = 10;
@@ -93,19 +103,46 @@ const plural = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
 const refusal = (errors, fallback) =>
   getUserFacingRefusal({ graphQLErrors: errors }) || fallback;
 
-/** Ce qu'il reste réellement à l'espace, en clair. */
+const PLAN_LABELS = {
+  freelance: "Freelance",
+  pme: "TPE",
+  entreprise: "Entreprise",
+};
+
+/** Solde de crédits de l'espace, en clair (en-tête de la fenêtre). */
 export function describeProspectQuota(quota) {
-  if (!quota?.plan) {
-    return "Les prospects offerts sont réservés aux abonnements payés.";
+  if (!quota) return "";
+  const available = quota.available ?? 0;
+  if (!quota.plan && available === 0) {
+    return "Réservé aux abonnements payés.";
   }
-  const available = quota.available ?? quota.remaining ?? 0;
-  if (available === 0) {
-    return quota.remaining === 0 && quota.bucket === "monthly"
-      ? "Vous avez utilisé vos prospects offerts ce mois-ci."
-      : "Aucun prospect disponible pour le moment.";
+  if (quota.monthlyCredits === 0 && available === 0 && quota.nextPlan) {
+    return `Inclus à partir de l'offre ${PLAN_LABELS[quota.nextPlan]}.`;
   }
-  const left = `${plural(available, "prospect")} disponible${available > 1 ? "s" : ""}`;
-  return quota.bucket === "monthly" ? `${left} ce mois-ci` : left;
+  const left = `${plural(available, "crédit")} disponible${available > 1 ? "s" : ""}`;
+  if (quota.purchasedRemaining > 0) {
+    return `${left}, dont ${quota.purchasedRemaining} acheté${quota.purchasedRemaining > 1 ? "s" : ""}`;
+  }
+  return `${left} ce mois-ci`;
+}
+
+/** Date de renouvellement des crédits du mois : « 1er décembre ». */
+function formatResetDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const month = date.toLocaleDateString("fr-FR", {
+    month: "long",
+    timeZone: "Europe/Paris",
+  });
+  return `1er ${month}`;
+}
+
+/** Ouvre les paramètres sur l'abonnement (changement d'offre). */
+function openSubscriptionSettings() {
+  window.dispatchEvent(
+    new CustomEvent("newbi:open-settings", { detail: { tab: "subscription" } }),
+  );
 }
 
 /**
@@ -207,10 +244,13 @@ export default function GenerateProspectsDialog({
   const quota = settings?.quota || null;
   const maxPages = settings?.maxSearchPages || DEFAULT_MAX_SEARCH_PAGES;
   const maxCodes = settings?.maxNafCodes || DEFAULT_MAX_NAF_CODES;
-  const maxCount = Math.min(
-    quota?.available ?? 0,
-    settings?.maxPerUnlock || 50,
+  const available = quota?.available ?? 0;
+  // 1 crédit par prospect, plus au moins une page de résultats lue
+  const maxCount = Math.max(
+    0,
+    Math.min(available - 1, settings?.maxPerUnlock || 50),
   );
+  const [buyOpen, setBuyOpen] = useState(false);
 
   const [activities, setActivities] = useState([]);
   const [places, setPlaces] = useState([]);
@@ -424,6 +464,7 @@ export default function GenerateProspectsDialog({
   };
 
   const countValid = Number.isInteger(count) && count >= 1 && count <= maxCount;
+  const requestedValid = Number.isInteger(count) && count >= 1;
   const listNameMissing = destination === NEW_LIST && !newListName.trim();
   // Aucune entreprise au registre : rien à chercher, pas de crédit à dépenser
   const noCompany = companiesTotal === 0;
@@ -433,9 +474,12 @@ export default function GenerateProspectsDialog({
     !listNameMissing &&
     !generating &&
     !noCompany;
-  const cost = countValid
+  // Coût affiché même au-delà du solde, pour dire combien il manque
+  const cost = requestedValid
     ? estimateCredits(count, maxPages, companiesTotal)
     : null;
+  const shortOfCredits = available < Math.max(2, cost?.expected ?? 2);
+  const upgradeTo = quota?.nextPlan || null;
   const tooMany =
     companiesTotal != null && companiesTotal > 0 && count > companiesTotal;
 
@@ -655,6 +699,19 @@ export default function GenerateProspectsDialog({
 
             {/* Récapitulatif */}
             <aside className="flex min-w-0 flex-col gap-6 border-t border-border/40 bg-[#fafafa] px-5 py-6 md:border-t-0 md:border-l dark:bg-[#141414]">
+              <CreditsCard
+                quota={quota}
+                available={available}
+                shortOfCredits={shortOfCredits}
+                needed={cost?.expected ?? null}
+                upgradeTo={upgradeTo}
+                onUpgrade={() => {
+                  onOpenChange(false);
+                  openSubscriptionSettings();
+                }}
+                onBuy={() => setBuyOpen(true)}
+              />
+
               {/* Compteur gratuit du registre public */}
               <div className="flex flex-col gap-1 rounded-xl border border-border/60 bg-background p-4">
                 <p className={FIELD_LABEL}>Entreprises correspondantes</p>
@@ -748,8 +805,8 @@ export default function GenerateProspectsDialog({
                 ) : (
                   <p className="text-xs text-muted-foreground">
                     {maxCount > 0
-                      ? `${maxCount} au maximum`
-                      : "Plus de prospects disponibles"}
+                      ? `${maxCount} au maximum avec vos crédits`
+                      : "Plus assez de crédits"}
                   </p>
                 )}
               </div>
@@ -878,6 +935,127 @@ export default function GenerateProspectsDialog({
           </div>
         </div>
       </DialogContent>
+      <BuyProspectCreditsDialog
+        open={buyOpen}
+        onOpenChange={setBuyOpen}
+        workspaceId={workspaceId}
+        suggested={cost ? Math.max(0, cost.expected - available) : 50}
+      />
     </Dialog>
+  );
+}
+
+/**
+ * Crédits de l'espace : solde, crédits du mois utilisés, crédits achetés,
+ * et la marche suivante quand il n'y en a plus assez (offre TPE, offre
+ * Entreprise, puis achat à l'unité).
+ */
+function CreditsCard({
+  quota,
+  available,
+  shortOfCredits,
+  needed,
+  upgradeTo,
+  onUpgrade,
+  onBuy,
+}) {
+  if (!quota) return null;
+  const monthly = quota.monthlyCredits ?? 0;
+  const used = quota.monthlyUsed ?? 0;
+  const purchased = quota.purchasedRemaining ?? 0;
+  const resetDate = formatResetDate(quota.resetsAt);
+  const usedRatio = monthly > 0 ? Math.min(1, used / monthly) : 0;
+  const canPurchase = Boolean(quota.canPurchase);
+
+  let upsell = null;
+  if (shortOfCredits) {
+    if (!quota.plan && !purchased) {
+      upsell = {
+        text: "La génération de prospects est réservée aux abonnements payés.",
+        action: "Voir les offres",
+        onClick: onUpgrade,
+      };
+    } else if (upgradeTo) {
+      upsell = {
+        text:
+          monthly === 0
+            ? `Incluse à partir de l'offre ${PLAN_LABELS[upgradeTo]} : ${quota.nextPlanCredits} crédits par mois.`
+            : `Pour plus de crédits, passez à l'offre ${PLAN_LABELS[upgradeTo]} : ${quota.nextPlanCredits} crédits par mois.`,
+        action: `Passer à l'offre ${PLAN_LABELS[upgradeTo]}`,
+        onClick: onUpgrade,
+      };
+    } else if (canPurchase) {
+      upsell = {
+        text: "Achetez des crédits en plus : sans expiration, utilisés après ceux du mois.",
+        action: "Acheter des crédits",
+        onClick: onBuy,
+      };
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className={FIELD_LABEL}>Crédits de l&apos;espace</p>
+        {canPurchase && !upsell && (
+          <button
+            type="button"
+            onClick={onBuy}
+            className="inline-flex items-center gap-1 text-xs font-medium text-[#5a50ff] hover:underline dark:text-[#8b85ff]"
+          >
+            <Coins className="size-3" />
+            Acheter
+          </button>
+        )}
+      </div>
+      <p className="text-2xl font-semibold tracking-tight tabular-nums">
+        {formatCount(available)}{" "}
+        <span className="text-sm font-medium text-muted-foreground">
+          restant{available > 1 ? "s" : ""}
+        </span>
+      </p>
+      {monthly > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-[#5a50ff]"
+              style={{ width: `${Math.round(usedRatio * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {Math.min(used, monthly)} sur {monthly} utilisés ce mois-ci
+            {resetDate ? `, renouvelés le ${resetDate}` : ""}
+          </p>
+        </div>
+      )}
+      {purchased > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Dont {plural(purchased, "crédit")} acheté{purchased > 1 ? "s" : ""},
+          sans expiration
+        </p>
+      )}
+      {upsell && (
+        <div className="flex flex-col gap-2.5 border-t border-border/40 pt-3">
+          {needed != null && available > 0 && needed > available && (
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              Il faut {plural(needed, "crédit")} pour cette génération.
+            </p>
+          )}
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {upsell.text}
+          </p>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={upsell.onClick}
+            className="gap-1.5 self-start"
+          >
+            {upsell.action}
+            <ArrowUpRight className="size-3.5" />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
