@@ -542,5 +542,12 @@
       "pv-reception-travaux-modele",
       "facture-garage-mecanicien-auto"
     ]
+  },
+  {
+    "date": "2026-11-11",
+    "articles": [
+      "ebp-vs-newbi-comparatif",
+      "recouvrement-amiable-vs-judiciaire"
+    ]
   }
 ]
