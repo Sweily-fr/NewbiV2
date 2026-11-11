@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { CheckIcon, ChevronDownIcon, Loader2, X } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
-import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import {
   Command,
@@ -20,7 +19,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 
-export const MAX_ACTIVITY_CODES = 10;
+export const MAX_ACTIVITY_CODES = 50;
 const MAX_NAF_RESULTS = 50;
 
 // Recherche insensible à la casse et aux accents (« electricien » trouve
@@ -59,7 +58,7 @@ export function selectedCodes(selection) {
 /**
  * Activités recherchées : métiers courants (avec leurs codes NAF) en tête,
  * puis n'importe quelle sous-classe de la nomenclature NAF. Sélection
- * multiple, 10 codes au plus.
+ * multiple, `maxCodes` codes au plus (50 par défaut).
  */
 export default function ProspectActivityPicker({
   trades = [],
@@ -67,6 +66,7 @@ export default function ProspectActivityPicker({
   loadingActivities = false,
   value,
   onChange,
+  maxCodes = MAX_ACTIVITY_CODES,
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -121,7 +121,7 @@ export default function ProspectActivityPicker({
   // Ajout refusé s'il ferait dépasser la limite de codes
   const wouldOverflow = (option) =>
     !chosen.has(option.key) &&
-    selectedCodes([...value, option]).size > MAX_ACTIVITY_CODES;
+    selectedCodes([...value, option]).size > maxCodes;
 
   const renderOption = (option, codesLabel) => {
     const blocked = wouldOverflow(option);
@@ -144,7 +144,7 @@ export default function ProspectActivityPicker({
           <span className="block">{option.label}</span>
           {blocked && (
             <span className="block text-xs text-muted-foreground">
-              Limite de {MAX_ACTIVITY_CODES} codes NAF atteinte
+              Limite de {maxCodes} codes NAF atteinte
             </span>
           )}
         </span>
@@ -160,23 +160,28 @@ export default function ProspectActivityPicker({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {value.map((v) => (
-            <Badge
+            <span
               key={v.key}
-              variant="secondary"
-              className="max-w-full gap-1 font-normal"
+              className="inline-flex max-w-full items-center gap-1 rounded-md bg-[#5a50ff]/10 px-2 py-1 text-xs font-medium text-[#5a50ff] dark:text-[#8b85ff]"
             >
               <span className="truncate">
-                {v.type === "naf" ? `${v.id} · ${v.label}` : v.label}
+                {v.type === "naf" ? (
+                  <>
+                    <span className="font-mono">{v.id}</span> · {v.label}
+                  </>
+                ) : (
+                  v.label
+                )}
               </span>
               <button
                 type="button"
                 onClick={() => onChange(value.filter((x) => x.key !== v.key))}
                 aria-label={`Retirer ${v.label}`}
-                className="shrink-0 text-muted-foreground hover:text-foreground"
+                className="shrink-0 opacity-60 hover:opacity-100"
               >
-                <X className="h-3 w-3" />
+                <X className="size-3" />
               </button>
-            </Badge>
+            </span>
           ))}
         </div>
       )}
@@ -257,7 +262,7 @@ export default function ProspectActivityPicker({
             </CommandList>
           </Command>
           <p className="border-t px-3 py-2 text-xs text-muted-foreground">
-            {codeCount}/{MAX_ACTIVITY_CODES} codes NAF choisis
+            {codeCount}/{maxCodes} codes NAF choisis
           </p>
         </PopoverContent>
       </Popover>
