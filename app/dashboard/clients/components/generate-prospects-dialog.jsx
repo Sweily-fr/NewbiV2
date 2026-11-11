@@ -120,6 +120,9 @@ export function describeProspectQuota(quota) {
     return `Inclus à partir de l'offre ${PLAN_LABELS[quota.nextPlan]}.`;
   }
   const left = `${plural(available, "crédit")} disponible${available > 1 ? "s" : ""}`;
+  if (quota.purchasedRemaining > 0 && !quota.monthlyRemaining) {
+    return `${plural(available, "crédit")} acheté${available > 1 ? "s" : ""} disponible${available > 1 ? "s" : ""}`;
+  }
   if (quota.purchasedRemaining > 0) {
     return `${left}, dont ${quota.purchasedRemaining} acheté${quota.purchasedRemaining > 1 ? "s" : ""}`;
   }
