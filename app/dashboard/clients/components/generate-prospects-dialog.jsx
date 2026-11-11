@@ -108,11 +108,14 @@ export function describeProspectQuota(quota) {
 }
 
 /**
- * Crédits d'une génération : 1 par page de 25 entreprises parcourues (au
- * moins une, au plus maxPages) et 1 par prospect ajouté.
+ * Crédits d'une génération : 1 par prospect ajouté et 1 par page de 25
+ * entreprises lues. Le nombre de pages n'est connu qu'en les lisant (une
+ * page de plus seulement si la précédente ne suffit pas) : on annonce le cas
+ * normal, les pages strictement nécessaires, et le maximum.
  */
 export function estimateCredits(count, maxPages) {
-  return { min: count + 1, max: count + maxPages };
+  const pages = Math.min(maxPages, Math.ceil(count / 25));
+  return { pages, expected: count + pages, max: count + maxPages };
 }
 
 /** Bilan d'une génération, en une phrase. */
@@ -152,8 +155,8 @@ function describeOutcome(outcome, requestedRadiusKm) {
 /** Titre de section du formulaire. */
 function Section({ title, hint, children }) {
   return (
-    <section className="space-y-3">
-      <div>
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0.5">
         <h3 className="text-sm font-medium">{title}</h3>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
@@ -404,7 +407,7 @@ export default function GenerateProspectsDialog({
 
           {/* Formulaire à gauche, récapitulatif et coût à droite */}
           <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="min-w-0 space-y-7 px-5 py-5">
+            <div className="flex min-w-0 flex-col gap-8 px-5 py-6">
               <Section
                 title="Qui cherchez-vous ?"
                 hint="Un métier courant ou n'importe quelle activité de la nomenclature NAF."
@@ -490,7 +493,7 @@ export default function GenerateProspectsDialog({
                   </div>
                 )}
                 {radiusCenter ? (
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2">
                     <Label className={FIELD_LABEL}>
                       Rayon autour de {radiusCenter.label.split(",")[0]}
                     </Label>
@@ -524,7 +527,7 @@ export default function GenerateProspectsDialog({
 
               <Section title="Quelles entreprises ?">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2">
                     <Label className={FIELD_LABEL}>Taille</Label>
                     <Select value={staffRange} onValueChange={setStaffRange}>
                       <SelectTrigger className="w-full">
@@ -539,7 +542,7 @@ export default function GenerateProspectsDialog({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2">
                     <Label className={FIELD_LABEL}>Date de création</Label>
                     <Select value={ageRange} onValueChange={setAgeRange}>
                       <SelectTrigger className="w-full">
@@ -555,7 +558,7 @@ export default function GenerateProspectsDialog({
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   <Label className={FIELD_LABEL}>Joignables par</Label>
                   <ToggleGroup
                     type="single"
@@ -579,8 +582,8 @@ export default function GenerateProspectsDialog({
             </div>
 
             {/* Récapitulatif */}
-            <aside className="min-w-0 space-y-5 border-t border-border/40 bg-[#fafafa] px-5 py-5 md:border-t-0 md:border-l dark:bg-[#141414]">
-              <div className="space-y-2">
+            <aside className="flex min-w-0 flex-col gap-6 border-t border-border/40 bg-[#fafafa] px-5 py-6 md:border-t-0 md:border-l dark:bg-[#141414]">
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="prospect-count" className={FIELD_LABEL}>
                   Nombre de prospects
                 </Label>
@@ -624,7 +627,7 @@ export default function GenerateProspectsDialog({
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <Label className={FIELD_LABEL}>Ajouter à</Label>
                 <Select value={destination} onValueChange={setDestination}>
                   <SelectTrigger className="w-full bg-background">
@@ -659,64 +662,67 @@ export default function GenerateProspectsDialog({
                 )}
               </div>
 
-              {/* Coût estimé, en crédits */}
-              <div className="space-y-3 rounded-xl border border-border/60 bg-background p-4">
-                <div>
-                  <p className={FIELD_LABEL}>Coût estimé</p>
+              {/* Coût prévu, en crédits */}
+              <div className="flex flex-col gap-4 rounded-xl border border-border/60 bg-background p-4">
+                <div className="flex flex-col gap-1">
+                  <p className={FIELD_LABEL}>Coût prévu</p>
                   {cost ? (
-                    <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-                      {cost.min}
-                      <span className="text-base font-medium text-muted-foreground">
-                        {" "}
-                        à {cost.max} crédits
-                      </span>
-                    </p>
+                    <>
+                      <p className="text-2xl font-semibold tracking-tight tabular-nums">
+                        {cost.expected}{" "}
+                        <span className="text-sm font-medium text-muted-foreground">
+                          crédits
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {cost.max} au maximum
+                      </p>
+                    </>
                   ) : (
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       Indiquez un nombre de prospects
                     </p>
                   )}
                 </div>
                 {cost && (
-                  <dl className="space-y-2 border-t border-border/40 pt-3 text-xs">
+                  <dl className="flex flex-col gap-3 border-t border-border/40 pt-4 text-xs">
                     <div className="flex items-start justify-between gap-3">
-                      <dt>
-                        <span className="font-medium">Recherche</span>
-                        <span className="block text-muted-foreground">
-                          1 crédit par page de 25 entreprises parcourues
-                        </span>
-                      </dt>
-                      <dd className="shrink-0 tabular-nums">1 à {maxPages}</dd>
-                    </div>
-                    <div className="flex items-start justify-between gap-3">
-                      <dt>
+                      <dt className="flex flex-col gap-0.5">
                         <span className="font-medium">Prospects ajoutés</span>
-                        <span className="block text-muted-foreground">
+                        <span className="text-muted-foreground">
                           1 crédit par fiche
                         </span>
                       </dt>
-                      <dd className="shrink-0 tabular-nums">{count}</dd>
+                      <dd className="shrink-0 font-medium tabular-nums">
+                        {count}
+                      </dd>
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <dt className="flex flex-col gap-0.5">
+                        <span className="font-medium">
+                          Lecture des résultats
+                        </span>
+                        <span className="text-muted-foreground">
+                          1 crédit par page de 25 entreprises
+                        </span>
+                      </dt>
+                      <dd className="shrink-0 font-medium tabular-nums">
+                        {cost.pages}
+                      </dd>
                     </div>
                   </dl>
                 )}
-                <p className="border-t border-border/40 pt-3 text-xs leading-relaxed text-muted-foreground">
-                  Seules les entreprises en activité et joignables comme demandé
-                  sont ajoutées. Celles qui refusent la prospection, qui sont
-                  hors du rayon ou déjà dans vos contacts sont écartées sans
-                  coûter de fiche.
+                <p className="border-t border-border/40 pt-4 text-xs leading-relaxed text-muted-foreground">
+                  Une page de plus n&apos;est lue que si la première ne contient
+                  pas assez d&apos;entreprises utilisables.
                 </p>
               </div>
             </aside>
           </div>
 
           {/* Pied */}
-          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/40 px-5 py-3">
-            <p className="hidden text-xs text-muted-foreground sm:block">
-              {cost
-                ? `${cost.min} à ${cost.max} crédits pour ${plural(count, "prospect")}`
-                : ""}
-            </p>
-            <div className="ml-auto flex items-center gap-2">
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border/40 px-5 py-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
