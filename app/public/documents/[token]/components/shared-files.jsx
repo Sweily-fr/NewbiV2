@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -22,9 +22,21 @@ import {
   LogOut,
   PanelLeft,
   Search,
+  Trash2,
+  Upload,
   UserRound,
   X,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -43,10 +55,12 @@ import {
   SheetTitle,
 } from "@/src/components/ui/sheet";
 import { PdfPreview } from "@/src/components/pdf/pdf-preview";
+import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { NewbiSignature, WorkspaceIdentity } from "./access-screen";
 import {
   HOME,
+  UPLOAD_ACCEPT,
   buildShareTree,
   fileKind,
   formatFileSize,
@@ -54,6 +68,7 @@ import {
   searchShare,
   sortDocuments,
 } from "./shared-files-utils";
+import { UploadPanel, useUploadQueue } from "./upload-queue";
 
 const KIND_ICONS = {
   image: FileImage,
@@ -266,10 +281,26 @@ function PreviewDialog({ document, previewUrl, downloadUrl, onClose }) {
 /**
  * Espace du visiteur d'un lien client : même visuel que Documents partagés
  * dans Newbi (explorateur à gauche, fil d'Ariane, recherche, colonnes Nom,
- * Taille et Date), en lecture seule.
+ * Taille et Date). Si l'accès le permet, le visiteur dépose des documents
+ * dans le dossier ouvert (bouton ou glisser-déposer) et supprime ceux qu'il
+ * a déposés. Le contenu arrive à jour en temps réel (page.jsx).
+ *
+ * @param {object} props
+ * @param {(folderId: string) => string} props.uploadUrl adresse de dépôt
+ * @param {(document: object) => Promise<void>} props.onDelete
+ * @param {() => void} props.onChanged un dépôt est arrivé : relire
  */
-export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
+export function SharedFiles({
+  content,
+  fileUrl,
+  downloadAllUrl,
+  onSignOut,
+  uploadUrl,
+  onDelete,
+  onChanged,
+}) {
   const { folders, documents, rootFolderIds, workspace, visitor } = content;
+  const canUpload = Boolean(content.allowUploads);
   const tree = useMemo(
     () => buildShareTree({ folders, documents, rootFolderIds }),
     [folders, documents, rootFolderIds],
@@ -278,13 +309,35 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
   const homeId = hasHome ? HOME : tree.roots[0]?.id;
   const homeLabel = content.name || "Documents partagés";
 
-  const [currentId, setCurrentId] = useState(homeId);
+  const [selectedId, setCurrentId] = useState(homeId);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState({ by: "name", order: "asc" });
   const [previewed, setPreviewed] = useState(null);
   const [treeOpen, setTreeOpen] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+  const fileInput = useRef(null);
+  const uploads = useUploadQueue({ uploadUrl, onUploaded: onChanged });
+
+  // Contenu relu en temps réel : un dossier fermé entre-temps ramène à
+  // l'accueil, un document retiré ferme son aperçu
+  const currentId = (
+    selectedId === HOME ? hasHome : tree.folderById.has(selectedId)
+  )
+    ? selectedId
+    : homeId;
+  const currentFolder =
+    currentId === HOME ? null : tree.folderById.get(currentId);
+  useEffect(() => {
+    if (previewed && !documents.some((d) => d.id === previewed.id)) {
+      setPreviewed(null);
+    }
+  }, [documents, previewed]);
 
   const searching = query.trim().length > 0;
+  // Dépôt dans le dossier ouvert (pas sur l'accueil qui liste les dossiers)
+  const dropTarget = canUpload && !searching ? currentFolder : null;
+  const actionsWidth = canUpload ? "w-[88px]" : "w-[60px]";
   const results = useMemo(
     () => (searching ? searchShare({ folders, documents }, query) : null),
     [searching, folders, documents, query],
@@ -319,6 +372,48 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
         ? { by: field, order: previous.order === "asc" ? "desc" : "asc" }
         : { by: field, order: field === "name" ? "asc" : "desc" },
     );
+
+  const pickFiles = () => fileInput.current?.click();
+  const depositFiles = (files) => {
+    if (dropTarget && files?.length) uploads.add(files, dropTarget);
+  };
+  const hasFiles = (event) =>
+    [...(event.dataTransfer?.types || [])].includes("Files");
+  const dropHandlers = dropTarget
+    ? {
+        onDragEnter: (event) => {
+          if (!hasFiles(event)) return;
+          event.preventDefault();
+          setDragging(true);
+        },
+        onDragOver: (event) => {
+          if (!hasFiles(event)) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        },
+        onDragLeave: (event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setDragging(false);
+          }
+        },
+        onDrop: (event) => {
+          event.preventDefault();
+          setDragging(false);
+          depositFiles(event.dataTransfer.files);
+        },
+      }
+    : {};
+
+  const confirmDelete = async () => {
+    const document = toDelete;
+    setToDelete(null);
+    try {
+      await onDelete(document);
+      toast.success("Document supprimé");
+    } catch (error) {
+      toast.error(error.message || "Suppression impossible");
+    }
+  };
 
   const folderLocation = (document) =>
     tree
@@ -425,7 +520,18 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
           </SheetContent>
         </Sheet>
 
-        <main className="flex-1 min-w-0 flex flex-col">
+        <main
+          className="relative flex-1 min-w-0 flex flex-col"
+          {...dropHandlers}
+        >
+          {dragging && dropTarget && (
+            <div className="absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary bg-background/90 pointer-events-none">
+              <Upload className="size-6 text-primary" />
+              <p className="text-sm font-medium text-center px-4">
+                Déposez vos fichiers dans « {dropTarget.name} »
+              </p>
+            </div>
+          )}
           {/* Fil d'Ariane et recherche */}
           <div className="min-h-12 border-b flex flex-wrap items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-2 shrink-0">
             <nav
@@ -481,6 +587,34 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
                 ({count})
               </span>
             </nav>
+            {dropTarget && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={pickFiles}
+                >
+                  <Upload className="size-4 sm:mr-1.5" />
+                  <span className="sr-only sm:not-sr-only">
+                    Déposer des documents
+                  </span>
+                </Button>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  multiple
+                  accept={UPLOAD_ACCEPT}
+                  className="hidden"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  onChange={(event) => {
+                    depositFiles(event.target.files);
+                    event.target.value = "";
+                  }}
+                />
+              </>
+            )}
             <div className="relative w-full sm:w-56">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
               <Input
@@ -522,6 +656,17 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
                     ? "Aucun document ne correspond à votre recherche."
                     : "Ce dossier est vide."}
                 </p>
+                {dropTarget && (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      Glissez vos fichiers ici pour les déposer.
+                    </p>
+                    <Button size="sm" variant="outline" onClick={pickFiles}>
+                      <Upload className="size-4 mr-1.5" />
+                      Déposer des documents
+                    </Button>
+                  </>
+                )}
               </div>
             ) : (
               <div>
@@ -548,7 +693,7 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
                     onSort={onSort}
                     className="w-28 justify-end hidden md:flex"
                   />
-                  <span className="w-[60px]" aria-hidden="true" />
+                  <span className={actionsWidth} aria-hidden="true" />
                 </div>
 
                 <div className="divide-y">
@@ -579,7 +724,7 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
                           {inside} élément{inside > 1 ? "s" : ""}
                         </span>
                         <span className="w-28 hidden md:block" />
-                        <span className="w-[60px] flex justify-end">
+                        <span className={cn(actionsWidth, "flex justify-end")}>
                           <ChevronRight className="size-4 text-muted-foreground" />
                         </span>
                       </div>
@@ -597,7 +742,16 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <FileTypeIcon document={document} />
                           <div className="min-w-0">
-                            <p className="text-sm truncate">{document.name}</p>
+                            <p className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm truncate">
+                                {document.name}
+                              </span>
+                              {document.mine && (
+                                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                                  Déposé par vous
+                                </span>
+                              )}
+                            </p>
                             <p className="text-xs text-muted-foreground truncate sm:hidden">
                               {formatFileSize(document.fileSize)}
                               {document.createdAt &&
@@ -616,7 +770,12 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
                         <span className="w-28 text-right text-sm text-muted-foreground hidden md:block">
                           {formatDate(document.createdAt)}
                         </span>
-                        <span className="w-[60px] flex justify-end gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+                        <span
+                          className={cn(
+                            actionsWidth,
+                            "flex justify-end gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity",
+                          )}
+                        >
                           {canPreview && (
                             <Button
                               size="icon"
@@ -645,6 +804,20 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
                               <Download className="size-4" />
                             </a>
                           </Button>
+                          {canUpload && document.mine && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="size-7 text-destructive hover:text-destructive"
+                              aria-label={`Supprimer ${document.name}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setToDelete(document);
+                              }}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          )}
                         </span>
                       </div>
                     );
@@ -661,6 +834,34 @@ export function SharedFiles({ content, fileUrl, downloadAllUrl, onSignOut }) {
         previewUrl={previewed ? fileUrl(previewed, "preview") : undefined}
         downloadUrl={previewed ? fileUrl(previewed, "download") : undefined}
         onClose={() => setPreviewed(null)}
+      />
+
+      <AlertDialog
+        open={Boolean(toDelete)}
+        onOpenChange={(open) => !open && setToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Supprimer « {toDelete?.name} » ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Le document sera retiré du dossier partagé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <UploadPanel
+        items={uploads.items}
+        busy={uploads.busy}
+        onClose={uploads.clear}
       />
     </div>
   );
