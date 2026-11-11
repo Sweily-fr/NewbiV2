@@ -32,6 +32,20 @@ export const GET_PROSPECT_SETTINGS = gql`
   }
 `;
 
+// Compteur gratuit (registre public, aucun crédit Societeinfo)
+export const GET_PROSPECT_COUNT = gql`
+  query GetProspectCount(
+    $workspaceId: String!
+    $input: ProspectSearchInput!
+    $places: [ProspectPlaceInput!]
+  ) {
+    prospectCount(workspaceId: $workspaceId, input: $input, places: $places) {
+      total
+      capped
+    }
+  }
+`;
+
 // Les 732 activités NAF : chargées à l'ouverture de la fenêtre, gardées en cache
 export const GET_PROSPECT_ACTIVITIES = gql`
   query GetProspectActivities($workspaceId: String!) {
