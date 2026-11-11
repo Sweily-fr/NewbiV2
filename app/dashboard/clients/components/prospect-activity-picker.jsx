@@ -95,18 +95,26 @@ export default function ProspectActivityPicker({
 
   const nafOptions = useMemo(() => {
     if (!query) return [];
-    return activities
-      .map((a) => ({
-        key: `naf:${a.code}`,
-        type: "naf",
-        id: a.code,
-        label: a.label,
-        codes: [a.code],
-        score: score(query, a.label, [a.code]),
-      }))
-      .filter((o) => o.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, MAX_NAF_RESULTS);
+    const match = (q) =>
+      activities
+        .map((a) => ({
+          key: `naf:${a.code}`,
+          type: "naf",
+          id: a.code,
+          label: a.label,
+          codes: [a.code],
+          score: score(q, a.label, [a.code]),
+        }))
+        .filter((o) => o.score > 0);
+    // Les libellés NAF décrivent l'activité, pas le métier : « fleuriste »
+    // ne trouve rien, sa racine « fleur » trouve le commerce de fleurs. On
+    // raccourcit le mot jusqu'à 4 lettres tant que rien ne correspond
+    let found = match(query);
+    for (let n = query.length - 1; !found.length && n >= 4; n--) {
+      if (/\d/.test(query)) break;
+      found = match(query.slice(0, n));
+    }
+    return found.sort((a, b) => b.score - a.score).slice(0, MAX_NAF_RESULTS);
   }, [activities, query]);
 
   const toggle = (option) => {
@@ -170,7 +178,12 @@ export default function ProspectActivityPicker({
                     <span className="font-mono">{v.id}</span> · {v.label}
                   </>
                 ) : (
-                  v.label
+                  <>
+                    {v.label}{" "}
+                    <span className="font-normal opacity-70">
+                      {v.codes.join(", ")}
+                    </span>
+                  </>
                 )}
               </span>
               <button

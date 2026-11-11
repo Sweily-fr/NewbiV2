@@ -167,6 +167,12 @@ const CHIP =
   "inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-xs font-medium";
 const TOGGLE_ON =
   "data-[state=on]:bg-[#5a50ff]/10 data-[state=on]:text-[#5a50ff] dark:data-[state=on]:text-[#8b85ff]";
+// Rayon : six choix, en grille de boutons séparés sur téléphone, en barre
+// segmentée au-delà
+const RADIUS_GROUP =
+  "grid w-full grid-cols-3 gap-1.5 data-[variant=outline]:shadow-none sm:flex sm:gap-0 sm:data-[variant=outline]:shadow-xs";
+const RADIUS_ITEM =
+  "rounded-md text-xs data-[variant=outline]:border-l sm:rounded-none sm:first:rounded-l-md sm:last:rounded-r-md sm:data-[variant=outline]:border-l-0 sm:data-[variant=outline]:first:border-l";
 
 export default function GenerateProspectsDialog({
   open,
@@ -365,6 +371,8 @@ export default function GenerateProspectsDialog({
           visibles, seul le formulaire défile */}
       <DialogContent
         showCloseButton={false}
+        // Pas de focus automatique sur la croix (cadre visible à l'ouverture)
+        onOpenAutoFocus={(e) => e.preventDefault()}
         className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-[#efefef] p-1 sm:max-w-[960px] dark:bg-[#1a1a1a]"
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
@@ -395,8 +403,8 @@ export default function GenerateProspectsDialog({
           </div>
 
           {/* Formulaire à gauche, récapitulatif et coût à droite */}
-          <div className="grid min-h-0 flex-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-7 px-5 py-5">
+          <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-w-0 space-y-7 px-5 py-5">
               <Section
                 title="Qui cherchez-vous ?"
                 hint="Un métier courant ou n'importe quelle activité de la nomenclature NAF."
@@ -491,13 +499,13 @@ export default function GenerateProspectsDialog({
                       variant="outline"
                       value={radiusKm}
                       onValueChange={(v) => v && setRadiusKm(v)}
-                      className="w-full"
+                      className={RADIUS_GROUP}
                     >
                       {RADIUS_OPTIONS.map((r) => (
                         <ToggleGroupItem
                           key={r.id}
                           value={r.id}
-                          className={cn("flex-1 text-xs", TOGGLE_ON)}
+                          className={cn(RADIUS_ITEM, TOGGLE_ON)}
                         >
                           {r.label}
                         </ToggleGroupItem>
@@ -571,7 +579,7 @@ export default function GenerateProspectsDialog({
             </div>
 
             {/* Récapitulatif */}
-            <aside className="space-y-5 border-t border-border/40 bg-[#fafafa] px-5 py-5 md:border-t-0 md:border-l dark:bg-[#141414]">
+            <aside className="min-w-0 space-y-5 border-t border-border/40 bg-[#fafafa] px-5 py-5 md:border-t-0 md:border-l dark:bg-[#141414]">
               <div className="space-y-2">
                 <Label htmlFor="prospect-count" className={FIELD_LABEL}>
                   Nombre de prospects
