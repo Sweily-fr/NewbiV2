@@ -1,6 +1,7 @@
 /**
  * Fonctions pures de la page du visiteur d'un lien client (dossiers
- * partagés) : tailles, types de fichiers, tri, recherche et arbre.
+ * partagés) : tailles, types de fichiers, tri, recherche, arbre et
+ * contrôle des fichiers déposés.
  */
 import { createSearchMatcher } from "@/src/utils/search-text";
 
@@ -163,4 +164,48 @@ export function searchShare({ folders, documents }, query) {
     folders: folders.filter((folder) => matches(folder.name)).sort(byName),
     documents: documents.filter((document) => matches(document.name)),
   };
+}
+
+// Dépôt par le client : mêmes formats et tailles que l'API
+// (newbi-api, src/utils/clientUploadType.js), vérifiés avant l'envoi pour
+// répondre tout de suite ; l'API refait le contrôle sur le contenu.
+const MB = 1024 * 1024;
+export const UPLOAD_MAX_BYTES = 50 * MB;
+export const UPLOAD_VIDEO_MAX_BYTES = 100 * MB;
+const UPLOAD_EXTENSIONS = [
+  "pdf",
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "heic",
+  "heif",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "csv",
+  "txt",
+];
+const UPLOAD_VIDEO_EXTENSIONS = ["mp4", "mov", "webm", "mkv", "avi"];
+
+/** Valeur de l'attribut `accept` du sélecteur de fichiers. */
+export const UPLOAD_ACCEPT = [...UPLOAD_EXTENSIONS, ...UPLOAD_VIDEO_EXTENSIONS]
+  .map((extension) => `.${extension}`)
+  .join(",");
+
+/** Raison du refus d'un fichier avant l'envoi, ou null s'il peut partir. */
+export function uploadProblem(file) {
+  const extension = extensionOf(file?.name);
+  const isVideo = UPLOAD_VIDEO_EXTENSIONS.includes(extension);
+  if (!isVideo && !UPLOAD_EXTENSIONS.includes(extension)) {
+    return "Format non accepté (PDF, images, Word, Excel, CSV, texte ou vidéo).";
+  }
+  if (!file.size) return "Le fichier est vide.";
+  const max = isVideo ? UPLOAD_VIDEO_MAX_BYTES : UPLOAD_MAX_BYTES;
+  if (file.size > max) {
+    return `Fichier trop volumineux (${max / MB} Mo maximum).`;
+  }
+  return null;
 }

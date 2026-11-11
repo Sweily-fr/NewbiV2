@@ -58,10 +58,12 @@ const share = (extra = {}) => ({
   isActive: true,
   expiresAt: null,
   hasPassword: false,
+  allowUploads: false,
   isFolderAvailable: true,
   shareUrl: "https://www.newbi.fr/public/documents/abc",
   totalViews: 3,
   totalDownloads: 1,
+  totalUploads: 0,
   lastViewedAt: null,
   visitors: [],
   bannedEmails: [],
@@ -78,6 +80,7 @@ const visitor = (extra = {}) => ({
   lastVisitAt: new Date().toISOString(),
   visitCount: 2,
   downloadCount: 1,
+  uploadCount: 0,
   isBanned: false,
   ...extra,
 });
@@ -288,6 +291,43 @@ describe("Fenêtre des accès clients", () => {
     expect(actions.createShare).not.toHaveBeenCalled();
   });
 
+  it("dépôt par le client : ouvert pour un nouvel accès, gardé ou changé ensuite", async () => {
+    renderDialog({ initialFolderId: "f-dupont" });
+    fireEvent.click(screen.getByRole("button", { name: /Nouvel accès/ }));
+    const toggle = screen.getByRole("switch", {
+      name: "Le client peut déposer des documents",
+    });
+    expect(toggle.getAttribute("data-state")).toBe("checked");
+    fireEvent.click(screen.getByRole("button", { name: "Créer l'accès" }));
+    await waitFor(() => expect(actions.createShare).toHaveBeenCalledTimes(1));
+    expect(actions.createShare.mock.calls[0][0].allowUploads).toBe(true);
+  });
+
+  it("montre le dépôt ouvert et les dépôts reçus, et le referme", async () => {
+    hook.shares = [
+      share({
+        allowUploads: true,
+        totalUploads: 4,
+        visitors: [visitor({ uploadCount: 4 })],
+      }),
+    ];
+    renderDialog();
+    expect(
+      screen.getByLabelText("Le client peut déposer des documents"),
+    ).toBeTruthy();
+    expect(screen.getByText(/1 téléchargement · 4 dépôts/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Modifier l'accès" }));
+    const toggle = screen.getByRole("switch", {
+      name: "Le client peut déposer des documents",
+    });
+    expect(toggle.getAttribute("data-state")).toBe("checked");
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await waitFor(() => expect(actions.updateShare).toHaveBeenCalledTimes(1));
+    expect(actions.updateShare.mock.calls[0][1].allowUploads).toBe(false);
+  });
+
   it("modifie les dossiers, garde le mot de passe ou le retire", async () => {
     hook.shares = [share({ hasPassword: true })];
     renderDialog();
@@ -301,6 +341,7 @@ describe("Fenêtre des accès clients", () => {
         name: "Dupont",
         folderIds: ["f-dupont", "f-factures"],
         expiresAt: null,
+        allowUploads: false,
       },
     ]);
 

@@ -3,8 +3,14 @@
  * explorateur, fil d'Ariane, recherche dans tout le partage, colonnes
  * triables, aperçu et déconnexion.
  */
-import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 vi.mock("next/image", () => ({
   // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
@@ -12,6 +18,22 @@ vi.mock("next/image", () => ({
 }));
 vi.mock("@/src/components/pdf/pdf-preview", () => ({
   PdfPreview: ({ src }) => <p>Aperçu PDF de {src}</p>,
+}));
+vi.mock("@/src/components/ui/sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}));
+
+// File des dépôts : testée à part (public-upload-queue.test.jsx) ; ici on
+// vérifie ce que l'explorateur lui confie
+const queue = vi.hoisted(() => ({ add: vi.fn() }));
+vi.mock("@/app/public/documents/[token]/components/upload-queue", () => ({
+  useUploadQueue: () => ({
+    items: [],
+    busy: false,
+    add: queue.add,
+    clear: () => {},
+  }),
+  UploadPanel: () => null,
 }));
 
 import { SharedFiles } from "@/app/public/documents/[token]/components/shared-files";
@@ -69,6 +91,9 @@ const renderFiles = (overrides, props = {}) =>
       content={content(overrides)}
       fileUrl={(document, kind) => `/api/${document.id}/${kind}`}
       downloadAllUrl="/api/tout"
+      uploadUrl={(folderId) => `/depot/${folderId}`}
+      onDelete={props.onDelete || (async () => {})}
+      onChanged={props.onChanged || (() => {})}
       onSignOut={props.onSignOut || (() => {})}
     />,
   );
@@ -186,5 +211,133 @@ describe("SharedFiles", () => {
       (icon) => /34, 197, 94|#22c55e/i.test(icon.getAttribute("style")),
     );
     expect(colored.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Dépôt par le client", () => {
+  beforeEach(() => {
+    queue.add.mockClear();
+  });
+
+  const pdf = (name = "releve.pdf") =>
+    new File(["%PDF-1.7"], name, { type: "application/pdf" });
+  const fileInput = (container) =>
+    container.querySelector('input[type="file"]');
+  const deposited = () => {
+    expect(queue.add).toHaveBeenCalledTimes(1);
+    const [files, folder] = queue.add.mock.calls[0];
+    return { names: [...files].map((file) => file.name), folder };
+  };
+
+  it("dépôt fermé : ni bouton ni suppression", () => {
+    const { container } = renderFiles({
+      documents: [{ ...content().documents[2], mine: true }],
+    });
+    expect(screen.queryByRole("button", { name: /Déposer/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Supprimer/ })).toBeNull();
+    expect(fileInput(container)).toBeNull();
+  });
+
+  it("dépose dans le dossier ouvert, formats acceptés seulement", () => {
+    const { container } = renderFiles({ allowUploads: true });
+    expect(
+      screen.getAllByRole("button", { name: /Déposer des documents/ }).length,
+    ).toBeGreaterThan(0);
+    const input = fileInput(container);
+    expect(input.multiple).toBe(true);
+    expect(input.accept).toContain(".pdf");
+    fireEvent.change(input, { target: { files: [pdf("Relevé.pdf")] } });
+    expect(deposited()).toEqual({
+      names: ["Relevé.pdf"],
+      folder: expect.objectContaining({ id: "racine", name: "Client Dupont" }),
+    });
+  });
+
+  it("dépose dans un sous-dossier ouvert", () => {
+    const { container } = renderFiles({ allowUploads: true });
+    fireEvent.click(list().getByText("Contrats"));
+    fireEvent.change(fileInput(container), { target: { files: [pdf()] } });
+    expect(deposited().folder.id).toBe("contrats");
+  });
+
+  it("dépose par glisser-déposer", () => {
+    renderFiles({ allowUploads: true });
+    const main = screen.getByRole("main");
+    const dataTransfer = { types: ["Files"], files: [pdf()] };
+    fireEvent.dragEnter(main, { dataTransfer });
+    expect(
+      screen.getByText("Déposez vos fichiers dans « Client Dupont »"),
+    ).toBeTruthy();
+    fireEvent.drop(main, { dataTransfer });
+    expect(deposited().folder.id).toBe("racine");
+    expect(
+      screen.queryByText("Déposez vos fichiers dans « Client Dupont »"),
+    ).toBeNull();
+  });
+
+  it("pendant une recherche : pas de dépôt", () => {
+    renderFiles({ allowUploads: true });
+    fireEvent.change(screen.getByLabelText("Rechercher un document"), {
+      target: { value: "contrat" },
+    });
+    expect(screen.queryByRole("button", { name: /Déposer/ })).toBeNull();
+  });
+
+  it("accueil de plusieurs dossiers : on dépose une fois un dossier ouvert", () => {
+    renderFiles({
+      allowUploads: true,
+      rootFolderIds: ["racine", "autre"],
+      folders: [
+        ...content().folders,
+        { id: "autre", name: "Factures", parentId: null, order: 1 },
+      ],
+    });
+    expect(screen.queryByRole("button", { name: /Déposer/ })).toBeNull();
+    fireEvent.click(list().getByText("Factures"));
+    expect(
+      screen.getAllByRole("button", { name: /Déposer des documents/ }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("supprime seulement ses propres documents, après confirmation", async () => {
+    const onDelete = vi.fn(async () => {});
+    const documents = content().documents.map((document) =>
+      document.id === "d3" ? { ...document, mine: true } : document,
+    );
+    renderFiles({ allowUploads: true, documents }, { onDelete });
+    expect(screen.getByText("Déposé par vous")).toBeTruthy();
+    // Les autres documents du dossier : pas de suppression
+    expect(screen.getAllByRole("button", { name: /^Supprimer/ })).toHaveLength(
+      1,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Supprimer lettre.pdf" }),
+    );
+    expect(screen.getByText("Supprimer « lettre.pdf » ?")).toBeTruthy();
+    expect(onDelete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1));
+    expect(onDelete.mock.calls[0][0].id).toBe("d3");
+  });
+
+  it("contenu relu : un dossier ouvert qui disparaît ramène au dossier partagé", () => {
+    const props = {
+      fileUrl: (document, kind) => `/api/${document.id}/${kind}`,
+      downloadAllUrl: "/api/tout",
+      uploadUrl: (folderId) => `/depot/${folderId}`,
+      onDelete: async () => {},
+      onChanged: () => {},
+      onSignOut: () => {},
+    };
+    const view = render(<SharedFiles content={content()} {...props} />);
+    fireEvent.click(list().getByText("Contrats"));
+    expect(list().getByText("Contrat signé.pdf")).toBeTruthy();
+    const next = content({
+      folders: content().folders.filter((folder) => folder.id !== "contrats"),
+      documents: content().documents.filter((d) => d.folderId !== "contrats"),
+    });
+    view.rerender(<SharedFiles content={next} {...props} />);
+    expect(list().getByText("lettre.pdf")).toBeTruthy();
+    expect(list().queryByText("Contrats")).toBeNull();
   });
 });

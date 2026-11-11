@@ -16,6 +16,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Upload,
   UserCheck,
   UserX,
   X,
@@ -62,6 +63,8 @@ const EMPTY_FORM = {
   removePassword: false,
   hadPassword: false,
   expiresOn: "",
+  // Nouvel accès : le client peut déposer ; un accès existant garde son choix
+  allowUploads: true,
   passwordError: null,
   error: null,
 };
@@ -106,6 +109,7 @@ function shareSummary(share) {
     plural(share.totalViews, "consultation"),
     plural(share.totalDownloads, "téléchargement"),
   ];
+  if (share.totalUploads > 0) parts.push(plural(share.totalUploads, "dépôt"));
   if (share.expiresAt) parts.push(`expire le ${formatDay(share.expiresAt)}`);
   return parts.join(" · ");
 }
@@ -371,6 +375,8 @@ function VisitorsSection({ share, isOpen, onToggle, onRevoke, onUnban }) {
                   {visitor.name ? `${visitor.email} · ` : ""}
                   {plural(visitor.visitCount, "visite")} ·{" "}
                   {plural(visitor.downloadCount, "téléchargement")}
+                  {visitor.uploadCount > 0 &&
+                    ` · ${plural(visitor.uploadCount, "dépôt")}`}
                   {visitor.lastVisitAt &&
                     ` · vu le ${formatDay(visitor.lastVisitAt)}`}
                 </p>
@@ -561,13 +567,19 @@ export default function ClientAccessDialog({
             name: form.name,
             password: form.password || undefined,
             expiresAt: expiresAt || undefined,
+            allowUploads: form.allowUploads,
           }),
         "Accès créé",
       );
       return;
     }
 
-    const input = { name: form.name, folderIds, expiresAt };
+    const input = {
+      name: form.name,
+      folderIds,
+      expiresAt,
+      allowUploads: form.allowUploads,
+    };
     if (form.removePassword) input.password = null;
     else if (form.password) input.password = form.password;
     await saveForm(() => updateShare(form.id, input), "Accès modifié");
@@ -622,7 +634,7 @@ export default function ClientAccessDialog({
             <DialogDescription>
               Le client confirme son e-mail par un code et voit les dossiers
               choisis, avec tout ce que vous y ajoutez ensuite. Les dossiers
-              privés restent masqués.
+              privés restent masqués. Tout s&apos;affiche en temps réel.
             </DialogDescription>
           </DialogHeader>
 
@@ -717,6 +729,25 @@ export default function ClientAccessDialog({
                     />
                   </div>
                 </div>
+                <label className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+                  <Switch
+                    aria-label="Le client peut déposer des documents"
+                    checked={form.allowUploads}
+                    onCheckedChange={(checked) =>
+                      updateForm({ allowUploads: checked })
+                    }
+                    className="mt-0.5"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="block text-sm font-medium">
+                      Le client peut déposer des documents
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      Ils arrivent dans vos dossiers. Il peut supprimer ceux
+                      qu&apos;il a déposés, rien d&apos;autre.
+                    </span>
+                  </span>
+                </label>
               </div>
               {form.error && (
                 <p
@@ -771,6 +802,12 @@ export default function ClientAccessDialog({
                           <Lock
                             className="size-3.5 text-muted-foreground shrink-0"
                             aria-label="Protégé par mot de passe"
+                          />
+                        )}
+                        {share.allowUploads && (
+                          <Upload
+                            className="size-3.5 text-muted-foreground shrink-0"
+                            aria-label="Le client peut déposer des documents"
                           />
                         )}
                         <Badge
@@ -910,6 +947,7 @@ export default function ClientAccessDialog({
                                 ),
                                 hadPassword: share.hasPassword,
                                 expiresOn: toDateInput(share.expiresAt),
+                                allowUploads: share.allowUploads,
                               })
                             }
                           >
