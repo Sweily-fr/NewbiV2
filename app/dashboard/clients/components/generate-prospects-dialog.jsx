@@ -11,13 +11,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Badge } from "@/src/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -26,8 +24,9 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import { Loader2, MapPin, Target, X } from "lucide-react";
+import { Loader2, MapPin, Minus, Plus, Target, X } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
+import { cn } from "@/src/lib/utils";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { getUserFacingRefusal } from "@/src/utils/errorMessages";
@@ -42,6 +41,9 @@ const MAX_PLACES = 5;
 const DEFAULT_COUNT = 10;
 const NEW_LIST = "__new__";
 const NO_LIST = "__none__";
+// Repli si l'API ne renvoie pas encore les bornes
+const DEFAULT_MAX_SEARCH_PAGES = 6;
+const DEFAULT_MAX_NAF_CODES = 50;
 
 // Rayon possible autour d'une ville ou d'un code postal (pas d'un
 // département ni d'une région, déjà larges)
@@ -105,6 +107,14 @@ export function describeProspectQuota(quota) {
   return quota.bucket === "monthly" ? `${left} ce mois-ci` : left;
 }
 
+/**
+ * Crédits d'une génération : 1 par page de 25 entreprises parcourues (au
+ * moins une, au plus maxPages) et 1 par prospect ajouté.
+ */
+export function estimateCredits(count, maxPages) {
+  return { min: count + 1, max: count + maxPages };
+}
+
 /** Bilan d'une génération, en une phrase. */
 function describeOutcome(outcome, requestedRadiusKm) {
   const parts = [];
@@ -139,6 +149,31 @@ function describeOutcome(outcome, requestedRadiusKm) {
   return parts.join(". ");
 }
 
+/** Titre de section du formulaire. */
+function Section({ title, hint, children }) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h3 className="text-sm font-medium">{title}</h3>
+        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const FIELD_LABEL = "text-xs font-medium text-muted-foreground";
+const CHIP =
+  "inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-xs font-medium";
+const TOGGLE_ON =
+  "data-[state=on]:bg-[#5a50ff]/10 data-[state=on]:text-[#5a50ff] dark:data-[state=on]:text-[#8b85ff]";
+// Rayon : six choix, en grille de boutons séparés sur téléphone, en barre
+// segmentée au-delà
+const RADIUS_GROUP =
+  "grid w-full grid-cols-3 gap-1.5 data-[variant=outline]:shadow-none sm:flex sm:gap-0 sm:data-[variant=outline]:shadow-xs";
+const RADIUS_ITEM =
+  "rounded-md text-xs data-[variant=outline]:border-l sm:rounded-none sm:first:rounded-l-md sm:last:rounded-r-md sm:data-[variant=outline]:border-l-0 sm:data-[variant=outline]:first:border-l";
+
 export default function GenerateProspectsDialog({
   open,
   onOpenChange,
@@ -151,6 +186,8 @@ export default function GenerateProspectsDialog({
   const apolloClient = useApolloClient();
   const trades = settings?.trades || [];
   const quota = settings?.quota || null;
+  const maxPages = settings?.maxSearchPages || DEFAULT_MAX_SEARCH_PAGES;
+  const maxCodes = settings?.maxNafCodes || DEFAULT_MAX_NAF_CODES;
   const maxCount = Math.min(
     quota?.available ?? 0,
     settings?.maxPerUnlock || 50,
@@ -246,6 +283,8 @@ export default function GenerateProspectsDialog({
     setPlaceQuery("");
   };
 
+  const clampCount = (n) => Math.max(1, Math.min(n, Math.max(1, maxCount)));
+
   const handleGenerate = async () => {
     const range = STAFF_RANGES.find((r) => r.id === staffRange);
     const age = AGE_RANGES.find((r) => r.id === ageRange);
@@ -299,12 +338,19 @@ export default function GenerateProspectsDialog({
       // La liste se mettra à jour au prochain affichage
     }
 
+    const spent =
+      outcome.creditsUsed != null
+        ? `${plural(outcome.creditsUsed, "crédit")} utilisé${outcome.creditsUsed > 1 ? "s" : ""}`
+        : undefined;
     if (outcome.unlockedCount > 0) {
       toast.success(
         `${plural(outcome.unlockedCount, "prospect")} ajouté${outcome.unlockedCount > 1 ? "s" : ""} à vos contacts`,
+        { description: spent },
       );
     } else {
-      toast.info("Aucun nouveau prospect ne correspond à ces critères.");
+      toast.info("Aucun nouveau prospect ne correspond à ces critères.", {
+        description: spent,
+      });
     }
     const details = describeOutcome(outcome, Number(radiusKm));
     if (details && outcome.unlockedCount > 0) toast.info(details);
@@ -316,275 +362,387 @@ export default function GenerateProspectsDialog({
   const listNameMissing = destination === NEW_LIST && !newListName.trim();
   const canGenerate =
     activities.length > 0 && countValid && !listNameMissing && !generating;
+  const cost = countValid ? estimateCredits(count, maxPages) : null;
 
   return (
     <Dialog open={open} onOpenChange={generating ? undefined : onOpenChange}>
-      {/* Hauteur bornée à l'écran (2rem de marge en haut et en bas) : titre et
-          boutons restent visibles, seuls les champs défilent */}
-      <DialogContent className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[560px]">
-        <DialogHeader className="shrink-0 px-6 pt-6 pb-4">
-          <DialogTitle>Générer des prospects</DialogTitle>
-          <DialogDescription>{describeProspectQuota(quota)}</DialogDescription>
-        </DialogHeader>
-
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-1 pb-5">
-          <div className="space-y-2">
-            <Label>Activité</Label>
-            <ProspectActivityPicker
-              trades={trades}
-              activities={activitiesData?.prospectActivities || []}
-              loadingActivities={loadingActivities}
-              value={activities}
-              onChange={setActivities}
-            />
+      {/* Cadre Newbi (gris, carte blanche dedans). Hauteur bornée à l'écran
+          avec 2rem de marge en haut et en bas : en-tête et boutons restent
+          visibles, seul le formulaire défile */}
+      <DialogContent
+        showCloseButton={false}
+        // Pas de focus automatique sur la croix (cadre visible à l'ouverture)
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-[#efefef] p-1 sm:max-w-[960px] dark:bg-[#1a1a1a]"
+      >
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          {/* En-tête */}
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/40 px-5 pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#5a50ff]/10 text-[#5a50ff]">
+                <Target className="size-4" />
+              </span>
+              <div>
+                <DialogTitle className="text-sm font-medium">
+                  Générer des prospects
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  {describeProspectQuota(quota)}
+                </DialogDescription>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={generating}
+              aria-label="Fermer"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="prospect-place">Zone</Label>
-            {places.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {places.map((p) => (
-                  <Badge
-                    key={p.id}
-                    variant="secondary"
-                    className="gap-1 font-normal"
-                  >
-                    {p.label}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPlaces((prev) => prev.filter((x) => x.id !== p.id))
-                      }
-                      aria-label={`Retirer ${p.label}`}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {places.length < MAX_PLACES && (
-              <div className="relative">
-                <Input
-                  id="prospect-place"
-                  className="ps-9"
-                  value={placeQuery}
-                  onChange={(e) => setPlaceQuery(e.target.value)}
-                  placeholder="Département, ville ou région (toute la France sinon)"
-                  autoComplete="off"
+          {/* Formulaire à gauche, récapitulatif et coût à droite */}
+          <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-w-0 space-y-7 px-5 py-5">
+              <Section
+                title="Qui cherchez-vous ?"
+                hint="Un métier courant ou n'importe quelle activité de la nomenclature NAF."
+              >
+                <ProspectActivityPicker
+                  trades={trades}
+                  activities={activitiesData?.prospectActivities || []}
+                  loadingActivities={loadingActivities}
+                  value={activities}
+                  onChange={setActivities}
+                  maxCodes={maxCodes}
                 />
-                <MapPin
-                  size={16}
-                  className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-3 my-auto"
-                  aria-hidden="true"
-                />
-                {(loadingPlaces || placeSuggestions.length > 0) &&
-                  placeQuery.trim().length >= 2 && (
-                    <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
-                      {loadingPlaces && !placeSuggestions.length ? (
-                        <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          Recherche…
+              </Section>
+
+              <Section
+                title="Où ?"
+                hint="Toute la France si vous ne choisissez aucune zone."
+              >
+                {places.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {places.map((p) => (
+                      <span
+                        key={p.id}
+                        className={cn(CHIP, "bg-muted text-foreground")}
+                      >
+                        <MapPin className="size-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate">{p.label}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPlaces((prev) =>
+                              prev.filter((x) => x.id !== p.id),
+                            )
+                          }
+                          aria-label={`Retirer ${p.label}`}
+                          className="shrink-0 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {places.length < MAX_PLACES && (
+                  <div className="relative">
+                    <Input
+                      id="prospect-place"
+                      className="ps-9"
+                      value={placeQuery}
+                      onChange={(e) => setPlaceQuery(e.target.value)}
+                      placeholder="Ville, code postal, département ou région"
+                      autoComplete="off"
+                      aria-label="Zone"
+                    />
+                    <MapPin
+                      size={16}
+                      className="pointer-events-none absolute inset-y-0 start-3 my-auto text-muted-foreground/80"
+                      aria-hidden="true"
+                    />
+                    {(loadingPlaces || placeSuggestions.length > 0) &&
+                      placeQuery.trim().length >= 2 && (
+                        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border bg-popover shadow-md">
+                          {loadingPlaces && !placeSuggestions.length ? (
+                            <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Recherche…
+                            </div>
+                          ) : (
+                            placeSuggestions.slice(0, 6).map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => addPlace(p)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                              >
+                                <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{p.label}</span>
+                              </button>
+                            ))
+                          )}
                         </div>
-                      ) : (
-                        placeSuggestions.slice(0, 6).map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => addPlace(p)}
-                            className="block w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                          >
-                            {p.label}
-                          </button>
-                        ))
                       )}
-                    </div>
-                  )}
-              </div>
-            )}
-            {radiusCenter ? (
-              <div className="flex items-center gap-3 pt-1">
-                <Label
-                  htmlFor="prospect-radius"
-                  className="shrink-0 font-normal"
-                >
-                  Rayon autour de {radiusCenter.label.split(",")[0]}
+                  </div>
+                )}
+                {radiusCenter ? (
+                  <div className="space-y-2">
+                    <Label className={FIELD_LABEL}>
+                      Rayon autour de {radiusCenter.label.split(",")[0]}
+                    </Label>
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      value={radiusKm}
+                      onValueChange={(v) => v && setRadiusKm(v)}
+                      className={RADIUS_GROUP}
+                    >
+                      {RADIUS_OPTIONS.map((r) => (
+                        <ToggleGroupItem
+                          key={r.id}
+                          value={r.id}
+                          className={cn(RADIUS_ITEM, TOGGLE_ON)}
+                        >
+                          {r.label}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </div>
+                ) : (
+                  places.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Choisissez une ville ou un code postal pour chercher dans
+                      un rayon autour.
+                    </p>
+                  )
+                )}
+              </Section>
+
+              <Section title="Quelles entreprises ?">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className={FIELD_LABEL}>Taille</Label>
+                    <Select value={staffRange} onValueChange={setStaffRange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STAFF_RANGES.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={FIELD_LABEL}>Date de création</Label>
+                    <Select value={ageRange} onValueChange={setAgeRange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AGE_RANGES.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className={FIELD_LABEL}>Joignables par</Label>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={contact}
+                    onValueChange={(v) => v && setContact(v)}
+                    className="w-full"
+                  >
+                    {CONTACT_MODES.map((m) => (
+                      <ToggleGroupItem
+                        key={m.id}
+                        value={m.id}
+                        className={cn("flex-1 text-xs", TOGGLE_ON)}
+                      >
+                        {m.label}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </div>
+              </Section>
+            </div>
+
+            {/* Récapitulatif */}
+            <aside className="min-w-0 space-y-5 border-t border-border/40 bg-[#fafafa] px-5 py-5 md:border-t-0 md:border-l dark:bg-[#141414]">
+              <div className="space-y-2">
+                <Label htmlFor="prospect-count" className={FIELD_LABEL}>
+                  Nombre de prospects
                 </Label>
-                <Select value={radiusKm} onValueChange={setRadiusKm}>
-                  <SelectTrigger id="prospect-radius" className="w-36">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Un de moins"
+                    disabled={maxCount < 1 || count <= 1}
+                    onClick={() => setCount((c) => clampCount((c || 1) - 1))}
+                  >
+                    <Minus className="size-4" />
+                  </Button>
+                  <Input
+                    id="prospect-count"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={Math.max(1, maxCount)}
+                    value={Number.isNaN(count) ? "" : count}
+                    onChange={(e) => setCount(parseInt(e.target.value, 10))}
+                    disabled={maxCount < 1}
+                    className="h-8 bg-background text-center tabular-nums"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Un de plus"
+                    disabled={maxCount < 1 || count >= maxCount}
+                    onClick={() => setCount((c) => clampCount((c || 0) + 1))}
+                  >
+                    <Plus className="size-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {maxCount > 0
+                    ? `${maxCount} au maximum`
+                    : "Plus de prospects disponibles"}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className={FIELD_LABEL}>Ajouter à</Label>
+                <Select value={destination} onValueChange={setDestination}>
+                  <SelectTrigger className="w-full bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {RADIUS_OPTIONS.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.label}
-                      </SelectItem>
-                    ))}
+                    {canCreateLists && (
+                      <SelectItem value={NEW_LIST}>Nouvelle liste</SelectItem>
+                    )}
+                    <SelectItem value={NO_LIST}>Contacts seulement</SelectItem>
+                    {canEditLists &&
+                      lists.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
+                {destination === NEW_LIST && (
+                  <Input
+                    id="prospect-list-name"
+                    aria-label="Nom de la liste"
+                    value={newListName}
+                    onChange={(e) => {
+                      setListNameTouched(true);
+                      setNewListName(e.target.value);
+                    }}
+                    maxLength={100}
+                    placeholder="Nom de la liste, ex. Menuisiers Poitiers"
+                    className="bg-background"
+                  />
+                )}
               </div>
-            ) : (
-              places.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Choisissez une ville pour chercher dans un rayon autour.
-                </p>
-              )
-            )}
-          </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Taille</Label>
-              <Select value={staffRange} onValueChange={setStaffRange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STAFF_RANGES.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Date de création</Label>
-              <Select value={ageRange} onValueChange={setAgeRange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {AGE_RANGES.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Joignables par</Label>
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                value={contact}
-                onValueChange={(v) => v && setContact(v)}
-                className="w-full"
-              >
-                {CONTACT_MODES.map((m) => (
-                  <ToggleGroupItem
-                    key={m.id}
-                    value={m.id}
-                    className="flex-1 text-xs"
-                  >
-                    {m.label}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="prospect-count">Nombre de prospects</Label>
-              <Input
-                id="prospect-count"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={Math.max(1, maxCount)}
-                value={Number.isNaN(count) ? "" : count}
-                onChange={(e) => setCount(parseInt(e.target.value, 10))}
-                disabled={maxCount < 1}
-              />
-              <p className="text-xs text-muted-foreground">
-                {maxCount > 0
-                  ? `${maxCount} au maximum`
-                  : "Plus de prospects disponibles"}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Ajouter à</Label>
-              <Select value={destination} onValueChange={setDestination}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {canCreateLists && (
-                    <SelectItem value={NEW_LIST}>Nouvelle liste</SelectItem>
+              {/* Coût estimé, en crédits */}
+              <div className="space-y-3 rounded-xl border border-border/60 bg-background p-4">
+                <div>
+                  <p className={FIELD_LABEL}>Coût estimé</p>
+                  {cost ? (
+                    <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+                      {cost.min}
+                      <span className="text-base font-medium text-muted-foreground">
+                        {" "}
+                        à {cost.max} crédits
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Indiquez un nombre de prospects
+                    </p>
                   )}
-                  <SelectItem value={NO_LIST}>Contacts seulement</SelectItem>
-                  {canEditLists &&
-                    lists.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {destination === NEW_LIST && (
-              <div className="space-y-2">
-                <Label htmlFor="prospect-list-name">Nom de la liste</Label>
-                <Input
-                  id="prospect-list-name"
-                  value={newListName}
-                  onChange={(e) => {
-                    setListNameTouched(true);
-                    setNewListName(e.target.value);
-                  }}
-                  maxLength={100}
-                  placeholder="Ex. Menuisiers Vienne"
-                />
+                </div>
+                {cost && (
+                  <dl className="space-y-2 border-t border-border/40 pt-3 text-xs">
+                    <div className="flex items-start justify-between gap-3">
+                      <dt>
+                        <span className="font-medium">Recherche</span>
+                        <span className="block text-muted-foreground">
+                          1 crédit par page de 25 entreprises parcourues
+                        </span>
+                      </dt>
+                      <dd className="shrink-0 tabular-nums">1 à {maxPages}</dd>
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <dt>
+                        <span className="font-medium">Prospects ajoutés</span>
+                        <span className="block text-muted-foreground">
+                          1 crédit par fiche
+                        </span>
+                      </dt>
+                      <dd className="shrink-0 tabular-nums">{count}</dd>
+                    </div>
+                  </dl>
+                )}
+                <p className="border-t border-border/40 pt-3 text-xs leading-relaxed text-muted-foreground">
+                  Seules les entreprises en activité et joignables comme demandé
+                  sont ajoutées. Celles qui refusent la prospection, qui sont
+                  hors du rayon ou déjà dans vos contacts sont écartées sans
+                  coûter de fiche.
+                </p>
               </div>
-            )}
+            </aside>
           </div>
 
-          <div className="space-y-1 rounded-md bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground">
-            <p>
-              Chaque recherche dépense 1 crédit (25 entreprises parcourues),
-              puis chaque prospect ajouté dépense 1 crédit.
-              {countValid &&
-                ` Pour ${plural(count, "prospect")} : ${count + 1} crédits, un de plus par page supplémentaire si besoin.`}
+          {/* Pied */}
+          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/40 px-5 py-3">
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              {cost
+                ? `${cost.min} à ${cost.max} crédits pour ${plural(count, "prospect")}`
+                : ""}
             </p>
-            <p>
-              Seules les entreprises en activité et joignables comme demandé
-              sont ajoutées. Celles qui refusent la prospection commerciale ou
-              qui sont déjà dans vos contacts sont écartées.
-            </p>
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={generating}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleGenerate}
+                disabled={!canGenerate}
+                className="gap-2"
+              >
+                {generating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Target className="h-4 w-4" />
+                )}
+                {generating
+                  ? "Recherche en cours…"
+                  : countValid
+                    ? `Générer ${plural(count, "prospect")}`
+                    : "Générer"}
+              </Button>
+            </div>
           </div>
-        </div>
-
-        <div className="flex shrink-0 justify-end gap-2 border-t px-6 py-4">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={generating}
-          >
-            Annuler
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleGenerate}
-            disabled={!canGenerate}
-            className="gap-2"
-          >
-            {generating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Target className="h-4 w-4" />
-            )}
-            {generating
-              ? "Recherche en cours…"
-              : countValid
-                ? `Générer ${plural(count, "prospect")}`
-                : "Générer"}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>

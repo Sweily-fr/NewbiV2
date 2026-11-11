@@ -18,6 +18,8 @@ export const GET_PROSPECT_SETTINGS = gql`
     prospectSettings(workspaceId: $workspaceId) {
       enabled
       maxPerUnlock
+      maxSearchPages
+      maxNafCodes
       trades {
         id
         label
@@ -129,6 +131,8 @@ export const GENERATE_PROSPECTS = gql`
       closedCount
       outOfRadiusCount
       radiusKm
+      searchCredits
+      creditsUsed
       unlockedCount
       listId
       providerError
