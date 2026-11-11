@@ -71,6 +71,15 @@ export function stateSigne(purpose, { userId, workspaceId, dureeMs = 10 * 60_000
   return `${encode}.${signature}`;
 }
 
+/** Jour de Paris AAAA-MM-JJ décalé de `jours` (comme l'API pour les échéances). */
+export function jourParis(jours = 0) {
+  const date = new Date(Date.now() + jours * 86_400_000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
+/** Fichier .ics « déplié » (lignes longues coupées par le format remises bout à bout). */
+export const icsDeplie = (texte) => String(texte).replace(/\r?\n[ \t]/g, "");
+
 /** Un document tel qu'en base (dates de mise à jour exclues), pour comparer avant et après. */
 export async function documentEnBase(collection, filtre) {
   const doc = await (await base()).collection(collection).findOne(filtre);

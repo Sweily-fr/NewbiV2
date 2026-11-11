@@ -49,6 +49,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
+import { SocialPostBadge } from "./social/SocialPostBadge";
 import {
   buildCalendarWeeks,
   compareCalendarItems,
@@ -799,6 +800,7 @@ export function KanbanCalendarView({
               </span>
               <PriorityFlag priority={task.priority} className="h-2.5 w-2.5" />
               <span className="ml-auto flex flex-shrink-0 items-center gap-1">
+                <SocialPostBadge taskId={task.id} variant="icon" />
                 <TaskPresenceAvatars taskId={task.id} size="xxs" />
                 {!isWeekMode && firstMember && (
                   <UserAvatar

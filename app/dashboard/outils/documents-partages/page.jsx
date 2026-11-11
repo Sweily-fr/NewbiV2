@@ -45,6 +45,9 @@ import { DraggableTree } from "./components/DraggableTree";
 import { MemberSelector } from "../kanban/[id]/components/MemberSelector";
 import DocumentAutomationsModal from "./components/document-automations-modal";
 import TransferFromDocsModal from "./components/transfer-from-docs-modal";
+import ClientAccessDialog from "./components/client-access-dialog";
+import { useDocumentShares } from "@/src/hooks/useDocumentShares";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import {
   TagSelector,
   resolveTagColor,
@@ -342,6 +345,35 @@ export default function DocumentsPartagesPage() {
   const canManageTrash = canEditSharedDocuments || canDeleteSharedDocuments;
   // « Transférer » crée un transfert de fichiers (module fileTransfers)
   const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
+  // Accès clients : l'adresse ouvre des dossiers sans compte Newbi. En
+  // accès anticipé : seulement pour les espaces qui y ont accès
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
+  const canShareFolders =
+    isReady &&
+    canDo("sharedDocuments", "share") &&
+    isFeatureEnabled("documentShares");
+  // null : fenêtre fermée ; { folderId } : ouverte (depuis un dossier ou non)
+  const [clientAccess, setClientAccess] = useState(null);
+  const { shares: documentShares } = useDocumentShares({
+    enabled: canShareFolders,
+  });
+  const linkedFolderIds = useMemo(
+    () =>
+      new Set(
+        documentShares
+          .filter((share) => share.isActive)
+          .flatMap((share) =>
+            share.folders
+              .filter((folder) => folder.available)
+              .map((folder) => folder.id),
+          ),
+      ),
+    [documentShares],
+  );
+  const pendingAccessRequests = documentShares.reduce(
+    (total, share) => total + share.pendingRequestsCount,
+    0,
+  );
   // Les automatisations de classement relèvent de l'action « edit »
   const canEditAutomations = canEditSharedDocuments;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -1760,6 +1792,11 @@ export default function DocumentsPartagesPage() {
   };
 
   // Nom du dossier sélectionné
+  const selectedFolderData = useMemo(
+    () => folders.find((f) => f.id === selectedFolder) || null,
+    [folders, selectedFolder],
+  );
+
   const selectedFolderName = useMemo(() => {
     if (selectedFolder === null) return "Documents à classer";
     const folder = folders.find((f) => f.id === selectedFolder);
@@ -1875,6 +1912,42 @@ export default function DocumentsPartagesPage() {
               </div>
               {/* Actions masquées si le rôle ne permet pas de modifier */}
               <div className="flex items-center gap-1.5 sm:gap-2">
+                {canShareFolders && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="relative"
+                          aria-label={
+                            pendingAccessRequests > 0
+                              ? `Accès clients, ${pendingAccessRequests} demande(s) en attente`
+                              : "Accès clients"
+                          }
+                          onClick={() =>
+                            setClientAccess({
+                              folderId: selectedFolderData?.id || null,
+                            })
+                          }
+                        >
+                          <Link2 className="h-4 w-4" strokeWidth={1.5} />
+                          {pendingAccessRequests > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#5b50ff] text-white text-[10px] font-semibold">
+                              {pendingAccessRequests}
+                            </span>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>Accès clients</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
                 {canEditAutomations && (
                   <TooltipProvider>
                     <Tooltip>
@@ -2029,6 +2102,7 @@ export default function DocumentsPartagesPage() {
                         highlightedFolderId={highlightedFolderId}
                         onToggleFolderSelection={toggleFolderSelection}
                         dragEnabled={canEditSharedDocuments}
+                        linkedFolderIds={linkedFolderIds}
                         onMove={handleTreeMove}
                         onMoveFolder={handleTreeMoveFolder}
                         onSelectFolder={(folderId) => {
@@ -2127,6 +2201,7 @@ export default function DocumentsPartagesPage() {
                       highlightedFolderId={highlightedFolderId}
                       onToggleFolderSelection={toggleFolderSelection}
                       dragEnabled={canEditSharedDocuments}
+                      linkedFolderIds={linkedFolderIds}
                       onMove={handleTreeMove}
                       onMoveFolder={handleTreeMoveFolder}
                       onSelectFolder={(folderId) => {
@@ -2240,6 +2315,34 @@ export default function DocumentsPartagesPage() {
                                       : "Télécharger en ZIP";
                                   })()}
                                 </DropdownMenuItem>
+                                {canShareFolders &&
+                                  !(
+                                    selectedFolders.includes(
+                                      treeContextMenu.itemId,
+                                    ) &&
+                                    selectedFolders.length +
+                                      selectedDocuments.length >
+                                      1
+                                  ) && (
+                                    <DropdownMenuItem
+                                      disabled={
+                                        treeContextMenu.item.data
+                                          ?.visibility === "private"
+                                      }
+                                      onClick={() => {
+                                        setClientAccess({
+                                          folderId: treeContextMenu.itemId,
+                                        });
+                                        setTreeContextMenu(null);
+                                      }}
+                                    >
+                                      <Link2 className="size-4 mr-2" />
+                                      {treeContextMenu.item.data?.visibility ===
+                                      "private"
+                                        ? "Partager au client (dossier privé)"
+                                        : "Partager au client"}
+                                    </DropdownMenuItem>
+                                  )}
                                 {canCreateFileTransfers && (
                                   <DropdownMenuItem
                                     onClick={() => {
@@ -5420,6 +5523,18 @@ export default function DocumentsPartagesPage() {
           refetchTrash();
         }}
       />
+
+      {canShareFolders && (
+        <ClientAccessDialog
+          open={Boolean(clientAccess)}
+          onOpenChange={(open) => {
+            if (!open) setClientAccess(null);
+          }}
+          folders={folders}
+          initialFolderId={clientAccess?.folderId || null}
+          isReadOnly={isReadOnly}
+        />
+      )}
 
       {/* Modal de transfert depuis documents partagés */}
       <TransferFromDocsModal

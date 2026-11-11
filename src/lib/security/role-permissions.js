@@ -68,6 +68,7 @@ export const ROLE_PERMISSIONS = {
     sharedDocuments: ["view", "create", "edit", "delete", "download"],
     kanban: ["view", "create", "edit", "delete", "assign"],
     signatures: ["view", "create", "edit", "delete", "set-default"],
+    appointments: ["view", "create", "edit", "delete"],
     calendar: ["view", "create", "edit", "delete"],
     reports: ["view", "export"],
     analytics: ["view", "export"],
@@ -137,6 +138,7 @@ export const ROLE_PERMISSIONS = {
     sharedDocuments: ["view", "create", "edit", "delete", "download"],
     kanban: ["view", "create", "edit", "delete", "assign"],
     signatures: ["view", "create", "edit", "delete", "set-default"],
+    appointments: ["view", "create", "edit", "delete"],
     calendar: ["view", "create", "edit", "delete"],
     reports: ["view", "export"],
     analytics: ["view", "export"],
@@ -163,6 +165,8 @@ export const ROLE_PERMISSIONS = {
     kanban: ["view", "create", "edit", "assign"],
     // Ses propres signatures seulement (l'API filtre sur l'auteur)
     signatures: ["view", "create", "edit", "delete", "set-default"],
+    // Sa propre page de réservation, ses types et ses rendez-vous
+    appointments: ["view", "create", "edit", "delete"],
     calendar: ["view", "create", "edit"],
     reports: ["view", "export"],
     analytics: ["view", "export"],
@@ -201,6 +205,7 @@ export const ROLE_PERMISSIONS = {
     fileTransfers: ["view", "download"],
     kanban: ["view"],
     signatures: ["view"],
+    appointments: ["view"],
     calendar: ["view"],
     reports: ["view"],
     analytics: ["view"],

@@ -254,6 +254,8 @@ test.describe("Paramètres (propriétaire)", () => {
     zone: contenuParametres,
     boutons: {
       ...Object.fromEntries(
+        // « Réseaux sociaux » absente : masquée tant que la publication n'est
+        // pas ouverte à l'espace (non configurée sur le serveur de test)
         ["Toutes", "Paiement", "Banque", "Comptabilité", "Automatisations", "CRM", "Intelligence artificielle", "E-mailing", "Productivité"].map((c) => [
           `button ${c}`,
           { parcours: "parcours.spec.mjs : catégories des applications" },

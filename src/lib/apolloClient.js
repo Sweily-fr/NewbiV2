@@ -578,6 +578,11 @@ const errorLink = onError(
       // Pendant un retry auth, ne pas afficher de toasts réseau
       if (isRetryingAuth || isRedirecting) return;
 
+      // Requête dont l'appelant gère l'échec lui-même. Une requête refusée à
+      // la validation (champ que l'API ne connaît pas encore : HTTP 400)
+      // arrive ici, pas dans graphQLErrors seuls.
+      if (operation.getContext().skipErrorToast) return;
+
       const msg = networkError.message || "";
 
       // Erreurs de chunk stale (deploiement Vercel) : ne pas afficher de toast,
@@ -690,6 +695,17 @@ const cache = new InMemoryCache({
     // (liste devis, brouillon, sidebar…) écrase les autres → mauvais
     // destinataire affiché dans le modal d'envoi d'email.
     EmbeddedClient: {
+      keyFields: false,
+    },
+    // Son d'un post réseaux sociaux : son id est celui du son chez le réseau,
+    // partagé par tous les posts qui l'utilisent, chacun avec ses volumes.
+    // Normalisé par id, le dernier post lu écraserait les volumes des autres.
+    SocialPostSound: {
+      keyFields: false,
+    },
+    // Sons proposés : identifiants de catalogues différents (Instagram,
+    // TikTok), gardés dans le résultat de chaque recherche
+    SocialSound: {
       keyFields: false,
     },
   },

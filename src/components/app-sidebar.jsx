@@ -36,6 +36,7 @@ import {
   MicroscopeIcon,
   SlashIcon,
   BrushIcon,
+  CalendarTickIcon,
   DocumentCloudIcon,
   DocumentTextIcon,
   SendIcon,
@@ -120,6 +121,11 @@ const data = {
       title: "Analytiques",
       url: "/dashboard/outils/analytiques",
       icon: DiagramIcon,
+    },
+    {
+      title: "TVA",
+      url: "/dashboard/outils/tva",
+      icon: Landmark,
     },
   ],
   navVentes: [
@@ -209,6 +215,12 @@ const data = {
       url: "/dashboard/outils/signatures-mail",
       isPro: false,
       icon: BrushIcon,
+    },
+    {
+      title: "Prise de rendez-vous",
+      url: "/dashboard/outils/rendez-vous",
+      isPro: false,
+      icon: CalendarTickIcon,
     },
   ],
   navSecondary: [

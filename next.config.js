@@ -65,6 +65,17 @@ const apiOrigins = [
   ),
 ];
 
+// Lecture des vidéos servies par l'API (aperçus des transferts, vidéos des
+// posts réseaux sociaux /social-media/<id>.mp4) : origines http(s) de l'API
+// seulement (prod en dur, staging-api.newbi.fr via NEXT_PUBLIC_API_URL sur
+// staging) et l'API locale en dev (http://localhost:4000).
+const mediaApiOrigins = [
+  ...new Set([
+    ...apiOrigins.filter((origin) => /^https?:\/\//.test(origin)),
+    ...(isDev ? ["http://localhost:4000"] : []),
+  ]),
+];
+
 // CSP stricte en prod, Report-Only en dev (les violations restent visibles en
 // console sans gêner le développement). Policy validée le 30/07/2026 par
 // balayage Playwright : 16 pages publiques + 19 pages dashboard authentifiées,
@@ -102,10 +113,14 @@ const cspValue = [
   `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net https://ad.doubleclick.net https://*.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
   // Vidéos : couvertures et pièces jointes des tâches kanban servies par le
   // bucket R2 public (KANBAN_URL, *.r2.dev), aperçus vidéo des transferts de
-  // fichiers via l'API (/api/files/preview) et blob: pour les entrées de ZIP
-  // décompressées côté navigateur. Sans media-src, <video> retombe sur
-  // default-src 'self' et la vidéo est bloquée en prod (ticket du 17/09/2026).
-  `media-src 'self' blob: https://*.r2.dev ${apiOrigins.join(" ")}`,
+  // fichiers via l'API (/api/files/preview), vidéos des posts réseaux sociaux
+  // (/social-media/<id>.mp4 sur l'API) et blob: pour les entrées de ZIP
+  // décompressées et les vidéos choisies avant leur envoi. Sans media-src,
+  // <video> retombe sur default-src 'self' et la vidéo est bloquée en prod
+  // (ticket du 17/09/2026). Extraits des sons tendance écoutés avant de
+  // choisir (fenêtre « Programmer un post ») : servis par Meta (*.fbcdn.net,
+  // *.cdninstagram.com) et TikTok (*.tiktokcdn*.com, *.ibyteimg.com).
+  `media-src 'self' blob: https://*.r2.dev ${mediaApiOrigins.join(" ")} https://*.fbcdn.net https://*.cdninstagram.com https://*.tiktokcdn.com https://*.tiktokcdn-us.com https://*.tiktokcdn-eu.com https://*.ibyteimg.com`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr
@@ -118,6 +133,12 @@ const cspValue = [
   "base-uri 'self'",
   "form-action 'self'",
 ].join("; ");
+
+// Pages publiques de prise de rendez-vous (/rdv/…) : intégrables en iframe
+// sur le site des clients (?embed=1). Seules ces pages autorisent tout
+// parent (frame-ancestors *) et n'envoient pas X-Frame-Options ; le reste du
+// site garde DENY. Jamais indexées.
+const bookingCspValue = `${cspValue}; frame-ancestors *`;
 
 // Versions WebP allégées des images des pages publiques (10/11/2026), créées à
 // côté des PNG/JPG d'origine, qui restent en place : les e-mails et l'app
@@ -228,6 +249,28 @@ const nextConfig = {
   },
 
   async headers() {
+    const securityHeaders = [
+      {
+        key: "X-Content-Type-Options",
+        value: "nosniff",
+      },
+      {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+      },
+      {
+        key: "X-XSS-Protection",
+        value: "1; mode=block",
+      },
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=()",
+      },
+    ];
     return [
       {
         // Autoriser l'iframe same-origin pour la prévisualisation de fichiers
@@ -264,36 +307,36 @@ const nextConfig = {
         ],
       },
       {
+        // Tout le site sauf les deux proxys ci-dessus et /rdv (ci-dessous) :
+        // une règle plus loin ne peut pas retirer X-Frame-Options, seulement
+        // le remplacer, d'où l'exclusion plutôt qu'une surcharge
         source:
-          "/((?!api/shared-documents/preview-file|api/document-preview).*)",
+          "/((?!api/shared-documents/preview-file|api/document-preview|rdv(?:/|$)).*)",
         headers: [
           {
             key: "X-Frame-Options",
             value: "DENY",
           },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
-          },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
+          ...securityHeaders,
           {
             key: cspHeaderKey,
             value: cspValue,
+          },
+        ],
+      },
+      {
+        // Prise de rendez-vous : mêmes en-têtes sans X-Frame-Options, CSP
+        // avec frame-ancestors * (intégration en iframe), pas d'indexation
+        source: "/rdv/:path*",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "X-Robots-Tag",
+            value: "noindex, nofollow",
+          },
+          {
+            key: cspHeaderKey,
+            value: bookingCspValue,
           },
         ],
       },

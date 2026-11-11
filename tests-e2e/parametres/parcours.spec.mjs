@@ -106,6 +106,9 @@ test.describe("Paramètres : la fenêtre et ses onglets", () => {
         if (absente) await expect(contenu.getByText(absente, { exact: true })).toHaveCount(0);
       });
     }
+    // Publication sur les réseaux non configurée sur le serveur de test : la
+    // catégorie « Réseaux sociaux » (sa seule application) n'est pas proposée
+    await expect(contenu.getByRole("button", { name: "Réseaux sociaux", exact: true })).toHaveCount(0);
   });
 
   test("Liens de la facturation électronique vers les autres onglets", async ({ page }) => {

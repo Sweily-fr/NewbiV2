@@ -1,8 +1,10 @@
 /**
  * Calendrier : ce qu'un membre ne voit pas, il ne le touche pas (espace
  * « Agenda », lot-calendrier.mjs). Appels directs à l'API avec la session :
- *   - l'événement privé d'un autre membre n'est ni modifié, ni supprimé, ni
- *     envoyé vers un agenda externe, et la réponse ne dit pas qu'il existe ;
+ *   - l'événement privé d'un autre membre, et le rendez-vous pris sur sa page
+ *     de réservation (coordonnées de l'invité), ne sont ni modifiés, ni
+ *     supprimés, ni envoyés vers un agenda externe, et la réponse ne dit pas
+ *     qu'ils existent ;
  *   - un événement n'est assigné qu'à des membres de l'espace : jamais le
  *     nom ni l'e-mail d'un utilisateur d'une autre entreprise ;
  *   - sans « Voir » des factures, une échéance de facture n'est ni lue ni
@@ -64,7 +66,7 @@ test.describe("Calendrier : l'événement privé d'un autre membre reste le sien
     test("Ne voit pas les événements privés du gérant dans la liste", async ({ page }) => {
       const reponse = await appelApi(page, LIRE_TOUS, { w: ORG }, { organisation: ORG });
       verifierReussite(reponse, "getEvents", "Liste des événements (Éditeur)");
-      sansFuite(reponse, [E.priveLecture.title, E.priveLecture.description], "getEvents (Éditeur)");
+      sansFuite(reponse, [E.priveLecture.title, E.rendezVous.title, "zoe.martin@client.test"], "getEvents (Éditeur)");
     });
 
     test("Ne modifie pas l'événement privé du gérant", async ({ page }) => {
@@ -78,6 +80,18 @@ test.describe("Calendrier : l'événement privé d'un autre membre reste le sien
       );
     });
 
+    test("Ne modifie pas le rendez-vous du gérant, sans apprendre qu'il existe", async ({ page }) => {
+      const reponse = await refusIntrouvable(
+        page,
+        MODIFIER,
+        { w: ORG, input: { id: id(E.rendezVous), title: "Rendez-vous déplacé" } },
+        "updateEvent",
+        [["events", { _id: E.rendezVous._id }]],
+        "Modifier le rendez-vous du gérant",
+      );
+      sansFuite(reponse, ["Prise de rendez-vous", "zoe.martin@client.test"], "updateEvent sur un rendez-vous (Éditeur)");
+    });
+
     test("N'envoie pas l'événement privé du gérant vers son propre agenda", async ({ page }) => {
       await refusIntrouvable(
         page,
@@ -89,6 +103,20 @@ test.describe("Calendrier : l'événement privé d'un autre membre reste le sien
           ["calendarconnections", { _id: CONNEXIONS.editeurPrive._id }],
         ],
         "Envoyer l'événement privé du gérant",
+      );
+    });
+
+    test("N'envoie pas le rendez-vous du gérant (coordonnées de l'invité) vers son propre agenda", async ({ page }) => {
+      await refusIntrouvable(
+        page,
+        ENVOYER,
+        { input: { eventId: id(E.rendezVousEnvoyer), connectionId: id(CONNEXIONS.editeurRendezVous) } },
+        "pushEventToCalendar",
+        [
+          ["events", { _id: E.rendezVousEnvoyer._id }],
+          ["calendarconnections", { _id: CONNEXIONS.editeurRendezVous._id }],
+        ],
+        "Envoyer le rendez-vous du gérant",
       );
     });
 
@@ -118,6 +146,9 @@ test.describe("Calendrier : l'événement privé d'un autre membre reste le sien
       expect(await (await base()).collection("events").countDocuments({ _id: E.priveSupprimer._id }), "L'événement privé a été supprimé").toBe(1);
     });
 
+    test("Ne supprime pas le rendez-vous du gérant", async ({ page }) => {
+      await refusIntrouvable(page, SUPPRIMER, { w: ORG, id: id(E.rendezVous) }, "deleteEvent", [["events", { _id: E.rendezVous._id }]], "Supprimer le rendez-vous du gérant");
+    });
   });
 });
 

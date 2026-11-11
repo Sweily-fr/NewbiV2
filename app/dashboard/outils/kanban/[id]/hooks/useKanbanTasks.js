@@ -20,6 +20,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { computeAutoSaveSignature } from "./taskFormSignature";
 import { isDescriptionHandledByCollab } from "../components/task-modal/collabConfig";
 import { perfMark } from "@/src/utils/kanbanPerf";
+import { getApiErrorMessage } from "@/src/hooks/useSocialPublishing";
 import {
   useTaskFieldMutations,
   isServerChecklistId,
@@ -557,8 +558,15 @@ export const useKanbanTasks = (boardId, board) => {
         // Auto-save : ne pas fermer le dialog ni réinitialiser le formulaire
         // La subscription temps réel met à jour les données
       },
-      onError: () => {
-        toast.error("Erreur lors de la modification de la tâche");
+      // Refus explicite de l'API affiché tel quel (ex. échéance d'un post
+      // programmé à moins de 5 minutes), sinon message générique
+      onError: (error) => {
+        toast.error(
+          getApiErrorMessage(
+            error,
+            "Erreur lors de la modification de la tâche",
+          ),
+        );
       },
     },
   );

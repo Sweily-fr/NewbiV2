@@ -75,6 +75,7 @@ import { useTaskFieldMutations } from "../hooks/useTaskFieldMutations";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
+import { SocialPostBadge } from "./social/SocialPostBadge";
 import { calculateTaskAmount, formatTaskAmount } from "./taskAmount";
 import { toast } from "sonner";
 import { createSearchMatcher, matchesSearch } from "@/src/utils/search-text";
@@ -2502,6 +2503,12 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             taskId={task.id}
             size="xxs"
             className="ml-1 flex-shrink-0"
+          />
+          <SocialPostBadge
+            taskId={task.id}
+            dueDate={task.dueDate}
+            variant="compact"
+            className="ml-1"
           />
         </div>
       </div>

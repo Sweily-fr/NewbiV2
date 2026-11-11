@@ -8,6 +8,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/analytiques/vue-densemble", "overview"],
   ["/dashboard/outils/analytiques", "analytics"],
   ["/dashboard/outils/prevision", "forecast"],
+  ["/dashboard/outils/tva", "vat"],
   ["/dashboard/analytics", "analytics"],
   ["/dashboard/outils/factures-achat", "purchaseInvoices"],
   ["/dashboard/outils/factures", "invoices"],
@@ -24,7 +25,20 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/transferts-fichiers", "fileTransfers"],
   ["/dashboard/outils/documents-partages", "sharedDocuments"],
   ["/dashboard/outils/signatures-mail", "signatures"],
+  ["/dashboard/outils/rendez-vous", "appointments"],
 ];
+
+// Pages en accès anticipé : module → fonctionnalité de useWorkspaceFeatures
+// (réservée à certains espaces par l'API, BETA_FEATURES)
+const MODULE_FEATURES = {
+  vat: "vat",
+  appointments: "appointments",
+};
+
+/** Fonctionnalité en accès anticipé d'un module, ou null. */
+export function featureForModule(moduleKey) {
+  return MODULE_FEATURES[moduleKey] || null;
+}
 
 // Avoirs : pages sous une facture (/factures/<id>/avoir/…)
 const CREDIT_NOTE_PATH = /^\/dashboard\/outils\/factures\/[^/]+\/avoir(\/|$)/;

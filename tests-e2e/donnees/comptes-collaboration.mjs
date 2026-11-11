@@ -1,13 +1,13 @@
 /**
  * Comptes propres aux fonctionnalités du lot « collaboration » ajoutées après
- * coup (tableaux restreints, calendrier, e-mails envoyés), hors COMPTES :
- * chacun son espace, ses membres et son abonnement, sans décaler les comptes
- * communs de base.mjs.
+ * coup (tableaux restreints, calendrier, prise de rendez-vous, réseaux
+ * sociaux, e-mails envoyés), hors COMPTES : chacun son espace, ses membres et
+ * son abonnement, sans décaler les comptes communs de base.mjs.
  *
  * Plages de numéros réservées (n) par fonctionnalité, pour qu'aucun id ne
- * se répète : kanban 1 à 19, calendrier 20 à 39, e-mails envoyés 60 à 79.
- * Préfixes : utilisateurLot, espaceLot, membreLot, sessionLot, abonnementLot,
- * roleLot (base.mjs).
+ * se répète : kanban 1 à 19, calendrier 20 à 39, rendez-vous 40 à 59,
+ * réseaux sociaux et e-mails envoyés 60 à 79. Préfixes : utilisateurLot,
+ * espaceLot, membreLot, sessionLot, abonnementLot, roleLot (base.mjs).
  */
 import { DANS, MAINTENANT, oid } from "./base.mjs";
 

@@ -19,17 +19,20 @@ function Slider({
   max = 100,
   showTooltip = false,
   tooltipContent,
+  thumbLabel,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root> & {
   showTooltip?: boolean;
   tooltipContent?: (value: number) => React.ReactNode;
+  // Nom accessible du curseur (porté par la poignée, rôle « slider »)
+  thumbLabel?: string;
 }) {
   const [internalValues, setInternalValues] = React.useState<number[]>(
     Array.isArray(value)
       ? value
       : Array.isArray(defaultValue)
         ? defaultValue
-        : [min, max]
+        : [min, max],
   );
 
   React.useEffect(() => {
@@ -70,6 +73,7 @@ function Slider({
     const thumb = (
       <SliderPrimitive.Thumb
         data-slot="slider-thumb"
+        aria-label={thumbLabel}
         className="bg-white block size-4 shrink-0 rounded-full border-0 shadow-md transition-shadow outline-none hover:shadow-lg focus-visible:shadow-lg disabled:pointer-events-none disabled:opacity-50"
         onPointerDown={handlePointerDown}
       />
@@ -102,7 +106,7 @@ function Slider({
       max={max}
       className={cn(
         "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
-        className
+        className,
       )}
       onValueChange={handleValueChange}
       {...props}
@@ -110,13 +114,13 @@ function Slider({
       <SliderPrimitive.Track
         data-slot="slider-track"
         className={cn(
-          "bg-gray-200 dark:bg-gray-700 relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1"
+          "bg-gray-200 dark:bg-gray-700 relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1",
         )}
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
           className={cn(
-            "bg-[#5B4EFF] absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+            "bg-[#5B4EFF] absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full",
           )}
         />
       </SliderPrimitive.Track>

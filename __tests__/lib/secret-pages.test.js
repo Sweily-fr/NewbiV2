@@ -24,6 +24,7 @@ const SECRETES = [
   "/auth/reset-password?token=abc",
   "/auth/verify-email?token=abc",
   "/reactivate-account?email=a%40b.fr&token=abc",
+  "/rdv/gerer/jeton",
   "/auth/login?invitation=abc&email=a%40b.fr",
   "/dashboard/outils/transferts-fichiers/abc?key=xyz",
 ];

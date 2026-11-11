@@ -35,6 +35,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
+import { CalendarDigestPreference } from "@/src/components/settings/calendar-digest-preference";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import {
   AlertDialog,
@@ -935,7 +936,9 @@ export function NotificationsSection({ onClose }) {
                     <div className="flex-1 min-w-0">
                       {notification.type === "PURCHASE_INVOICE_RECEIVED" ||
                       notification.type === "DOCUMENT_IMPORTED" ||
-                      notification.type === "ACCESS_REQUESTED" ? (
+                      notification.type === "ACCESS_REQUESTED" ||
+                      notification.type === "SOCIAL_POST_PUBLISHED" ||
+                      notification.type === "SOCIAL_POST_FAILED" ? (
                         <>
                           <p className="text-sm truncate max-w-[600px] font-medium">
                             {notification.title || "Nouvelle facture reçue"}
@@ -1159,6 +1162,9 @@ export function NotificationsSection({ onClose }) {
                   );
                 },
               )}
+
+              {/* Récap du lundi (réglage lu à part, sans push) */}
+              <CalendarDigestPreference />
             </div>
           )}
         </TabsContent>

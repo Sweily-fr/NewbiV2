@@ -824,6 +824,85 @@ test.describe("Factures : un texte piégé ne s'exécute jamais", () => {
 });
 
 /**
+ * Relance immédiate d'une facture (sendInvoiceReminderNow, fiche d'une
+ * échéance du calendrier) : droit « Envoyer par e-mail » des factures, une
+ * relance au plus toutes les 12 heures, jamais pour une facture payée, et
+ * rien pour les factures d'une autre entreprise.
+ */
+test.describe("Factures : relance immédiate", () => {
+  const RELANCER = `mutation($id: ID!, $w: ID) { sendInvoiceReminderNow(invoiceId: $id, workspaceId: $w) { success message } }`;
+  const journaux = async (f) => (await base()).collection("invoicereminderlogs").countDocuments({ invoiceId: f._id });
+
+  test.describe("Membre", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_LECTEUR) });
+    test("Relancer une facture : refusé, aucune relance journalisée", async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      const avant = await journaux(F.relanceEditeur);
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG });
+      verifierRefus(reponse, "sendInvoiceReminderNow", "Relance par le Membre");
+      expect(await journaux(F.relanceEditeur)).toBe(avant);
+    });
+  });
+
+  test.describe("Éditeur", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_EDITEUR) });
+    test.beforeEach(async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+    });
+
+    test("Relancer une facture échue : le droit de l'Éditeur est reconnu", async ({ page }) => {
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG, delai: 30_000 });
+      expect(reponse.sansReponse, "L'API n'a pas répondu").toBe(false);
+      expect(estRefusDeDroits(reponse), `Refusé pour une question de droits (${JSON.stringify(reponse.errors).slice(0, 300)})`).toBe(false);
+    });
+
+    test("Relancer une facture payée : refusé avec un message", async ({ page }) => {
+      const reponse = await appelApi(page, RELANCER, { id: id(F.payee), w: ORG }, { organisation: ORG });
+      expect(reponse.data?.sendInvoiceReminderNow?.success).toBe(false);
+      expect(reponse.data?.sendInvoiceReminderNow?.message).toMatch(/Seules les factures en attente/);
+      expect(await journaux(F.payee)).toBe(0);
+    });
+
+    test("Seconde relance dans les 12 heures : refusée avec un message", async ({ page }) => {
+      const avant = await journaux(F.relanceRecente);
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceRecente), w: ORG }, { organisation: ORG });
+      expect(reponse.data?.sendInvoiceReminderNow?.success).toBe(false);
+      expect(reponse.data?.sendInvoiceReminderNow?.message).toMatch(/12 dernières heures/);
+      expect(await journaux(F.relanceRecente)).toBe(avant);
+    });
+  });
+
+  test.describe("Autre entreprise", () => {
+    test.use({ storageState: connecte(SESSION_TOKEN_INTRUS) });
+    test("Relancer une facture des autres : « introuvable », rien n'est journalisé", async ({ page }) => {
+      await ouvrir(page, "/dashboard");
+      const avant = await journaux(F.relanceEditeur);
+      await etape(page, "Depuis sa propre organisation, avec leur identifiant", async () => {
+        const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG_INTRUS }, { organisation: ORG_INTRUS });
+        expect(reponse.data?.sendInvoiceReminderNow?.success ?? false).toBe(false);
+        expect(JSON.stringify(reponse)).toMatch(/introuvable/i);
+      });
+      await etape(page, "En visant leur organisation", async () => {
+        verifierRefus(await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG }), "sendInvoiceReminderNow", "Relance chez les autres");
+      });
+      await etape(page, "En-tête de sa propre organisation, organisation des autres en argument", async () => {
+        verifierRefus(await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG_INTRUS }), "sendInvoiceReminderNow", "Relance chez les autres (en-tête)");
+      });
+      expect(await journaux(F.relanceEditeur)).toBe(avant);
+    });
+  });
+
+  test.describe("Sans session", () => {
+    test.use({ storageState: { cookies: [], origins: [] }, erreursConsoleAutorisees: /401.*\/api\/auth\/token/ });
+    test("Relancer une facture : refusé", async ({ page }) => {
+      await ouvrir(page, "/auth/login");
+      const reponse = await appelApi(page, RELANCER, { id: id(F.relanceEditeur), w: ORG }, { organisation: ORG });
+      expect(reponse.data?.sendInvoiceReminderNow ?? null).toBeNull();
+    });
+  });
+});
+
+/**
  * Archive PDF d'une facture ou d'un avoir (archiveInvoicePdf,
  * archiveCreditNotePdf), envoyée par le site en multipart : c'est le
  * document qui fait foi (aperçu, bouton PDF, envois).

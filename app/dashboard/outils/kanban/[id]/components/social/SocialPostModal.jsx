@@ -1,0 +1,2117 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  CalendarClock,
+  Check,
+  Film,
+  ImagePlus,
+  Loader2,
+  Music,
+  Plus,
+  RefreshCw,
+  Send,
+  X,
+  Zap,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { toast } from "@/src/components/ui/sonner";
+import { cn } from "@/src/lib/utils";
+import {
+  getApiErrorMessage,
+  useConnectSocialAccount,
+} from "@/src/hooks/useSocialPublishing";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+  MAX_UPLOAD_BYTES,
+  DEFAULT_SOUND_VOLUME,
+  DEFAULT_VIDEO_SOUND_VOLUME,
+  SOCIAL_PLATFORMS,
+  SOCIAL_TIMEZONE,
+  SOUND_PLATFORMS,
+  STORY_PLATFORMS,
+  buildComposerReturnTo,
+  canAccountPostStory,
+  checkVideoFile,
+  formatParisDateTime,
+  formatParisShortDateTime,
+  formatSoundLabel,
+  formatVideoDuration,
+  getAccountConnectorKey,
+  getDefaultScheduleParts,
+  getMaxImages,
+  getParisToday,
+  getPlatformLabel,
+  getSoundTargets,
+  getStoryHints,
+  getTextLimit,
+  getTextPlatforms,
+  getTikTokDraftAvailability,
+  getXQuotaNote,
+  isDeliveredAsDraft,
+  isInstagramRatioValid,
+  isSameParisMonth,
+  isTikTokBusinessAccount,
+  isVideoFile,
+  isVideoMedia,
+  isoToParisParts,
+  joinLabels,
+  normalizeConnectors,
+  parisPartsToIso,
+  uniquePlatforms,
+  validateSocialPost,
+} from "@/src/utils/social-post-rules";
+import {
+  SocialVideoError,
+  VIDEO_UPLOAD_FAILED_MESSAGE,
+  isAbortError,
+  readVideoMetadata,
+} from "@/src/utils/social-video-upload";
+import {
+  SocialAccountAvatar,
+  SocialAccountConnectorMention,
+  SocialNetworkIcon,
+  getSocialAccountName,
+} from "./SocialNetworkIcon";
+import { SocialPostFormatPicker } from "./SocialPostFormatPicker";
+import { SocialPostSoundSection } from "./SocialPostSoundPicker";
+import { TikTokDeclaration, TikTokOptions } from "./SocialPostTikTokOptions";
+import { useSocialPublishing } from "./SocialPostsProvider";
+
+const DRAFT_KEY_PREFIX = "newbi:social-post-draft:";
+// Erreurs affichées dès la saisie (ce que l'utilisateur vient de faire) ;
+// les choix manquants attendent un premier essai d'envoi, pour ne pas
+// accueillir l'utilisateur en rouge
+const LIVE_ERROR_CODES = new Set([
+  "text_too_long",
+  "too_many_images",
+  "image_required",
+  "instagram_ratio",
+  "linkedin_size",
+  "media_mixed",
+  "too_many_videos",
+  "story_media_required",
+  "story_unavailable",
+  "video_failed",
+  "video_too_long",
+  "video_too_short",
+  "video_too_heavy",
+  "video_too_light",
+  "when_too_soon",
+  "when_too_far",
+  "tiktok_quota",
+  "tiktok_draft_unavailable",
+  "tiktok_business_public",
+]);
+const VIDEO_INPUT_ACCEPT = ACCEPTED_VIDEO_TYPES.join(",");
+const PHOTOS_OR_VIDEO = "un post contient soit des photos, soit une vidéo.";
+const PHOTOS_LOCKED_REASON = `Retirez la vidéo pour ajouter des photos : ${PHOTOS_OR_VIDEO}`;
+const VIDEO_LOCKED_REASON = `Retirez les photos pour ajouter une vidéo : ${PHOTOS_OR_VIDEO}`;
+const isShown = (error, attempted) =>
+  attempted || LIVE_ERROR_CODES.has(error.code);
+
+let localKeySeq = 0;
+const newLocalKey = () => `media-${Date.now()}-${(localKeySeq += 1)}`;
+
+function readDraft(boardId) {
+  try {
+    const raw = window.sessionStorage.getItem(`${DRAFT_KEY_PREFIX}${boardId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(boardId, draft) {
+  try {
+    window.sessionStorage.setItem(
+      `${DRAFT_KEY_PREFIX}${boardId}`,
+      JSON.stringify(draft),
+    );
+  } catch {
+    // Stockage indisponible (navigation privée) : le brouillon est perdu
+  }
+}
+
+function clearDraft(boardId) {
+  try {
+    window.sessionStorage.removeItem(`${DRAFT_KEY_PREFIX}${boardId}`);
+  } catch {
+    // Rien à faire
+  }
+}
+
+function firstColumnId(columns) {
+  const sorted = [...(columns || [])].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
+  return sorted[0]?.id || "";
+}
+
+function sortAccounts(accounts) {
+  return [...(accounts || [])].sort(
+    (a, b) =>
+      SOCIAL_PLATFORMS.indexOf(a.platform) -
+        SOCIAL_PLATFORMS.indexOf(b.platform) ||
+      getSocialAccountName(a).localeCompare(getSocialAccountName(b)),
+  );
+}
+
+// Consignes TikTok : confidentialité sans valeur par défaut, interactions
+// (commentaires, duos et collages pour une vidéo) et divulgation du contenu
+// commercial désactivées au départ
+const EMPTY_TIKTOK = {
+  // "direct" (publication) ou "draft" (brouillons de l'appli TikTok)
+  mode: "direct",
+  privacyLevel: "",
+  allowComment: false,
+  allowDuet: false,
+  allowStitch: false,
+  commercial: false,
+  brandOrganic: false,
+  brandContent: false,
+};
+
+// Format par réseau (Instagram et Facebook) : publication par défaut
+const DEFAULT_FORMATS = { instagram: "post", facebook: "post" };
+// Son tendance par réseau (catalogues différents)
+const EMPTY_SOUNDS = { instagram: null, tiktok: null };
+
+function clampVolume(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n)
+    ? Math.min(100, Math.max(0, Math.round(n)))
+    : fallback;
+}
+
+/** Son lu (post enregistré, brouillon) → état de la fenêtre, sans __typename */
+function toSoundState(sound) {
+  if (!sound?.id || !sound?.title) return null;
+  return {
+    id: String(sound.id),
+    title: sound.title,
+    artist: sound.artist || null,
+    coverUrl: sound.coverUrl || null,
+    volume: clampVolume(sound.volume, DEFAULT_SOUND_VOLUME),
+    videoVolume: clampVolume(sound.videoVolume, DEFAULT_VIDEO_SOUND_VOLUME),
+  };
+}
+
+/** Formats d'un post enregistré ou d'un brouillon */
+function toFormatsState(instagram, facebook) {
+  return {
+    instagram: instagram === "story" ? "story" : "post",
+    facebook: facebook === "story" ? "story" : "post",
+  };
+}
+
+/** Champs d'un média renvoyé par l'API, sans écraser ce qui est déjà connu */
+function mediaFields(media) {
+  const out = {};
+  for (const field of [
+    "id",
+    "kind",
+    "status",
+    "errorMessage",
+    "url",
+    "thumbnailUrl",
+    "width",
+    "height",
+    "durationMs",
+    "size",
+    "contentType",
+  ]) {
+    const value = media?.[field];
+    if (value !== null && value !== undefined && value !== "") {
+      out[field] = value;
+    }
+  }
+  return out;
+}
+
+/** Média d'un post enregistré (ou d'un brouillon) → élément de la fenêtre */
+function toMediaItem(media) {
+  return {
+    ...mediaFields(media),
+    key: media.id,
+    kind: media.kind || "image",
+    status: media.status || "ready",
+  };
+}
+
+function FieldError({ messages }) {
+  if (!messages?.length) return null;
+  return (
+    <div className="space-y-1">
+      {messages.map((message) => (
+        <p
+          key={message}
+          className="flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400"
+        >
+          <AlertCircle className="mt-px h-3.5 w-3.5 flex-shrink-0" />
+          <span>{message}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function SectionTitle({ children, htmlFor }) {
+  return (
+    <Label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
+      {children}
+    </Label>
+  );
+}
+
+// ── Comptes ──────────────────────────────────────────────────────────────
+
+function ConnectNetworkButtons({ connectors, onConnect, connecting }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-2">
+      {connectors.map((connector) => {
+        const button = (
+          <Button
+            key={connector.key}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onConnect(connector.platform, connector.key)}
+            disabled={!!connecting}
+          >
+            {connecting === connector.key ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <SocialNetworkIcon platform={connector.platform} title="" />
+            )}
+            {connector.label}
+          </Button>
+        );
+        if (!connector.description) return button;
+        return (
+          <Tooltip key={connector.key}>
+            <TooltipTrigger asChild>{button}</TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              {connector.description}
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
+}
+
+function AccountsPicker({
+  accounts,
+  connectors,
+  selectedIds,
+  onToggle,
+  canManageAccounts,
+  onConnect,
+  connecting,
+  allowAdd,
+}) {
+  const connectorKeys = new Set(connectors.map((c) => c.key));
+  if (accounts.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed px-4 py-6 text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#5A50FF]/10 text-[#5A50FF]">
+          <Send className="h-5 w-5" />
+        </div>
+        <p className="text-sm font-medium">
+          Connectez votre premier réseau social
+        </p>
+        {canManageAccounts && connectors.length === 0 ? (
+          <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+            Aucun réseau n&apos;est disponible pour le moment.
+          </p>
+        ) : canManageAccounts ? (
+          <>
+            <p className="mx-auto mt-1 mb-4 max-w-sm text-xs text-muted-foreground">
+              Votre post partira tout seul à l&apos;heure choisie. La connexion
+              se fait en quelques clics, sans créer de compte.
+            </p>
+            <ConnectNetworkButtons
+              connectors={connectors}
+              onConnect={onConnect}
+              connecting={connecting}
+            />
+          </>
+        ) : (
+          <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+            Demandez à un administrateur de connecter un réseau dans Paramètres
+            &gt; Intégrations.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {accounts.map((account) => {
+        const needsReconnect = account.status !== "active";
+        const selected = selectedIds.includes(account.id);
+        const name = getSocialAccountName(account);
+        // Reconnexion par le même chemin (« Instagram via Facebook »…)
+        const connectorKey = getAccountConnectorKey(account);
+        if (needsReconnect) {
+          return (
+            <div
+              key={account.id}
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-dashed py-1 pl-1 pr-1.5 text-sm text-muted-foreground"
+              title="La connexion à ce compte a expiré"
+            >
+              <SocialAccountAvatar
+                account={account}
+                size={24}
+                className="opacity-50"
+              />
+              <span className="max-w-[140px] truncate">{name}</span>
+              <SocialAccountConnectorMention account={account} />
+              {canManageAccounts && connectorKeys.has(connectorKey) ? (
+                <button
+                  type="button"
+                  onClick={() => onConnect(account.platform, connectorKey)}
+                  disabled={!!connecting}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/30 dark:text-amber-300"
+                >
+                  {connecting === connectorKey ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3" />
+                  )}
+                  Reconnecter
+                </button>
+              ) : (
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  À reconnecter
+                </span>
+              )}
+            </div>
+          );
+        }
+        return (
+          <button
+            key={account.id}
+            type="button"
+            onClick={() => onToggle(account.id)}
+            aria-pressed={selected}
+            className={cn(
+              "inline-flex max-w-full cursor-pointer items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-colors",
+              selected
+                ? "border-[#5A50FF] bg-[#5A50FF]/[0.07] text-foreground"
+                : "border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+            )}
+          >
+            <SocialAccountAvatar account={account} size={24} />
+            <span className="max-w-[160px] truncate">{name}</span>
+            <SocialAccountConnectorMention account={account} />
+            <span
+              className={cn(
+                "flex h-4 w-4 items-center justify-center rounded-full border",
+                selected
+                  ? "border-[#5A50FF] bg-[#5A50FF] text-white"
+                  : "border-muted-foreground/30",
+              )}
+            >
+              {selected && <Check className="h-3 w-3" strokeWidth={3} />}
+            </span>
+          </button>
+        );
+      })}
+
+      {canManageAccounts && allowAdd && connectors.length > 0 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Ajouter un compte
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-64">
+            {connectors.map((connector) => (
+              <DropdownMenuItem
+                key={connector.key}
+                onSelect={() => onConnect(connector.platform, connector.key)}
+                disabled={!!connecting}
+                className="cursor-pointer items-start gap-2"
+              >
+                <SocialNetworkIcon
+                  platform={connector.platform}
+                  title=""
+                  className="mt-0.5"
+                />
+                <span className="min-w-0">
+                  <span className="block">{connector.label}</span>
+                  {connector.description && (
+                    <span className="block text-xs text-muted-foreground">
+                      {connector.description}
+                    </span>
+                  )}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </div>
+  );
+}
+
+// ── Images ───────────────────────────────────────────────────────────────
+
+function MediaTile({
+  item,
+  index,
+  count,
+  invalidRatio,
+  onRemove,
+  onMove,
+  disabled,
+}) {
+  const src = item.url || item.previewUrl;
+  return (
+    <div
+      className={cn(
+        "group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border bg-muted",
+        invalidRatio && "ring-2 ring-red-500",
+      )}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={`Image ${index + 1}`}
+          className="h-full w-full object-cover"
+        />
+      ) : null}
+      {item.uploading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      <span className="absolute left-1 top-1 rounded bg-black/60 px-1 text-[10px] font-medium leading-4 text-white">
+        {index + 1}
+      </span>
+      {!disabled && (
+        <button
+          type="button"
+          onClick={() => onRemove(item.key)}
+          className="absolute right-1 top-1 cursor-pointer rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+          aria-label={`Retirer l'image ${index + 1}`}
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+      {!disabled && count > 1 && !item.uploading && (
+        <div className="absolute inset-x-1 bottom-1 flex justify-between sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
+          <button
+            type="button"
+            onClick={() => onMove(index, -1)}
+            disabled={index === 0}
+            className="cursor-pointer rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80 disabled:invisible"
+            aria-label="Déplacer avant"
+          >
+            <ArrowLeft className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(index, 1)}
+            disabled={index === count - 1}
+            className="cursor-pointer rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80 disabled:invisible"
+            aria-label="Déplacer après"
+          >
+            <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Bouton « Ajouter des photos » / « Ajouter une vidéo ». Grisé quand
+ * l'autre type de média est déjà là : l'info-bulle (et un message au clic,
+ * pour les écrans tactiles) explique pourquoi.
+ */
+function MediaPickerButton({
+  icon: Icon,
+  label,
+  onClick,
+  lockedReason,
+  disabled,
+}) {
+  const button = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={lockedReason ? () => toast.info(lockedReason) : onClick}
+      disabled={disabled}
+      aria-disabled={lockedReason ? true : undefined}
+      className={cn(
+        "flex-1 sm:flex-none",
+        lockedReason && "cursor-not-allowed opacity-50",
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Button>
+  );
+  if (!lockedReason) return button;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        {lockedReason}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/**
+ * Vidéo du post : lecteur une fois prête, progression pendant l'envoi puis
+ * la préparation par le serveur, bouton pour annuler ou retirer.
+ */
+function VideoTile({ item, onRemove, disabled }) {
+  const busy = item.status === "uploading" || item.status === "processing";
+  const failed = item.status === "failed";
+  const ready = item.status === "ready" && !!item.url;
+  const progress = Math.max(0, Math.min(100, Math.round(item.progress || 0)));
+  const duration =
+    item.durationMs > 0 ? formatVideoDuration(item.durationMs) : "";
+
+  return (
+    <div className="w-full space-y-1.5 sm:w-80">
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-lg border bg-black",
+          failed && "ring-2 ring-red-500",
+        )}
+      >
+        {ready ? (
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            poster={item.thumbnailUrl || undefined}
+            src={item.url}
+            aria-label="Vidéo du post"
+            className="aspect-video w-full bg-black object-contain"
+          />
+        ) : item.thumbnailUrl ? (
+          <img
+            src={item.thumbnailUrl}
+            alt=""
+            className="aspect-video w-full object-contain"
+          />
+        ) : item.previewUrl ? (
+          <video
+            muted
+            playsInline
+            preload="metadata"
+            src={item.previewUrl}
+            aria-hidden="true"
+            className="aspect-video w-full object-contain"
+          />
+        ) : (
+          <div className="aspect-video w-full bg-muted" />
+        )}
+        {busy && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 px-6 text-white">
+            {item.status === "uploading" ? (
+              <>
+                <span className="text-sm font-medium tabular-nums">
+                  Envoi {progress} %
+                </span>
+                <div
+                  role="progressbar"
+                  aria-label="Envoi de la vidéo"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progress}
+                  className="h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-white/25"
+                >
+                  <div
+                    className="h-full rounded-full bg-white transition-[width] duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </>
+            ) : (
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Préparation de la vidéo…
+              </span>
+            )}
+          </div>
+        )}
+        {failed && (
+          <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/60 px-4 text-center text-sm text-white">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            Vidéo non préparée
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Film className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">
+            {duration ? `Vidéo de ${duration}` : "Vidéo"}
+          </span>
+        </span>
+        {!disabled && (
+          <button
+            type="button"
+            onClick={() => onRemove(item.key)}
+            className="cursor-pointer font-medium text-foreground hover:underline"
+          >
+            {busy ? "Annuler l'envoi" : "Retirer la vidéo"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Aperçu ───────────────────────────────────────────────────────────────
+
+function PostPreview({
+  accounts,
+  content,
+  media,
+  whenLabel,
+  storyPlatforms = [],
+  sounds = EMPTY_SOUNDS,
+}) {
+  const first = accounts[0] || null;
+  const platforms = uniquePlatforms(accounts.map((a) => a.platform));
+  const soundLines = SOUND_PLATFORMS.filter((p) => sounds[p]).map(
+    (p) => `${getPlatformLabel(p)} : ${formatSoundLabel(sounds[p])}`,
+  );
+  const video = media.find(isVideoMedia) || null;
+  const videoSrc = video ? video.url || video.previewUrl : null;
+  const images = media.filter(
+    (m) => !isVideoMedia(m) && (m.url || m.previewUrl),
+  );
+  const shown = images.slice(0, 4);
+  const extra = images.length - shown.length;
+
+  return (
+    <div className="overflow-hidden rounded-xl border bg-background shadow-xs">
+      <div className="flex items-center gap-2.5 p-3">
+        {first ? (
+          <SocialAccountAvatar account={first} size={36} />
+        ) : (
+          <span className="h-9 w-9 rounded-full bg-muted" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">
+            {first
+              ? first.displayName || getSocialAccountName(first)
+              : "Votre compte"}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">{whenLabel}</p>
+        </div>
+      </div>
+      {content.trim() ? (
+        <p className="whitespace-pre-wrap break-words px-3 pb-3 text-sm leading-relaxed">
+          {content}
+        </p>
+      ) : (
+        <p className="px-3 pb-3 text-sm text-muted-foreground/60">
+          Le texte de votre post apparaîtra ici.
+        </p>
+      )}
+      {videoSrc && (
+        <video
+          // Nouveau lecteur quand la vidéo préparée remplace le fichier local
+          key={videoSrc}
+          controls
+          playsInline
+          preload="metadata"
+          poster={video.thumbnailUrl || undefined}
+          src={videoSrc}
+          aria-label="Aperçu de la vidéo"
+          className="max-h-[360px] w-full bg-black object-contain"
+        />
+      )}
+      {shown.length > 0 && (
+        <div
+          className={cn(
+            "grid gap-0.5 bg-muted",
+            shown.length === 1 ? "grid-cols-1" : "grid-cols-2",
+          )}
+        >
+          {shown.map((item, i) => (
+            <div
+              key={item.key}
+              className={cn(
+                "relative bg-muted",
+                shown.length === 1 ? "aspect-[4/3]" : "aspect-square",
+                shown.length === 3 && i === 0 && "row-span-2 aspect-auto",
+              )}
+            >
+              <img
+                src={item.url || item.previewUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              {extra > 0 && i === shown.length - 1 && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
+                  +{extra}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {soundLines.length > 0 && (
+        <div className="space-y-0.5 border-t px-3 py-2 text-xs text-muted-foreground">
+          {soundLines.map((line) => (
+            <p key={line} className="flex min-w-0 items-center gap-1.5">
+              <Music className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{line}</span>
+            </p>
+          ))}
+        </div>
+      )}
+      {platforms.length > 0 && (
+        <div className="flex items-center gap-1.5 border-t px-3 py-2 text-xs text-muted-foreground">
+          {platforms.map((p) => (
+            <SocialNetworkIcon key={p} platform={p} size={14} />
+          ))}
+          <span className="ml-1 truncate">
+            {joinLabels(
+              platforms.map((p) =>
+                storyPlatforms.includes(p)
+                  ? `${getPlatformLabel(p)} (story)`
+                  : getPlatformLabel(p),
+              ),
+            )}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Fenêtre ──────────────────────────────────────────────────────────────
+
+/**
+ * Programmer un post (création) ou le modifier (`post` fourni, statut
+ * « scheduled »). Les images partent dès qu'elles sont choisies ; la carte
+ * du tableau est créée par l'API avec le post.
+ */
+export function SocialPostModal({ open, onClose, post, restoreDraft }) {
+  const social = useSocialPublishing();
+  const { status, boardId, workspaceId, columns, mutations } = social || {};
+  const isEdit = !!post;
+
+  const accounts = useMemo(
+    () => sortAccounts(status?.accounts),
+    [status?.accounts],
+  );
+  // Façons de connecter chaque réseau (déjà normalisées par le hook ; les
+  // simulations des tests n'en donnent pas toujours)
+  const connectors = useMemo(
+    () =>
+      status?.connectors ||
+      normalizeConnectors(null, status?.platforms || SOCIAL_PLATFORMS),
+    [status?.connectors, status?.platforms],
+  );
+  const { connect, connecting } = useConnectSocialAccount(workspaceId);
+
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [content, setContent] = useState("");
+  const [media, setMedia] = useState([]);
+  const [whenMode, setWhenMode] = useState("schedule");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [columnId, setColumnId] = useState("");
+  const [tiktok, setTiktok] = useState(EMPTY_TIKTOK);
+  const [tiktokInfo, setTiktokInfo] = useState(null);
+  const [formats, setFormats] = useState(DEFAULT_FORMATS);
+  const [sounds, setSounds] = useState(EMPTY_SOUNDS);
+  const [attempted, setAttempted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const previewUrlsRef = useRef(new Set());
+  // Envoi de vidéo en cours : { key, controller } (annulé si la vidéo est
+  // retirée ou remplacée, ou la fenêtre fermée)
+  const videoUploadRef = useRef(null);
+  const openRef = useRef(open);
+  openRef.current = open;
+
+  const cancelVideoUpload = useCallback(() => {
+    videoUploadRef.current?.controller.abort();
+    videoUploadRef.current = null;
+  }, []);
+  useEffect(() => {
+    if (!open) cancelVideoUpload();
+  }, [open, cancelVideoUpload]);
+  useEffect(() => cancelVideoUpload, [cancelVideoUpload]);
+
+  // Initialisation à chaque ouverture
+  useEffect(() => {
+    if (!open) return;
+    setAttempted(false);
+    setSubmitting(false);
+    setTiktokInfo(null);
+    if (post) {
+      const parts = isoToParisParts(post.scheduledFor);
+      setSelectedIds(
+        (post.targets || []).map((t) => t.accountId).filter(Boolean),
+      );
+      setContent(post.content || "");
+      setMedia((post.media || []).filter((m) => m?.id).map(toMediaItem));
+      setWhenMode("schedule");
+      setDate(parts.date);
+      setTime(parts.time);
+      setColumnId("");
+      setFormats(
+        toFormatsState(
+          post.instagramSettings?.format,
+          post.facebookSettings?.format,
+        ),
+      );
+      setSounds({
+        instagram: toSoundState(post.instagramSettings?.sound),
+        tiktok: toSoundState(post.tiktokSettings?.sound),
+      });
+      setTiktok(
+        post.tiktokSettings
+          ? {
+              mode: post.tiktokSettings.mode === "draft" ? "draft" : "direct",
+              privacyLevel: post.tiktokSettings.privacyLevel || "",
+              allowComment: !!post.tiktokSettings.allowComment,
+              allowDuet: !!post.tiktokSettings.allowDuet,
+              allowStitch: !!post.tiktokSettings.allowStitch,
+              commercial:
+                !!post.tiktokSettings.brandOrganic ||
+                !!post.tiktokSettings.brandContent,
+              brandOrganic: !!post.tiktokSettings.brandOrganic,
+              brandContent: !!post.tiktokSettings.brandContent,
+            }
+          : EMPTY_TIKTOK,
+      );
+      return;
+    }
+    const defaults = getDefaultScheduleParts();
+    const draft = restoreDraft ? readDraft(boardId) : null;
+    const activeIds = new Set(
+      accounts.filter((a) => a.status === "active").map((a) => a.id),
+    );
+    if (draft) {
+      setSelectedIds(
+        (draft.accountIds || []).filter((id) => activeIds.has(id)),
+      );
+      setContent(draft.content || "");
+      setMedia(
+        (draft.media || []).filter((m) => m?.id && m?.url).map(toMediaItem),
+      );
+      setWhenMode(draft.whenMode === "now" ? "now" : "schedule");
+      setDate(draft.date || defaults.date);
+      setTime(draft.time || defaults.time);
+      setColumnId(draft.columnId || firstColumnId(columns));
+      setTiktok({ ...EMPTY_TIKTOK, ...(draft.tiktok || {}) });
+      setFormats(
+        toFormatsState(draft.formats?.instagram, draft.formats?.facebook),
+      );
+      setSounds({
+        instagram: toSoundState(draft.sounds?.instagram),
+        tiktok: toSoundState(draft.sounds?.tiktok),
+      });
+    } else {
+      // Un seul compte connecté : choisi d'office
+      setSelectedIds(activeIds.size === 1 ? [...activeIds] : []);
+      setContent("");
+      setMedia([]);
+      setWhenMode("schedule");
+      setDate(defaults.date);
+      setTime(defaults.time);
+      setColumnId(firstColumnId(columns));
+      setTiktok(EMPTY_TIKTOK);
+      setFormats(DEFAULT_FORMATS);
+      setSounds(EMPTY_SOUNDS);
+    }
+    // Comptes et colonnes lus à l'ouverture seulement
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, post?.id, restoreDraft, boardId]);
+
+  // Aperçus locaux libérés à la fermeture
+  useEffect(() => {
+    const urls = previewUrlsRef.current;
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
+    };
+  }, []);
+
+  const selectedAccounts = useMemo(
+    () => accounts.filter((a) => selectedIds.includes(a.id)),
+    [accounts, selectedIds],
+  );
+  const platforms = useMemo(
+    () => uniquePlatforms(selectedAccounts.map((a) => a.platform)),
+    [selectedAccounts],
+  );
+  const tiktokAccount = selectedAccounts.find((a) => a.platform === "tiktok");
+  const hasTikTok = !!tiktokAccount;
+
+  // Format par réseau : story possible si un compte choisi du réseau la
+  // permet (sinon « Publication » imposée)
+  const formatNetworks = STORY_PLATFORMS.filter((p) =>
+    platforms.includes(p),
+  ).map((platform) => ({
+    platform,
+    storyAvailable: selectedAccounts.some(
+      (a) => a.platform === platform && canAccountPostStory(a),
+    ),
+  }));
+  const activeFormats = { ...DEFAULT_FORMATS };
+  for (const { platform, storyAvailable } of formatNetworks) {
+    if (storyAvailable && formats[platform] === "story") {
+      activeFormats[platform] = "story";
+    }
+  }
+  const storyPlatforms = formatNetworks
+    .map((n) => n.platform)
+    .filter((p) => activeFormats[p] === "story");
+
+  // Brouillon TikTok : seulement si un compte choisi peut le recevoir (ou le
+  // pourrait après une reconnexion)
+  const draftAvailability = getTikTokDraftAvailability(selectedAccounts);
+  const tiktokMode =
+    hasTikTok && tiktok.mode === "draft" && draftAvailability.offered
+      ? "draft"
+      : "direct";
+  const tiktokDraft = tiktokMode === "draft";
+
+  const scheduledFor =
+    whenMode === "schedule" ? parisPartsToIso(date, time) : null;
+  const videoItem = media.find(isVideoMedia) || null;
+  const imageCount = media.length - (videoItem ? 1 : 0);
+  // Médias prêts à partir avec le post
+  const uploadedMedia = media.filter(
+    (m) => m.id && !m.uploading && (!isVideoMedia(m) || m.status === "ready"),
+  );
+  // Contrôles : la vidéo compte dès son ajout (durée connue, préparation
+  // en cours signalée), les images une fois envoyées
+  const rulesMedia = media.filter(
+    (m) => isVideoMedia(m) || (m.id && !m.uploading),
+  );
+  const videoBusy =
+    videoItem?.status === "uploading" || videoItem?.status === "processing";
+  const uploading = media.some((m) => m.uploading) || videoBusy;
+
+  // Son tendance : réseaux où il est possible (compte compatible, média et
+  // format qui s'y prêtent). Un son d'un réseau qui ne le permet plus n'est
+  // jamais envoyé, et il est retiré (effet plus bas).
+  const soundTargets = getSoundTargets(selectedAccounts, {
+    media,
+    formats: activeFormats,
+    tiktokMode,
+  });
+  const soundPlatforms = soundTargets.map((t) => t.platform);
+  const soundPlatformsKey = soundPlatforms.join(",");
+  const activeSounds = useMemo(() => {
+    const allowed = soundPlatformsKey.split(",");
+    return {
+      instagram: allowed.includes("instagram") ? sounds.instagram : null,
+      tiktok: allowed.includes("tiktok") ? sounds.tiktok : null,
+    };
+  }, [soundPlatformsKey, sounds]);
+  // Vidéo d'un compte TikTok Business en publication directe : publique
+  const businessVideo =
+    !!videoItem &&
+    !tiktokDraft &&
+    selectedAccounts.some(isTikTokBusinessAccount);
+  const storyHints = storyPlatforms.length > 0 ? getStoryHints(media) : [];
+
+  const errors = useMemo(
+    () =>
+      validateSocialPost({
+        platforms,
+        accounts: selectedAccounts,
+        accountCount: selectedAccounts.length,
+        content,
+        media: rulesMedia,
+        formats: activeFormats,
+        publishNow: whenMode === "now",
+        scheduledFor,
+        tiktok: {
+          ...tiktok,
+          mode: tiktokMode,
+          canPostMore: tiktokInfo ? tiktokInfo.canPostMore : undefined,
+          maxVideoDurationSec: tiktokInfo?.maxVideoPostDurationSec ?? null,
+        },
+      }),
+    // rulesMedia dérive de media, activeFormats et tiktokMode des comptes
+    // choisis et des choix de l'utilisateur
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      platforms,
+      selectedAccounts,
+      content,
+      media,
+      whenMode,
+      scheduledFor,
+      tiktok,
+      tiktokInfo,
+      activeFormats.instagram,
+      activeFormats.facebook,
+      tiktokMode,
+    ],
+  );
+
+  // Choix devenus impossibles (média, format, comptes ou mode changés) :
+  // son retiré, story et brouillon ramenés à la publication. Pas au passage
+  // qui suit l'ouverture : l'état vient d'y être initialisé.
+  const constraintsKey = [
+    soundPlatformsKey,
+    formatNetworks
+      .filter((n) => !n.storyAvailable)
+      .map((n) => n.platform)
+      .join(","),
+    hasTikTok && !draftAvailability.offered ? "no-draft" : "",
+  ].join("|");
+  const constraintsReadyRef = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      constraintsReadyRef.current = false;
+      return;
+    }
+    if (!constraintsReadyRef.current) {
+      constraintsReadyRef.current = true;
+      return;
+    }
+    const [allowedSounds, lockedStories, draftLock] = constraintsKey.split("|");
+    setSounds((prev) => {
+      const lost = SOUND_PLATFORMS.filter(
+        (p) => prev[p] && !allowedSounds.split(",").includes(p),
+      );
+      if (lost.length === 0) return prev;
+      const next = { ...prev };
+      lost.forEach((p) => {
+        next[p] = null;
+      });
+      return next;
+    });
+    setFormats((prev) => {
+      const locked = lockedStories
+        .split(",")
+        .filter((p) => p && prev[p] === "story");
+      if (locked.length === 0) return prev;
+      const next = { ...prev };
+      locked.forEach((p) => {
+        next[p] = "post";
+      });
+      return next;
+    });
+    if (draftLock) {
+      setTiktok((prev) =>
+        prev.mode === "draft" ? { ...prev, mode: "direct" } : prev,
+      );
+    }
+  }, [open, constraintsKey]);
+  // Limite mensuelle de posts X : envois que ce post ajoute au mois visé
+  const xSelected = selectedAccounts.filter(
+    (a) => a.platform === "twitter",
+  ).length;
+  const xAlreadyCounted =
+    isEdit && isSameParisMonth(post.scheduledFor, scheduledFor || new Date())
+      ? (post.targets || []).filter(
+          (t) => t.platform === "twitter" && t.status !== "cancelled",
+        ).length
+      : 0;
+  const xQuotaNote = getXQuotaNote({
+    quota: status?.xPostQuota,
+    extra: xSelected - xAlreadyCounted,
+    at: scheduledFor,
+  });
+
+  const errorsFor = (field) =>
+    errors
+      .filter((e) => e.field === field && isShown(e, attempted))
+      .map((e) => e.message);
+  // Le dépassement de texte s'affiche déjà en rouge dans le compteur. Story
+  // et vidéo TikTok en brouillon : texte non publié, pas de compteur
+  const textLimit = getTextLimit(
+    content,
+    getTextPlatforms(platforms, {
+      formats: activeFormats,
+      tiktokMode,
+      video: !!videoItem,
+    }),
+    { video: !!videoItem },
+  );
+  const contentErrors = errors
+    .filter(
+      (e) =>
+        e.field === "content" &&
+        e.code !== "text_too_long" &&
+        isShown(e, attempted),
+    )
+    .map((e) => e.message);
+
+  const maxImages = getMaxImages(platforms);
+  // Format des photos contrôlé pour le fil Instagram, pas pour une story
+  const instagramChosen =
+    platforms.includes("instagram") && !storyPlatforms.includes("instagram");
+
+  const toggleAccount = useCallback((accountId) => {
+    setSelectedIds((prev) =>
+      prev.includes(accountId)
+        ? prev.filter((id) => id !== accountId)
+        : [...prev, accountId],
+    );
+  }, []);
+
+  const patchTiktok = useCallback(
+    (patch) => setTiktok((prev) => ({ ...prev, ...patch })),
+    [],
+  );
+  const changeFormat = useCallback(
+    (platform, format) =>
+      setFormats((prev) => ({ ...prev, [platform]: format })),
+    [],
+  );
+  const changeSound = useCallback(
+    (platform, sound) => setSounds((prev) => ({ ...prev, [platform]: sound })),
+    [],
+  );
+
+  // Brouillon gardé pendant l'aller-retour de connexion d'un réseau
+  const saveDraft = useCallback(() => {
+    if (isEdit) return;
+    writeDraft(boardId, {
+      accountIds: selectedIds,
+      content,
+      media: uploadedMedia.map(
+        ({
+          id,
+          kind,
+          status,
+          url,
+          thumbnailUrl,
+          width,
+          height,
+          durationMs,
+          size,
+        }) => ({
+          id,
+          kind,
+          status,
+          url,
+          thumbnailUrl,
+          width,
+          height,
+          durationMs,
+          size,
+        }),
+      ),
+      whenMode,
+      date,
+      time,
+      columnId,
+      tiktok,
+      formats,
+      sounds: activeSounds,
+    });
+  }, [
+    isEdit,
+    boardId,
+    selectedIds,
+    content,
+    uploadedMedia,
+    whenMode,
+    date,
+    time,
+    columnId,
+    tiktok,
+    formats,
+    activeSounds,
+  ]);
+
+  const handleConnect = useCallback(
+    (platform, connector) => {
+      const pathname = window.location.pathname;
+      const returnTo = isEdit
+        ? `${pathname}?task=${encodeURIComponent(post.taskId)}`
+        : buildComposerReturnTo(pathname);
+      connect(platform, returnTo, { connector, beforeRedirect: saveDraft });
+    },
+    [connect, isEdit, post?.taskId, saveDraft],
+  );
+
+  // Compte TikTok choisi à reconnecter pour l'envoi en brouillon (par le
+  // même chemin de connexion), si l'utilisateur peut gérer les comptes
+  const reconnectTikTokAccount = selectedAccounts.find(
+    (a) =>
+      a.platform === "tiktok" &&
+      !a.capabilities?.drafts &&
+      a.capabilities?.draftsNeedReconnect,
+  );
+  const reconnectTikTokKey = reconnectTikTokAccount
+    ? getAccountConnectorKey(reconnectTikTokAccount)
+    : null;
+  const canReconnectTikTok =
+    !!status?.canManageAccounts &&
+    !!reconnectTikTokKey &&
+    connectors.some((c) => c.key === reconnectTikTokKey);
+
+  // ── Téléversement ──
+  const addFiles = useCallback(
+    async (fileList) => {
+      const files = Array.from(fileList || []);
+      if (files.length === 0) return;
+      if (media.some(isVideoMedia)) {
+        toast.info(PHOTOS_LOCKED_REASON);
+        return;
+      }
+      const remaining = maxImages.max - media.length;
+      if (remaining <= 0) {
+        toast.info(
+          maxImages.label
+            ? `${maxImages.label} accepte ${maxImages.max} images au maximum.`
+            : `${maxImages.max} images au maximum.`,
+        );
+        return;
+      }
+      const accepted = [];
+      for (const file of files) {
+        const type = (file.type || "").toLowerCase();
+        const isHeic = /\.(heic|heif)$/i.test(file.name || "");
+        if (!ACCEPTED_IMAGE_TYPES.includes(type) && !isHeic) {
+          toast.error(
+            `« ${file.name} » n'est pas une image JPEG, PNG ou WebP.`,
+          );
+          continue;
+        }
+        if (file.size > MAX_UPLOAD_BYTES) {
+          toast.error(`« ${file.name} » dépasse 20 Mo.`);
+          continue;
+        }
+        accepted.push(file);
+      }
+      if (accepted.length > remaining) {
+        toast.info(
+          `Seules les ${remaining} premières images ont été ajoutées (${maxImages.max} au maximum).`,
+        );
+      }
+      const batch = accepted.slice(0, remaining).map((file) => {
+        let previewUrl = null;
+        try {
+          previewUrl = URL.createObjectURL(file);
+          previewUrlsRef.current.add(previewUrl);
+        } catch {
+          previewUrl = null;
+        }
+        return { key: newLocalKey(), file, previewUrl, uploading: true };
+      });
+      if (batch.length === 0) return;
+      setMedia((prev) => [...prev, ...batch]);
+
+      await Promise.all(
+        batch.map(async (item) => {
+          try {
+            const uploaded = await mutations.upload(item.file);
+            if (!uploaded?.id) throw new Error("Réponse vide");
+            setMedia((prev) =>
+              prev.map((m) =>
+                m.key === item.key
+                  ? {
+                      key: item.key,
+                      id: uploaded.id,
+                      url: uploaded.url,
+                      width: uploaded.width,
+                      height: uploaded.height,
+                      previewUrl: item.previewUrl,
+                      uploading: false,
+                    }
+                  : m,
+              ),
+            );
+          } catch (error) {
+            setMedia((prev) => prev.filter((m) => m.key !== item.key));
+            toast.error(
+              getApiErrorMessage(
+                error,
+                `Impossible d'envoyer « ${item.file.name} ». Réessayez.`,
+              ),
+            );
+          }
+        }),
+      );
+    },
+    [maxImages.label, maxImages.max, media, mutations],
+  );
+
+  // Vidéo : contrôles du fichier (format, poids, durée lue sur place), puis
+  // envoi en morceaux et préparation par le serveur. Remplace la vidéo
+  // précédente s'il y en a une.
+  const addVideo = useCallback(
+    async (file) => {
+      if (!file) return;
+      if (media.some((m) => !isVideoMedia(m))) {
+        toast.info(VIDEO_LOCKED_REASON);
+        return;
+      }
+      const fileError = checkVideoFile(file);
+      if (fileError) {
+        toast.error(fileError);
+        return;
+      }
+      let previewUrl = null;
+      try {
+        previewUrl = URL.createObjectURL(file);
+        previewUrlsRef.current.add(previewUrl);
+      } catch {
+        previewUrl = null;
+      }
+      const metadata = previewUrl ? await readVideoMetadata(previewUrl) : null;
+      // Fenêtre fermée pendant la lecture du fichier : rien à envoyer
+      if (!openRef.current) return;
+      const durationError = checkVideoFile(file, {
+        durationMs: metadata?.durationMs,
+      });
+      if (durationError) {
+        toast.error(durationError);
+        return;
+      }
+
+      cancelVideoUpload();
+      const key = newLocalKey();
+      const controller = new AbortController();
+      videoUploadRef.current = { key, controller };
+      setMedia([
+        {
+          key,
+          kind: "video",
+          status: "uploading",
+          progress: 0,
+          previewUrl,
+          durationMs: metadata?.durationMs || null,
+          width: metadata?.width || null,
+          height: metadata?.height || null,
+        },
+      ]);
+      const patch = (changes) =>
+        setMedia((prev) =>
+          prev.map((m) => (m.key === key ? { ...m, ...changes } : m)),
+        );
+
+      try {
+        const ready = await mutations.uploadVideo(file, {
+          signal: controller.signal,
+          onProgress: (progress) => patch({ progress }),
+          onMedia: (uploaded) => patch(mediaFields(uploaded)),
+        });
+        patch({ ...mediaFields(ready), kind: "video", status: "ready" });
+      } catch (error) {
+        if (isAbortError(error) || controller.signal.aborted) return;
+        patch({
+          status: "failed",
+          errorMessage:
+            error instanceof SocialVideoError
+              ? error.message
+              : getApiErrorMessage(error, VIDEO_UPLOAD_FAILED_MESSAGE),
+        });
+      } finally {
+        if (videoUploadRef.current?.key === key) videoUploadRef.current = null;
+      }
+    },
+    [media, mutations, cancelVideoUpload],
+  );
+
+  // Glisser-déposer : une vidéo seule, ou des photos
+  const addDroppedFiles = useCallback(
+    (fileList) => {
+      const files = Array.from(fileList || []);
+      if (files.length === 0) return;
+      const videos = files.filter(isVideoFile);
+      const others = files.filter((file) => !isVideoFile(file));
+      if (videos.length > 0 && others.length === 0) {
+        if (videos.length > 1) {
+          toast.info(
+            "Une seule vidéo par post : seule la première a été ajoutée.",
+          );
+        }
+        addVideo(videos[0]);
+        return;
+      }
+      if (videos.length > 0) {
+        toast.info(
+          "Un post contient soit des photos, soit une vidéo : les vidéos n'ont pas été ajoutées.",
+        );
+      }
+      addFiles(others);
+    },
+    [addFiles, addVideo],
+  );
+
+  const removeMedia = useCallback((key) => {
+    if (videoUploadRef.current?.key === key) {
+      videoUploadRef.current.controller.abort();
+      videoUploadRef.current = null;
+    }
+    setMedia((prev) => prev.filter((m) => m.key !== key));
+  }, []);
+
+  const moveMedia = useCallback((index, delta) => {
+    setMedia((prev) => {
+      const target = index + delta;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }, []);
+
+  // ── Envoi ──
+  const handleSubmit = async () => {
+    setAttempted(true);
+    if (errors.length > 0 || uploading || submitting) return;
+    setSubmitting(true);
+    const mediaIds = uploadedMedia.map((m) => m.id);
+    // Son : champs du contrat seulement (jamais __typename) ; null le retire
+    const soundInput = (sound) =>
+      sound
+        ? {
+            id: sound.id,
+            title: sound.title,
+            artist: sound.artist || null,
+            coverUrl: sound.coverUrl || null,
+            volume: sound.volume,
+            videoVolume: sound.videoVolume,
+          }
+        : null;
+    // Réglages des réseaux visés seulement (les autres sont ignorés)
+    const instagramSettings = platforms.includes("instagram")
+      ? {
+          format: activeFormats.instagram,
+          sound: soundInput(activeSounds.instagram),
+        }
+      : undefined;
+    const facebookSettings = platforms.includes("facebook")
+      ? { format: activeFormats.facebook }
+      : undefined;
+    // Brouillon : TikTok demande le reste dans l'appli
+    const tiktokDirectSettings = hasTikTok
+      ? {
+          mode: "direct",
+          privacyLevel: tiktok.privacyLevel,
+          allowComment: !!tiktok.allowComment && !tiktokInfo?.commentDisabled,
+          // Duos et collages : seulement pour une vidéo (obligatoires alors)
+          ...(videoItem
+            ? {
+                allowDuet: !!tiktok.allowDuet && !tiktokInfo?.duetDisabled,
+                allowStitch:
+                  !!tiktok.allowStitch && !tiktokInfo?.stitchDisabled,
+              }
+            : {}),
+          brandOrganic: !!tiktok.commercial && !!tiktok.brandOrganic,
+          brandContent: !!tiktok.commercial && !!tiktok.brandContent,
+          // Accord donné en publiant (déclaration au-dessus du bouton)
+          consentGiven: true,
+          sound: soundInput(activeSounds.tiktok),
+        }
+      : undefined;
+    const tiktokSettings = tiktokDraft
+      ? { mode: "draft" }
+      : tiktokDirectSettings;
+    const networkSettings = {
+      ...(tiktokSettings ? { tiktokSettings } : {}),
+      ...(instagramSettings ? { instagramSettings } : {}),
+      ...(facebookSettings ? { facebookSettings } : {}),
+    };
+    // Consigne TikTok : prévenir que la publication n'est pas immédiate
+    // (une vidéo est traitée par chaque réseau avant d'être en ligne)
+    const tiktokDelay = tiktokDraft
+      ? " TikTok l'enverra dans vos brouillons : terminez la publication dans l'appli TikTok."
+      : videoItem
+        ? " La publication d'une vidéo peut prendre quelques minutes."
+        : hasTikTok
+          ? " La publication sur TikTok peut prendre quelques minutes."
+          : "";
+    try {
+      if (isEdit) {
+        await mutations.update(post.id, {
+          accountIds: selectedIds,
+          content,
+          mediaIds,
+          scheduledFor,
+          ...networkSettings,
+        });
+        toast.success("Post modifié", {
+          description: `Publication le ${formatParisDateTime(scheduledFor)}.${tiktokDelay}`,
+        });
+      } else {
+        const payload = await mutations.schedule({
+          columnId: columnId || undefined,
+          accountIds: selectedIds,
+          content,
+          mediaIds,
+          ...(whenMode === "now" ? { publishNow: true } : { scheduledFor }),
+          timezone: SOCIAL_TIMEZONE,
+          ...networkSettings,
+        });
+        clearDraft(boardId);
+        const result = payload?.post;
+        if (whenMode !== "now") {
+          toast.success("Post programmé", {
+            description: `Publication le ${formatParisDateTime(result?.scheduledFor || scheduledFor)}.${tiktokDelay}`,
+          });
+        } else if (
+          result?.status === "published" &&
+          result.targets?.length > 0 &&
+          result.targets.every(isDeliveredAsDraft)
+        ) {
+          toast.success("Envoyé dans vos brouillons TikTok", {
+            description: "Terminez la publication dans l'appli TikTok.",
+          });
+        } else if (result?.status === "published") {
+          toast.success("Post publié");
+        } else if (
+          result?.status === "partial" ||
+          result?.status === "failed"
+        ) {
+          const failed = (result.targets || []).filter(
+            (t) => t.status === "failed",
+          );
+          const message =
+            result.status === "partial"
+              ? "Post publié en partie"
+              : "La publication a échoué";
+          toast.error(message, {
+            description:
+              failed
+                .map((t) => t.errorMessage)
+                .filter(Boolean)
+                .join(" ") || "Ouvrez la carte pour réessayer.",
+          });
+        } else {
+          toast.success("Publication en cours", {
+            description: `Le statut s'affiche sur la carte du post.${tiktokDelay}`,
+          });
+        }
+      }
+      onClose();
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(
+          error,
+          isEdit
+            ? "Impossible de modifier le post. Réessayez."
+            : "Impossible de programmer le post. Réessayez.",
+        ),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const whenLabel =
+    whenMode === "now"
+      ? "Publication immédiate"
+      : scheduledFor
+        ? `Programmé ${formatParisShortDateTime(scheduledFor)}`
+        : "Date à choisir";
+
+  const today = getParisToday();
+  const maxDate = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return isoToParisParts(d).date;
+  }, []);
+
+  // Rappel discret en bas : ce qu'il reste à faire avant l'envoi
+  const firstError = errors[0];
+  const primaryLabel = isEdit
+    ? "Enregistrer les modifications"
+    : whenMode === "now"
+      ? "Publier maintenant"
+      : "Programmer le post";
+
+  const sortedColumns = useMemo(
+    () => [...(columns || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [columns],
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => !next && !submitting && onClose()}
+    >
+      <DialogContent
+        className="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-[920px]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="border-b px-5 py-4 pr-12 text-left">
+          <DialogTitle className="text-base">
+            {isEdit ? "Modifier le post" : "Programmer un post"}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            {isEdit
+              ? "Les changements s'appliquent au post programmé et à sa carte."
+              : "Écrivez votre post, choisissez quand il part : il sera publié automatiquement."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="grid md:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-6 p-5">
+              {/* 1. Comptes */}
+              <section className="space-y-2.5">
+                <SectionTitle>Publier sur</SectionTitle>
+                <AccountsPicker
+                  accounts={accounts}
+                  connectors={connectors}
+                  selectedIds={selectedIds}
+                  onToggle={toggleAccount}
+                  canManageAccounts={status?.canManageAccounts}
+                  onConnect={handleConnect}
+                  connecting={connecting}
+                  allowAdd={!isEdit}
+                />
+                <FieldError messages={errorsFor("accounts")} />
+                {xQuotaNote && (
+                  <p
+                    className={cn(
+                      "flex items-start gap-1.5 text-xs",
+                      xQuotaNote.tone === "warning"
+                        ? "text-amber-700 dark:text-amber-400"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {xQuotaNote.tone === "warning" && (
+                      <AlertCircle className="mt-px h-3.5 w-3.5 flex-shrink-0" />
+                    )}
+                    <span>{xQuotaNote.message}</span>
+                  </p>
+                )}
+              </section>
+
+              {/* Format (Instagram, Facebook) : publication ou story */}
+              {formatNetworks.length > 0 && (
+                <section className="space-y-2.5">
+                  <SectionTitle>Format</SectionTitle>
+                  <SocialPostFormatPicker
+                    networks={formatNetworks}
+                    formats={activeFormats}
+                    onChange={changeFormat}
+                    hints={storyHints}
+                    disabled={submitting}
+                  />
+                  <FieldError messages={errorsFor("format")} />
+                </section>
+              )}
+
+              {/* 2. Texte */}
+              <section className="space-y-2">
+                <div className="flex items-end justify-between gap-3">
+                  <SectionTitle htmlFor="social-post-content">
+                    Texte
+                  </SectionTitle>
+                  {textLimit && (
+                    <span
+                      className={cn(
+                        "text-xs tabular-nums",
+                        textLimit.over
+                          ? "font-medium text-red-600 dark:text-red-400"
+                          : textLimit.remaining < 20
+                            ? "text-amber-600"
+                            : "text-muted-foreground",
+                      )}
+                    >
+                      {textLimit.count} / {textLimit.max} ({textLimit.label})
+                    </span>
+                  )}
+                </div>
+                <Textarea
+                  id="social-post-content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Qu'avez-vous envie de partager ?"
+                  className={cn(
+                    "min-h-[140px] resize-y text-sm",
+                    textLimit?.over &&
+                      "border-red-500 focus-visible:ring-red-500/40",
+                  )}
+                />
+                <FieldError messages={contentErrors} />
+              </section>
+
+              {/* 3. Photos ou vidéo */}
+              <section className="space-y-2">
+                <div className="flex items-end justify-between gap-3">
+                  <SectionTitle>Photos ou vidéo</SectionTitle>
+                  {imageCount > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {imageCount} / {maxImages.max}
+                    </span>
+                  )}
+                </div>
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    if (!submitting) addDroppedFiles(e.dataTransfer?.files);
+                  }}
+                  className={cn(
+                    "space-y-3 rounded-xl border border-dashed p-3 transition-colors",
+                    dragOver && "border-[#5A50FF] bg-[#5A50FF]/5",
+                  )}
+                >
+                  {videoItem ? (
+                    <VideoTile
+                      item={videoItem}
+                      onRemove={removeMedia}
+                      disabled={submitting}
+                    />
+                  ) : (
+                    media.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {media.map((item, index) => (
+                          <MediaTile
+                            key={item.key}
+                            item={item}
+                            index={index}
+                            count={media.length}
+                            invalidRatio={
+                              instagramChosen &&
+                              !isInstagramRatioValid(item.width, item.height)
+                            }
+                            onRemove={removeMedia}
+                            onMove={moveMedia}
+                            disabled={submitting}
+                          />
+                        ))}
+                      </div>
+                    )
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <MediaPickerButton
+                      icon={ImagePlus}
+                      label="Ajouter des photos"
+                      onClick={() => fileInputRef.current?.click()}
+                      lockedReason={videoItem ? PHOTOS_LOCKED_REASON : null}
+                      disabled={submitting || imageCount >= maxImages.max}
+                    />
+                    <MediaPickerButton
+                      icon={Film}
+                      label={
+                        videoItem ? "Remplacer la vidéo" : "Ajouter une vidéo"
+                      }
+                      onClick={() => videoInputRef.current?.click()}
+                      lockedReason={imageCount > 0 ? VIDEO_LOCKED_REASON : null}
+                      disabled={submitting}
+                    />
+                  </div>
+                  {media.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Vous pouvez aussi glisser vos fichiers ici. Vidéo : MP4,
+                      MOV ou WebM, 10 minutes et 500 Mo au maximum.
+                    </p>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={[...ACCEPTED_IMAGE_TYPES, ".heic", ".heif"].join(
+                      ",",
+                    )}
+                    multiple
+                    className="hidden"
+                    data-testid="social-post-photo-input"
+                    onChange={(e) => {
+                      addFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept={VIDEO_INPUT_ACCEPT}
+                    className="hidden"
+                    data-testid="social-post-video-input"
+                    onChange={(e) => {
+                      addVideo(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+                <FieldError messages={errorsFor("media")} />
+              </section>
+
+              {/* Son tendance (Instagram via Facebook, TikTok Business) */}
+              {soundTargets.length > 0 && (
+                <section className="space-y-2">
+                  <SectionTitle>Son</SectionTitle>
+                  <SocialPostSoundSection
+                    targets={soundTargets}
+                    sounds={activeSounds}
+                    onChange={changeSound}
+                    hasVideo={!!videoItem}
+                    workspaceId={workspaceId}
+                    disabled={submitting}
+                  />
+                </section>
+              )}
+
+              {/* 4. Options TikTok */}
+              {hasTikTok && (
+                <section className="space-y-2">
+                  <TikTokOptions
+                    accountId={tiktokAccount.id}
+                    accountName={getSocialAccountName(tiktokAccount)}
+                    workspaceId={workspaceId}
+                    value={{ ...tiktok, mode: tiktokMode }}
+                    onChange={patchTiktok}
+                    onInfo={setTiktokInfo}
+                    isVideo={!!videoItem}
+                    draftAvailability={draftAvailability}
+                    onReconnect={
+                      canReconnectTikTok
+                        ? () => handleConnect("tiktok", reconnectTikTokKey)
+                        : undefined
+                    }
+                    businessVideo={businessVideo}
+                  />
+                  <FieldError messages={errorsFor("tiktok")} />
+                </section>
+              )}
+
+              {/* 5. Quand */}
+              <section className="space-y-2.5">
+                <SectionTitle>Quand</SectionTitle>
+                {!isEdit && (
+                  <div
+                    role="radiogroup"
+                    aria-label="Moment de publication"
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    {[
+                      {
+                        id: "schedule",
+                        label: "Programmer",
+                        shortLabel: "Programmer",
+                        icon: CalendarClock,
+                      },
+                      {
+                        id: "now",
+                        label: "Publier maintenant",
+                        shortLabel: "Maintenant",
+                        icon: Zap,
+                      },
+                    ].map((option) => {
+                      const Icon = option.icon;
+                      const active = whenMode === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setWhenMode(option.id)}
+                          className={cn(
+                            "flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
+                            active
+                              ? "border-[#5A50FF] bg-[#5A50FF]/[0.07] font-medium text-foreground"
+                              : "text-muted-foreground hover:bg-muted/60",
+                          )}
+                        >
+                          <Icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="sm:hidden">{option.shortLabel}</span>
+                          <span className="hidden sm:inline">
+                            {option.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {whenMode === "schedule" ? (
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        type="date"
+                        aria-label="Date de publication"
+                        value={date}
+                        min={today}
+                        max={maxDate}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-[170px]"
+                      />
+                      <Input
+                        type="time"
+                        aria-label="Heure de publication"
+                        value={time}
+                        step={300}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="w-[120px]"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        Heure de Paris
+                      </span>
+                    </div>
+                    <FieldError messages={errorsFor("when")} />
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Le post part dès que vous validez.
+                  </p>
+                )}
+              </section>
+
+              {/* 6. Colonne */}
+              {!isEdit && sortedColumns.length > 0 && (
+                <section className="space-y-2">
+                  <SectionTitle>Placer la carte dans</SectionTitle>
+                  <Select value={columnId} onValueChange={setColumnId}>
+                    <SelectTrigger className="w-full sm:w-64">
+                      <SelectValue placeholder="Choisir une colonne" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sortedColumns.map((column) => (
+                        <SelectItem key={column.id} value={column.id}>
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{
+                                backgroundColor: column.color || "#94a3b8",
+                              }}
+                            />
+                            {column.title}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </section>
+              )}
+            </div>
+
+            {/* 7. Aperçu */}
+            <aside className="border-t bg-muted/30 md:border-l md:border-t-0">
+              <div className="space-y-2 p-5 md:sticky md:top-0">
+                <p className="text-sm font-medium">Aperçu</p>
+                <PostPreview
+                  accounts={selectedAccounts}
+                  content={content}
+                  media={media}
+                  whenLabel={whenLabel}
+                  storyPlatforms={storyPlatforms}
+                  sounds={activeSounds}
+                />
+                <p className="text-xs text-muted-foreground">
+                  L&apos;affichage final dépend de chaque réseau.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        {/* Déclaration TikTok : publication directe seulement (en
+            brouillon, TikTok la demande dans l'appli) */}
+        {hasTikTok && !tiktokDraft && (
+          <div className="border-t px-5 pt-3">
+            <TikTokDeclaration
+              branded={!!tiktok.commercial && !!tiktok.brandContent}
+            />
+          </div>
+        )}
+        <div
+          className={cn(
+            "flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between",
+            !(hasTikTok && !tiktokDraft) && "border-t",
+          )}
+        >
+          <p className="min-h-[1rem] text-xs text-muted-foreground sm:max-w-[55%]">
+            {videoItem?.status === "uploading"
+              ? `Envoi de la vidéo : ${Math.round(videoItem.progress || 0)} %`
+              : videoItem?.status === "processing"
+                ? "Préparation de la vidéo…"
+                : uploading
+                  ? "Envoi des images en cours…"
+                  : firstError
+                    ? firstError.message
+                    : ""}
+          </p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={submitting}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleSubmit}
+              disabled={
+                submitting ||
+                uploading ||
+                accounts.length === 0 ||
+                (attempted && errors.length > 0)
+              }
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : whenMode === "now" && !isEdit ? (
+                <Zap className="h-4 w-4" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {primaryLabel}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
