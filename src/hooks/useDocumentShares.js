@@ -17,10 +17,12 @@ const DOCUMENT_SHARE_FIELDS = gql`
     isActive
     expiresAt
     hasPassword
+    allowUploads
     isFolderAvailable
     shareUrl
     totalViews
     totalDownloads
+    totalUploads
     lastViewedAt
     visitors {
       email
@@ -29,6 +31,7 @@ const DOCUMENT_SHARE_FIELDS = gql`
       lastVisitAt
       visitCount
       downloadCount
+      uploadCount
       isBanned
     }
     bannedEmails {

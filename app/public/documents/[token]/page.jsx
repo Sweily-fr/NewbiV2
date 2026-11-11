@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
+import { gql, useSubscription } from "@apollo/client";
 import { LoaderCircle, Lock, Mail, UserX } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -13,6 +14,19 @@ import { SharedFiles } from "./components/shared-files";
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 ).replace(/\/$/, "");
+
+/**
+ * Temps réel, comme la page publique d'un tableau kanban : un signal à
+ * chaque changement (document ajouté, supprimé, déplacé, accès modifié),
+ * sans contenu. La page relit alors ce qu'elle a le droit de voir.
+ */
+export const PUBLIC_DOCUMENT_SHARE_CHANGED = gql`
+  subscription PublicDocumentShareChanged($token: String!, $session: String!) {
+    publicDocumentShareChanged(token: $token, session: $session) {
+      type
+    }
+  }
+`;
 
 /**
  * Stockage du navigateur, toujours protégé : en navigation privée ou avec les
@@ -440,6 +454,66 @@ export default function PublicDocumentsPage({ params }) {
     load();
   }, [load]);
 
+  /**
+   * Relecture sans écran de chargement (temps réel, après un dépôt) : la
+   * page reste sur le dossier ouvert. Hors ligne, l'affichage est gardé.
+   */
+  const refresh = useCallback(async () => {
+    const session = sessionStore.get(sessionKey(token));
+    const access = accessStore.get(accessKey(token));
+    const query = new URLSearchParams({ refresh: "1" });
+    if (session) query.set("session", session);
+    if (access) query.set("access", access);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/public-documents/${token}?${query}`,
+      );
+      if (response.status === 404 || response.status === 410) {
+        setState({ status: "closed" });
+        return;
+      }
+      if (!response.ok) return;
+      const data = await response.json();
+      if (session && ["password", "identify"].includes(data.status)) {
+        sessionStore.set(sessionKey(token), null);
+      }
+      setState({ ...data, session, access });
+    } catch {
+      // Hors ligne : la prochaine relecture rattrapera
+    }
+  }, [token]);
+
+  // Plusieurs signaux rapprochés (dépôt de dix fichiers) : une relecture
+  const refreshTimer = useRef(null);
+  const scheduleRefresh = useCallback(() => {
+    clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(refresh, 400);
+  }, [refresh]);
+  useEffect(() => () => clearTimeout(refreshTimer.current), []);
+
+  const isReady = state.status === "ready" && Boolean(state.session);
+  useSubscription(PUBLIC_DOCUMENT_SHARE_CHANGED, {
+    variables: { token, session: state.session || "" },
+    skip: !isReady,
+    onData: scheduleRefresh,
+    // Connexion perdue : les relectures au retour sur la page compensent
+    onError: () => {},
+  });
+
+  // Retour sur l'onglet ou sur le réseau : rattraper ce qui a pu être manqué
+  useEffect(() => {
+    if (!isReady) return undefined;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") scheduleRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", scheduleRefresh);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", scheduleRefresh);
+    };
+  }, [isReady, scheduleRefresh]);
+
   const signOut = () => {
     sessionStore.set(sessionKey(token), null);
     load();
@@ -521,6 +595,21 @@ export default function PublicDocumentsPage({ params }) {
             `${base}/files/${document.id}/${kind}${sessionQuery}`
           }
           downloadAllUrl={`${base}/download-all${sessionQuery}`}
+          uploadUrl={(folderId) =>
+            `${base}/folders/${folderId}/files${sessionQuery}`
+          }
+          onDelete={async (document) => {
+            const response = await fetch(
+              `${base}/files/${document.id}${sessionQuery}`,
+              { method: "DELETE" },
+            );
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.success === false) {
+              throw new Error(data.message || "Suppression impossible");
+            }
+            scheduleRefresh();
+          }}
+          onChanged={scheduleRefresh}
           onSignOut={signOut}
         />
       );

@@ -11,6 +11,8 @@ import {
   previewKind,
   searchShare,
   sortDocuments,
+  UPLOAD_ACCEPT,
+  uploadProblem,
 } from "@/app/public/documents/[token]/components/shared-files-utils";
 
 const folders = [
@@ -157,5 +159,41 @@ describe("searchShare", () => {
     expect(searchShare({ folders, documents }, "equipe").folders).toEqual([
       folders[4],
     ]);
+  });
+});
+
+describe("uploadProblem", () => {
+  const file = (name, size = 1000) => ({ name, size });
+
+  it("laisse passer les formats acceptés par l'API", () => {
+    for (const name of [
+      "a.pdf",
+      "b.PNG",
+      "c.jpeg",
+      "d.heic",
+      "e.docx",
+      "f.xls",
+      "g.csv",
+      "h.txt",
+      "i.mp4",
+    ]) {
+      expect(uploadProblem(file(name))).toBeNull();
+    }
+    expect(UPLOAD_ACCEPT).toContain(".pdf");
+    expect(UPLOAD_ACCEPT).toContain(".mov");
+  });
+
+  it("refuse un format absent, un fichier vide ou trop lourd", () => {
+    expect(uploadProblem(file("page.html"))).toMatch(/Format non accepté/);
+    expect(uploadProblem(file("sans-extension"))).toMatch(/Format/);
+    expect(uploadProblem(file("vide.pdf", 0))).toBe("Le fichier est vide.");
+    expect(uploadProblem(file("gros.pdf", 50 * 1024 * 1024 + 1))).toMatch(
+      /50 Mo/,
+    );
+    // Une vidéo a droit à 100 Mo
+    expect(uploadProblem(file("film.mp4", 60 * 1024 * 1024))).toBeNull();
+    expect(uploadProblem(file("film.mp4", 100 * 1024 * 1024 + 1))).toMatch(
+      /100 Mo/,
+    );
   });
 });
