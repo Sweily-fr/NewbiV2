@@ -21,10 +21,21 @@ export const GET_PROSPECT_SETTINGS = gql`
       trades {
         id
         label
+        nafCodes
       }
       quota {
         ...ProspectQuotaFields
       }
+    }
+  }
+`;
+
+// Les 732 activités NAF : chargées à l'ouverture de la fenêtre, gardées en cache
+export const GET_PROSPECT_ACTIVITIES = gql`
+  query GetProspectActivities($workspaceId: String!) {
+    prospectActivities(workspaceId: $workspaceId) {
+      code
+      label
     }
   }
 `;
@@ -116,6 +127,8 @@ export const GENERATE_PROSPECTS = gql`
       matching
       opposedCount
       closedCount
+      outOfRadiusCount
+      radiusKm
       unlockedCount
       listId
       providerError
