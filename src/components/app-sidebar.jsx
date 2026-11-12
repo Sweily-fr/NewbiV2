@@ -127,6 +127,11 @@ const data = {
       url: "/dashboard/outils/tva",
       icon: Landmark,
     },
+    {
+      title: "Urssaf",
+      url: "/dashboard/outils/urssaf",
+      icon: Landmark,
+    },
   ],
   navVentes: [
     {

@@ -39,6 +39,7 @@ import {
 import { useFormContext } from "react-hook-form";
 import { Callout } from "@/src/components/ui/callout";
 import { CompanyRegistrySearch } from "./company-registry-search";
+import { MicroEntrepreneurFields } from "./micro-entrepreneur-fields";
 import {
   companyFieldsFromRegistry,
   describeRegistryFill,
@@ -684,6 +685,11 @@ export function InformationsLegalesSection({
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+
+              {/* Micro-entrepreneur : déclaration Urssaf */}
+              {isMicroEntrepreneur && (
+                <MicroEntrepreneurFields disabled={!canManageOrgSettings} />
               )}
             </div>
           </div>

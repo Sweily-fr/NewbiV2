@@ -40,6 +40,7 @@ const CALENDAR_LINKED_ITEM_FIELDS = gql`
     isConditional
     note
     vatPeriodKey
+    urssafPeriodKey
     isDeclared
     assignedMembersInfo {
       id

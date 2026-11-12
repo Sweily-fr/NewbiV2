@@ -325,14 +325,18 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
   const amountSign =
     item.kind === "FORECAST" ? (item.flowType === "EXPENSE" ? "- " : "+ ") : "";
   const detail = linkedKindDetail(item);
-  // Page TVA sans le droit « Voir », ou pas encore ouverte à l'espace
-  // (accès anticipé) : l'échéance reste affichée, sans lien
+  // Page TVA ou Urssaf sans le droit « Voir », ou pas encore ouverte à
+  // l'espace (accès anticipé) : l'échéance reste affichée, sans lien
   const { canDo, isReady } = useMyPermissions();
   const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
-  const canOpenVatPage =
-    isFeatureEnabled("vat") && (!isReady || canDo("vat", "view"));
+  const declarationModule = item.urssafPeriodKey ? "urssaf" : "vat";
+  const canOpenDeclarationPage =
+    isFeatureEnabled(declarationModule) &&
+    (!isReady || canDo(declarationModule, "view"));
   const href =
-    item.kind === "FISCAL" && !canOpenVatPage ? null : linkedItemHref(item);
+    item.kind === "FISCAL" && !canOpenDeclarationPage
+      ? null
+      : linkedItemHref(item);
   const externalUrl = linkedItemExternalUrl(item);
   const hint = hintFor(item, longDate);
   const members = item.assignedMembersInfo || [];

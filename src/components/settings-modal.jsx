@@ -170,6 +170,10 @@ export function SettingsModal({
         fiscalYearStartDate: "",
         fiscalYearEndDate: "",
         microDeclarationFrequency: "",
+        microActivity: "",
+        microAcre: "",
+        microActivityStartDate: "",
+        microIncomeTaxWithholding: "",
       },
     },
   });
@@ -236,6 +240,10 @@ export function SettingsModal({
       fiscalYearStartDate: org.fiscalYearStartDate || "",
       fiscalYearEndDate: org.fiscalYearEndDate || "",
       microDeclarationFrequency: org.microDeclarationFrequency || "",
+      microActivity: org.microActivity || "",
+      microAcre: org.microAcre || "",
+      microActivityStartDate: org.microActivityStartDate || "",
+      microIncomeTaxWithholding: org.microIncomeTaxWithholding || "",
     },
   });
 
@@ -392,6 +400,11 @@ export function SettingsModal({
         // rien n'est effacé sans action de l'utilisateur
         microDeclarationFrequency:
           formData.legal?.microDeclarationFrequency || "",
+        microActivity: formData.legal?.microActivity || "",
+        microAcre: formData.legal?.microAcre || "",
+        microActivityStartDate: formData.legal?.microActivityStartDate || "",
+        microIncomeTaxWithholding:
+          formData.legal?.microIncomeTaxWithholding || "",
       };
 
       // Sauvegarder via Better Auth
@@ -419,13 +432,19 @@ export function SettingsModal({
           }
           // L'exercice comptable borne l'encaissement/décaissement et les
           // analytics → invalider ces caches pour un rafraîchissement immédiat
-          // du dashboard sans rechargement de page.
+          // du dashboard sans rechargement de page. Les pages Déclaration de
+          // TVA et Urssaf dépendent aussi des informations légales (régime,
+          // ACRE, versement libératoire…).
           try {
             [
               "dashboardSummary",
               "transactions",
               "financialAnalytics",
               "treasuryForecast",
+              "vatOverview",
+              "vatReturn",
+              "urssafOverview",
+              "urssafDeclaration",
             ].forEach((fieldName) =>
               apolloClient.cache.evict({ id: "ROOT_QUERY", fieldName }),
             );

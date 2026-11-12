@@ -1871,6 +1871,29 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Micro-entrepreneur, lus par la page Déclaration Urssaf : nature de
+        // l'activité (case du formulaire et taux), ACRE (« oui »/« non ») et
+        // début d'activité, versement libératoire (« oui »/« non »)
+        microActivity: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        microAcre: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        microActivityStartDate: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        microIncomeTaxWithholding: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Address information (flattened)
         addressStreet: {
           type: "string",

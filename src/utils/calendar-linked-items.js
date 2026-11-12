@@ -287,12 +287,17 @@ export function linkedItemHref(item) {
         : `/dashboard/outils/bons-commande?id=${item.entityId}`;
     case "FILE_TRANSFER":
       return "/dashboard/outils/transferts-fichiers";
-    // Déclaration de TVA : sa période dans la page TVA ; les autres échéances
-    // fiscales n'ont pas de page dans l'application
+    // Déclaration de TVA ou Urssaf : sa période dans la page de la
+    // déclaration ; les autres échéances fiscales n'ont pas de page dans
+    // l'application
     case "FISCAL":
-      return item.vatPeriodKey
-        ? `/dashboard/outils/tva?periode=${encodeURIComponent(item.vatPeriodKey)}`
-        : null;
+      if (item.vatPeriodKey) {
+        return `/dashboard/outils/tva?periode=${encodeURIComponent(item.vatPeriodKey)}`;
+      }
+      if (item.urssafPeriodKey) {
+        return `/dashboard/outils/urssaf?periode=${encodeURIComponent(item.urssafPeriodKey)}`;
+      }
+      return null;
     default:
       return null;
   }
