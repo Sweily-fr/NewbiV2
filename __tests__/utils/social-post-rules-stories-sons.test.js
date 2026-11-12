@@ -511,6 +511,37 @@ describe("connexion par connecteur", () => {
     expect(getAccountConnectorMention(ACCOUNTS.instagram)).toBeNull();
   });
 
+  it("connexion unifiée : libellé Instagram, aide, reconnexion par le même chemin, sans mention", () => {
+    const [unified] = normalizeConnectors(
+      [{ key: "instagram_unified", platform: "instagram", label: "Instagram" }],
+      ["instagram"],
+    );
+    expect(unified).toEqual({
+      key: "instagram_unified",
+      platform: "instagram",
+      label: "Instagram",
+      description:
+        "Connexion avec votre compte Instagram professionnel, sans Page Facebook.",
+    });
+    const account = {
+      platform: "instagram",
+      provider: "direct",
+      connector: "unified",
+    };
+    expect(getAccountConnectorKey(account)).toBe("instagram_unified");
+    expect(getAccountConnectorMention(account)).toBeNull();
+    expect(getConnectorLabel("instagram_unified")).toBe("Instagram");
+    expect(getConnectorPlatform("instagram_unified")).toBe("instagram");
+    expect(
+      getSocialConnectErrorMessage(
+        "no_instagram_selected",
+        "instagram_unified",
+      ),
+    ).toBe(
+      "Aucun compte Instagram professionnel n'a été choisi. Recommencez en sélectionnant votre compte.",
+    );
+  });
+
   it("libellés et messages de retour de connexion", () => {
     expect(getConnectorLabel("instagram_facebook")).toBe(
       "Instagram via Facebook",

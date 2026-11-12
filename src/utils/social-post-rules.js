@@ -1235,6 +1235,16 @@ export function shouldPollSocialPosts(posts, now = new Date()) {
  * prioritaire sur celui de l'API).
  */
 const SOCIAL_CONNECTORS = {
+  // Connexion unifiée de Meta : compte Instagram seul, sans Page ni compte
+  // Facebook ; aucune mention à côté du compte
+  instagram_unified: {
+    platform: "instagram",
+    connector: "unified",
+    label: "Instagram",
+    mention: null,
+    description:
+      "Connexion avec votre compte Instagram professionnel, sans Page Facebook.",
+  },
   instagram_facebook: {
     platform: "instagram",
     connector: "facebook",
@@ -1331,6 +1341,8 @@ export function getSocialConnectErrorMessage(code, platform) {
   switch (code) {
     case "no_instagram_account":
       return "Aucun compte Instagram professionnel n'est relié à vos Pages Facebook.";
+    case "no_instagram_selected":
+      return "Aucun compte Instagram professionnel n'a été choisi. Recommencez en sélectionnant votre compte.";
     case "oauth_denied":
     case "access_denied":
     case "cancelled":
