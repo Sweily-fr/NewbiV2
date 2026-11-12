@@ -9,6 +9,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/analytiques", "analytics"],
   ["/dashboard/outils/prevision", "forecast"],
   ["/dashboard/outils/tva", "vat"],
+  ["/dashboard/outils/urssaf", "urssaf"],
   ["/dashboard/analytics", "analytics"],
   ["/dashboard/outils/factures-achat", "purchaseInvoices"],
   ["/dashboard/outils/factures", "invoices"],
@@ -32,6 +33,7 @@ const ROUTE_MODULES = [
 // (réservée à certains espaces par l'API, BETA_FEATURES)
 const MODULE_FEATURES = {
   vat: "vat",
+  urssaf: "urssaf",
   appointments: "appointments",
 };
 

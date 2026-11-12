@@ -73,6 +73,10 @@ export const authClient = createAuthClient({
             fiscalYearStartDate: { type: "string" },
             fiscalYearEndDate: { type: "string" },
             microDeclarationFrequency: { type: "string" },
+            microActivity: { type: "string" },
+            microAcre: { type: "string" },
+            microActivityStartDate: { type: "string" },
+            microIncomeTaxWithholding: { type: "string" },
             // Address information (flattened)
             addressStreet: { type: "string" },
             addressCity: { type: "string" },

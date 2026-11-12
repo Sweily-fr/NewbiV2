@@ -6,6 +6,7 @@ export const GET_WORKSPACE_FEATURES = gql`
   query WorkspaceFeatures($workspaceId: ID) {
     workspaceFeatures(workspaceId: $workspaceId) {
       vat
+      urssaf
       appointments
       documentShares
       socialPublishing

@@ -1,17 +1,30 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 
-const permissions = vi.hoisted(() => ({ canViewVat: true, vatOpen: true }));
+const permissions = vi.hoisted(() => ({
+  canViewVat: true,
+  vatOpen: true,
+  canViewUrssaf: true,
+  urssafOpen: true,
+}));
 vi.mock("@/src/hooks/useMyPermissions", () => ({
   useMyPermissions: () => ({
     isReady: true,
-    canDo: (module) => module !== "vat" || permissions.canViewVat,
+    canDo: (module) => {
+      if (module === "vat") return permissions.canViewVat;
+      if (module === "urssaf") return permissions.canViewUrssaf;
+      return true;
+    },
   }),
 }));
 vi.mock("@/src/hooks/useWorkspaceFeatures", () => ({
   useWorkspaceFeatures: () => ({
     isReady: true,
-    isEnabled: (feature) => feature !== "vat" || permissions.vatOpen,
+    isEnabled: (feature) => {
+      if (feature === "vat") return permissions.vatOpen;
+      if (feature === "urssaf") return permissions.urssafOpen;
+      return true;
+    },
   }),
 }));
 
@@ -104,6 +117,54 @@ describe("fiche d'une déclaration de TVA", () => {
     ).not.toBeInTheDocument();
     expect(within(sheet).getAllByRole("link")).toHaveLength(1);
     permissions.vatOpen = true;
+  });
+});
+
+describe("fiche d'une déclaration Urssaf", () => {
+  const urssafItem = {
+    ...item,
+    id: "FISCAL:URSSAF_REVENUE:2026-11-30",
+    entityId: "URSSAF_REVENUE",
+    day: "2026-11-30",
+    title: "Déclaration de chiffre d'affaires (Urssaf)",
+    counterparty: "Urssaf",
+    isIndicative: false,
+    isConditional: false,
+    vatPeriodKey: null,
+    urssafPeriodKey: "2026-10",
+    isDeclared: false,
+  };
+
+  it("ouvre sa période dans la page Urssaf", () => {
+    render(<LinkedItemSheet item={urssafItem} onClose={() => {}} />);
+    const sheet = screen.getByRole("dialog");
+    expect(
+      within(sheet).getByRole("link", { name: /Préparer la déclaration/ }),
+    ).toHaveAttribute("href", "/dashboard/outils/urssaf?periode=2026-10");
+  });
+
+  it("le droit et l'accès de la page Urssaf comptent, pas ceux de la TVA", () => {
+    permissions.canViewVat = false;
+    permissions.vatOpen = false;
+    const { unmount } = render(
+      <LinkedItemSheet item={urssafItem} onClose={() => {}} />,
+    );
+    expect(
+      within(screen.getByRole("dialog")).getByRole("link", {
+        name: /Préparer la déclaration/,
+      }),
+    ).toBeInTheDocument();
+    unmount();
+    permissions.canViewVat = true;
+    permissions.vatOpen = true;
+
+    permissions.urssafOpen = false;
+    render(<LinkedItemSheet item={urssafItem} onClose={() => {}} />);
+    const sheet = screen.getByRole("dialog");
+    expect(
+      within(sheet).queryByRole("link", { name: /Préparer la déclaration/ }),
+    ).not.toBeInTheDocument();
+    permissions.urssafOpen = true;
   });
 });
 
