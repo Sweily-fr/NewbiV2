@@ -11,6 +11,7 @@ import {
   ImagePlus,
   Loader2,
   Music,
+  Play,
   Plus,
   RefreshCw,
   Send,
@@ -64,6 +65,7 @@ import {
   STORY_PLATFORMS,
   buildComposerReturnTo,
   canAccountPostStory,
+  canMixMedia,
   checkVideoFile,
   formatParisDateTime,
   formatParisShortDateTime,
@@ -84,6 +86,7 @@ import {
   isInstagramRatioValid,
   isSameParisMonth,
   isTikTokBusinessAccount,
+  isVideoCarousel,
   isVideoFile,
   isVideoMedia,
   isoToParisParts,
@@ -136,7 +139,9 @@ const LIVE_ERROR_CODES = new Set([
   "tiktok_business_public",
 ]);
 const VIDEO_INPUT_ACCEPT = ACCEPTED_VIDEO_TYPES.join(",");
-const PHOTOS_OR_VIDEO = "un post contient soit des photos, soit une vidéo.";
+// Seul Instagram (en publication) mélange photos et vidéos dans un post
+const PHOTOS_OR_VIDEO =
+  "seul Instagram (en publication) mélange photos et vidéos dans un même post.";
 const PHOTOS_LOCKED_REASON = `Retirez la vidéo pour ajouter des photos : ${PHOTOS_OR_VIDEO}`;
 const VIDEO_LOCKED_REASON = `Retirez les photos pour ajouter une vidéo : ${PHOTOS_OR_VIDEO}`;
 const isShown = (error, attempted) =>
@@ -496,6 +501,10 @@ function AccountsPicker({
 
 // ── Images ───────────────────────────────────────────────────────────────
 
+/**
+ * Vignette d'une photo, ou d'une vidéo d'un carrousel Instagram (couverture,
+ * durée, progression de l'envoi puis de la préparation).
+ */
 function MediaTile({
   item,
   index,
@@ -505,15 +514,39 @@ function MediaTile({
   onMove,
   disabled,
 }) {
+  const video = isVideoMedia(item);
   const src = item.url || item.previewUrl;
+  const videoBusy =
+    video && (item.status === "uploading" || item.status === "processing");
+  const videoFailed = video && item.status === "failed";
+  const progress = Math.max(0, Math.min(100, Math.round(item.progress || 0)));
+  const duration =
+    video && item.durationMs > 0 ? formatVideoDuration(item.durationMs) : "";
   return (
     <div
       className={cn(
         "group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border bg-muted",
-        invalidRatio && "ring-2 ring-red-500",
+        (invalidRatio || videoFailed) && "ring-2 ring-red-500",
       )}
     >
-      {src ? (
+      {video ? (
+        item.thumbnailUrl ? (
+          <img
+            src={item.thumbnailUrl}
+            alt={`Vidéo ${index + 1}`}
+            className="h-full w-full bg-black object-cover"
+          />
+        ) : src ? (
+          <video
+            muted
+            playsInline
+            preload="metadata"
+            src={src}
+            aria-label={`Vidéo ${index + 1}`}
+            className="h-full w-full bg-black object-cover"
+          />
+        ) : null
+      ) : src ? (
         <img
           src={src}
           alt={`Image ${index + 1}`}
@@ -525,6 +558,32 @@ function MediaTile({
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       )}
+      {videoBusy && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-[11px] font-medium tabular-nums text-white">
+          {item.status === "uploading" ? (
+            <span aria-label="Envoi de la vidéo">{progress} %</span>
+          ) : (
+            <Loader2
+              className="h-4 w-4 animate-spin"
+              aria-label="Préparation de la vidéo"
+            />
+          )}
+        </div>
+      )}
+      {videoFailed && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-black/60 text-white"
+          title={item.errorMessage || "Vidéo non préparée"}
+        >
+          <AlertCircle className="h-4 w-4" aria-label="Vidéo non préparée" />
+        </div>
+      )}
+      {video && !videoBusy && !videoFailed && (
+        <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded bg-black/60 px-1 text-[10px] font-medium leading-4 text-white group-hover:opacity-0">
+          <Film className="h-2.5 w-2.5" />
+          {duration}
+        </span>
+      )}
       <span className="absolute left-1 top-1 rounded bg-black/60 px-1 text-[10px] font-medium leading-4 text-white">
         {index + 1}
       </span>
@@ -533,7 +592,11 @@ function MediaTile({
           type="button"
           onClick={() => onRemove(item.key)}
           className="absolute right-1 top-1 cursor-pointer rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
-          aria-label={`Retirer l'image ${index + 1}`}
+          aria-label={
+            video
+              ? `${videoBusy ? "Annuler l'envoi de" : "Retirer"} la vidéo ${index + 1}`
+              : `Retirer l'image ${index + 1}`
+          }
         >
           <X className="h-3 w-3" />
         </button>
@@ -724,11 +787,13 @@ function PostPreview({
   const soundLines = SOUND_PLATFORMS.filter((p) => sounds[p]).map(
     (p) => `${getPlatformLabel(p)} : ${formatSoundLabel(sounds[p])}`,
   );
-  const video = media.find(isVideoMedia) || null;
+  // Une vidéo seule : lecteur ; carrousel (Instagram) : vignettes, vidéos
+  // comprises
+  const video = media.length === 1 && isVideoMedia(media[0]) ? media[0] : null;
   const videoSrc = video ? video.url || video.previewUrl : null;
-  const images = media.filter(
-    (m) => !isVideoMedia(m) && (m.url || m.previewUrl),
-  );
+  const images = video
+    ? []
+    : media.filter((m) => m.url || m.previewUrl || m.thumbnailUrl);
   const shown = images.slice(0, 4);
   const extra = images.length - shown.length;
 
@@ -787,11 +852,33 @@ function PostPreview({
                 shown.length === 3 && i === 0 && "row-span-2 aspect-auto",
               )}
             >
-              <img
-                src={item.url || item.previewUrl}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              {isVideoMedia(item) && !item.thumbnailUrl ? (
+                <video
+                  muted
+                  playsInline
+                  preload="metadata"
+                  src={item.url || item.previewUrl}
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full bg-black object-cover"
+                />
+              ) : (
+                <img
+                  src={
+                    isVideoMedia(item)
+                      ? item.thumbnailUrl
+                      : item.url || item.previewUrl
+                  }
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+              {isVideoMedia(item) && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white">
+                    <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
+                  </span>
+                </span>
+              )}
               {extra > 0 && i === shown.length - 1 && (
                 <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
                   +{extra}
@@ -874,15 +961,17 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   const fileInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const previewUrlsRef = useRef(new Set());
-  // Envoi de vidéo en cours : { key, controller } (annulé si la vidéo est
-  // retirée ou remplacée, ou la fenêtre fermée)
-  const videoUploadRef = useRef(null);
+  // Envois de vidéos en cours : clé de l'élément → AbortController (annulé
+  // si la vidéo est retirée ou remplacée, ou la fenêtre fermée)
+  const videoUploadsRef = useRef(new Map());
   const openRef = useRef(open);
   openRef.current = open;
 
   const cancelVideoUpload = useCallback(() => {
-    videoUploadRef.current?.controller.abort();
-    videoUploadRef.current = null;
+    for (const controller of videoUploadsRef.current.values()) {
+      controller.abort();
+    }
+    videoUploadsRef.current.clear();
   }, []);
   useEffect(() => {
     if (!open) cancelVideoUpload();
@@ -1028,7 +1117,11 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   const scheduledFor =
     whenMode === "schedule" ? parisPartsToIso(date, time) : null;
   const videoItem = media.find(isVideoMedia) || null;
-  const imageCount = media.length - (videoItem ? 1 : 0);
+  const imageCount = media.filter((m) => !isVideoMedia(m)).length;
+  // Photos et vidéos ensemble (ou plusieurs vidéos) : Instagram seul, en
+  // publication ; sans compte choisi, le contrôle attend le choix
+  const canMix = canMixMedia(platforms, activeFormats);
+  const videoCarousel = isVideoCarousel(media);
   // Médias prêts à partir avec le post
   const uploadedMedia = media.filter(
     (m) => m.id && !m.uploading && (!isVideoMedia(m) || m.status === "ready"),
@@ -1038,8 +1131,11 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
   const rulesMedia = media.filter(
     (m) => isVideoMedia(m) || (m.id && !m.uploading),
   );
-  const videoBusy =
-    videoItem?.status === "uploading" || videoItem?.status === "processing";
+  const videoBusy = media.some(
+    (m) =>
+      isVideoMedia(m) &&
+      (m.status === "uploading" || m.status === "processing"),
+  );
   const uploading = media.some((m) => m.uploading) || videoBusy;
 
   // Son tendance : réseaux où il est possible (compte compatible, média et
@@ -1193,6 +1289,14 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     .map((e) => e.message);
 
   const maxImages = getMaxImages(platforms);
+  // Carrousel avec vidéo : photos et vidéos comptées ensemble
+  const mediaNoun = canMix && videoItem ? "photos ou vidéos" : "images";
+  const maxMediaMessage = maxImages.label
+    ? `${maxImages.label} accepte ${maxImages.max} ${mediaNoun} au maximum.`
+    : `${maxImages.max} ${mediaNoun} au maximum.`;
+  const mediaCount = videoCarousel ? media.length : imageCount;
+  // Instagram seul choisi : la section annonce le carrousel mixte
+  const mixHint = canMix && platforms.includes("instagram");
   // Format des photos contrôlé pour le fil Instagram, pas pour une story
   const instagramChosen =
     platforms.includes("instagram") && !storyPlatforms.includes("instagram");
@@ -1303,17 +1407,13 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
     async (fileList) => {
       const files = Array.from(fileList || []);
       if (files.length === 0) return;
-      if (media.some(isVideoMedia)) {
+      if (!canMix && media.some(isVideoMedia)) {
         toast.info(PHOTOS_LOCKED_REASON);
         return;
       }
       const remaining = maxImages.max - media.length;
       if (remaining <= 0) {
-        toast.info(
-          maxImages.label
-            ? `${maxImages.label} accepte ${maxImages.max} images au maximum.`
-            : `${maxImages.max} images au maximum.`,
-        );
+        toast.info(maxMediaMessage);
         return;
       }
       const accepted = [];
@@ -1382,17 +1482,21 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         }),
       );
     },
-    [maxImages.label, maxImages.max, media, mutations],
+    [canMix, maxImages.max, maxMediaMessage, media, mutations],
   );
 
   // Vidéo : contrôles du fichier (format, poids, durée lue sur place), puis
-  // envoi en morceaux et préparation par le serveur. Remplace la vidéo
-  // précédente s'il y en a une.
+  // envoi en morceaux et préparation par le serveur. Carrousel Instagram :
+  // ajoutée à la suite ; sinon, remplace la vidéo précédente s'il y en a une.
   const addVideo = useCallback(
     async (file) => {
       if (!file) return;
-      if (media.some((m) => !isVideoMedia(m))) {
+      if (!canMix && media.some((m) => !isVideoMedia(m))) {
         toast.info(VIDEO_LOCKED_REASON);
+        return;
+      }
+      if (canMix && media.length >= maxImages.max) {
+        toast.info(maxMediaMessage);
         return;
       }
       const fileError = checkVideoFile(file);
@@ -1418,22 +1522,25 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
         return;
       }
 
-      cancelVideoUpload();
       const key = newLocalKey();
       const controller = new AbortController();
-      videoUploadRef.current = { key, controller };
-      setMedia([
-        {
-          key,
-          kind: "video",
-          status: "uploading",
-          progress: 0,
-          previewUrl,
-          durationMs: metadata?.durationMs || null,
-          width: metadata?.width || null,
-          height: metadata?.height || null,
-        },
-      ]);
+      const item = {
+        key,
+        kind: "video",
+        status: "uploading",
+        progress: 0,
+        previewUrl,
+        durationMs: metadata?.durationMs || null,
+        width: metadata?.width || null,
+        height: metadata?.height || null,
+      };
+      if (canMix) {
+        setMedia((prev) => [...prev, item]);
+      } else {
+        cancelVideoUpload();
+        setMedia([item]);
+      }
+      videoUploadsRef.current.set(key, controller);
       const patch = (changes) =>
         setMedia((prev) =>
           prev.map((m) => (m.key === key ? { ...m, ...changes } : m)),
@@ -1456,19 +1563,34 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
               : getApiErrorMessage(error, VIDEO_UPLOAD_FAILED_MESSAGE),
         });
       } finally {
-        if (videoUploadRef.current?.key === key) videoUploadRef.current = null;
+        if (videoUploadsRef.current.get(key) === controller) {
+          videoUploadsRef.current.delete(key);
+        }
       }
     },
-    [media, mutations, cancelVideoUpload],
+    [
+      canMix,
+      maxImages.max,
+      maxMediaMessage,
+      media,
+      mutations,
+      cancelVideoUpload,
+    ],
   );
 
-  // Glisser-déposer : une vidéo seule, ou des photos
+  // Glisser-déposer : une vidéo seule, ou des photos ; carrousel Instagram :
+  // photos et vidéos ensemble
   const addDroppedFiles = useCallback(
     (fileList) => {
       const files = Array.from(fileList || []);
       if (files.length === 0) return;
       const videos = files.filter(isVideoFile);
       const others = files.filter((file) => !isVideoFile(file));
+      if (canMix) {
+        if (others.length > 0) addFiles(others);
+        for (const file of videos) addVideo(file);
+        return;
+      }
       if (videos.length > 0 && others.length === 0) {
         if (videos.length > 1) {
           toast.info(
@@ -1480,18 +1602,19 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
       }
       if (videos.length > 0) {
         toast.info(
-          "Un post contient soit des photos, soit une vidéo : les vidéos n'ont pas été ajoutées.",
+          "Seul Instagram mélange photos et vidéos dans un même post : les vidéos n'ont pas été ajoutées.",
         );
       }
       addFiles(others);
     },
-    [addFiles, addVideo],
+    [addFiles, addVideo, canMix],
   );
 
   const removeMedia = useCallback((key) => {
-    if (videoUploadRef.current?.key === key) {
-      videoUploadRef.current.controller.abort();
-      videoUploadRef.current = null;
+    const controller = videoUploadsRef.current.get(key);
+    if (controller) {
+      controller.abort();
+      videoUploadsRef.current.delete(key);
     }
     setMedia((prev) => prev.filter((m) => m.key !== key));
   }, []);
@@ -1783,10 +1906,12 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
               {/* 3. Photos ou vidéo */}
               <section className="space-y-2">
                 <div className="flex items-end justify-between gap-3">
-                  <SectionTitle>Photos ou vidéo</SectionTitle>
-                  {imageCount > 0 && (
+                  <SectionTitle>
+                    {mixHint ? "Photos et vidéos" : "Photos ou vidéo"}
+                  </SectionTitle>
+                  {mediaCount > 0 && (
                     <span className="text-xs text-muted-foreground">
-                      {imageCount} / {maxImages.max}
+                      {mediaCount} / {maxImages.max}
                     </span>
                   )}
                 </div>
@@ -1806,7 +1931,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                     dragOver && "border-[#5A50FF] bg-[#5A50FF]/5",
                   )}
                 >
-                  {videoItem ? (
+                  {videoItem && media.length === 1 ? (
                     <VideoTile
                       item={videoItem}
                       onRemove={removeMedia}
@@ -1823,6 +1948,7 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                             count={media.length}
                             invalidRatio={
                               instagramChosen &&
+                              !isVideoMedia(item) &&
                               !isInstagramRatioValid(item.width, item.height)
                             }
                             onRemove={removeMedia}
@@ -1838,23 +1964,33 @@ export function SocialPostModal({ open, onClose, post, restoreDraft }) {
                       icon={ImagePlus}
                       label="Ajouter des photos"
                       onClick={() => fileInputRef.current?.click()}
-                      lockedReason={videoItem ? PHOTOS_LOCKED_REASON : null}
-                      disabled={submitting || imageCount >= maxImages.max}
+                      lockedReason={
+                        videoItem && !canMix ? PHOTOS_LOCKED_REASON : null
+                      }
+                      disabled={submitting || media.length >= maxImages.max}
                     />
                     <MediaPickerButton
                       icon={Film}
                       label={
-                        videoItem ? "Remplacer la vidéo" : "Ajouter une vidéo"
+                        videoItem && !canMix
+                          ? "Remplacer la vidéo"
+                          : "Ajouter une vidéo"
                       }
                       onClick={() => videoInputRef.current?.click()}
-                      lockedReason={imageCount > 0 ? VIDEO_LOCKED_REASON : null}
-                      disabled={submitting}
+                      lockedReason={
+                        imageCount > 0 && !canMix ? VIDEO_LOCKED_REASON : null
+                      }
+                      disabled={
+                        submitting || (canMix && media.length >= maxImages.max)
+                      }
                     />
                   </div>
                   {media.length === 0 && (
                     <p className="text-xs text-muted-foreground">
                       Vous pouvez aussi glisser vos fichiers ici. Vidéo : MP4,
                       MOV ou WebM, 10 minutes et 500 Mo au maximum.
+                      {mixHint &&
+                        " Sur Instagram, photos et vidéos peuvent se mélanger dans un même carrousel."}
                     </p>
                   )}
                   <input
