@@ -59,14 +59,16 @@ const MAX_THUMBNAILS = 6;
 
 /**
  * Photos ou vidéo du post : vignettes des photos, ou vignette de la vidéo
- * avec une icône de lecture (le lecteur s'ouvre au clic).
+ * avec une icône de lecture (le lecteur s'ouvre au clic). Carrousel
+ * Instagram avec vidéo : vignettes de tous les éléments, icône de lecture
+ * sur les vidéos.
  */
 function PostMedia({ media }) {
   const [playing, setPlaying] = useState(false);
   const items = (media || []).filter((m) => m?.url || m?.thumbnailUrl);
   if (items.length === 0) return null;
 
-  const video = items.find(isVideoMedia);
+  const video = items.length === 1 && isVideoMedia(items[0]) ? items[0] : null;
   if (video) {
     if (playing && video.url) {
       return (
@@ -116,14 +118,32 @@ function PostMedia({ media }) {
   const extra = items.length - shown.length;
   return (
     <div className="flex flex-wrap gap-1.5">
-      {shown.map((image, index) => (
-        <img
-          key={image.id || index}
-          src={image.url || image.thumbnailUrl}
-          alt={`Image ${index + 1} du post`}
-          className="h-12 w-12 rounded-md border object-cover"
-        />
-      ))}
+      {shown.map((item, index) =>
+        isVideoMedia(item) ? (
+          <span
+            key={item.id || index}
+            className="relative block h-12 w-12 overflow-hidden rounded-md border bg-black"
+          >
+            {item.thumbnailUrl && (
+              <img
+                src={item.thumbnailUrl}
+                alt={`Vidéo ${index + 1} du post`}
+                className="h-full w-full object-cover"
+              />
+            )}
+            <span className="absolute inset-0 flex items-center justify-center">
+              <Play className="h-3.5 w-3.5 fill-current text-white drop-shadow" />
+            </span>
+          </span>
+        ) : (
+          <img
+            key={item.id || index}
+            src={item.url || item.thumbnailUrl}
+            alt={`Image ${index + 1} du post`}
+            className="h-12 w-12 rounded-md border object-cover"
+          />
+        ),
+      )}
       {extra > 0 && (
         <span className="flex h-12 w-12 items-center justify-center rounded-md border bg-muted text-xs text-muted-foreground">
           +{extra}

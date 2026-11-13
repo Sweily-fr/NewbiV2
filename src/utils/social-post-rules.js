@@ -159,6 +159,13 @@ export const DEFAULT_SOUND_VOLUME = 80;
 export const DEFAULT_VIDEO_SOUND_VOLUME = 50;
 export const TIKTOK_PUBLIC_PRIVACY = "PUBLIC_TO_EVERYONE";
 
+// Carrousel avec vidéo (photos et vidéos mélangées, ou plusieurs vidéos) :
+// seul Instagram le publie, dans le fil (pas en story). Ailleurs : photos
+// seules, ou une seule vidéo.
+export const MIXED_CAROUSEL_PLATFORMS = ["instagram"];
+export const STORY_MIXED_MEDIA_MESSAGE =
+  "Une story ne mélange pas photos et vidéos : choisissez « Publication » pour Instagram, ou gardez soit des photos, soit une seule vidéo.";
+
 export const STORY_UNAVAILABLE_MESSAGE =
   "Les stories ne sont disponibles que pour les comptes connectés directement.";
 export const TIKTOK_DRAFT_RECONNECT_MESSAGE =
@@ -197,6 +204,43 @@ export function getPostFormat(formats, platform) {
 
 export function isStoryFormat(formats, platform) {
   return getPostFormat(formats, platform) === "story";
+}
+
+/** Carrousel avec au moins une vidéo (plusieurs médias dont une vidéo) */
+export function isVideoCarousel(media) {
+  const items = (media || []).filter(Boolean);
+  return items.length > 1 && items.some(isVideoMedia);
+}
+
+/**
+ * Réseaux choisis qui ne publient pas de carrousel avec vidéo : autres
+ * qu'Instagram, ou Instagram en story.
+ */
+export function getVideoCarouselBlockers(platforms, formats) {
+  return uniquePlatforms(platforms).filter(
+    (platform) =>
+      !MIXED_CAROUSEL_PLATFORMS.includes(platform) ||
+      isStoryFormat(formats, platform),
+  );
+}
+
+/**
+ * Photos et vidéos peuvent-elles se mélanger (ou plusieurs vidéos) avec
+ * les réseaux choisis ? Oui sans réseau choisi : le contrôle se fait au
+ * choix des comptes.
+ */
+export function canMixMedia(platforms, formats) {
+  return getVideoCarouselBlockers(platforms, formats).length === 0;
+}
+
+/** Refus d'un carrousel avec vidéo : réseaux à décocher, ou story */
+export function getVideoCarouselMessage(blockers) {
+  const others = (blockers || []).filter(
+    (platform) => !MIXED_CAROUSEL_PLATFORMS.includes(platform),
+  );
+  if (others.length === 0) return STORY_MIXED_MEDIA_MESSAGE;
+  const labels = joinLabels(others.map(getPlatformLabel));
+  return `Seul Instagram publie un carrousel avec vidéo (photos et vidéos mélangées, ou plusieurs vidéos) : décochez ${labels}, ou gardez soit des photos, soit une seule vidéo.`;
 }
 
 /**
@@ -727,9 +771,18 @@ export function validateSocialPost({
     });
   }
 
+  // Carrousel avec vidéo : Instagram en publication seulement, photos et
+  // vidéos comptées ensemble
+  const carousel = isVideoCarousel(media);
   if (selected.length > 0) {
     const { max, label } = getMaxImages(selected);
-    if (imageCount > max) {
+    if (carousel && media.length > max) {
+      errors.push({
+        field: "media",
+        code: "too_many_images",
+        message: `${label} accepte ${max} photos ou vidéos au maximum.`,
+      });
+    } else if (imageCount > max) {
       errors.push({
         field: "media",
         code: "too_many_images",
@@ -738,18 +791,14 @@ export function validateSocialPost({
     }
   }
 
-  if (videos.length > 0 && imageCount > 0) {
+  const carouselBlockers = carousel
+    ? getVideoCarouselBlockers(selected, formats)
+    : [];
+  if (carouselBlockers.length > 0) {
     errors.push({
       field: "media",
-      code: "media_mixed",
-      message:
-        "Un post contient soit des photos, soit une vidéo, pas les deux.",
-    });
-  } else if (videos.length > 1) {
-    errors.push({
-      field: "media",
-      code: "too_many_videos",
-      message: "Une seule vidéo par post.",
+      code: imageCount > 0 ? "media_mixed" : "too_many_videos",
+      message: getVideoCarouselMessage(carouselBlockers),
     });
   }
 
@@ -789,29 +838,39 @@ export function validateSocialPost({
     });
   }
 
-  const video = videos[0];
-  if (video?.status === "failed") {
-    errors.push({
-      field: "media",
-      code: "video_failed",
-      message: video.errorMessage || VIDEO_FAILED_MESSAGE,
-    });
-  } else if (video) {
+  // Chaque vidéo (une seule, sauf carrousel Instagram) ; une erreur de
+  // même nature n'est affichée qu'une fois
+  const videoErrors = [];
+  for (const video of videos) {
+    if (video.status === "failed") {
+      videoErrors.push({
+        field: "media",
+        code: "video_failed",
+        message: video.errorMessage || VIDEO_FAILED_MESSAGE,
+      });
+      continue;
+    }
     // En brouillon, la durée maximale du compte (creator_info) ne compte pas
     for (const error of getVideoErrors(video, selected, {
       tiktokMaxDurationSec: tiktokDraft ? null : tiktok.maxVideoDurationSec,
       formats,
     })) {
-      errors.push({ field: "media", ...error });
+      videoErrors.push({ field: "media", ...error });
     }
     // Envoi ou préparation en cours : le bouton attend la vidéo prête
     if (video.status && video.status !== "ready") {
-      errors.push({
+      videoErrors.push({
         field: "media",
         code: "video_not_ready",
         message: VIDEO_NOT_READY_MESSAGE,
       });
     }
+  }
+  const seenVideoErrors = new Set();
+  for (const error of videoErrors) {
+    if (seenVideoErrors.has(error.message)) continue;
+    seenVideoErrors.add(error.message);
+    errors.push(error);
   }
 
   // Story : pas de contrôle du format des photos (9:16 seulement conseillé)

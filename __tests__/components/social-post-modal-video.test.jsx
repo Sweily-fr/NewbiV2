@@ -60,6 +60,13 @@ vi.mock("@/src/components/ui/sonner", () => ({
 import { SocialPostModal } from "@/app/dashboard/outils/kanban/[id]/components/social/SocialPostModal";
 
 const ACCOUNTS = {
+  instagram: {
+    id: "a-ig",
+    platform: "instagram",
+    username: "boulangerie.martin",
+    status: "active",
+    capabilities: { stories: true },
+  },
   facebook: {
     id: "a-fb",
     platform: "facebook",
@@ -313,5 +320,73 @@ describe("fenêtre de programmation : vidéo", () => {
     expect(
       screen.getByRole("button", { name: /Ajouter une vidéo/ }),
     ).toBeTruthy();
+  });
+});
+
+describe("fenêtre de programmation : carrousel Instagram avec vidéo", () => {
+  const photoFile = () =>
+    new File([new Uint8Array(64)], "vitrine.jpg", { type: "image/jpeg" });
+  const PHOTO = {
+    id: "p1",
+    url: "https://api.newbi.fr/social-media/p1.jpg",
+    width: 1080,
+    height: 1350,
+  };
+
+  async function choosePhoto() {
+    fireEvent.change(screen.getByTestId("social-post-photo-input"), {
+      target: { files: [photoFile()] },
+    });
+    await screen.findByAltText("Image 1");
+  }
+
+  beforeEach(() => {
+    mutations.upload.mockResolvedValue(PHOTO);
+    setAccount("instagram");
+  });
+
+  it("photo puis vidéo : les deux gardées, dans l'ordre, envoyées ensemble", async () => {
+    render(<SocialPostModal open onClose={vi.fn()} post={null} />);
+    expect(screen.getByText("Photos et vidéos")).toBeTruthy();
+    await choosePhoto();
+
+    const videoButton = screen.getByRole("button", {
+      name: /Ajouter une vidéo/,
+    });
+    expect(videoButton.getAttribute("aria-disabled")).toBeNull();
+    fireEvent.change(screen.getByTestId("social-post-video-input"), {
+      target: { files: [videoFile()] },
+    });
+    await screen.findByLabelText("Envoi de la vidéo");
+    // La photo reste, la vidéo s'ajoute à la suite
+    expect(screen.getByAltText("Image 1")).toBeTruthy();
+    expect(screen.getByText("2 / 10")).toBeTruthy();
+    expect(submitButton().disabled).toBe(true);
+
+    await act(async () => upload.handlers.resolve(READY_MEDIA));
+    expect(screen.getByAltText("Vidéo 2")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: /Ajouter des photos/ })
+        .getAttribute("aria-disabled"),
+    ).toBeNull();
+    expect(submitButton().disabled).toBe(false);
+
+    await act(async () => fireEvent.click(submitButton()));
+    expect(mutations.schedule).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaIds: ["p1", "m1"] }),
+    );
+  });
+
+  it("Facebook : photos et vidéo restent exclusives", async () => {
+    setAccount("facebook");
+    render(<SocialPostModal open onClose={vi.fn()} post={null} />);
+    expect(screen.getByText("Photos ou vidéo")).toBeTruthy();
+    await choosePhoto();
+    expect(
+      screen
+        .getByRole("button", { name: /Ajouter une vidéo/ })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
   });
 });
