@@ -556,5 +556,11 @@
       "signature-electronique-devis-valeur-outils",
       "facture-food-truck-traiteur"
     ]
+  },
+  {
+    "date": "2026-11-13",
+    "articles": [
+      "note-honoraires-vs-facture-differences"
+    ]
   }
 ]
