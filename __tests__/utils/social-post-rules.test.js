@@ -26,6 +26,9 @@ import {
   getVideoContentType,
   getVideoErrors,
   isVideoFile,
+  canMixMedia,
+  isVideoCarousel,
+  STORY_MIXED_MEDIA_MESSAGE,
 } from "@/src/utils/social-post-rules";
 
 const NOW = new Date("2026-10-28T10:00:00.000Z");
@@ -675,6 +678,58 @@ describe("vidéo", () => {
     expect(codes({ media: [READY_VIDEO, READY_VIDEO] })).toEqual([
       "too_many_videos",
     ]);
+  });
+
+  it("carrousel avec vidéo : Instagram seul, en publication", () => {
+    const photo = { width: 1080, height: 1350 };
+    expect(isVideoCarousel([photo, READY_VIDEO])).toBe(true);
+    expect(isVideoCarousel([READY_VIDEO])).toBe(false);
+    expect(canMixMedia(["instagram"], {})).toBe(true);
+    expect(canMixMedia([], {})).toBe(true);
+    expect(canMixMedia(["instagram"], { instagram: "story" })).toBe(false);
+    expect(canMixMedia(["instagram", "linkedin"], {})).toBe(false);
+
+    expect(
+      codes({
+        platforms: ["instagram"],
+        media: [photo, READY_VIDEO, READY_VIDEO],
+      }),
+    ).toEqual([]);
+    expect(
+      messages({
+        platforms: ["instagram", "facebook"],
+        media: [photo, READY_VIDEO],
+      }),
+    ).toEqual([
+      "Seul Instagram publie un carrousel avec vidéo (photos et vidéos mélangées, ou plusieurs vidéos) : décochez Facebook, ou gardez soit des photos, soit une seule vidéo.",
+    ]);
+    expect(
+      messages({
+        platforms: ["instagram"],
+        formats: { instagram: "story" },
+        media: [photo, READY_VIDEO],
+      }),
+    ).toEqual([STORY_MIXED_MEDIA_MESSAGE]);
+    expect(
+      messages({
+        platforms: ["instagram"],
+        media: [...Array(10).fill(photo), READY_VIDEO],
+      }),
+    ).toEqual(["Instagram accepte 10 photos ou vidéos au maximum."]);
+  });
+
+  it("carrousel : chaque vidéo contrôlée, même erreur affichée une fois", () => {
+    const processing = {
+      kind: "video",
+      status: "processing",
+      durationMs: 45_000,
+    };
+    expect(
+      codes({
+        platforms: ["instagram"],
+        media: [READY_VIDEO, processing, processing],
+      }),
+    ).toEqual(["video_not_ready"]);
   });
 
   it("vidéo en préparation ou en échec : le post attend", () => {
