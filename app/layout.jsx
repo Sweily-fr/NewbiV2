@@ -189,7 +189,9 @@ export default function RootLayout({ children }) {
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('vite-ui-theme') || 'system';
+                  // Thème clair par défaut : le sombre (ou « système ») ne
+                  // s'applique que si l'utilisateur l'a choisi lui-même.
+                  var theme = localStorage.getItem('vite-ui-theme') || 'light';
                   var path = window.location.pathname;
                   var isDarkAllowed = path.startsWith('/dashboard') || path.startsWith('/create-workspace');
 
@@ -205,8 +207,7 @@ export default function RootLayout({ children }) {
                     document.documentElement.classList.add(theme);
                   }
                 } catch (e) {
-                  var st = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  document.documentElement.classList.add(st);
+                  document.documentElement.classList.add('light');
                 }
               })();
 
@@ -240,7 +241,7 @@ export default function RootLayout({ children }) {
         <ForceDesktopViewport />
         <AttributionCapture />
         <ApolloWrapper>
-          <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
             {children}
             <CookieWrapper />
           </ThemeProvider>

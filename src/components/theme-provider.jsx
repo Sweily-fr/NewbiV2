@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 const COLORBLIND_STORAGE_KEY = "newbi-colorblind-mode";
 
 const initialState = {
-  theme: "system",
+  theme: "light",
   setTheme: () => null,
   colorblindMode: false,
   setColorblindMode: () => null,
@@ -15,7 +15,8 @@ const ThemeProviderContext = createContext(initialState);
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  // Clair par défaut pour un nouvel utilisateur : il passe en sombre lui-même.
+  defaultTheme = "light",
   storageKey = "vite-ui-theme",
   ...props
 }) {
