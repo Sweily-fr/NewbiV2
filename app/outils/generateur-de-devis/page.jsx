@@ -19,12 +19,16 @@ import {
 
 // Ce que l'outil fait réellement (DocumentGenerator.jsx), et donc ce que la
 // page peut promettre : un PDF A4 produit dans le navigateur (une image de la
-// page), sans compte ni enregistrement ; date « Valable jusqu'au » à 90 jours
-// par défaut ; conditions préremplies (validité 3 mois, « Bon pour accord »,
-// acompte de 30 %) et modifiables ; TVA par ligne ; franchise en base.
+// page), sans compte ; date « Valable jusqu'au » à 90 jours par défaut ;
+// conditions préremplies (validité 3 mois, « Bon pour accord », acompte de
+// 30 %) et modifiables ; logo ; remise en pourcentage par ligne ; TVA par
+// ligne ; franchise en base ; mémorisation facultative (stockage du
+// navigateur) de l'émetteur, du logo et du dernier numéro ; bouton
+// « Transformer ce devis en facture » qui ouvre le générateur de facture
+// prérempli (données passées par le sessionStorage, rien côté serveur).
 // Il ne fait PAS : de signature en ligne, de cadre de signature dédié (la
 // mention d'accord est dans les conditions), de champ acompte, délai
-// d'exécution ou assurance décennale, ni de conversion en facture.
+// d'exécution ou assurance décennale.
 
 export const metadata = {
   title: {
@@ -32,12 +36,12 @@ export const metadata = {
       "Générateur de devis gratuit en ligne, PDF sans inscription | Newbi",
   },
   description:
-    "Faites un devis gratuit en ligne : prestations, TVA, durée de validité, aperçu puis PDF à télécharger, sans inscription.",
+    "Faites un devis gratuit en ligne avec votre logo : remises, TVA, durée de validité, PDF sans inscription, puis transformez-le en facture.",
   alternates: { canonical: "/outils/generateur-de-devis" },
   openGraph: {
     title: "Générateur de devis gratuit en ligne | Newbi",
     description:
-      "Remplissez, prévisualisez et téléchargez votre devis en PDF. Gratuit, sans compte, rien n'est enregistré.",
+      "Remplissez, prévisualisez et téléchargez votre devis en PDF avec votre logo, puis transformez-le en facture. Gratuit, sans compte.",
     url: "/outils/generateur-de-devis",
     siteName: "Newbi",
     type: "website",
@@ -49,15 +53,15 @@ export const metadata = {
 const ETAPES = [
   {
     title: "Renseignez votre entreprise et votre client",
-    text: "Nom, adresse, SIREN et forme juridique. Entrepreneur individuel ou micro-entrepreneur : saisissez « EI » comme forme juridique, la mention s'ajoute devant votre nom. En franchise en base, cochez la case prévue.",
+    text: "Votre logo si vous en avez un, puis nom, adresse, SIREN et forme juridique. Entrepreneur individuel ou micro-entrepreneur : saisissez « EI » comme forme juridique, la mention s'ajoute devant votre nom. En franchise en base, cochez la case prévue. Cochez « Mémoriser » pour retrouver ces informations et votre numérotation à la prochaine visite.",
   },
   {
     title: "Détaillez la prestation et fixez la validité",
-    text: "Une ligne par poste, avec sa quantité, son prix unitaire HT et son taux de TVA. La date « Valable jusqu'au » est posée à 90 jours. Les conditions sont préremplies (validité, « Bon pour accord », acompte de 30 %) : adaptez-les et ajoutez le délai d'exécution.",
+    text: "Une ligne par poste, avec sa quantité, son prix unitaire HT, une remise éventuelle en pourcentage et son taux de TVA. La date « Valable jusqu'au » est posée à 90 jours. Les conditions sont préremplies (validité, « Bon pour accord », acompte de 30 %) : adaptez-les et ajoutez le délai d'exécution.",
   },
   {
     title: "Téléchargez le PDF et faites-le signer",
-    text: "Relisez l'aperçu, cochez la case de prise de connaissance et téléchargez le PDF. Votre client le retourne daté et signé avec la mention « Bon pour accord ». Rien n'est enregistré : gardez le fichier pour établir la facture.",
+    text: "Relisez l'aperçu, cochez la case de prise de connaissance et téléchargez le PDF. Votre client le retourne daté et signé avec la mention « Bon pour accord ». Une fois le devis accepté, le bouton « Transformer ce devis en facture » ouvre le générateur de facture déjà rempli.",
   },
 ];
 
@@ -159,7 +163,7 @@ const FAQ = [
   {
     question: "Faut-il un compte, et dans quel format est le devis ?",
     answer:
-      "Aucun compte ni adresse e-mail : la saisie reste dans votre navigateur, n'est jamais envoyée à Newbi et disparaît à la fermeture de la page. Le devis se télécharge en PDF A4. Le contenu du PDF est une image de la page : pour corriger, modifiez le formulaire et téléchargez à nouveau.",
+      "Aucun compte ni adresse e-mail : la saisie reste dans votre navigateur, n'est jamais envoyée à Newbi et disparaît à la fermeture de la page, sauf si vous cochez « Mémoriser » (coordonnées, logo et dernier numéro gardés dans ce navigateur, jusqu'à ce que vous décochiez la case). Le devis se télécharge en PDF A4. Le contenu du PDF est une image de la page : pour corriger, modifiez le formulaire et téléchargez à nouveau.",
   },
   {
     question: "Le client peut-il signer le devis en ligne ?",
@@ -174,13 +178,13 @@ const FAQ = [
   {
     question: "Comment transformer ce devis en facture ?",
     answer:
-      "Avec cet outil, il faut ressaisir les informations dans le générateur de facture, en reprenant la référence du devis dans la désignation. Dans Newbi, un devis accepté se convertit en facture en un clic, sans ressaisie, en conservant les lignes, le client et la référence du devis d'origine.",
+      "Cliquez sur « Transformer ce devis en facture », sous le bouton de téléchargement : le générateur de facture s'ouvre avec votre entreprise, votre client, vos lignes et la référence du devis déjà remplis. Choisissez « Facture » ou « Facture d'acompte », vérifiez le numéro, et téléchargez. Rien ne transite par Newbi : les informations passent d'une page à l'autre dans votre navigateur. Dans Newbi, la conversion garde en plus le lien entre le devis signé et ses factures.",
   },
 ];
 
 const LIENS = [
   [
-    "/blog/modele-devis-gratuit-word-excel-pdf",
+    "/blog/modele-devis-gratuit",
     "Modèle de devis à télécharger",
     "Word, Excel et PDF, avec un exemple rempli.",
   ],
@@ -237,7 +241,11 @@ const jsonLd = [
     featureList: [
       "Aperçu en direct du document",
       "Durée de validité et mention « Bon pour accord »",
+      "Ajout du logo de l'entreprise",
+      "Remise en pourcentage par ligne",
       "Calcul du total HT, de la TVA et du total TTC",
+      "Transformation du devis en facture dans le générateur de facture",
+      "Mémorisation facultative de l'émetteur et du dernier numéro",
       "Téléchargement en PDF",
     ],
     offers: {
@@ -295,10 +303,12 @@ export default function GenerateurDeDevisPage() {
               Générateur de devis gratuit en ligne
             </h1>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Remplissez le formulaire, vérifiez l&apos;aperçu à droite et
-              téléchargez votre devis en PDF. Durée de validité, mentions
-              obligatoires et calcul de la TVA sont en place. Gratuit, sans
-              inscription, et votre saisie ne quitte jamais votre navigateur.
+              Remplissez le formulaire, ajoutez votre logo, vérifiez
+              l&apos;aperçu à droite et téléchargez votre devis en PDF. Durée de
+              validité, mentions obligatoires, remises et calcul de la TVA sont
+              en place, et le devis accepté se transforme en facture en un clic.
+              Gratuit, sans inscription, et votre saisie ne quitte jamais votre
+              navigateur.
             </p>
           </header>
 

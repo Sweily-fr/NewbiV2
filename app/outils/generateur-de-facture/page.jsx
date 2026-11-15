@@ -24,12 +24,16 @@ import {
 
 // Ce que l'outil fait réellement (DocumentGenerator.jsx), et donc ce que la
 // page peut promettre : un PDF A4 produit dans le navigateur (une image de la
-// page, pas un Factur-X), sans compte ni enregistrement ; TVA par ligne à 20,
+// page, pas un Factur-X), sans compte ; facture, facture d'acompte ou facture
+// pro forma ; logo ; remise en pourcentage par ligne ; TVA par ligne à 20,
 // 10, 5,5, 2,1 ou 0 % ; case franchise en base qui ajoute la mention 293 B ;
-// « EI » ajouté devant le nom quand la forme juridique saisie est « EI ».
-// Il ne gère PAS : la numérotation d'une visite à l'autre, la date de
-// prestation distincte, les remises, le logo, le numéro de TVA du client, la
-// nature de l'opération, l'adresse de livraison, ni l'émission électronique.
+// « EI » ajouté devant le nom quand la forme juridique saisie est « EI » ;
+// référence du devis ; reprise d'un devis depuis le générateur de devis ;
+// mémorisation facultative (case à cocher, stockage du navigateur) de
+// l'émetteur, du logo et du dernier numéro, pour proposer le suivant.
+// Il ne gère PAS : la date de prestation distincte, le numéro de TVA du
+// client, la nature de l'opération, l'adresse de livraison, la déduction
+// d'un acompte sur la facture finale, ni l'émission électronique.
 
 export const metadata = {
   title: {
@@ -37,12 +41,12 @@ export const metadata = {
       "Générateur de facture gratuit en ligne, sans inscription | Newbi",
   },
   description:
-    "Créez une facture gratuite en ligne : mentions obligatoires, TVA ou franchise en base, aperçu puis PDF à télécharger, sans inscription.",
+    "Créez une facture gratuite en ligne avec votre logo : facture, acompte ou pro forma, remise et TVA, PDF à télécharger sans inscription.",
   alternates: { canonical: "/outils/generateur-de-facture" },
   openGraph: {
     title: "Générateur de facture gratuit en ligne | Newbi",
     description:
-      "Remplissez, prévisualisez et téléchargez votre facture en PDF. Gratuit, sans compte, rien n'est enregistré.",
+      "Facture, acompte ou pro forma avec votre logo : remplissez, prévisualisez et téléchargez en PDF. Gratuit, sans compte.",
     url: "/outils/generateur-de-facture",
     siteName: "Newbi",
     type: "website",
@@ -55,16 +59,16 @@ const PLANCHER = pourcent(PLANCHER_PENALITES);
 
 const ETAPES = [
   {
-    title: "Renseignez votre entreprise et votre client",
-    text: "Nom, adresse, SIREN et forme juridique. Entrepreneur individuel ou micro-entrepreneur : saisissez « EI » comme forme juridique, la mention s'ajoute devant votre nom. En franchise en base, cochez la case prévue.",
+    title: "Choisissez le document et renseignez votre entreprise",
+    text: "Facture, facture d'acompte ou facture pro forma, puis votre logo si vous en avez un, votre nom, adresse, SIREN et forme juridique. Entrepreneur individuel ou micro-entrepreneur : saisissez « EI » comme forme juridique, la mention s'ajoute devant votre nom. En franchise en base, cochez la case prévue. Cochez « Mémoriser » pour retrouver ces informations à la prochaine visite.",
   },
   {
-    title: "Numérotez, datez et détaillez vos lignes",
-    text: "Reprenez le numéro qui suit votre dernière facture, vérifiez l'échéance (30 jours par défaut), puis ajoutez une ligne par prestation avec sa quantité, son prix unitaire HT et son taux de TVA. Les totaux se calculent seuls.",
+    title: "Ajoutez votre client, numérotez et détaillez vos lignes",
+    text: "Coordonnées du client, numéro qui suit votre dernière facture (proposé tout seul si vous avez coché « Mémoriser »), échéance à 30 jours par défaut, puis une ligne par prestation avec sa quantité, son prix unitaire HT, une remise éventuelle et son taux de TVA. Les totaux se calculent seuls.",
   },
   {
     title: "Vérifiez l'aperçu et téléchargez le PDF",
-    text: "L'aperçu est le document final. Relisez les conditions de règlement, cochez la case de prise de connaissance et téléchargez le PDF. Rien n'est enregistré : archivez le fichier avant de fermer la page.",
+    text: "L'aperçu est le document final. Relisez les conditions de règlement, cochez la case de prise de connaissance et téléchargez le PDF. Newbi ne garde aucune copie : archivez le fichier avant de fermer la page.",
   },
 ];
 
@@ -87,7 +91,7 @@ const MENTIONS = [
   ],
   [
     "Lignes et totaux",
-    "Désignation, quantité, prix unitaire HT et taux de TVA par ligne, puis total HT, TVA par taux et total TTC. Pas de champ de remise : indiquez-la dans la désignation.",
+    "Désignation, quantité, prix unitaire HT, remise éventuelle en pourcentage et taux de TVA par ligne, puis total HT après remise, TVA par taux et total TTC.",
   ],
   [
     "Conditions de règlement",
@@ -118,7 +122,7 @@ const EXEMPLE = {
 const ERREURS = [
   {
     title: "Repartir de 001 à chaque facture",
-    text: "Le générateur propose 001 par défaut et n'a aucune mémoire d'une visite à l'autre. Un doublon ou un trou est une irrégularité : notez votre dernier numéro.",
+    text: "Sans la case « Mémoriser », le générateur propose 001 à chaque visite. Cochez-la pour qu'il vous propose le numéro suivant sur cet appareil, ou notez votre dernier numéro : un doublon ou un trou est une irrégularité.",
   },
   {
     title: "Oublier « EI » ou la mention de franchise",
@@ -156,12 +160,27 @@ const FAQ = [
   {
     question: "Faut-il un compte, et dans quel format est la facture ?",
     answer:
-      "Aucun compte ni adresse e-mail : votre saisie reste dans votre navigateur, n'est jamais envoyée à Newbi, et rien n'est conservé après la fermeture de la page. La facture se télécharge en PDF A4, sur plusieurs pages si besoin. Le contenu du PDF est une image de la page : pour corriger, modifiez le formulaire et téléchargez à nouveau. Pour un fichier à remplir dans Word ou Excel, utilisez nos modèles de facture.",
+      "Aucun compte ni adresse e-mail : votre saisie reste dans votre navigateur et n'est jamais envoyée à Newbi. Rien n'est conservé après la fermeture de la page, sauf si vous cochez « Mémoriser » : vos coordonnées, votre logo et votre dernier numéro restent alors dans ce navigateur, sur cet appareil, jusqu'à ce que vous décochiez la case. La facture se télécharge en PDF A4, sur plusieurs pages si besoin. Le contenu du PDF est une image de la page : pour corriger, modifiez le formulaire et téléchargez à nouveau. Pour un fichier à remplir dans Word ou Excel, utilisez nos modèles de facture.",
   },
   {
     question: "Comment numéroter mes factures correctement ?",
     answer:
-      "Continue et chronologique, sans trou ni doublon. Un préfixe par année est courant, par exemple F-2026-001 puis F-2026-002 : c'est ce que proposent les champs préfixe et numéro. Le générateur ne retient pas le dernier numéro : notez-le, ou passez à un logiciel qui le gère.",
+      "Continue et chronologique, sans trou ni doublon. Un préfixe par année est courant, par exemple F-2026-001 puis F-2026-002 : c'est ce que proposent les champs préfixe et numéro. Cochez « Mémoriser » : après chaque téléchargement, le générateur retient le numéro et vous propose le suivant à la visite d'après, sur cet appareil. Une facture d'acompte suit la même séquence ; une facture pro forma n'y entre pas et porte son propre préfixe, PF.",
+  },
+  {
+    question: "Comment faire une facture d'acompte ?",
+    answer:
+      "Choisissez « Facture d'acompte » en haut du formulaire, indiquez le devis ou la commande concerné, puis ajoutez une ligne du type « Acompte de 30 % sur le devis D-2026-004 » avec le taux de TVA de la prestation ou de la vente : la TVA est due dès l'encaissement de l'acompte. La facture d'acompte prend le numéro suivant de vos factures. Sur la facture finale, rappelez dans les conditions le numéro et le montant de l'acompte déjà facturé, et le solde qui reste à payer.",
+  },
+  {
+    question: "Qu'est-ce qu'une facture pro forma, et comment la créer ?",
+    answer:
+      "C'est un document commercial qui annonce le montant d'une vente avant qu'elle ait lieu, souvent demandé pour une commande à l'étranger, un dossier de financement ou un paiement d'avance. Elle n'a pas de valeur comptable : elle ne compte pas dans la suite de vos numéros et ne remplace pas la facture définitive, à émettre une fois la vente réalisée. Choisissez « Facture pro forma » : le titre change, le préfixe passe à PF et une mention le rappelle sur le document.",
+  },
+  {
+    question: "Puis-je ajouter mon logo et une remise ?",
+    answer:
+      "Oui. Le logo (PNG, JPG, WebP ou SVG) s'ajoute en haut du bloc « Votre entreprise » et s'affiche en tête de la facture ; il reste dans votre navigateur. Chaque ligne accepte une remise en pourcentage : elle apparaît sous la désignation, et le total HT comme la TVA se calculent sur le montant après remise.",
   },
   {
     question:
@@ -191,6 +210,16 @@ const LIENS = [
     "/blog/quest-ce-que-numero-facture",
     "Numérotation des factures",
     "Règles, exemples et changement d'année.",
+  ],
+  [
+    "/blog/quest-ce-que-acompte-facture",
+    "Facture d'acompte",
+    "Quand l'émettre, quelle TVA, et comment la déduire ensuite.",
+  ],
+  [
+    "/blog/facture-proforma-guide-utilisation",
+    "Facture pro forma",
+    "À quoi elle sert et ce qui la distingue d'une facture.",
   ],
   [
     "/blog/comment-creer-facture-auto-entrepreneur",
@@ -234,8 +263,13 @@ const jsonLd = [
     isAccessibleForFree: true,
     featureList: [
       "Aperçu en direct du document",
+      "Facture, facture d'acompte et facture pro forma",
+      "Ajout du logo de l'entreprise",
+      "Remise en pourcentage par ligne",
       "Calcul du total HT, de la TVA et du total TTC",
       "Mention de franchise en base de TVA",
+      "Mémorisation facultative de l'émetteur et du dernier numéro",
+      "Reprise d'un devis créé avec le générateur de devis",
       "Téléchargement en PDF",
     ],
     // L'outil est réellement gratuit et sans compte : le prix zéro est exact
@@ -295,11 +329,12 @@ export default function GenerateurDeFacturePage() {
               Générateur de facture gratuit en ligne
             </h1>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Remplissez le formulaire, vérifiez l&apos;aperçu à droite et
-              téléchargez votre facture en PDF. Les mentions obligatoires sont
-              en place, les totaux et la TVA se calculent tout seuls. Gratuit,
-              sans inscription, et votre saisie ne quitte jamais votre
-              navigateur.
+              Facture, facture d&apos;acompte ou facture pro forma, avec votre
+              logo : remplissez le formulaire, vérifiez l&apos;aperçu à droite
+              et téléchargez votre facture en PDF. Une facture simple prend deux
+              minutes. Les mentions obligatoires sont en place, la TVA et les
+              remises se calculent toutes seules. Gratuit, sans inscription, et
+              votre saisie ne quitte jamais votre navigateur.
             </p>
           </header>
 
@@ -311,9 +346,10 @@ export default function GenerateurDeFacturePage() {
             title="Créer une facture gratuitement en 3 étapes"
             intro={
               <p>
-                Comptez cinq minutes. Un document qui paraît complet peut encore
-                manquer d&apos;une mention obligatoire : la liste plus bas vous
-                dit lesquelles vérifier.
+                Comptez deux minutes pour une facture simple, un peu plus pour
+                relire : un document qui paraît complet peut encore manquer
+                d&apos;une mention obligatoire, la liste plus bas vous dit
+                lesquelles vérifier.
               </p>
             }
           >

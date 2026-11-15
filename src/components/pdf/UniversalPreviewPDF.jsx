@@ -532,9 +532,13 @@ const UniversalPreviewPDFContent = ({
   // distincte, et l'absence de `crossOrigin` sur l'<img> ci-dessous rend
   // l'affichage écran insensible au problème. À incrémenter uniquement si
   // une nouvelle entrée de cache empoisonnée devait apparaître.
-  const companyLogo = rawCompanyLogo
-    ? `${rawCompanyLogo}${rawCompanyLogo.includes("?") ? "&" : "?"}v=2`
-    : rawCompanyLogo;
+  // Un logo `data:` ou `blob:` (générateurs publics : image choisie sur
+  // l'ordinateur du visiteur) ne passe par aucun cache réseau, et un suffixe
+  // l'abîmerait : on le laisse tel quel.
+  const companyLogo =
+    rawCompanyLogo && !/^(data|blob):/.test(rawCompanyLogo)
+      ? `${rawCompanyLogo}${rawCompanyLogo.includes("?") ? "&" : "?"}v=2`
+      : rawCompanyLogo;
 
   if (!data) {
     return (

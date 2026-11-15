@@ -18,6 +18,11 @@
 export const FACTURE_CONFIG = {
   type: "invoice",
   prefix: "F",
+  // Choix Facture / Facture d'acompte / Facture pro forma, champ de référence
+  // du devis, et reprise d'un devis transformé depuis le générateur de devis
+  documentTypes: true,
+  referenceField: true,
+  acceptsQuoteHandoff: true,
   sectionTitle: "La facture",
   downloadTitle: "Télécharger votre facture",
   downloadLabel: "Télécharger la facture en PDF",
@@ -34,7 +39,7 @@ export const FACTURE_CONFIG = {
     items: [
       {
         label: "La numérotation.",
-        text: "Elle doit être continue et chronologique, sans trou ni doublon. Cet outil ne garde aucune mémoire d'une facture à l'autre : c'est à vous de tenir le compteur.",
+        text: "Elle doit être continue et chronologique, sans trou ni doublon. Cochez « Mémoriser » pour que l'outil vous propose le numéro suivant sur cet appareil ; sinon, c'est à vous de tenir le compteur.",
       },
       {
         label: "La conservation.",
@@ -71,6 +76,8 @@ export const FACTURE_CONFIG = {
 export const DEVIS_CONFIG = {
   type: "quote",
   prefix: "D",
+  // Bouton « Transformer ce devis en facture » vers le générateur de facture
+  toInvoice: true,
   sectionTitle: "Le devis",
   downloadTitle: "Télécharger votre devis",
   downloadLabel: "Télécharger le devis en PDF",
