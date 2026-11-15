@@ -16,7 +16,7 @@ describe("ctaIntentFor", () => {
   const cases = [
     ["modele-facture-gratuit-word-excel-pdf", "generateur-facture"],
     ["logiciel-devis-facture-gratuit", "generateur-facture"],
-    ["modele-devis-gratuit-word-excel-pdf", "generateur-devis"],
+    ["modele-devis-gratuit", "generateur-devis"],
     ["devis-coach-formateur-modele", "generateur-devis"],
     ["relancer-devis-sans-reponse-modeles", "devis"],
     ["modifier-devis-signe-avenant", "devis"],
@@ -70,7 +70,7 @@ describe("ctaIntentFor", () => {
 describe("composants MDX des articles", () => {
   it("ArticleCta suit le thème de l'article", () => {
     const { ArticleCta } = getMDXComponents({
-      slug: "modele-devis-gratuit-word-excel-pdf",
+      slug: "modele-devis-gratuit",
     });
     const html = renderToStaticMarkup(ArticleCta({}));
     expect(html).toContain('href="/outils/generateur-de-devis"');

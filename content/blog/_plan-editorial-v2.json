@@ -52,7 +52,7 @@
   },
   {
     "id": 104,
-    "slug": "modele-devis-gratuit-word-excel-pdf",
+    "slug": "modele-devis-gratuit",
     "title": "Modèle de devis gratuit (Word, Excel, PDF) : exemple et mentions",
     "metaDescription": "Un modèle de devis gratuit et conforme, avec les mentions obligatoires, un exemple complété et nos conseils pour le transformer en facture sans ressaisie.",
     "keyword": "modèle devis gratuit",
@@ -147,10 +147,7 @@
     "cluster": "Comparatifs & alternatives",
     "publishDate": "2026-09-04",
     "week": 1,
-    "linksTo": [
-      "tiime-vs-newbi-comparatif",
-      "logiciel-gestion-tout-en-un-tpe"
-    ]
+    "linksTo": ["tiime-vs-newbi-comparatif", "logiciel-gestion-tout-en-un-tpe"]
   },
   {
     "id": 110,
@@ -504,10 +501,7 @@
     "cluster": "Facturation par métier",
     "publishDate": "2026-09-18",
     "week": 3,
-    "linksTo": [
-      "devis-travaux-btp-guide",
-      "automatiser-facturation-recurrente"
-    ]
+    "linksTo": ["devis-travaux-btp-guide", "automatiser-facturation-recurrente"]
   },
   {
     "id": 131,
@@ -538,10 +532,7 @@
     "cluster": "Modèles à télécharger",
     "publishDate": "2026-09-21",
     "week": 4,
-    "linksTo": [
-      "quest-ce-que-acompte-facture",
-      "facture-situation-travaux-btp"
-    ]
+    "linksTo": ["quest-ce-que-acompte-facture", "facture-situation-travaux-btp"]
   },
   {
     "id": 133,
@@ -555,10 +546,7 @@
     "cluster": "Questions pratiques facturation",
     "publishDate": "2026-09-22",
     "week": 4,
-    "linksTo": [
-      "quest-ce-que-avoir-credit",
-      "quest-ce-que-numero-facture"
-    ]
+    "linksTo": ["quest-ce-que-avoir-credit", "quest-ce-que-numero-facture"]
   },
   {
     "id": 134,
@@ -726,10 +714,7 @@
     "cluster": "Modèles à télécharger",
     "publishDate": "2026-09-29",
     "week": 5,
-    "linksTo": [
-      "quest-ce-que-avoir-credit",
-      "annuler-une-facture-deja-emise"
-    ]
+    "linksTo": ["quest-ce-que-avoir-credit", "annuler-une-facture-deja-emise"]
   },
   {
     "id": 143,
@@ -777,10 +762,7 @@
     "cluster": "Facturation par métier",
     "publishDate": "2026-09-30",
     "week": 5,
-    "linksTo": [
-      "facture-profession-liberale-guide",
-      "facture-osteopathe-guide"
-    ]
+    "linksTo": ["facture-profession-liberale-guide", "facture-osteopathe-guide"]
   },
   {
     "id": 146,
@@ -794,10 +776,7 @@
     "cluster": "Comparatifs & alternatives",
     "publishDate": "2026-10-01",
     "week": 5,
-    "linksTo": [
-      "pennylane-vs-newbi-comparatif",
-      "tiime-vs-newbi-comparatif"
-    ]
+    "linksTo": ["pennylane-vs-newbi-comparatif", "tiime-vs-newbi-comparatif"]
   },
   {
     "id": 147,
@@ -1170,10 +1149,7 @@
     "cluster": "Comparatifs & alternatives",
     "publishDate": "2026-10-16",
     "week": 7,
-    "linksTo": [
-      "abby-vs-newbi-comparatif",
-      "freebe-vs-newbi-comparatif"
-    ]
+    "linksTo": ["abby-vs-newbi-comparatif", "freebe-vs-newbi-comparatif"]
   },
   {
     "id": 234,
@@ -1512,10 +1488,7 @@
     "cluster": "Questions pratiques facturation",
     "publishDate": "2026-10-30",
     "week": 9,
-    "linksTo": [
-      "mentions-obligatoires-facture",
-      "facture-en-ligne-vs-excel"
-    ]
+    "linksTo": ["mentions-obligatoires-facture", "facture-en-ligne-vs-excel"]
   },
   {
     "id": 236,
@@ -1752,10 +1725,7 @@
     "cluster": "Comparatifs & alternatives",
     "publishDate": "2026-11-10",
     "week": 11,
-    "linksTo": [
-      "tiime-vs-newbi-comparatif",
-      "pennylane-vs-tiime-comparatif"
-    ]
+    "linksTo": ["tiime-vs-newbi-comparatif", "pennylane-vs-tiime-comparatif"]
   },
   {
     "id": 197,
@@ -1940,10 +1910,7 @@
     "cluster": "Comparatifs & alternatives",
     "publishDate": "2026-11-17",
     "week": 12,
-    "linksTo": [
-      "logiciel-gestion-tout-en-un-tpe",
-      "facture-en-ligne-vs-excel"
-    ]
+    "linksTo": ["logiciel-gestion-tout-en-un-tpe", "facture-en-ligne-vs-excel"]
   },
   {
     "id": 207,
@@ -2266,10 +2233,7 @@
     "cluster": "Modèles à télécharger",
     "publishDate": "2026-12-01",
     "week": 14,
-    "linksTo": [
-      "mentions-obligatoires-facture",
-      "quest-ce-que-acompte-facture"
-    ]
+    "linksTo": ["mentions-obligatoires-facture", "quest-ce-que-acompte-facture"]
   },
   {
     "id": 223,
