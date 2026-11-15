@@ -648,7 +648,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="/blog/modele-devis-gratuit-word-excel-pdf"
+                      href="/blog/modele-devis-gratuit"
                     >
                       Modèle de devis gratuit
                     </a>

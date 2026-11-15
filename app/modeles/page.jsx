@@ -50,7 +50,7 @@ const MODELES = [
     nom: "Modèle de devis",
     desc: "Un devis prêt à envoyer avec sa durée de validité, ses conditions de règlement et la mention « Bon pour accord » à faire signer avant de démarrer.",
     pour: "Chiffrer une prestation avant de la réaliser",
-    article: "modele-devis-gratuit-word-excel-pdf",
+    article: "modele-devis-gratuit",
   },
   {
     slug: "modele-facture-auto-entrepreneur",

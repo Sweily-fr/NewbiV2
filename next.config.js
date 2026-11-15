@@ -419,6 +419,16 @@ const nextConfig = {
         destination: "/blog/alternatives-quickbooks-france-arret",
         permanent: true,
       },
+      // L'article « Modèle de devis » (en ligne depuis le 01/09/2026, dans le
+      // sitemap, lié depuis le pied de page de tout le site) n'a jamais été
+      // exploré par Google malgré six demandes d'indexation et un test en
+      // direct réussi. Nouvelle adresse le 15/11/2026, pour repartir d'une
+      // URL neuve ; l'ancienne n'avait aucune impression à perdre.
+      {
+        source: "/blog/modele-devis-gratuit-word-excel-pdf",
+        destination: "/blog/modele-devis-gratuit",
+        permanent: true,
+      },
       // URLs d'une version antérieure du site, absentes du dépôt actuel mais
       // toujours connues de Google 16 mois après. Relevé le 26/09/2026 dans le
       // rapport de performances : /blog/guide-facturation-freelance tient

@@ -261,7 +261,7 @@ const EXEMPLES = {
     pied: `Studio Pixel SAS au capital de 5 000 € · RCS Lyon ${sirenDe(SIRET_PIXEL)} · ${tvaIntra(SIRET_PIXEL.slice(0, 11))}`,
   },
 
-  "modele-devis-gratuit-word-excel-pdf": {
+  "modele-devis-gratuit": {
     gabarit: "document",
     titre: "Devis",
     emetteur: {

@@ -34,7 +34,7 @@ const OUTILS = [
     href: "/outils/generateur-de-facture",
     icon: FileText,
     title: "Générateur de facture",
-    desc: "Remplissez, prévisualisez et téléchargez en PDF une facture avec les mentions obligatoires. Sans inscription, rien n'est enregistré.",
+    desc: "Facture, facture d'acompte ou pro forma, avec votre logo et les mentions obligatoires : remplissez, prévisualisez et téléchargez en PDF. Sans inscription.",
     tag: "En ligne",
   },
   {
