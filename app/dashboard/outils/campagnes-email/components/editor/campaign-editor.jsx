@@ -48,6 +48,7 @@ import { cn } from "@/src/lib/utils";
 import {
   BLOCK_LABELS,
   MAX_BLOCKS,
+  RICH_TEXT_TYPES,
   addBlock,
   createBlock,
   duplicateBlock,
@@ -209,6 +210,13 @@ export function CampaignEditor({
   const [dropIndex, setDropIndexState] = useState(null);
   const dropIndexRef = useRef(null);
   const canvasRef = useRef(null);
+  // Texte à ouvrir au clavier : { id, point } (clic) ou { id, selectAll } (ajout)
+  const focusRequest = useRef(null);
+  const requestTextFocus = (block) => {
+    if (RICH_TEXT_TYPES.includes(block.type)) {
+      focusRequest.current = { id: block.id, selectAll: true };
+    }
+  };
 
   const selected = findBlock(design, selectedId);
   useEffect(() => {
@@ -245,6 +253,7 @@ export function CampaignEditor({
       );
       commit(next);
       setSelectedId(block.id);
+      requestTextFocus(block);
       scrollToBlock(block.id);
     },
     [locked, full, designRef, selectedId, commit],
@@ -396,6 +405,7 @@ export function CampaignEditor({
         const block = createBlock(active.data.current.type);
         commit(insertBlock(designRef.current, block, index));
         setSelectedId(block.id);
+        requestTextFocus(block);
       }
     } else if (over && active.id !== over.id) {
       const from = findBlockIndex(designRef.current, active.id);
@@ -600,6 +610,7 @@ export function CampaignEditor({
               companyName={companyName}
               companyAddress={settings?.companyAddress}
               canvasRef={canvasRef}
+              focusRequest={focusRequest}
               onSelect={setSelectedId}
               onDeselect={() => setSelectedId(null)}
               onUpdate={handleUpdate}

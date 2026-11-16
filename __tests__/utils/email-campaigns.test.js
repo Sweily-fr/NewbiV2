@@ -6,6 +6,7 @@ import {
   campaignRates,
   canDeleteStatus,
   checkLink,
+  checkTarget,
   countChecks,
   defaultCampaignName,
   formatCount,
@@ -218,6 +219,18 @@ describe("vérification avant envoi", () => {
       "d",
       "a",
     ]);
+  });
+
+  it("envoie chaque contrôle de l'API là où il se corrige", () => {
+    expect(checkTarget("subject_length")).toEqual({ section: "objet" });
+    expect(checkTarget("preheader")).toEqual({ section: "objet" });
+    expect(checkTarget("reply_to")).toEqual({ section: "expediteur" });
+    expect(checkTarget("audience_quota")).toEqual({ section: "destinataires" });
+    expect(checkTarget("links_shortener")).toEqual({ editor: true });
+    expect(checkTarget("variables_first_name")).toEqual({ editor: true });
+    expect(checkTarget("legal_address")).toEqual({ settings: true });
+    expect(checkTarget("sender_domain_dmarc")).toBe(null);
+    expect(checkTarget(undefined)).toBe(null);
   });
 
   it("compte les contrôles par niveau et colore la note", () => {

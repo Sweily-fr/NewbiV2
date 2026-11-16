@@ -15,6 +15,7 @@ import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import {
+  checkTarget,
   countChecks,
   formatScore,
   scoreTone,
@@ -55,21 +56,9 @@ const LEVELS = {
   },
 };
 
-/** Où corriger un point : étape de la page, éditeur ou paramètres. */
-const TARGETS = {
-  sender_domain: null,
-  reply_to: { section: "expediteur" },
-  from_name: { section: "expediteur" },
-  subject: { section: "objet" },
-  preheader: { section: "objet" },
-  audience: { section: "destinataires" },
-  content_text: { editor: true },
-  images: { editor: true },
-  links: { editor: true },
-  html_size: { editor: true },
-  variables: { editor: true },
-  legal: { settings: true },
-};
+// Simples constats (contacts écartés…) : sans lien ; ces conseils-là se
+// corrigent
+const FIXABLE_INFOS = ["preheader", "images_empty"];
 
 export function ScoreRing({ score, size = 84, stroke = 7 }) {
   const tone = scoreTone(score);
@@ -119,13 +108,13 @@ export function ScoreRing({ score, size = 84, stroke = 7 }) {
 function CheckItem({ check, campaignId, canEdit }) {
   const level = LEVELS[check.level] || LEVELS.INFO;
   const Icon = level.icon;
-  // Lien de correction pour un problème, et pour le seul conseil qui se
-  // corrige sur la page (texte d'aperçu) ; jamais pour un simple constat
+  // Lien de correction pour un problème, et pour les conseils qui se
+  // corrigent ; jamais pour un simple constat
   const fixable =
     check.level === "ERROR" ||
     check.level === "WARNING" ||
-    (check.level === "INFO" && check.id === "preheader");
-  const target = fixable ? TARGETS[check.id] : null;
+    (check.level === "INFO" && FIXABLE_INFOS.includes(check.id));
+  const target = fixable ? checkTarget(check.id) : null;
   const goToSection = (section) => {
     const element = document.getElementById(section);
     element?.scrollIntoView({ behavior: "smooth", block: "center" });

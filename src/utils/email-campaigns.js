@@ -400,6 +400,26 @@ export function sortChecks(checks) {
     .map(({ check }) => check);
 }
 
+/**
+ * Où corriger un contrôle (identifiants de newbi-api, deliverability.js :
+ * « subject_length », « links_shortener »…) : étape de la page
+ * ({ section }), éditeur ({ editor }) ou paramètres de l'entreprise
+ * ({ settings }). Le domaine d'envoi relève de Newbi : rien à corriger.
+ */
+export function checkTarget(id) {
+  const key = String(id || "");
+  if (key.startsWith("sender_domain")) return null;
+  if (key === "reply_to" || key === "from_name")
+    return { section: "expediteur" };
+  if (key.startsWith("subject") || key === "preheader")
+    return { section: "objet" };
+  if (key.startsWith("audience")) return { section: "destinataires" };
+  if (key.startsWith("legal")) return { settings: true };
+  if (/^(content|images|links|html_size|variables)/.test(key))
+    return { editor: true };
+  return null;
+}
+
 /** Nombre de contrôles par niveau : { ERROR: 1, WARNING: 2, … }. */
 export function countChecks(checks) {
   const counts = { ERROR: 0, WARNING: 0, INFO: 0, OK: 0 };

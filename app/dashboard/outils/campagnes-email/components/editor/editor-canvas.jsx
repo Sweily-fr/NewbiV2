@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -33,6 +33,7 @@ import {
   EmailFooterView,
   HEADING_RICH_CLASS,
   RICH_CLASS,
+  RichHtml,
 } from "../email-design/email-blocks";
 import { useRichTextEditor } from "./rich-text-editor";
 
@@ -80,16 +81,47 @@ const cornerStyle = (radius, first, last) => ({
 });
 
 /** Bloc de texte sélectionné : Tiptap à la place du texte, barre au-dessus. */
-function RichBlockContent({ block, style, corners, onUpdate, variables }) {
+function RichBlockContent({
+  block,
+  style,
+  corners,
+  onUpdate,
+  variables,
+  focusRequest,
+}) {
+  const richClass = block.type === "heading" ? HEADING_RICH_CLASS : RICH_CLASS;
   const rich = useRichTextEditor({
     html: block.html,
     variables,
     allowLists: block.type !== "heading",
     placeholder:
       block.type === "heading" ? "Votre titre" : "Écrivez votre texte",
-    richClass: block.type === "heading" ? HEADING_RICH_CLASS : RICH_CLASS,
+    richClass,
     onChange: (html) => onUpdate({ html }, "html"),
   });
+  const { editor } = rich;
+
+  // Bloc ouvert d'un clic : le curseur se place là où l'on a cliqué ; bloc
+  // tout juste ajouté : son texte d'exemple est sélectionné, prêt à remplacer
+  useEffect(() => {
+    const request = focusRequest?.current;
+    if (!editor || !request || request.id !== block.id) return undefined;
+    focusRequest.current = null;
+    const frame = requestAnimationFrame(() => {
+      if (editor.isDestroyed) return;
+      if (request.point) {
+        const hit = editor.view.posAtCoords(request.point);
+        if (hit) {
+          editor.chain().focus().setTextSelection(hit.pos).run();
+          return;
+        }
+      }
+      if (request.selectAll) editor.chain().focus().selectAll().run();
+      else editor.commands.focus("end");
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editor, block.id, focusRequest]);
+
   return (
     <>
       <div className="absolute bottom-full left-0 z-40 mb-2">
@@ -99,7 +131,14 @@ function RichBlockContent({ block, style, corners, onUpdate, variables }) {
         <BlockView
           block={block}
           style={style}
-          renderRichText={() => rich.content}
+          // Tant que l'éditeur se prépare, le texte reste affiché tel quel
+          renderRichText={() =>
+            editor ? (
+              rich.content
+            ) : (
+              <RichHtml html={block.html} className={richClass} />
+            )
+          }
         />
       </div>
     </>
@@ -114,6 +153,7 @@ function CanvasBlock({
   selected,
   readOnly,
   variables,
+  focusRequest,
   onSelect,
   onUpdate,
   onMove,
@@ -153,7 +193,15 @@ function CanvasBlock({
         // Les liens de l'e-mail ne s'ouvrent pas dans l'éditeur
         event.preventDefault();
         event.stopPropagation();
-        if (!readOnly) onSelect(block.id);
+        if (readOnly) return;
+        // Texte ouvert d'un clic : le curseur ira à cet endroit
+        if (!selected && RICH_TEXT_TYPES.includes(block.type) && focusRequest) {
+          focusRequest.current = {
+            id: block.id,
+            point: { left: event.clientX, top: event.clientY },
+          };
+        }
+        onSelect(block.id);
       }}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -254,6 +302,7 @@ function CanvasBlock({
           style={style}
           corners={corners}
           variables={variables}
+          focusRequest={focusRequest}
           onUpdate={(patch, key) => onUpdate(block.id, patch, key)}
         />
       ) : (
@@ -307,6 +356,7 @@ export function EditorCanvas({
   companyName,
   companyAddress,
   canvasRef,
+  focusRequest,
   onSelect,
   onDeselect,
   onUpdate,
@@ -356,6 +406,7 @@ export function EditorCanvas({
                   selected={block.id === selectedId}
                   readOnly={readOnly}
                   variables={variables}
+                  focusRequest={focusRequest}
                   onSelect={onSelect}
                   onUpdate={onUpdate}
                   onMove={onMove}
