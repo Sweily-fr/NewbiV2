@@ -391,7 +391,7 @@ export function BlockSettings({
             <SwitchRow
               id="button-full"
               label="Pleine largeur"
-              description="Le bouton occupe toute la largeur de l'e-mail."
+              description="Le bouton prend toute la largeur du cadre."
               checked={block.fullWidth}
               onCheckedChange={(fullWidth) => set({ fullWidth })}
             />

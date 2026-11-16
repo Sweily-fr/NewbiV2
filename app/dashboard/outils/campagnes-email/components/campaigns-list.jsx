@@ -25,6 +25,7 @@ import {
   isReportStatus,
 } from "@/src/utils/email-campaigns";
 import { FOCUS_RING, StatusBadge } from "./shared";
+import { TextWithVariables } from "./setup/subject-section";
 
 /** Taux affiché dans le tableau (rien tant que l'envoi n'a pas commencé). */
 function Rate({ value, count }) {
@@ -169,7 +170,11 @@ export function CampaignsTable({
                   {campaign.name}
                 </button>
                 <p className="truncate text-xs text-muted-foreground">
-                  {campaign.subject || "Sans objet"}
+                  {campaign.subject ? (
+                    <TextWithVariables text={campaign.subject} />
+                  ) : (
+                    "Sans objet"
+                  )}
                 </p>
               </td>
               <td className={CELL}>
