@@ -12,7 +12,8 @@ import { errorMessage } from "../shared";
 import { FIELD_LABEL } from "./controls";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const ACCEPTED = "image/png,image/jpeg,image/gif,image/webp";
+// Photos HEIC (iPhone) acceptées : l'API les convertit
+const ACCEPTED = "image/*,.heic,.heif";
 
 /**
  * Image d'un bloc : envoi d'un fichier (hébergé par Newbi, adresse publique
@@ -31,7 +32,9 @@ export function ImageInput({ workspaceId, src, onChange }) {
 
   const send = async (file) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    // HEIC sans type reconnu (navigateur sous Windows) : son extension suffit
+    const heic = /\.hei[cf]$/i.test(file.name || "");
+    if (!heic && !String(file.type || "").startsWith("image/")) {
       toast.error("Choisissez une image (JPG, PNG, GIF ou WebP)");
       return;
     }
@@ -162,8 +165,10 @@ export function ImageInput({ workspaceId, src, onChange }) {
           <span className="text-sm font-medium">
             {busy ? "Envoi de l'image…" : "Choisir une image"}
           </span>
-          <span className="text-xs text-muted-foreground">
-            ou glissez-la ici · JPG, PNG, GIF, WebP · 10 Mo au plus
+          <span className="text-xs leading-5 text-muted-foreground">
+            ou glissez-la ici
+            <br />
+            JPG, PNG, GIF ou WebP, 10 Mo au plus
           </span>
         </button>
       )}
