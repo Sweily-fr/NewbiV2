@@ -23,12 +23,12 @@ export const metadata = {
       "Modèles de facture et de devis gratuits à télécharger (Word, Excel, PDF) | Newbi",
   },
   description:
-    "Quatorze modèles gratuits à remplir : facture, devis, avoir, reçu, contrat, mise en demeure, note de frais, plan de trésorerie et suivi des factures. Word, Excel, PDF.",
+    "Quinze modèles gratuits à remplir : facture, devis, avoir, reçu, contrat, mise en demeure, note de frais, plan de trésorerie et suivi des factures. Word, Excel, PDF.",
   alternates: { canonical: "/modeles" },
   openGraph: {
     title: "Modèles de facture et de devis gratuits | Newbi",
     description:
-      "Facture, devis, avoir, reçu, contrat, mise en demeure, note de frais, trésorerie, suivi des factures : quatorze modèles à télécharger en Word, Excel et PDF.",
+      "Facture, devis, avoir, reçu, contrat, mise en demeure, note de frais, trésorerie, suivi des factures : quinze modèles à télécharger en Word, Excel et PDF.",
     url: "/modeles",
     siteName: "Newbi",
     type: "website",
@@ -119,6 +119,14 @@ const MODELES = [
     desc: "Les clauses à faire signer avant une mission : objet, délais, prix et pénalités de retard, propriété intellectuelle, résiliation et responsabilité.",
     pour: "Encadrer une mission",
     article: "modele-contrat-prestation-de-services",
+    formats: ["docx"],
+  },
+  {
+    slug: "modele-lettre-relance-facture-impayee",
+    nom: "Lettre de relance pour facture impayée",
+    desc: "La dernière relance amiable avant la mise en demeure : rappel de la facture, tableau des sommes dues, délai de 8 jours et notes pour un client particulier.",
+    pour: "Relancer un client en retard",
+    article: "relance-facture-impayee-modele",
     formats: ["docx"],
   },
   {
@@ -257,7 +265,7 @@ export default function ModelesPage() {
               Modèles de facture et de devis à télécharger
             </h1>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Quatorze modèles prêts à remplir : les documents de facturation en
+              Quinze modèles prêts à remplir : les documents de facturation en
               Word et Excel (et en PDF pour les cinq modèles de facture et de
               devis), le contrat et la lettre de mise en demeure en Word, les
               tableaux de suivi en Excel. Ils contiennent déjà les mentions
