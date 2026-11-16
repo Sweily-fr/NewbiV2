@@ -1,8 +1,8 @@
 # Modèles téléchargeables (Word, Excel, PDF)
 
 Les articles « modèle » du blog et la page `/modeles` promettent un fichier à
-télécharger. Ces scripts génèrent les vingt-huit fichiers réellement servis
-depuis `public/modeles/`, pour quatorze modèles :
+télécharger. Ces scripts génèrent les vingt-neuf fichiers réellement servis
+depuis `public/modeles/`, pour quinze modèles :
 
 | Modèle                                                                         | Fichiers         | Source         |
 | ------------------------------------------------------------------------------ | ---------------- | -------------- |
@@ -12,6 +12,7 @@ depuis `public/modeles/`, pour quatorze modèles :
 | Facture en anglais (`modele-facture-anglais`)                                  | Word, Excel      | `rendus.json`  |
 | Reçu de paiement (`modele-recu-paiement`)                                      | Word, Excel      | `rendus.json`  |
 | Contrat de prestation de services                                              | Word             | `textes.json`  |
+| Lettre de relance pour facture impayée                                         | Word             | `textes.json`  |
 | Lettre de mise en demeure pour facture impayée                                 | Word             | `textes.json`  |
 | Note de frais (`modele-note-de-frais`)                                         | Excel            | `tableurs.cjs` |
 | Plan de trésorerie (`modele-plan-de-tresorerie`)                               | Excel            | `tableurs.cjs` |

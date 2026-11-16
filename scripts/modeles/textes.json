@@ -206,6 +206,134 @@
       ]
     },
     {
+      "slug": "modele-lettre-relance-facture-impayee",
+      "pied": [
+        "[Raison sociale, ou nom suivi de « EI »] • [Forme juridique] • [Adresse] • SIRET : [14 chiffres]"
+      ],
+      "blocs": [
+        {
+          "t": "colonnes",
+          "intitules": ["Expéditeur", "Destinataire"],
+          "gauche": [
+            "**[Raison sociale, ou nom suivi de « EI »]**",
+            "[Adresse complète]",
+            "[Code postal] [Ville]",
+            "SIRET : [14 chiffres]",
+            "[Téléphone] • [E-mail]"
+          ],
+          "droite": [
+            "**[Nom ou raison sociale du client]**",
+            "[À l'attention de : nom, fonction]",
+            "[Adresse complète]",
+            "[Code postal] [Ville]"
+          ],
+          "apres": 360
+        },
+        {
+          "t": "p",
+          "texte": "[Ville], le [date du jour]",
+          "align": "right"
+        },
+        {
+          "t": "p",
+          "texte": "**Objet : Relance pour facture impayée n° [FA-2026-XXX]**",
+          "align": "left"
+        },
+        {
+          "t": "espace",
+          "h": 120
+        },
+        {
+          "t": "p",
+          "texte": "Madame, Monsieur,",
+          "align": "left"
+        },
+        {
+          "t": "p",
+          "texte": "Sauf erreur de notre part, la facture n° **[FA-2026-XXX]**, d'un montant de **[montant] EUR TTC**, émise le **[date d'émission]** et arrivée à échéance le **[date d'échéance]**, reste impayée à ce jour, malgré nos rappels du [date du premier rappel] et du [date du deuxième rappel]."
+        },
+        {
+          "t": "p",
+          "texte": "Il s'agit peut-être d'un oubli ou d'un problème de transmission : vous trouverez ci-joint une copie de cette facture."
+        },
+        {
+          "t": "tableau",
+          "colonnes": [
+            {
+              "libelle": "Facture",
+              "docx": 2900
+            },
+            {
+              "libelle": "Échéance",
+              "docx": 5052
+            },
+            {
+              "libelle": "Montant TTC",
+              "docx": 1800,
+              "align": "right"
+            }
+          ],
+          "lignes": [
+            [
+              "Facture n° [FA-2026-XXX]",
+              "[date d'échéance], soit [15] jours de retard",
+              "[2 400,00 €]"
+            ],
+            {
+              "fort": true,
+              "valeurs": [
+                "Total restant dû",
+                "Arrêté au [date du jour]",
+                "[2 400,00 €]"
+              ]
+            }
+          ]
+        },
+        {
+          "t": "p",
+          "texte": "Entre professionnels, tout retard de paiement entraîne de plein droit des **pénalités de retard**, au taux prévu par nos conditions générales, et une **indemnité forfaitaire pour frais de recouvrement de 40 €** par facture (articles L441-10 et D441-5 du Code de commerce). Nous renoncerons à les réclamer si le règlement nous parvient dans le délai ci-dessous."
+        },
+        {
+          "t": "p",
+          "texte": "Nous vous remercions de bien vouloir régler cette somme sous **8 jours** à compter de la réception de ce courrier, par virement sur le compte IBAN [FR76 0000 0000 0000 0000 0000 000], BIC [XXXXFRPP], en rappelant la référence de la facture."
+        },
+        {
+          "t": "p",
+          "texte": "Si le règlement a été effectué entre-temps, merci de ne pas tenir compte de ce courrier. En cas de difficulté, contactez-nous : nous étudierons volontiers un échéancier. Sans règlement ni nouvelle de votre part dans ce délai, nous vous adresserons une mise en demeure."
+        },
+        {
+          "t": "p",
+          "texte": "Veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées."
+        },
+        {
+          "t": "espace",
+          "h": 200
+        },
+        {
+          "t": "colonnes",
+          "gauche": [""],
+          "droite": ["[Nom, prénom]", "[Fonction]", "Signature :"],
+          "apres": 900
+        },
+        {
+          "t": "p",
+          "texte": "Pièce jointe : copie de la facture n° [FA-2026-XXX].",
+          "align": "left"
+        },
+        {
+          "t": "note",
+          "titre": "Notes à supprimer avant envoi",
+          "items": [
+            "Ce courrier est la dernière relance amiable : envoyez-le une quinzaine de jours après l'échéance, après un ou deux rappels par e-mail. Un envoi simple ou par e-mail suffit ; le recommandé avec accusé de réception est réservé à la mise en demeure.",
+            "Plusieurs factures impayées : ajoutez une ligne par facture dans le tableau. L'indemnité de 40 € est due pour chacune.",
+            "La renonciation aux pénalités en cas de paiement rapide est un geste facultatif : supprimez la phrase si vous préférez les réclamer dès maintenant. Pour les chiffrer, utilisez le calculateur de pénalités de retard de newbi.fr.",
+            "Débiteur particulier : supprimez le paragraphe sur les pénalités et l'indemnité de 40 €, qui ne s'applique qu'entre professionnels. Seules les pénalités prévues par vos conditions générales ou votre devis peuvent être réclamées ; à défaut, les intérêts au taux légal courent à compter d'une mise en demeure.",
+            "Toujours impayé à l'expiration du délai : envoyez la lettre de mise en demeure, elle aussi gratuite sur newbi.fr/modeles."
+          ]
+        }
+      ]
+    },
+    {
       "slug": "modele-mise-en-demeure-facture-impayee",
       "pied": [
         "[Raison sociale, ou nom suivi de « EI »] • [Forme juridique] • [Adresse] • SIRET : [14 chiffres]"
