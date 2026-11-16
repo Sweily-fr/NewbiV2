@@ -10,6 +10,7 @@ export const GET_WORKSPACE_FEATURES = gql`
       appointments
       documentShares
       socialPublishing
+      emailCampaigns
     }
   }
 `;

@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Users,
   ReceiptText,
+  Send,
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { isDeliveryNotesAllowed } from "@/src/hooks/useDeliveryNotesAccess";
@@ -125,6 +126,11 @@ const moreMenuSections = [
         label: "Prise de rendez-vous",
         href: "/dashboard/outils/rendez-vous",
         icon: CalendarCheck,
+      },
+      {
+        label: "Campagnes e-mail",
+        href: "/dashboard/outils/campagnes-email",
+        icon: Send,
       },
     ],
   },
