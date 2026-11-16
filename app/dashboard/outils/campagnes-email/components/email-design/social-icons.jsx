@@ -1,26 +1,30 @@
 import { SOCIAL_LABELS } from "@/src/utils/email-campaign-design";
 
 /**
- * Pictogrammes des réseaux du bloc « Réseaux sociaux » : pastille ronde et
- * signe du réseau, en trois styles comme à l'envoi (couleur de la marque,
- * sombre, clair). Vue 24 × 24, le signe réduit au centre de la pastille.
+ * Icônes du bloc « Réseaux sociaux », comme celles que l'API envoie
+ * (newbi-api, render.js > socialIconSpecFor) : pastille ronde de la couleur
+ * du réseau (sombre #1f2937 ou claire #9ca3af selon le style) et signe
+ * blanc ; le site web est un globe au trait, de la couleur principale en
+ * style « Couleur ». Vue 24 × 24.
  */
 
 export const BRAND_COLORS = {
-  facebook: "#1877F2",
+  facebook: "#0866FF",
   instagram: "#E4405F",
   linkedin: "#0A66C2",
   x: "#000000",
   tiktok: "#000000",
   youtube: "#FF0000",
-  website: "#4B5563",
 };
+
+const TONES = { dark: "#1f2937", light: "#9ca3af" };
 
 const TIKTOK_NOTE =
   "M305.5,82.5c-28-18.2-44.8-49.2-44.9-82.5h-70.8l-0.1,283.8c-1.3,32.8-28.9,58.4-61.7,57.2S69.6,312,70.8,279.2 c1.2-32,27.5-57.2,59.5-57.2c6,0,11.9,0.9,17.6,2.8v-72.3c-5.8-0.8-11.7-1.2-17.6-1.3C58.5,151.2,0,209.7,0,281.5 c0,72,58.3,130.3,130.3,130.3s130.3-58.3,130.3-130.3V137.6c28.7,20.6,63.2,31.7,98.5,31.7V98.5C340.1,98.5,321.5,93,305.5,82.5z";
 
-/** Signe du réseau, dessiné dans la vue 24 × 24 (couleur `fg`). */
-function Glyph({ network, fg }) {
+/** Signe blanc du réseau, centré dans la pastille (environ 58 %). */
+function Glyph({ network }) {
+  const fg = "#ffffff";
   switch (network) {
     case "facebook":
       return (
@@ -87,61 +91,59 @@ function Glyph({ network, fg }) {
         </>
       );
     default:
-      // Site web : globe
-      return (
-        <>
-          <circle
-            cx="12"
-            cy="12"
-            r="5.4"
-            fill="none"
-            stroke={fg}
-            strokeWidth="1.4"
-          />
-          <ellipse
-            cx="12"
-            cy="12"
-            rx="2.3"
-            ry="5.4"
-            fill="none"
-            stroke={fg}
-            strokeWidth="1.4"
-          />
-          <path d="M6.8 12h10.4" stroke={fg} strokeWidth="1.4" />
-        </>
-      );
+      return null;
   }
 }
 
-/** Couleurs de la pastille et du signe selon le style choisi. */
-export function iconColors(network, iconStyle) {
-  if (iconStyle === "dark") return { bg: "#1f2937", fg: "#ffffff", ring: null };
-  if (iconStyle === "light")
-    return { bg: "#ffffff", fg: "#374151", ring: "#e5e7eb" };
-  return { bg: BRAND_COLORS[network] || "#4B5563", fg: "#ffffff", ring: null };
+/** Couleur de l'icône selon le style (et la couleur principale pour le site). */
+export function iconTone(network, iconStyle, primaryColor = "#5a50ff") {
+  if (TONES[iconStyle]) return TONES[iconStyle];
+  if (network === "website") return primaryColor;
+  return BRAND_COLORS[network] || TONES.dark;
 }
 
-export function SocialIcon({ network, iconStyle = "color", size = 32 }) {
-  const { bg, fg, ring } = iconColors(network, iconStyle);
+export function SocialIcon({
+  network,
+  iconStyle = "color",
+  primaryColor,
+  size = 32,
+}) {
+  const tone = iconTone(network, iconStyle, primaryColor);
+  const label = SOCIAL_LABELS[network] || "Lien";
+  if (network === "website") {
+    // Globe au trait, sans pastille, comme l'icône « site web » de l'API
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        role="img"
+        aria-label={label}
+        fill="none"
+        stroke={tone}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ display: "block" }}
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+        <path d="M2 12h20" />
+      </svg>
+    );
+  }
   return (
     <svg
       viewBox="0 0 24 24"
       width={size}
       height={size}
       role="img"
-      aria-label={SOCIAL_LABELS[network] || "Lien"}
+      aria-label={label}
       // Triangle de YouTube : couleur de la pastille, pour qu'il se détache
-      style={{ display: "block", "--ec-yt-play": bg }}
+      style={{ display: "block", "--ec-yt-play": tone }}
     >
-      <circle
-        cx="12"
-        cy="12"
-        r={ring ? 11.5 : 12}
-        fill={bg}
-        stroke={ring || "none"}
-        strokeWidth={ring ? 1 : 0}
-      />
-      <Glyph network={network} fg={fg} />
+      <circle cx="12" cy="12" r="12" fill={tone} />
+      <Glyph network={network} />
     </svg>
   );
 }

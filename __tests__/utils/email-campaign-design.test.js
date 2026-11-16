@@ -114,23 +114,28 @@ describe("valeurs par défaut", () => {
     expect(
       blockWithDefaults({ id: "s", type: "spacer", height: 500 }).height,
     ).toBe(120);
+    // Titre moyen par défaut, comme l'API
     expect(
       blockWithDefaults({ id: "h", type: "heading", level: 7 }).level,
-    ).toBe(1);
+    ).toBe(2);
     expect(blockWithDefaults({ id: "x", type: "video" })).toBe(null);
   });
 
-  it("garde seulement les réseaux connus d'un bloc réseaux sociaux", () => {
+  it("remplace un réseau inconnu par « Site web », comme l'API", () => {
     const social = blockWithDefaults({
       id: "r",
       type: "social",
       items: [
         { network: "facebook", url: "https://facebook.com/x" },
-        { network: "myspace" },
+        { network: "myspace", url: "https://myspace.com/x" },
+        null,
       ],
       iconStyle: "neon",
     });
-    expect(social.items).toHaveLength(1);
+    expect(social.items.map((item) => item.network)).toEqual([
+      "facebook",
+      "website",
+    ]);
     expect(social.iconStyle).toBe("color");
   });
 

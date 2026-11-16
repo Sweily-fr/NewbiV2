@@ -27,9 +27,20 @@ describe("repérage des variables", () => {
     ]);
   });
 
-  it("ignore les accolades simples et les textes vides", () => {
-    expect(parseVariables("{prenom} et {{}}")).toEqual([]);
+  it("ignore les accolades simples, signale une variable vide comme l'API", () => {
+    expect(parseVariables("{prenom} et {{ }}")).toEqual([
+      { raw: "{{ }}", key: "", fallback: null, index: 12 },
+    ]);
+    expect(unknownVariables("{{}}")).toEqual([""]);
     expect(parseVariables(null)).toEqual([]);
+  });
+
+  it("lit une clé entourée d'espaces, avec ou sans repli", () => {
+    expect(parseVariables("{{ prenom | Bonjour }}")[0]).toMatchObject({
+      key: "prenom",
+      fallback: "Bonjour",
+    });
+    expect(unknownVariables("{{ pre nom }}")).toEqual(["pre nom"]);
   });
 
   it("signale les variables inconnues une seule fois, sans tenir compte de la casse", () => {
@@ -99,7 +110,7 @@ describe("remplacement", () => {
       DEFAULT_VARIABLES.find((v) => v.key === "prenom").example,
     );
     expect(fillVariables("{{nom_complet}}", exampleValues())).toBe(
-      "Camille Martin",
+      "Marie Durand",
     );
   });
 });

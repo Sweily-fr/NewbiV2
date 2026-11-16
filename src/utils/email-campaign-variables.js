@@ -10,16 +10,17 @@
 
 /** Variables connues tant que l'API ne les a pas renvoyées (réglages). */
 export const DEFAULT_VARIABLES = [
-  { key: "prenom", label: "Prénom", example: "Camille" },
-  { key: "nom", label: "Nom", example: "Martin" },
-  { key: "nom_complet", label: "Nom complet", example: "Camille Martin" },
-  { key: "entreprise", label: "Entreprise", example: "Atelier Martin" },
-  { key: "email", label: "E-mail", example: "camille@exemple.fr" },
+  { key: "prenom", label: "Prénom", example: "Marie" },
+  { key: "nom", label: "Nom", example: "Durand" },
+  { key: "nom_complet", label: "Nom complet", example: "Marie Durand" },
+  { key: "entreprise", label: "Entreprise", example: "Atelier Durand" },
+  { key: "email", label: "Adresse e-mail", example: "marie.durand@exemple.fr" },
   { key: "ville", label: "Ville", example: "Lyon" },
 ];
 
-// {{ cle }} ou {{cle|repli}} ; la clé en lettres, chiffres et _
-const VARIABLE_PATTERN = /\{\{\s*([^{}|\s]+)\s*(?:\|([^{}]*))?\}\}/g;
+// {{ clé }} ou {{ clé | repli }}, comme l'API (personalize.js) : ni
+// accolade dans la clé ni dans le repli ; la clé est lue sans espaces autour
+const VARIABLE_PATTERN = /\{\{([^{}|]*)(?:\|([^{}]*))?\}\}/g;
 
 /** Variables écrites dans un texte, dans l'ordre : { raw, key, fallback, index }. */
 export function parseVariables(text) {
@@ -30,7 +31,7 @@ export function parseVariables(text) {
   while (match) {
     found.push({
       raw: match[0],
-      key: match[1].toLowerCase(),
+      key: match[1].trim().toLowerCase(),
       fallback: match[2] === undefined ? null : match[2].trim(),
       index: match.index,
     });
@@ -104,7 +105,7 @@ export function fillVariables(
 ) {
   const known = knownKeySet(variables);
   return String(text ?? "").replace(VARIABLE_PATTERN, (raw, key, fallback) => {
-    const name = key.toLowerCase();
+    const name = key.trim().toLowerCase();
     if (!known.has(name)) return raw;
     const value = values[name];
     if (value !== undefined && value !== null && String(value).trim() !== "") {

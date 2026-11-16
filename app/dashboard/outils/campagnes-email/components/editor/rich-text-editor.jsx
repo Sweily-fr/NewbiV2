@@ -327,6 +327,7 @@ export function useRichTextEditor({
   variables,
   allowLists = true,
   placeholder = "Écrivez votre texte",
+  richClass = RICH_CLASS,
   className,
 }) {
   const onChangeRef = useRef(onChange);
@@ -363,7 +364,7 @@ export function useRichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          RICH_CLASS,
+          richClass,
           "min-h-[1.4em] cursor-text outline-none [&_.ec-empty]:before:pointer-events-none [&_.ec-empty]:before:float-left [&_.ec-empty]:before:h-0 [&_.ec-empty]:before:opacity-40 [&_.ec-empty]:before:content-[attr(data-placeholder)]",
           className,
         ),

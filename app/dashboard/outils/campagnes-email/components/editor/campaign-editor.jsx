@@ -47,6 +47,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import {
   BLOCK_LABELS,
+  MAX_BLOCKS,
   addBlock,
   createBlock,
   duplicateBlock,
@@ -181,7 +182,19 @@ export function CampaignEditor({
   const access = useCampaignAccess();
   const notDraft = campaign.status !== "DRAFT";
   const readOnly = notDraft || !access.canEdit || access.readOnly;
-  const editor = useCampaignEditor({ campaign, workspaceId, readOnly });
+  // Refus d'enregistrement : expliqué une fois par message (pas à chaque frappe)
+  const lastSaveError = useRef(null);
+  const editor = useCampaignEditor({
+    campaign,
+    workspaceId,
+    readOnly,
+    onSaveError: (error) => {
+      const message = errorMessage(error);
+      if (message === lastSaveError.current) return;
+      lastSaveError.current = message;
+      toast.error("Modifications non enregistrées", { description: message });
+    },
+  });
   const { design, designRef, commit } = editor;
   const style = useMemo(() => resolvedStyle(design.style), [design.style]);
   const variables = settings?.variables;
@@ -215,9 +228,16 @@ export function CampaignEditor({
   };
 
   // ── Opérations sur le design ──────────────────────────────────────────
+  /** Plus de place (80 blocs, limite de l'API) : expliqué, rien n'est ajouté. */
+  const full = useCallback(() => {
+    if ((designRef.current.blocks || []).length < MAX_BLOCKS) return false;
+    toast.error(`Un e-mail ne peut pas contenir plus de ${MAX_BLOCKS} blocs`);
+    return true;
+  }, [designRef]);
+
   const handleAdd = useCallback(
     (type) => {
-      if (locked) return;
+      if (locked || full()) return;
       const { design: next, block } = addBlock(
         designRef.current,
         type,
@@ -227,7 +247,7 @@ export function CampaignEditor({
       setSelectedId(block.id);
       scrollToBlock(block.id);
     },
-    [locked, designRef, selectedId, commit],
+    [locked, full, designRef, selectedId, commit],
   );
 
   const handleUpdate = useCallback(
@@ -256,13 +276,14 @@ export function CampaignEditor({
 
   const handleDuplicate = useCallback(
     (id) => {
+      if (full()) return;
       const { design: next, block } = duplicateBlock(designRef.current, id);
       if (!block) return;
       commit(next);
       setSelectedId(block.id);
       scrollToBlock(block.id);
     },
-    [designRef, commit],
+    [full, designRef, commit],
   );
 
   const handleRemove = useCallback(
@@ -371,7 +392,7 @@ export function CampaignEditor({
     const source = active.data.current?.source;
     if (source === "palette") {
       const index = dropIndexRef.current;
-      if (over && index !== null && !locked) {
+      if (over && index !== null && !locked && !full()) {
         const block = createBlock(active.data.current.type);
         commit(insertBlock(designRef.current, block, index));
         setSelectedId(block.id);

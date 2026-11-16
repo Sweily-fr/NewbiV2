@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import {
+  TriangleAlert,
   CalendarClock,
   Eye,
   Loader2,
@@ -182,6 +183,27 @@ export function CampaignSetup({ campaign, workspaceId, settings }) {
             canEdit ? (name) => save({ name }, { quiet: true }) : undefined
           }
         />
+
+        {draft && campaign.pausedReason && (
+          <div
+            role="status"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100"
+          >
+            <TriangleAlert
+              className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+              aria-hidden
+            />
+            <div className="min-w-0">
+              <p className="font-medium">
+                L&apos;envoi programmé n&apos;a pas pu partir
+              </p>
+              <p className="mt-0.5 leading-5 text-amber-900/80 dark:text-amber-100/80">
+                {campaign.pausedReason} La campagne est redevenue un brouillon :
+                corrigez ce qui bloque, puis programmez-la de nouveau.
+              </p>
+            </div>
+          </div>
+        )}
 
         {scheduled && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-100">

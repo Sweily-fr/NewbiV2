@@ -6,47 +6,56 @@ import {
   HEADING_SIZES,
   blockWithDefaults,
   fontStack,
+  isBlankHtml,
   resolveStyle,
 } from "@/src/utils/email-campaign-design";
 import { highlightVariables, sanitizeCampaignHtml } from "./rich-html";
 import { SocialIcon } from "./social-icons";
 
 /**
- * Rendu React d'un e-mail de campagne, fidèle au HTML envoyé par l'API
+ * Rendu React d'un e-mail de campagne, calqué sur le HTML envoyé par l'API
  * (newbi-api, src/services/emailCampaigns/render.js) : mêmes tailles,
- * marges, couleurs et polices, en styles en ligne. Sert à la toile de
- * l'éditeur et aux vignettes des modèles.
+ * marges, interlignes, couleurs et polices. Sert à la toile de l'éditeur et
+ * aux vignettes des modèles.
  */
 
+// Mise en forme commune du texte riche : liens soulignés de la couleur des
+// liens (--ec-link), variables en pastille. Le reset de Tailwind retire
+// marges et puces : on les remet comme à l'envoi.
+const RICH_BASE =
+  "ec-rich break-words [&_a]:text-[var(--ec-link)] [&_a]:underline [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_.ec-var]:rounded-[4px] [&_.ec-var]:bg-[#5a50ff]/10 [&_.ec-var]:px-[3px] [&_.ec-var]:text-[#4a41e0] [&_.ec-var]:[text-decoration:none]";
+
 /**
- * Mise en forme du texte riche à l'intérieur d'un bloc : paragraphes
- * espacés, listes, liens soulignés de la couleur des liens (--ec-link), et
- * variables en pastille. Le reset de Tailwind retire marges et puces : on
- * les remet comme dans une messagerie.
+ * Texte (et colonne de texte) : paragraphes et listes séparés d'une ligne
+ * de la taille du texte, dernier élément sans marge, ligne vide gardée.
  */
-export const RICH_CLASS =
-  "ec-rich break-words [&_p]:m-0 [&_p]:mb-[0.75em] [&_p:last-child]:mb-0 [&_ul]:m-0 [&_ul]:mb-[0.75em] [&_ul:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-[1.4em] [&_ol]:m-0 [&_ol]:mb-[0.75em] [&_ol:last-child]:mb-0 [&_ol]:list-decimal [&_ol]:pl-[1.4em] [&_li>p]:mb-0 [&_a]:text-[var(--ec-link)] [&_a]:underline [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_.ec-var]:rounded-[4px] [&_.ec-var]:bg-[#5a50ff]/10 [&_.ec-var]:px-[3px] [&_.ec-var]:text-[#4a41e0] [&_.ec-var]:[text-decoration:none]";
+export const RICH_CLASS = `${RICH_BASE} [&_p]:m-0 [&_p]:mb-[1em] [&_p:empty]:min-h-[1lh] [&_ul]:m-0 [&_ul]:mb-[1em] [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:m-0 [&_ol]:mb-[1em] [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_li_p]:mb-0 [&>:last-child]:mb-0`;
+
+/** Titre : chaque paragraphe est une ligne, sans écart ni puce. */
+export const HEADING_RICH_CLASS = `${RICH_BASE} [&_p]:m-0 [&_p:empty]:min-h-[1lh] [&_ul]:m-0 [&_ul]:list-none [&_ul]:p-0 [&_ol]:m-0 [&_ol]:list-none [&_ol]:p-0 [&_li]:m-0`;
 
 export const paddingStyle = (padding) =>
   padding
     ? `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`
     : undefined;
 
+const lineHeightPx = (fontSize, ratio) => `${Math.round(fontSize * ratio)}px`;
+
 /** Texte riche nettoyé, variables en pastille. */
-export const RichHtml = memo(function RichHtml({ html, className = "" }) {
+export const RichHtml = memo(function RichHtml({
+  html,
+  className = RICH_CLASS,
+}) {
   const clean = useMemo(
     () => highlightVariables(sanitizeCampaignHtml(html)),
     [html],
   );
   return (
-    <div
-      className={`${RICH_CLASS} ${className}`}
-      dangerouslySetInnerHTML={{ __html: clean }}
-    />
+    <div className={className} dangerouslySetInnerHTML={{ __html: clean }} />
   );
 });
 
-/** Texte visible d'un bouton : variables en pastille légère. */
+/** Texte d'un bouton : variables en pastille légère. */
 function LabelWithVariables({ text }) {
   const parts = String(text || "").split(/(\{\{[^{}]*\}\})/g);
   return parts.map((part, index) =>
@@ -65,8 +74,8 @@ function LabelWithVariables({ text }) {
 }
 
 /**
- * Zone d'une image pas encore choisie (bloc image vide) : visible dans
- * l'éditeur, jamais envoyée.
+ * Zone d'une image pas encore choisie : visible dans l'éditeur, jamais
+ * envoyée (l'API ignore une image vide).
  */
 export function ImagePlaceholder({
   height = 160,
@@ -91,13 +100,19 @@ export function ImagePlaceholder({
   );
 }
 
-const textAlign = (align) => align || "left";
+/** Invite d'un texte vide (éditeur seulement : l'API ne l'envoie pas). */
+function EmptyText({ children }) {
+  return (
+    <p style={{ margin: 0, opacity: 0.35, fontStyle: "italic" }}>{children}</p>
+  );
+}
+
 const blockAlign = (align) =>
   align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
 
 /**
- * Bouton du bloc Bouton (ou du bloc Image et texte) : même allure qu'à
- * l'envoi (bouton « bulletproof » de l'API).
+ * Bouton : même allure que le bouton « bulletproof » de l'API (hauteur
+ * 2,75 fois la taille du texte, 28 px de part et d'autre du texte).
  */
 export function EmailButton({
   label,
@@ -107,6 +122,7 @@ export function EmailButton({
   fontSize = 16,
   fullWidth = false,
 }) {
+  const empty = !String(label || "").trim();
   return (
     <span
       style={{
@@ -116,62 +132,69 @@ export function EmailButton({
         borderRadius,
         fontSize,
         fontWeight: 700,
-        lineHeight: 1.2,
-        padding: "12px 24px",
+        lineHeight: lineHeightPx(fontSize, 2.75),
+        padding: fullWidth ? 0 : "0 28px",
         textAlign: "center",
         textDecoration: "none",
         wordBreak: "break-word",
+        opacity: empty ? 0.45 : 1,
       }}
     >
-      <LabelWithVariables text={label || "Bouton"} />
+      <LabelWithVariables text={empty ? "Texte du bouton" : label} />
     </span>
   );
 }
 
 /**
  * Contenu d'un bloc, marges comprises. `renderRichText(block, html)` : la
- * toile y monte l'éditeur de texte du bloc sélectionné ; sinon le texte
- * riche est affiché.
+ * toile y monte l'éditeur du bloc sélectionné ; sinon le texte riche est
+ * affiché. `editor` : invites des textes vides (jamais envoyées).
  */
-export function BlockView({ block: raw, style: rawStyle, renderRichText }) {
+export function BlockView({
+  block: raw,
+  style: rawStyle,
+  renderRichText,
+  editor = false,
+}) {
   const block = blockWithDefaults(raw);
   if (!block) return null;
   const style = rawStyle?.__resolved ? rawStyle : resolveStyle(rawStyle);
-  const rich = (html, extraClass) =>
-    renderRichText ? (
-      renderRichText(block, html, extraClass)
-    ) : (
-      <RichHtml html={html} className={extraClass} />
-    );
+  const rich = (html, className, emptyLabel) => {
+    if (renderRichText) return renderRichText(block, html);
+    if (editor && isBlankHtml(html)) return <EmptyText>{emptyLabel}</EmptyText>;
+    return <RichHtml html={html} className={className} />;
+  };
 
   switch (block.type) {
-    case "heading":
+    case "heading": {
+      const fontSize = HEADING_SIZES[block.level];
       return (
         <div
           style={{
             padding: paddingStyle(block.padding),
-            textAlign: textAlign(block.align),
+            textAlign: block.align,
             color: block.color || style.headingColor,
-            fontSize: HEADING_SIZES[block.level],
-            lineHeight: 1.3,
+            fontSize,
+            lineHeight: lineHeightPx(fontSize, 1.3),
             fontWeight: 700,
           }}
         >
-          {rich(block.html)}
+          {rich(block.html, HEADING_RICH_CLASS, "Votre titre")}
         </div>
       );
+    }
     case "text":
       return (
         <div
           style={{
             padding: paddingStyle(block.padding),
-            textAlign: textAlign(block.align),
+            textAlign: block.align,
             color: block.color || style.textColor,
             fontSize: block.fontSize,
-            lineHeight: block.lineHeight,
+            lineHeight: lineHeightPx(block.fontSize, block.lineHeight),
           }}
         >
-          {rich(block.html)}
+          {rich(block.html, RICH_CLASS, "Écrivez votre texte")}
         </div>
       );
     case "button":
@@ -179,7 +202,7 @@ export function BlockView({ block: raw, style: rawStyle, renderRichText }) {
         <div
           style={{
             padding: paddingStyle(block.padding),
-            textAlign: block.fullWidth ? "center" : textAlign(block.align),
+            textAlign: block.fullWidth ? "center" : block.align,
           }}
         >
           <EmailButton
@@ -203,8 +226,7 @@ export function BlockView({ block: raw, style: rawStyle, renderRichText }) {
         >
           <div style={{ width: `${block.width}%` }}>
             {block.src ? (
-              // Image choisie par l'utilisateur (URL publique), affichée
-              // telle qu'elle partira : pas d'optimisation Next
+              // Image choisie par l'utilisateur, montrée telle qu'elle partira
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={block.src}
@@ -240,34 +262,35 @@ export function BlockView({ block: raw, style: rawStyle, renderRichText }) {
           style={{
             color: style.textColor,
             fontSize: 16,
-            lineHeight: 1.6,
+            lineHeight: lineHeightPx(16, 1.6),
+            textAlign: "left",
           }}
         >
-          {rich(block.html)}
+          {rich(block.html, RICH_CLASS, "Écrivez votre texte")}
           {block.buttonLabel ? (
             <div style={{ marginTop: 16 }}>
               <EmailButton
                 label={block.buttonLabel}
                 backgroundColor={style.primaryColor}
-                fontSize={15}
               />
             </div>
           ) : null}
         </div>
       );
-      const left = block.imagePosition === "right" ? text : image;
-      const right = block.imagePosition === "right" ? image : text;
+      // Image à gauche ou à droite, colonnes alignées en haut, 24 px entre
+      const right = block.imagePosition === "right";
       return (
         <div
           style={{
             padding: paddingStyle(block.padding),
             display: "flex",
+            flexDirection: right ? "row-reverse" : "row",
             gap: 24,
-            alignItems: "center",
+            alignItems: "flex-start",
           }}
         >
-          <div style={{ flex: "1 1 0", minWidth: 0 }}>{left}</div>
-          <div style={{ flex: "1 1 0", minWidth: 0 }}>{right}</div>
+          <div style={{ flex: "1 1 0", minWidth: 0 }}>{image}</div>
+          <div style={{ flex: "1 1 0", minWidth: 0 }}>{text}</div>
         </div>
       );
     }
@@ -295,19 +318,32 @@ export function BlockView({ block: raw, style: rawStyle, renderRichText }) {
             padding: paddingStyle(block.padding),
             display: "flex",
             justifyContent: blockAlign(block.align),
-            gap: 10,
+            gap: 8,
             flexWrap: "wrap",
-            opacity: block.items.length ? 1 : 0.45,
           }}
         >
-          {items.map((item, index) => (
-            <SocialIcon
-              key={`${item.network}-${index}`}
-              network={item.network}
-              iconStyle={block.iconStyle}
-              size={32}
-            />
-          ))}
+          {items.map((item, index) => {
+            // Sans adresse, l'icône n'est pas envoyée : estompée ici
+            const linked = /^https?:\/\/[^/\s]+\.[^\s]+/i.test(item.url || "");
+            return (
+              <span
+                key={`${item.network}-${index}`}
+                style={{ opacity: linked ? 1 : 0.35 }}
+                title={
+                  linked
+                    ? undefined
+                    : "Ajoutez l'adresse pour afficher cette icône dans l'e-mail"
+                }
+              >
+                <SocialIcon
+                  network={item.network}
+                  iconStyle={block.iconStyle}
+                  primaryColor={style.primaryColor}
+                  size={32}
+                />
+              </span>
+            );
+          })}
         </div>
       );
     }
@@ -317,9 +353,9 @@ export function BlockView({ block: raw, style: rawStyle, renderRichText }) {
 }
 
 /**
- * Pied de page ajouté par l'API à chaque envoi (identité de l'entreprise et
- * désinscription) : affiché grisé, jamais modifiable. Adresse manquante :
- * signalée à la place, sans être inventée.
+ * Pied de page ajouté par l'API à chaque envoi (identité de l'entreprise,
+ * raison de l'envoi, désinscription), sous le cadre : affiché tel quel,
+ * jamais modifiable. Adresse manquante : signalée, jamais inventée.
  */
 export function EmailFooterView({
   style: rawStyle,
@@ -328,32 +364,33 @@ export function EmailFooterView({
   addressMissingHint = false,
 }) {
   const style = rawStyle?.__resolved ? rawStyle : resolveStyle(rawStyle);
-  const name = companyName || "Votre entreprise";
+  const name = companyName || "l'expéditeur";
+  const line = {
+    margin: 0,
+    fontSize: 12,
+    lineHeight: "18px",
+    color: style.footerTextColor,
+  };
   return (
     <div
       style={{
-        padding: "24px 32px 8px",
+        padding: "24px 24px 8px",
         textAlign: "center",
-        fontSize: 12,
-        lineHeight: 1.6,
-        color: style.footerTextColor,
         fontFamily: fontStack(style.fontFamily),
       }}
     >
-      <div style={{ fontWeight: 700 }}>{name}</div>
+      <p style={{ ...line, marginBottom: 4, fontWeight: 700 }}>{name}</p>
       {companyAddress ? (
-        <div>{companyAddress}</div>
+        <p style={{ ...line, marginBottom: 12 }}>{companyAddress}</p>
       ) : addressMissingHint ? (
-        <div style={{ color: "#b45309" }}>
-          Adresse de l&apos;entreprise à compléter
-        </div>
+        <p style={{ ...line, marginBottom: 12, color: "#b45309" }}>
+          Adresse de l&apos;entreprise à compléter dans les paramètres
+        </p>
       ) : null}
-      <div style={{ marginTop: 8 }}>
+      <p style={{ ...line, marginBottom: 12 }}>
         Vous recevez cet e-mail car vous êtes en relation avec {name}.
-      </div>
-      <div style={{ marginTop: 4, textDecoration: "underline" }}>
-        Se désinscrire
-      </div>
+      </p>
+      <p style={{ ...line, textDecoration: "underline" }}>Se désinscrire</p>
     </div>
   );
 }
@@ -365,7 +402,7 @@ export const resolvedStyle = (style) => ({
 });
 
 /**
- * Fond et cadre de l'e-mail (largeur, arrondi, police, couleurs). Les
+ * Fond et cadre de l'e-mail (largeur, arrondi, police, couleurs) ; les
  * blocs vont dans `children`, le pied dans `footer`.
  */
 export function EmailShell({
@@ -374,7 +411,7 @@ export function EmailShell({
   footer,
   className = "",
   frameClassName = "",
-  outerPadding = "32px 16px",
+  outerPadding = "24px 12px",
   frameProps = {},
 }) {
   const style = rawStyle?.__resolved ? rawStyle : resolvedStyle(rawStyle);
@@ -403,7 +440,9 @@ export function EmailShell({
       >
         {children}
       </div>
-      {footer}
+      <div style={{ maxWidth: style.contentWidth, margin: "0 auto" }}>
+        {footer}
+      </div>
     </div>
   );
 }

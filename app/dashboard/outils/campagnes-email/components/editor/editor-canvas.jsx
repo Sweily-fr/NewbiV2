@@ -28,7 +28,12 @@ import {
   RICH_TEXT_TYPES,
   fontStack,
 } from "@/src/utils/email-campaign-design";
-import { BlockView, EmailFooterView } from "../email-design/email-blocks";
+import {
+  BlockView,
+  EmailFooterView,
+  HEADING_RICH_CLASS,
+  RICH_CLASS,
+} from "../email-design/email-blocks";
 import { useRichTextEditor } from "./rich-text-editor";
 
 /** Ligne qui montre où le bloc glissé sera déposé. */
@@ -82,6 +87,7 @@ function RichBlockContent({ block, style, corners, onUpdate, variables }) {
     allowLists: block.type !== "heading",
     placeholder:
       block.type === "heading" ? "Votre titre" : "Écrivez votre texte",
+    richClass: block.type === "heading" ? HEADING_RICH_CLASS : RICH_CLASS,
     onChange: (html) => onUpdate({ html }, "html"),
   });
   return (
@@ -252,7 +258,7 @@ function CanvasBlock({
         />
       ) : (
         <div style={corners}>
-          <BlockView block={block} style={style} />
+          <BlockView block={block} style={style} editor />
         </div>
       )}
     </div>

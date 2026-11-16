@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApolloClient } from "@apollo/client";
-import { UPDATE_EMAIL_CAMPAIGN } from "@/src/graphql/emailCampaignQueries";
+import {
+  GET_EMAIL_CAMPAIGN,
+  UPDATE_EMAIL_CAMPAIGN,
+} from "@/src/graphql/emailCampaignQueries";
 import { normalizeDesign } from "@/src/utils/email-campaign-design";
 
 const SAVE_DELAY_MS = 1500;
@@ -11,17 +14,7 @@ const HISTORY_LIMIT = 100;
 // arrière les annule toutes
 const COALESCE_MS = 1200;
 
-/** Refus définitif : rien ne sert de réessayer (campagne partie, rôle…). */
-function isPermanentRefusal(error) {
-  const first = error?.graphQLErrors?.[0];
-  const code = first?.extensions?.code;
-  return [
-    "FORBIDDEN",
-    "NOT_FOUND",
-    "BAD_USER_INPUT",
-    "VALIDATION_ERROR",
-  ].includes(code);
-}
+const errorCode = (error) => error?.graphQLErrors?.[0]?.extensions?.code;
 
 /**
  * État de l'éditeur d'une campagne : design (avec historique Annuler /
@@ -29,7 +22,12 @@ function isPermanentRefusal(error) {
  * modification). Le design initial est lu une fois : les réponses de l'API
  * ne remplacent jamais une saisie en cours.
  */
-export function useCampaignEditor({ campaign, workspaceId, readOnly }) {
+export function useCampaignEditor({
+  campaign,
+  workspaceId,
+  readOnly,
+  onSaveError,
+}) {
   const client = useApolloClient();
   const initial = useRef(null);
   if (!initial.current) {
@@ -39,6 +37,8 @@ export function useCampaignEditor({ campaign, workspaceId, readOnly }) {
     };
   }
 
+  const onSaveErrorRef = useRef(onSaveError);
+  onSaveErrorRef.current = onSaveError;
   const designRef = useRef(initial.current.design);
   const nameRef = useRef(initial.current.name);
   const [design, setDesignState] = useState(initial.current.design);
@@ -87,10 +87,26 @@ export function useCampaignEditor({ campaign, workspaceId, readOnly }) {
           setStatus(snapshot() === current ? "saved" : "dirty");
           return true;
         },
-        (error) => {
+        async (error) => {
           setSaveError(error);
-          if (isPermanentRefusal(error)) setBlocked(true);
           setStatus("error");
+          const code = errorCode(error);
+          if (code === "FORBIDDEN" || code === "NOT_FOUND") {
+            setBlocked(true);
+          } else if (code === "VALIDATION_ERROR" || code === "BAD_USER_INPUT") {
+            // Contenu refusé (trop de blocs…) ou campagne partie entre-temps :
+            // seul le second cas fige l'éditeur
+            const fresh = await client
+              .query({
+                query: GET_EMAIL_CAMPAIGN,
+                variables: { workspaceId, id: campaign.id },
+                fetchPolicy: "network-only",
+              })
+              .catch(() => null);
+            const status = fresh?.data?.emailCampaign?.status;
+            if (status && status !== "DRAFT") setBlocked(true);
+          }
+          onSaveErrorRef.current?.(error);
           return false;
         },
       );

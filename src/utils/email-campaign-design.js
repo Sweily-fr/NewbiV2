@@ -67,6 +67,10 @@ export const LIMITS = Object.freeze({
 
 export const HEADING_SIZES = { 1: 28, 2: 22, 3: 18 };
 
+/** Limites de l'API : au-delà, l'enregistrement est refusé. */
+export const MAX_BLOCKS = 80;
+export const MAX_SOCIAL_ITEMS = 10;
+
 export const BLOCK_TYPES = [
   "heading",
   "text",
@@ -122,7 +126,7 @@ export const DEFAULT_PADDING = {
   heading: pad(24, 32, 8, 32),
   text: pad(8, 32, 8, 32),
   button: pad(16, 32, 16, 32),
-  image: pad(16, 32, 16, 32),
+  image: pad(8, 32, 8, 32),
   imageText: pad(16, 32, 16, 32),
   divider: pad(16, 32, 16, 32),
   social: pad(16, 32, 16, 32),
@@ -136,7 +140,7 @@ export const DEFAULT_PADDING = {
 export const BLOCK_DEFAULTS = {
   heading: {
     html: "",
-    level: 1,
+    level: 2,
     align: "left",
     color: null,
   },
@@ -292,7 +296,7 @@ export function blockWithDefaults(block) {
     case "heading":
       resolved.level = [1, 2, 3].includes(Number(resolved.level))
         ? Number(resolved.level)
-        : 1;
+        : 2;
       break;
     case "text":
       resolved.fontSize = clampNumber(
@@ -349,11 +353,16 @@ export function blockWithDefaults(block) {
       );
       break;
     case "social":
-      resolved.items = Array.isArray(resolved.items)
-        ? resolved.items.filter((item) =>
-            SOCIAL_NETWORKS.includes(item?.network),
-          )
-        : [];
+      // Comme l'API : un réseau inconnu devient « Site web », 10 au plus
+      resolved.items = (Array.isArray(resolved.items) ? resolved.items : [])
+        .filter((item) => item && typeof item === "object")
+        .slice(0, MAX_SOCIAL_ITEMS)
+        .map((item) => ({
+          ...item,
+          network: SOCIAL_NETWORKS.includes(item.network)
+            ? item.network
+            : "website",
+        }));
       if (!ICON_STYLES.includes(resolved.iconStyle))
         resolved.iconStyle = "color";
       break;
