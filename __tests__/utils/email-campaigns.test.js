@@ -79,22 +79,42 @@ describe("nombres", () => {
 });
 
 describe("dates", () => {
+  const now = new Date("2026-11-16T10:00:00Z");
+
   it("affiche la date utile selon le statut, à l'heure de Paris", () => {
     expect(
-      campaignDateLabel({
-        status: "SCHEDULED",
-        scheduledAt: "2026-11-20T08:00:00.000Z",
-      }),
-    ).toBe("Prévue le 20 nov. 2026 à 09:00");
+      campaignDateLabel(
+        { status: "SCHEDULED", scheduledAt: "2026-11-20T08:00:00.000Z" },
+        now,
+      ),
+    ).toBe("Prévue le 20 nov. à 09:00");
     expect(
-      campaignDateLabel({
-        status: "SENT",
-        completedAt: "2026-07-01T12:30:00.000Z",
-      }),
-    ).toBe("Envoyée le 1 juil. 2026 à 14:30");
+      campaignDateLabel(
+        { status: "SENT", completedAt: "2026-07-01T12:30:00.000Z" },
+        now,
+      ),
+    ).toBe("Envoyée le 1 juil. à 14:30");
     expect(
-      campaignDateLabel({ status: "DRAFT", updatedAt: "2026-11-16T10:00:00Z" }),
-    ).toMatch(/^Modifiée le 16 nov\. 2026/);
+      campaignDateLabel(
+        { status: "DRAFT", updatedAt: "2026-11-16T10:00:00Z" },
+        now,
+      ),
+    ).toBe("Modifiée le 16 nov. à 11:00");
+  });
+
+  it("ajoute l'année quand ce n'est pas l'année en cours", () => {
+    expect(
+      campaignDateLabel(
+        { status: "SENT", completedAt: "2025-12-31T23:30:00.000Z" },
+        now,
+      ),
+    ).toBe("Envoyée le 1 janv. à 00:30");
+    expect(
+      campaignDateLabel(
+        { status: "CANCELED", completedAt: "2025-03-10T09:00:00.000Z" },
+        now,
+      ),
+    ).toBe("Annulée le 10 mars 2025 à 10:00");
   });
 
   it("propose un nom daté pour une nouvelle campagne", () => {

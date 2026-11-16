@@ -127,6 +127,15 @@ const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   month: "short",
   year: "numeric",
 });
+const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: CAMPAIGN_TIMEZONE,
+  day: "numeric",
+  month: "short",
+});
+const yearFormatter = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: CAMPAIGN_TIMEZONE,
+  year: "numeric",
+});
 const longDayFormatter = new Intl.DateTimeFormat("fr-FR", {
   timeZone: CAMPAIGN_TIMEZONE,
   weekday: "long",
@@ -139,11 +148,18 @@ const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
 });
 
-/** « 12 nov. 2026 à 14:30 » */
-export function formatDateTime(value) {
+/** Jour : « 12 nov. », avec l'année si ce n'est pas l'année en cours. */
+function dayLabel(date, now) {
+  return yearFormatter.format(date) === yearFormatter.format(now)
+    ? shortDayFormatter.format(date)
+    : dayFormatter.format(date);
+}
+
+/** « 12 nov. à 14:30 » (« 12 nov. 2025 à 14:30 » une autre année). */
+export function formatDateTime(value, now = new Date()) {
   const date = toDate(value);
   if (!date) return "";
-  return `${dayFormatter.format(date)} à ${timeFormatter.format(date)}`;
+  return `${dayLabel(date, now)} à ${timeFormatter.format(date)}`;
 }
 
 /** « jeudi 20 novembre à 09:00 » */
@@ -153,27 +169,28 @@ export function formatLongDateTime(value) {
   return `${longDayFormatter.format(date)} à ${timeFormatter.format(date)}`;
 }
 
-/** « 12 nov. 2026 » */
-export function formatDay(value) {
+/** « 12 nov. » (avec l'année si ce n'est pas l'année en cours). */
+export function formatDay(value, now = new Date()) {
   const date = toDate(value);
-  return date ? dayFormatter.format(date) : "";
+  return date ? dayLabel(date, now) : "";
 }
 
 /** Date qui compte pour la liste, selon le statut. */
-export function campaignDateLabel(campaign) {
+export function campaignDateLabel(campaign, now = new Date()) {
   if (!campaign) return "";
   const { status } = campaign;
+  const at = (value) => formatDateTime(value, now);
   if (status === "SCHEDULED" && campaign.scheduledAt)
-    return `Prévue le ${formatDateTime(campaign.scheduledAt)}`;
+    return `Prévue le ${at(campaign.scheduledAt)}`;
   if (status === "SENDING" && campaign.startedAt)
-    return `Démarrée le ${formatDateTime(campaign.startedAt)}`;
+    return `Démarrée le ${at(campaign.startedAt)}`;
   if (status === "SENT")
-    return `Envoyée le ${formatDateTime(campaign.completedAt || campaign.startedAt || campaign.updatedAt)}`;
+    return `Envoyée le ${at(campaign.completedAt || campaign.startedAt || campaign.updatedAt)}`;
   if (status === "PAUSED")
-    return `En pause depuis le ${formatDateTime(campaign.updatedAt)}`;
+    return `En pause depuis le ${at(campaign.updatedAt)}`;
   if (status === "CANCELED")
-    return `Annulée le ${formatDateTime(campaign.completedAt || campaign.updatedAt)}`;
-  return `Modifiée le ${formatDateTime(campaign.updatedAt || campaign.createdAt)}`;
+    return `Annulée le ${at(campaign.completedAt || campaign.updatedAt)}`;
+  return `Modifiée le ${at(campaign.updatedAt || campaign.createdAt)}`;
 }
 
 /** Nom proposé pour une nouvelle campagne : « Campagne du 16 novembre ». */
