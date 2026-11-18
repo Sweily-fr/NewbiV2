@@ -62,6 +62,7 @@ import {
   updateStyle,
 } from "@/src/utils/email-campaign-design";
 import { DEFAULT_VARIABLES } from "@/src/utils/email-campaign-variables";
+import { effectiveSenderEmail } from "@/src/utils/email-sending-domain";
 import { resolvedStyle } from "../email-design/email-blocks";
 import { PreviewDialog } from "../preview-dialog";
 import { TestEmailDialog } from "../test-email-dialog";
@@ -658,7 +659,7 @@ export function CampaignEditor({
         subject={campaign.subject}
         preheader={campaign.preheader}
         fromName={campaign.fromName}
-        senderEmail={campaign.senderEmail}
+        senderEmail={effectiveSenderEmail(campaign, settings)}
         variables={variables}
       />
       <TestEmailDialog

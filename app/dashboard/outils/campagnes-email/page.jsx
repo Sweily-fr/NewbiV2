@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client";
 import {
+  AtSign,
   BarChart3,
   ChevronLeft,
   ChevronRight,
@@ -49,9 +50,14 @@ import {
   formatCount,
   quotaSummary,
 } from "@/src/utils/email-campaigns";
+import {
+  sendingDomainBadge,
+  sendingDomainState,
+} from "@/src/utils/email-sending-domain";
 import { CampagnesEmailPageSkeleton } from "./components/campagnes-email-page-skeleton";
 import { CampaignCards, CampaignsTable } from "./components/campaigns-list";
 import { NewCampaignDialog } from "./components/new-campaign-dialog";
+import { SendingDomainSheet } from "./components/sender/sending-domain-sheet";
 import { SuppressionsSheet } from "./components/suppressions-sheet";
 import {
   FOCUS_RING,
@@ -176,6 +182,56 @@ function FirstCampaign({ canCreate, readOnlyReason, onCreate }) {
   );
 }
 
+const DOT_TONES = { warning: "bg-amber-500", danger: "bg-red-500" };
+
+/**
+ * « Adresse d'envoi » : ouvre le panneau du domaine connecté. Une pastille
+ * signale un domaine en attente de validation ou en échec.
+ */
+function SenderAddressButton({ settings, isMobile, onClick }) {
+  const domain = settings?.sendingDomain;
+  const state = sendingDomainState(domain);
+  const badge =
+    state === "pending" || state === "failed"
+      ? sendingDomainBadge(domain)
+      : null;
+  const label = badge
+    ? `Adresse d'envoi : ${badge.label.toLowerCase()}`
+    : "Adresse d'envoi";
+  const title = settings?.senderEmail
+    ? `Vos campagnes partent de ${settings.senderEmail}${
+        badge
+          ? ` (domaine ${domain.domain} : ${badge.label.toLowerCase()})`
+          : ""
+      }`
+    : label;
+  return (
+    <Button
+      variant="outline"
+      onClick={onClick}
+      size={isMobile ? "icon" : "default"}
+      className={isMobile ? "size-9 rounded-full" : undefined}
+      aria-label={label}
+      title={title}
+    >
+      <AtSign className={isMobile ? "size-4" : "size-3.5"} aria-hidden />
+      {!isMobile && "Adresse d'envoi"}
+      {badge && (
+        <span
+          aria-hidden
+          className={cn(
+            "rounded-full",
+            DOT_TONES[badge.tone] || DOT_TONES.warning,
+            isMobile
+              ? "absolute top-1 right-1 size-2.5 ring-2 ring-background"
+              : "size-1.5",
+          )}
+        />
+      )}
+    </Button>
+  );
+}
+
 function SearchBox({ value, onChange, className }) {
   return (
     <div
@@ -230,6 +286,7 @@ export default function CampagnesEmailPage() {
   const [page, setPage] = useState(1);
   const [newOpen, setNewOpen] = useState(false);
   const [suppressionsOpen, setSuppressionsOpen] = useState(false);
+  const [senderOpen, setSenderOpen] = useState(false);
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -348,6 +405,11 @@ export default function CampagnesEmailPage() {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {!isMobile && <QuotaMeter quota={settings?.quota} />}
+          <SenderAddressButton
+            settings={settings}
+            isMobile={isMobile}
+            onClick={() => setSenderOpen(true)}
+          />
           <Button
             variant="outline"
             onClick={() => setSuppressionsOpen(true)}
@@ -509,6 +571,13 @@ export default function CampagnesEmailPage() {
           organization?.name
         }
         companyAddress={settings?.companyAddress}
+      />
+
+      <SendingDomainSheet
+        open={senderOpen}
+        onOpenChange={setSenderOpen}
+        workspaceId={workspaceId}
+        settings={settings}
       />
 
       <SuppressionsSheet

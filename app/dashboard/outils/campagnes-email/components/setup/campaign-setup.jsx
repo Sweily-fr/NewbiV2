@@ -23,6 +23,7 @@ import {
   formatDateTime,
   formatLongDateTime,
 } from "@/src/utils/email-campaigns";
+import { effectiveSenderEmail } from "@/src/utils/email-sending-domain";
 import { CampaignHeader } from "../campaign-header";
 import { PreviewDialog } from "../preview-dialog";
 import { TestEmailDialog } from "../test-email-dialog";
@@ -226,6 +227,7 @@ export function CampaignSetup({ campaign, workspaceId, settings }) {
             <SenderSection
               campaign={campaign}
               settings={settings}
+              workspaceId={workspaceId}
               complete={completion.sender}
               canEdit={canEdit}
               onSave={save}
@@ -277,7 +279,7 @@ export function CampaignSetup({ campaign, workspaceId, settings }) {
         workspaceId={workspaceId}
         campaignId={campaign.id}
         fromName={campaign.fromName}
-        senderEmail={campaign.senderEmail}
+        senderEmail={effectiveSenderEmail(campaign, settings)}
         subject={campaign.subject}
         preheader={campaign.preheader}
         variables={variables}
