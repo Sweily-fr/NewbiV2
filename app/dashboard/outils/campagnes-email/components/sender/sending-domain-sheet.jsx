@@ -767,6 +767,12 @@ export function SendingDomainSheet({
 
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Domaine visé, figé à l'ouverture : la fenêtre garde son texte pendant
+  // sa fermeture, une fois le domaine retiré
+  const [confirmFor, setConfirmFor] = useState({
+    domain: "",
+    verified: false,
+  });
   const [disconnectError, setDisconnectError] = useState(null);
 
   // Domaine absent ou déjà connecté côté API : l'état affiché est relu
@@ -840,23 +846,27 @@ export function SendingDomainSheet({
     }
   };
 
+  const verified = state === "verified";
   const openConfirm = () => {
     setDisconnectError(null);
+    setConfirmFor({ domain: domain?.domain || "", verified });
     setConfirmOpen(true);
   };
 
-  const verified = state === "verified";
   const handleDisconnect = async () => {
     setDisconnectError(null);
     try {
       await disconnectDomain({ variables: { workspaceId } });
-      setCachedDomain(null);
       setConfirmOpen(false);
-      toast.success(verified ? "Domaine déconnecté" : "Domaine retiré", {
-        description: verified
-          ? `Vos prochaines campagnes partiront de ${newbiSenderEmail || "l'adresse Newbi"}.`
-          : "Vous pouvez connecter une autre adresse.",
-      });
+      setCachedDomain(null);
+      toast.success(
+        confirmFor.verified ? "Domaine déconnecté" : "Domaine retiré",
+        {
+          description: confirmFor.verified
+            ? `Vos prochaines campagnes partiront de ${newbiSenderEmail || "l'adresse Newbi"}.`
+            : "Vous pouvez connecter une autre adresse.",
+        },
+      );
     } catch (error) {
       resyncOn(error, ["NOT_FOUND"]);
       setDisconnectError(sendingDomainErrorMessage(error, "disconnect"));
@@ -948,16 +958,17 @@ export function SendingDomainSheet({
         </div>
 
         <AlertDialog
-          open={confirmOpen && Boolean(domain)}
+          open={confirmOpen}
           onOpenChange={(next) => !disconnecting && setConfirmOpen(next)}
         >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {verified ? "Déconnecter" : "Retirer"} {domain?.domain}&nbsp;?
+                {confirmFor.verified ? "Déconnecter" : "Retirer"}{" "}
+                {confirmFor.domain}&nbsp;?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                {verified
+                {confirmFor.verified
                   ? `Vos prochaines campagnes partiront de ${newbiSenderEmail || "l'adresse Newbi"}. Les campagnes déjà envoyées ne changent pas. Pour reconnecter ce domaine plus tard, il faudra refaire la validation.`
                   : "La validation en cours est abandonnée. Vous pourrez ensuite connecter une autre adresse."}
               </AlertDialogDescription>
@@ -983,7 +994,7 @@ export function SendingDomainSheet({
                 className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:text-white dark:hover:bg-red-700"
               >
                 {disconnecting && <Loader2 className="size-3.5 animate-spin" />}
-                {verified ? "Déconnecter" : "Retirer"}
+                {confirmFor.verified ? "Déconnecter" : "Retirer"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
