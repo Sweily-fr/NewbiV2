@@ -169,7 +169,7 @@ export const contenu = {
       </>
     ),
     sousTitre:
-      "Créez votre compte, connectez les comptes de la société et invitez votre expert-comptable. 30 jours pour tester, sans carte bancaire.",
+      "Créez votre compte, connectez les comptes de la société et invitez votre expert-comptable. 7 jours pour tester, sans engagement.",
     imageAlt:
       "Un dirigeant de SASU consulte les factures de sa société dans Newbi sur son ordinateur portable",
   },
@@ -216,9 +216,9 @@ export const contenu = {
           "Vous conservez votre historique de facturation et vous adaptez vos informations légales — SIRET, forme juridique, régime de TVA. Un point à ne pas oublier : la société étant une nouvelle entité juridique, vous devez ouvrir une séquence de numérotation distincte, même si l'activité exercée reste la même.",
       },
       {
-        title: "Que se passe-t-il pendant les 30 jours offerts ?",
+        title: "Que se passe-t-il pendant les 7 jours offerts ?",
         content:
-          "Vous avez accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire, et vous pouvez émettre de vraies factures dès le premier jour. À la fin de l'essai, vous choisissez votre formule ; si vous ne faites rien, rien n'est prélevé.",
+          "Vous avez accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement, et vous pouvez émettre de vraies factures dès le premier jour. Vous choisissez votre formule et enregistrez votre carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé.",
       },
     ],
   },

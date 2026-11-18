@@ -52,7 +52,7 @@ export default function FacturesPage() {
                 <br className="hidden md:block" /> électronique sans stress
               </>
             }
-            subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 30 jours pour tester, sans carte bancaire."
+            subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 7 jours pour tester, sans engagement."
             image="/lp/facturation-electronique/cta-laptop.jpg"
             imageAlt="Un indépendant consulte ses factures clients dans Newbi sur son ordinateur portable"
             maxWidth="max-w-7xl"

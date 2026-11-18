@@ -1102,7 +1102,7 @@ export default function DocumentGenerator({ config }) {
                 <Link href="/auth/signup">{config.afterDownload.cta}</Link>
               </Button>
               <p className="mt-2 text-xs text-gray-500">
-                30 jours gratuits, sans carte bancaire.
+                7 jours gratuits, sans engagement.
               </p>
             </div>
           )}

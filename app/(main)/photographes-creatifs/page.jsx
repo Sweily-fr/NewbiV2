@@ -103,7 +103,7 @@ const jsonLd = [
       priceCurrency: "EUR",
       url: `${SITE_URL}/tarifs`,
       availability: "https://schema.org/InStock",
-      description: `Essai gratuit de 30 jours sans carte bancaire, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
+      description: `Essai gratuit de 7 jours, sans engagement, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
     },
   },
   {
@@ -283,7 +283,7 @@ export default function PhotographesCreatifsPage() {
             <br className="hidden md:block" /> payée avant d&apos;être ouverte
           </>
         }
-        subtitle="Créez votre compte, préparez votre premier transfert avec filigrane et fixez son montant. 30 jours pour tester, sans carte bancaire."
+        subtitle="Créez votre compte, préparez votre premier transfert avec filigrane et fixez son montant. 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Un photographe consulte ses transferts dans Newbi sur son ordinateur portable"
         maxWidth="max-w-7xl"

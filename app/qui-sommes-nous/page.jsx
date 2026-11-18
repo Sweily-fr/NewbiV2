@@ -52,7 +52,7 @@ export default function QuiSommesNousPage() {
                 <br className="hidden md:block" /> sur votre administratif
               </>
             }
-            subtitle="Crée ton compte et envoie ta première facture aujourd'hui. 30 jours pour tester, sans carte bancaire."
+            subtitle="Crée ton compte et envoie ta première facture aujourd'hui. 7 jours pour tester, sans engagement."
             image="/lp/facturation-electronique/cta-laptop.jpg"
             imageAlt="Un indépendant gère ses factures dans Newbi sur son ordinateur portable"
             maxWidth="max-w-7xl"

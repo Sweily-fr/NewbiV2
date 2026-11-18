@@ -34,7 +34,7 @@ export const metadata = {
     absolute: "Logiciel de gestion simple pour indépendants et TPE | Newbi",
   },
   description:
-    "Devis, factures, clients, reçus et banque au même endroit. Newbi simplifie la gestion des indépendants et petites équipes. 30 jours gratuits, sans carte bancaire.",
+    "Devis, factures, clients, reçus et banque au même endroit. Newbi simplifie la gestion des indépendants et petites équipes. 7 jours gratuits, sans engagement.",
   robots: { index: false, follow: false },
   alternates: { canonical: "/" },
 };
@@ -95,7 +95,7 @@ const STEPS = [
   {
     when: "Lundi, 8h40",
     title: "Tu crées ton compte entre deux cafés",
-    desc: "Email ou Google, pas de carte bancaire. Tu tapes ton SIRET, Newbi remplit le reste. Ton premier devis part avant la fin de la matinée.",
+    desc: "Email ou Google, puis ta formule et ta carte bancaire, sans prélèvement pendant 7 jours. Tu tapes ton SIRET, Newbi remplit le reste. Ton premier devis part avant la fin de la matinée.",
     aside: "Compte prêt en 2 minutes",
   },
   {
@@ -151,7 +151,7 @@ const FAQ = [
     id: "g-3",
     title: "Comment fonctionne l'essai gratuit ?",
     content:
-      "Tu as accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire. À la fin de l'essai, tu choisis ta formule. Si tu ne fais rien, rien n'est prélevé.",
+      "Tu as accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement. Tu choisis ta formule et enregistres ta carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si tu résilies avant la fin des 7 jours, rien n'est prélevé.",
   },
   {
     id: "g-4",
@@ -258,7 +258,7 @@ export default function LpGestion() {
             <br className="hidden md:block" /> ouvre Newbi
           </>
         }
-        subtitle="Crée ton compte et envoie ton premier devis aujourd'hui. 30 jours pour tester, sans carte bancaire."
+        subtitle="Crée ton compte et envoie ton premier devis aujourd'hui. 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Un indépendant gère ses factures dans Newbi sur son ordinateur portable"
       />

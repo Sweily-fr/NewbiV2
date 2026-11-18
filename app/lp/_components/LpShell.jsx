@@ -118,7 +118,7 @@ export default function LpShell({
             {CTA_LABEL}
           </span>
           <span className="text-xs text-white/75 leading-tight">
-            30 jours offerts · sans carte bancaire
+            7 jours offerts · sans engagement
           </span>
         </Link>
       </div>

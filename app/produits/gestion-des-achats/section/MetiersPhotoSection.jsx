@@ -51,7 +51,7 @@ export default function MetiersPhotoSection() {
             className="h-auto w-full px-4 py-1.5 text-[17px] sm:w-auto flex-none self-start md:self-auto bg-[#17171A] text-white hover:bg-[#2A2A2E] active:bg-[#0D0D0F] [box-shadow:none]"
           >
             <Link href="/auth/signup">
-              <span>Essayer 30 jours offerts</span>
+              <span>Essayer 7 jours offerts</span>
             </Link>
           </Button>
         </div>

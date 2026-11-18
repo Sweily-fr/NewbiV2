@@ -49,7 +49,7 @@ export default function LpFinalCta({
             />
             <p className="mt-3 text-xs text-white/60">
               {cta?.note ??
-                "30 jours offerts · sans carte bancaire · aucun prélèvement à la fin de l'essai"}
+                "7 jours offerts · sans engagement · aucun prélèvement pendant l'essai"}
             </p>
           </div>
         </div>
@@ -68,7 +68,7 @@ export default function LpFinalCta({
         <p className="text-gray-700 max-w-xl mx-auto mb-8">{subtitle}</p>
         <LpCtaButton className="w-full sm:w-auto" />
         <p className="mt-4 text-xs text-gray-500">
-          Compte créé en 2 minutes · Aucun prélèvement à la fin de l'essai
+          Compte créé en 2 minutes · Aucun prélèvement pendant l'essai
         </p>
       </div>
     </section>

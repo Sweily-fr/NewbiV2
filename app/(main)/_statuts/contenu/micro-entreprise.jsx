@@ -31,7 +31,7 @@ export const seo = {
   slug: "micro-entreprise",
   titreSeo: "Logiciel pour micro-entreprise | Newbi",
   description:
-    "Devis et factures conformes, clients, dépenses, trésorerie et facturation électronique de votre micro-entreprise. 30 jours offerts.",
+    "Devis et factures conformes, clients, dépenses, trésorerie et facturation électronique de votre micro-entreprise. 7 jours offerts.",
   motsCles:
     "logiciel micro-entreprise, obligations comptables micro-entreprise, livre des recettes, registre des achats, compte bancaire dédié micro-entrepreneur, déclaration URSSAF",
 };
@@ -190,7 +190,7 @@ export const contenu = {
       </>
     ),
     sousTitre:
-      "Créez votre compte, envoyez votre première facture et marquez-la payée. Votre livre des recettes se remplit tout seul. 30 jours pour tester, sans carte bancaire.",
+      "Créez votre compte, envoyez votre première facture et marquez-la payée. Votre livre des recettes se remplit tout seul. 7 jours pour tester, sans engagement.",
     imageAlt:
       "Une micro-entrepreneuse consulte son livre des recettes dans Newbi sur son ordinateur portable",
   },
@@ -235,9 +235,9 @@ export const contenu = {
           "Chaque facture porte un statut — émise, envoyée, payée. Vous filtrez sur la période à déclarer et vous lisez le montant encaissé, sans additionner vos relevés. La déclaration est mensuelle ou trimestrielle selon l'option que vous avez retenue auprès de l'URSSAF.",
       },
       {
-        title: "Que se passe-t-il pendant les 30 jours offerts ?",
+        title: "Que se passe-t-il pendant les 7 jours offerts ?",
         content:
-          "Vous avez accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire, et vous pouvez émettre de vraies factures dès le premier jour. À la fin de l'essai, vous choisissez votre formule ; si vous ne faites rien, rien n'est prélevé.",
+          "Vous avez accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement, et vous pouvez émettre de vraies factures dès le premier jour. Vous choisissez votre formule et enregistrez votre carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé.",
       },
     ],
   },

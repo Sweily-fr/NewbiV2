@@ -97,7 +97,7 @@ const jsonLd = [
       priceCurrency: "EUR",
       url: `${SITE_URL}/tarifs`,
       availability: "https://schema.org/InStock",
-      description: `Essai gratuit de 30 jours sans carte bancaire, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
+      description: `Essai gratuit de 7 jours, sans engagement, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
     },
   },
   {
@@ -281,7 +281,7 @@ export default function AvocatsPage() {
             <br className="hidden md:block" /> d&apos;honoraires, au propre
           </>
         }
-        subtitle="Créez votre compte, préparez votre modèle avec vos références de dossier et éditez votre première facture. 30 jours pour tester, sans carte bancaire."
+        subtitle="Créez votre compte, préparez votre modèle avec vos références de dossier et éditez votre première facture. 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Une avocate consulte ses factures d'honoraires dans Newbi sur son ordinateur portable"
         maxWidth="max-w-7xl"

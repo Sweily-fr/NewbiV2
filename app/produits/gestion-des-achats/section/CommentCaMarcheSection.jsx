@@ -42,7 +42,7 @@ export default function CommentCaMarcheSection() {
               href="/auth/signup"
               className="flex-none self-start md:self-auto rounded-xl border border-white/30 px-7 py-3.5 text-[15px] text-white transition-colors hover:bg-white/10"
             >
-              Essayer 30 jours offerts
+              Essayer 7 jours offerts
             </Link>
           </div>
 

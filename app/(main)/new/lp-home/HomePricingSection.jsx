@@ -18,8 +18,8 @@ const freelancePrice = `${freelancePlan.monthlyPrice
   .replace(".", ",")}€`;
 
 const TRIAL_HIGHLIGHTS = [
-  "Toutes les fonctionnalités Freelance",
-  "Sans carte bancaire",
+  "Toutes les fonctionnalités de l'offre choisie",
+  "Aucun prélèvement pendant 7 jours",
   "Sans engagement",
 ];
 
@@ -141,7 +141,7 @@ export default function HomePricingSection({
         {/* Titre centré */}
         <div className="text-center mb-12 md:mb-16">
           <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-gray-950 dark:text-gray-50 mb-4">
-            Profite de 30 jours offerts
+            Profite de 7 jours offerts
           </h2>
           <p className="text-[15px] text-gray-500 dark:text-gray-400">
             Sans engagement et résiliable à tout moment !
@@ -151,7 +151,7 @@ export default function HomePricingSection({
         <div className="grid grid-cols-1 md:grid-cols-3">
           {/* Essai gratuit */}
           <Column first>
-            <PriceLine price="0€" suffix="pendant 30 jours" />
+            <PriceLine price="0€" suffix="pendant 7 jours" />
             <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
               Essai gratuit
             </h3>
@@ -159,7 +159,7 @@ export default function HomePricingSection({
               Pour tester Newbi sans risque :
             </p>
             <Bullets items={TRIAL_HIGHLIGHTS} />
-            <ArrowLink href="/auth/signup" sub="Sans carte bancaire">
+            <ArrowLink href="/auth/signup" sub="Résiliable en un clic">
               Commencer gratuitement
             </ArrowLink>
           </Column>
@@ -178,7 +178,7 @@ export default function HomePricingSection({
               {freelancePlan.description}
             </p>
             <Bullets items={FREELANCE_HIGHLIGHTS} />
-            <ArrowLink href="/auth/signup" sub="30 jours offerts">
+            <ArrowLink href="/auth/signup" sub="7 jours offerts">
               Commencer gratuitement
             </ArrowLink>
           </Column>

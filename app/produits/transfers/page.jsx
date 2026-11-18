@@ -47,7 +47,7 @@ export default function TransfersPage() {
                 <br className="hidden md:block" /> livrés en un lien
               </>
             }
-            subtitle="Crée ton compte et envoie ton premier transfert aujourd'hui. 30 jours pour tester, sans carte bancaire."
+            subtitle="Crée ton compte et envoie ton premier transfert aujourd'hui. 7 jours pour tester, sans engagement."
             image="/lp/transfers/cta-transfert.jpg"
             imageAlt="Une équipe créative partage des visuels avec son client depuis un ordinateur portable"
             maxWidth="max-w-7xl"

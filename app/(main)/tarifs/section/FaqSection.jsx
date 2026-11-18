@@ -29,9 +29,9 @@ const questions = [
   },
   {
     id: "item-2",
-    title: "L'essai de 30 jours est-il vraiment gratuit ?",
+    title: "L'essai de 7 jours est-il vraiment gratuit ?",
     content:
-      "Oui. Vous créez votre espace sans carte bancaire et vous utilisez l'outil pendant 30 jours. À la fin de l'essai, aucun prélèvement n'est déclenché : c'est à vous de choisir une formule si vous souhaitez continuer. Il n'y a pas d'engagement de durée.",
+      "Oui. En créant votre espace, vous choisissez votre formule et enregistrez votre carte bancaire, puis vous utilisez l'outil pendant 7 jours sans aucun prélèvement. À la fin de l'essai, la formule choisie est prélevée automatiquement, sauf si vous avez résilié avant : dans ce cas, rien n'est prélevé. Il n'y a pas d'engagement de durée.",
   },
   {
     id: "item-3",
