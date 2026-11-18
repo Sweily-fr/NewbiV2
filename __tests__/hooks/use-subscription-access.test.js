@@ -143,6 +143,28 @@ describe("useSubscriptionAccess — app-managed trial (flag ON)", () => {
     expect(result.current.trialDaysRemaining).toBeLessThanOrEqual(10);
   });
 
+  it("essai avec carte (abonnement Stripe en essai) : pas un essai sans carte", () => {
+    mockContext({
+      subscription: {
+        status: "trialing",
+        periodEnd: inFuture(3).toISOString(),
+        appTrialEnabled: true,
+        isTrialActive: true,
+        stripeTrialActive: true,
+        trialEndDate: inFuture(3).toISOString(),
+      },
+      isActive: true,
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    // Le bandeau « Souscrivez » ne doit pas s'afficher : déjà abonné
+    expect(result.current.isTrialApp).toBe(false);
+    expect(result.current.isInTrial).toBe(true);
+    expect(result.current.isReadOnly).toBe(false);
+    expect(result.current.canCreate).toBe(true);
+    expect(result.current.trialDaysRemaining).toBeGreaterThanOrEqual(2);
+    expect(result.current.trialDaysRemaining).toBeLessThanOrEqual(3);
+  });
+
   it("expired app trial + no Stripe sub → read only", () => {
     mockContext({
       subscription: {

@@ -18,6 +18,9 @@ import { cabinetActionFor } from "@/src/components/gestionnaire/paid-by-cabinet-
  *
  * Quand le feature flag ENABLE_APP_TRIAL est OFF, l'API ne marque jamais
  * `isTrialApp = true`, donc cette bannière reste invisible — aucune régression.
+ *
+ * Jamais pour un essai avec carte (abonnement Stripe en essai) : il est déjà
+ * abonné et sera prélevé automatiquement, « Souscrivez » serait faux.
  */
 export function TrialBanner({ onSubscribe }) {
   const { isTrialApp, trialDaysRemaining, isOwner, loading } =
