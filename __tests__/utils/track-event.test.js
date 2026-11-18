@@ -128,4 +128,38 @@ describe("trackGoogleAdsConversion / trackSignupConversion", () => {
     window.gtag = undefined;
     expect(mod.trackSignupConversion("user-3")).toBe(false);
   });
+
+  it("Essai démarré : bon libellé, montant et identifiant de transaction", () => {
+    const sent = mod.trackTrialStartConversion({
+      subscriptionId: "sub_essai_1",
+      value: 17.99,
+      currency: "EUR",
+    });
+    expect(sent).toBe(true);
+    expect(window.gtag).toHaveBeenCalledWith("event", "conversion", {
+      send_to: "AW-18448267727/LdElCOiH-7odEM_z6NxE",
+      value: 17.99,
+      currency: "EUR",
+      transaction_id: "sub_essai_1",
+    });
+  });
+
+  it("Essai démarré : une seule fois par abonnement, rien sans abonnement", () => {
+    const essai = { subscriptionId: "sub_essai_2", value: 17.99 };
+    expect(mod.trackTrialStartConversion(essai)).toBe(true);
+    expect(mod.trackTrialStartConversion(essai)).toBe(false);
+    expect(mod.trackTrialStartConversion({ value: 17.99 })).toBe(false);
+    expect(window.gtag).toHaveBeenCalledTimes(1);
+  });
+
+  it("Essai démarré sans montant lisible : conversion envoyée sans valeur", () => {
+    mod.trackTrialStartConversion({
+      subscriptionId: "sub_essai_3",
+      value: null,
+    });
+    expect(window.gtag).toHaveBeenCalledWith("event", "conversion", {
+      send_to: "AW-18448267727/LdElCOiH-7odEM_z6NxE",
+      transaction_id: "sub_essai_3",
+    });
+  });
 });

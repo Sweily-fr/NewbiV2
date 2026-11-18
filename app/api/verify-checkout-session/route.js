@@ -97,6 +97,9 @@ export async function GET(request) {
     // /onboarding/success can set the correct active org (otherwise it falls
     // back to organizations[0], which may not be the one with the new sub).
     let resolvedOrganizationId = null;
+    // Essai d'inscription confirmé : montant prélevé à la fin de l'essai,
+    // envoyé comme valeur de la conversion Google Ads « Essai démarré »
+    let trialConversion = null;
 
     // L'abonnement est déjà expandé dans la requête
     const subscription = checkoutSession.subscription;
@@ -108,6 +111,19 @@ export async function GET(request) {
           : subscription;
 
       subscriptionStatus = subscriptionObj.status;
+      const price = subscriptionObj.items?.data?.[0]?.price;
+      if (
+        subscriptionObj.status === "trialing" &&
+        checkoutSession.metadata?.isOnboarding === "true"
+      ) {
+        trialConversion = {
+          value:
+            typeof price?.unit_amount === "number"
+              ? price.unit_amount / 100
+              : null,
+          currency: (price?.currency || "eur").toUpperCase(),
+        };
+      }
       subscriptionId = subscriptionObj.id;
 
       console.log(
@@ -274,6 +290,7 @@ export async function GET(request) {
       subscriptionStatus: subscriptionStatus,
       subscriptionId: subscriptionId,
       organizationId: resolvedOrganizationId,
+      trialConversion,
       message: "Paiement vérifié avec succès",
     });
   } catch (error) {
