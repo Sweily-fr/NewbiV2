@@ -32,6 +32,7 @@ import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
 import { legalFormFromNatureJuridique } from "@/src/lib/company-registry";
 import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
+import { SIGNUP_TRIAL_DAYS, firstChargeDate } from "@/src/lib/signup-trial";
 
 // Compte créé il y a moins de 15 min : suffisant pour distinguer un retour
 // OAuth d'inscription d'un ancien utilisateur qui reprend son onboarding.
@@ -173,25 +174,6 @@ function SignUpPageContent() {
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [companyData, setCompanyData] = useState(null);
-  // Feature flag fetched from /api/feature-flags. When true, the workspace
-  // step is the final step and submits directly to "completed" (no plan/recap).
-  // When false (default), the historical 3-step Stripe flow is used.
-  const [appTrialEnabled, setAppTrialEnabled] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/feature-flags")
-      .then((r) => r.json())
-      .then((flags) => {
-        if (!cancelled) setAppTrialEnabled(flags?.appTrialEnabled === true);
-      })
-      .catch(() => {
-        // Network failure → keep flag OFF (historical flow), no regression.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
   const [inviteEmails, setInviteEmails] = useState([]);
   const [inviteInput, setInviteInput] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
@@ -475,43 +457,17 @@ function SignUpPageContent() {
     }
     setCompanyData(newCompanyData);
 
-    // App-managed trial flow (flag ON): workspace is the last data-collection
-    // step. Submit straight to "completed" — the route applies the data to
-    // the placeholder org and marks the user completed atomically.
-    //
-    // Then redirect to /onboarding/success which renders the welcome → invite
-    // → theme sequence (existing UI, designed to work without a Stripe
-    // session_id). After the theme step the user lands on /dashboard.
-    //
-    // The session refresh is critical: the cookieCache (5 min) may still
-    // serve a session with the OLD or missing activeOrganizationId. Without
-    // a no-store getSession, the /onboarding/success page (and downstream
-    // /dashboard) can briefly target the wrong org.
-    if (appTrialEnabled) {
-      const ok = await updateOnboardingStep(
-        "completed",
-        { ...newCompanyData, billingCountry },
-        // Cliquer sur « Continuer » sous la phrase de déclaration vaut
-        // acceptation (cf. professional-use-declaration.js).
-        { honorDeclarationAccepted: true },
-      );
-      if (ok) {
-        try {
-          const { authClient } = await import("@/src/lib/auth-client");
-          await authClient.getSession({ fetchOptions: { cache: "no-store" } });
-        } catch {
-          // Non-fatal — onboarding/success will refetch as needed
-        }
-        router.replace("/onboarding/success");
-      }
-      return;
-    }
-
-    // Historical Stripe-first flow (flag OFF): continue to "plan" view.
-    const ok = await updateOnboardingStep("plan", {
-      ...newCompanyData,
-      billingCountry,
-    });
+    // Entreprise → offre → récapitulatif → carte sur Stripe (essai de
+    // 7 jours). La route enregistre l'entreprise et la déclaration d'usage
+    // professionnel sur l'espace dès cette étape ; l'inscription n'est
+    // terminée qu'au retour du paiement (/onboarding/success).
+    const ok = await updateOnboardingStep(
+      "plan",
+      { ...newCompanyData, billingCountry },
+      // Cliquer sur « Continuer » sous la phrase de déclaration vaut
+      // acceptation (cf. professional-use-declaration.js).
+      { honorDeclarationAccepted: true },
+    );
     if (ok) switchView("plan");
   };
 
@@ -986,11 +942,9 @@ function SignUpPageContent() {
                   )}
                 </Button>
               </div>
-              {appTrialEnabled && (
-                <p className="mt-3 text-center text-[12px] leading-5 text-muted-foreground max-w-[380px] mx-auto">
-                  {PROFESSIONAL_USE_STATEMENT}
-                </p>
-              )}
+              <p className="mt-3 text-center text-[12px] leading-5 text-muted-foreground max-w-[380px] mx-auto">
+                {PROFESSIONAL_USE_STATEMENT}
+              </p>
             </form>
           )}
 
@@ -999,7 +953,7 @@ function SignUpPageContent() {
             <div className="w-full max-w-3xl mt-12 md:mt-0">
               {/* Subtitle + trial */}
               <p className="text-[13px] text-muted-foreground text-center mb-2">
-                30 jours d'essai gratuit, sans engagement
+                {SIGNUP_TRIAL_DAYS} jours d'essai gratuit, sans engagement
               </p>
 
               {/* Toggle */}
@@ -1124,6 +1078,10 @@ function SignUpPageContent() {
           {view === "recap" &&
             (() => {
               const plan = plans.find((p) => p.key === selectedPlan);
+              const chargeDateLabel = firstChargeDate().toLocaleDateString(
+                "fr-FR",
+                { day: "numeric", month: "long" },
+              );
               const price = plan
                 ? isAnnual
                   ? plan.annualPrice
@@ -1133,9 +1091,10 @@ function SignUpPageContent() {
                 <div className="w-full max-w-[420px]">
                   {/* Subtitle */}
                   <p className="text-[14px] text-muted-foreground text-center mb-10 leading-relaxed">
-                    Profitez de 30 jours pour explorer toutes les
-                    fonctionnalités de Newbi. Aucun engagement, résiliable à
-                    tout moment.
+                    Profitez de {SIGNUP_TRIAL_DAYS} jours pour explorer toutes
+                    les fonctionnalités de Newbi. Aucun prélèvement avant le{" "}
+                    <span className="whitespace-nowrap">{chargeDateLabel}</span>
+                    , résiliable à tout moment.
                   </p>
 
                   {/* Recap lines */}
@@ -1170,7 +1129,7 @@ function SignUpPageContent() {
                     <div className="border-t border-border/40" />
                     <div className="flex items-center justify-between">
                       <span className="text-[14px] text-foreground font-medium">
-                        Après l'essai
+                        À partir du {chargeDateLabel}
                       </span>
                       <span className="text-[14px] text-foreground font-medium">
                         {isAnnual
@@ -1194,7 +1153,8 @@ function SignUpPageContent() {
                   </Button>
 
                   <p className="text-[11px] text-muted-foreground/50 mt-4 text-center">
-                    Paiement sécurisé via Stripe. Résiliable en un clic.
+                    Carte demandée sur la page sécurisée de Stripe. Résiliez
+                    avant le {chargeDateLabel} : aucun prélèvement.
                   </p>
                 </div>
               );

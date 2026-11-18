@@ -1,5 +1,13 @@
 // Template pour début de période d'essai - Style Qonto
-export const trialStarted = ({ customerName, plan, trialEndDate }) => `
+// `trialDays` et `amount` sont facultatifs (null pour un essai repris d'un
+// essai sans carte, cf. Pattern A de create-org-subscription).
+export const trialStarted = ({
+  customerName,
+  plan,
+  trialEndDate,
+  trialDays = null,
+  amount = null,
+}) => `
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -35,14 +43,13 @@ export const trialStarted = ({ customerName, plan, trialEndDate }) => `
           <!-- Icône avec image et texte - style Qonto -->
           <div style="margin-bottom: 20px;">
             <div style="display: inline-flex; align-items: center; background-color: #dcfce7; border-radius: 6px; padding: 8px 12px;">
-              <span style="font-size: 16px; margin-right: 8px;">🎉</span>
               <span style="font-size: 11px; font-weight: 500; color: #166534; letter-spacing: 0.3px; text-transform: uppercase;">BIENVENUE</span>
             </div>
           </div>
 
           <!-- Titre -->
           <h1 style="font-size: 26px; font-weight: 500; color: #1a1a1a; margin: 0 0 24px 0; line-height: 1.3;">
-            Votre essai gratuit de 30 jours a commencé
+            Votre essai gratuit${trialDays ? ` de ${trialDays}&nbsp;jours` : ""} a&nbsp;commencé
           </h1>
 
           <!-- Salutation -->
@@ -52,18 +59,19 @@ export const trialStarted = ({ customerName, plan, trialEndDate }) => `
 
           <!-- Message principal -->
           <p style="font-size: 15px; color: #4b5563; margin: 0 0 16px 0; line-height: 1.6;">
-            Bienvenue sur <strong style="color: #1a1a1a;">Newbi</strong> ! Vous bénéficiez désormais d'un accès complet au plan <strong style="color: #1a1a1a;">${plan}</strong> pendant 30 jours, sans aucun engagement.
+            Bienvenue sur <strong style="color: #1a1a1a;">Newbi</strong>&nbsp;! Vous avez accès à toutes les fonctionnalités du plan <strong style="color: #1a1a1a;">${plan}</strong>${trialDays ? ` pendant ${trialDays}&nbsp;jours` : ""}, sans aucun <span style="white-space: nowrap;">engagement.</span>
           </p>
 
           <!-- Encart informations essai -->
           <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 24px 0;">
             <p style="font-size: 14px; color: #166534; margin: 0 0 8px 0; font-weight: 500;">
-              Ce qui vous attend :
+              Ce qui vous <span style="white-space: nowrap;">attend&nbsp;:</span>
             </p>
             <ul style="font-size: 14px; color: #4b5563; margin: 0; padding-left: 20px; line-height: 1.8;">
               <li>Accès illimité à toutes les fonctionnalités ${plan}</li>
               <li>Aucun prélèvement avant le <strong>${trialEndDate}</strong></li>
-              <li>Annulation possible à tout moment</li>
+              ${amount ? `<li>Ensuite, <strong>${amount}</strong>, sans engagement</li>` : ""}
+              <li>Résiliable à tout moment depuis vos paramètres, sans frais pendant l'essai</li>
             </ul>
           </div>
 
@@ -80,13 +88,13 @@ export const trialStarted = ({ customerName, plan, trialEndDate }) => `
         <!-- Rappel fin d'essai -->
         <div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 16px; margin-bottom: 32px;">
           <p style="font-size: 14px; color: #854d0e; margin: 0; line-height: 1.6;">
-            <strong>Rappel :</strong> Votre essai se termine le <strong>${trialEndDate}</strong>. Nous vous enverrons un email quelques jours avant pour vous rappeler.
+            <strong style="white-space: nowrap;">Rappel&nbsp;:</strong> votre essai se termine le <strong>${trialEndDate}</strong>. Nous vous enverrons un e-mail 3&nbsp;jours avant, avec la date et le montant du <span style="white-space: nowrap;">prélèvement.</span>
           </p>
         </div>
 
         <!-- Question / Aide -->
         <p style="font-size: 14px; color: #4b5563; margin: 0 0 32px 0; padding: 0 8px; line-height: 1.6;">
-          Une question ? Trouvez rapidement la réponse dans notre <a href="https://newbi.fr/aide" style="color: #5B4FFF; text-decoration: none;">centre d'aide</a>.
+          Une fonctionnalité vous manque&nbsp;? Écrivez-nous à <a href="mailto:contact@newbi.fr" style="color: #5B4FFF; text-decoration: none;">contact@newbi.fr</a>, nous lisons toutes les <span style="white-space: nowrap;">demandes.</span>
         </p>
 
         <!-- Signature -->

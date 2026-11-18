@@ -35,7 +35,7 @@ const poppins = Poppins({
 
 const TITRE = "Logiciel de facturation profession médicale | Newbi";
 const DESCRIPTION =
-  "Honoraires avec exonération de TVA à la ligne, encaissements, dépenses du cabinet et accès comptable. 30 jours offerts, sans carte.";
+  "Honoraires avec exonération de TVA à la ligne, encaissements, dépenses du cabinet et accès comptable. 7 jours offerts, sans engagement.";
 
 export const metadata = {
   title: { absolute: TITRE },
@@ -96,7 +96,7 @@ const jsonLd = [
       priceCurrency: "EUR",
       url: `${SITE_URL}/tarifs`,
       availability: "https://schema.org/InStock",
-      description: `Essai gratuit de 30 jours sans carte bancaire, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
+      description: `Essai gratuit de 7 jours, sans engagement, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
     },
   },
   {
@@ -281,7 +281,7 @@ export default function ProfessionsMedicalesPage() {
             <br className="hidden md:block" /> part après la séance
           </>
         }
-        subtitle="Créez votre compte, enregistrez votre mention d'exonération dans votre modèle et éditez votre première facture. 30 jours pour tester, sans carte bancaire."
+        subtitle="Créez votre compte, enregistrez votre mention d'exonération dans votre modèle et éditez votre première facture. 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Une praticienne consulte ses factures dans Newbi sur son ordinateur portable"
         maxWidth="max-w-7xl"

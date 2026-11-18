@@ -19,9 +19,9 @@ import {
    d'air au-dessus avec des boutons larges comme la colonne.
 
    Les trois colonnes sont les trois plans payants : l'essai gratuit n'a pas
-   de ligne qui lui soit propre (il ouvre l'intégralité du plan Freelance
-   pendant 30 jours), une quatrième colonne serait la copie exacte de celle
-   de Freelance. La mention est rappelée sous le tableau. */
+   de ligne qui lui soit propre (il ouvre l'intégralité de l'offre choisie
+   pendant 7 jours), une quatrième colonne serait la copie exacte de celle
+   de cette offre. La mention est rappelée sous le tableau. */
 
 const FILET = "rgba(16,16,32,0.09)";
 
@@ -360,9 +360,9 @@ export default function PricingFeaturesSection() {
         </div>
 
         <p className="mt-10 text-[13px] leading-5 text-gray-500">
-          L&apos;essai gratuit de 30 jours ouvre l&apos;intégralité des
-          fonctionnalités du plan Freelance, sans carte bancaire et sans
-          engagement.
+          L&apos;essai gratuit de 7 jours ouvre l&apos;intégralité des
+          fonctionnalités de l&apos;offre choisie, sans engagement : aucun
+          prélèvement si vous résiliez avant la fin de l&apos;essai.
         </p>
       </div>
     </section>

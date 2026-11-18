@@ -21,7 +21,7 @@ export default function CGVPage() {
               Conditions Générales de Vente
             </h1>
             <p className="text-sm text-gray-500 mb-8">
-              Dernière mise à jour : {new Date().toLocaleDateString("fr-FR")}
+              Dernière mise à jour : 18 novembre 2026
             </p>
 
             <div className="prose prose-gray max-w-none">
@@ -86,13 +86,21 @@ export default function CGVPage() {
                   ARTICLE 5. TARIFS ET MODALITES DE PAIEMENT
                 </h2>
                 <p className="text-gray-600 leading-relaxed mb-4">
-                  L'Utilisateur bénéficie d'un essai gratuit de 30 jours. À
-                  l'issue de cette période, l'accès aux services est facturé à
-                  partir de 17,99 € TTC par mois selon la formule choisie, sans
-                  engagement. La résiliation peut intervenir à tout moment ;
-                  l'Utilisateur continuera à profiter des Services jusqu'à la
-                  date de fin de son mois d'abonnement. Aucun remboursement
-                  partiel ne pourra être exigé.
+                  Lors de son inscription, l'Utilisateur choisit sa formule
+                  (Freelance, TPE ou Entreprise, en paiement mensuel ou annuel)
+                  et enregistre une carte bancaire sur la page de paiement
+                  sécurisée de Stripe. Il bénéficie alors d'un essai gratuit de
+                  7 jours, pendant lequel aucun prélèvement n'est effectué. À
+                  l'issue de cette période, l'abonnement à la formule choisie
+                  démarre et son montant est prélevé automatiquement sur la
+                  carte enregistrée, sauf si l'Utilisateur a résilié avant la
+                  fin des 7 jours d'essai, auquel cas aucun prélèvement n'est
+                  effectué. L'accès aux services est facturé à partir de 17,99 €
+                  TTC par mois selon la formule choisie, sans engagement. La
+                  résiliation peut intervenir à tout moment depuis l'espace de
+                  l'Utilisateur ; l'Utilisateur continuera à profiter des
+                  Services jusqu'à la date de fin de son mois d'abonnement.
+                  Aucun remboursement partiel ne pourra être exigé.
                 </p>
               </section>
 

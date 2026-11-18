@@ -55,7 +55,7 @@ export const FACTURE_CONFIG = {
     title:
       "Vous voulez créer vos factures plus vite, sans retaper vos clients ni surveiller votre numérotation ? Rejoignez Newbi.",
     subtitle:
-      "Numérotation automatique, clients et produits enregistrés, relances des impayés et facturation électronique incluse. 30 jours gratuits, sans carte bancaire.",
+      "Numérotation automatique, clients et produits enregistrés, relances des impayés et facturation électronique incluse. 7 jours gratuits, sans engagement.",
   },
   // Affiché sous le bouton juste après un téléchargement réussi : c'est le
   // moment où le visiteur vient d'obtenir ce qu'il cherchait et mesure ce que
@@ -110,7 +110,7 @@ export const DEVIS_CONFIG = {
     title:
       "Vous voulez envoyer vos devis plus vite et les transformer en facture en un clic ? Rejoignez Newbi.",
     subtitle:
-      "Devis signés en ligne, relance automatique de ceux qui traînent, conversion en facture sans ressaisie, et suivi de votre taux de signature. 30 jours gratuits, sans carte bancaire.",
+      "Devis signés en ligne, relance automatique de ceux qui traînent, conversion en facture sans ressaisie, et suivi de votre taux de signature. 7 jours gratuits, sans engagement.",
   },
   afterDownload: {
     title:

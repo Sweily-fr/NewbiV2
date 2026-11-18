@@ -34,11 +34,11 @@ export const faqData = [
     questions: [
       {
         q: "Quelles formules et quels prix propose Newbi ? Y a-t-il un essai gratuit ?",
-        a: "À l'inscription vous bénéficiez de 30 jours gratuits, sans carte bancaire, durant lesquels vous pouvez résilier à tout moment.\n\nEnsuite, trois formules, toutes en TTC :\n• Freelance : 17,99 €/mois, ou 16,19 €/mois en réglant à l'année\n• TPE : 48,99 €/mois, ou 44,09 €/mois à l'année\n• Entreprise : 94,99 €/mois, ou 85,49 €/mois à l'année\n\nL'engagement annuel revient à 10 % de moins que le mensuel. Vous pouvez à tout moment changer de formule ou résilier sans conditions.",
+        a: "À l'inscription vous bénéficiez de 7 jours gratuits, sans aucun prélèvement, durant lesquels vous pouvez résilier à tout moment.\n\nEnsuite, trois formules, toutes en TTC :\n• Freelance : 17,99 €/mois, ou 16,19 €/mois en réglant à l'année\n• TPE : 48,99 €/mois, ou 44,09 €/mois à l'année\n• Entreprise : 94,99 €/mois, ou 85,49 €/mois à l'année\n\nL'engagement annuel revient à 10 % de moins que le mensuel. Vous pouvez à tout moment changer de formule ou résilier sans conditions.",
       },
       {
         q: "Quels moyens de paiement sont acceptés pour l'abonnement Newbi ?",
-        a: "L'essai de 30 jours ne demande aucune carte bancaire. C'est seulement au moment de souscrire un abonnement, à la fin de l'essai, que le règlement se fait par carte bancaire depuis votre espace client.",
+        a: "L'abonnement se règle par carte bancaire. Vous l'enregistrez à l'inscription, sur la page de paiement sécurisée Stripe : aucun prélèvement n'a lieu pendant les 7 jours d'essai, puis l'offre choisie est prélevée automatiquement, sauf si vous résiliez avant la fin de l'essai.",
       },
     ],
   },

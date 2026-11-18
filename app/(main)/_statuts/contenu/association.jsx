@@ -172,7 +172,7 @@ export const contenu = {
       </>
     ),
     sousTitre:
-      "Créez votre compte, connectez celui de l'association et invitez votre trésorier. 30 jours pour tester, sans carte bancaire.",
+      "Créez votre compte, connectez celui de l'association et invitez votre trésorier. 7 jours pour tester, sans engagement.",
     imageAlt:
       "Un trésorier d'association consulte les comptes de sa structure dans Newbi sur son ordinateur portable",
   },
@@ -221,9 +221,9 @@ export const contenu = {
           "Dix ans pour les factures émises comme reçues, avec l'enregistrement chronologique des recettes et des dépenses. Dans Newbi, l'archivage se fait automatiquement à l'émission, et chaque justificatif reste rattaché à sa dépense.",
       },
       {
-        title: "Que se passe-t-il pendant les 30 jours offerts ?",
+        title: "Que se passe-t-il pendant les 7 jours offerts ?",
         content:
-          "Vous avez accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire, et vous pouvez émettre de vraies factures dès le premier jour. À la fin de l'essai, vous choisissez votre formule ; si vous ne faites rien, rien n'est prélevé.",
+          "Vous avez accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement, et vous pouvez émettre de vraies factures dès le premier jour. Vous choisissez votre formule et enregistrez votre carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé.",
       },
     ],
   },

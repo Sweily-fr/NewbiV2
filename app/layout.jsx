@@ -72,7 +72,7 @@ export const metadata = {
   openGraph: {
     title: "Newbi - Devis, factures et gestion pour indépendants",
     description:
-      "Tes devis, tes factures, tes clients et tes reçus au même endroit. Tu peux fermer ton Excel. 30 jours gratuits, sans carte bancaire.",
+      "Tes devis, tes factures, tes clients et tes reçus au même endroit. Tu peux fermer ton Excel. 7 jours gratuits, sans engagement.",
     siteName: "Newbi",
     locale: "fr_FR",
     type: "website",
@@ -89,7 +89,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Newbi - Devis, factures et gestion pour indépendants",
     description:
-      "Tes devis, tes factures, tes clients et tes reçus au même endroit. Tu peux fermer ton Excel. 30 jours gratuits, sans carte bancaire.",
+      "Tes devis, tes factures, tes clients et tes reçus au même endroit. Tu peux fermer ton Excel. 7 jours gratuits, sans engagement.",
     images: ["/images/op-newbi.png"],
   },
   robots: {

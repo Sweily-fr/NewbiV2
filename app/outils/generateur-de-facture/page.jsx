@@ -429,9 +429,8 @@ export default function GenerateurDeFacturePage() {
               <p>
                 Newbi émet vos factures au format Factur-X via une plateforme
                 agréée, numérote sans trou, archive vos documents et relance les
-                retards. Vous pouvez l&apos;essayer 30 jours sans carte
-                bancaire, et garder ce générateur pour vos besoins ponctuels
-                d&apos;ici là.{" "}
+                retards. Vous pouvez l&apos;essayer 7 jours sans engagement, et
+                garder ce générateur pour vos besoins ponctuels d&apos;ici là.{" "}
                 <InlineLink href="/auth/signup">Essayer Newbi</InlineLink>
               </p>
             </div>

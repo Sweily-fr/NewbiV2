@@ -26,7 +26,8 @@ const pricingJsonLd = {
       name: "Essai gratuit",
       price: "0",
       priceCurrency: "EUR",
-      description: "30 jours gratuits, sans carte bancaire, sans engagement",
+      description:
+        "7 jours gratuits, sans engagement, aucun prélèvement pendant l'essai",
       availability: "https://schema.org/InStock",
     },
     ...PLANS_DISPLAY.flatMap((p) => [
@@ -84,8 +85,8 @@ export default function TarifsPage() {
                     ","
                   )} € par mois en réglant à l'année.`
             ).join(" ")}{" "}
-            Tous les abonnements démarrent par 30 jours gratuits, sans carte
-            bancaire et sans engagement.
+            Tous les abonnements démarrent par 7 jours gratuits, sans
+            engagement.
           </p>
           */}
         </header>
@@ -93,7 +94,7 @@ export default function TarifsPage() {
         <PricingPlansSection />
         {/* Mêmes logos clients que sur les LP produits */}
         <TrustedBySection variant="default" />
-        {/* Comparatif détaillé. Il remplace l'ancien bloc « Profitez de 30
+        {/* Comparatif détaillé. Il remplace l'ancien bloc « Profitez de 7
             jours offerts » (lp-home/PricingSection), qui reprenait les mêmes
             plans et le même tableau : la page les affichait deux fois. Ce
             composant n'est plus monté nulle part — les LP produits utilisent

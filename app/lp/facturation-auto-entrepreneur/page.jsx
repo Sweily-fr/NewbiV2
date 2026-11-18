@@ -29,14 +29,14 @@ import { FacturationBanner } from "@/app/produits/factures/section/FacturationBa
 // Landing page Google Ads — intention « logiciel de facturation
 // auto-entrepreneur / micro-entreprise ». Copie conforme de
 // /lp/facturation-electronique, angle : conformité 2026, mention TVA non
-// applicable automatique, 30 jours offerts sans carte bancaire.
+// applicable automatique, 7 jours offerts, sans engagement.
 // noindex : page réservée au trafic payant.
 export const metadata = {
   title: {
     absolute: "Logiciel de facturation pour auto-entrepreneurs | Newbi",
   },
   description:
-    "Devis et factures conformes pour auto-entrepreneurs : mention TVA non applicable ajoutée automatiquement, compatible facturation électronique 2026. 30 jours offerts, sans carte bancaire.",
+    "Devis et factures conformes pour auto-entrepreneurs : mention TVA non applicable ajoutée automatiquement, compatible facturation électronique 2026. 7 jours offerts, sans engagement.",
   robots: { index: false, follow: false },
   alternates: { canonical: "/produits/factures" },
 };
@@ -62,8 +62,8 @@ const TRUST_FEATURES = [
   },
   {
     icon: <Gift size={26} strokeWidth={1.75} />,
-    title: "30 jours offerts",
-    desc: "Sans carte bancaire. Toutes les fonctionnalités dès le premier jour.",
+    title: "7 jours offerts",
+    desc: "Sans engagement. Toutes les fonctionnalités dès le premier jour.",
   },
 ];
 
@@ -97,7 +97,7 @@ const ESSENTIALS = [
     intro:
       "Tu entres ton SIRET : Newbi détecte ton statut de micro-entrepreneur et prépare tes modèles. Ta première facture conforme part dans la matinée.",
     points: [
-      "30 jours offerts, sans carte bancaire",
+      "7 jours offerts, sans engagement",
       "Aucun réglage de TVA à faire",
       "Une question ? Un humain répond sur WhatsApp",
     ],
@@ -109,7 +109,7 @@ const STEPS = [
   {
     when: "Aujourd'hui, 9h",
     title: "Tu crées ton compte, ton SIRET fait le reste",
-    desc: "Email ou Google, sans carte bancaire. Les informations légales de ta micro-entreprise sont pré-remplies, tes modèles de devis et de facture sont prêts.",
+    desc: "Email ou Google, puis ta formule et ta carte bancaire, sans prélèvement pendant 7 jours. Les informations légales de ta micro-entreprise sont pré-remplies, tes modèles de devis et de facture sont prêts.",
     aside: "Compte prêt en 2 minutes",
   },
   {
@@ -171,9 +171,9 @@ const FAQ = [
   },
   {
     id: "ae-4",
-    title: "Que se passe-t-il pendant les 30 jours offerts ?",
+    title: "Que se passe-t-il pendant les 7 jours offerts ?",
     content:
-      "Tu as accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire. Tu peux émettre de vraies factures dès le premier jour. À la fin de l'essai, tu choisis ta formule ; si tu ne fais rien, rien n'est prélevé.",
+      "Tu as accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement. Tu peux émettre de vraies factures dès le premier jour. Tu choisis ta formule et enregistres ta carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si tu résilies avant la fin des 7 jours, rien n'est prélevé.",
   },
   {
     id: "ae-5",
@@ -200,7 +200,7 @@ export default function LpFacturationAutoEntrepreneur() {
             <>
               Auto-entrepreneur ? Facture en conformité 2026 avec Newbi :{" "}
               <span className="font-medium text-[#5A50FF] underline decoration-[#5A50FF] decoration-1 underline-offset-4">
-                30 jours offerts, sans carte bancaire
+                7 jours offerts, sans engagement
               </span>
             </>
           }
@@ -253,7 +253,7 @@ export default function LpFacturationAutoEntrepreneur() {
             <br className="hidden md:block" /> même en micro-entreprise
           </>
         }
-        subtitle="Crée ton compte, envoie ta première facture conforme aujourd'hui. Tu as 30 jours pour tester, sans carte bancaire."
+        subtitle="Crée ton compte, envoie ta première facture conforme aujourd'hui. Tu as 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Un auto-entrepreneur consulte ses factures clients dans Newbi sur son ordinateur portable"
       />

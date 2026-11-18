@@ -15,21 +15,21 @@ import { Gift, ShieldCheck, FileText, Check, X } from "lucide-react";
 // « logiciel devis facture gratuit », « meilleur logiciel facture gratuit »),
 // jusqu'ici portée par un seul article de blog en page 6. Page indexable,
 // contrairement aux LP Ads de /lp. Le discours est honnête : Newbi est
-// gratuit 30 jours sans carte bancaire, puis payant ; la page dit aussi ce
+// gratuit 7 jours (carte demandée à l'inscription), puis payant ; la page dit aussi ce
 // qu'un outil 100 % gratuit ne fait pas.
 
 export const metadata = {
   title: {
     absolute:
-      "Logiciel de facturation gratuit 30 jours : devis et factures conformes | Newbi",
+      "Logiciel de facturation gratuit 7 jours : devis et factures conformes | Newbi",
   },
   description:
-    "Devis et factures gratuits pendant 30 jours, sans carte bancaire : mentions obligatoires, numérotation, relances, facturation électronique.",
+    "Devis et factures gratuits pendant 7 jours, sans engagement : mentions obligatoires, numérotation, relances, facturation électronique.",
   alternates: { canonical: "/logiciel-facturation-gratuit" },
   openGraph: {
-    title: "Logiciel de facturation gratuit 30 jours | Newbi",
+    title: "Logiciel de facturation gratuit 7 jours | Newbi",
     description:
-      "Devis, factures et avoirs conformes, sans carte bancaire pendant 30 jours. Compatible facturation électronique 2026.",
+      "Devis, factures et avoirs conformes, gratuits pendant 7 jours, sans engagement. Compatible facturation électronique 2026.",
     url: "/logiciel-facturation-gratuit",
     siteName: "Newbi",
     type: "website",
@@ -41,8 +41,8 @@ export const metadata = {
 const TRUST_FEATURES = [
   {
     icon: <Gift size={26} strokeWidth={1.75} />,
-    title: "30 jours gratuits, sans carte bancaire",
-    desc: "Toutes les fonctionnalités, de vraies factures dès le premier jour. Si vous ne faites rien à la fin, rien n'est prélevé.",
+    title: "7 jours gratuits, sans engagement",
+    desc: "Toutes les fonctionnalités, de vraies factures dès le premier jour. Résiliez avant la fin des 7 jours et rien n'est prélevé.",
   },
   {
     icon: <FileText size={26} strokeWidth={1.75} />,
@@ -60,7 +60,7 @@ const STEPS = [
   {
     when: "Minute 0",
     title: "Vous créez votre compte avec votre SIRET",
-    desc: "Email ou Google, sans carte bancaire. Vos informations légales sont pré-remplies, vos modèles de devis et de facture sont prêts.",
+    desc: "Email ou Google, puis votre formule et votre carte bancaire, sans prélèvement pendant 7 jours. Vos informations légales sont pré-remplies, vos modèles de devis et de facture sont prêts.",
     aside: "Compte prêt en 2 minutes",
   },
   {
@@ -70,9 +70,9 @@ const STEPS = [
     aside: "Devis, facture, avoir",
   },
   {
-    when: "Jour 30",
+    when: "Jour 7",
     title: "Vous choisissez de continuer, ou pas",
-    desc: "Vous exportez vos données à tout moment. Si Newbi vous convient, vous choisissez votre formule ; sinon, rien n'est prélevé.",
+    desc: "Vous exportez vos données à tout moment. Si Newbi vous convient, la formule choisie démarre automatiquement ; sinon, résiliez avant la fin de l'essai et rien n'est prélevé.",
     aside: "Sans engagement",
   },
 ];
@@ -82,7 +82,7 @@ const FAQ = [
     id: "g-1",
     title: "Newbi est-il vraiment gratuit ?",
     content:
-      "Newbi est gratuit pendant 30 jours, sans carte bancaire et sans limite de fonctionnalités : vous pouvez émettre de vraies factures dès le premier jour. Ensuite, l'abonnement démarre à quelques euros par mois (voir les tarifs). Nous ne proposons pas de version 100 % gratuite à vie : un logiciel de facturation doit être maintenu, hébergé en France et mis à jour à chaque évolution réglementaire, et ce n'est pas compatible avec un modèle sans revenu.",
+      "Newbi est gratuit pendant 7 jours, sans engagement et sans limite de fonctionnalités : vous pouvez émettre de vraies factures dès le premier jour. Ensuite, la formule choisie à l'inscription est prélevée automatiquement, à partir de quelques euros par mois (voir les tarifs), sauf si vous résiliez avant la fin de l'essai. Nous ne proposons pas de version 100 % gratuite à vie : un logiciel de facturation doit être maintenu, hébergé en France et mis à jour à chaque évolution réglementaire, et ce n'est pas compatible avec un modèle sans revenu.",
   },
   {
     id: "g-2",
@@ -104,9 +104,9 @@ const FAQ = [
   },
   {
     id: "g-5",
-    title: "Que se passe-t-il à la fin des 30 jours ?",
+    title: "Que se passe-t-il à la fin des 7 jours ?",
     content:
-      "Vous choisissez votre formule, ou vous ne faites rien : aucune carte n'a été enregistrée, donc rien n'est prélevé. Vos documents restent exportables (PDF, CSV, Excel) pour que vous ne soyez jamais bloqué.",
+      "La formule choisie à l'inscription est prélevée automatiquement et vous continuez sans interruption. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé. Vos documents restent exportables (PDF, CSV, Excel) pour que vous ne soyez jamais bloqué.",
   },
   {
     id: "g-6",
@@ -181,7 +181,7 @@ function ComparisonSection() {
     <section className="px-5 py-14 md:py-20">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-medium tracking-tight text-gray-950 mb-4">
-          Gratuit, ou gratuit 30 jours : ce que ça change
+          Gratuit, ou gratuit 7 jours : ce que ça change
         </h2>
         <p className="text-gray-600 max-w-2xl mb-10">
           Un logiciel 100 % gratuit suffit pour émettre quelques factures par
@@ -201,7 +201,7 @@ function ComparisonSection() {
                   Outil 100 % gratuit
                 </th>
                 <th className="px-5 py-4 font-medium text-[#5A50FF] whitespace-nowrap">
-                  Newbi (30 jours offerts)
+                  Newbi (7 jours offerts)
                 </th>
               </tr>
             </thead>
@@ -314,7 +314,7 @@ export default function LogicielFacturationGratuitPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <HeroSection
-        title="Logiciel de facturation gratuit pendant 30 jours, sans carte bancaire."
+        title="Logiciel de facturation gratuit pendant 7 jours, sans engagement."
         subtitle={
           <>
             Créez vos devis et vos factures en 2 minutes, avec les{" "}
@@ -335,7 +335,7 @@ export default function LogicielFacturationGratuitPage() {
         steps={STEPS}
         ctaLabel="Commencer gratuitement"
       />
-      <LpTestimonials title="Ils ont commencé par les 30 jours gratuits" />
+      <LpTestimonials title="Ils ont commencé par les 7 jours gratuits" />
       {/* Mêmes cartes de prix que la home : essai gratuit, offre Freelance, renvoi vers /tarifs */}
       <HomePricingSection />
       <GuidesSection />
@@ -346,7 +346,7 @@ export default function LogicielFacturationGratuitPage() {
             <br className="hidden md:block" /> dès aujourd'hui
           </>
         }
-        subtitle="Créez votre compte, envoyez votre première facture conforme ce matin. 30 jours pour tester, sans carte bancaire."
+        subtitle="Créez votre compte, envoyez votre première facture conforme ce matin. 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Un indépendant consulte ses factures clients dans Newbi sur son ordinateur portable"
       />

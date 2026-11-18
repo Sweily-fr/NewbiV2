@@ -64,7 +64,7 @@ const REASONS = [
   },
   {
     title: "Compris dans l'abonnement",
-    desc: "Pas de module en supplément ni de facturation à l'unité. 30 jours pour tester, sans carte bancaire et sans engagement.",
+    desc: "Pas de module en supplément ni de facturation à l'unité. 7 jours pour tester, sans engagement et résiliable en un clic.",
     Icon: WalletIcon,
   },
 ];
@@ -417,7 +417,7 @@ export default function ConcernePage() {
             <br className="hidden md:block" /> sans y passer tes soirées
           </>
         }
-        subtitle="Newbi émet et reçoit tes factures au format exigé et garde tes mentions à jour. 30 jours pour tester, sans carte bancaire."
+        subtitle="Newbi émet et reçoit tes factures au format exigé et garde tes mentions à jour. 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Une indépendante gère ses factures électroniques dans Newbi sur son ordinateur portable"
         maxWidth="max-w-7xl"

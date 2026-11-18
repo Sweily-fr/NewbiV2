@@ -35,7 +35,6 @@ export const trialEnding = ({ customerName, plan, trialEndDate, amount }) => `
           <!-- Icône avec image et texte - style Qonto -->
           <div style="margin-bottom: 20px;">
             <div style="display: inline-flex; align-items: center; background-color: #fef3c7; border-radius: 6px; padding: 8px 12px;">
-              <span style="font-size: 16px; margin-right: 8px;">⏰</span>
               <span style="font-size: 11px; font-weight: 500; color: #92400e; letter-spacing: 0.3px; text-transform: uppercase;">3 JOURS RESTANTS</span>
             </div>
           </div>
@@ -79,8 +78,8 @@ export const trialEnding = ({ customerName, plan, trialEndDate, amount }) => `
           </p>
 
           <ul style="font-size: 15px; color: #4b5563; margin: 0 0 24px 0; padding-left: 20px; line-height: 1.8;">
-            <li><strong>Continuer avec Newbi</strong> — Rien à faire, votre abonnement sera automatiquement activé le ${trialEndDate}.</li>
-            <li><strong>Annuler</strong> — Vous pouvez annuler à tout moment depuis vos paramètres, avant la fin de l'essai.</li>
+            <li><strong>Continuer avec Newbi</strong>&nbsp;: rien à faire, le prélèvement de ${amount} aura lieu automatiquement le <span style="white-space: nowrap;">${trialEndDate}.</span></li>
+            <li><strong>Résilier</strong>&nbsp;: depuis vos paramètres, avant le ${trialEndDate}, sans aucun <span style="white-space: nowrap;">prélèvement.</span></li>
           </ul>
 
           <!-- Bouton CTA - Style Qonto (noir, border-radius réduit) -->

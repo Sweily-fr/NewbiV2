@@ -30,7 +30,7 @@ export const metadata = {
     absolute: "Logiciel de facturation et devis pour freelances et TPE | Newbi",
   },
   description:
-    "Devis, factures, clients, banque et facturation électronique au même endroit, pour indépendants et petites équipes. 30 jours gratuits.",
+    "Devis, factures, clients, banque et facturation électronique au même endroit, pour indépendants et petites équipes. 7 jours gratuits.",
   keywords: [
     "logiciel de facturation",
     "logiciel devis facture",
@@ -46,13 +46,13 @@ export const metadata = {
     card: "summary_large_image",
     title: "Newbi | Devis, factures et gestion pour indépendants",
     description:
-      "Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
+      "Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 7 jours gratuits, sans engagement.",
     images: ["/images/op-newbi.png"],
   },
   openGraph: {
     title: "Newbi | Devis, factures et gestion pour indépendants",
     description:
-      "Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
+      "Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 7 jours gratuits, sans engagement.",
     url: "/",
     type: "website",
     images: ["/images/op-newbi.png"],
@@ -97,7 +97,7 @@ export default function Home() {
               <br className="hidden md:block" /> ouvre Newbi
             </>
           }
-          subtitle="Crée ton compte et envoie ta première facture aujourd'hui. 30 jours pour tester, sans carte bancaire."
+          subtitle="Crée ton compte et envoie ta première facture aujourd'hui. 7 jours pour tester, sans engagement."
           image="/lp/facturation-electronique/cta-laptop.jpg"
           imageAlt="Un indépendant gère ses factures dans Newbi sur son ordinateur portable"
           maxWidth="max-w-7xl"

@@ -4,7 +4,7 @@
 export const SIGNUP_HREF = "/auth/signup";
 
 export const CTA_LABEL = "Commencer gratuitement";
-export const CTA_SUBLABEL = "30 jours offerts · sans carte bancaire";
+export const CTA_SUBLABEL = "7 jours offerts · sans engagement";
 
 // Témoignages clients affichés sur les LP. `image` : portrait affiché par le
 // carrousel (photos réelles des clients). L'ordre est celui d'affichage.

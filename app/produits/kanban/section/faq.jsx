@@ -49,7 +49,7 @@ const questions = [
     id: "item-8",
     title: "Faut-il payer un supplément pour la gestion de projet ?",
     content:
-      "Non. Elle est incluse dans l'abonnement Newbi, au même titre que la facturation, les devis et les signatures e-mail. Vous testez l'ensemble 30 jours gratuitement, sans carte bancaire et sans engagement.",
+      "Non. Elle est incluse dans l'abonnement Newbi, au même titre que la facturation, les devis et les signatures e-mail. Vous testez l'ensemble 7 jours gratuitement, sans engagement.",
   },
   {
     id: "item-9",
