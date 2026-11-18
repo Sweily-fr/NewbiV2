@@ -14,6 +14,7 @@ export function CampagnesEmailPageSkeleton() {
         </div>
         <div className="hidden items-center gap-2 md:flex">
           <Skeleton className="h-8 w-56 rounded-[9px]" />
+          <Skeleton className="h-8 w-36 rounded-[9px]" />
           <Skeleton className="h-8 w-44 rounded-[9px]" />
           <Skeleton className="h-8 w-40 rounded-[9px]" />
         </div>

@@ -26,6 +26,7 @@ import {
   formatLongDateTime,
   plural,
 } from "@/src/utils/email-campaigns";
+import { effectiveSenderEmail } from "@/src/utils/email-sending-domain";
 import { TextWithVariables } from "./subject-section";
 import { SendModeNote } from "../test-email-dialog";
 import { errorMessage } from "../shared";
@@ -189,7 +190,7 @@ export function SendDialog({
               {campaign.fromName}
               <span className="text-muted-foreground">
                 {" "}
-                · {campaign.senderEmail}
+                · {effectiveSenderEmail(campaign, settings)}
               </span>
             </SummaryRow>
             <SummaryRow label="Objet">

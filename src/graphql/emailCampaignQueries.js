@@ -111,11 +111,47 @@ export const GET_EMAIL_CAMPAIGN = gql`
   ${EMAIL_CAMPAIGN_FIELDS}
 `;
 
-// Adresse d'envoi, réglages par défaut, quota du mois et variables
+// Domaine de l'entreprise connecté pour l'envoi (« Envoyer depuis votre
+// adresse ») : lignes DNS à ajouter chez son hébergeur et état de la
+// validation. Seul VERIFIED (`active`) fait partir les campagnes de
+// `fromEmail` ; sinon elles partent de l'adresse Newbi.
+export const EMAIL_SENDING_DOMAIN_FIELDS = gql`
+  fragment EmailSendingDomainFields on EmailSendingDomain {
+    id
+    domain
+    fromEmail
+    status
+    active
+    records {
+      kind
+      type
+      name
+      fqdn
+      value
+      priority
+      status
+    }
+    zone
+    dnsProvider
+    lastCheckedAt
+    verifiedAt
+    expiresAt
+    createdAt
+  }
+`;
+
+// Adresse d'envoi, réglages par défaut, quota du mois et variables.
+// senderEmail = adresse réellement utilisée aujourd'hui (domaine validé,
+// sinon newbiSenderEmail)
 export const GET_EMAIL_CAMPAIGN_SETTINGS = gql`
   query EmailCampaignSettings($workspaceId: ID!) {
     emailCampaignSettings(workspaceId: $workspaceId) {
       senderEmail
+      newbiSenderEmail
+      sendingDomain {
+        ...EmailSendingDomainFields
+      }
+      canManageSendingDomain
       defaultFromName
       defaultReplyTo
       companyAddress
@@ -133,6 +169,17 @@ export const GET_EMAIL_CAMPAIGN_SETTINGS = gql`
       }
     }
   }
+  ${EMAIL_SENDING_DOMAIN_FIELDS}
+`;
+
+// null si aucun domaine n'est connecté
+export const GET_EMAIL_SENDING_DOMAIN = gql`
+  query EmailSendingDomain($workspaceId: ID!) {
+    emailSendingDomain(workspaceId: $workspaceId) {
+      ...EmailSendingDomainFields
+    }
+  }
+  ${EMAIL_SENDING_DOMAIN_FIELDS}
 `;
 
 export const GET_EMAIL_CAMPAIGN_TEMPLATES = gql`
@@ -459,5 +506,57 @@ export const ADD_EMAIL_SUPPRESSION = gql`
 export const REMOVE_EMAIL_SUPPRESSION = gql`
   mutation RemoveEmailSuppression($workspaceId: ID!, $id: ID!) {
     removeEmailSuppression(workspaceId: $workspaceId, id: $id)
+  }
+`;
+
+// ── Domaine d'envoi (droit emailCampaigns.send) ──────────────────────────
+
+// Déclare le domaine de `fromEmail` et renvoie les lignes DNS à ajouter.
+// Refus : INVALID_SENDER_EMAIL, FREE_EMAIL_PROVIDER, RESERVED_DOMAIN,
+// DOMAIN_ALREADY_CONNECTED, SENDING_DOMAIN_EXISTS, SENDING_DOMAIN_UNAVAILABLE
+export const CONNECT_EMAIL_SENDING_DOMAIN = gql`
+  mutation ConnectEmailSendingDomain($workspaceId: ID!, $fromEmail: String!) {
+    connectEmailSendingDomain(
+      workspaceId: $workspaceId
+      fromEmail: $fromEmail
+    ) {
+      ...EmailSendingDomainFields
+    }
+  }
+  ${EMAIL_SENDING_DOMAIN_FIELDS}
+`;
+
+// Relit les lignes chez Resend (au plus une fois toutes les 20 s : sinon
+// l'API renvoie l'état connu)
+export const VERIFY_EMAIL_SENDING_DOMAIN = gql`
+  mutation VerifyEmailSendingDomain($workspaceId: ID!) {
+    verifyEmailSendingDomain(workspaceId: $workspaceId) {
+      ...EmailSendingDomainFields
+    }
+  }
+  ${EMAIL_SENDING_DOMAIN_FIELDS}
+`;
+
+// Autre adresse sur le même domaine seulement
+export const UPDATE_EMAIL_SENDING_DOMAIN_SENDER = gql`
+  mutation UpdateEmailSendingDomainSender(
+    $workspaceId: ID!
+    $fromEmail: String!
+  ) {
+    updateEmailSendingDomainSender(
+      workspaceId: $workspaceId
+      fromEmail: $fromEmail
+    ) {
+      ...EmailSendingDomainFields
+    }
+  }
+  ${EMAIL_SENDING_DOMAIN_FIELDS}
+`;
+
+// Refus SENDING_DOMAIN_IN_USE si une campagne en cours d'envoi ou
+// programmée part de ce domaine
+export const DISCONNECT_EMAIL_SENDING_DOMAIN = gql`
+  mutation DisconnectEmailSendingDomain($workspaceId: ID!) {
+    disconnectEmailSendingDomain(workspaceId: $workspaceId)
   }
 `;

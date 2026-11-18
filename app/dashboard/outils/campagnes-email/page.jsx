@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client";
 import {
+  AtSign,
   BarChart3,
   ChevronLeft,
   ChevronRight,
@@ -49,9 +50,14 @@ import {
   formatCount,
   quotaSummary,
 } from "@/src/utils/email-campaigns";
+import {
+  sendingDomainBadge,
+  sendingDomainState,
+} from "@/src/utils/email-sending-domain";
 import { CampagnesEmailPageSkeleton } from "./components/campagnes-email-page-skeleton";
 import { CampaignCards, CampaignsTable } from "./components/campaigns-list";
 import { NewCampaignDialog } from "./components/new-campaign-dialog";
+import { SendingDomainSheet } from "./components/sender/sending-domain-sheet";
 import { SuppressionsSheet } from "./components/suppressions-sheet";
 import {
   FOCUS_RING,
@@ -176,6 +182,60 @@ function FirstCampaign({ canCreate, readOnlyReason, onCreate }) {
   );
 }
 
+const DOT_TONES = { warning: "bg-amber-500", danger: "bg-red-500" };
+
+/**
+ * « Adresse d'envoi » : ouvre le panneau du domaine connecté. Une pastille
+ * signale un domaine en attente de validation ou en échec.
+ */
+function SenderAddressButton({ settings, isMobile, onClick }) {
+  const domain = settings?.sendingDomain;
+  const state = sendingDomainState(domain);
+  const badge =
+    state === "pending" || state === "failed"
+      ? sendingDomainBadge(domain)
+      : null;
+  const label = badge
+    ? `Adresse d'envoi\u00a0: ${badge.label.toLowerCase()}`
+    : "Adresse d'envoi";
+  const title = settings?.senderEmail
+    ? `Vos campagnes partent de ${settings.senderEmail}${
+        badge
+          ? ` (domaine ${domain.domain}\u00a0: ${badge.label.toLowerCase()})`
+          : ""
+      }`
+    : label;
+  return (
+    <Button
+      variant="outline"
+      onClick={onClick}
+      size={isMobile ? "icon" : "default"}
+      className={isMobile ? "size-9 rounded-full" : undefined}
+      aria-label={label}
+      title={title}
+    >
+      <AtSign className={isMobile ? "size-4" : "size-3.5"} aria-hidden />
+      {/* Libellé masqué quand l'en-tête manque de place (barre latérale
+          dépliée sur un petit écran) : l'icône et l'infobulle restent */}
+      {!isMobile && (
+        <span className="hidden @6xl:inline">Adresse d&apos;envoi</span>
+      )}
+      {badge && (
+        <span
+          aria-hidden
+          className={cn(
+            "rounded-full",
+            DOT_TONES[badge.tone] || DOT_TONES.warning,
+            isMobile
+              ? "absolute top-1 right-1 size-2.5 ring-2 ring-background"
+              : "size-1.5",
+          )}
+        />
+      )}
+    </Button>
+  );
+}
+
 function SearchBox({ value, onChange, className }) {
   return (
     <div
@@ -230,6 +290,7 @@ export default function CampagnesEmailPage() {
   const [page, setPage] = useState(1);
   const [newOpen, setNewOpen] = useState(false);
   const [suppressionsOpen, setSuppressionsOpen] = useState(false);
+  const [senderOpen, setSenderOpen] = useState(false);
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -337,9 +398,9 @@ export default function CampagnesEmailPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="flex h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] flex-col overflow-hidden">
-      <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4 sm:px-6 sm:pt-6">
-        <div className="min-w-0 flex-1">
+    <div className="@container flex h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] flex-col overflow-hidden">
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-3 px-4 pt-4 sm:px-6 sm:pt-6">
+        <div className="min-w-[12rem] flex-1">
           <h1 className="text-2xl font-medium">Campagnes e-mail</h1>
           <p className="text-sm text-muted-foreground">
             Un e-mail personnalisé à vos clients, avec désinscription et
@@ -348,19 +409,28 @@ export default function CampagnesEmailPage() {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {!isMobile && <QuotaMeter quota={settings?.quota} />}
+          <SenderAddressButton
+            settings={settings}
+            isMobile={isMobile}
+            onClick={() => setSenderOpen(true)}
+          />
           <Button
             variant="outline"
             onClick={() => setSuppressionsOpen(true)}
             size={isMobile ? "icon" : "default"}
             className={isMobile ? "size-9 rounded-full" : undefined}
-            aria-label={isMobile ? "Désinscrits et exclusions" : undefined}
-            title={isMobile ? "Désinscrits et exclusions" : undefined}
+            aria-label="Désinscrits et exclusions"
+            title="Désinscrits et exclusions"
           >
             <ShieldBan
               className={isMobile ? "size-4" : "size-3.5"}
               aria-hidden
             />
-            {!isMobile && "Désinscrits et exclusions"}
+            {!isMobile && (
+              <span className="hidden @6xl:inline">
+                Désinscrits et exclusions
+              </span>
+            )}
           </Button>
           {createButton}
         </div>
@@ -509,6 +579,13 @@ export default function CampagnesEmailPage() {
           organization?.name
         }
         companyAddress={settings?.companyAddress}
+      />
+
+      <SendingDomainSheet
+        open={senderOpen}
+        onOpenChange={setSenderOpen}
+        workspaceId={workspaceId}
+        settings={settings}
       />
 
       <SuppressionsSheet
