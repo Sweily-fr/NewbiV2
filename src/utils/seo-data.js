@@ -41,7 +41,7 @@ export const seoData = {
     title:
       "Newbi - Solution de gestion complète pour entrepreneurs et freelances",
     description:
-      "Devis, factures, clients, trésorerie et facturation électronique au même endroit. Essai gratuit de 30 jours, sans carte bancaire.",
+      "Devis, factures, clients, trésorerie et facturation électronique au même endroit. Essai gratuit de 7 jours, sans engagement.",
     keywords:
       "gestion entreprise, facturation, devis, signature de mail, kanban, freelance, entrepreneur, comptabilité, CRM, logiciel gestion, auto-entrepreneur, TPE, PME",
     canonical: `${baseUrl}`,
@@ -96,7 +96,7 @@ export const seoData = {
       ],
       offers: {
         "@type": "Offer",
-        description: "Essai gratuit de 30 jours",
+        description: "Essai gratuit de 7 jours",
         price: "0",
         priceCurrency: "EUR",
       },
@@ -109,7 +109,7 @@ export const seoData = {
   factures: {
     title: "Logiciel de facturation en ligne : devis, factures, avoirs | Newbi",
     description:
-      "Créez devis, factures et avoirs conformes en 2 minutes, suivez les paiements et relancez vos clients. 30 jours gratuits, sans carte bancaire.",
+      "Créez devis, factures et avoirs conformes en 2 minutes, suivez les paiements et relancez vos clients. 7 jours gratuits, sans engagement.",
     keywords:
       "logiciel facturation, facture professionnelle, gestion factures, suivi paiements, relance automatique, TVA, comptabilité, facturation en ligne, auto-entrepreneur",
     canonical: `${baseUrl}/produits/factures`,
@@ -144,7 +144,7 @@ export const seoData = {
         "@type": "Offer",
         price: "0",
         priceCurrency: "EUR",
-        description: "Essai gratuit de 30 jours",
+        description: "Essai gratuit de 7 jours",
       },
       featureList: [
         "Création de factures professionnelles",
@@ -196,7 +196,7 @@ export const seoData = {
         "@type": "Offer",
         price: "0",
         priceCurrency: "EUR",
-        description: "Essai gratuit de 30 jours",
+        description: "Essai gratuit de 7 jours",
       },
       featureList: [
         "Création de devis personnalisés",
@@ -294,7 +294,7 @@ export const seoData = {
     title:
       "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
     description:
-      "Organisez vos projets sur des tableaux kanban partagés, reliés à vos clients et à vos factures. Inclus dans Newbi, 30 jours gratuits.",
+      "Organisez vos projets sur des tableaux kanban partagés, reliés à vos clients et à vos factures. Inclus dans Newbi, 7 jours gratuits.",
     keywords:
       "kanban, gestion projet, organisation, productivité, collaboration équipe, suivi tâches, méthode agile, tableau kanban, outil gratuit",
     canonical: `${baseUrl}/produits/kanban`,
@@ -381,7 +381,7 @@ export const seoData = {
         "@type": "Offer",
         price: "0",
         priceCurrency: "EUR",
-        description: "Essai gratuit de 30 jours",
+        description: "Essai gratuit de 7 jours",
       },
       featureList: [
         "Transferts cryptés",
@@ -495,14 +495,14 @@ export const seoData = {
   pricing: {
     title: "Tarifs Newbi - Offres Freelance, TPE et Entreprise",
     description:
-      "Comparez les offres Newbi : Freelance dès 17,99 € TTC/mois, TPE et Entreprise. 30 jours gratuits, sans carte bancaire, sans engagement.",
+      "Comparez les offres Newbi : Freelance dès 17,99 € TTC/mois, TPE et Entreprise. 7 jours gratuits, sans engagement.",
     keywords:
       "tarifs newbi, prix abonnement, plan entrepreneur, facturation prix, devis tarif, essai gratuit, abonnement mensuel",
     canonical: `${baseUrl}/tarifs`,
     openGraph: {
       title: "Tarifs Newbi - Plans pour Entrepreneurs",
       description:
-        "Plans flexibles pour votre gestion d'entreprise. Essai gratuit de 30 jours inclus.",
+        "Plans flexibles pour votre gestion d'entreprise. Essai gratuit de 7 jours inclus.",
       image: `/images/op-newbi.png`,
       type: "website",
       locale: "fr_FR",
@@ -531,7 +531,7 @@ export const seoData = {
           price: "0",
           priceCurrency: "EUR",
           description:
-            "Essai gratuit de 30 jours - Toutes fonctionnalités incluses",
+            "Essai gratuit de 7 jours - Toutes fonctionnalités incluses",
           availability: "https://schema.org/InStock",
         },
         {
@@ -614,7 +614,7 @@ export const seoData = {
           name: "Y a-t-il un essai gratuit ?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Oui, vous bénéficiez de 30 jours gratuits à l'inscription, durant lesquels vous pouvez résilier votre abonnement à tout moment.",
+            text: "Oui, vous bénéficiez de 7 jours gratuits à l'inscription, sans aucun prélèvement, durant lesquels vous pouvez résilier votre abonnement à tout moment.",
           },
         },
       ],
@@ -816,7 +816,7 @@ export const homeJsonLd = [
         "@type": "Offer",
         price: "0",
         priceCurrency: "EUR",
-        description: "Essai gratuit de 30 jours, sans carte bancaire",
+        description: "Essai gratuit de 7 jours, sans engagement",
       },
       ...PLANS_DISPLAY.flatMap((plan) => [
         {

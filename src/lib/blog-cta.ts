@@ -39,7 +39,7 @@ export type CtaContent = {
 };
 
 const SIGNUP = "/auth/signup";
-const TRIAL_NOTE = "30 jours gratuits, sans carte bancaire.";
+const TRIAL_NOTE = "7 jours gratuits, sans engagement.";
 
 export const CTA_CONTENT: Record<CtaIntent, CtaContent> = {
   facture: {
@@ -146,10 +146,10 @@ export const CTA_CONTENT: Record<CtaIntent, CtaContent> = {
   },
   comparatif: {
     title: "Faites-vous votre propre avis",
-    text: "Testez toutes les fonctionnalités de Newbi pendant 30 jours : devis, factures, achats, banque et facturation électronique.",
-    primary: { label: "Essayer Newbi 30 jours", href: SIGNUP },
+    text: "Testez toutes les fonctionnalités de Newbi pendant 7 jours : devis, factures, achats, banque et facturation électronique.",
+    primary: { label: "Essayer Newbi 7 jours", href: SIGNUP },
     secondary: { label: "Voir les tarifs", href: "/tarifs" },
-    note: "Sans carte bancaire.",
+    note: "Sans engagement.",
   },
 };
 

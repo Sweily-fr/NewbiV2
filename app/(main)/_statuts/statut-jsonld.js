@@ -38,7 +38,7 @@ export function statutJsonLd({ slug, nom, description, fonctionnalites }) {
         priceCurrency: "EUR",
         url: `${SITE_URL}/tarifs`,
         availability: "https://schema.org/InStock",
-        description: `Essai gratuit de 30 jours sans carte bancaire, puis abonnement à partir de ${ENTRY_PRICE.toFixed(2).replace(".", ",")} € TTC par mois.`,
+        description: `Essai gratuit de 7 jours, sans engagement, puis abonnement à partir de ${ENTRY_PRICE.toFixed(2).replace(".", ",")} € TTC par mois.`,
       },
     },
     {
