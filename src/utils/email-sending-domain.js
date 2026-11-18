@@ -14,6 +14,11 @@ import {
   isValidEmail,
 } from "@/src/utils/email-campaigns";
 
+// Espace insécable avant « : », « ; », « ? » et « ! » : jamais de
+// ponctuation seule en début de ligne
+export const frenchSpacing = (text) =>
+  String(text ?? "").replace(/ ([:;?!])/g, "\u00a0$1");
+
 const upper = (value) =>
   String(value ?? "")
     .trim()
@@ -90,7 +95,7 @@ export function isReservedSenderDomain(domain, newbiSenderEmail) {
 }
 
 /** Refus de l'API par code (`extensions.code`), en clair. */
-export const SENDING_DOMAIN_ERRORS = {
+const ERROR_TEXTS = {
   INVALID_SENDER_EMAIL:
     "Cette adresse n'est pas valide. Vérifiez-la, par exemple contact@votre-entreprise.fr.",
   FREE_EMAIL_PROVIDER:
@@ -109,6 +114,12 @@ export const SENDING_DOMAIN_ERRORS = {
   SUBSCRIPTION_READ_ONLY:
     "Mode lecture seule : renouvelez votre abonnement pour modifier l'adresse d'envoi.",
 };
+export const SENDING_DOMAIN_ERRORS = Object.fromEntries(
+  Object.entries(ERROR_TEXTS).map(([code, text]) => [
+    code,
+    frenchSpacing(text),
+  ]),
+);
 
 /**
  * Adresse saisie pour la connexion : null si elle convient, sinon
@@ -296,6 +307,12 @@ const toDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const fullDayFormatter = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: CAMPAIGN_TIMEZONE,
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 const longDayFormatter = new Intl.DateTimeFormat("fr-FR", {
   timeZone: CAMPAIGN_TIMEZONE,
   weekday: "long",
@@ -310,6 +327,12 @@ const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
   hour: "2-digit",
   minute: "2-digit",
 });
+
+/** « 16 novembre 2026 » (heure de Paris). */
+export function formatFullDay(value) {
+  const date = toDate(value);
+  return date ? fullDayFormatter.format(date) : "";
+}
 
 /** « mardi 25 novembre » (heure de Paris). */
 export function formatLongDay(value) {
@@ -330,7 +353,9 @@ export function formatCheckTime(value, now = new Date()) {
 export function expiryNotice(expiresAt) {
   const day = formatLongDay(expiresAt);
   return day
-    ? `Sans validation d'ici le ${day}, le domaine sera retiré automatiquement : il suffira de le connecter de nouveau.`
+    ? frenchSpacing(
+        `Sans validation d'ici le ${day}, le domaine sera retiré automatiquement : il suffira de le connecter de nouveau.`,
+      )
     : null;
 }
 
@@ -363,9 +388,11 @@ export function pendingDomainNotice(settings) {
     domain: domain.domain,
     fallbackEmail,
     validating,
-    text: `Votre domaine ${domain.domain} ${
-      validating ? "est en cours de validation" : "n'est pas encore validé"
-    } : en attendant, vos campagnes partent de ${fallbackEmail}.`,
+    text: frenchSpacing(
+      `Votre domaine ${domain.domain} ${
+        validating ? "est en cours de validation" : "n'est pas encore validé"
+      } : en attendant, vos campagnes partent de ${fallbackEmail}.`,
+    ),
   };
 }
 

@@ -28,9 +28,9 @@ function PendingDomainText({ notice }) {
       Votre domaine <span className="font-medium">{notice.domain}</span>{" "}
       {notice.validating
         ? "est en cours de validation"
-        : "n'est pas encore validé"}{" "}
-      : en attendant, vos campagnes partent de{" "}
-      <span className="font-medium break-all">{notice.fallbackEmail}</span>.
+        : "n'est pas encore validé"}
+      &nbsp;: en attendant, vos campagnes partent de{" "}
+      <span className="font-medium break-words">{notice.fallbackEmail}</span>.
     </>
   );
 }
@@ -134,15 +134,17 @@ export function SenderSection({
           ) : (
             <>
               Envoyé depuis{" "}
-              <span className="font-medium break-all text-foreground">
+              <span className="font-medium break-words text-foreground">
                 {senderEmail}
               </span>
             </>
           )}
           {panelLink && (
             <>
-              <span className="mx-1.5 text-muted-foreground/60">·</span>
-              {panelLink}
+              <span className="mx-1.5 hidden text-muted-foreground/60 sm:inline">
+                ·
+              </span>
+              <span className="block sm:inline">{panelLink}</span>
             </>
           )}
         </span>
@@ -209,7 +211,7 @@ export function SenderSection({
             <div className="min-w-0">
               <p>
                 Envoyé depuis{" "}
-                <span className="font-medium break-all text-foreground">
+                <span className="font-medium break-words text-foreground">
                   {senderEmail}
                 </span>{" "}
                 au nom de{" "}
@@ -217,7 +219,7 @@ export function SenderSection({
                   {fromName.trim() || "votre entreprise"}
                 </span>
                 . Cette adresse authentifiée évite que vos e-mails finissent en
-                spam ; vos contacts voient votre nom et leurs réponses vous
+                spam&nbsp;; vos contacts voient votre nom et leurs réponses vous
                 parviennent directement.
               </p>
               {notice && (

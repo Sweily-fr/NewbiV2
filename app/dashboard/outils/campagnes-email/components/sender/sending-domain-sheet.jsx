@@ -41,13 +41,14 @@ import {
   UPDATE_EMAIL_SENDING_DOMAIN_SENDER,
   VERIFY_EMAIL_SENDING_DOMAIN,
 } from "@/src/graphql/emailCampaignQueries";
-import { formatDay, isValidEmail } from "@/src/utils/email-campaigns";
+import { isValidEmail } from "@/src/utils/email-campaigns";
 import {
   apiErrorCode,
   checkSenderEmail,
   emailLocalPart,
   expiryNotice,
   formatCheckTime,
+  formatFullDay,
   hostLabel,
   isExpiredSendingDomain,
   sendingDomainBadge,
@@ -136,7 +137,7 @@ function StepTitle({ step, children }) {
 
 function Strong({ children }) {
   return (
-    <span className="font-medium break-all text-foreground">{children}</span>
+    <span className="font-medium break-words text-foreground">{children}</span>
   );
 }
 
@@ -145,7 +146,7 @@ function Strong({ children }) {
 const HOW_IT_WORKS = [
   "Vous indiquez l'adresse qui enverra vos campagnes.",
   "Newbi vous donne quelques lignes à copier chez l'hébergeur de votre domaine (OVH, Hostinger, IONOS…). Votre site et votre messagerie ne changent pas.",
-  "Une fois votre domaine validé, vos campagnes partent de votre adresse. D'ici là, elles partent de l'adresse Newbi : rien n'est bloqué.",
+  "Une fois votre domaine validé, vos campagnes partent de votre adresse. D'ici là, elles partent de l'adresse Newbi\u00a0: rien n'est bloqué.",
 ];
 
 function ConnectView({
@@ -185,7 +186,8 @@ function ConnectView({
       {expiredDomain && (
         <Notice tone="warning">
           Votre domaine <Strong>{expiredDomain.domain}</Strong> n&apos;a pas été
-          validé à temps : il a été retiré. Vous pouvez le connecter de nouveau.
+          validé à temps&nbsp;: il a été retiré. Vous pouvez le connecter de
+          nouveau.
         </Notice>
       )}
 
@@ -342,7 +344,7 @@ function AddressCard({
             </Label>
             <div
               className={cn(
-                "flex h-8 min-w-0 items-center rounded-[9px] border transition-[border] focus-within:border-[#D1D3D8] hover:border-[#D1D3D8] dark:hover:border-[#44444A]",
+                "flex h-8 min-w-0 items-center rounded-[9px] border transition-[border] focus-within:border-[#D1D3D8] hover:border-[#D1D3D8] sm:max-w-[420px] dark:hover:border-[#44444A]",
                 error
                   ? "border-red-300 dark:border-red-500/50"
                   : "border-[#E6E7EA] dark:border-[#2E2E32]",
@@ -375,7 +377,7 @@ function AddressCard({
               )}
             >
               {error ||
-                `Seule la partie avant le @ change : le domaine reste ${domain.domain}.`}
+                `Seule la partie avant le @ change\u00a0: le domaine reste ${domain.domain}.`}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -402,7 +404,7 @@ function AddressCard({
           <>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                <p className="min-w-0 text-[15px] leading-6 font-medium break-all">
+                <p className="min-w-0 text-[15px] leading-6 font-medium break-words">
                   {domain.fromEmail}
                 </p>
                 {badge && (
@@ -509,8 +511,8 @@ function PendingView({
             {domain.dnsProvider
               ? `Connectez-vous à votre compte ${domain.dnsProvider}, ouvrez la zone DNS de ${domain.zone}, puis ajoutez chaque ligne telle quelle.`
               : `Connectez-vous là où vous avez acheté votre domaine (OVH, Hostinger, IONOS…), ouvrez la zone DNS de ${domain.zone}, puis ajoutez chaque ligne telle quelle.`}{" "}
-            Elles s&apos;ajoutent aux autres : votre site et votre messagerie ne
-            changent pas.
+            Elles s&apos;ajoutent aux autres&nbsp;: votre site et votre
+            messagerie ne changent pas.
           </p>
         </div>
 
@@ -520,7 +522,7 @@ function PendingView({
           <p>
             {fullNames
               ? "Noms complets affichés, pour les hébergeurs qui les demandent. "
-              : `Votre hébergeur demande le nom complet, qui se termine par .${domain.zone} ? `}
+              : `Votre hébergeur demande le nom complet, qui se termine par .${domain.zone}\u00a0? `}
             <button
               type="button"
               className={LINK_CLASS}
@@ -534,9 +536,9 @@ function PendingView({
           {reminder && (
             <p>
               {reminder.ovh
-                ? "Chez OVH, terminez la valeur des lignes MX et CNAME par un point, par exemple : "
-                : "Lignes MX et CNAME : certains hébergeurs, comme OVH, demandent un point à la fin de la valeur, par exemple : "}
-              <code className="rounded bg-[#f1f1f3] px-1 py-px font-mono break-all text-foreground dark:bg-white/[0.08]">
+                ? "Chez OVH, terminez la valeur des lignes MX et CNAME par un point, par exemple\u00a0: "
+                : "Lignes MX et CNAME\u00a0: certains hébergeurs, comme OVH, demandent un point à la fin de la valeur, par exemple\u00a0: "}
+              <code className="inline-block max-w-full rounded bg-[#f1f1f3] px-1 py-px align-bottom font-mono wrap-anywhere text-foreground dark:bg-white/[0.08]">
                 {reminder.example}
               </code>
             </p>
@@ -582,7 +584,7 @@ function PendingView({
             {seconds > 0
               ? `Nouvel essai possible dans ${seconds} s`
               : domain.lastCheckedAt
-                ? `Dernière vérification : ${formatCheckTime(domain.lastCheckedAt)}`
+                ? `Dernière vérification\u00a0: ${formatCheckTime(domain.lastCheckedAt)}`
                 : null}
           </p>
         </div>
@@ -596,7 +598,7 @@ function PendingView({
       {canManage && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEEFF1] pt-4 dark:border-[#232323]">
           <p className="text-xs leading-5 text-muted-foreground">
-            Une erreur dans l&apos;adresse ou le domaine ? Retirez-le pour
+            Une erreur dans l&apos;adresse ou le domaine&nbsp;? Retirez-le pour
             recommencer.
           </p>
           <Button
@@ -604,7 +606,7 @@ function PendingView({
             size="sm"
             onClick={onRemove}
             disabled={Boolean(disabledReason)}
-            className="text-red-600 hover:text-red-700 dark:text-red-400"
+            className="-mx-2.5 text-red-600 hover:text-red-700 dark:text-red-400"
           >
             Retirer ce domaine
           </Button>
@@ -623,7 +625,7 @@ function VerifiedView({
   onUpdate,
   onRemove,
 }) {
-  const verifiedOn = formatDay(domain.verifiedAt);
+  const verifiedOn = formatFullDay(domain.verifiedAt);
   return (
     <div className="flex flex-col gap-6">
       <AddressCard
@@ -638,8 +640,8 @@ function VerifiedView({
       />
 
       <Notice>
-        Gardez les lignes ajoutées chez {hostLabel(domain.dnsProvider)} : sans
-        elles, vos campagnes repartiraient de{" "}
+        Gardez les lignes ajoutées chez {hostLabel(domain.dnsProvider)}&nbsp;:
+        sans elles, vos campagnes repartiraient de{" "}
         {newbiSenderEmail || "l'adresse Newbi"}.
       </Notice>
 
@@ -876,7 +878,13 @@ export function SendingDomainSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-[720px]">
+      <SheetContent
+        className="flex w-full flex-col gap-0 p-0 focus:outline-none sm:max-w-[760px]"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          event.currentTarget?.focus?.();
+        }}
+      >
         <SheetHeader className="shrink-0 border-b border-[#EEEFF1] px-5 pt-5 pb-4 dark:border-[#232323]">
           <SheetTitle className="pr-8 text-base font-medium">
             Envoyer depuis votre adresse
@@ -946,7 +954,7 @@ export function SendingDomainSheet({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {verified ? "Déconnecter" : "Retirer"} {domain?.domain} ?
+                {verified ? "Déconnecter" : "Retirer"} {domain?.domain}&nbsp;?
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {verified
@@ -972,7 +980,7 @@ export function SendingDomainSheet({
                   handleDisconnect();
                 }}
                 disabled={disconnecting}
-                className="bg-red-600 text-white hover:bg-red-700"
+                className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:text-white dark:hover:bg-red-700"
               >
                 {disconnecting && <Loader2 className="size-3.5 animate-spin" />}
                 {verified ? "Déconnecter" : "Retirer"}

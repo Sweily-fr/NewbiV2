@@ -53,18 +53,34 @@ export function CopyIconButton({ text, label, className }) {
   );
 }
 
+/**
+ * Coupures de ligne permises après « . », « - » et « _ » (noms et valeurs
+ * DNS sans espace) ; le texte copié reste intact.
+ */
+function breakable(text) {
+  const parts = [];
+  String(text ?? "")
+    .split(/([.\-_])/)
+    .forEach((part, index) => {
+      if (!part) return;
+      parts.push(part);
+      if (index % 2 === 1) parts.push(<wbr key={index} />);
+    });
+  return parts;
+}
+
 /** Texte à recopier chez l'hébergeur (police à chasse fixe) et son bouton. */
 function CopyableValue({ text, label, clamp = false }) {
   return (
     <div className="flex min-w-0 items-start gap-1">
       <code
         className={cn(
-          "min-w-0 flex-1 pt-1 font-mono text-xs leading-5 break-all text-foreground",
+          "min-w-0 flex-1 pt-1 font-mono text-xs leading-5 wrap-anywhere text-foreground",
           clamp && "line-clamp-3",
         )}
         title={clamp ? text : undefined}
       >
-        {text}
+        {breakable(text)}
       </code>
       <CopyIconButton text={text} label={label} />
     </div>
@@ -104,11 +120,11 @@ export function DnsRecords({ records, fullNames = false }) {
       <div className="hidden overflow-hidden rounded-xl border border-[#EEEFF1] md:block dark:border-[#232323]">
         <table className="w-full table-fixed border-collapse text-sm">
           <colgroup>
-            <col className="w-[72px]" />
-            <col className="w-[30%]" />
+            <col className="w-[68px]" />
+            <col className="w-[27%]" />
             <col />
-            <col className="w-[76px]" />
-            <col className="w-[118px]" />
+            <col className="w-[72px]" />
+            <col className="w-[116px]" />
           </colgroup>
           <thead className="bg-[#fafafa] dark:bg-white/[0.03]">
             <tr className="border-b border-[#EEEFF1] dark:border-[#232323]">

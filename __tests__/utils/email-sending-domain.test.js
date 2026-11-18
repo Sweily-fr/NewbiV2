@@ -17,7 +17,9 @@ import {
   expiryNotice,
   failedRecords,
   formatCheckTime,
+  formatFullDay,
   formatLongDay,
+  frenchSpacing,
   hostLabel,
   isExpiredSendingDomain,
   isFreeEmailDomain,
@@ -299,9 +301,14 @@ describe("dates", () => {
     expect(formatCheckTime(undefined, now)).toBe("");
   });
 
+  it("écrit la date de validation en toutes lettres", () => {
+    expect(formatFullDay("2026-11-16T09:30:00.000Z")).toBe("16 novembre 2026");
+    expect(formatFullDay("pas une date")).toBe("");
+  });
+
   it("annonce le retrait automatique d'un domaine non validé", () => {
     expect(expiryNotice("2026-11-25T10:00:00.000Z")).toBe(
-      "Sans validation d'ici le mercredi 25 novembre, le domaine sera retiré automatiquement : il suffira de le connecter de nouveau.",
+      "Sans validation d'ici le mercredi 25 novembre, le domaine sera retiré automatiquement\u00a0: il suffira de le connecter de nouveau.",
     );
     expect(expiryNotice(null)).toBe(null);
   });
@@ -340,7 +347,7 @@ describe("expéditeur d'une campagne", () => {
       validating: true,
     });
     expect(pending.text).toBe(
-      `Votre domaine atelier-martin.fr est en cours de validation : en attendant, vos campagnes partent de ${NEWBI}.`,
+      `Votre domaine atelier-martin.fr est en cours de validation\u00a0: en attendant, vos campagnes partent de ${NEWBI}.`,
     );
     const failed = pendingDomainNotice({
       ...settings,
@@ -441,7 +448,14 @@ describe("refus de l'API", () => {
     expect(sendingDomainErrorMessage(null)).toBe(null);
   });
 
-  it("aucun message ne contient de tiret cadratin", () => {
+  it("colle la ponctuation double au mot qui précède", () => {
+    expect(frenchSpacing("Attention : point ; question ? oui !")).toBe(
+      "Attention\u00a0: point\u00a0; question\u00a0? oui\u00a0!",
+    );
+    expect(frenchSpacing(null)).toBe("");
+  });
+
+  it("aucun message ne contient de tiret cadratin ni de ponctuation sécable", () => {
     const texts = [
       ...Object.values(SENDING_DOMAIN_ERRORS),
       sendingDomainErrorMessage(gqlError("SENDING_DOMAIN_UNAVAILABLE")),
@@ -449,7 +463,10 @@ describe("refus de l'API", () => {
       sendingDomainProblem(domainOf("FAILED", "FAILED")).text,
       sendingDomainProblem(domainOf("TEMPORARY_FAILURE", "PENDING")).text,
     ];
-    for (const text of texts) expect(text).not.toContain("—");
+    for (const text of texts) {
+      expect(text).not.toContain("—");
+      expect(text).not.toMatch(/ [:;?!]/);
+    }
   });
 });
 
