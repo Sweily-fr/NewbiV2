@@ -380,7 +380,7 @@ export default function ModelesPage() {
             <p className="text-gray-400 text-sm sm:text-base mb-8 max-w-xl mx-auto">
               Numérotation automatique, clients et produits enregistrés, relance
               des impayés, suivi de trésorerie et facturation électronique au
-              même endroit. 30 jours gratuits, sans carte bancaire.
+              même endroit. 7 jours gratuits, sans engagement.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link

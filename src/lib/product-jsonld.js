@@ -20,7 +20,7 @@ import { PLANS_DISPLAY } from "@/src/lib/plans-display";
  *    chiffres, et à condition que les avis soient visibles sur la page.
  *
  * 2. Le prix vient de `plans-display.js` (source unique des tarifs) au lieu du
- *    « price: 0 » codé en dur. Newbi n'est pas gratuit : l'essai de 30 jours
+ *    « price: 0 » codé en dur. Newbi n'est pas gratuit : l'essai de 7 jours
  *    est décrit dans la description de l'offre, pas par un prix nul.
  */
 
@@ -163,7 +163,7 @@ export function productJsonLd(key) {
         priceCurrency: "EUR",
         url: `${SITE_URL}/tarifs`,
         availability: "https://schema.org/InStock",
-        description: `Essai gratuit de 30 jours sans carte bancaire, puis abonnement à partir de ${ENTRY_PRICE.toFixed(2).replace(".", ",")} € TTC par mois.`,
+        description: `Essai gratuit de 7 jours, sans engagement, puis abonnement à partir de ${ENTRY_PRICE.toFixed(2).replace(".", ",")} € TTC par mois.`,
       },
     },
     {

@@ -63,7 +63,7 @@ export function HeroSection() {
                 className="h-auto w-full px-4 py-1.5 text-[17px] sm:w-auto"
               >
                 <Link href="/auth/signup">
-                  <span>Essayer 30 jours offerts</span>
+                  <span>Essayer 7 jours offerts</span>
                 </Link>
               </Button>
             </div>

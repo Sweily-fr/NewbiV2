@@ -47,9 +47,9 @@ const questions = [
       "Oui, et son accès est inclus gratuitement : un en formule Freelance, trois en TPE, cinq en Entreprise. Il consulte vos documents et lance ses exports (CSV, Excel ou FEC selon votre formule) sans occuper de place d'utilisateur.",
   },
   {
-    title: "Que se passe-t-il pendant les 30 jours offerts ?",
+    title: "Que se passe-t-il pendant les 7 jours offerts ?",
     content:
-      "Vous avez accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire, et vous pouvez éditer de vraies factures dès le premier jour. À la fin de l'essai, vous choisissez votre formule ; si vous ne faites rien, rien n'est prélevé.",
+      "Vous avez accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement, et vous pouvez éditer de vraies factures dès le premier jour. Vous choisissez votre formule et enregistrez votre carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé.",
   },
 ];
 

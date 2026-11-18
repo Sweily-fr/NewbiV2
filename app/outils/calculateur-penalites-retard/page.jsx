@@ -355,8 +355,8 @@ export default function CalculateurPenalitesPage() {
             </h2>
             <p className="text-gray-400 text-sm sm:text-base mb-8 max-w-xl mx-auto">
               Newbi suit vos échéances, repère les factures en retard dès le
-              premier jour et envoie les relances à votre place. 30 jours
-              gratuits, sans carte bancaire.
+              premier jour et envoie les relances à votre place. 7 jours
+              gratuits, sans engagement.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link

@@ -72,7 +72,7 @@ export default function StatutHero({
   imageWidth = 1600,
   imageHeight = 1069,
   cartes,
-  cta = { href: "/auth/signup", label: "Essayer 30 jours offerts" },
+  cta = { href: "/auth/signup", label: "Essayer 7 jours offerts" },
 }) {
   return (
     /* Même cadrage que les heros des LP produits : à partir de lg la section

@@ -45,7 +45,7 @@ export default function SignaturesPage() {
                 <br className="hidden md:block" /> une seule signature
               </>
             }
-            subtitle="Crée ton compte, choisis un modèle et déploie la signature de toute ton équipe aujourd'hui. 30 jours pour tester, sans carte bancaire."
+            subtitle="Crée ton compte, choisis un modèle et déploie la signature de toute ton équipe aujourd'hui. 7 jours pour tester, sans engagement."
             image="/lp/signatures/cta-signature.png"
             imageAlt="Une indépendante compose sa signature e-mail dans Newbi sur son ordinateur portable"
             maxWidth="max-w-7xl"
