@@ -34,7 +34,7 @@ export const seo = {
   slug: "sas-sarl",
   titreSeo: "Logiciel de gestion SAS et SARL | Newbi",
   description:
-    "Factures aux mentions de la société, achats, comptes bancaires rapprochés et dossier pour l'expert-comptable. 30 jours offerts.",
+    "Factures aux mentions de la société, achats, comptes bancaires rapprochés et dossier pour l'expert-comptable. 7 jours offerts.",
   motsCles:
     "logiciel gestion SAS, logiciel SARL, facturation SAS, comptabilité SARL, mentions obligatoires facture société, approbation des comptes, export FEC société",
 };
@@ -204,7 +204,7 @@ export const contenu = {
       </>
     ),
     sousTitre:
-      "Créez votre compte, invitez vos associés et votre expert-comptable, émettez votre première facture. 30 jours pour tester, sans carte bancaire.",
+      "Créez votre compte, invitez vos associés et votre expert-comptable, émettez votre première facture. 7 jours pour tester, sans engagement.",
     imageAlt:
       "Les associés d'une société consultent leurs comptes dans Newbi sur un ordinateur portable",
   },
@@ -250,9 +250,9 @@ export const contenu = {
           "Oui, comme toutes les entreprises assujetties à la TVA. La réception des factures fournisseurs au format électronique devient obligatoire pour tous au 1ᵉʳ septembre 2026 ; l'émission suit, en 2026 ou en 2027 selon la taille de l'entreprise. La facturation électronique est incluse dans toutes les offres Newbi, sans supplément.",
       },
       {
-        title: "Que se passe-t-il pendant les 30 jours offerts ?",
+        title: "Que se passe-t-il pendant les 7 jours offerts ?",
         content:
-          "Vous avez accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire, et vous pouvez émettre de vrais documents dès le premier jour. À la fin de l'essai, vous choisissez votre formule ; si vous ne faites rien, rien n'est prélevé.",
+          "Vous avez accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement, et vous pouvez émettre de vrais documents dès le premier jour. Vous choisissez votre formule et enregistrez votre carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé.",
       },
     ],
   },

@@ -9,8 +9,11 @@ import {
   withErrorHandler,
 } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import { SIGNUP_TRIAL_DAYS } from "@/src/lib/signup-trial";
 import {
+  expireOpenSignupCheckouts,
   expireOpenWorkspaceCheckouts,
+  findLiveSignupSubscription,
   findLiveStripeSubscription,
   findLiveWorkspaceSubscription,
   liveSubscriptionMessage,
@@ -202,31 +205,28 @@ async function handler(request) {
       }
     : {};
 
-  // When ENABLE_APP_TRIAL is ON, the trial is fully managed by the app
-  // (Lot 3 cron + Lot 1 gating). Stripe is then ONLY used for paid plans,
-  // so trial_period_days must be 0 — never re-grant a Stripe trial.
-  //
-  // - Main signup with flag ON does NOT reach this endpoint anymore (org +
-  //   app trial are created at user.create.after).
-  // - /create-workspace (additional org) reaches this with flag ON → decision
-  //   #16: no trial, payment immediate (trial_period_days: 0).
-  // - Flag OFF preserves the legacy 30-day Stripe trial for the entire flow.
-  //
-  // EXCEPTION (Pattern A — "convert trial at trial_end") : si on est dans un
-  // upgrade d'org existante AVEC trial maison encore actif, on garde la date
-  // de fin du trial maison comme date de première facturation Stripe. Les
-  // features payantes seront débloquées immédiatement via le webhook (cf.
-  // auth-plugins.js handler `customer.subscription.created`).
-  let trialDays = isAppTrialEnabled() ? 0 : 30;
-  if (isAppTrialEnabled()) {
+  // Essai Stripe (carte enregistrée, prélèvement automatique à la fin) :
+  //   - inscription (`type: "onboarding"`) : SIGNUP_TRIAL_DAYS jours
+  //     (décision du 18/11/2026, la carte est demandée à l'inscription) ;
+  //   - espace supplémentaire (/create-workspace) ou abonnement d'un espace
+  //     existant, sous ENABLE_APP_TRIAL : pas d'essai, paiement immédiat
+  //     (decision #16 ; l'essai sans carte d'un espace existant est repris
+  //     plus bas par le « Pattern A ») ;
+  //   - flag désactivé : même durée que l'inscription.
+  // L'anti re-essai ci-dessous peut encore ramener la durée à 0.
+  let trialDays =
+    organizationData.type === "onboarding" || !isAppTrialEnabled()
+      ? SIGNUP_TRIAL_DAYS
+      : 0;
+  if (trialDays === 0) {
     console.log(
-      `🚫 [CREATE-SUB] App-trial flag ON — Stripe trial_period_days forced to 0`,
+      `🚫 [CREATE-SUB] Pas d'essai Stripe pour un espace ${organizationData.type}`,
     );
   }
 
   // Anti re-essai : une org qui a DÉJÀ un abonnement (renouvellement après
   // expiration/résiliation) ou qui a déjà consommé son essai ne doit pas
-  // ré-obtenir 30 jours gratuits → paiement immédiat. Sans ça, un client
+  // ré-obtenir un essai gratuit → paiement immédiat. Sans ça, un client
   // expiré repassait par le "bon flux nouveau client" (essai) au lieu d'un
   // vrai renouvellement.
   if (trialDays > 0 && session.session?.activeOrganizationId) {
@@ -308,6 +308,23 @@ async function handler(request) {
       const live = await findLiveStripeSubscription(stripe, customerId, orgId);
       if (live) return apiError(409, liveSubscriptionMessage(live.status));
       await expireOpenWorkspaceCheckouts(stripe, customerId, orgId);
+    }
+
+    // Inscription : un seul abonnement (et un seul essai) par inscrit
+    if (organizationData.type === "onboarding") {
+      const { mongoDb: db } = await import("@/src/lib/mongodb");
+      const live =
+        (await findLiveWorkspaceSubscription(
+          db,
+          session.session?.activeOrganizationId,
+        )) || (await findLiveSignupSubscription(stripe, customerId));
+      if (live) {
+        return apiError(
+          409,
+          "Votre abonnement est déjà en place. Rechargez la page pour accéder à votre espace.",
+        );
+      }
+      await expireOpenSignupCheckouts(stripe, customerId);
     }
 
     // 3. Déterminer le Price ID selon le plan et la période (mensuel/annuel)
@@ -506,7 +523,7 @@ async function handler(request) {
               ? `Aucun prélèvement avant le ${new Date(deferredBillingUnix * 1000).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })} : votre cabinet paie votre abonnement jusqu'à cette date.`
               : trialDays > 0
                 ? isOnboarding
-                  ? `Essai gratuit ${trialDays} jours - Aucun prélèvement avant la fin de l'essai`
+                  ? `${trialDays} jours d'essai gratuit : aucun prélèvement avant le ${new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}. Résiliable à tout moment depuis votre espace, sans frais pendant l'essai.`
                   : `Souscription au plan ${planName.toUpperCase()} - ${trialDays} jours d'essai gratuit`
                 : `Souscription au plan ${planName.toUpperCase()} - Paiement immédiat`,
         },

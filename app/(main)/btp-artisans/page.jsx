@@ -41,7 +41,7 @@ const poppins = Poppins({
 
 const TITRE = "Logiciel de devis et facture bâtiment | Newbi";
 const DESCRIPTION =
-  "Devis de chantier, acomptes, factures de situation, retenue de garantie et TVA à la ligne : le logiciel des artisans du bâtiment. 30 jours offerts.";
+  "Devis de chantier, acomptes, factures de situation, retenue de garantie et TVA à la ligne : le logiciel des artisans du bâtiment. 7 jours offerts.";
 
 export const metadata = {
   title: { absolute: TITRE },
@@ -102,7 +102,7 @@ const jsonLd = [
       priceCurrency: "EUR",
       url: `${SITE_URL}/tarifs`,
       availability: "https://schema.org/InStock",
-      description: `Essai gratuit de 30 jours sans carte bancaire, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
+      description: `Essai gratuit de 7 jours, sans engagement, puis abonnement à partir de ${PRIX_ENTREE.toFixed(2).replace(".", ",")} € TTC par mois.`,
     },
   },
   {
@@ -292,7 +292,7 @@ export default function BtpArtisansPage() {
             <br className="hidden md:block" /> part du chantier
           </>
         }
-        subtitle="Créez votre compte, renseignez votre assurance décennale et chiffrez votre première visite. 30 jours pour tester, sans carte bancaire."
+        subtitle="Créez votre compte, renseignez votre assurance décennale et chiffrez votre première visite. 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Un artisan consulte ses devis dans Newbi sur son ordinateur portable"
         maxWidth="max-w-7xl"

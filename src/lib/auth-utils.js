@@ -449,14 +449,20 @@ export async function sendTrialStartedEmail({
   customerName,
   plan,
   trialEndDate,
+  trialDays = null,
+  amount = null,
 }) {
   await sendEmail({
     to,
-    subject: "Bienvenue sur Newbi - Votre essai gratuit de 30 jours commence",
+    subject: trialDays
+      ? `Bienvenue sur Newbi : votre essai gratuit de ${trialDays} jours commence`
+      : "Bienvenue sur Newbi : votre essai gratuit commence",
     html: emailTemplates.trialStarted({
       customerName,
       plan,
       trialEndDate,
+      trialDays,
+      amount,
     }),
   });
 }

@@ -48,9 +48,9 @@ const questions = [
       "Oui, avec une facture d'acompte : c'est un type de document à part entière, qui prend sa place dans votre numérotation continue. Les factures émises ensuite s'imputent sur ce qui a déjà été réglé.",
   },
   {
-    title: "Que se passe-t-il pendant les 30 jours offerts ?",
+    title: "Que se passe-t-il pendant les 7 jours offerts ?",
     content:
-      "Vous avez accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire, transfert de fichiers compris. À la fin de l'essai, vous choisissez votre formule ; si vous ne faites rien, rien n'est prélevé.",
+      "Vous avez accès à toutes les fonctionnalités pendant 7 jours, transfert de fichiers compris, sans aucun prélèvement. Vous choisissez votre formule et enregistrez votre carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé.",
   },
 ];
 

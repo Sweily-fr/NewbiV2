@@ -337,7 +337,7 @@ export default function ConcernedChecker() {
                   <Info className="size-4 shrink-0 text-amber-600" />
                   <span>
                     Pas encore inscrite à une plateforme agréée. Avec Newbi,
-                    l'inscription se fait à la création du compte, 30 jours
+                    l'inscription se fait à la création du compte, 7 jours
                     offerts.
                   </span>
                 </div>

@@ -85,7 +85,7 @@ export default function FacturationElectroniquePage() {
             title="Les trois dates à retenir"
             intro="Rien à anticiper dans l'urgence : voilà ce que la réforme demande, et quand."
             steps={DATES}
-            ctaLabel="Essayer 30 jours offerts"
+            ctaLabel="Essayer 7 jours offerts"
             maxWidth="max-w-7xl"
             className="mt-10 md:mt-20 lg:mt-22"
           />
@@ -102,7 +102,7 @@ export default function FacturationElectroniquePage() {
                 <br className="hidden md:block" /> électronique sans stress
               </>
             }
-            subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 30 jours pour tester, sans carte bancaire."
+            subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 7 jours pour tester, sans engagement."
             image="/lp/facturation-electronique/cta-laptop.jpg"
             imageAlt="Un indépendant consulte ses factures clients dans Newbi sur son ordinateur portable"
             maxWidth="max-w-7xl"

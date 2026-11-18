@@ -21,7 +21,7 @@ function buildPricingFaqContent() {
     ].join("\n");
   }).join("\n\n");
   return (
-    "Tu profites de 30 jours gratuits à l'inscription, sans carte bancaire et sans engagement.\n\n" +
+    "Tu profites de 7 jours gratuits à l'inscription, sans engagement : rien n'est prélevé pendant l'essai.\n\n" +
     "Ensuite, Newbi propose 3 formules :\n\n" +
     planLines +
     "\n\nTu peux changer de formule ou résilier à tout moment, sans conditions."
@@ -51,7 +51,7 @@ export const HOME_FAQ = [
     id: "item-4",
     title: "Comment fonctionne l'essai gratuit ?",
     content:
-      "Tu crées ton compte en quelques secondes, sans carte bancaire, et tu as accès à toutes les fonctionnalités pendant 30 jours. À la fin de l'essai, tu choisis la formule qui te convient. Si tu ne fais rien, ton compte n'est pas facturé.",
+      "Tu crées ton compte en quelques secondes, tu choisis ta formule et tu enregistres ta carte bancaire : tu as accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement. À la fin de l'essai, la formule choisie est prélevée automatiquement. Si tu résilies avant la fin des 7 jours, rien n'est prélevé.",
   },
   {
     id: "item-5",

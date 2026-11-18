@@ -21,7 +21,7 @@ export const seo = {
   slug: "entreprise-individuelle",
   titreSeo: "Logiciel de gestion entreprise individuelle (EI) | Newbi",
   description:
-    "Devis et factures, achats, TVA, trésorerie et export comptable de votre entreprise individuelle au même endroit. 30 jours offerts.",
+    "Devis et factures, achats, TVA, trésorerie et export comptable de votre entreprise individuelle au même endroit. 7 jours offerts.",
   motsCles:
     "logiciel entreprise individuelle, gestion entreprise individuelle, facturation EI, comptabilité entreprise individuelle, régime réel, export FEC, charges déductibles indépendant",
 };
@@ -172,7 +172,7 @@ export const contenu = {
       </>
     ),
     sousTitre:
-      "Créez votre compte, connectez votre compte bancaire et photographiez votre premier justificatif. 30 jours pour tester, sans carte bancaire.",
+      "Créez votre compte, connectez votre compte bancaire et photographiez votre premier justificatif. 7 jours pour tester, sans engagement.",
     imageAlt:
       "Un indépendant en entreprise individuelle consulte ses factures dans Newbi sur son ordinateur portable",
   },
@@ -219,9 +219,9 @@ export const contenu = {
           "Oui. Vous reprenez votre numérotation de factures là où vous en étiez et vous importez vos clients. Vos documents antérieurs restent chez vous : Newbi prend la suite à partir de la date que vous choisissez.",
       },
       {
-        title: "Que se passe-t-il pendant les 30 jours offerts ?",
+        title: "Que se passe-t-il pendant les 7 jours offerts ?",
         content:
-          "Vous avez accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire, et vous pouvez émettre de vraies factures dès le premier jour. À la fin de l'essai, vous choisissez votre formule ; si vous ne faites rien, rien n'est prélevé.",
+          "Vous avez accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement, et vous pouvez émettre de vraies factures dès le premier jour. Vous choisissez votre formule et enregistrez votre carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si vous résiliez avant la fin des 7 jours, rien n'est prélevé.",
       },
     ],
   },

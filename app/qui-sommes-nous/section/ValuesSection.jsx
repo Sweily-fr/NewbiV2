@@ -92,9 +92,9 @@ export function ValuesSection() {
             <h3 className={TITLE}>Des prix affichés en entier</h3>
             <p className={TEXT}>
               Un tarif, visible sur le site, sans palier caché ni frais de mise
-              en service. Vous testez 30 jours sans carte bancaire, vous
-              résiliez en deux clics, et votre abonnement n&apos;augmente pas
-              parce que vous avez envoyé plus de factures que le mois dernier.
+              en service. Vous testez 7 jours sans prélèvement, vous résiliez en
+              deux clics, et votre abonnement n&apos;augmente pas parce que vous
+              avez envoyé plus de factures que le mois dernier.
             </p>
             <Photo
               src="/lp/about/cafe-equipe.jpg"

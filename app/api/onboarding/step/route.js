@@ -12,13 +12,11 @@ import {
   isValidTransition,
 } from "@/src/lib/onboarding";
 import { onboardingStepSchema } from "@/src/lib/schemas/onboarding-step";
-import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 import {
   verifySiret,
   siretVerificationMessage,
   SIRET_VERIFICATION_ERRORS,
 } from "@/src/lib/siret-verification";
-import { grantAppTrialIfEligible } from "@/src/lib/org-creation";
 import {
   legalFormFromNatureJuridique,
   normalizeLegalForm,
@@ -31,8 +29,9 @@ import {
 import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
 
 /**
- * Espace que la fin d'onboarding va renseigner (raison sociale, SIRET,
- * adresse) et sur lequel elle ouvre l'essai.
+ * Espace que l'étape entreprise va renseigner (raison sociale, SIRET,
+ * adresse, déclaration d'usage professionnel). L'abonnement et son essai y
+ * sont rattachés ensuite, au paiement.
  *
  * Jamais « la première appartenance trouvée » : un utilisateur invité dans
  * un autre espace avant d'avoir terminé son inscription aurait pu écraser
@@ -140,13 +139,16 @@ async function handler(request) {
     organizationId: requestedOrganizationId,
   } = validation.data;
 
-  // The "completed" step shortcut is only available under the app-managed
-  // trial flag. Without it, only the webhook path can mark a user completed —
-  // preserving the historical Stripe-first flow exactly.
-  if (targetStep === "completed" && !isAppTrialEnabled()) {
+  // Depuis le 18/11/2026, l'inscription se termine au paiement : le client
+  // choisit son offre, entre sa carte sur Stripe et démarre un essai de
+  // 7 jours. Seul le retour de Stripe (webhook ou verify-checkout-session)
+  // marque l'inscription terminée. L'ancien raccourci « workspace →
+  // completed » de l'essai sans carte n'existe plus : un onglet resté ouvert
+  // sur l'ancienne version de la page reçoit ce message.
+  if (targetStep === "completed") {
     return apiError(
-      400,
-      "Transition 'completed' réservée au flow app-trial (flag désactivé)",
+      409,
+      "L'inscription se termine désormais par le choix de votre offre. Rechargez la page pour continuer.",
     );
   }
 
@@ -202,11 +204,15 @@ async function handler(request) {
     });
   }
 
-  // App-managed trial signup shortcut (flag ON): when transitioning to
-  // "completed" from the workspace step, apply the company data directly to
-  // the org that databaseHooks.user.create.after already created. Then mark
-  // the user completed in a single atomic update.
-  if (targetStep === "completed" && isAppTrialEnabled()) {
+  // Étape entreprise validée (workspace → plan, ou nouvel envoi du
+  // formulaire après un retour en arrière) : l'identité de l'entreprise et
+  // la déclaration d'usage professionnel sont enregistrées sur l'espace créé
+  // à l'inscription (databaseHooks.user.create.after), AVANT le choix de
+  // l'offre et la carte. L'inscription n'est terminée qu'au paiement.
+  const isWorkspaceSubmit =
+    targetStep === "plan" &&
+    (currentStep === "workspace" || honorDeclarationAccepted === true);
+  if (isWorkspaceSubmit) {
     const { organizationId: targetOrganizationId, error: orgError } =
       await resolveOnboardingOrganization(
         sessionUser.id,
@@ -221,7 +227,7 @@ async function handler(request) {
     if (honorDeclarationAccepted !== true) {
       return apiError(
         400,
-        "La déclaration d'usage professionnel doit être acceptée pour terminer l'inscription.",
+        "La déclaration d'usage professionnel doit être acceptée pour continuer l'inscription.",
       );
     }
 
@@ -323,7 +329,7 @@ async function handler(request) {
       if (!companyName) {
         return apiError(
           400,
-          "Le nom de votre entreprise est requis pour terminer l'inscription.",
+          "Le nom de votre entreprise est requis pour continuer l'inscription.",
         );
       }
 
@@ -360,7 +366,7 @@ async function handler(request) {
         statement: PROFESSIONAL_USE_STATEMENT,
       },
 
-      onboardingCompleted: true,
+      // `onboardingCompleted` n'est posé qu'au paiement (org-creation.js).
       updatedAt: now,
     };
 
@@ -368,41 +374,9 @@ async function handler(request) {
       .collection("organization")
       .updateOne({ _id: targetOrganizationId }, { $set: orgPatch });
 
-    // L'essai de 30 jours ne démarre qu'ici, une fois la déclaration signée
-    // (et le SIRET vérifié s'il a été fourni) — plus au moment du signup.
-    await grantAppTrialIfEligible({
-      mongoDb,
-      userId: sessionUser.id,
-      organizationId: targetOrganizationId,
-    });
-
-    await mongoDb.collection("user").updateOne(
-      { _id: toObjectId(sessionUser.id) },
-      {
-        $set: {
-          onboardingStep: "completed",
-          hasSeenOnboarding: true,
-          updatedAt: now,
-        },
-        $unset: { onboardingData: "" },
-      },
-    );
-
     console.log(
-      `✅ [ONBOARDING STEP] ${sessionUser.email}: workspace → completed (${verifiedCompany ? `SIRET ${verifiedCompany.siret} vérifié` : "sans SIRET"}, déclaration acceptée)`,
+      `✅ [ONBOARDING STEP] ${sessionUser.email}: entreprise enregistrée sur ${targetOrganizationId} (${verifiedCompany ? `SIRET ${verifiedCompany.siret} vérifié` : "sans SIRET"}, déclaration acceptée)`,
     );
-
-    return NextResponse.json({
-      step: "completed",
-      data: mergedData || null,
-      changed: true,
-      organizationId: targetOrganizationId.toString(),
-      company: {
-        siret: verifiedCompany?.siret || null,
-        denomination:
-          verifiedCompany?.denominationUniteLegale || orgPatch.companyName,
-      },
-    });
   }
 
   // Build update

@@ -155,7 +155,7 @@ export default function AlternativesPage() {
               href="/logiciel-facturation-gratuit"
               className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 hover:border-[#5a50ff] hover:text-[#5a50ff]"
             >
-              Essayer Newbi gratuitement 30 jours
+              Essayer Newbi gratuitement 7 jours
             </Link>
             <Link
               href="/tarifs"
@@ -223,7 +223,7 @@ export default function AlternativesPage() {
             Le plus simple reste d'essayer
           </h2>
           <p className="text-gray-400 text-sm sm:text-base mb-8 max-w-lg mx-auto">
-            Newbi est gratuit pendant 30 jours, sans carte bancaire. Devis,
+            Newbi est gratuit pendant 7 jours, sans engagement. Devis,
             factures, avoirs, banque, trésorerie et facturation électronique
             au même endroit.
           </p>

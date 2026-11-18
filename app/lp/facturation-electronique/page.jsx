@@ -35,7 +35,7 @@ export const metadata = {
     absolute: "Logiciel de facturation électronique compatible 2026 | Newbi",
   },
   description:
-    "Émets, reçois et archive tes factures électroniques au format Factur-X, UBL ou CII. Compatible avec la réforme 2026, inclus sans surcoût. 30 jours gratuits, sans carte bancaire.",
+    "Émets, reçois et archive tes factures électroniques au format Factur-X, UBL ou CII. Compatible avec la réforme 2026, inclus sans surcoût. 7 jours gratuits, sans engagement.",
   robots: { index: false, follow: false },
   alternates: { canonical: "/produits/facturation-electronique" },
 };
@@ -143,7 +143,7 @@ const ESSENTIALS = [
       "Crée ton compte, ton SIRET pré-remplit le reste : première facture électronique dans la matinée.",
     points: [
       "Inclus dans toutes les formules, sans surcoût",
-      "30 jours offerts, sans carte bancaire",
+      "7 jours offerts, sans engagement",
       "Un humain répond sur WhatsApp",
     ],
     visual: <StartVisual />,
@@ -154,7 +154,7 @@ const STEPS = [
   {
     when: "Aujourd'hui, 9h",
     title: "Tu crées ton compte, ton SIRET fait le reste",
-    desc: "Email ou Google, sans carte bancaire. Les informations légales de ton entreprise sont pré-remplies, tes modèles de facture sont prêts.",
+    desc: "Email ou Google, puis ta formule et ta carte bancaire, sans prélèvement pendant 7 jours. Les informations légales de ton entreprise sont pré-remplies, tes modèles de facture sont prêts.",
     aside: "Compte prêt en 2 minutes",
   },
   {
@@ -216,7 +216,7 @@ const FAQ = [
     id: "fe-4",
     title: "Que se passe-t-il pendant l'essai gratuit ?",
     content:
-      "Tu as accès à toutes les fonctionnalités pendant 30 jours, sans carte bancaire. Tu peux émettre de vraies factures électroniques dès le premier jour. À la fin de l'essai, tu choisis ta formule ; si tu ne fais rien, rien n'est prélevé.",
+      "Tu as accès à toutes les fonctionnalités pendant 7 jours, sans aucun prélèvement. Tu peux émettre de vraies factures électroniques dès le premier jour. Tu choisis ta formule et enregistres ta carte bancaire à l'inscription ; à la fin de l'essai, la formule choisie est prélevée automatiquement. Si tu résilies avant la fin des 7 jours, rien n'est prélevé.",
   },
   {
     id: "fe-5",
@@ -325,7 +325,7 @@ export default function LpFacturationElectronique() {
             <br className="hidden md:block" /> électronique sans stress
           </>
         }
-        subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 30 jours pour tester, sans carte bancaire."
+        subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 7 jours pour tester, sans engagement."
         image="/lp/facturation-electronique/cta-laptop.jpg"
         imageAlt="Un indépendant consulte ses factures clients dans Newbi sur son ordinateur portable"
       />
