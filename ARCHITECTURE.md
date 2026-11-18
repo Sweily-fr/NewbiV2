@@ -365,7 +365,7 @@ npm run lint     # ESLint
 ### Provider
 
 - **Resend API** via `src/lib/resend.js`
-- Sender: `Newbi <noreply@newbi.sweily.fr>`
+- Sender: `Newbi <no-reply@newbi.fr>`
 
 ### Templates (`src/lib/email-templates/`)
 

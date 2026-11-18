@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { emailTemplates } from "@/src/lib/email-templates";
 import { sendEmail } from "@/src/lib/auth-utils";
+import { NEWBI_EMAIL_FROM } from "@/src/lib/email-from";
 import { withErrorHandler } from "@/src/lib/security";
 
 async function handler(request) {
@@ -45,7 +46,7 @@ async function handler(request) {
     to: email,
     subject: emailSubjects[template] || "Email de test Newbi",
     html: htmlContent,
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
   });
 
   return NextResponse.json({

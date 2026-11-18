@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { NEWBI_EMAIL_FROM } from "@/src/lib/email-from";
 import { resend } from "@/src/lib/resend";
 import { emailTemplates } from "@/src/lib/email-templates";
 import { withErrorHandler } from "@/src/lib/security";
@@ -75,7 +76,7 @@ async function handler(request) {
     to: CONTACT_RECIPIENT,
     subject: `Formulaire de contact - ${subject.trim()}`,
     html,
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
     replyTo: email.trim(),
   });
 
