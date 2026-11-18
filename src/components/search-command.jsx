@@ -54,6 +54,7 @@ import {
   Truck,
   RotateCcw,
   History,
+  Send,
 } from "lucide-react";
 import { normalizeSearchText } from "@/src/utils/search-text";
 import { GET_CLIENTS } from "@/src/graphql/clientQueries";
@@ -1193,6 +1194,20 @@ export function SearchCommand() {
                         <CalendarCheck className="size-3.5" />
                       </IconWrapper>
                       <span>Prise de rendez-vous</span>
+                    </CommandItem>
+                  )}
+                  {canList("/dashboard/outils/campagnes-email") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/campagnes-email"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <Send className="size-3.5" />
+                      </IconWrapper>
+                      <span>Campagnes e-mail</span>
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/documents-partages") && (

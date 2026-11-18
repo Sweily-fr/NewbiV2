@@ -28,7 +28,7 @@ async function sendEmail({ to, subject, html }) {
       to,
       subject,
       html,
-      from: "Newbi <noreply@newbi.sweily.fr>",
+      from: "Newbi <no-reply@newbi.fr>",
     });
     return true;
   } catch (error) {
