@@ -112,6 +112,57 @@ describe("GET /api/verify-checkout-session", () => {
     expect(corps).not.toContain("cus_autre");
   });
 
+  it("essai d'inscription confirmé : montant renvoyé pour la conversion Essai démarré", async () => {
+    m.subscription = { referenceId: orgId, status: "trialing" };
+    m.retrieve.mockResolvedValue({
+      id: "cs_test_123",
+      payment_status: "no_payment_required",
+      metadata: {
+        userId,
+        organizationId: orgId,
+        isOnboarding: "true",
+        isNewOrganization: "true",
+      },
+      subscription: {
+        id: "sub_essai",
+        status: "trialing",
+        metadata: { referenceId: orgId, organizationId: orgId },
+        items: {
+          data: [{ price: { unit_amount: 1799, currency: "eur" } }],
+        },
+      },
+      customer: { id: "cus_moi", metadata: { userId } },
+    });
+    const res = await appel();
+    expect(res.status).toBe(200);
+    const corps = await res.json();
+    expect(corps.subscriptionId).toBe("sub_essai");
+    expect(corps.trialConversion).toEqual({ value: 17.99, currency: "EUR" });
+  });
+
+  it("paiement immédiat (espace supplémentaire) : pas de conversion Essai démarré", async () => {
+    m.subscription = { referenceId: orgId, status: "active" };
+    m.retrieve.mockResolvedValue({
+      id: "cs_test_123",
+      payment_status: "paid",
+      metadata: {
+        userId,
+        organizationId: orgId,
+        isOnboarding: "false",
+        isNewOrganization: "true",
+      },
+      subscription: {
+        id: "sub_paye",
+        status: "active",
+        metadata: { referenceId: orgId, organizationId: orgId },
+        items: { data: [{ price: { unit_amount: 1799, currency: "eur" } }] },
+      },
+      customer: { id: "cus_moi", metadata: { userId } },
+    });
+    const corps = await (await appel()).json();
+    expect(corps.trialConversion).toBeNull();
+  });
+
   it("session sans compte d'origine : 400 (pas de repli sur l'adresse e-mail), rien d'écrit", async () => {
     m.retrieve.mockResolvedValue({
       id: "cs_test_123",

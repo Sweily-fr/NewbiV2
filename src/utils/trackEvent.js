@@ -90,13 +90,24 @@ export const GOOGLE_ADS_CONVERSIONS = {
   // Action « Inscription » (catégorie Inscription) dans Google Ads. Attention :
   // zQX2CM-P4PYcEM_z6NxE est le libellé de l'action « Page vue », pas celui-ci.
   signup: "9_9LCMfq2_YcEM_z6NxE",
+  // Action « Essai démarré » (18/11/2026) : carte enregistrée sur Stripe et
+  // essai de 7 jours ouvert, au retour du paiement (/onboarding/success).
+  // C'est elle qui doit piloter les enchères depuis l'inscription avec
+  // carte ; « Inscription » (compte créé) reste en suivi.
+  trialStart: "LdElCOiH-7odEM_z6NxE",
 };
 
 // Envoie une conversion Google Ads une seule fois par (conversion, clé) : la
 // clé (id utilisateur en général) évite de recompter au rechargement de la
 // page ou quand l'inscription email et le retour OAuth passent tous les deux
 // par la même page.
-export function trackGoogleAdsConversion({ conversion, dedupeKey }) {
+export function trackGoogleAdsConversion({
+  conversion,
+  dedupeKey,
+  value,
+  currency = "EUR",
+  transactionId,
+}) {
   if (typeof window === "undefined" || typeof window.gtag !== "function") {
     return false;
   }
@@ -112,6 +123,9 @@ export function trackGoogleAdsConversion({ conversion, dedupeKey }) {
 
   window.gtag("event", "conversion", {
     send_to: `${GOOGLE_ADS_ID}/${label}`,
+    ...(typeof value === "number" && { value, currency }),
+    // Google dédoublonne aussi de son côté sur l'identifiant de transaction
+    ...(transactionId && { transaction_id: String(transactionId) }),
   });
 
   try {
@@ -125,4 +139,17 @@ export function trackGoogleAdsConversion({ conversion, dedupeKey }) {
 // Compte créé (email ou OAuth) : à appeler avec l'id du nouvel utilisateur.
 export function trackSignupConversion(userId) {
   return trackGoogleAdsConversion({ conversion: "signup", dedupeKey: userId });
+}
+
+// Essai démarré (carte enregistrée, abonnement Stripe en essai) : une fois
+// par abonnement, avec le montant prélevé à la fin de l'essai.
+export function trackTrialStartConversion({ subscriptionId, value, currency }) {
+  if (!subscriptionId) return false;
+  return trackGoogleAdsConversion({
+    conversion: "trialStart",
+    dedupeKey: subscriptionId,
+    value,
+    currency,
+    transactionId: subscriptionId,
+  });
 }
