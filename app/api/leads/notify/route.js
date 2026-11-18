@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { NEWBI_EMAIL_FROM } from "@/src/lib/email-from";
 import { resend } from "@/src/lib/resend";
 import { emailTemplates } from "@/src/lib/email-templates";
 import { requireInternalSecret, withErrorHandler } from "@/src/lib/security";
@@ -23,7 +24,7 @@ async function handler(request) {
     to: recipients,
     subject: `Nouveau lead guide facturation — ${lead.firstName} ${lead.lastName}`,
     html,
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
   });
 
   return NextResponse.json({ success: true });

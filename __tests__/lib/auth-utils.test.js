@@ -174,8 +174,8 @@ describe("sendResetPasswordEmail / sendVerificationEmail", () => {
 describe("sendEmail (generic)", () => {
   it("uses default 'from' when not provided", async () => {
     await sendEmail({ to: "u@x.fr", subject: "S", html: "<p>X</p>" });
-    expect(resendMock.emails.send.mock.calls[0][0].from).toMatch(
-      /noreply@newbi/,
+    expect(resendMock.emails.send.mock.calls[0][0].from).toBe(
+      "Newbi <no-reply@newbi.fr>",
     );
   });
 

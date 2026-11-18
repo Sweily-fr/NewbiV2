@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { NEWBI_EMAIL_FROM } from "./email-from";
 import { resend } from "./resend";
 import { emailTemplates } from "./email-templates";
 
@@ -66,7 +67,7 @@ export async function sendReactivationEmail(user) {
     to: user.email,
     subject: "Réactivez votre compte - Newbi",
     html: emailTemplates.reactivation(reactivationUrl),
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
   });
 }
 
@@ -95,7 +96,7 @@ export async function send2FAEmail(user, otp) {
       to: user.email,
       subject: "Code de vérification 2FA - Newbi",
       html: emailTemplates.twoFactor(otp),
-      from: "Newbi <noreply@newbi.sweily.fr>",
+      from: NEWBI_EMAIL_FROM,
     });
 
     if (error) {
@@ -116,7 +117,7 @@ export async function sendResetPasswordEmail(user, url) {
     to: user.email,
     subject: "Réinitialisez votre mot de passe - Newbi",
     html: emailTemplates.resetPassword(url),
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
   });
 }
 
@@ -126,7 +127,7 @@ export async function sendVerificationEmail(user, url) {
     to: user.email,
     subject: "Vérifiez votre adresse e-mail - Newbi",
     html: emailTemplates.emailVerification(url),
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
   });
 }
 
@@ -136,7 +137,7 @@ export async function sendChangeEmailConfirmation(user, newEmail, url) {
     to: user.email,
     subject: "Confirmez le changement de votre adresse e-mail - Newbi",
     html: emailTemplates.changeEmailConfirmation(url, newEmail),
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
   });
 }
 
@@ -146,7 +147,7 @@ export async function sendVerificationOtpEmail(email, otp) {
     to: email,
     subject: "Votre code de vérification - Newbi",
     html: emailTemplates.emailOtp(otp),
-    from: "Newbi <noreply@newbi.sweily.fr>",
+    from: NEWBI_EMAIL_FROM,
   });
 }
 
@@ -155,7 +156,7 @@ export async function sendEmail({
   to,
   subject,
   html,
-  from = "Newbi <noreply@newbi.sweily.fr>",
+  from = NEWBI_EMAIL_FROM,
 }) {
   try {
     // Resend ne lève pas d'exception en cas de refus : il renvoie
@@ -352,7 +353,7 @@ export async function sendPaymentSucceededEmail({
         paymentDate,
         nextRenewalDate,
       }),
-      from: "Newbi <noreply@newbi.sweily.fr>",
+      from: NEWBI_EMAIL_FROM,
       attachments: [],
     };
 

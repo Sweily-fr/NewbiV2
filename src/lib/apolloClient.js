@@ -708,6 +708,13 @@ const cache = new InMemoryCache({
     SocialSound: {
       keyFields: false,
     },
+    // Contrôle de la vérification avant envoi d'une campagne e-mail : son id
+    // est celui du contrôle (« subject_length »…), le même pour toutes les
+    // campagnes. Normalisé, le dernier résultat lu remplacerait les titres et
+    // détails des autres campagnes.
+    EmailCampaignCheck: {
+      keyFields: false,
+    },
   },
 });
 

@@ -48,6 +48,7 @@ describe("useWorkspaceFeatures", () => {
               appointments: false,
               documentShares: true,
               socialPublishing: false,
+              emailCampaigns: true,
             },
           },
         },
@@ -61,6 +62,7 @@ describe("useWorkspaceFeatures", () => {
     expect(result.current.isEnabled("appointments")).toBe(false);
     expect(result.current.isEnabled("documentShares")).toBe(true);
     expect(result.current.isEnabled("socialPublishing")).toBe(false);
+    expect(result.current.isEnabled("emailCampaigns")).toBe(true);
   });
 
   it("reste fermé si l'API répond une erreur", async () => {

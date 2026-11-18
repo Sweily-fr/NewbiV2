@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
+  actionForPath,
   featureForModule,
   isHiddenForRole,
   moduleForPath,
+  pathForModule,
 } from "@/src/lib/route-modules";
 
 describe("pages masquées au Comptable par défaut", () => {
@@ -61,10 +63,35 @@ describe("pages en accès anticipé", () => {
     ).toBe("appointments");
   });
 
+  it("rattache les campagnes e-mail, éditeur compris, à leur module et à leur fonctionnalité", () => {
+    expect(moduleForPath("/dashboard/outils/campagnes-email")).toBe(
+      "emailCampaigns",
+    );
+    expect(
+      featureForModule(
+        moduleForPath("/dashboard/outils/campagnes-email/abc/editeur"),
+      ),
+    ).toBe("emailCampaigns");
+    expect(pathForModule("emailCampaigns")).toBe(
+      "/dashboard/outils/campagnes-email",
+    );
+  });
+
   it("aucune fonctionnalité pour les autres pages", () => {
     expect(featureForModule(moduleForPath("/dashboard/outils/factures"))).toBe(
       null,
     );
     expect(featureForModule(null)).toBe(null);
+  });
+});
+
+describe("action demandée par une page", () => {
+  it("l'éditeur d'une campagne demande « Modifier », sa page « Voir »", () => {
+    expect(actionForPath("/dashboard/outils/campagnes-email/abc/editeur")).toBe(
+      "edit",
+    );
+    expect(actionForPath("/dashboard/outils/campagnes-email/abc")).toBe("view");
+    expect(actionForPath("/dashboard/outils/factures/abc/editer")).toBe("edit");
+    expect(actionForPath("/dashboard/outils/devis/new")).toBe("create");
   });
 });

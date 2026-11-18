@@ -27,6 +27,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/documents-partages", "sharedDocuments"],
   ["/dashboard/outils/signatures-mail", "signatures"],
   ["/dashboard/outils/rendez-vous", "appointments"],
+  ["/dashboard/outils/campagnes-email", "emailCampaigns"],
 ];
 
 // Pages en accès anticipé : module → fonctionnalité de useWorkspaceFeatures
@@ -35,6 +36,7 @@ const MODULE_FEATURES = {
   vat: "vat",
   urssaf: "urssaf",
   appointments: "appointments",
+  emailCampaigns: "emailCampaigns",
 };
 
 /** Fonctionnalité en accès anticipé d'un module, ou null. */
@@ -61,11 +63,14 @@ export function moduleForPath(pathname) {
   return null;
 }
 
-/** Action demandée par une page : créer (/new), modifier (/editer), voir. */
+/**
+ * Action demandée par une page : créer (/new), modifier (/editer, ou
+ * /editeur pour l'éditeur d'une campagne e-mail), voir.
+ */
 export function actionForPath(pathname) {
   const path = String(pathname || "").split(/[?#]/)[0];
   if (/\/(new|nouveau)(\/|$)/.test(path)) return "create";
-  if (/\/editer(\/|$)/.test(path)) return "edit";
+  if (/\/(editer|editeur)(\/|$)/.test(path)) return "edit";
   return "view";
 }
 

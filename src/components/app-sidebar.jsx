@@ -227,6 +227,12 @@ const data = {
       isPro: false,
       icon: CalendarTickIcon,
     },
+    {
+      title: "Campagnes e-mail",
+      url: "/dashboard/outils/campagnes-email",
+      isPro: false,
+      icon: SendIcon,
+    },
   ],
   navSecondary: [
     {
