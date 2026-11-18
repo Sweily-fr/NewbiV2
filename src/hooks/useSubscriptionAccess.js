@@ -35,9 +35,14 @@ export function useSubscriptionAccess() {
     const trialEndDate = subscription?.trialEndDate
       ? new Date(subscription.trialEndDate)
       : null;
+    // Essai SANS carte uniquement. Un essai avec carte (inscriptions depuis
+    // le 18/11/2026) pose aussi `isTrialActive`, mais c'est un abonnement
+    // Stripe en essai (`stripeTrialActive`, statut `trialing`) : prélevé
+    // automatiquement à la fin, il n'a rien à « souscrire ».
     const isTrialApp =
       subscription?.appTrialEnabled === true &&
       subscription?.isTrialActive === true &&
+      subscription?.stripeTrialActive !== true &&
       trialEndDate &&
       trialEndDate > now;
 
