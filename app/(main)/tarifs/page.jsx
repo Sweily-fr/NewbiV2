@@ -26,7 +26,8 @@ const pricingJsonLd = {
       name: "Essai gratuit",
       price: "0",
       priceCurrency: "EUR",
-      description: "7 jours gratuits, sans engagement, aucun prélèvement pendant l'essai",
+      description:
+        "7 jours gratuits, sans engagement, aucun prélèvement pendant l'essai",
       availability: "https://schema.org/InStock",
     },
     ...PLANS_DISPLAY.flatMap((p) => [

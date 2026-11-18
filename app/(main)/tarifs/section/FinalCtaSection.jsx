@@ -21,8 +21,7 @@ export default function FinalCtaSection() {
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-10">
         <h2 className="text-balance text-center text-[2.5rem] font-medium leading-none tracking-[-0.022em] text-gray-950 md:text-[3.5rem] lg:text-[4.5rem]">
           Commencez aujourd&apos;hui.
-          <br />
-          7 jours offerts.
+          <br />7 jours offerts.
         </h2>
 
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
