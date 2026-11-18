@@ -20,6 +20,7 @@ import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { toast } from "@/src/components/ui/sonner";
 import { capture } from "@/src/lib/analytics";
+import { trackTrialStartConversion } from "@/src/utils/trackEvent";
 import {
   DEFAULT_INVITE_ROLE,
   PREDEFINED_ROLE_LABELS,
@@ -175,6 +176,16 @@ function SuccessContent() {
             capture("subscription_paid", {
               stripe_session_id: sessionId,
             });
+
+            // Conversion Google Ads « Essai démarré » : seulement quand
+            // l'essai de l'inscription est confirmé chez Stripe
+            if (data.trialConversion && data.subscriptionId) {
+              trackTrialStartConversion({
+                subscriptionId: data.subscriptionId,
+                value: data.trialConversion.value,
+                currency: data.trialConversion.currency,
+              });
+            }
 
             // Refresh client session & set the newly created org as active.
             // The Stripe webhook updated sessions in DB but the client still
