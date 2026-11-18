@@ -209,49 +209,42 @@ export const auth = betterAuth({
             );
 
             // ──────────────────────────────────────────────────────────────
-            // ENABLE_APP_TRIAL : créer immédiatement une org placeholder + member
-            // + trial 30 jours app-managed. L'utilisateur renseignera son
-            // entreprise à l'étape "workspace" qui mettra à jour l'org et basculera
-            // onboardingStep vers "completed".
-            //
-            // Quand le flag est OFF, ce bloc est totalement ignoré et le flow
-            // historique (création d'org par webhook Stripe après paiement)
-            // reste actif et inchangé.
+            // Espace provisoire + membre propriétaire créés tout de suite.
+            // L'étape « workspace » y écrit l'entreprise et la déclaration
+            // d'usage professionnel, puis le paiement Stripe (offre + carte,
+            // essai de 7 jours) y rattache l'abonnement et termine
+            // l'inscription (org-creation.js). Indépendant d'ENABLE_APP_TRIAL
+            // depuis le 18/11/2026 : ce flag ne sert plus qu'aux essais sans
+            // carte accordés avant cette date.
             // ──────────────────────────────────────────────────────────────
-            const { isAppTrialEnabled } = await import("./feature-flags.js");
-            if (isAppTrialEnabled()) {
-              try {
-                const { createOrganizationWithSubscription } =
-                  await import("./org-creation.js");
-                await createOrganizationWithSubscription({
-                  mongoDb,
-                  userId: user.id,
-                  orgData: {
-                    // Placeholder — sera enrichi à l'étape "workspace" du signup
-                    companyName: user.name || "Mon entreprise",
-                    orgName: user.name || "Mon entreprise",
-                    orgType: "business",
-                  },
-                  // Pas d'essai ici : il est accordé par
-                  // PATCH /api/onboarding/step une fois la déclaration d'usage
-                  // professionnel signée (et le SIRET vérifié s'il est fourni).
-                  // Le démarrer au signup donnait 30 jours d'accès à un compte
-                  // dont rien n'établissait le caractère professionnel.
-                  appTrialDays: null,
-                  markOnboardingComplete: false, // workspace step still pending
-                });
-                console.log(
-                  `✅ [USER CREATE] Org placeholder créée pour ${user.email} (essai accordé en fin d'onboarding)`,
-                );
-              } catch (trialError) {
-                // Non-fatal: better-auth ne bloque pas le signup si la création
-                // d'org placeholder échoue. L'utilisateur retombera sur le flow
-                // historique (création post-paiement).
-                console.error(
-                  `❌ [USER CREATE] Erreur création org+trial pour ${user.email}:`,
-                  trialError,
-                );
-              }
+            try {
+              const { createOrganizationWithSubscription } =
+                await import("./org-creation.js");
+              await createOrganizationWithSubscription({
+                mongoDb,
+                userId: user.id,
+                orgData: {
+                  // Placeholder — sera enrichi à l'étape "workspace" du signup
+                  companyName: user.name || "Mon entreprise",
+                  orgName: user.name || "Mon entreprise",
+                  orgType: "business",
+                },
+                // Pas d'essai sans carte : l'essai est celui de Stripe,
+                // démarré au paiement.
+                appTrialDays: null,
+                markOnboardingComplete: false, // workspace step still pending
+              });
+              console.log(
+                `✅ [USER CREATE] Org placeholder créée pour ${user.email} (essai démarré au paiement)`,
+              );
+            } catch (trialError) {
+              // Non bloquant : better-auth ne bloque pas le signup si la
+              // création de l'espace provisoire échoue. L'étape entreprise
+              // répondra « Aucune organisation rattachée ».
+              console.error(
+                `❌ [USER CREATE] Erreur création org+trial pour ${user.email}:`,
+                trialError,
+              );
             }
           } catch (error) {
             console.error("❌ [USER CREATE] Erreur:", error);

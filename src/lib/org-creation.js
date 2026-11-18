@@ -257,6 +257,9 @@ export async function attachSubscriptionToOrganization({
       orgUpdateData.trialStartDate = new Date().toISOString();
       orgUpdateData.trialEndDate = trialEnd.toISOString();
       orgUpdateData.stripeTrialActive = true;
+      // L'essai Stripe consomme l'essai de l'espace : pas de second essai
+      // (anti re-essai de create-org-subscription, decision #16).
+      orgUpdateData.hasUsedTrial = true;
     } else if (subscriptionInfo.status === "active") {
       orgUpdateData.isTrialActive = false;
       orgUpdateData.hasUsedTrial = true;
@@ -393,7 +396,27 @@ export async function createOrganizationWithSubscription({
       ownedOrganizationIds.find((id) => String(id) === linkedOrgId) || null;
   }
 
-  // b. Même entreprise (SIRET du checkout) parmi les espaces dont il est
+  // b. Paiement d'inscription : l'espace a été créé à l'inscription
+  //    (databaseHooks.user.create.after) et l'étape entreprise y a déjà
+  //    écrit l'identité vérifiée et la déclaration d'usage professionnel.
+  //    On le reprend, qu'il ait un SIRET ou non : sans SIRET, l'étape c
+  //    ne le retrouvait pas et un second espace était créé. Seul un espace
+  //    dont l'inscrit est propriétaire est repris : celui du checkout, ou
+  //    à défaut son unique espace.
+  let identityAlreadySet = false;
+  if (
+    !organizationObjectId &&
+    sessionMetadata?.isOnboarding === "true" &&
+    ownedOrganizationIds.length > 0
+  ) {
+    const checkoutOrgId = String(sessionMetadata.organizationId || "");
+    const signupOrg =
+      ownedOrganizationIds.find((id) => String(id) === checkoutOrgId) ||
+      (ownedOrganizationIds.length === 1 ? ownedOrganizationIds[0] : null);
+    if (signupOrg) organizationObjectId = signupOrg;
+  }
+
+  // c. Même entreprise (SIRET du checkout) parmi les espaces dont il est
   //    propriétaire : réabonnement, ou second passage du même checkout.
   if (!organizationObjectId && siret && ownedOrganizationIds.length > 0) {
     const sameCompany = await mongoDb
@@ -405,7 +428,38 @@ export async function createOrganizationWithSubscription({
     organizationObjectId = sameCompany?._id || null;
   }
 
-  if (organizationObjectId) {
+  // Inscription (premier passage ou rejeu) : l'étape entreprise a déjà
+  // écrit l'identité si la déclaration d'usage professionnel est posée.
+  if (organizationObjectId && sessionMetadata?.isOnboarding === "true") {
+    const signupOrgDoc = await mongoDb
+      .collection("organization")
+      .findOne(
+        { _id: organizationObjectId },
+        { projection: { professionalUseDeclaration: 1 } },
+      );
+    identityAlreadySet = Boolean(
+      signupOrgDoc?.professionalUseDeclaration?.acceptedAt,
+    );
+  }
+
+  if (organizationObjectId && identityAlreadySet) {
+    // Identité déjà écrite (et vérifiée au registre) par l'étape entreprise :
+    // les métadonnées du checkout, saisies côté client, ne l'écrasent pas.
+    result.orgUpdated = true;
+    console.log(
+      `♻️ [ORG-CREATION] Espace d'inscription repris pour userId ${userId}: ${organizationObjectId}`,
+    );
+    await mongoDb.collection("organization").updateOne(
+      { _id: organizationObjectId },
+      {
+        $set: {
+          ...(orgLogo && { logo: orgLogo }),
+          onboardingCompleted: true,
+          updatedAt: new Date(),
+        },
+      },
+    );
+  } else if (organizationObjectId) {
     // Update the existing org with new data
     result.orgUpdated = true;
     console.log(

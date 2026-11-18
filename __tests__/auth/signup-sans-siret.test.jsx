@@ -47,13 +47,10 @@ import SignUpPage from "@/app/auth/signup/page";
 function mockFetch({ results = [] } = {}) {
   const fetchMock = vi.fn(async (url) => {
     const json = (body) => ({ ok: true, json: async () => body });
-    if (url.startsWith("/api/feature-flags")) {
-      return json({ appTrialEnabled: true });
-    }
     if (url.startsWith("/api/search-companies")) return json({ results });
     if (url.startsWith("/api/check-siret")) return json({ available: true });
     if (url.startsWith("/api/onboarding/step")) {
-      return json({ step: "completed", changed: true });
+      return json({ step: "plan", changed: true });
     }
     throw new Error(`fetch inattendu : ${url}`);
   });
@@ -71,7 +68,7 @@ describe("Inscription sans SIRET", () => {
     session = { user: { ...baseSession.user, name: "" } };
   });
 
-  it("termine l'inscription avec le nom saisi et la déclaration", async () => {
+  it("enregistre le nom saisi et la déclaration, puis propose les offres", async () => {
     const fetchMock = mockFetch();
     const user = userEvent.setup();
     render(<SignUpPage />);
@@ -105,7 +102,7 @@ describe("Inscription sans SIRET", () => {
     const [, init] = onboardingCalls(fetchMock)[0];
     const body = JSON.parse(init.body);
     expect(body).toMatchObject({
-      step: "completed",
+      step: "plan",
       honorDeclarationAccepted: true,
       data: { companyName: "Studio Dupont", siret: "", siren: "" },
     });
@@ -113,9 +110,12 @@ describe("Inscription sans SIRET", () => {
     expect(
       fetchMock.mock.calls.some(([url]) => url.includes("search-companies")),
     ).toBe(false);
-    await waitFor(() =>
-      expect(mockReplace).toHaveBeenCalledWith("/onboarding/success"),
-    );
+    // Inscription avec carte (18/11/2026) : l'étape suivante est le choix
+    // de l'offre, avec l'essai de 7 jours.
+    expect(
+      await screen.findByText("7 jours d'essai gratuit, sans engagement"),
+    ).toBeInTheDocument();
+    expect(mockReplace).not.toHaveBeenCalledWith("/onboarding/success");
   });
 
   it("propose de continuer sans SIRET quand la recherche ne trouve rien", async () => {

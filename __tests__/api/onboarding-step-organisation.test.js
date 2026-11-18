@@ -3,10 +3,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ObjectId } from "mongodb";
 
 /**
- * Fin d'onboarding (PATCH /api/onboarding/step, step "completed") : l'espace
- * renseigné (raison sociale, SIRET) et qui reçoit l'essai doit être un
- * espace dont l'utilisateur est propriétaire, jamais la première
+ * Étape entreprise (PATCH /api/onboarding/step, workspace → plan) : l'espace
+ * renseigné (raison sociale, SIRET, déclaration d'usage professionnel) doit
+ * être un espace dont l'utilisateur est propriétaire, jamais la première
  * appartenance trouvée (qui peut être l'espace qui l'a invité).
+ *
+ * Depuis le 18/11/2026, l'inscription se termine au paiement Stripe (offre +
+ * carte, essai de 7 jours) : cette étape n'accorde aucun essai et ne termine
+ * pas l'inscription.
  */
 
 const m = vi.hoisted(() => ({
@@ -82,7 +86,7 @@ function signIn(activeOrganizationId = null) {
 }
 
 const completeBody = (extra = {}) => ({
-  step: "completed",
+  step: "plan",
   honorDeclarationAccepted: true,
   data: { companyName: "Ma société", siret: "12345678900011" },
   ...extra,
@@ -135,9 +139,8 @@ describe("PATCH /api/onboarding/step : espace configuré", () => {
     const res = await call(completeBody());
 
     expect(res.status).toBe(200);
-    expect((await res.json()).organizationId).toBe(ownOrgId);
     expect(updatedOrgIds()).toEqual([ownOrgId]);
-    expect(String(m.grantTrial.mock.calls[0][0].organizationId)).toBe(ownOrgId);
+    expect(m.grantTrial).not.toHaveBeenCalled();
   });
 
   it("refuse si l'utilisateur n'est propriétaire d'aucun espace", async () => {
@@ -213,7 +216,46 @@ describe("PATCH /api/onboarding/step : espace configuré", () => {
     expect(res.status).toBe(200);
     expect(updatedOrgIds()).toEqual([ownOrgId]);
     const [, update] = m.userUpdateOne.mock.calls[0];
-    expect(update.$set.onboardingStep).toBe("completed");
+    // Étape suivante : le choix de l'offre, pas la fin de l'inscription
+    expect(update.$set.onboardingStep).toBe("plan");
+    const [, orgUpdate] = m.orgUpdateOne.mock.calls[0];
+    expect(orgUpdate.$set).not.toHaveProperty("onboardingCompleted");
+    expect(m.grantTrial).not.toHaveBeenCalled();
+  });
+
+  it("refuse l'ancienne fin d'inscription sans carte (onglet resté ouvert)", async () => {
+    signIn(ownOrgId);
+    m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
+
+    const res = await call(completeBody({ step: "completed" }));
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatch(/Rechargez la page/);
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
+    expect(m.userUpdateOne).not.toHaveBeenCalled();
+    expect(m.grantTrial).not.toHaveBeenCalled();
+  });
+
+  it("exige la déclaration d'usage professionnel pour passer à l'offre", async () => {
+    signIn(ownOrgId);
+    m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
+
+    const res = await call(completeBody({ honorDeclarationAccepted: false }));
+
+    expect(res.status).toBe(400);
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
+    expect(m.userUpdateOne).not.toHaveBeenCalled();
+  });
+
+  it("revenir de l'offre au récapitulatif ne réécrit pas l'entreprise", async () => {
+    signIn(ownOrgId);
+    m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
+    m.userFindOne.mockResolvedValue({ onboardingStep: "recap" });
+
+    const res = await call({ step: "plan" });
+
+    expect(res.status).toBe(200);
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
   });
 });
 
@@ -223,7 +265,7 @@ describe("PATCH /api/onboarding/step : inscription sans SIRET", () => {
     m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
   });
 
-  it("termine l'inscription avec le nom saisi, sans interroger le registre", async () => {
+  it("enregistre l'entreprise avec le nom saisi, sans interroger le registre", async () => {
     const res = await call(
       completeBody({
         data: { companyName: "  Studio Dupont  ", siret: "", siren: "" },
@@ -245,16 +287,11 @@ describe("PATCH /api/onboarding/step : inscription sans SIRET", () => {
     expect(update.$set.professionalUseDeclaration.statement).toMatch(
       /^En continuant, vous confirmez utiliser Newbi/,
     );
-    expect(update.$set.onboardingCompleted).toBe(true);
+    expect(update.$set).not.toHaveProperty("onboardingCompleted");
 
-    expect(m.grantTrial).toHaveBeenCalledTimes(1);
+    expect(m.grantTrial).not.toHaveBeenCalled();
     const [, userUpdate] = m.userUpdateOne.mock.calls[0];
-    expect(userUpdate.$set.onboardingStep).toBe("completed");
-
-    expect((await res.json()).company).toEqual({
-      siret: null,
-      denomination: "Studio Dupont",
-    });
+    expect(userUpdate.$set.onboardingStep).toBe("plan");
   });
 
   it("refuse sans SIRET ni nom d'entreprise", async () => {
@@ -279,7 +316,7 @@ describe("PATCH /api/onboarding/step : inscription sans SIRET", () => {
 describe("PATCH /api/onboarding/step : SIRET d'un autre espace", () => {
   const otherOrgId = "507f1f77bcf86cd799439055";
 
-  it("SIRET déjà porté par un espace dont l'utilisateur n'est pas membre : refus 409, rien d'écrit, aucun essai", async () => {
+  it("SIRET déjà porté par un espace dont l'utilisateur n'est pas membre : refus 409, rien d'écrit", async () => {
     signIn(ownOrgId);
     m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
     m.orgsWithSiret.mockResolvedValue([{ _id: new ObjectId(otherOrgId) }]);

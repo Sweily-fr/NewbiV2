@@ -1375,13 +1375,12 @@ export const stripePlugin = stripe({
               }
             }
 
-            // Calculer le montant qui sera prélevé
-            let trialAmount = "Montant non disponible";
-            if (trialEndingSub.items?.data?.[0]?.price?.unit_amount) {
-              const unitAmount =
-                trialEndingSub.items.data[0].price.unit_amount / 100;
-              trialAmount = `${unitAmount.toFixed(2)}€`;
-            }
+            // Montant qui sera prélevé (« 17,99 € par mois »)
+            const { formatTrialChargeAmount } =
+              await import("./trial-email-amount.js");
+            const trialAmount =
+              formatTrialChargeAmount(trialEndingSub) ||
+              "Montant non disponible";
 
             // Envoyer l'email de fin d'essai imminente
             const { sendTrialEndingEmail } = await import("./auth-utils.js");
@@ -1524,6 +1523,21 @@ export const stripePlugin = stripe({
                 }
               }
 
+              // Durée de l'essai (sauf essai sans carte repris par un
+              // abonnement : « Pattern A », la durée n'aurait pas de sens) et
+              // montant prélevé ensuite
+              const { formatTrialChargeAmount } =
+                await import("./trial-email-amount.js");
+              const startedTrialDays =
+                subscription.metadata?.convertedFromAppTrial !== "true" &&
+                subscription.trial_start &&
+                subscription.trial_end
+                  ? Math.round(
+                      (subscription.trial_end - subscription.trial_start) /
+                        (24 * 60 * 60),
+                    )
+                  : null;
+
               // Envoyer l'email de début d'essai
               const { sendTrialStartedEmail } = await import("./auth-utils.js");
 
@@ -1532,6 +1546,8 @@ export const stripePlugin = stripe({
                 customerName: customer.name || customer.email,
                 plan: planName,
                 trialEndDate,
+                trialDays: startedTrialDays || null,
+                amount: formatTrialChargeAmount(subscription),
               });
 
               console.log(

@@ -125,6 +125,62 @@ export async function expireOpenWorkspaceCheckouts(
   }
 }
 
+/**
+ * Paiement d'inscription déjà abouti chez Stripe pour ce client (deux
+ * onglets, retour arrière depuis Stripe) : un second Checkout créerait un
+ * second abonnement, prélevé en plus du premier à la fin de l'essai. En cas
+ * d'erreur Stripe, le contrôle n'empêche pas le paiement.
+ *
+ * @returns {Promise<{ status: string } | null>}
+ */
+export async function findLiveSignupSubscription(stripe, customerId) {
+  if (!customerId) return null;
+  try {
+    const { data } = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+      limit: 100,
+    });
+    const live = (data || []).find(
+      (subscription) =>
+        isBlocking(subscription.status) &&
+        subscription.metadata?.isOnboarding === "true",
+    );
+    return live ? { status: live.status } : null;
+  } catch (error) {
+    console.warn(
+      "[SUBSCRIPTION-GUARD] Abonnements d'inscription non relus:",
+      error?.message,
+    );
+    return null;
+  }
+}
+
+/**
+ * Ferme les paiements d'inscription encore ouverts pour ce client : un seul
+ * peut aboutir.
+ */
+export async function expireOpenSignupCheckouts(stripe, customerId) {
+  if (!customerId) return;
+  try {
+    const { data } = await stripe.checkout.sessions.list({
+      customer: customerId,
+      status: "open",
+      limit: 100,
+    });
+    await Promise.all(
+      (data || [])
+        .filter((session) => session.metadata?.isOnboarding === "true")
+        .map((session) => stripe.checkout.sessions.expire(session.id)),
+    );
+  } catch (error) {
+    console.warn(
+      "[SUBSCRIPTION-GUARD] Paiements d'inscription ouverts non fermés:",
+      error?.message,
+    );
+  }
+}
+
 /** Message affiché quand l'espace a déjà un abonnement en cours. */
 export function liveSubscriptionMessage(status) {
   if (status === "past_due" || status === "unpaid") {
