@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
+  registryUrl,
   verifySiret,
   siretVerificationMessage,
   SIRET_VERIFICATION_ERRORS,
@@ -183,5 +184,35 @@ describe("siretVerificationMessage", () => {
 
     expect(new Set(messages).size).toBe(messages.length);
     messages.forEach((message) => expect(message.length).toBeGreaterThan(0));
+  });
+});
+
+describe("registryUrl : registre simulé des tests de bout en bout", () => {
+  it("par défaut : le registre officiel", () => {
+    expect(registryUrl({})).toBe(
+      "https://recherche-entreprises.api.gouv.fr/search",
+    );
+  });
+
+  it("adresse locale (tests-e2e/serveur.mjs) : acceptée", () => {
+    expect(
+      registryUrl({ SIRET_REGISTRY_URL: "http://127.0.0.1:41234/search" }),
+    ).toBe("http://127.0.0.1:41234/search");
+    expect(
+      registryUrl({ SIRET_REGISTRY_URL: "http://localhost:8080/search" }),
+    ).toBe("http://localhost:8080/search");
+  });
+
+  it("adresse publique ou illisible : ignorée, registre officiel", () => {
+    for (const value of [
+      "https://faux-registre.example/search",
+      "http://127.0.0.1.evil.example/search",
+      "https://127.0.0.1/search",
+      "pas une adresse",
+    ]) {
+      expect(registryUrl({ SIRET_REGISTRY_URL: value }), value).toBe(
+        "https://recherche-entreprises.api.gouv.fr/search",
+      );
+    }
   });
 });
