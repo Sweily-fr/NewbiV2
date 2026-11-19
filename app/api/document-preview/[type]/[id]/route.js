@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { safeFileHeaders } from "@/src/lib/safe-file-headers";
+import { previewErrorResponse } from "@/src/lib/preview-error-page";
 
 /**
  * Proxy same-origin des PDF archivés (factures, devis, avoirs, bons de
@@ -57,35 +58,33 @@ const UPSTREAM_PATHS = {
 const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
 
 export async function GET(request, { params }) {
+  let type;
+  // Erreur : page lisible dans une iframe, JSON pour un appel fetch()
+  const fail = (status, body) =>
+    previewErrorResponse(request, { status, body, type });
+
   try {
-    const { type, id } = await params;
+    const resolved = await params;
+    type = resolved.type;
+    const { id } = resolved;
 
     const buildPath = UPSTREAM_PATHS[type];
     if (!buildPath || !OBJECT_ID_RE.test(id || "")) {
-      return NextResponse.json(
-        { error: "Type de document ou identifiant invalide" },
-        { status: 400 },
-      );
+      return fail(400, { error: "Type de document ou identifiant invalide" });
     }
 
     const fileId = request.nextUrl.searchParams.get("fileId");
     if (fileId && !OBJECT_ID_RE.test(fileId)) {
-      return NextResponse.json(
-        { error: "Identifiant de fichier invalide" },
-        { status: 400 },
-      );
+      return fail(400, { error: "Identifiant de fichier invalide" });
     }
     const fileIndex = request.nextUrl.searchParams.get("index");
     if (fileIndex && !/^\d{1,3}$/.test(fileIndex)) {
-      return NextResponse.json(
-        { error: "Index de fichier invalide" },
-        { status: 400 },
-      );
+      return fail(400, { error: "Index de fichier invalide" });
     }
 
     const cookie = request.headers.get("cookie");
     if (!cookie) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      return fail(401, { error: "Non authentifié" });
     }
 
     const backendUrl = (
@@ -107,12 +106,11 @@ export async function GET(request, { params }) {
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const error = await response.json();
-        return NextResponse.json(error, { status: response.status });
+        return fail(response.status, error);
       }
-      return NextResponse.json(
-        { error: `Erreur ${response.status}: ${response.statusText}` },
-        { status: response.status },
-      );
+      return fail(response.status, {
+        error: `Erreur ${response.status}: ${response.statusText}`,
+      });
     }
 
     // Streamer la réponse sans buffer en mémoire. Fichier choisi par
@@ -136,9 +134,6 @@ export async function GET(request, { params }) {
     return new NextResponse(response.body, { status: 200, headers });
   } catch (error) {
     console.error("Erreur proxy document preview:", error);
-    return NextResponse.json(
-      { error: "Erreur interne du serveur" },
-      { status: 500 },
-    );
+    return fail(500, { error: "Erreur interne du serveur" });
   }
 }
