@@ -334,12 +334,15 @@ describe("rôle sans « Voir les membres »", () => {
     expect(result.members[0]).not.toHaveProperty("role");
   });
 
-  it("list-invitations : aucune invitation", async () => {
-    const invitations = await auth.api.listInvitations({
-      query: { organizationId: orgId },
-      headers: people.restreint.headers,
-    });
-    expect(invitations).toEqual([]);
+  it("list-invitations : refusé", async () => {
+    // Better Auth 1.7 réserve les invitations en attente aux rôles qui
+    // peuvent les gérer (super admin, administrateur)
+    await expect(
+      auth.api.listInvitations({
+        query: { organizationId: orgId },
+        headers: people.restreint.headers,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
   });
 
   it("get-active-member-role : son propre rôle toujours visible", async () => {
@@ -405,15 +408,22 @@ describe("rôle autorisé : réponse inchangée", () => {
     expect(memberOf(reference.members, "admin").role).toBe("admin");
     expect(memberOf(reference.members, "admin").createdAt).toBeDefined();
 
+    expect(await getFullOrg("admin"), "admin").toEqual(reference);
+    // Better Auth 1.7 : invitations en attente réservées aux rôles qui
+    // peuvent les gérer ; le reste de la réponse est celui du super admin.
+    // La page Membres (GET /api/organizations/[id]/members) lit les
+    // invitations en base selon les droits Newbi, sans passer par ici.
     for (const key of [
       "viewer",
       "editeur",
-      "admin",
       "comptable",
       "autorise",
       "inviteur",
     ]) {
-      expect(await getFullOrg(key), key).toEqual(reference);
+      expect(await getFullOrg(key), key).toEqual({
+        ...reference,
+        invitations: [],
+      });
     }
   });
 
@@ -431,10 +441,19 @@ describe("rôle autorisé : réponse inchangée", () => {
 
     const invitations = await auth.api.listInvitations({
       query: { organizationId: orgId },
-      headers: people.autorise.headers,
+      headers: people.admin.headers,
     });
     expect(invitations).toHaveLength(1);
     expect(invitations[0].email).toBe("invite@test.fr");
+
+    // Better Auth 1.7 : « Voir les membres » ne suffit plus pour lister les
+    // invitations en attente par cet endpoint
+    await expect(
+      auth.api.listInvitations({
+        query: { organizationId: orgId },
+        headers: people.autorise.headers,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
   });
 
   it("get-active-member-role d'un autre membre inchangé", async () => {

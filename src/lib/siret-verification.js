@@ -22,6 +22,30 @@
  */
 
 const API_URL = "https://recherche-entreprises.api.gouv.fr/search";
+
+/**
+ * Registre interrogé. Les tests de bout en bout le remplacent par un registre
+ * simulé local (SIRET_REGISTRY_URL, tests-e2e/serveur.mjs). Seule une adresse
+ * de la machine elle-même est acceptée : une variable mal posée en ligne ne
+ * peut pas détourner la vérification vers un faux registre public (sur
+ * Vercel, rien n'écoute en local : la vérification échoue, refus).
+ */
+export function registryUrl(env = process.env) {
+  const override = env.SIRET_REGISTRY_URL;
+  if (!override) return API_URL;
+  try {
+    const { hostname, protocol } = new URL(override);
+    if (
+      protocol === "http:" &&
+      (hostname === "127.0.0.1" || hostname === "localhost")
+    ) {
+      return override;
+    }
+  } catch {
+    // adresse illisible : registre officiel
+  }
+  return API_URL;
+}
 const TIMEOUT_MS = 8000;
 const MAX_ATTEMPTS = 2;
 
@@ -53,7 +77,7 @@ async function fetchRegistry(siret) {
 
     try {
       const response = await fetch(
-        `${API_URL}?q=${encodeURIComponent(siret)}&per_page=5`,
+        `${registryUrl()}?q=${encodeURIComponent(siret)}&per_page=5`,
         {
           signal: controller.signal,
           headers: {
