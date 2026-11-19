@@ -23,6 +23,7 @@ const m = vi.hoisted(() => ({
   verifySiret: vi.fn(),
   orgsWithSiret: vi.fn(async () => []),
   memberFindOne: vi.fn(),
+  repair: vi.fn(),
 }));
 
 vi.mock("@/src/lib/auth", () => ({
@@ -59,6 +60,10 @@ vi.mock("@/src/lib/feature-flags", () => ({
 
 vi.mock("@/src/lib/org-creation", () => ({
   grantAppTrialIfEligible: (...args) => m.grantTrial(...args),
+}));
+
+vi.mock("@/src/lib/signup-workspace-repair", () => ({
+  repairMissingSignupWorkspace: (...args) => m.repair(...args),
 }));
 
 vi.mock("@/src/lib/siret-verification", () => ({
@@ -125,6 +130,53 @@ beforeEach(() => {
   m.memberFindOne.mockImplementation(
     async () => (await m.memberships())[0] || null,
   );
+});
+
+describe("PATCH /api/onboarding/step : espace d'inscription manquant", () => {
+  // Constaté le 19/11/2026 : sans espace, l'étape répondait « Aucune
+  // organisation rattachée : recommencez l'inscription », une impasse.
+  const repairedOrgId = "507f1f77bcf86cd799439055";
+
+  it("recrée l'espace provisoire puis y enregistre l'entreprise", async () => {
+    m.getSession.mockResolvedValue({
+      user: { id: userId, email: "u@x.fr", name: "Paul Sanssiret" },
+      session: { activeOrganizationId: null },
+    });
+    m.memberships.mockResolvedValue([]);
+    m.repair.mockResolvedValue({ organizationId: new ObjectId(repairedOrgId) });
+
+    const res = await call(completeBody());
+
+    expect(res.status).toBe(200);
+    expect(m.repair).toHaveBeenCalledWith(
+      expect.objectContaining({ userId, userName: "Paul Sanssiret" }),
+    );
+    expect(updatedOrgIds()).toEqual([repairedOrgId]);
+    expect((await res.json()).step).toBe("plan");
+  });
+
+  it("création déjà en cours (double clic) : 409, rien d'écrit", async () => {
+    signIn();
+    m.memberships.mockResolvedValue([]);
+    m.repair.mockResolvedValue({ pending: true });
+
+    const res = await call(completeBody());
+
+    expect(res.status).toBe(409);
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
+    expect(m.userUpdateOne).not.toHaveBeenCalled();
+  });
+
+  it("espace demandé sans en être membre : refus, aucun espace créé", async () => {
+    signIn();
+    m.memberships.mockResolvedValue([]);
+
+    const res = await call(completeBody({ organizationId: ownOrgId }));
+
+    expect(res.status).toBe(403);
+    expect(m.repair).not.toHaveBeenCalled();
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
+  });
 });
 
 describe("PATCH /api/onboarding/step : espace configuré", () => {
