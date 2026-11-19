@@ -41,15 +41,18 @@ for (const [nom, chemin, prefixe] of [
 
     test("Totaux de deux lignes à 20 % et 5,5 % : HT, TVA et TTC justes", async ({ page }) => {
       await ouvrirGenerateur(page);
+      // Champs repérés par leur libellé : depuis le 15/11/2026, chaque ligne
+      // a aussi une « Remise (%) », et le repérage par position remplissait
+      // la remise de la première ligne avec la quantité de la seconde.
+      const champ = (libelle, ligne) => page.locator("main").getByLabel(libelle, { exact: true }).nth(ligne);
       await page.getByPlaceholder("Prestation de conseil").first().fill("Création de logo");
-      const nombres = page.locator("main input[type=number]");
-      await nombres.nth(0).fill("2");
-      await nombres.nth(1).fill("450");
+      await champ("Qté", 0).fill("2");
+      await champ("Prix unitaire HT", 0).fill("450");
       await page.getByRole("button", { name: "Ajouter une ligne" }).click();
       await page.getByPlaceholder("Prestation de conseil").nth(1).fill("Impression de flyers");
-      await nombres.nth(2).fill("3");
-      await nombres.nth(3).fill("12.5");
-      await page.locator("main select").nth(1).selectOption("5.5");
+      await champ("Qté", 1).fill("3");
+      await champ("Prix unitaire HT", 1).fill("12.5");
+      await champ("TVA", 1).selectOption("5.5");
       const ht = 2 * 450 + 3 * 12.5;
       const tva = 2 * 450 * 0.2 + 3 * 12.5 * 0.055;
       await etape(page, "Totaux", async () => {
