@@ -240,7 +240,7 @@ export const auth = betterAuth({
             } catch (trialError) {
               // Non bloquant : better-auth ne bloque pas le signup si la
               // création de l'espace provisoire échoue. L'étape entreprise
-              // répondra « Aucune organisation rattachée ».
+              // le recrée (src/lib/signup-workspace-repair.js).
               console.error(
                 `❌ [USER CREATE] Erreur création org+trial pour ${user.email}:`,
                 trialError,

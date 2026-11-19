@@ -27,6 +27,7 @@ import {
   SIRET_TAKEN_MESSAGE,
 } from "@/src/lib/organization-siret-guard";
 import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declaration";
+import { repairMissingSignupWorkspace } from "@/src/lib/signup-workspace-repair";
 
 /**
  * Espace que l'étape entreprise va renseigner (raison sociale, SIRET,
@@ -42,6 +43,9 @@ import { PROFESSIONAL_USE_STATEMENT } from "@/src/lib/professional-use-declarati
  *   2. l'espace actif de la session, s'il en est propriétaire ;
  *   3. son unique espace en propriété (l'espace créé à l'inscription) ;
  *      plusieurs espaces sans choix possible = refus.
+ * Aucun espace du tout (création échouée à l'inscription, compte plus
+ * ancien) : l'espace provisoire est recréé comme à l'inscription, au lieu de
+ * renvoyer vers une inscription impossible à recommencer.
  *
  * @returns {Promise<{ organizationId?: ObjectId, error?: NextResponse }>}
  */
@@ -49,6 +53,7 @@ async function resolveOnboardingOrganization(
   userId,
   activeOrganizationId,
   requestedOrganizationId,
+  userName,
 ) {
   const memberships = await mongoDb
     .collection("member")
@@ -56,12 +61,32 @@ async function resolveOnboardingOrganization(
     .toArray();
 
   if (memberships.length === 0) {
-    return {
-      error: apiError(
-        500,
-        "Aucune organisation rattachée : état incohérent, recommencez l'inscription.",
-      ),
-    };
+    if (requestedOrganizationId) {
+      return {
+        error: apiError(
+          403,
+          "Vous n'êtes pas propriétaire de cet espace.",
+          `onboarding : ${userId} n'est membre d'aucun espace (demandé : ${requestedOrganizationId})`,
+        ),
+      };
+    }
+    const repaired = await repairMissingSignupWorkspace({
+      mongoDb,
+      userId,
+      userName,
+    });
+    if (repaired.pending) {
+      return {
+        error: apiError(
+          409,
+          "Votre espace est en cours de préparation. Réessayez dans un instant.",
+        ),
+      };
+    }
+    console.warn(
+      `⚠️ [ONBOARDING STEP] ${userId} n'avait aucun espace : espace d'inscription recréé (${repaired.organizationId})`,
+    );
+    return { organizationId: repaired.organizationId };
   }
 
   const owned = memberships.filter((m) => isOwnerRole(m.role));
@@ -218,6 +243,7 @@ async function handler(request) {
         sessionUser.id,
         session?.activeOrganizationId,
         requestedOrganizationId,
+        sessionUser.name,
       );
     if (orgError) return orgError;
 

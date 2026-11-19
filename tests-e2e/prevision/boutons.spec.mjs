@@ -52,6 +52,14 @@ const ECRITURE = {
       { fenetre: "Nouvelle saisie" },
     ]),
   ),
+  // Lignes des catégories qui n'ont que des montants réels sur la période
+  // (ventes et dépenses du jeu de test) : présentes ou non selon le jour.
+  ...Object.fromEntries(
+    ["Ventes", "Transport", "Matériel", "Autres dépenses"].map((categorie) => [
+      `button Ajouter une prévision « ${categorie} » en (mois)`,
+      { fenetre: "Nouvelle saisie", facultatif: true },
+    ]),
+  ),
   "button Ajouter une prévision": { fenetre: "Nouvelle saisie" },
   "button Exporter": { fenetre: "Exporter la prévision" },
   // Saisies (« Modifier la saisie ») et récurrence détectée (« Modifier la récurrence ») : même nom, la première ligne est une saisie.
