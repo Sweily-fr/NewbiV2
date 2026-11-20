@@ -72,6 +72,7 @@ export default function Component() {
         color: isAppointment ? APPOINTMENT_COLOR : event.color,
         location: event.location,
         type: event.type,
+        declarationKind: event.declarationKind || null,
         bookingId: event.bookingId || null,
         invoiceId: event.invoiceId,
         invoice: event.invoice,
@@ -101,6 +102,7 @@ export default function Component() {
         color: event.color || "sky",
         location: event.location,
         type: "MANUAL",
+        declarationKind: event.declarationKind || null,
         assignedMembers: event.assignedMembers || [],
         emailReminder: event.emailReminder?.enabled
           ? {
@@ -140,6 +142,11 @@ export default function Component() {
         color: updatedEvent.color,
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
+        // Déclaration : seulement quand l'appelant la connaît (la fiche
+        // l'envoie toujours ; un déplacement garde celle de l'événement)
+        ...(updatedEvent.declarationKind !== undefined
+          ? { declarationKind: updatedEvent.declarationKind }
+          : {}),
         assignedMembers: Array.isArray(updatedEvent.assignedMembers)
           ? updatedEvent.assignedMembers
           : undefined,

@@ -15,12 +15,20 @@ import {
   Loader2,
   Check as RiCheckLine,
   Users,
+  Landmark,
+  ExternalLink,
 } from "lucide-react";
 import { format, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sanitizeInput, detectInjectionAttempt } from "@/src/lib/validation";
 import { useCalendarColorLabels } from "@/src/hooks/useCalendarColorLabels";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  DECLARATION_PRESETS,
+  declarationFilingSite,
+  declarationPresetsFor,
+} from "@/src/utils/declaration-events";
 
 import {
   DefaultEndHour,
@@ -137,6 +145,8 @@ export function EventDialog({
   const [allDay, setAllDay] = useState(false);
   const [location, setLocation] = useState("");
   const [color, setColor] = useState("#3B82F6");
+  // Événement Newbi de déclaration (« VAT », « URSSAF ») ou ordinaire (null)
+  const [declarationKind, setDeclarationKind] = useState(null);
   const [assignedMembers, setAssignedMembers] = useState([]);
   const [emailReminder, setEmailReminder] = useState({
     enabled: false,
@@ -148,6 +158,46 @@ export function EventDialog({
   const [endDateOpen, setEndDateOpen] = useState(false);
   const [pushingConnectionId, setPushingConnectionId] = useState(null);
   const [justSyncedIds, setJustSyncedIds] = useState([]);
+
+  // Déclarations proposées selon la forme juridique de l'espace (TVA pour
+  // une société, Urssaf pour un micro-entrepreneur…)
+  const { organization } = useWorkspace();
+  const typeOptions = useMemo(() => {
+    const presets = declarationPresetsFor(organization);
+    // Déclaration déjà enregistrée sur l'événement : toujours proposée
+    if (
+      declarationKind &&
+      !presets.some((preset) => preset.kind === declarationKind)
+    ) {
+      presets.push(DECLARATION_PRESETS[declarationKind]);
+    }
+    return presets.length
+      ? [{ kind: null, label: "Événement" }, ...presets]
+      : [];
+  }, [organization, declarationKind]);
+  const declarationPreset = declarationKind
+    ? DECLARATION_PRESETS[declarationKind]
+    : null;
+  const filingSite = declarationFilingSite(declarationKind);
+
+  // Changement de type : titre, description, journée entière et couleur du
+  // modèle, sans écraser ce que l'utilisateur a déjà écrit
+  const applyDeclarationType = (kind) => {
+    const next = kind ? DECLARATION_PRESETS[kind] : null;
+    const presets = Object.values(DECLARATION_PRESETS);
+    const untouched = (value, field) =>
+      !value.trim() || presets.some((preset) => preset[field] === value.trim());
+    setDeclarationKind(kind);
+    if (untouched(title, "title")) setTitle(next ? next.title : "");
+    if (untouched(description, "description")) {
+      setDescription(next ? next.description : "");
+    }
+    if (next) {
+      setAllDay(true);
+      setColor(next.color);
+    }
+    setFieldErrors((prev) => ({ ...prev, title: null }));
+  };
 
   const { connections } = useCalendarConnections();
   const { pushEvent, loading: pushLoading } = usePushEventToCalendar();
@@ -190,6 +240,7 @@ export function EventDialog({
       setAllDay(event.allDay || false);
       setLocation(event.location || "");
       setColor(event.color || "#3B82F6");
+      setDeclarationKind(event.declarationKind || null);
       setAssignedMembers(event.assignedMembers || []);
       setEmailReminder(
         event.emailReminder || { enabled: false, anticipation: null },
@@ -211,6 +262,7 @@ export function EventDialog({
     setAllDay(false);
     setLocation("");
     setColor("#3B82F6");
+    setDeclarationKind(null);
     setAssignedMembers([]);
     setEmailReminder({ enabled: false, anticipation: null });
     setError(null);
@@ -329,6 +381,7 @@ export function EventDialog({
       allDay,
       location: sanitizeInput(locationValue),
       color,
+      declarationKind,
       assignedMembers,
       emailReminder,
     });
@@ -339,6 +392,30 @@ export function EventDialog({
       onDelete(event.id);
     }
   };
+
+  const declarationBanner = filingSite && declarationPreset && (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 px-4 py-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <Landmark
+          className="h-4 w-4 shrink-0 text-[#5a50ff]"
+          aria-hidden="true"
+        />
+        <span className="text-sm">{declarationPreset.label}</span>
+      </div>
+      <Button
+        asChild
+        size="sm"
+        variant="outline"
+        className="h-7 gap-1.5 text-xs"
+      >
+        <a href={filingSite.url} target="_blank" rel="noopener noreferrer">
+          {filingSite.label}
+          <ExternalLink className="size-3.5" aria-hidden="true" />
+          <span className="sr-only">(nouvel onglet)</span>
+        </a>
+      </Button>
+    </div>
+  );
 
   return (
     <>
@@ -387,6 +464,8 @@ export function EventDialog({
                 <p className="text-base font-medium break-words">
                   {title || "(sans titre)"}
                 </p>
+
+                {declarationBanner}
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -464,6 +543,44 @@ export function EventDialog({
               </>
             ) : (
               <>
+                {/* Type : événement ordinaire ou déclaration Newbi */}
+                {typeOptions.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <CalendarDays className="h-4 w-4" />
+                      <span className="text-sm font-medium">Type</span>
+                    </div>
+                    <div
+                      role="radiogroup"
+                      aria-label="Type d'événement"
+                      className="flex flex-wrap gap-2"
+                    >
+                      {typeOptions.map((option) => {
+                        const selected = option.kind === declarationKind;
+                        return (
+                          <button
+                            key={option.kind || "event"}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => applyDeclarationType(option.kind)}
+                            className={cn(
+                              "focus-visible:ring-ring cursor-pointer rounded-full border px-3 py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                              selected
+                                ? "border-[#5a50ff] bg-[#5a50ff]/10 text-[#5a50ff]"
+                                : "border-border hover:bg-accent",
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {declarationBanner}
+
                 {/* Title */}
                 <div className="space-y-2">
                   <Input

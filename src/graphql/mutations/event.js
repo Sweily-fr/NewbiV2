@@ -15,6 +15,7 @@ export const CREATE_EVENT = gql`
         color
         location
         type
+        declarationKind
         clientId
         assignedMembers
         assignedMembersInfo {
@@ -53,6 +54,7 @@ export const UPDATE_EVENT = gql`
         color
         location
         type
+        declarationKind
         assignedMembers
         assignedMembersInfo {
           id
