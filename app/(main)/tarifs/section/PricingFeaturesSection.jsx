@@ -36,6 +36,7 @@ const COLONNES = [
     cle: "freelance",
     nom: "Freelance",
     cta: { href: "/auth/signup", label: "Commencer gratuitement" },
+    lien: { href: "/contact", label: "parler à un conseiller" },
   },
   {
     id: "tpe",
