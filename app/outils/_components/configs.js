@@ -71,6 +71,14 @@ export const FACTURE_CONFIG = {
     ],
     cta: "Créer ma prochaine facture avec Newbi",
   },
+  // À partir du 3e document du même visiteur (src/lib/outils-usage.js), à la
+  // place de l'encart ci-dessus. « {n} » = rang du document.
+  regularUser: {
+    title: "Vous en êtes à votre {n}e facture avec le générateur",
+    text: "Passez à Newbi pour les suivantes : vos clients et vos tarifs restent enregistrés, la numérotation se suit toute seule, et chaque facture part par e-mail, avec le suivi du paiement et les relances.",
+    cta: "Essayer Newbi 7 jours gratuits",
+    note: "Sans engagement. Le générateur reste gratuit et sans inscription.",
+  },
 };
 
 export const DEVIS_CONFIG = {
@@ -121,5 +129,11 @@ export const DEVIS_CONFIG = {
       "la conversion du devis signé en facture, sans ressaisie.",
     ],
     cta: "Faire signer mes devis en ligne",
+  },
+  regularUser: {
+    title: "Vous en êtes à votre {n}e devis avec le générateur",
+    text: "Passez à Newbi pour les suivants : vos clients signent vos devis en ligne, ceux restés sans réponse sont relancés tout seuls, et un devis signé devient une facture sans rien ressaisir.",
+    cta: "Essayer Newbi 7 jours gratuits",
+    note: "Sans engagement. Le générateur reste gratuit et sans inscription.",
   },
 };

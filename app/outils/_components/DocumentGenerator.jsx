@@ -16,6 +16,12 @@ import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { generatePDFFromElement } from "@/src/utils/generatePDF";
+import { capture } from "@/src/lib/analytics";
+import {
+  compterDocument,
+  envoyerComptage,
+  SEUIL_HABITUE,
+} from "@/src/lib/outils-usage";
 import { montantLigneHT, numeroSuivant, remiseBornee } from "./calculs";
 import {
   ArrowRight,
@@ -228,6 +234,9 @@ export default function DocumentGenerator({ config }) {
   const logoInputRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  // Combien de documents ce visiteur a créés (src/lib/outils-usage.js) : à
+  // partir du 3e, l'encart des habitués remplace l'encart habituel.
+  const [rangDocument, setRangDocument] = useState(0);
   const [consent, setConsent] = useState(false);
 
   // L'aperçu est rendu à sa largeur réelle (794 px, soit une page A4) puis
@@ -508,6 +517,22 @@ export default function DocumentGenerator({ config }) {
       a.remove();
       URL.revokeObjectURL(url);
       setDownloaded(true);
+      // Comptage sans donnée personnelle : jamais la saisie, seulement l'outil
+      // et le rang du document. Au mieux : ne bloque jamais le téléchargement.
+      try {
+        const outil = isQuote ? "devis" : "facture";
+        const { rang, portee } = compterDocument();
+        setRangDocument(rang);
+        envoyerComptage({ outil, rang, portee });
+        capture("generateur_document_telecharge", {
+          outil,
+          type: isQuote ? "devis" : docType,
+          rang,
+          portee,
+        });
+      } catch {
+        // Mesure au mieux
+      }
       // Numéro retenu pour proposer le suivant à la prochaine visite. Une
       // pro forma n'entre pas dans la séquence des factures.
       if (memoriser && !estProForma) {
@@ -528,7 +553,15 @@ export default function DocumentGenerator({ config }) {
     } finally {
       setDownloading(false);
     }
-  }, [doc.prefix, doc.number, memoriser, estProForma, config.type]);
+  }, [
+    doc.prefix,
+    doc.number,
+    memoriser,
+    estProForma,
+    config.type,
+    isQuote,
+    docType,
+  ]);
 
   /** Ouvre le générateur de facture prérempli avec ce devis. */
   const versFacture = () => {
@@ -1085,27 +1118,75 @@ export default function DocumentGenerator({ config }) {
             et n'est jamais envoyée à Newbi.
           </p>
 
-          {downloaded && (
-            <div
-              role="status"
-              className="mt-4 rounded-lg border border-[#5A50FF]/30 bg-[#5A50FF]/[0.04] p-4"
-            >
-              <p className="text-sm font-medium text-gray-900">
-                {config.afterDownload.title}
-              </p>
-              <ul className="mt-2 space-y-1 list-disc pl-5 text-sm text-gray-700">
-                {config.afterDownload.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <Button asChild size="sm" className="mt-3">
-                <Link href="/auth/signup">{config.afterDownload.cta}</Link>
-              </Button>
-              <p className="mt-2 text-xs text-gray-500">
-                7 jours gratuits, sans engagement.
-              </p>
-            </div>
-          )}
+          {downloaded &&
+            (rangDocument >= SEUIL_HABITUE && config.regularUser ? (
+              // Habitué (3e document ou plus) : encart plus visible, le
+              // téléchargement reste libre
+              <div
+                role="status"
+                className="mt-4 rounded-xl bg-[#5A50FF] p-5 text-white"
+              >
+                <p className="text-base font-medium leading-snug">
+                  {config.regularUser.title.replace("{n}", rangDocument)}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-white/85">
+                  {config.regularUser.text}
+                </p>
+                <Button
+                  asChild
+                  variant="secondary"
+                  size="lg"
+                  className="mt-4 w-full"
+                >
+                  <Link
+                    href="/auth/signup"
+                    onClick={() =>
+                      capture("generateur_encart_clic", {
+                        outil: isQuote ? "devis" : "facture",
+                        encart: "habitue",
+                        rang: rangDocument,
+                      })
+                    }
+                  >
+                    {config.regularUser.cta}
+                  </Link>
+                </Button>
+                <p className="mt-2 text-xs text-white/80">
+                  {config.regularUser.note}
+                </p>
+              </div>
+            ) : (
+              <div
+                role="status"
+                className="mt-4 rounded-lg border border-[#5A50FF]/30 bg-[#5A50FF]/[0.04] p-4"
+              >
+                <p className="text-sm font-medium text-gray-900">
+                  {config.afterDownload.title}
+                </p>
+                <ul className="mt-2 space-y-1 list-disc pl-5 text-sm text-gray-700">
+                  {config.afterDownload.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <Button asChild size="sm" className="mt-3">
+                  <Link
+                    href="/auth/signup"
+                    onClick={() =>
+                      capture("generateur_encart_clic", {
+                        outil: isQuote ? "devis" : "facture",
+                        encart: "habituel",
+                        rang: rangDocument,
+                      })
+                    }
+                  >
+                    {config.afterDownload.cta}
+                  </Link>
+                </Button>
+                <p className="mt-2 text-xs text-gray-500">
+                  7 jours gratuits, sans engagement.
+                </p>
+              </div>
+            ))}
         </Section>
 
         {/* ---------------------------- Accroche ---------------------------- */}
