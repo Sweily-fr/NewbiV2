@@ -95,12 +95,15 @@ describe("vue mois du calendrier", () => {
     expect(bar.style.width).toBe("calc(2 * 100% / 7)");
   });
 
-  it("cases hors du mois en gris, jour J en violet, autres jours en blanc", () => {
+  it("jours des mois voisins en gris, jour J en violet, jours du mois en blanc", () => {
     const now = new Date();
     const { container } = renderMonth({ currentDate: now });
+    const cells = [...container.querySelectorAll("div.group")];
+    const inMonth = (cell) => !cell.hasAttribute("data-outside-cell");
     const cellOf = (dayOfMonth) =>
-      [...container.querySelectorAll("div.group")].find(
+      cells.find(
         (cell) =>
+          inMonth(cell) &&
           cell.querySelector("button, div")?.textContent === String(dayOfMonth),
       );
     const today = cellOf(now.getDate());
@@ -113,11 +116,10 @@ describe("vue mois du calendrier", () => {
       if (other) expect(other.className).not.toMatch(/bg-muted|bg-\[#5a50ff\]/);
     }
 
-    // Cases des mois voisins : vides et grisées
-    const outside = container.querySelectorAll('[aria-hidden="true"].border-r');
-    for (const cell of outside) {
+    // Jours des mois voisins : affichés (numéro), sur fond gris
+    for (const cell of cells.filter((c) => !inMonth(c))) {
       expect(cell.className).toMatch(/bg-muted/);
-      expect(cell).toBeEmptyDOMElement();
+      expect(cell.textContent).toMatch(/^\d+/);
     }
   });
 
@@ -126,13 +128,13 @@ describe("vue mois du calendrier", () => {
     const { container } = renderMonth({ onEventCreate });
     expect(screen.queryByRole("button", { name: /^Voir le/ })).toBeNull();
     const cells = container.querySelectorAll("div.group");
-    // 1re case du mois : dimanche 1er novembre
+    // 1re case : lundi 26 octobre (jour du mois précédent, cliquable aussi)
     fireEvent.click(cells[0].firstChild);
-    expect(onEventCreate).toHaveBeenCalledWith(new Date(2026, 10, 1, 9, 0, 0));
+    expect(onEventCreate).toHaveBeenCalledWith(new Date(2026, 9, 26, 9, 0, 0));
   });
 
-  it("seuls les jours du mois : cases des mois voisins vides", () => {
-    const { container } = renderMonth({
+  it("jours des mois voisins affichés, barres continues par-dessus", () => {
+    renderMonth({
       selectedDay: new Date(2026, 10, 20),
       onDaySelect: () => {},
       events: [
@@ -145,22 +147,16 @@ describe("vue mois du calendrier", () => {
         },
       ],
     });
+    // 26 octobre → 6 décembre : 6 semaines
     const days = screen.getAllByRole("button", { name: /^Voir le/ });
-    expect(days).toHaveLength(30);
-    expect(days[0]).toHaveTextContent(/^1$/);
-    // 6 cases vides avant le 1er (lundi 26 → samedi 31 octobre) et 6 après
-    // le 30 (mardi 1er → dimanche 6 décembre)
-    expect(
-      container.querySelectorAll('[aria-hidden="true"].border-r'),
-    ).toHaveLength(12);
-    // Barre coupée au bord du mois : dimanche 1er (bout gauche à ras,
-    // l'événement a commencé en octobre), puis lundi 2 sur la semaine
-    // suivante
+    expect(days).toHaveLength(42);
+    expect(days[0]).toHaveTextContent(/^26$/);
+    // Barre du vendredi 30 octobre au dimanche 1er novembre, puis le lundi 2
     const [first, second] = screen
       .getAllByText(/Pont de la Toussaint/)
       .map((title) => title.closest("div.absolute"));
-    expect(first.style.left).toBe("calc(6 * 100% / 7)");
-    expect(first.style.width).toBe("calc(1 * 100% / 7)");
+    expect(first.style.left).toBe("calc(4 * 100% / 7)");
+    expect(first.style.width).toBe("calc(3 * 100% / 7)");
     expect(second.style.left).toBe("calc(0 * 100% / 7)");
     expect(second.style.width).toBe("calc(1 * 100% / 7)");
   });

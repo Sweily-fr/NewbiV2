@@ -476,10 +476,12 @@ export function EventCalendar({
   }, []);
   const showDayPanel = view === "mois" && viewsWidth >= DAY_PANEL_MIN_WIDTH;
 
-  // Jour du volet : celui choisi s'il est dans le mois affiché (seuls ses
-  // jours sont dans la grille), sinon aujourd'hui (mois en cours) ou le 1er
+  // Jour du volet : celui choisi s'il est dans la grille affichée (jours des
+  // mois voisins compris), sinon aujourd'hui (mois en cours) ou le 1er
   const panelDay = useMemo(() => {
-    if (isSameMonth(selectedDay, currentDate)) return selectedDay;
+    const grid = visibleRange("mois", currentDate);
+    const key = dateToDay(selectedDay);
+    if (key >= grid.from && key <= grid.to) return selectedDay;
     const today = new Date();
     return isSameMonth(currentDate, today) ? today : startOfMonth(currentDate);
   }, [selectedDay, currentDate]);
@@ -549,12 +551,13 @@ export function EventCalendar({
     linkedUnavailable,
   ]);
 
-  // Jour d'« Ensuite » : le calendrier passe à son mois s'il le faut
+  // Jour d'« Ensuite » : le calendrier passe à son mois s'il n'est pas dans
+  // la grille affichée
   const selectPanelDay = useCallback(
     (day) => {
-      const date = dayToDate(day);
-      setSelectedDay(date);
-      if (!isSameMonth(date, currentDate)) setCurrentDate(date);
+      setSelectedDay(dayToDate(day));
+      const grid = visibleRange("mois", currentDate);
+      if (day < grid.from || day > grid.to) setCurrentDate(dayToDate(day));
     },
     [currentDate],
   );

@@ -86,10 +86,8 @@ export const MonthView = React.memo(function MonthView({
     return result;
   }, [days]);
 
-  // Seuls les jours du mois sont affichés : les cases des mois voisins
-  // restent vides et les barres s'arrêtent au bord du mois
+  // Case mesurée (hauteur, haut du contenu) : le 1er du mois
   const monthFirstDay = dateToDay(startOfMonth(currentDate));
-  const monthLastDay = dateToDay(endOfMonth(currentDate));
 
   // Par semaine : les barres des événements sur plusieurs jours (couloirs)
   // et, pour chaque jour, ses autres éléments (un seul jour) et tout ce
@@ -98,22 +96,17 @@ export const MonthView = React.memo(function MonthView({
   const weekData = useMemo(
     () =>
       weeks.map((week) => ({
-        layout: layoutWeekBars(week, events, {
-          from: monthFirstDay,
-          to: monthLastDay,
-        }),
+        layout: layoutWeekBars(week, events),
         singles: week.map((day) =>
-          isSameMonth(day, currentDate)
-            ? sortEvents(
-                getEventsForDay(events, day).filter(
-                  (event) => !spansSeveralDays(event),
-                ),
-              )
-            : [],
+          sortEvents(
+            getEventsForDay(events, day).filter(
+              (event) => !spansSeveralDays(event),
+            ),
+          ),
         ),
         allEvents: week.map((day) => getAllEventsForDay(events, day)),
       })),
-    [weeks, events, currentDate, monthFirstDay, monthLastDay],
+    [weeks, events],
   );
 
   const handleEventClick = (event, e) => {
@@ -182,17 +175,6 @@ export const MonthView = React.memo(function MonthView({
               {week.map((day, dayIndex) => {
                 const cell = cells[dayIndex];
                 const isCurrentMonth = isSameMonth(day, currentDate);
-                // Jour d'un mois voisin : case vide et grisée (quadrillage
-                // gardé)
-                if (!isCurrentMonth) {
-                  return (
-                    <div
-                      key={day.toString()}
-                      aria-hidden="true"
-                      className="border-border/70 bg-muted/80 min-h-0 border-r border-b last:border-r-0"
-                    />
-                  );
-                }
                 const isSelected =
                   Boolean(onDaySelect && selectedDay) &&
                   isSameDay(day, selectedDay);
@@ -200,8 +182,6 @@ export const MonthView = React.memo(function MonthView({
                   isToday(day) ? ", aujourd'hui" : ""
                 }`;
                 const cellId = `month-cell-${day.toISOString()}`;
-                // Case mesurée (hauteur, haut du contenu) : le 1er du mois,
-                // toujours présent
                 const isReferenceCell = dateToDay(day) === monthFirstDay;
                 const dayEvents = allEvents[dayIndex];
 
@@ -210,15 +190,19 @@ export const MonthView = React.memo(function MonthView({
                     key={day.toString()}
                     className={cn(
                       "group @container/cell border-border/70 min-h-0 overflow-hidden border-r border-b transition-colors last:border-r-0",
-                      // Jour J en violet clair, autres jours du mois en
+                      // Jour J en violet clair, jours des mois voisins en
+                      // gris (numéro et contenu pâlis), jours du mois en
                       // blanc ; le jour choisi (volet) a un contour, pour ne
                       // pas se confondre avec le jour J
-                      isToday(day) && "bg-[#5a50ff]/[0.08]",
+                      isToday(day)
+                        ? "bg-[#5a50ff]/[0.08]"
+                        : !isCurrentMonth && "bg-muted/80",
                       isSelected &&
                         !isToday(day) &&
                         "ring-2 ring-[#5a50ff]/35 ring-inset",
                     )}
                     data-today={isToday(day) || undefined}
+                    data-outside-cell={!isCurrentMonth || undefined}
                     data-selected={isSelected || undefined}
                   >
                     <DroppableCell
@@ -245,12 +229,12 @@ export const MonthView = React.memo(function MonthView({
                             }}
                             aria-label={`Voir le ${dayLabel}`}
                             aria-pressed={isSelected}
-                            className="hover:bg-muted focus-visible:ring-ring group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            className="hover:bg-muted focus-visible:ring-ring group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                           >
                             {format(day, "d")}
                           </button>
                         ) : (
-                          <div className="group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
+                          <div className="group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
                             {format(day, "d")}
                           </div>
                         )}
@@ -265,7 +249,7 @@ export const MonthView = React.memo(function MonthView({
                       </div>
                       <div
                         ref={isReferenceCell ? contentRef : null}
-                        className="min-h-0 flex-1"
+                        className="min-h-0 flex-1 group-data-outside-cell:opacity-60"
                       >
                         {isMounted && (
                           <>
