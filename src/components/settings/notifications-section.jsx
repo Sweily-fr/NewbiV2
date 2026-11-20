@@ -55,6 +55,7 @@ import {
   Activity,
   ExternalLink,
   FileText as FileTextIcon,
+  Landmark,
 } from "lucide-react";
 import {
   Dialog,
@@ -916,7 +917,11 @@ export function NotificationsSection({ onClose }) {
                   >
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      {notification.data?.actorImage ? (
+                      {notification.type === "FISCAL_DEADLINE" ? (
+                        <div className="w-8 h-8 rounded-lg bg-[#5b4fff]/10 flex items-center justify-center text-[#5b4fff]">
+                          <Landmark className="w-4 h-4" aria-hidden="true" />
+                        </div>
+                      ) : notification.data?.actorImage ? (
                         <img
                           src={notification.data.actorImage}
                           alt={notification.data.actorName}
@@ -937,6 +942,7 @@ export function NotificationsSection({ onClose }) {
                       {notification.type === "PURCHASE_INVOICE_RECEIVED" ||
                       notification.type === "DOCUMENT_IMPORTED" ||
                       notification.type === "ACCESS_REQUESTED" ||
+                      notification.type === "FISCAL_DEADLINE" ||
                       notification.type === "SOCIAL_POST_PUBLISHED" ||
                       notification.type === "SOCIAL_POST_FAILED" ? (
                         <>

@@ -6,7 +6,7 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { getExternalSource } from "@/src/components/document-source-badge";
-import { FileDown, KeyRound, Send } from "lucide-react";
+import { FileDown, KeyRound, Landmark, Send } from "lucide-react";
 
 // Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
 // rafraîchir sans recharger la page, par nom d'opération GraphQL.
@@ -21,6 +21,49 @@ const rememberToasted = (id) => {
   setTimeout(() => TOASTED_NOTIFICATION_IDS.delete(id), 60_000);
   return true;
 };
+
+// Rappels d'échéance fiscale déjà montés en toast dans cet onglet : un seul
+// toast par rappel, même après un rechargement de la page
+const FISCAL_TOAST_KEY = "newbi:fiscal-deadline-toasts";
+function fiscalToastShown(id) {
+  try {
+    const shown = JSON.parse(sessionStorage.getItem(FISCAL_TOAST_KEY) || "[]");
+    return Array.isArray(shown) && shown.includes(id);
+  } catch {
+    return false;
+  }
+}
+function rememberFiscalToast(id) {
+  try {
+    const shown = JSON.parse(sessionStorage.getItem(FISCAL_TOAST_KEY) || "[]");
+    const next = [...(Array.isArray(shown) ? shown : []), id].slice(-20);
+    sessionStorage.setItem(FISCAL_TOAST_KEY, JSON.stringify(next));
+  } catch {
+    // Stockage indisponible : le toast peut revenir au rechargement
+  }
+}
+
+/** Jour local AAAA-MM-JJ d'une date de notification (ISO ou horodatage). */
+function localDayOf(value) {
+  const date = new Date(/^\d+$/.test(String(value)) ? Number(value) : value);
+  if (Number.isNaN(date.getTime())) return null;
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
+ * Rappels d'échéance fiscale du jour, non lus, pas encore montrés en toast
+ * (créés par l'API à la lecture des notifications, donc à la connexion).
+ */
+export function fiscalDeadlinesToToast(notifications, now = new Date()) {
+  const today = localDayOf(now);
+  return (notifications || []).filter(
+    (notification) =>
+      notification?.type === "FISCAL_DEADLINE" &&
+      !notification.read &&
+      localDayOf(notification.createdAt) === today,
+  );
+}
 
 const IMPORTED_DOCUMENT_QUERIES = {
   INVOICE: ["GetImportedInvoices", "GetInvoices", "GetImportedInvoiceStats"],
@@ -110,6 +153,26 @@ export const useActivityNotifications = (options = {}) => {
       String(currentUserId)
       ? subscriptionData.notificationReceived
       : null;
+
+  // Échéance fiscale du jour (déclaration de TVA, Urssaf…) : un toast à la
+  // connexion, en plus de la notification dans la cloche
+  const loadedNotifications = data?.getNotifications?.notifications;
+  useEffect(() => {
+    for (const notification of fiscalDeadlinesToToast(loadedNotifications)) {
+      if (fiscalToastShown(notification.id)) continue;
+      if (!rememberToasted(notification.id)) continue;
+      rememberFiscalToast(notification.id);
+      const url = notification.data?.url;
+      toast.document(notification.title, {
+        description: notification.message,
+        fallbackIcon: Landmark,
+        action:
+          url && url.startsWith("/") && !url.startsWith("//")
+            ? { label: "Voir", onClick: () => router.push(url) }
+            : undefined,
+      });
+    }
+  }, [loadedNotifications, router]);
 
   // Rafraîchir quand une nouvelle notification arrive via WebSocket
   useEffect(() => {

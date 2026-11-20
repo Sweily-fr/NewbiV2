@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   addDays,
@@ -76,6 +77,8 @@ import {
   linkedItemToEvent,
   linkedReminderDraft,
   periodNames,
+  readHiddenSources,
+  storeHiddenSources,
   summarizeLinkedItems,
   summaryRange,
   visibleRange,
@@ -88,31 +91,10 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 
-// Sources masquées, gardées dans ce navigateur. Sans choix enregistré :
-// vue Essentiel (clé v2 : l'ancienne gardait « tout affiché » par défaut)
-const HIDDEN_SOURCES_KEY = "newbi:calendar:hidden-sources-v2";
 // « Tâches de » : « all » ou l'identifiant d'un membre
 const TASK_ASSIGNEE_KEY = "newbi:calendar:task-assignee";
 const NO_HIDDEN_SOURCES = new Set();
 const NO_MEMBERS = [];
-
-function readHiddenSources() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(HIDDEN_SOURCES_KEY));
-    if (Array.isArray(stored)) return new Set(stored);
-  } catch {
-    // Stockage indisponible ou illisible : vue par défaut
-  }
-  return hiddenSourcesForView(DEFAULT_VIEW);
-}
-
-function storeHiddenSources(hidden) {
-  try {
-    localStorage.setItem(HIDDEN_SOURCES_KEY, JSON.stringify([...hidden]));
-  } catch {
-    // Stockage indisponible (navigation privée) : choix non retenu
-  }
-}
 
 export function EventCalendar({
   events = [],
@@ -201,6 +183,34 @@ export function EventCalendar({
     unavailable: linkedUnavailable,
     fiscalSetup: linkedFiscalSetup,
   } = useCalendarLinkedItems(range);
+
+  // Lien d'une notification ou de l'accueil : ?jour=AAAA-MM-JJ ouvre ce jour,
+  // &echeance=<id> ouvre en plus la fiche de l'échéance dès qu'elle est
+  // chargée. Chaque lien n'est appliqué qu'une fois.
+  const searchParams = useSearchParams();
+  const requestedDay = searchParams?.get("jour") || null;
+  const requestedItemId = searchParams?.get("echeance") || null;
+  const appliedLinkRef = useRef(null);
+  const openedItemRef = useRef(null);
+  useEffect(() => {
+    if (!requestedDay || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDay)) return;
+    const linkKey = `${requestedDay}|${requestedItemId || ""}`;
+    if (appliedLinkRef.current === linkKey) return;
+    const date = dayToDate(requestedDay);
+    if (Number.isNaN(date.getTime())) return;
+    appliedLinkRef.current = linkKey;
+    openedItemRef.current = null;
+    setCurrentDate(date);
+  }, [requestedDay, requestedItemId]);
+  useEffect(() => {
+    if (!requestedItemId || openedItemRef.current === requestedItemId) return;
+    const item = linkedItems.find(
+      (candidate) => candidate.id === requestedItemId,
+    );
+    if (!item) return;
+    openedItemRef.current = requestedItemId;
+    setSelectedLinkedItem(item);
+  }, [requestedItemId, linkedItems]);
 
   const { workspaceId } = useWorkspace();
   const { data: membersData } = useQuery(GET_ORGANIZATION_MEMBERS, {

@@ -58,6 +58,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
+import { UpcomingDaysCard } from "@/app/dashboard/components/upcoming-days-card";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -179,6 +180,7 @@ function DashboardContent() {
   const canTransferFiles =
     canCreateModule("fileTransfers") && !fileTransfersHidden;
   const canSeeKanban = canReadModule("kanban");
+  const canSeeCalendar = canReadModule("calendar");
   // Cadres de l'accueil (Paramètres > Rôles > Accueil) : chacun masquable
   // par le rôle, en plus des droits des pages d'où viennent ses données.
   // Grille sans la page Accueil (API plus ancienne) : tout reste affiché.
@@ -1174,6 +1176,16 @@ function DashboardContent() {
               </>
             )}
           </div>
+        )}
+
+        {/* Section : les 5 prochains jours (droit « Voir » du calendrier) */}
+        {canSeeCalendar && (
+          <>
+            <h2 className="text-sm font-medium text-foreground mt-4">
+              Les 5 prochains jours
+            </h2>
+            <UpcomingDaysCard className="shadow-xs w-full -mt-2" />
+          </>
         )}
 
         {/* Section : À traiter (case du rôle) */}

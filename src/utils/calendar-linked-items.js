@@ -99,6 +99,29 @@ export const CALENDAR_VIEWS = [
 
 export const DEFAULT_VIEW = "essentiel";
 
+// Sources masquées, gardées dans ce navigateur (calendrier et accueil). Sans
+// choix enregistré : vue Essentiel (clé v2 : l'ancienne gardait « tout
+// affiché » par défaut)
+const HIDDEN_SOURCES_KEY = "newbi:calendar:hidden-sources-v2";
+
+export function readHiddenSources() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(HIDDEN_SOURCES_KEY));
+    if (Array.isArray(stored)) return new Set(stored);
+  } catch {
+    // Stockage indisponible ou illisible : vue par défaut
+  }
+  return hiddenSourcesForView(DEFAULT_VIEW);
+}
+
+export function storeHiddenSources(hidden) {
+  try {
+    localStorage.setItem(HIDDEN_SOURCES_KEY, JSON.stringify([...hidden]));
+  } catch {
+    // Stockage indisponible (navigation privée) : choix non retenu
+  }
+}
+
 /** Sources masquées par une vue. */
 export function hiddenSourcesForView(viewKey) {
   const view =
