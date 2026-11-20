@@ -404,3 +404,50 @@ describe("hubs and related posts", () => {
     expect(getRelatedPosts("b", 10).map((p) => p.title)).not.toContain("B");
   });
 });
+
+import { getDraftSlugs, articleSlugFromHref } from "@/src/lib/blog";
+
+describe("articles pas encore publiés", () => {
+  it("getDraftSlugs liste les articles écrits mais pas encore publiés", () => {
+    fsState.files = {
+      "en-ligne.mdx": fmPost({ title: "En ligne" }),
+      "brouillon.mdx": fmPost({ title: "Brouillon", published: false }),
+      "_publication-queue.json": "{}",
+    };
+    expect([...getDraftSlugs()]).toEqual(["brouillon"]);
+  });
+
+  it("getDraftSlugs est vide quand tout est publié", () => {
+    fsState.files = { "en-ligne.mdx": fmPost({ title: "En ligne" }) };
+    expect(getDraftSlugs().size).toBe(0);
+  });
+
+  it("articleSlugFromHref reconnaît un lien vers un article", () => {
+    expect(articleSlugFromHref("/blog/mon-article")).toBe("mon-article");
+    expect(articleSlugFromHref("/blog/mon-article/")).toBe("mon-article");
+    expect(articleSlugFromHref("/blog/mon-article#faq")).toBe("mon-article");
+    expect(articleSlugFromHref("/blog/mon-article?ref=x")).toBe("mon-article");
+    expect(articleSlugFromHref("https://www.newbi.fr/blog/mon-article")).toBe(
+      "mon-article",
+    );
+    expect(articleSlugFromHref("https://newbi.fr/blog/mon-article")).toBe(
+      "mon-article",
+    );
+  });
+
+  it("articleSlugFromHref ignore ce qui n'est pas un article", () => {
+    for (const href of [
+      "/blog",
+      "/blog/",
+      "/blog/auteur/holany",
+      "/blog/categorie/guides",
+      "/blog/secteur/startups",
+      "/tarifs",
+      "#faq",
+      "https://exemple.fr/blog/mon-article",
+      "https://www.newbi.fr.exemple.fr/blog/mon-article",
+    ]) {
+      expect(articleSlugFromHref(href)).toBeNull();
+    }
+  });
+});

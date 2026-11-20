@@ -3,6 +3,7 @@ import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { JsonLd } from "@/src/components/seo/json-ld";
 import { SITE_URL } from "@/src/lib/site";
+import { getDraftSlugs } from "@/src/lib/blog";
 import { FileText, FileSpreadsheet, FileDown } from "lucide-react";
 
 // Hub des modèles téléchargeables.
@@ -242,6 +243,11 @@ const jsonLd = [
 ];
 
 export default function ModelesPage() {
+  // Un modèle peut sortir avant son article (écrit d'avance, publié plus tard
+  // par le robot du blog) : pas de lien vers une 404 d'ici là, il apparaît
+  // tout seul au déploiement qui suit la publication.
+  const articlesPasEncoreSortis = getDraftSlugs();
+
   return (
     <>
       <JsonLd data={jsonLd} />
@@ -307,12 +313,14 @@ export default function ModelesPage() {
                   ))}
                 </div>
 
-                <Link
-                  href={`/blog/${article}`}
-                  className="mt-4 inline-block text-sm text-[#5a50ff] hover:underline"
-                >
-                  Comment le remplir, cas par cas
-                </Link>
+                {!articlesPasEncoreSortis.has(article) && (
+                  <Link
+                    href={`/blog/${article}`}
+                    className="mt-4 inline-block text-sm text-[#5a50ff] hover:underline"
+                  >
+                    Comment le remplir, cas par cas
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

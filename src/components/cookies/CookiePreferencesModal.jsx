@@ -86,6 +86,13 @@ const CookiePreferencesModal = ({ isOpen, onClose }) => {
           expiration: "6 mois",
         },
         {
+          name: "newbi-outils-documents",
+          provider: "Newbi",
+          purpose:
+            "Nombre de documents créés avec les générateurs gratuits, pour adapter le message affiché après un téléchargement",
+          expiration: "13 mois",
+        },
+        {
           name: "Widget Trustpilot",
           provider: "Trustpilot",
           purpose: "Affichage des avis clients et collecte d'avis",
