@@ -107,6 +107,56 @@ describe("volet du jour du calendrier", () => {
     expect(onCreate).toHaveBeenCalledTimes(1);
   });
 
+  it("« Ensuite » : une ligne par jour suivant, un clic l'affiche", () => {
+    const onSelectDay = vi.fn();
+    const next = buildUpcomingDays({
+      days: ["2026-11-21", "2026-11-23"],
+      events: [
+        {
+          id: "s",
+          title: "Salon des indépendants",
+          start: new Date(2026, 10, 21),
+          end: new Date(2026, 10, 21, 23, 59),
+          allDay: true,
+          color: "#D85A30",
+        },
+        {
+          id: "l",
+          title: "Lancement projet",
+          start: new Date(2026, 10, 23, 9),
+          end: new Date(2026, 10, 23, 10),
+          allDay: false,
+          color: "#378ADD",
+        },
+        {
+          id: "b",
+          title: "Banque",
+          start: new Date(2026, 10, 23, 11),
+          end: new Date(2026, 10, 23, 12),
+          allDay: false,
+          color: "#BA7517",
+        },
+      ],
+    });
+    render(
+      <CalendarDayPanel
+        date={today}
+        entries={[]}
+        nextDays={next}
+        onOpen={() => {}}
+        onSelectDay={onSelectDay}
+      />,
+    );
+    const section = screen.getByRole("region", { name: "Les jours suivants" });
+    const rows = within(section).getAllByRole("button");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "Sam. 21Salon des indépendants",
+      "Lun. 2309:00Lancement projet+1",
+    ]);
+    fireEvent.click(rows[1]);
+    expect(onSelectDay).toHaveBeenCalledWith("2026-11-23");
+  });
+
   it("autre jour sans rien : date en titre, message, pas d'ajout sans le droit", () => {
     const other = new Date(today.getFullYear(), 10, 11);
     render(<CalendarDayPanel date={other} entries={[]} onOpen={() => {}} />);

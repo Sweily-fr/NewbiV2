@@ -15,6 +15,7 @@ import { LinkedEventItem } from "./linked-event-item";
 import { SyncBadge } from "./sync-badge";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
 import { cn } from "@/src/lib/utils";
+import { spansSeveralDays } from "@/src/utils/calendar-month-layout";
 
 // Using date-fns format with custom formatting:
 // 'H' - hours (0-23)
@@ -87,7 +88,7 @@ function EventWrapper({
   return (
     <button
       className={cn(
-        "focus-visible:border-ring focus-visible:ring-ring/50 flex size-full overflow-hidden px-1 text-left font-medium transition outline-none select-none focus-visible:ring-[3px] data-dragging:cursor-grabbing data-dragging:shadow-lg data-past-event:line-through sm:px-2",
+        "focus-visible:border-ring focus-visible:ring-ring/50 flex size-full overflow-hidden px-1 text-left font-medium transition outline-none select-none focus-visible:ring-[3px] data-dragging:cursor-grabbing data-dragging:shadow-lg data-past-event:opacity-50 sm:px-2",
         getBorderRadiusClasses(isFirstDay, isLastDay),
         className,
       )}
@@ -191,8 +192,7 @@ export const EventItem = memo(function EventItem({
   if (
     view === "month" &&
     !event.allDay &&
-    isFirstDay &&
-    isLastDay &&
+    !spansSeveralDays(event) &&
     !children
   ) {
     return (
@@ -355,7 +355,7 @@ export const EventItem = memo(function EventItem({
   return (
     <button
       className={cn(
-        "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90",
+        "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:opacity-60",
         className,
       )}
       style={getEventHexStyles(eventColor)}

@@ -75,6 +75,26 @@ describe("vue mois du calendrier", () => {
     expect(onEventCreate).toHaveBeenCalledWith(new Date(2026, 10, 23, 9, 0, 0));
   });
 
+  it("événement sur deux jours : une seule barre, sur deux colonnes", () => {
+    renderMonth({
+      events: [
+        {
+          id: "salon",
+          title: "Salon des indépendants",
+          start: new Date(2026, 10, 21, 9),
+          end: new Date(2026, 10, 22, 18),
+          allDay: false,
+          color: "#D85A30",
+        },
+      ],
+    });
+    const titles = screen.getAllByText(/Salon des indépendants/);
+    expect(titles).toHaveLength(1);
+    const bar = titles[0].closest("div.absolute");
+    expect(bar.style.left).toBe("calc(5 * 100% / 7)");
+    expect(bar.style.width).toBe("calc(2 * 100% / 7)");
+  });
+
   it("sans volet : un clic sur une case crée un événement", () => {
     const onEventCreate = vi.fn();
     const { container } = renderMonth({ onEventCreate });

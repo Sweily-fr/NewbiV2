@@ -8,22 +8,29 @@ import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import { frenchHolidayName } from "@/src/utils/french-holidays";
-import { DayEntryRow } from "@/app/dashboard/components/day-entry-row";
+import { dayToDate } from "@/src/utils/recurrenceDays";
+import {
+  DayEntryRow,
+  EntryColorBar,
+} from "@/app/dashboard/components/day-entry-row";
 
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /**
  * Volet du jour choisi, à droite de la vue mois : les éléments du jour
  * (événements et échéances des autres pages) présentés comme l'agenda de
- * l'accueil, et « Ajouter ce jour-là ». Affichage seul : les éléments
- * viennent de buildUpcomingDays.
+ * l'accueil, et « Ajouter ce jour-là » ; puis « Ensuite » : les jours
+ * suivants qui ont quelque chose, une ligne chacun (un clic les affiche).
+ * Affichage seul : les éléments viennent de buildUpcomingDays.
  */
 export function CalendarDayPanel({
   date,
   entries = [],
+  nextDays = [],
   loading = false,
   onOpen,
   onCreate,
+  onSelectDay,
   className,
 }) {
   const today = isToday(date);
@@ -89,6 +96,54 @@ export function CalendarDayPanel({
             <Plus className="size-3.5" aria-hidden="true" />
             Ajouter ce jour-là
           </Button>
+        )}
+
+        {nextDays.length > 0 && (
+          <section
+            aria-label="Les jours suivants"
+            className="border-border/70 mx-2 mt-3 border-t pt-3"
+          >
+            <h4 className="text-muted-foreground pb-1 text-xs">Ensuite</h4>
+            <ul className="-mx-2">
+              {nextDays.map(({ day, entries: dayEntries }) => {
+                const [first] = dayEntries;
+                const more = dayEntries.length - 1;
+                return (
+                  <li key={day}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectDay?.(day)}
+                      className="hover:bg-accent focus-visible:ring-ring grid w-full cursor-pointer grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                      <span className="text-muted-foreground text-xs tabular-nums">
+                        {capitalize(
+                          format(dayToDate(day), "EEE d", { locale: fr }),
+                        )}
+                      </span>
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <EntryColorBar entry={first} className="size-1.5" />
+                        {first.time && (
+                          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                            {first.time}
+                          </span>
+                        )}
+                        <span className="truncate text-[13px]">
+                          {first.title}
+                        </span>
+                      </span>
+                      {more > 0 ? (
+                        <span className="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 text-[11px] tabular-nums">
+                          +{more}
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         )}
       </div>
     </aside>

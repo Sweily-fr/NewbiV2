@@ -68,7 +68,7 @@ import {
   useCalendarLinkedItems,
   useCalendarOverdueItems,
 } from "@/src/hooks/useCalendarLinkedItems";
-import { dateToDay, dayToDate } from "@/src/utils/recurrenceDays";
+import { addDaysToDay, dateToDay, dayToDate } from "@/src/utils/recurrenceDays";
 import { shiftTaskDates } from "@/src/utils/kanban-calendar";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { useMarkInvoiceAsPaid } from "@/src/graphql/invoiceQueries";
@@ -507,6 +507,42 @@ export function EventCalendar({
     activeHiddenSources,
     linkedUnavailable,
   ]);
+
+  // « Ensuite » : les jours suivants de la grille qui ont quelque chose
+  // (les échéances ne sont chargées que pour les jours affichés)
+  const nextDays = useMemo(() => {
+    if (!showDayPanel) return [];
+    const grid = visibleRange("mois", currentDate);
+    const following = [];
+    for (let offset = 1; offset <= 7; offset++) {
+      const day = addDaysToDay(panelDayKey, offset);
+      if (day > grid.to) break;
+      following.push(day);
+    }
+    if (!following.length) return [];
+    return buildUpcomingDays({
+      days: following,
+      events,
+      linkedItems: visibleLinkedItems,
+      hiddenSources: activeHiddenSources,
+      linkedUnavailable,
+    })
+      .filter((column) => column.entries.length > 0)
+      .slice(0, 4);
+  }, [
+    showDayPanel,
+    currentDate,
+    panelDayKey,
+    events,
+    visibleLinkedItems,
+    activeHiddenSources,
+    linkedUnavailable,
+  ]);
+
+  const selectPanelDay = useCallback(
+    (day) => setSelectedDay(dayToDate(day)),
+    [],
+  );
 
   const openDayEntry = useCallback(
     (entry) => {
@@ -1067,6 +1103,8 @@ export function EventCalendar({
               )}
               date={panelDay}
               entries={dayPanelEntries}
+              nextDays={nextDays}
+              onSelectDay={selectPanelDay}
               loading={linkedLoading && dayPanelEntries.length === 0}
               onOpen={openDayEntry}
               onCreate={canCreateEvents ? createOnPanelDay : undefined}
