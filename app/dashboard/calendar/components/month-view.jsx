@@ -147,6 +147,9 @@ export const MonthView = React.memo(function MonthView({
   }, [contentRef, isMounted, contentHeight]);
 
   // Lignes d'éléments qui tiennent dans une case
+  // Jours passés en gris, jour J en violet
+  const todayKey = dateToDay(new Date());
+
   const capacity = contentHeight
     ? Math.floor(contentHeight / (EventHeight + EventGap))
     : Infinity;
@@ -209,11 +212,21 @@ export const MonthView = React.memo(function MonthView({
                     key={day.toString()}
                     className={cn(
                       "group @container/cell border-border/70 min-h-0 overflow-hidden border-r border-b transition-colors last:border-r-0",
-                      // Jour choisi : violet très clair ; sinon pas de fond
-                      isSelected && "bg-[#5a50ff]/[0.06]",
+                      // Jour J en violet clair, jours passés en gris, jours
+                      // à venir en blanc ; le jour choisi (volet) a un
+                      // contour, pour ne pas se confondre avec le jour J
+                      isToday(day)
+                        ? "bg-[#5a50ff]/[0.08]"
+                        : dateToDay(day) < todayKey && "bg-muted/80",
+                      isSelected &&
+                        !isToday(day) &&
+                        "ring-2 ring-[#5a50ff]/35 ring-inset",
                     )}
                     data-today={isToday(day) || undefined}
                     data-selected={isSelected || undefined}
+                    data-past={
+                      (!isToday(day) && dateToDay(day) < todayKey) || undefined
+                    }
                   >
                     <DroppableCell
                       id={cellId}
@@ -239,12 +252,12 @@ export const MonthView = React.memo(function MonthView({
                             }}
                             aria-label={`Voir le ${dayLabel}`}
                             aria-pressed={isSelected}
-                            className="hover:bg-muted focus-visible:ring-ring group-data-today:bg-[#5a50ff] group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            className="hover:bg-muted focus-visible:ring-ring group-data-past:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                           >
                             {format(day, "d")}
                           </button>
                         ) : (
-                          <div className="group-data-today:bg-[#5a50ff] group-data-today:text-white mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
+                          <div className="group-data-past:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
                             {format(day, "d")}
                           </div>
                         )}

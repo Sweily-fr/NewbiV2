@@ -95,6 +95,36 @@ describe("vue mois du calendrier", () => {
     expect(bar.style.width).toBe("calc(2 * 100% / 7)");
   });
 
+  it("jours passés en gris, jour J en violet, jours à venir en blanc", () => {
+    const now = new Date();
+    const { container } = renderMonth({ currentDate: now });
+    const cellOf = (dayOfMonth) =>
+      [...container.querySelectorAll("div.group")].find(
+        (cell) =>
+          cell.querySelector("button, div")?.textContent === String(dayOfMonth),
+      );
+    const today = cellOf(now.getDate());
+    expect(today).toHaveAttribute("data-today");
+    expect(today).not.toHaveAttribute("data-past");
+    expect(today.className).toMatch(/bg-\[#5a50ff\]/);
+
+    if (now.getDate() > 1) {
+      const yesterday = cellOf(now.getDate() - 1);
+      expect(yesterday).toHaveAttribute("data-past");
+      expect(yesterday.className).toMatch(/bg-muted/);
+    }
+    const lastDay = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
+    if (now.getDate() < lastDay) {
+      const tomorrow = cellOf(now.getDate() + 1);
+      expect(tomorrow).not.toHaveAttribute("data-past");
+      expect(tomorrow.className).not.toMatch(/bg-muted|bg-\[#5a50ff\]/);
+    }
+  });
+
   it("sans volet : un clic sur une case crée un événement", () => {
     const onEventCreate = vi.fn();
     const { container } = renderMonth({ onEventCreate });
