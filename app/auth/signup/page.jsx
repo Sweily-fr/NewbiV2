@@ -20,7 +20,6 @@ import {
   MapPin,
   Loader2,
   AlertCircle,
-  Check,
   Gift,
   X,
   AlertTriangle,
@@ -28,6 +27,10 @@ import {
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import {
+  COLONNES_OFFRES,
+  PricingPlansGrid,
+} from "@/src/components/pricing/pricing-plans-grid";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
 import { legalFormFromNatureJuridique } from "@/src/lib/company-registry";
@@ -558,60 +561,13 @@ function SignUpPageContent() {
     );
   };
 
-  // Features et description marketing sont spécifiques au signup ; prix et
-  // label viennent du module central (plans-display.js) pour cohérence avec
-  // landing/pricing-modal/settings/workspace.
-  const PLAN_UI_EXTRA = {
-    freelance: {
-      description: "Pour les indépendants",
-      features: [
-        "1 utilisateur",
-        "Facturation & Devis",
-        "Relances automatiques",
-        "E-signature (10/mois)",
-        "Scan OCR (50/mois)",
-        "Gestion de trésorerie",
-        "CRM client",
-        "Un accès comptable gratuit",
-      ],
-    },
-    pme: {
-      featured: true,
-      description: "Pour les petites entreprises",
-      features: [
-        "Jusqu'à 10 utilisateurs",
-        "Facturation & Devis",
-        "Relances automatiques",
-        "E-signature (100/mois)",
-        "Scan OCR illimité",
-        "Gestion de trésorerie",
-        "CRM client",
-        "3 accès comptables gratuits",
-        "Support prioritaire",
-      ],
-    },
-    entreprise: {
-      description: "Pour les grandes structures",
-      features: [
-        "Jusqu'à 25 utilisateurs",
-        "Facturation & Devis",
-        "E-signature illimitée",
-        "Scan OCR illimité",
-        "Gestion de trésorerie",
-        "CRM client",
-        "5 accès comptables gratuits",
-        "Support prioritaire",
-        "Automatisations illimitées",
-      ],
-    },
-  };
-
+  // Nom et prix pour le récapitulatif. L'étape de choix affiche la grille de
+  // /tarifs (pricing-plans-grid.jsx), sans la colonne d'essai gratuit.
   const plans = PLANS_DISPLAY.map((p) => ({
     key: p.key,
     name: p.displayName,
     monthlyPrice: p.monthlyPrice,
     annualPrice: p.annualMonthlyPrice,
-    ...PLAN_UI_EXTRA[p.key],
   }));
 
   // ─── Title per view ───
@@ -646,7 +602,10 @@ function SignUpPageContent() {
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
       <main
-        className={`relative flex min-h-[100dvh] flex-col items-center px-4 md:px-6 overflow-x-hidden ${view === "plan" ? "justify-start py-16 md:justify-center md:py-0" : "justify-center py-12"}`}
+        // Étape « plan » : la grille de /tarifs fait ~720 px de haut avec le
+        // titre ; sans marge, elle collait au bord haut et passait sous les
+        // points d'étape sur un écran de 720 px.
+        className={`relative flex min-h-[100dvh] flex-col items-center px-4 md:px-6 overflow-x-hidden ${view === "plan" ? "justify-start py-16 md:justify-center" : "justify-center py-12"}`}
         style={{ backgroundColor: "rgb(251, 251, 252)" }}
       >
         {/* Header: logout + email (workspace & plan views) */}
@@ -948,129 +907,40 @@ function SignUpPageContent() {
             </form>
           )}
 
-          {/* ─── View: Plan selection ─── */}
+          {/* ─── View: Plan selection ───
+              Même grille que /tarifs (offres, avantages, prix, bascule
+              annuelle), sans la colonne d'essai gratuit : l'essai est
+              annoncé juste au-dessus. */}
           {view === "plan" && (
-            <div className="w-full max-w-3xl mt-12 md:mt-0">
+            <div className="w-full max-w-5xl mt-12 md:mt-0">
               {/* Subtitle + trial */}
-              <p className="text-[13px] text-muted-foreground text-center mb-2">
+              <p className="text-[13px] text-muted-foreground text-center mb-6 lg:mb-12">
                 {SIGNUP_TRIAL_DAYS} jours d'essai gratuit, sans engagement
               </p>
 
-              {/* Toggle */}
-              <div className="flex justify-center mb-8">
-                <div className="flex rounded-full bg-muted p-1">
-                  <button
+              <PricingPlansGrid
+                colonnes={COLONNES_OFFRES}
+                annuel={isAnnual}
+                onAnnuelChange={setIsAnnual}
+                // Nouvel onglet : l'inscription reste ouverte à cette étape.
+                lienConseiller={{ target: "_blank", rel: "noopener" }}
+                actionPrincipale={(col) => (
+                  <Button
                     type="button"
-                    onClick={() => setIsAnnual(false)}
-                    className={`relative px-4 py-1.5 text-[13px] font-medium rounded-full transition-colors ${!isAnnual ? "text-foreground" : "text-muted-foreground"}`}
+                    size="md"
+                    variant={col.enAvant ? "primary" : "outline"}
+                    className="w-full justify-center px-4"
+                    onClick={() => handleSelectPlan(col.cle)}
+                    disabled={loadingPlan !== null || isSavingStep}
                   >
-                    <span className="relative z-10">Mensuel</span>
-                    {!isAnnual && (
-                      <span className="absolute inset-0 z-0 rounded-full bg-background shadow-sm" />
+                    {loadingPlan === col.cle ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      "Choisir ce plan"
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsAnnual(true)}
-                    className={`relative px-4 py-1.5 text-[13px] font-medium rounded-full transition-colors flex items-center gap-1.5 ${isAnnual ? "text-foreground" : "text-muted-foreground"}`}
-                  >
-                    <span className="relative z-10">Annuel</span>
-                    <span className="relative z-10 text-[11px] bg-[#5A50FF] text-white px-1.5 py-0.5 rounded-full">
-                      -10%
-                    </span>
-                    {isAnnual && (
-                      <span className="absolute inset-0 z-0 rounded-full bg-background shadow-sm" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Cards */}
-              <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:justify-center md:gap-0">
-                {plans.map((plan, idx) => (
-                  <div
-                    key={plan.key}
-                    className={`flex flex-col border p-5 md:p-6 transition-all md:flex-1 w-full ${
-                      plan.featured
-                        ? "rounded-xl shadow-sm md:shadow-lg md:z-10 md:-my-4 md:py-8 bg-[#5A50FF]/90 text-white border-[#5A50FF]/90 order-first md:order-none"
-                        : idx === 0
-                          ? "rounded-xl md:rounded-r-none md:border-r-0 bg-white border-border shadow-xs"
-                          : "rounded-xl md:rounded-l-none md:border-l-0 bg-white border-border shadow-xs"
-                    }`}
-                  >
-                    {/* Header */}
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3
-                          className={`text-[15px] font-semibold ${plan.featured ? "text-white" : "text-foreground"}`}
-                        >
-                          {plan.name}
-                        </h3>
-                        {plan.featured && (
-                          <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full">
-                            Populaire
-                          </span>
-                        )}
-                      </div>
-                      <p
-                        className={`text-[12px] ${plan.featured ? "text-white/70" : "text-muted-foreground"}`}
-                      >
-                        {plan.description}
-                      </p>
-                    </div>
-
-                    {/* Price */}
-                    <div className="flex items-baseline gap-0.5 mb-5">
-                      <span
-                        className={`text-2xl font-semibold ${plan.featured ? "text-white" : "text-foreground"}`}
-                      >
-                        {(isAnnual ? plan.annualPrice : plan.monthlyPrice)
-                          .toFixed(2)
-                          .replace(".", ",")}
-                        €
-                      </span>
-                      <span
-                        className={`text-[12px] ${plan.featured ? "text-white/60" : "text-muted-foreground"}`}
-                      >
-                        /mois
-                      </span>
-                    </div>
-
-                    {/* Features */}
-                    <div className="flex-1 space-y-2 mb-6">
-                      {plan.features.map((feature, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <Check
-                            className={`size-3.5 shrink-0 ${plan.featured ? "text-white" : "text-[#5A50FF]"}`}
-                          />
-                          <span
-                            className={`text-[12px] ${plan.featured ? "text-white/80" : "text-muted-foreground"}`}
-                          >
-                            {feature}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA */}
-                    <Button
-                      onClick={() => handleSelectPlan(plan.key)}
-                      disabled={loadingPlan !== null || isSavingStep}
-                      className={`w-full h-10 rounded-lg cursor-pointer ${
-                        plan.featured
-                          ? "bg-white text-[#5A50FF] hover:bg-white/90"
-                          : "bg-[#202020] hover:bg-[#303030] text-white"
-                      }`}
-                    >
-                      {loadingPlan === plan.key ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        "Choisir ce plan"
-                      )}
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                  </Button>
+                )}
+              />
             </div>
           )}
 
