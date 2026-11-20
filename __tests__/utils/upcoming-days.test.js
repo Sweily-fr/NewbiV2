@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  buildUpcomingDays,
-  upcomingDays,
-  upcomingSummary,
-} from "@/src/utils/upcoming-days";
+import { buildUpcomingDays, upcomingDays } from "@/src/utils/upcoming-days";
 import { fiscalDeadlinesToToast } from "@/src/hooks/useActivityNotifications";
 import {
   FILING_SITES,
@@ -168,16 +164,20 @@ describe("accueil : les 5 prochains jours", () => {
     ).toHaveLength(1);
   });
 
-  it("résume la période", () => {
-    const columns = buildUpcomingDays({
+  it("heure de début seule pour les étiquettes", () => {
+    const [today] = buildUpcomingDays({ days: DAYS, events: [event({})] });
+    expect(today.entries[0].time).toBe("14:00");
+    const [allDay] = buildUpcomingDays({
       days: DAYS,
-      events: [event({}), event({ id: "e2" })],
-      linkedItems: [linked({})],
+      events: [
+        event({
+          allDay: true,
+          start: local("2026-11-20"),
+          end: local("2026-11-20"),
+        }),
+      ],
     });
-    expect(upcomingSummary(columns)).toBe("2 événements et 1 échéance");
-    expect(upcomingSummary(buildUpcomingDays({ days: DAYS }))).toBe(
-      "Rien de prévu",
-    );
+    expect(allDay.entries[0].time).toBeNull();
   });
 });
 

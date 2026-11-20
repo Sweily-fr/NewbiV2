@@ -61,6 +61,8 @@ function eventEntries(event, day) {
     key: `event:${event.id}:${day}`,
     type: "event",
     day,
+    // Heure de début seule, pour les étiquettes de l'accueil
+    time: timed ? timeOf(start) : null,
     event,
     title: event.title || "Sans titre",
     detail,
@@ -122,22 +124,4 @@ export function buildUpcomingDays({
     );
     return { day, entries };
   });
-}
-
-/** « 3 événements et 2 échéances », « Rien de prévu ». */
-export function upcomingSummary(daysWithEntries) {
-  let events = 0;
-  let deadlines = 0;
-  for (const { entries } of daysWithEntries) {
-    for (const entry of entries) {
-      if (entry.type === "event") events += 1;
-      else deadlines += 1;
-    }
-  }
-  const parts = [];
-  if (events) parts.push(`${events} événement${events > 1 ? "s" : ""}`);
-  if (deadlines) {
-    parts.push(`${deadlines} échéance${deadlines > 1 ? "s" : ""}`);
-  }
-  return parts.length ? parts.join(" et ") : "Rien de prévu";
 }

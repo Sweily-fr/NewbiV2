@@ -695,6 +695,10 @@ function DashboardContent() {
           ) : null}
         </div>
 
+        {/* Les 5 prochains jours, sous le bonjour (droit « Voir » du
+            calendrier) */}
+        {canSeeCalendar && <UpcomingDaysCard className="w-full -mt-1" />}
+
         {/* Actions rapides (selon l'action « create » du rôle sur chaque module) */}
         {hasQuickActions && (
           // Cadre étroit : grille de boutons de même largeur ; large : en ligne
@@ -1179,16 +1183,6 @@ function DashboardContent() {
               </>
             )}
           </div>
-        )}
-
-        {/* Section : les 5 prochains jours (droit « Voir » du calendrier) */}
-        {canSeeCalendar && (
-          <>
-            <h2 className="text-sm font-medium text-foreground mt-4">
-              Les 5 prochains jours
-            </h2>
-            <UpcomingDaysCard className="shadow-xs w-full -mt-2" />
-          </>
         )}
 
         {/* Section : À traiter (case du rôle) */}
