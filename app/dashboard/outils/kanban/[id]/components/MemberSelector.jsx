@@ -15,7 +15,8 @@ import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 /**
  * Composant pour sélectionner les membres assignés à une tâche
  */
-export function MemberSelector({ workspaceId, selectedMembers = [], onMembersChange, hideLabel = false }) {
+// variant « inline » : déclencheur en simple texte (fenêtre d'événement)
+export function MemberSelector({ workspaceId, selectedMembers = [], onMembersChange, hideLabel = false, variant = 'default' }) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState([]);
   
@@ -122,7 +123,9 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
           <div
             role="button"
             tabIndex={0}
-            className="inline-flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 w-full text-muted-foreground cursor-pointer"
+            className={variant === 'inline'
+              ? "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium text-[rgba(0,0,0,0.35)] dark:text-[rgba(255,255,255,0.35)] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+              : "inline-flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 w-full text-muted-foreground cursor-pointer"}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -130,7 +133,7 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
               }
             }}
           >
-            <Plus className="mr-2 h-4 w-4" />
+            {variant !== 'inline' && <Plus className="mr-2 h-4 w-4" />}
             {selectedMembers.length === 0
               ? 'Ajouter des membres'
               : 'Ajouter d\'autres membres'}
