@@ -12,6 +12,7 @@ import {
   extractFaq,
   categoryLabel,
   slugify,
+  getDraftSlugs,
   generateStaticParams as getStaticParams,
 } from "@/src/lib/blog";
 import { formatDateFr } from "@/src/lib/blog-format";
@@ -250,7 +251,7 @@ export default async function BlogPostPage({
           <div className="blog-content">
             <MDXRemote
               source={post.content}
-              components={getMDXComponents(post)}
+              components={getMDXComponents(post, getDraftSlugs())}
             />
           </div>
 
