@@ -8,13 +8,14 @@ import {
 import { addDaysToDay, dateToDay, dayToDate } from "@/src/utils/recurrenceDays";
 
 /**
- * Accueil, cadre « Les 5 prochains jours » : événements du calendrier et
+ * Accueil, la semaine à venir : événements du calendrier et
  * échéances des autres pages, jour par jour. Fonctions pures, sans rendu.
  * Mêmes sources que le calendrier, filtrées par le choix fait dans son menu
  * Filtres (gardé dans le navigateur).
  */
 
-export const UPCOMING_DAY_COUNT = 5;
+// Aujourd'hui en détail + les 6 jours suivants
+export const UPCOMING_DAY_COUNT = 7;
 
 /** Jours AAAA-MM-JJ à partir d'aujourd'hui (heure locale). */
 export function upcomingDays(now = new Date(), count = UPCOMING_DAY_COUNT) {

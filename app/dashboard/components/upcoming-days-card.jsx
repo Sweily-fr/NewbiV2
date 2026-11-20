@@ -31,20 +31,29 @@ const LinkedItemSheet = dynamic(
   { ssr: false },
 );
 
-// Étiquettes affichées pour le jour choisi ; au-delà, « +N » ouvre le jour
-// dans le calendrier
-const MAX_CHIPS = 5;
-// Pastilles sous un jour : 3 au plus, puis « +N »
-const MAX_DOTS = 3;
+// Étiquettes affichées pour le jour en détail ; au-delà, « +N » ouvre le
+// jour dans le calendrier
+const MAX_CHIPS = 6;
 
 const calendarDayUrl = (day) => `/dashboard/calendar?jour=${day}`;
+
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
 function dayLabels(day, index) {
   const date = dayToDate(day);
   const long = format(date, "EEEE d MMMM", { locale: fr });
   return {
-    short: format(date, "EEE", { locale: fr }).replace(".", ""),
-    number: format(date, "d"),
+    // « Sam 21 »
+    short: capitalize(format(date, "EEE d", { locale: fr }).replace(".", "")),
+    // « Aujourd'hui », « Demain », « Lundi »
+    title:
+      index === 0
+        ? "Aujourd'hui"
+        : index === 1
+          ? "Demain"
+          : capitalize(format(date, "EEEE", { locale: fr })),
+    // « ven. 20 nov. »
+    date: format(date, "EEE d MMM", { locale: fr }),
     // « Aujourd'hui, vendredi 20 novembre »
     full:
       index === 0
@@ -69,6 +78,17 @@ function entryColor(entry) {
   };
 }
 
+function ColorDot({ entry, className }) {
+  const color = entryColor(entry);
+  return (
+    <span
+      aria-hidden="true"
+      className={cn("shrink-0 rounded-full", className, color.className)}
+      style={color.style}
+    />
+  );
+}
+
 function entryAmount(entry) {
   if (entry.type !== "linked" || entry.item.kind === "FISCAL") return null;
   return formatLinkedAmount(entry.item.amount, entry.item.currency || "EUR", {
@@ -77,7 +97,6 @@ function entryAmount(entry) {
 }
 
 function EntryChip({ entry, onOpen }) {
-  const color = entryColor(entry);
   const amount = entryAmount(entry);
   const isOverdue = entry.type === "linked" && entry.item.state === "OVERDUE";
   const meta =
@@ -101,11 +120,7 @@ function EntryChip({ entry, onOpen }) {
       aria-label={label}
       className="border-border/70 hover:bg-accent focus-visible:ring-ring inline-flex max-w-full min-w-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
-      <span
-        aria-hidden="true"
-        className={cn("size-1.5 shrink-0 rounded-full", color.className)}
-        style={color.style}
-      />
+      <ColorDot entry={entry} className="size-1.5" />
       {entry.time && (
         <span className="text-muted-foreground shrink-0 tabular-nums">
           {entry.time}
@@ -127,116 +142,61 @@ function EntryChip({ entry, onOpen }) {
   );
 }
 
-/** Affichage seul (données passées en props), testable sans API. */
+/**
+ * Affichage seul (données passées en props), testable sans API : le détail
+ * d'un jour (aujourd'hui par défaut), puis les 6 jours suivants en aperçu.
+ */
 export function UpcomingDaysView({ columns, loading, onOpen, className }) {
-  // Jour choisi : aujourd'hui par défaut
   const [selectedDay, setSelectedDay] = useState(null);
   const activeIndex = Math.max(
     0,
     columns.findIndex((column) => column.day === selectedDay),
   );
   const active = columns[activeIndex];
-  const panelId = "upcoming-days-panel";
+  const labels = active ? dayLabels(active.day, activeIndex) : null;
   const visible = active ? active.entries.slice(0, MAX_CHIPS) : [];
   const hiddenCount = active ? active.entries.length - visible.length : 0;
+  const panelId = "upcoming-days-panel";
 
   return (
     <section
-      aria-label="Les 5 prochains jours"
-      className={cn("@container/days", className)}
+      aria-label="Cette semaine"
+      className={cn("@container/days flex flex-col gap-3", className)}
     >
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-        <div
-          role="tablist"
-          aria-label="Les 5 prochains jours"
-          className="order-1 flex shrink-0 gap-1"
-        >
-          {columns.map(({ day, entries }, index) => {
-            const labels = dayLabels(day, index);
-            const selected = index === activeIndex;
-            const isToday = index === 0;
-            const extra = entries.length - MAX_DOTS;
-            return (
-              <button
-                key={day}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                aria-controls={panelId}
-                aria-label={`${labels.full}, ${
-                  loading
-                    ? "chargement"
-                    : entries.length
-                      ? `${entries.length} élément${entries.length > 1 ? "s" : ""}`
-                      : "rien de prévu"
-                }`}
-                onClick={() => setSelectedDay(day)}
-                className={cn(
-                  "focus-visible:ring-ring flex w-12 cursor-pointer flex-col items-center gap-1 rounded-xl py-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                  selected ? "bg-muted" : "hover:bg-accent/60",
-                )}
-              >
-                <span
-                  className={cn(
-                    "text-[11px] leading-none capitalize",
-                    isToday
-                      ? "font-medium text-[#5a50ff]"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {labels.short}
-                </span>
-                <span
-                  className={cn(
-                    "text-base leading-none font-medium tabular-nums",
-                    isToday && "text-[#5a50ff]",
-                  )}
-                >
-                  {labels.number}
-                </span>
-                <span
-                  className="flex h-1.5 items-center gap-0.5"
-                  aria-hidden="true"
-                >
-                  {!loading &&
-                    entries.slice(0, MAX_DOTS).map((entry) => {
-                      const color = entryColor(entry);
-                      return (
-                        <span
-                          key={entry.key}
-                          className={cn("size-1 rounded-full", color.className)}
-                          style={color.style}
-                        />
-                      );
-                    })}
-                  {!loading && extra > 0 && (
-                    <span className="text-muted-foreground text-[8px] leading-none">
-                      +{extra}
-                    </span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
+      {/* Détail du jour */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex shrink-0 items-baseline gap-2">
+          <h2
+            className={cn(
+              "text-sm font-medium",
+              activeIndex === 0 && "text-[#5a50ff]",
+            )}
+          >
+            {labels?.title}
+          </h2>
+          <span className="text-muted-foreground text-xs">{labels?.date}</span>
+          {activeIndex > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedDay(null)}
+              className="cursor-pointer text-xs text-[#5a50ff] hover:underline"
+            >
+              Revenir à aujourd&apos;hui
+            </button>
+          )}
         </div>
-
         <Link
           href="/dashboard/calendar"
-          className="text-muted-foreground hover:text-foreground order-2 ml-auto inline-flex shrink-0 items-center gap-1 text-xs transition-colors @2xl/days:order-4"
+          className="text-muted-foreground hover:text-foreground order-2 ml-auto inline-flex shrink-0 items-center gap-1 text-xs transition-colors @2xl/days:order-3"
         >
           Calendrier
           <ArrowRight className="size-3" aria-hidden="true" />
         </Link>
-
-        {/* Éléments du jour choisi : sous les jours en cadre étroit, à côté
-            en cadre large */}
         <div
           id={panelId}
           role="tabpanel"
-          aria-label={
-            active ? dayLabels(active.day, activeIndex).full : undefined
-          }
-          className="order-3 flex min-w-0 basis-full flex-wrap items-center gap-1.5 @2xl/days:basis-0 @2xl/days:flex-1 @2xl/days:border-l @2xl/days:pl-5"
+          aria-label={labels?.full}
+          className="order-3 flex min-w-0 basis-full flex-wrap items-center gap-1.5 @2xl/days:order-2 @2xl/days:basis-0 @2xl/days:flex-1"
         >
           {loading ? (
             <>
@@ -266,14 +226,74 @@ export function UpcomingDaysView({ columns, loading, onOpen, className }) {
           )}
         </div>
       </div>
+
+      {/* Les 6 jours suivants : premier élément de chacun, un clic le passe
+          en détail */}
+      <div
+        role="tablist"
+        aria-label="Les 6 jours suivants"
+        className="grid grid-cols-3 gap-1.5 @xl/days:grid-cols-6"
+      >
+        {columns.slice(1).map(({ day, entries }, offset) => {
+          const index = offset + 1;
+          const dayText = dayLabels(day, index);
+          const selected = index === activeIndex;
+          const [first] = entries;
+          const more = entries.length - 1;
+          return (
+            <button
+              key={day}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={panelId}
+              aria-label={`${dayText.full}, ${
+                loading
+                  ? "chargement"
+                  : entries.length
+                    ? `${entries.length} élément${entries.length > 1 ? "s" : ""}`
+                    : "rien de prévu"
+              }`}
+              onClick={() => setSelectedDay(selected ? null : day)}
+              className={cn(
+                "focus-visible:ring-ring flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                selected
+                  ? "bg-[#5a50ff]/8 ring-1 ring-[#5a50ff]/30"
+                  : "bg-muted/40 hover:bg-muted",
+              )}
+            >
+              <span className="text-muted-foreground text-[11px] leading-none">
+                {dayText.short}
+              </span>
+              <span className="flex min-w-0 items-center gap-1.5 text-[11px] leading-tight">
+                {loading ? (
+                  <Skeleton className="h-3 w-full" />
+                ) : first ? (
+                  <>
+                    <ColorDot entry={first} className="size-1.5" />
+                    <span className="truncate font-medium">{first.title}</span>
+                    {more > 0 && (
+                      <span className="text-muted-foreground shrink-0">
+                        +{more}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-muted-foreground/60">—</span>
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </section>
   );
 }
 
 /**
- * Accueil : ce que réservent les 5 prochains jours (événements, rendez-vous,
- * échéances de factures, devis, tâches, déclarations…). Un clic sur une
- * échéance ouvre sa fiche, sur un événement le jour dans le calendrier.
+ * Accueil : la semaine à venir (événements, rendez-vous, échéances de
+ * factures, devis, tâches, déclarations…). Un clic sur une échéance ouvre sa
+ * fiche, sur un événement le jour dans le calendrier.
  */
 export function UpcomingDaysCard({ className }) {
   const router = useRouter();

@@ -556,8 +556,10 @@ function DashboardContent() {
         )}
 
       {/* Largeurs utiles mesurées sur la zone de contenu (@container/home),
-          pas sur l'écran : le menu latéral ouvert lui retire ~250 px */}
-      <div className="@container/home flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
+          pas sur l'écran : le menu latéral ouvert lui retire ~250 px.
+          Cartes de l'accueil allégées ici, en un seul endroit : sans ombre,
+          bordure discrète, marges intérieures réduites. */}
+      <div className="@container/home flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6 [&_[data-slot=card]]:shadow-none [&_[data-slot=card]]:border-border/60 [&_[data-slot=card]]:py-4 [&_[data-slot=card]]:gap-3 [&_[data-slot=card-header]]:px-5 [&_[data-slot=card-content]]:px-5">
         {/* Hors lecture seule : la route du statut bancaire répond 402 */}
         {!permissionsPending && canReadBanking && !isReadOnly && (
           <BankReconnectAlert />
@@ -695,7 +697,7 @@ function DashboardContent() {
           ) : null}
         </div>
 
-        {/* Les 5 prochains jours, sous le bonjour (droit « Voir » du
+        {/* La semaine à venir, sous le bonjour (droit « Voir » du
             calendrier) */}
         {canSeeCalendar && <UpcomingDaysCard className="w-full -mt-1" />}
 

@@ -32,13 +32,15 @@ const titlesOf = (columns, day) =>
   columns.find((c) => c.day === day).entries.map((e) => e.title);
 
 describe("accueil : les 5 prochains jours", () => {
-  it("cinq jours à partir d'aujourd'hui, passage de mois compris", () => {
+  it("aujourd'hui et les 6 jours suivants, passage de mois compris", () => {
     expect(DAYS).toEqual([
       "2026-11-20",
       "2026-11-21",
       "2026-11-22",
       "2026-11-23",
       "2026-11-24",
+      "2026-11-25",
+      "2026-11-26",
     ]);
     expect(upcomingDays(local("2026-11-29"))[2]).toBe("2026-12-01");
   });
@@ -49,7 +51,7 @@ describe("accueil : les 5 prochains jours", () => {
       events: [event({})],
       linkedItems: [linked({})],
     });
-    expect(columns).toHaveLength(5);
+    expect(columns).toHaveLength(7);
     const today = columns[0].entries;
     expect(today).toHaveLength(1);
     expect(today[0]).toMatchObject({
