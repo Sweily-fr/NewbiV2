@@ -95,7 +95,7 @@ describe("vue mois du calendrier", () => {
     expect(bar.style.width).toBe("calc(2 * 100% / 7)");
   });
 
-  it("jours passés en gris, jour J en violet, jours à venir en blanc", () => {
+  it("cases hors du mois en gris, jour J en violet, autres jours en blanc", () => {
     const now = new Date();
     const { container } = renderMonth({ currentDate: now });
     const cellOf = (dayOfMonth) =>
@@ -105,23 +105,19 @@ describe("vue mois du calendrier", () => {
       );
     const today = cellOf(now.getDate());
     expect(today).toHaveAttribute("data-today");
-    expect(today).not.toHaveAttribute("data-past");
     expect(today.className).toMatch(/bg-\[#5a50ff\]/);
 
-    if (now.getDate() > 1) {
-      const yesterday = cellOf(now.getDate() - 1);
-      expect(yesterday).toHaveAttribute("data-past");
-      expect(yesterday.className).toMatch(/bg-muted/);
+    // Jours passés et à venir du mois : sans fond
+    for (const offset of [-1, 1]) {
+      const other = cellOf(now.getDate() + offset);
+      if (other) expect(other.className).not.toMatch(/bg-muted|bg-\[#5a50ff\]/);
     }
-    const lastDay = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-    ).getDate();
-    if (now.getDate() < lastDay) {
-      const tomorrow = cellOf(now.getDate() + 1);
-      expect(tomorrow).not.toHaveAttribute("data-past");
-      expect(tomorrow.className).not.toMatch(/bg-muted|bg-\[#5a50ff\]/);
+
+    // Cases des mois voisins : vides et grisées
+    const outside = container.querySelectorAll('[aria-hidden="true"].border-r');
+    for (const cell of outside) {
+      expect(cell.className).toMatch(/bg-muted/);
+      expect(cell).toBeEmptyDOMElement();
     }
   });
 
