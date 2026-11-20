@@ -110,8 +110,9 @@ const TASK_ASSIGNEE_KEY = "newbi:calendar:task-assignee";
 const NO_HIDDEN_SOURCES = new Set();
 const NO_MEMBERS = [];
 // Volet du jour à droite de la vue mois, à partir de cette largeur
-// (calendrier et volet compris)
-const DAY_PANEL_MIN_WIDTH = 960;
+// (calendrier et volet compris) ; plus large au-delà de DAY_PANEL_WIDE
+const DAY_PANEL_MIN_WIDTH = 680;
+const DAY_PANEL_WIDE = 1100;
 
 const capitalize = (text) =>
   typeof text === "string"
@@ -1060,7 +1061,10 @@ export function EventCalendar({
           </div>
           {showDayPanel && (
             <CalendarDayPanel
-              className="border-border/70 w-[300px] shrink-0 border-l"
+              className={cn(
+                "border-border/70 shrink-0 border-l",
+                viewsWidth >= DAY_PANEL_WIDE ? "w-[300px]" : "w-[248px]",
+              )}
               date={panelDay}
               entries={dayPanelEntries}
               loading={linkedLoading && dayPanelEntries.length === 0}

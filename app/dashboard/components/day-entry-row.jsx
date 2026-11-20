@@ -91,13 +91,77 @@ export function EntryColorBar({ entry, className }) {
 
 // Ligne de la journée : heure, couleur, titre et détail ; lien de dépôt
 // pour une déclaration
-export function DayEntryRow({ entry, onOpen }) {
+// compact : volet étroit du calendrier, « Déclarer ↗ » en lien sous le
+// titre plutôt qu'en bouton à droite (le titre garde sa place)
+export function DayEntryRow({ entry, onOpen, compact = false }) {
   const filingSite = entryFilingSite(entry);
   const subtitle = entrySubtitle(entry);
   const isOverdue = entry.type === "linked" && entry.item.state === "OVERDUE";
   const meta =
     entry.type === "linked" ? LINKED_SOURCE_META[entry.item.kind] : null;
   const Icon = meta?.icon;
+
+  const leading = (
+    <span className="text-muted-foreground text-xs tabular-nums">
+      {entry.time ? (
+        entry.time
+      ) : Icon ? (
+        <Icon className={cn("size-3.5", meta.iconClass)} aria-hidden="true" />
+      ) : (
+        "Journée"
+      )}
+    </span>
+  );
+  const titleLine = (
+    <span className="flex items-center gap-1.5">
+      <span className="truncate text-[13px] font-medium">{entry.title}</span>
+      {isOverdue && (
+        <CircleAlert
+          className="size-3.5 shrink-0 text-red-600 dark:text-red-400"
+          aria-label="En retard"
+        />
+      )}
+    </span>
+  );
+
+  if (compact) {
+    // Toute la ligne ouvre l'élément (bouton étiré) ; le lien de dépôt
+    // reste cliquable par-dessus
+    return (
+      <li className="hover:bg-accent focus-within:bg-accent relative grid grid-cols-[2.75rem_3px_minmax(0,1fr)] items-center gap-x-2.5 rounded-lg px-2 py-1.5 transition-colors">
+        {leading}
+        <EntryColorBar entry={entry} className="h-8 w-[3px]" />
+        <span className="min-w-0">
+          <button
+            type="button"
+            onClick={() => onOpen(entry)}
+            className="block w-full min-w-0 cursor-pointer text-left after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-[#5a50ff]/40"
+          >
+            {titleLine}
+            {subtitle && !filingSite && (
+              <span className="text-muted-foreground block truncate text-xs">
+                {subtitle}
+              </span>
+            )}
+          </button>
+          {filingSite && (
+            <a
+              href={filingSite.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative z-10 inline-flex items-center gap-1 text-xs text-[#5a50ff] hover:underline focus-visible:underline focus-visible:outline-none"
+            >
+              Déclarer
+              <ExternalLink className="size-3" aria-hidden="true" />
+              <span className="sr-only">
+                : {filingSite.label} (nouvel onglet)
+              </span>
+            </a>
+          )}
+        </span>
+      </li>
+    );
+  }
 
   return (
     <li className="flex items-center gap-2">
@@ -106,31 +170,10 @@ export function DayEntryRow({ entry, onOpen }) {
         onClick={() => onOpen(entry)}
         className="hover:bg-accent focus-visible:ring-ring grid min-w-0 flex-1 cursor-pointer grid-cols-[2.75rem_3px_minmax(0,1fr)] items-center gap-x-2.5 rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
-        <span className="text-muted-foreground text-xs tabular-nums">
-          {entry.time ? (
-            entry.time
-          ) : Icon ? (
-            <Icon
-              className={cn("size-3.5", meta.iconClass)}
-              aria-hidden="true"
-            />
-          ) : (
-            "Journée"
-          )}
-        </span>
+        {leading}
         <EntryColorBar entry={entry} className="h-8 w-[3px]" />
         <span className="min-w-0">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate text-[13px] font-medium">
-              {entry.title}
-            </span>
-            {isOverdue && (
-              <CircleAlert
-                className="size-3.5 shrink-0 text-red-600 dark:text-red-400"
-                aria-label="En retard"
-              />
-            )}
-          </span>
+          {titleLine}
           {subtitle && (
             <span className="text-muted-foreground block truncate text-xs">
               {subtitle}

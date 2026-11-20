@@ -69,7 +69,12 @@ export function CalendarDayPanel({
         ) : (
           <ul className="space-y-0.5">
             {entries.map((entry) => (
-              <DayEntryRow key={entry.key} entry={entry} onOpen={onOpen} />
+              <DayEntryRow
+                key={entry.key}
+                entry={entry}
+                onOpen={onOpen}
+                compact
+              />
             ))}
           </ul>
         )}
