@@ -175,7 +175,7 @@ export const MonthView = React.memo(function MonthView({
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 data-selected:bg-muted/60 min-h-0 overflow-hidden border-r border-b transition-colors last:border-r-0"
+                  className="group @container/cell border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 data-selected:bg-muted/60 min-h-0 overflow-hidden border-r border-b transition-colors last:border-r-0"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
                   data-selected={isSelected || undefined}
@@ -298,8 +298,10 @@ export const MonthView = React.memo(function MonthView({
                           aria-label={`${remainingCount} de plus le ${dayLabel}`}
                           className="focus-visible:border-ring focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 mt-[var(--event-gap)] flex h-[var(--event-height)] w-full items-center overflow-hidden rounded px-1 text-left text-[10px] transition outline-none select-none focus-visible:ring-[3px] sm:px-2 sm:text-xs"
                         >
-                          + {remainingCount}{" "}
-                          <span className="max-sm:sr-only">de plus</span>
+                          <span className="truncate">
+                            + {remainingCount}
+                            <span className="sr-only"> de plus</span>
+                          </span>
                         </button>
                       )}
                       {hasMore && !onDaySelect && (

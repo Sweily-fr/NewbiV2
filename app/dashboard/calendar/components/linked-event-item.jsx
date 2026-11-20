@@ -222,30 +222,31 @@ export const LinkedEventItem = memo(function LinkedEventItem({
       )}
       <span className="min-w-0 truncate">{item.title}</span>
       {item.kind === "REMINDER" && (
-        <span className="shrink-0 rounded-sm bg-current/10 px-0.5 text-[9px] font-semibold tabular-nums max-sm:hidden">
+        <span className="shrink-0 rounded-sm bg-current/10 px-0.5 text-[9px] font-semibold tabular-nums max-sm:hidden @max-[8rem]/cell:hidden">
           {item.reminderStep === 0 ? "R+" : `R${item.reminderStep || 1}`}
         </span>
       )}
       {signaturePending && (
         <PenLine
-          className="size-3 shrink-0 text-[#6250d6] max-sm:hidden dark:text-[#9085e9]"
+          className="size-3 shrink-0 text-[#6250d6] max-sm:hidden @max-[8rem]/cell:hidden dark:text-[#9085e9]"
           aria-hidden="true"
         />
       )}
+      {/* Case étroite : l'état reste lisible par la couleur de la ligne */}
       {isAlert && (
         <AlertIcon
-          className="size-3 shrink-0 max-sm:hidden"
+          className="size-3 shrink-0 max-sm:hidden @max-[8rem]/cell:hidden"
           aria-hidden="true"
         />
       )}
       {isDone && (
         <DoneIcon
-          className="size-3 shrink-0 max-sm:hidden"
+          className="size-3 shrink-0 max-sm:hidden @max-[8rem]/cell:hidden"
           aria-hidden="true"
         />
       )}
       {(amount || members.length > 0) && (
-        <span className="ml-auto flex shrink-0 items-center gap-1 pl-1">
+        <span className="ml-auto flex shrink-0 items-center gap-1 pl-1 @max-[8rem]/cell:hidden">
           {amount && (
             <span className="font-normal tabular-nums opacity-80 max-sm:hidden">
               {amount}

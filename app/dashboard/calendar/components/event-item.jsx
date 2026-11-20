@@ -217,20 +217,20 @@ export const EventItem = memo(function EventItem({
           style={{ backgroundColor: normalizeColor(eventColor) }}
         />
         <AppointmentMark event={event} />
-        <span className="text-muted-foreground shrink-0 font-normal tabular-nums max-sm:hidden">
+        <span className="text-muted-foreground shrink-0 font-normal tabular-nums max-sm:hidden @max-[6rem]/cell:hidden">
           {formatTimeWithOptionalMinutes(displayStart)}
         </span>
         <span className="truncate">{event.title}</span>
         <SyncBadge
           count={syncCount}
-          className="hidden shrink-0 sm:inline-flex"
+          className="hidden shrink-0 sm:inline-flex @max-[8rem]/cell:hidden"
         />
         {event.assignedMembersInfo?.length > 0 && (
           <AvatarGroup
             users={event.assignedMembersInfo}
             max={2}
             size="xxs"
-            className="ml-auto shrink-0"
+            className="ml-auto shrink-0 @max-[8rem]/cell:hidden"
           />
         )}
       </EventWrapper>
@@ -260,7 +260,7 @@ export const EventItem = memo(function EventItem({
             <AppointmentMark event={event} />
             <span className="truncate">
               {!event.allDay && (
-                <span className="truncate font-normal opacity-70 sm:text-[11px]">
+                <span className="truncate font-normal opacity-70 sm:text-[11px] @max-[6rem]/cell:hidden">
                   {formatTimeWithOptionalMinutes(displayStart)}{" "}
                 </span>
               )}
@@ -268,14 +268,14 @@ export const EventItem = memo(function EventItem({
             </span>
             <SyncBadge
               count={syncCount}
-              className="hidden sm:inline-flex shrink-0"
+              className="hidden sm:inline-flex shrink-0 @max-[8rem]/cell:hidden"
             />
             {event.assignedMembersInfo?.length > 0 && (
               <AvatarGroup
                 users={event.assignedMembersInfo}
                 max={2}
                 size="xxs"
-                className="ml-auto shrink-0"
+                className="ml-auto shrink-0 @max-[8rem]/cell:hidden"
               />
             )}
           </span>
