@@ -19,16 +19,32 @@ test.describe("Calendrier (propriétaire) : la barre d'outils agit", () => {
     await expect(page.getByRole("dialog").filter({ hasText: "Nouvel événement" })).toBeVisible();
   });
 
-  test("« Calendriers » ouvre les calendriers externes", async ({ page }) => {
+  // Options secondaires regroupées dans le menu « … » de la barre d'outils
+  const ouvrirOptions = (page) => cliquer(page, page.getByRole("button", { name: "Plus d'options" }));
+
+  test("« … › Calendriers connectés » ouvre les calendriers externes", async ({ page }) => {
     await ouvrirCalendrier(page);
-    await cliquer(page, page.getByRole("button", { name: "Calendriers" }));
+    await ouvrirOptions(page);
+    await cliquer(page, page.getByRole("menuitem", { name: /Calendriers connectés/ }));
     await expect(page.getByText("Calendriers externes")).toBeVisible();
   });
 
-  test("« Synchroniser » annonce le résultat sans erreur", async ({ page }) => {
+  test("« … › Synchroniser maintenant » annonce le résultat sans erreur", async ({ page }) => {
     await ouvrirCalendrier(page);
-    await cliquer(page, page.getByRole("button", { name: "Synchroniser" }));
+    await ouvrirOptions(page);
+    await cliquer(page, page.getByRole("menuitem", { name: "Synchroniser maintenant" }));
     await expect(page.locator("[data-sonner-toast]")).toContainText(/calendrier\(s\) synchronisé/);
+  });
+
+  test("« … › Étiquettes de couleur » et « Recevoir le calendrier ailleurs » s'ouvrent", async ({ page }) => {
+    await ouvrirCalendrier(page);
+    await ouvrirOptions(page);
+    await cliquer(page, page.getByRole("menuitem", { name: "Étiquettes de couleur" }));
+    await expect(page.getByRole("dialog", { name: "Étiquettes de couleur" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await ouvrirOptions(page);
+    await cliquer(page, page.getByRole("menuitem", { name: "Recevoir le calendrier ailleurs" }));
+    await expect(page.getByRole("dialog", { name: "Recevoir le calendrier ailleurs" })).toBeVisible();
   });
 
   test("« Mois » propose Mois, Semaine, Jour, Agenda", async ({ page }) => {
@@ -42,8 +58,8 @@ test.describe("Calendrier (propriétaire) : la barre d'outils agit", () => {
 
   test("« Précédent », « Suivant » et « Aujourd'hui » naviguent sans erreur", async ({ page }) => {
     await ouvrirCalendrier(page);
-    await cliquer(page, page.getByRole("button", { name: "Next" }));
-    await cliquer(page, page.getByRole("button", { name: "Previous" }));
+    await cliquer(page, page.getByRole("button", { name: "Suivant" }));
+    await cliquer(page, page.getByRole("button", { name: "Précédent" }));
     await cliquer(page, page.getByRole("button", { name: "Aujourd'hui" }));
   });
 
@@ -75,8 +91,10 @@ test.describe("Calendrier (membre, lecture seule) : consulter sans modifier", ()
   test("Ni création, ni synchronisation, ni calendriers externes", async ({ page }) => {
     await ouvrirCalendrier(page);
     await expect(page.getByRole("button", { name: "Nouvel événement" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Synchroniser" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Calendriers" })).toHaveCount(0);
+    await cliquer(page, page.getByRole("button", { name: "Plus d'options" }));
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Synchroniser maintenant" })).toHaveCount(0);
+    await expect(menu.getByRole("menuitem", { name: /Calendriers connectés/ })).toHaveCount(0);
   });
 
   test("Les boutons de navigation restent disponibles", async ({ page }) => {

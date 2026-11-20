@@ -37,7 +37,7 @@ test.describe("Calendrier : création d'un événement", () => {
   test("Un événement avec titre est enregistré", async ({ page }) => {
     const titre = "Point hebdomadaire œuvre à livrer";
     const panneau = await ouvrirNouvelEvenement(page);
-    await panneau.getByPlaceholder("Titre de l'événement").fill(titre);
+    await panneau.getByRole("textbox", { name: "Titre de l'événement" }).fill(titre);
     await etape(
       page,
       "Créer l'événement",
@@ -70,7 +70,7 @@ test.describe("Calendrier : création d'un événement", () => {
 
   test("Un titre piégé est refusé par le site", async ({ page }) => {
     const panneau = await ouvrirNouvelEvenement(page);
-    await panneau.getByPlaceholder("Titre de l'événement").fill(`<script>alert(1)</script>`);
+    await panneau.getByRole("textbox", { name: "Titre de l'événement" }).fill(`<script>alert(1)</script>`);
     await panneau.getByRole("button", { name: "Créer" }).click();
     await etape(
       page,
@@ -91,7 +91,7 @@ test.describe("Calendrier : modification et suppression", () => {
     await page.getByText(EVENEMENTS.modifier.title, { exact: true }).first().click();
     const panneau = page.getByRole("dialog").filter({ hasText: "Modifier l'événement" });
     await expect(panneau).toBeVisible();
-    await panneau.getByPlaceholder("Titre de l'événement").fill(nouveau);
+    await panneau.getByRole("textbox", { name: "Titre de l'événement" }).fill(nouveau);
     await etape(
       page,
       "Enregistrer",

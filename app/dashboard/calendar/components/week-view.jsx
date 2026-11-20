@@ -29,6 +29,7 @@ import {
 } from "./index";
 import { EndHour, StartHour } from "./constants";
 import { frenchHolidayName } from "@/src/utils/french-holidays";
+import { CALENDAR_WEEK_OPTIONS } from "@/src/utils/calendar-linked-items";
 import { cn } from "@/src/lib/utils";
 
 // WeekView props converted to JSDoc
@@ -56,13 +57,13 @@ export const WeekView = React.memo(function WeekView({
   onEventCreate,
 }) {
   const days = useMemo(() => {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
+    const weekStart = startOfWeek(currentDate, CALENDAR_WEEK_OPTIONS);
+    const weekEnd = endOfWeek(currentDate, CALENDAR_WEEK_OPTIONS);
     return eachDayOfInterval({ start: weekStart, end: weekEnd });
   }, [currentDate]);
 
   const weekStart = useMemo(
-    () => startOfWeek(currentDate, { weekStartsOn: 0 }),
+    () => startOfWeek(currentDate, CALENDAR_WEEK_OPTIONS),
     [currentDate],
   );
 

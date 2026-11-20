@@ -152,6 +152,21 @@ describe("accueil : les 5 prochains jours", () => {
     ]);
   });
 
+  it("volet du jour du calendrier : garde ce qui est réglé (includeDone)", () => {
+    const paid = linked({
+      id: "INVOICE:2",
+      kind: "INVOICE",
+      title: "Payée",
+      state: "DONE",
+    });
+    const [, , , monday] = buildUpcomingDays({
+      days: DAYS,
+      linkedItems: [paid],
+      includeDone: true,
+    });
+    expect(monday.entries.map((entry) => entry.title)).toContain("Payée");
+  });
+
   it("copie d'échéance de facture : masquée, sauf si les échéances manquent", () => {
     const copy = event({ type: "INVOICE_DUE", title: "Échéance F-1" });
     expect(

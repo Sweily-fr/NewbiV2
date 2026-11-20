@@ -69,8 +69,16 @@ const CONFIRM_TEXT = {
  * Google Agenda, Apple Calendrier ou Outlook (lecture seule, propre à
  * l'utilisateur et à l'espace), et récap du lundi par e-mail.
  */
-export function CalendarFeedDialog() {
-  const [open, setOpen] = useState(false);
+// showTrigger={false} : pas de bouton, fenêtre pilotée par open /
+// onOpenChange (menu « … » du calendrier)
+export function CalendarFeedDialog({
+  open: controlledOpen,
+  onOpenChange,
+  showTrigger = true,
+} = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
   const [confirm, setConfirm] = useState(null);
   const [copied, setCopied] = useState(false);
   const { organization } = useWorkspace();
@@ -123,20 +131,22 @@ export function CalendarFeedDialog() {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 font-normal"
-            title="Recevoir le calendrier ailleurs"
-          >
-            <CalendarArrowUp className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden 2xl:inline">Ajouter à mon agenda</span>
-            <span className="sr-only 2xl:hidden">
-              Recevoir le calendrier ailleurs
-            </span>
-          </Button>
-        </DialogTrigger>
+        {showTrigger && (
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 font-normal"
+              title="Recevoir le calendrier ailleurs"
+            >
+              <CalendarArrowUp className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden 2xl:inline">Ajouter à mon agenda</span>
+              <span className="sr-only 2xl:hidden">
+                Recevoir le calendrier ailleurs
+              </span>
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Recevoir le calendrier ailleurs</DialogTitle>

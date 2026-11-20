@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowRight, CircleAlert, ExternalLink, Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -15,17 +15,13 @@ import { cn } from "@/src/lib/utils";
 import { useEvents, useEventOperations } from "@/src/hooks/useEvents";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useCalendarLinkedItems } from "@/src/hooks/useCalendarLinkedItems";
-import {
-  formatLinkedAmount,
-  linkedItemFilingSite,
-  readHiddenSources,
-} from "@/src/utils/calendar-linked-items";
-import { declarationFilingSite } from "@/src/utils/declaration-events";
+import { readHiddenSources } from "@/src/utils/calendar-linked-items";
 import { dayToDate } from "@/src/utils/recurrenceDays";
-import { APPOINTMENT_COLOR } from "@/src/utils/booking";
 import { buildUpcomingDays, upcomingDays } from "@/src/utils/upcoming-days";
-import { normalizeColor } from "@/app/dashboard/calendar/components/utils";
-import { LINKED_SOURCE_META } from "@/app/dashboard/calendar/components/linked-sources";
+import { DayEntryRow, EntryColorBar, formatDuration } from "./day-entry-row";
+
+// Gardé ici pour les imports existants
+export { formatDuration };
 
 // Fiches chargées au premier clic seulement
 const LinkedItemSheet = dynamic(
@@ -48,144 +44,6 @@ const MAX_TODAY_ROWS = 6;
 
 const calendarDayUrl = (day) => `/dashboard/calendar?jour=${day}`;
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
-
-// « 30 min », « 1 h », « 1 h 30 »
-export function formatDuration(start, end) {
-  const minutes = Math.round((new Date(end) - new Date(start)) / 60000);
-  if (!(minutes > 0) || minutes >= 24 * 60) return null;
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest ? `${hours} h ${String(rest).padStart(2, "0")}` : `${hours} h`;
-}
-
-// Couleur d'un élément : celle de sa source ou de son événement
-function entryColor(entry) {
-  if (entry.type === "linked") {
-    return { className: LINKED_SOURCE_META[entry.item.kind]?.accent };
-  }
-  return {
-    style: {
-      backgroundColor: entry.isAppointment
-        ? APPOINTMENT_COLOR
-        : normalizeColor(entry.event.color),
-    },
-  };
-}
-
-// Site où déposer une déclaration (événement Newbi ou échéance fiscale)
-function entryFilingSite(entry) {
-  if (entry.type === "linked") return linkedItemFilingSite(entry.item);
-  return declarationFilingSite(entry.event.declarationKind);
-}
-
-function entrySubtitle(entry) {
-  if (entry.type === "linked") {
-    const meta = LINKED_SOURCE_META[entry.item.kind];
-    if (entry.item.kind === "FISCAL") {
-      return [entry.item.reference, entry.item.counterparty]
-        .filter(Boolean)
-        .join(" · ");
-    }
-    const amount = formatLinkedAmount(
-      entry.item.amount,
-      entry.item.currency || "EUR",
-      { compact: true },
-    );
-    return [meta?.noun, entry.item.counterparty, amount]
-      .filter(Boolean)
-      .join(" · ");
-  }
-  const { event } = entry;
-  const filingSite = entryFilingSite(entry);
-  if (filingSite) {
-    return `À déposer sur ${filingSite.site}`;
-  }
-  if (!entry.time) return event.location || "Toute la journée";
-  return [event.location, formatDuration(event.start, event.end)]
-    .filter(Boolean)
-    .join(" · ");
-}
-
-function ColorBar({ entry, className }) {
-  const color = entryColor(entry);
-  return (
-    <span
-      aria-hidden="true"
-      className={cn("shrink-0 rounded-full", className, color.className)}
-      style={color.style}
-    />
-  );
-}
-
-// Ligne de la journée : heure, couleur, titre et détail ; lien de dépôt
-// pour une déclaration
-function TodayRow({ entry, onOpen }) {
-  const filingSite = entryFilingSite(entry);
-  const subtitle = entrySubtitle(entry);
-  const isOverdue = entry.type === "linked" && entry.item.state === "OVERDUE";
-  const meta =
-    entry.type === "linked" ? LINKED_SOURCE_META[entry.item.kind] : null;
-  const Icon = meta?.icon;
-
-  return (
-    <li className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => onOpen(entry)}
-        className="hover:bg-accent focus-visible:ring-ring grid min-w-0 flex-1 cursor-pointer grid-cols-[2.75rem_3px_minmax(0,1fr)] items-center gap-x-2.5 rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
-      >
-        <span className="text-muted-foreground text-xs tabular-nums">
-          {entry.time ? (
-            entry.time
-          ) : Icon ? (
-            <Icon
-              className={cn("size-3.5", meta.iconClass)}
-              aria-hidden="true"
-            />
-          ) : (
-            "Journée"
-          )}
-        </span>
-        <ColorBar entry={entry} className="h-8 w-[3px]" />
-        <span className="min-w-0">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate text-[13px] font-medium">
-              {entry.title}
-            </span>
-            {isOverdue && (
-              <CircleAlert
-                className="size-3.5 shrink-0 text-red-600 dark:text-red-400"
-                aria-label="En retard"
-              />
-            )}
-          </span>
-          {subtitle && (
-            <span className="text-muted-foreground block truncate text-xs">
-              {subtitle}
-            </span>
-          )}
-        </span>
-      </button>
-      {filingSite && (
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-7 shrink-0 gap-1 px-2 text-xs"
-        >
-          <a href={filingSite.url} target="_blank" rel="noopener noreferrer">
-            Déclarer
-            <ExternalLink className="size-3" aria-hidden="true" />
-            <span className="sr-only">
-              : {filingSite.label} (nouvel onglet)
-            </span>
-          </a>
-        </Button>
-      )}
-    </li>
-  );
-}
 
 /**
  * Affichage seul (données passées en props), testable sans API :
@@ -247,7 +105,7 @@ export function UpcomingDaysView({
           ) : (
             <ul className="-mx-2 space-y-0.5">
               {visibleToday.map((entry) => (
-                <TodayRow key={entry.key} entry={entry} onOpen={onOpen} />
+                <DayEntryRow key={entry.key} entry={entry} onOpen={onOpen} />
               ))}
               {hiddenToday > 0 && (
                 <li>
@@ -301,7 +159,7 @@ export function UpcomingDaysView({
                       <Skeleton className="h-4 w-3/4" />
                     ) : first ? (
                       <span className="flex min-w-0 items-center gap-2">
-                        <ColorBar entry={first} className="size-1.5" />
+                        <EntryColorBar entry={first} className="size-1.5" />
                         {first.time && (
                           <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                             {first.time}

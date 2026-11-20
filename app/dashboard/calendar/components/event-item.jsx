@@ -5,7 +5,11 @@ import { memo, useMemo } from "react";
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
 import { CalendarCheck } from "lucide-react";
 
-import { getBorderRadiusClasses, getEventHexStyles } from "./index";
+import {
+  getBorderRadiusClasses,
+  getEventHexStyles,
+  normalizeColor,
+} from "./index";
 import { ExternalEventBadge } from "./external-event-badge";
 import { LinkedEventItem } from "./linked-event-item";
 import { SyncBadge } from "./sync-badge";
@@ -51,6 +55,7 @@ function AppointmentMark({ event, showLabel = false }) {
  * @param {Object} dndAttributes
  * @param {Function} onMouseDown
  * @param {Function} onTouchStart
+ * @param {boolean} plain - sans fond teinté (ligne « point, heure, titre »)
  */
 
 // Shared wrapper component for event styling
@@ -67,6 +72,7 @@ function EventWrapper({
   dndAttributes,
   onMouseDown,
   onTouchStart,
+  plain = false,
 }) {
   // Always use the currentTime (if provided) to determine if the event is in the past
   const displayEnd = currentTime
@@ -85,7 +91,7 @@ function EventWrapper({
         getBorderRadiusClasses(isFirstDay, isLastDay),
         className,
       )}
-      style={getEventHexStyles(event.color)}
+      style={plain ? undefined : getEventHexStyles(event.color)}
       data-dragging={isDragging || undefined}
       data-past-event={isEventInPast || undefined}
       onClick={onClick}
@@ -178,6 +184,58 @@ export const EventItem = memo(function EventItem({
     // For longer events, show both start and end time
     return `${formatTimeWithOptionalMinutes(displayStart)} - ${formatTimeWithOptionalMinutes(displayEnd)}`;
   };
+
+  // Mois : un événement à l'heure tenant sur une journée est une ligne
+  // « point de couleur, heure, titre » ; journées entières et événements
+  // sur plusieurs jours gardent leur barre teintée
+  if (
+    view === "month" &&
+    !event.allDay &&
+    isFirstDay &&
+    isLastDay &&
+    !children
+  ) {
+    return (
+      <EventWrapper
+        event={event}
+        isDragging={isDragging}
+        onClick={onClick}
+        plain
+        className={cn(
+          "text-foreground hover:bg-muted/70 mt-[var(--event-gap)] h-[var(--event-height)] items-center gap-1.5 rounded text-[10px] sm:text-xs",
+          className,
+        )}
+        currentTime={currentTime}
+        dndListeners={dndListeners}
+        dndAttributes={dndAttributes}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+      >
+        <span
+          aria-hidden="true"
+          className="size-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: normalizeColor(eventColor) }}
+        />
+        <AppointmentMark event={event} />
+        <span className="text-muted-foreground shrink-0 font-normal tabular-nums max-sm:hidden">
+          {formatTimeWithOptionalMinutes(displayStart)}
+        </span>
+        <span className="truncate">{event.title}</span>
+        <SyncBadge
+          count={syncCount}
+          className="hidden shrink-0 sm:inline-flex"
+        />
+        {event.assignedMembersInfo?.length > 0 && (
+          <AvatarGroup
+            users={event.assignedMembersInfo}
+            max={2}
+            size="xxs"
+            className="ml-auto shrink-0"
+          />
+        )}
+      </EventWrapper>
+    );
+  }
 
   if (view === "month") {
     return (

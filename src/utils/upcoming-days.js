@@ -82,6 +82,8 @@ function eventEntries(event, day) {
  *   enregistrées comme événements restent alors affichées.
  * Les échéances réglées (facture payée, tâche terminée, déclaration
  * confirmée) ne sont pas reprises : le cadre montre ce qui reste à faire.
+ * - includeDone : les garder (volet du jour du calendrier, fidèle à la
+ *   grille).
  */
 export function buildUpcomingDays({
   days,
@@ -89,6 +91,7 @@ export function buildUpcomingDays({
   linkedItems = [],
   hiddenSources = new Set(),
   linkedUnavailable = false,
+  includeDone = false,
 }) {
   const showEvents = !hiddenSources.has(EVENTS_SOURCE);
   const showAppointments = !hiddenSources.has(APPOINTMENTS_SOURCE);
@@ -105,7 +108,8 @@ export function buildUpcomingDays({
       if (entry) entries.push(entry);
     }
     for (const item of linkedItems) {
-      if (item.day !== day || item.state === "DONE") continue;
+      if (item.day !== day) continue;
+      if (item.state === "DONE" && !includeDone) continue;
       if (hiddenSources.has(item.kind)) continue;
       entries.push({
         key: `linked:${item.id}`,

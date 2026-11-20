@@ -144,8 +144,10 @@ export function matchingView(hiddenSources, availableKeys) {
   );
 }
 
-// Le calendrier commence la semaine le dimanche (vues mois et semaine)
-const WEEK_OPTIONS = { weekStartsOn: 0 };
+// Le calendrier commence la semaine le lundi (vues mois et semaine), comme
+// en France ; partagé par les vues et les jours chargés
+export const CALENDAR_WEEK_OPTIONS = { weekStartsOn: 1 };
+const WEEK_OPTIONS = CALENDAR_WEEK_OPTIONS;
 
 /**
  * Jours visibles d'une vue, bornes incluses, au format AAAA-MM-JJ.

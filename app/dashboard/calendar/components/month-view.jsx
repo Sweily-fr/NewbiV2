@@ -29,6 +29,7 @@ import {
 } from "./index";
 import { DefaultStartHour } from "./constants";
 import { frenchHolidayName } from "@/src/utils/french-holidays";
+import { CALENDAR_WEEK_OPTIONS } from "@/src/utils/calendar-linked-items";
 import {
   Popover,
   PopoverContent,
@@ -41,6 +42,10 @@ import {
  * @param {Array} events
  * @param {Function} onEventSelect
  * @param {Function} onEventCreate
+ * @param {Date|null} selectedDay - jour affiché dans le volet du jour
+ * @param {Function} onDaySelect - avec le volet : un clic sur une case
+ *   choisit le jour, un double clic crée un événement ; sans volet, un clic
+ *   crée un événement
  */
 
 export const MonthView = React.memo(function MonthView({
@@ -48,19 +53,21 @@ export const MonthView = React.memo(function MonthView({
   events,
   onEventSelect,
   onEventCreate,
+  selectedDay = null,
+  onDaySelect,
 }) {
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
-    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
-    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    const calendarStart = startOfWeek(monthStart, CALENDAR_WEEK_OPTIONS);
+    const calendarEnd = endOfWeek(monthEnd, CALENDAR_WEEK_OPTIONS);
 
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentDate]);
 
   const weekdays = useMemo(() => {
     return Array.from({ length: 7 }).map((_, i) => {
-      const date = addDays(startOfWeek(new Date(), { weekStartsOn: 0 }), i);
+      const date = addDays(startOfWeek(new Date(), CALENDAR_WEEK_OPTIONS), i);
       return format(date, "EEE", { locale: fr });
     });
   }, []);
@@ -102,6 +109,13 @@ export const MonthView = React.memo(function MonthView({
     onEventSelect(event);
   };
 
+  // Nouvel événement ce jour-là, à l'heure par défaut
+  const createOn = (day) => {
+    const startTime = new Date(day);
+    startTime.setHours(DefaultStartHour, 0, 0);
+    onEventCreate(startTime);
+  };
+
   const [isMounted, setIsMounted] = useState(false);
   const { contentRef, getVisibleEventCount } = useEventVisibility({
     eventHeight: EventHeight,
@@ -118,7 +132,7 @@ export const MonthView = React.memo(function MonthView({
         {weekdays.map((day) => (
           <div
             key={day}
-            className="text-muted-foreground/70 py-2 text-center text-sm"
+            className="text-muted-foreground/80 px-1.5 py-2 text-xs sm:px-2.5"
           >
             {day}
           </div>
@@ -136,6 +150,12 @@ export const MonthView = React.memo(function MonthView({
               if (!day) return null; // Skip if day is undefined
 
               const isCurrentMonth = isSameMonth(day, currentDate);
+              const isSelected =
+                Boolean(onDaySelect && selectedDay) &&
+                isSameDay(day, selectedDay);
+              const dayLabel = `${format(day, "EEEE d MMMM", { locale: fr })}${
+                isToday(day) ? ", aujourd'hui" : ""
+              }`;
               const cellId = `month-cell-${day.toISOString()}`;
               const { allDayEvents, allEvents } = eventsByDay.get(
                 day.toISOString(),
@@ -155,24 +175,42 @@ export const MonthView = React.memo(function MonthView({
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 min-h-0 overflow-hidden border-r border-b last:border-r-0"
+                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 data-selected:bg-muted/60 min-h-0 overflow-hidden border-r border-b transition-colors last:border-r-0"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
+                  data-selected={isSelected || undefined}
                 >
                   <DroppableCell
                     id={cellId}
                     date={day}
-                    onClick={() => {
-                      const startTime = new Date(day);
-                      startTime.setHours(DefaultStartHour, 0, 0);
-                      onEventCreate(startTime);
-                    }}
+                    onClick={
+                      onDaySelect ? () => onDaySelect(day) : () => createOn(day)
+                    }
+                    onDoubleClick={
+                      onDaySelect ? () => createOn(day) : undefined
+                    }
                   >
                     {/* Jour férié : son nom, discret, à côté du numéro */}
                     <div className="flex min-w-0 items-center gap-1.5">
-                      <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
-                        {format(day, "d")}
-                      </div>
+                      {onDaySelect ? (
+                        // Numéro cliquable : choisir le jour au clavier
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDaySelect(day);
+                          }}
+                          aria-label={`Voir le ${dayLabel}`}
+                          aria-pressed={isSelected}
+                          className="hover:bg-muted focus-visible:ring-ring group-data-today:bg-[#5a50ff] group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          {format(day, "d")}
+                        </button>
+                      ) : (
+                        <div className="group-data-today:bg-[#5a50ff] group-data-today:text-white mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
+                          {format(day, "d")}
+                        </div>
+                      )}
                       {frenchHolidayName(day) && (
                         <span
                           className="text-muted-foreground mt-1 truncate text-[10px] sm:text-xs"
@@ -205,7 +243,10 @@ export const MonthView = React.memo(function MonthView({
                               aria-hidden={isHidden ? "true" : undefined}
                             >
                               <EventItem
-                                onClick={(e) => handleEventClick(event, e)}
+                                onClick={(e) => {
+                                  handleEventClick(event, e);
+                                  onDaySelect?.(day);
+                                }}
                                 event={event}
                                 view="month"
                                 isFirstDay={isFirstDay}
@@ -236,7 +277,10 @@ export const MonthView = React.memo(function MonthView({
                             <DraggableEvent
                               event={event}
                               view="month"
-                              onClick={(e) => handleEventClick(event, e)}
+                              onClick={(e) => {
+                                handleEventClick(event, e);
+                                onDaySelect?.(day);
+                              }}
                               isFirstDay={isFirstDay}
                               isLastDay={isLastDay}
                             />
@@ -244,7 +288,21 @@ export const MonthView = React.memo(function MonthView({
                         );
                       })}
 
-                      {hasMore && (
+                      {hasMore && onDaySelect && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDaySelect(day);
+                          }}
+                          aria-label={`${remainingCount} de plus le ${dayLabel}`}
+                          className="focus-visible:border-ring focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 mt-[var(--event-gap)] flex h-[var(--event-height)] w-full items-center overflow-hidden rounded px-1 text-left text-[10px] transition outline-none select-none focus-visible:ring-[3px] sm:px-2 sm:text-xs"
+                        >
+                          + {remainingCount}{" "}
+                          <span className="max-sm:sr-only">de plus</span>
+                        </button>
+                      )}
+                      {hasMore && !onDaySelect && (
                         <Popover modal>
                           <PopoverTrigger asChild>
                             <button

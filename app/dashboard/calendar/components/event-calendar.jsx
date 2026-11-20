@@ -11,16 +11,22 @@ import {
   endOfWeek,
   format,
   isSameMonth,
+  startOfMonth,
   startOfWeek,
   subMonths,
   subWeeks,
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  CalendarArrowUp,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  Link2,
+  MoreHorizontal,
+  Palette,
   PlusIcon,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -38,9 +44,10 @@ import {
   WeekView,
 } from "./index";
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
+import { CalendarDayPanel } from "./calendar-day-panel";
 import { CalendarFeedDialog } from "./calendar-feed-dialog";
-import { CalendarSyncButton } from "./calendar-sync-button";
 import { CalendarFiltersButton } from "./calendar-filters";
+import { DefaultStartHour } from "./constants";
 import { CalendarOverdueButton } from "./calendar-overdue-button";
 import { ColorLegend } from "./color-legend";
 import { LinkedItemSheet } from "./linked-item-sheet";
@@ -51,6 +58,11 @@ import {
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import {
+  useCalendarConnections,
+  useSyncAllCalendars,
+} from "@/src/hooks/useCalendarConnections";
+import { buildUpcomingDays } from "@/src/utils/upcoming-days";
 import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import {
   useCalendarLinkedItems,
@@ -70,6 +82,7 @@ import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   APPOINTMENTS_SOURCE,
+  CALENDAR_WEEK_OPTIONS,
   DEFAULT_VIEW,
   EVENTS_SOURCE,
   hiddenSourcesForView,
@@ -87,6 +100,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
@@ -95,6 +109,14 @@ import {
 const TASK_ASSIGNEE_KEY = "newbi:calendar:task-assignee";
 const NO_HIDDEN_SOURCES = new Set();
 const NO_MEMBERS = [];
+// Volet du jour à droite de la vue mois, à partir de cette largeur
+// (calendrier et volet compris)
+const DAY_PANEL_MIN_WIDTH = 960;
+
+const capitalize = (text) =>
+  typeof text === "string"
+    ? text.charAt(0).toUpperCase() + text.slice(1)
+    : text;
 
 export function EventCalendar({
   events = [],
@@ -106,6 +128,14 @@ export function EventCalendar({
 }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState(initialView);
+  // Jour du volet de la vue mois (aujourd'hui à l'arrivée)
+  const [selectedDay, setSelectedDay] = useState(() => new Date());
+  // Fenêtres ouvertes depuis le menu « … »
+  const [labelsOpen, setLabelsOpen] = useState(false);
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
+  const [feedOpen, setFeedOpen] = useState(false);
+  // Un élément du menu ouvre une fenêtre : le focus ne revient pas au bouton
+  const openingFromMenuRef = useRef(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   // Échéance d'une autre page ouverte dans sa fiche
@@ -135,6 +165,8 @@ export function EventCalendar({
 
   const { data: sessionData } = useSession();
   const currentUserId = sessionData?.user?.id;
+  const { connections: calendarConnections } = useCalendarConnections();
+  const { syncAll, loading: syncing } = useSyncAllCalendars();
 
   // Lu après le premier rendu : le rendu serveur ne connaît pas le stockage
   useEffect(() => {
@@ -201,6 +233,7 @@ export function EventCalendar({
     appliedLinkRef.current = linkKey;
     openedItemRef.current = null;
     setCurrentDate(date);
+    setSelectedDay(date);
   }, [requestedDay, requestedItemId]);
   useEffect(() => {
     if (!requestedItemId || openedItemRef.current === requestedItemId) return;
@@ -341,9 +374,16 @@ export function EventCalendar({
     };
   }, [isEventDialogOpen, selectedLinkedItem, selectedAppointment]);
 
+  // Autre mois : le volet montre aujourd'hui (mois en cours) ou le 1er
+  const showMonth = (date) => {
+    const today = new Date();
+    setCurrentDate(date);
+    setSelectedDay(isSameMonth(date, today) ? today : startOfMonth(date));
+  };
+
   const handlePrevious = () => {
     if (view === "mois") {
-      setCurrentDate(subMonths(currentDate, 1));
+      showMonth(subMonths(currentDate, 1));
     } else if (view === "semaine") {
       setCurrentDate(subWeeks(currentDate, 1));
     } else if (view === "jour") {
@@ -356,7 +396,7 @@ export function EventCalendar({
 
   const handleNext = () => {
     if (view === "mois") {
-      setCurrentDate(addMonths(currentDate, 1));
+      showMonth(addMonths(currentDate, 1));
     } else if (view === "semaine") {
       setCurrentDate(addWeeks(currentDate, 1));
     } else if (view === "jour") {
@@ -369,6 +409,7 @@ export function EventCalendar({
 
   const handleToday = () => {
     setCurrentDate(new Date());
+    setSelectedDay(new Date());
   };
 
   // Handlers stables (useCallback) : passés en props aux vues mémoïsées
@@ -419,6 +460,66 @@ export function EventCalendar({
     },
     [canCreateEvents],
   );
+
+  // --- Volet du jour (vue mois, écran assez large) ---
+  const viewsRef = useRef(null);
+  const [viewsWidth, setViewsWidth] = useState(0);
+  useEffect(() => {
+    const node = viewsRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(([entry]) =>
+      setViewsWidth(entry.contentRect.width),
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const showDayPanel = view === "mois" && viewsWidth >= DAY_PANEL_MIN_WIDTH;
+
+  // Jour du volet : celui choisi s'il est dans la grille affichée, sinon
+  // aujourd'hui (mois en cours) ou le 1er du mois
+  const panelDay = useMemo(() => {
+    const grid = visibleRange("mois", currentDate);
+    const key = dateToDay(selectedDay);
+    if (key >= grid.from && key <= grid.to) return selectedDay;
+    const today = new Date();
+    return isSameMonth(currentDate, today) ? today : startOfMonth(currentDate);
+  }, [selectedDay, currentDate]);
+  const panelDayKey = dateToDay(panelDay);
+
+  // Mêmes éléments que la case du jour (sources, « Tâches de », réglés
+  // compris), présentés comme l'agenda de l'accueil
+  const dayPanelEntries = useMemo(() => {
+    if (!showDayPanel) return [];
+    return buildUpcomingDays({
+      days: [panelDayKey],
+      events,
+      linkedItems: visibleLinkedItems,
+      hiddenSources: activeHiddenSources,
+      linkedUnavailable,
+      includeDone: true,
+    })[0].entries;
+  }, [
+    showDayPanel,
+    panelDayKey,
+    events,
+    visibleLinkedItems,
+    activeHiddenSources,
+    linkedUnavailable,
+  ]);
+
+  const openDayEntry = useCallback(
+    (entry) => {
+      if (entry.type === "linked") setSelectedLinkedItem(entry.item);
+      else handleEventSelect(entry.event);
+    },
+    [handleEventSelect],
+  );
+
+  const createOnPanelDay = useCallback(() => {
+    const start = new Date(panelDay);
+    start.setHours(DefaultStartHour, 0, 0, 0);
+    handleEventCreate(start);
+  }, [panelDay, handleEventCreate]);
 
   const handleEventSave = useCallback(
     (event) => {
@@ -665,8 +766,8 @@ export function EventCalendar({
     if (view === "mois") {
       return format(currentDate, "MMMM yyyy", { locale: fr });
     } else if (view === "semaine") {
-      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      const start = startOfWeek(currentDate, CALENDAR_WEEK_OPTIONS);
+      const end = endOfWeek(currentDate, CALENDAR_WEEK_OPTIONS);
       if (isSameMonth(start, end)) {
         return format(start, "MMMM yyyy", { locale: fr });
       } else {
@@ -715,44 +816,48 @@ export function EventCalendar({
         onEventUpdate={handleEventUpdate}
         disabled={!canEditEvents}
       >
+        {/* Barre d'outils : navigation à gauche ; filtres, vue, options et
+            création à droite (une ligne, qui passe à la ligne sur petit
+            écran plutôt que déborder) */}
         <div
           className={cn(
-            "flex shrink-0 flex-wrap items-center justify-between gap-2 p-2 sm:px-4 sm:py-3 xl:flex-nowrap",
+            "border-border/70 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-2 py-2 sm:px-4 sm:py-2.5 xl:flex-nowrap",
             className,
           )}
         >
-          <div className="flex items-center gap-1 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
             <Button
               variant="outline"
-              className="font-normal"
+              size="sm"
+              className="h-8 font-normal"
               onClick={handleToday}
             >
-              Aujourd'hui
+              Aujourd&apos;hui
             </Button>
-            <div className="flex items-center sm:gap-2">
+            <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
+                className="size-8"
                 onClick={handlePrevious}
-                aria-label="Previous"
+                aria-label="Précédent"
               >
                 <ChevronLeftIcon size={16} aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
+                className="size-8"
                 onClick={handleNext}
-                aria-label="Next"
+                aria-label="Suivant"
               >
                 <ChevronRightIcon size={16} aria-hidden="true" />
               </Button>
             </div>
-            <h2 className="text-sm font-medium sm:text-lg md:text-xl">
-              {viewTitle}
+            <h2 className="truncate text-base font-semibold sm:text-lg">
+              {capitalize(viewTitle)}
             </h2>
           </div>
-          {/* Une seule ligne d'outils ; sur petit écran elle peut passer à la
-              ligne plutôt que déborder */}
           <div className="flex flex-wrap items-center justify-end gap-2">
             <CalendarOverdueButton
               items={overdueItems}
@@ -776,15 +881,13 @@ export function EventCalendar({
               taskAssignee={activeTaskAssignee}
               onTaskAssigneeChange={changeTaskAssignee}
             />
-            <ColorLegend canEdit={canEditEvents} />
-            {/* Synchronisation et connexions : action « edit » */}
-            {canEditEvents && <CalendarSyncButton />}
-            <CalendarConnectionsPanel canManage={canEditEvents} />
-            {/* Lien d'abonnement (Google, Apple, Outlook) et récap du lundi */}
-            <CalendarFeedDialog />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-1.5 font-normal">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 font-normal"
+                >
                   <span>{view.charAt(0).toUpperCase() + view.slice(1)}</span>
                   <ChevronDownIcon
                     className="-me-1 opacity-60"
@@ -808,53 +911,161 @@ export function EventCalendar({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Options : étiquettes, calendriers connectés, synchronisation,
+                abonnement depuis un autre agenda */}
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  aria-label="Plus d'options"
+                >
+                  <MoreHorizontal className="size-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-64"
+                onCloseAutoFocus={(e) => {
+                  if (openingFromMenuRef.current) {
+                    e.preventDefault();
+                    openingFromMenuRef.current = false;
+                  }
+                }}
+              >
+                <DropdownMenuItem
+                  onSelect={() => {
+                    openingFromMenuRef.current = true;
+                    setLabelsOpen(true);
+                  }}
+                >
+                  <Palette className="size-4" aria-hidden="true" />
+                  Étiquettes de couleur
+                </DropdownMenuItem>
+                {(canEditEvents || calendarConnections.length > 0) && (
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      openingFromMenuRef.current = true;
+                      setConnectionsOpen(true);
+                    }}
+                  >
+                    <Link2 className="size-4" aria-hidden="true" />
+                    Calendriers connectés
+                    {calendarConnections.length > 0 && (
+                      <span className="text-muted-foreground ml-auto text-xs tabular-nums">
+                        {calendarConnections.length}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                )}
+                {/* Synchronisation : action « edit » */}
+                {canEditEvents && (
+                  <DropdownMenuItem disabled={syncing} onSelect={syncAll}>
+                    <RefreshCw
+                      className={cn("size-4", syncing && "animate-spin")}
+                      aria-hidden="true"
+                    />
+                    Synchroniser maintenant
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {/* Lien d'abonnement (Google, Apple, Outlook) et récap du lundi */}
+                <DropdownMenuItem
+                  onSelect={() => {
+                    openingFromMenuRef.current = true;
+                    setFeedOpen(true);
+                  }}
+                >
+                  <CalendarArrowUp className="size-4" aria-hidden="true" />
+                  Recevoir le calendrier ailleurs
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {canCreateEvents && (
               <Button
-                className="font-normal"
+                size="sm"
+                className="h-8 bg-[#5a50ff] font-normal hover:bg-[#5a50ff]/90"
                 onClick={() => {
                   setSelectedEvent(null); // Ensure we're creating a new event
                   setIsEventDialogOpen(true);
                 }}
               >
-                <PlusIcon className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Nouvel événement</span>
+                <PlusIcon className="h-4 w-4 md:mr-1" aria-hidden="true" />
+                <span className="max-md:sr-only">Nouvel événement</span>
               </Button>
             )}
           </div>
         </div>
 
+        {/* Fenêtres du menu « … » (sans bouton à elles) */}
+        <ColorLegend
+          canEdit={canEditEvents}
+          showTrigger={false}
+          open={labelsOpen}
+          onOpenChange={setLabelsOpen}
+        />
+        <CalendarConnectionsPanel
+          canManage={canEditEvents}
+          showTrigger={false}
+          open={connectionsOpen}
+          onOpenChange={setConnectionsOpen}
+        />
+        <CalendarFeedDialog
+          showTrigger={false}
+          open={feedOpen}
+          onOpenChange={setFeedOpen}
+        />
+
         {/* Les vues prennent la hauteur restante : la grille du mois se
-            partage la place, semaine, jour et agenda défilent à l'intérieur */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          {view === "mois" && (
-            <MonthView
-              currentDate={currentDate}
-              events={displayedEvents}
-              onEventSelect={handleEventSelect}
-              onEventCreate={handleEventCreate}
-            />
-          )}
-          {view === "semaine" && (
-            <WeekView
-              currentDate={currentDate}
-              events={displayedEvents}
-              onEventSelect={handleEventSelect}
-              onEventCreate={handleEventCreate}
-            />
-          )}
-          {view === "jour" && (
-            <DayView
-              currentDate={currentDate}
-              events={displayedEvents}
-              onEventSelect={handleEventSelect}
-              onEventCreate={handleEventCreate}
-            />
-          )}
-          {view === "agenda" && (
-            <AgendaView
-              currentDate={currentDate}
-              events={displayedEvents}
-              onEventSelect={handleEventSelect}
+            partage la place, semaine, jour et agenda défilent à l'intérieur.
+            Vue mois sur grand écran : volet du jour choisi à droite */}
+        <div ref={viewsRef} className="flex min-h-0 flex-1">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {view === "mois" && (
+              <MonthView
+                currentDate={currentDate}
+                events={displayedEvents}
+                onEventSelect={handleEventSelect}
+                onEventCreate={handleEventCreate}
+                selectedDay={showDayPanel ? panelDay : null}
+                onDaySelect={showDayPanel ? setSelectedDay : undefined}
+              />
+            )}
+            {view === "semaine" && (
+              <WeekView
+                currentDate={currentDate}
+                events={displayedEvents}
+                onEventSelect={handleEventSelect}
+                onEventCreate={handleEventCreate}
+              />
+            )}
+            {view === "jour" && (
+              <DayView
+                currentDate={currentDate}
+                events={displayedEvents}
+                onEventSelect={handleEventSelect}
+                onEventCreate={handleEventCreate}
+              />
+            )}
+            {view === "agenda" && (
+              <AgendaView
+                currentDate={currentDate}
+                events={displayedEvents}
+                onEventSelect={handleEventSelect}
+              />
+            )}
+          </div>
+          {showDayPanel && (
+            <CalendarDayPanel
+              className="border-border/70 w-[300px] shrink-0 border-l"
+              date={panelDay}
+              entries={dayPanelEntries}
+              loading={linkedLoading && dayPanelEntries.length === 0}
+              onOpen={openDayEntry}
+              onCreate={canCreateEvents ? createOnPanelDay : undefined}
             />
           )}
         </div>

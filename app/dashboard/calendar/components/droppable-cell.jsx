@@ -14,6 +14,7 @@ import { cn } from "@/src/lib/utils";
  * @param {React.ReactNode} children
  * @param {string} className
  * @param {Function} onClick
+ * @param {Function} onDoubleClick
  */
 
 export const DroppableCell = memo(function DroppableCell({
@@ -23,6 +24,7 @@ export const DroppableCell = memo(function DroppableCell({
   children,
   className,
   onClick,
+  onDoubleClick,
 }) {
   const { activeEvent } = useCalendarDnd();
 
@@ -46,6 +48,7 @@ export const DroppableCell = memo(function DroppableCell({
     <div
       ref={setNodeRef}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       className={cn(
         "data-dragging:bg-accent flex h-full flex-col overflow-hidden px-0.5 py-1 sm:px-1",
         className,
