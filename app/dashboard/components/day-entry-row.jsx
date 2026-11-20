@@ -72,7 +72,8 @@ function entrySubtitle(entry) {
   if (filingSite) {
     return `À déposer sur ${filingSite.site}`;
   }
-  if (!entry.time) return event.location || "Toute la journée";
+  // Sans heure : journée entière, ou suite d'un événement de la veille
+  if (!entry.time) return event.location || entry.detail || "Toute la journée";
   return [event.location, formatDuration(event.start, event.end)]
     .filter(Boolean)
     .join(" · ");
