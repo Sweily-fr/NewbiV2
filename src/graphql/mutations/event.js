@@ -16,6 +16,7 @@ export const CREATE_EVENT = gql`
         location
         type
         declarationKind
+        eventTypeId
         clientId
         assignedMembers
         assignedMembersInfo {
@@ -55,6 +56,7 @@ export const UPDATE_EVENT = gql`
         location
         type
         declarationKind
+        eventTypeId
         assignedMembers
         assignedMembersInfo {
           id

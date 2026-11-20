@@ -73,6 +73,7 @@ export default function Component() {
         location: event.location,
         type: event.type,
         declarationKind: event.declarationKind || null,
+        eventTypeId: event.eventTypeId || null,
         bookingId: event.bookingId || null,
         invoiceId: event.invoiceId,
         invoice: event.invoice,
@@ -103,6 +104,7 @@ export default function Component() {
         location: event.location,
         type: "MANUAL",
         declarationKind: event.declarationKind || null,
+        eventTypeId: event.eventTypeId || null,
         assignedMembers: event.assignedMembers || [],
         emailReminder: event.emailReminder?.enabled
           ? {
@@ -146,6 +148,9 @@ export default function Component() {
         // l'envoie toujours ; un déplacement garde celle de l'événement)
         ...(updatedEvent.declarationKind !== undefined
           ? { declarationKind: updatedEvent.declarationKind }
+          : {}),
+        ...(updatedEvent.eventTypeId !== undefined
+          ? { eventTypeId: updatedEvent.eventTypeId }
           : {}),
         assignedMembers: Array.isArray(updatedEvent.assignedMembers)
           ? updatedEvent.assignedMembers

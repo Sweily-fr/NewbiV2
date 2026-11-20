@@ -422,6 +422,7 @@ export function UpcomingDaysCard({ className }) {
       color: event.color || "sky",
       location: event.location,
       declarationKind: event.declarationKind || null,
+      eventTypeId: event.eventTypeId || null,
       assignedMembers: event.assignedMembers || [],
       emailReminder: event.emailReminder?.enabled
         ? {

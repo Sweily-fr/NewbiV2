@@ -24,6 +24,8 @@ import { sanitizeInput, detectInjectionAttempt } from "@/src/lib/validation";
 import { useCalendarColorLabels } from "@/src/hooks/useCalendarColorLabels";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useCalendarEventTypes } from "@/src/hooks/useCalendarEventTypes";
+import { newEventTypeId, typeSelectionPatch } from "@/src/utils/event-types";
 import {
   DECLARATION_PRESETS,
   declarationFilingSite,
@@ -147,6 +149,10 @@ export function EventDialog({
   const [color, setColor] = useState("#3B82F6");
   // Événement Newbi de déclaration (« VAT », « URSSAF ») ou ordinaire (null)
   const [declarationKind, setDeclarationKind] = useState(null);
+  // Type créé par l'espace (« Rendez-vous client »…), ou null
+  const [eventTypeId, setEventTypeId] = useState(null);
+  // Fenêtre d'ajout / de modification d'un type d'événement
+  const [typeDialog, setTypeDialog] = useState(null);
   const [assignedMembers, setAssignedMembers] = useState([]);
   const [emailReminder, setEmailReminder] = useState({
     enabled: false,
@@ -179,23 +185,67 @@ export function EventDialog({
     : null;
   const filingSite = declarationFilingSite(declarationKind);
 
+  // Types créés par l'espace, à côté des déclarations Newbi
+  const {
+    types: customTypes,
+    updateTypes,
+    updateLoading: typesSaving,
+  } = useCalendarEventTypes();
+  const selectedCustomType = customTypes.find(
+    (type) => type.id === eventTypeId,
+  );
+
   // Changement de type : titre, description, journée entière et couleur du
-  // modèle, sans écraser ce que l'utilisateur a déjà écrit
-  const applyDeclarationType = (kind) => {
-    const next = kind ? DECLARATION_PRESETS[kind] : null;
-    const presets = Object.values(DECLARATION_PRESETS);
-    const untouched = (value, field) =>
-      !value.trim() || presets.some((preset) => preset[field] === value.trim());
-    setDeclarationKind(kind);
-    if (untouched(title, "title")) setTitle(next ? next.title : "");
-    if (untouched(description, "description")) {
-      setDescription(next ? next.description : "");
-    }
-    if (next) {
-      setAllDay(true);
-      setColor(next.color);
-    }
+  // type, sans écraser ce que l'utilisateur a déjà écrit
+  const applyType = (selection) => {
+    const patch = typeSelectionPatch({
+      selection,
+      current: { title, description },
+      customTypes,
+    });
+    setDeclarationKind(patch.declarationKind);
+    setEventTypeId(patch.eventTypeId);
+    if (patch.title !== undefined) setTitle(patch.title);
+    if (patch.description !== undefined) setDescription(patch.description);
+    if (patch.allDay !== undefined) setAllDay(patch.allDay);
+    if (patch.color !== undefined) setColor(patch.color);
     setFieldErrors((prev) => ({ ...prev, title: null }));
+  };
+
+  const openTypeDialog = (type = null) =>
+    setTypeDialog({
+      id: type?.id || null,
+      name: type?.name || "",
+      color: type?.color || "#3B82F6",
+      allDay: Boolean(type?.allDay),
+    });
+
+  const saveTypeDialog = async () => {
+    const name = typeDialog.name.trim();
+    if (!name) return;
+    const entry = {
+      id: typeDialog.id || newEventTypeId(),
+      name,
+      color: typeDialog.color,
+      allDay: typeDialog.allDay,
+    };
+    const nextTypes = typeDialog.id
+      ? customTypes.map((type) => (type.id === entry.id ? entry : type))
+      : [...customTypes, entry];
+    const saved = await updateTypes(nextTypes);
+    if (!saved?.success) return;
+    setTypeDialog(null);
+    // Nouveau type : choisi aussitôt pour cet événement
+    if (!typeDialog.id) applyType({ eventType: entry });
+  };
+
+  const deleteTypeDialog = async () => {
+    const saved = await updateTypes(
+      customTypes.filter((type) => type.id !== typeDialog.id),
+    );
+    if (!saved?.success) return;
+    if (eventTypeId === typeDialog.id) setEventTypeId(null);
+    setTypeDialog(null);
   };
 
   const { connections } = useCalendarConnections();
@@ -240,6 +290,7 @@ export function EventDialog({
       setLocation(event.location || "");
       setColor(event.color || "#3B82F6");
       setDeclarationKind(event.declarationKind || null);
+      setEventTypeId(event.eventTypeId || null);
       setAssignedMembers(event.assignedMembers || []);
       setEmailReminder(
         event.emailReminder || { enabled: false, anticipation: null },
@@ -262,6 +313,7 @@ export function EventDialog({
     setLocation("");
     setColor("#3B82F6");
     setDeclarationKind(null);
+    setEventTypeId(null);
     setAssignedMembers([]);
     setEmailReminder({ enabled: false, anticipation: null });
     setError(null);
@@ -381,6 +433,7 @@ export function EventDialog({
       location: sanitizeInput(locationValue),
       color,
       declarationKind,
+      eventTypeId,
       assignedMembers,
       emailReminder,
     });
@@ -470,6 +523,17 @@ export function EventDialog({
                 <p className="text-base font-medium break-words">
                   {title || "(sans titre)"}
                 </p>
+
+                {selectedCustomType && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span
+                      aria-hidden="true"
+                      className="size-2 rounded-full"
+                      style={{ backgroundColor: selectedCustomType.color }}
+                    />
+                    {selectedCustomType.name}
+                  </span>
+                )}
 
                 {declarationBanner}
 
@@ -562,14 +626,18 @@ export function EventDialog({
                       className="flex flex-wrap gap-2"
                     >
                       {typeOptions.map((option) => {
-                        const selected = option.kind === declarationKind;
+                        const selected = option.kind
+                          ? option.kind === declarationKind
+                          : !declarationKind && !eventTypeId;
                         return (
                           <button
                             key={option.kind || "event"}
                             type="button"
                             role="radio"
                             aria-checked={selected}
-                            onClick={() => applyDeclarationType(option.kind)}
+                            onClick={() =>
+                              applyType({ declarationKind: option.kind })
+                            }
                             className={cn(
                               "focus-visible:ring-ring cursor-pointer rounded-full border px-3 py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none",
                               selected
@@ -581,6 +649,55 @@ export function EventDialog({
                           </button>
                         );
                       })}
+                      {customTypes.map((type) => {
+                        const selected = type.id === eventTypeId;
+                        return (
+                          <span
+                            key={type.id}
+                            className="inline-flex items-center"
+                          >
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              onClick={() => applyType({ eventType: type })}
+                              className={cn(
+                                "focus-visible:ring-ring inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                                selected
+                                  ? "border-[#5a50ff] bg-[#5a50ff]/10 text-[#5a50ff]"
+                                  : "border-border hover:bg-accent",
+                              )}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className="size-2 shrink-0 rounded-full"
+                                style={{ backgroundColor: type.color }}
+                              />
+                              {type.name}
+                            </button>
+                            {canManageLabels && (
+                              <button
+                                type="button"
+                                onClick={() => openTypeDialog(type)}
+                                aria-label={`Modifier le type « ${type.name} »`}
+                                className="text-muted-foreground/50 hover:text-foreground hover:bg-muted ml-0.5 cursor-pointer rounded p-1 transition-colors"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })}
+                      {canManageLabels && (
+                        <button
+                          type="button"
+                          onClick={() => openTypeDialog()}
+                          className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                          Ajouter un type
+                        </button>
+                      )}
                     </div>
                     {recommendedLabels.length > 0 && (
                       <p className="text-muted-foreground text-xs">
@@ -1070,6 +1187,112 @@ export function EventDialog({
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      {/* Ajout / modification d'un type d'événement */}
+      <Dialog
+        open={!!typeDialog}
+        onOpenChange={(open) => !open && setTypeDialog(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {typeDialog?.id
+                ? "Modifier le type d'événement"
+                : "Nouveau type d'événement"}
+            </DialogTitle>
+            <DialogDescription>
+              Réutilisable pour vos prochains événements : il remplit le titre,
+              la couleur et la journée entière.
+            </DialogDescription>
+          </DialogHeader>
+          {typeDialog && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <label
+                  htmlFor="event-type-name"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Nom
+                </label>
+                <Input
+                  id="event-type-name"
+                  value={typeDialog.name}
+                  onChange={(e) =>
+                    setTypeDialog((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="Ex : Rendez-vous client, Réunion d'équipe…"
+                  maxLength={40}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <span className="text-sm font-medium text-foreground">
+                  Couleur
+                </span>
+                <ColorPicker
+                  color={typeDialog.color}
+                  onChange={(value) =>
+                    setTypeDialog((prev) => ({ ...prev, color: value }))
+                  }
+                  inline
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="event-type-all-day"
+                  checked={typeDialog.allDay}
+                  onCheckedChange={(checked) =>
+                    setTypeDialog((prev) => ({
+                      ...prev,
+                      allDay: checked === true,
+                    }))
+                  }
+                  className="h-3.5 w-3.5"
+                />
+                <Label
+                  htmlFor="event-type-all-day"
+                  className="cursor-pointer text-sm font-normal"
+                >
+                  Toute la journée
+                </Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-row justify-between sm:justify-between">
+            {typeDialog?.id ? (
+              <Button
+                variant="ghost"
+                onClick={deleteTypeDialog}
+                disabled={typesSaving}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Supprimer
+              </Button>
+            ) : (
+              <div />
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setTypeDialog(null)}
+                disabled={typesSaving}
+              >
+                Annuler
+              </Button>
+              <Button
+                disabled={typesSaving || !typeDialog?.name.trim()}
+                onClick={saveTypeDialog}
+              >
+                {typesSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                {typeDialog?.id ? "Enregistrer" : "Ajouter"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal d'ajout / édition d'étiquette */}
       <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
