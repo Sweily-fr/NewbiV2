@@ -99,7 +99,7 @@ function entrySubtitle(entry) {
   const { event } = entry;
   const filingSite = entryFilingSite(entry);
   if (filingSite) {
-    return filingSite.label.replace("Déclarer sur ", "À déposer sur ");
+    return `À déposer sur ${filingSite.site}`;
   }
   if (!entry.time) return event.location || "Toute la journée";
   return [event.location, formatDuration(event.start, event.end)]

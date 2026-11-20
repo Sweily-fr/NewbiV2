@@ -476,10 +476,12 @@ export function linkedItemExternalUrl(item) {
 export const FILING_SITES = {
   VAT: {
     url: "https://cfspro.impots.gouv.fr/mire/accueil.do",
+    site: "impots.gouv.fr",
     label: "Déclarer sur impots.gouv.fr",
   },
   URSSAF: {
     url: "https://www.autoentrepreneur.urssaf.fr/portail/accueil.html",
+    site: "autoentrepreneur.urssaf.fr",
     label: "Déclarer sur autoentrepreneur.urssaf.fr",
   },
 };

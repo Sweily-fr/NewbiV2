@@ -392,25 +392,32 @@ export function EventDialog({
     }
   };
 
+  // Encadré de la déclaration : même mise en page pour la TVA et l'Urssaf
+  // (site de dépôt en petit sous le titre, bouton court à droite)
   const declarationBanner = filingSite && declarationPreset && (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 px-4 py-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <Landmark
-          className="h-4 w-4 shrink-0 text-[#5a50ff]"
-          aria-hidden="true"
-        />
-        <span className="text-sm">{declarationPreset.label}</span>
+    <div className="flex items-center gap-3 rounded-xl border bg-muted/30 px-4 py-3">
+      <Landmark
+        className="h-4 w-4 shrink-0 text-[#5a50ff]"
+        aria-hidden="true"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">
+          {declarationPreset.label}
+        </p>
+        <p className="text-muted-foreground truncate text-xs">
+          À déposer sur {filingSite.site}
+        </p>
       </div>
       <Button
         asChild
         size="sm"
         variant="outline"
-        className="h-7 gap-1.5 text-xs"
+        className="h-8 shrink-0 gap-1.5 text-xs"
       >
         <a href={filingSite.url} target="_blank" rel="noopener noreferrer">
-          {filingSite.label}
+          Déclarer
           <ExternalLink className="size-3.5" aria-hidden="true" />
-          <span className="sr-only">(nouvel onglet)</span>
+          <span className="sr-only">: {filingSite.label} (nouvel onglet)</span>
         </a>
       </Button>
     </div>
