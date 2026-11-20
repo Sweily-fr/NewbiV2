@@ -52,9 +52,9 @@ const DEFAULT_CONTENT_TOP = 32;
  * @param {Function} onEventSelect
  * @param {Function} onEventCreate
  * @param {Date|null} selectedDay - jour affiché dans le volet du jour
- * @param {Function} onDaySelect - avec le volet : un clic sur une case
- *   choisit le jour, un double clic crée un événement ; sans volet, un clic
- *   crée un événement
+ * @param {Function} onDaySelect - avec le volet : le jour cliqué devient
+ *   celui du volet. Un clic sur une case ouvre toujours la fenêtre d'un
+ *   nouvel événement ce jour-là.
  */
 export const MonthView = React.memo(function MonthView({
   currentDate,
@@ -205,39 +205,26 @@ export const MonthView = React.memo(function MonthView({
                     data-outside-cell={!isCurrentMonth || undefined}
                     data-selected={isSelected || undefined}
                   >
+                    {/* Un clic sur le jour : fenêtre d'un nouvel événement ce
+                        jour-là (et le jour passe dans le volet) */}
                     <DroppableCell
                       id={cellId}
                       date={day}
-                      onClick={
-                        onDaySelect
-                          ? () => onDaySelect(day)
-                          : () => createOn(day)
-                      }
-                      onDoubleClick={
-                        onDaySelect ? () => createOn(day) : undefined
-                      }
+                      onClick={() => {
+                        onDaySelect?.(day);
+                        createOn(day);
+                      }}
                     >
                       {/* Jour férié : son nom, discret, à côté du numéro */}
                       <div className="flex min-w-0 items-center gap-1.5">
-                        {onDaySelect ? (
-                          // Numéro cliquable : choisir le jour au clavier
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDaySelect(day);
-                            }}
-                            aria-label={`Voir le ${dayLabel}`}
-                            aria-pressed={isSelected}
-                            className="hover:bg-muted focus-visible:ring-ring group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                          >
-                            {format(day, "d")}
-                          </button>
-                        ) : (
-                          <div className="group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm">
-                            {format(day, "d")}
-                          </div>
-                        )}
+                        {/* Numéro : même action, au clavier aussi */}
+                        <button
+                          type="button"
+                          aria-label={`Nouvel événement le ${dayLabel}`}
+                          className="hover:bg-muted focus-visible:ring-ring group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          {format(day, "d")}
+                        </button>
                         {frenchHolidayName(day) && (
                           <span
                             className="text-muted-foreground mt-1 truncate text-[10px] sm:text-xs"

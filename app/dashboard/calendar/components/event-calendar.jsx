@@ -25,6 +25,7 @@ import {
   Link2,
   MoreHorizontal,
   Palette,
+  PanelRightOpen,
   PlusIcon,
   RefreshCw,
 } from "lucide-react";
@@ -107,6 +108,8 @@ import {
 
 // « Tâches de » : « all » ou l'identifiant d'un membre
 const TASK_ASSIGNEE_KEY = "newbi:calendar:task-assignee";
+// Volet du jour masqué ou affiché (choix gardé dans le navigateur)
+const DAY_PANEL_KEY = "newbi:calendar:day-panel";
 const NO_HIDDEN_SOURCES = new Set();
 const NO_MEMBERS = [];
 // Volet du jour à droite de la vue mois, à partir de cette largeur
@@ -137,6 +140,9 @@ export function EventCalendar({
   const [feedOpen, setFeedOpen] = useState(false);
   // Un élément du menu ouvre une fenêtre : le focus ne revient pas au bouton
   const openingFromMenuRef = useRef(false);
+  // Volet du jour masqué par la personne (plus de place pour la grille,
+  // barre de gauche ouverte par exemple)
+  const [dayPanelHidden, setDayPanelHidden] = useState(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   // Échéance d'une autre page ouverte dans sa fiche
@@ -174,8 +180,18 @@ export function EventCalendar({
     setHiddenSources(readHiddenSources());
     try {
       setTaskAssignee(localStorage.getItem(TASK_ASSIGNEE_KEY) || "all");
+      setDayPanelHidden(localStorage.getItem(DAY_PANEL_KEY) === "hidden");
     } catch {
-      // Stockage indisponible : les tâches de tout le monde
+      // Stockage indisponible : les tâches de tout le monde, volet affiché
+    }
+  }, []);
+
+  const toggleDayPanel = useCallback((hidden) => {
+    setDayPanelHidden(hidden);
+    try {
+      localStorage.setItem(DAY_PANEL_KEY, hidden ? "hidden" : "visible");
+    } catch {
+      // Stockage indisponible : choix non retenu
     }
   }, []);
 
@@ -474,7 +490,10 @@ export function EventCalendar({
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  const showDayPanel = view === "mois" && viewsWidth >= DAY_PANEL_MIN_WIDTH;
+  // Le volet tient à côté de la grille ; affiché sauf si la personne l'a
+  // masqué
+  const dayPanelFits = view === "mois" && viewsWidth >= DAY_PANEL_MIN_WIDTH;
+  const showDayPanel = dayPanelFits && !dayPanelHidden;
 
   // Jour du volet : celui choisi s'il est dans la grille affichée (jours des
   // mois voisins compris), sinon aujourd'hui (mois en cours) ou le 1er
@@ -967,6 +986,20 @@ export function EventCalendar({
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Volet du jour masqué : bouton pour le réafficher */}
+            {dayPanelFits && dayPanelHidden && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Afficher le volet du jour"
+                title="Afficher le volet du jour"
+                onClick={() => toggleDayPanel(false)}
+              >
+                <PanelRightOpen className="size-4" aria-hidden="true" />
+              </Button>
+            )}
+
             {/* Options : étiquettes, calendriers connectés, synchronisation,
                 abonnement depuis un autre agenda */}
             <DropdownMenu modal={false}>
@@ -1123,6 +1156,7 @@ export function EventCalendar({
               entries={dayPanelEntries}
               nextDays={nextDays}
               onSelectDay={selectPanelDay}
+              onHide={() => toggleDayPanel(true)}
               loading={linkedLoading && dayPanelEntries.length === 0}
               onOpen={openDayEntry}
               onCreate={canCreateEvents ? createOnPanelDay : undefined}

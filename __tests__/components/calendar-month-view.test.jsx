@@ -48,7 +48,7 @@ describe("vue mois du calendrier", () => {
     ]);
   });
 
-  it("avec le volet : le numéro choisit le jour, le double clic crée", () => {
+  it("un clic sur un jour ouvre la création et passe le jour au volet", () => {
     const onDaySelect = vi.fn();
     const onEventCreate = vi.fn();
     renderMonth({
@@ -57,21 +57,19 @@ describe("vue mois du calendrier", () => {
       onEventCreate,
     });
 
-    const selected = screen.getByRole("button", {
-      name: /^Voir le vendredi 20 novembre/,
+    // Le jour choisi a un contour (s'il n'est pas aujourd'hui)
+    const friday = screen.getByRole("button", {
+      name: /^Nouvel événement le vendredi 20 novembre/,
     });
-    expect(selected).toHaveAttribute("aria-pressed", "true");
+    expect(friday.closest("div.group")).toHaveAttribute("data-selected");
 
-    const monday = screen.getByRole("button", {
-      name: /^Voir le lundi 23 novembre/,
-    });
-    expect(monday).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(monday);
+    // Numéro (clavier compris) ou case : nouvel événement ce jour-là, à 9 h
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /^Nouvel événement le lundi 23 novembre/,
+      }),
+    );
     expect(onDaySelect).toHaveBeenCalledWith(new Date(2026, 10, 23));
-    expect(onEventCreate).not.toHaveBeenCalled();
-
-    // Double clic sur la case : nouvel événement ce jour-là, à 9 h
-    fireEvent.doubleClick(monday);
     expect(onEventCreate).toHaveBeenCalledWith(new Date(2026, 10, 23, 9, 0, 0));
   });
 
@@ -126,7 +124,6 @@ describe("vue mois du calendrier", () => {
   it("sans volet : un clic sur une case crée un événement", () => {
     const onEventCreate = vi.fn();
     const { container } = renderMonth({ onEventCreate });
-    expect(screen.queryByRole("button", { name: /^Voir le/ })).toBeNull();
     const cells = container.querySelectorAll("div.group");
     // 1re case : lundi 26 octobre (jour du mois précédent, cliquable aussi)
     fireEvent.click(cells[0].firstChild);
@@ -148,7 +145,9 @@ describe("vue mois du calendrier", () => {
       ],
     });
     // 26 octobre → 6 décembre : 6 semaines
-    const days = screen.getAllByRole("button", { name: /^Voir le/ });
+    const days = screen.getAllByRole("button", {
+      name: /^Nouvel événement le/,
+    });
     expect(days).toHaveLength(42);
     expect(days[0]).toHaveTextContent(/^26$/);
     // Barre du vendredi 30 octobre au dimanche 1er novembre, puis le lundi 2

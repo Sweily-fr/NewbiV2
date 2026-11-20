@@ -2,7 +2,7 @@
 
 import { format, isSameYear, isToday } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Plus } from "lucide-react";
+import { PanelRightClose, Plus } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -31,6 +31,7 @@ export function CalendarDayPanel({
   onOpen,
   onCreate,
   onSelectDay,
+  onHide,
   className,
 }) {
   const today = isToday(date);
@@ -46,7 +47,20 @@ export function CalendarDayPanel({
       aria-label={`Journée du ${fullDate}`}
       className={cn("flex min-h-0 flex-col", className)}
     >
-      <div className="px-4 pt-4 pb-2">
+      <div className={cn("relative px-4 pt-4 pb-2", onHide && "pr-10")}>
+        {/* Masquer le volet : la grille prend toute la largeur */}
+        {onHide && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onHide}
+            aria-label="Masquer le volet du jour"
+            title="Masquer le volet du jour"
+            className="text-muted-foreground hover:text-foreground absolute top-3 right-2 size-7"
+          >
+            <PanelRightClose className="size-4" aria-hidden="true" />
+          </Button>
+        )}
         <h3
           className={cn(
             "text-sm font-medium",

@@ -157,6 +157,22 @@ describe("volet du jour du calendrier", () => {
     expect(onSelectDay).toHaveBeenCalledWith("2026-11-23");
   });
 
+  it("« Masquer le volet du jour » : la grille reprend la place", () => {
+    const onHide = vi.fn();
+    render(
+      <CalendarDayPanel
+        date={today}
+        entries={[]}
+        onOpen={() => {}}
+        onHide={onHide}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Masquer le volet du jour" }),
+    );
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
   it("autre jour sans rien : date en titre, message, pas d'ajout sans le droit", () => {
     const other = new Date(today.getFullYear(), 10, 11);
     render(<CalendarDayPanel date={other} entries={[]} onOpen={() => {}} />);
