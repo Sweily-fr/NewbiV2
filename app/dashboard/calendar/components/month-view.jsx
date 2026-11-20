@@ -252,17 +252,25 @@ export const MonthView = React.memo(function MonthView({
                                 isFirstDay={isFirstDay}
                                 isLastDay={isLastDay}
                               >
-                                <div className="invisible" aria-hidden={true}>
-                                  {!event.allDay && (
-                                    <span>
-                                      {format(
-                                        new Date(event.start),
-                                        "h:mm",
-                                      )}{" "}
-                                    </span>
-                                  )}
-                                  {event.title}
-                                </div>
+                                {dayIndex === 0 ? (
+                                  // Lundi : le titre est rappelé en début de
+                                  // semaine sur la barre de l'événement
+                                  <span className="truncate">
+                                    {event.title}
+                                  </span>
+                                ) : (
+                                  <div className="invisible" aria-hidden={true}>
+                                    {!event.allDay && (
+                                      <span>
+                                        {format(
+                                          new Date(event.start),
+                                          "h:mm",
+                                        )}{" "}
+                                      </span>
+                                    )}
+                                    {event.title}
+                                  </div>
+                                )}
                               </EventItem>
                             </div>
                           );
