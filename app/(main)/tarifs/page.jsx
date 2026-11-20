@@ -19,6 +19,10 @@ const pricingJsonLd = {
   description:
     "Plateforme tout-en-un de gestion pour indépendants et petites équipes : devis, factures, clients, banque et facturation électronique.",
   url: `${SITE_URL}/tarifs`,
+  // Obligatoire pour les fiches de marchand : sans image, la Search Console
+  // signalait « Champ "image" manquant » sur cette page (20/11/2026). Visuel
+  // Newbi déjà utilisé pour les partages (847 × 572 px).
+  image: `${SITE_URL}/images/op-newbi.png`,
   brand: { "@type": "Brand", name: "Newbi" },
   offers: [
     {
