@@ -702,7 +702,7 @@ function DashboardContent() {
         {/* Actions rapides (selon l'action « create » du rôle sur chaque module) */}
         {hasQuickActions && (
           // Cadre étroit : grille de boutons de même largeur ; large : en ligne
-          <div className="grid grid-cols-2 gap-2 -mt-2 @3xl/home:flex @3xl/home:flex-wrap @3xl/home:items-center [&>button]:justify-center @3xl/home:[&>button]:justify-start">
+          <div className="grid grid-cols-2 gap-2 @3xl/home:flex @3xl/home:flex-wrap @3xl/home:items-center [&>button]:justify-center @3xl/home:[&>button]:justify-start">
             {canCreateQuotes && (
               <Button
                 variant="primary"
@@ -872,7 +872,7 @@ function DashboardContent() {
           </div>
         </div> */}
         {/* Deux cards KPI */}
-        <div className="flex items-center justify-end mt-6">
+        <div className="flex items-center justify-end">
           {canReadOverview && (
             <Button
               variant="ghost"
