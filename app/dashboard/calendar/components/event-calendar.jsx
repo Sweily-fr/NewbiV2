@@ -520,15 +520,27 @@ export function EventCalendar({
       following.push(day);
     }
     if (!following.length) return [];
-    return buildUpcomingDays({
-      days: following,
-      events,
-      linkedItems: visibleLinkedItems,
-      hiddenSources: activeHiddenSources,
-      linkedUnavailable,
-    })
-      .filter((column) => column.entries.length > 0)
-      .slice(0, 4);
+    return (
+      buildUpcomingDays({
+        days: following,
+        events,
+        linkedItems: visibleLinkedItems,
+        hiddenSources: activeHiddenSources,
+        linkedUnavailable,
+      })
+        // Ce qui commence ce jour-là : la suite d'un événement déjà en
+        // cours n'est pas répétée chaque jour
+        .map((column) => ({
+          ...column,
+          entries: column.entries.filter(
+            (entry) =>
+              entry.type !== "event" ||
+              dateToDay(new Date(entry.event.start)) >= column.day,
+          ),
+        }))
+        .filter((column) => column.entries.length > 0)
+        .slice(0, 4)
+    );
   }, [
     showDayPanel,
     currentDate,
