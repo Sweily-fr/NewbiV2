@@ -37,13 +37,18 @@ export function spansSeveralDays(event) {
  * Barres d'une semaine (weekDays : ses 7 dates, lundi en premier).
  * Chaque barre : { event, lane, from, to, startsHere, endsHere }
  * - from / to : colonnes occupées (0 = lundi) ;
- * - startsHere / endsHere : la barre commence / finit dans la semaine
- *   (bouts arrondis), sinon elle déborde sur la semaine voisine.
+ * - startsHere / endsHere : la barre commence / finit dans les jours
+ *   affichés (bouts arrondis), sinon elle continue au-delà.
+ * - visible : jours affichés { from, to } (AAAA-MM-JJ) ; les jours des mois
+ *   voisins restent vides, la barre s'arrête au bord du mois.
  * Les plus anciennes, puis les plus longues, prennent les premiers couloirs.
  */
-export function layoutWeekBars(weekDays, events) {
-  const first = dateToDay(weekDays[0]);
-  const last = dateToDay(weekDays[weekDays.length - 1]);
+export function layoutWeekBars(weekDays, events, visible = {}) {
+  const weekFirst = dateToDay(weekDays[0]);
+  const weekLast = dateToDay(weekDays[weekDays.length - 1]);
+  const first =
+    visible.from && visible.from > weekFirst ? visible.from : weekFirst;
+  const last = visible.to && visible.to < weekLast ? visible.to : weekLast;
   const column = (day) => differenceInCalendarDays(dayToDate(day), weekDays[0]);
 
   const bars = events
@@ -67,8 +72,8 @@ export function layoutWeekBars(weekDays, events) {
   // Dernière colonne occupée de chaque couloir
   const laneEnds = [];
   const placed = bars.map((bar) => {
-    const from = Math.max(0, column(bar.startDay));
-    const to = Math.min(weekDays.length - 1, column(bar.endDay));
+    const from = Math.max(column(first), column(bar.startDay));
+    const to = Math.min(column(last), column(bar.endDay));
     let lane = laneEnds.findIndex((end) => end < from);
     if (lane === -1) {
       lane = laneEnds.length;

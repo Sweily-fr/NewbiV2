@@ -30,6 +30,7 @@ import { DefaultStartHour } from "./constants";
 import { cn } from "@/src/lib/utils";
 import { frenchHolidayName } from "@/src/utils/french-holidays";
 import { CALENDAR_WEEK_OPTIONS } from "@/src/utils/calendar-linked-items";
+import { dateToDay } from "@/src/utils/recurrenceDays";
 import {
   fitWeek,
   layoutWeekBars,
@@ -85,6 +86,11 @@ export const MonthView = React.memo(function MonthView({
     return result;
   }, [days]);
 
+  // Seuls les jours du mois sont affichés : les cases des mois voisins
+  // restent vides et les barres s'arrêtent au bord du mois
+  const monthFirstDay = dateToDay(startOfMonth(currentDate));
+  const monthLastDay = dateToDay(endOfMonth(currentDate));
+
   // Par semaine : les barres des événements sur plusieurs jours (couloirs)
   // et, pour chaque jour, ses autres éléments (un seul jour) et tout ce
   // qu'il contient (liste de « + N »). Calculé une fois par mois affiché ou
@@ -92,17 +98,22 @@ export const MonthView = React.memo(function MonthView({
   const weekData = useMemo(
     () =>
       weeks.map((week) => ({
-        layout: layoutWeekBars(week, events),
+        layout: layoutWeekBars(week, events, {
+          from: monthFirstDay,
+          to: monthLastDay,
+        }),
         singles: week.map((day) =>
-          sortEvents(
-            getEventsForDay(events, day).filter(
-              (event) => !spansSeveralDays(event),
-            ),
-          ),
+          isSameMonth(day, currentDate)
+            ? sortEvents(
+                getEventsForDay(events, day).filter(
+                  (event) => !spansSeveralDays(event),
+                ),
+              )
+            : [],
         ),
         allEvents: week.map((day) => getAllEventsForDay(events, day)),
       })),
-    [weeks, events],
+    [weeks, events, currentDate, monthFirstDay, monthLastDay],
   );
 
   const handleEventClick = (event, e) => {
@@ -171,31 +182,38 @@ export const MonthView = React.memo(function MonthView({
               {week.map((day, dayIndex) => {
                 const cell = cells[dayIndex];
                 const isCurrentMonth = isSameMonth(day, currentDate);
+                // Jour d'un mois voisin : case vide (quadrillage gardé)
+                if (!isCurrentMonth) {
+                  return (
+                    <div
+                      key={day.toString()}
+                      aria-hidden="true"
+                      className="border-border/70 min-h-0 border-r border-b last:border-r-0"
+                    />
+                  );
+                }
                 const isSelected =
                   Boolean(onDaySelect && selectedDay) &&
                   isSameDay(day, selectedDay);
-                const isWeekend = dayIndex >= 5;
                 const dayLabel = `${format(day, "EEEE d MMMM", { locale: fr })}${
                   isToday(day) ? ", aujourd'hui" : ""
                 }`;
                 const cellId = `month-cell-${day.toISOString()}`;
-                const isReferenceCell = weekIndex === 0 && dayIndex === 0;
+                // Case mesurée (hauteur, haut du contenu) : le 1er du mois,
+                // toujours présent
+                const isReferenceCell = dateToDay(day) === monthFirstDay;
                 const dayEvents = allEvents[dayIndex];
 
                 return (
                   <div
                     key={day.toString()}
                     className={cn(
-                      "group @container/cell border-border/70 data-outside-cell:text-muted-foreground/70 min-h-0 overflow-hidden border-r border-b transition-colors last:border-r-0",
-                      // Jour choisi, puis mois voisin, puis week-end
-                      isSelected
-                        ? "bg-[#5a50ff]/[0.06]"
-                        : (!isCurrentMonth || isWeekend) && "bg-muted/50",
+                      "group @container/cell border-border/70 min-h-0 overflow-hidden border-r border-b transition-colors last:border-r-0",
+                      // Jour choisi : violet très clair ; sinon pas de fond
+                      isSelected && "bg-[#5a50ff]/[0.06]",
                     )}
                     data-today={isToday(day) || undefined}
-                    data-outside-cell={!isCurrentMonth || undefined}
                     data-selected={isSelected || undefined}
-                    data-weekend={isWeekend || undefined}
                   >
                     <DroppableCell
                       id={cellId}

@@ -100,8 +100,42 @@ describe("vue mois du calendrier", () => {
     const { container } = renderMonth({ onEventCreate });
     expect(screen.queryByRole("button", { name: /^Voir le/ })).toBeNull();
     const cells = container.querySelectorAll("div.group");
-    // 1re case : lundi 26 octobre (semaine du 1er novembre)
+    // 1re case du mois : dimanche 1er novembre
     fireEvent.click(cells[0].firstChild);
-    expect(onEventCreate).toHaveBeenCalledWith(new Date(2026, 9, 26, 9, 0, 0));
+    expect(onEventCreate).toHaveBeenCalledWith(new Date(2026, 10, 1, 9, 0, 0));
+  });
+
+  it("seuls les jours du mois : cases des mois voisins vides", () => {
+    const { container } = renderMonth({
+      selectedDay: new Date(2026, 10, 20),
+      onDaySelect: () => {},
+      events: [
+        {
+          id: "pont",
+          title: "Pont de la Toussaint",
+          start: new Date(2026, 9, 30, 9),
+          end: new Date(2026, 10, 2, 18),
+          allDay: false,
+        },
+      ],
+    });
+    const days = screen.getAllByRole("button", { name: /^Voir le/ });
+    expect(days).toHaveLength(30);
+    expect(days[0]).toHaveTextContent(/^1$/);
+    // 6 cases vides avant le 1er (lundi 26 → samedi 31 octobre) et 6 après
+    // le 30 (mardi 1er → dimanche 6 décembre)
+    expect(
+      container.querySelectorAll('[aria-hidden="true"].border-r'),
+    ).toHaveLength(12);
+    // Barre coupée au bord du mois : dimanche 1er (bout gauche à ras,
+    // l'événement a commencé en octobre), puis lundi 2 sur la semaine
+    // suivante
+    const [first, second] = screen
+      .getAllByText(/Pont de la Toussaint/)
+      .map((title) => title.closest("div.absolute"));
+    expect(first.style.left).toBe("calc(6 * 100% / 7)");
+    expect(first.style.width).toBe("calc(1 * 100% / 7)");
+    expect(second.style.left).toBe("calc(0 * 100% / 7)");
+    expect(second.style.width).toBe("calc(1 * 100% / 7)");
   });
 });

@@ -80,6 +80,20 @@ describe("barres d'une semaine", () => {
     });
   });
 
+  it("jours affichés : la barre s'arrête au bord du mois", () => {
+    const { bars } = layoutWeekBars(
+      WEEK,
+      [event("pont", at("2026-11-12"), at("2026-11-19", "18:00"))],
+      { from: "2026-11-18", to: "2026-11-30" },
+    );
+    expect(bars[0]).toMatchObject({
+      from: 2,
+      to: 3,
+      startsHere: false,
+      endsHere: true,
+    });
+  });
+
   it("les éléments d'un seul jour ne sont pas des barres", () => {
     const { bars } = layoutWeekBars(WEEK, [
       event("rdv", at("2026-11-18", "09:00"), at("2026-11-18", "10:00")),
