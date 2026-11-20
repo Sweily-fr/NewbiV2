@@ -93,7 +93,7 @@ export function EmailReminderToggle({
   // Ligne de la fenêtre d'événement : l'icône est portée par la fenêtre
   return (
     <div>
-      <div className="flex min-h-10 items-center justify-between gap-3">
+      <div className="flex min-h-12 items-center justify-between gap-3">
         <Label
           htmlFor="email-reminder"
           className="cursor-pointer text-sm font-normal"
@@ -111,7 +111,7 @@ export function EmailReminderToggle({
       </div>
 
       {enabled && (
-        <div className="space-y-2 pb-2.5">
+        <div className="space-y-2 pb-3">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Select
               value={anticipation || "none"}

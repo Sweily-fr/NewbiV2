@@ -2,11 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlignLeft,
   Bell,
   Check,
   ChevronDown,
-  Clock,
   ExternalLink,
   Landmark,
   Loader2,
@@ -146,12 +144,16 @@ const ROW_BUTTON =
 const PLACEHOLDER =
   "placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)]";
 
+// Petit intitulé de section (« Début », « Fin », « Description »)
+const SECTION_LABEL =
+  "text-muted-foreground text-[11px] font-medium tracking-wide uppercase";
+
 /** Ligne de la fenêtre : icône à gauche, champ ou valeur à droite. */
 function PropertyRow({ icon: Icon, children, alignTop = false }) {
   return (
     <div
       className={cn(
-        "flex min-h-10 gap-3",
+        "flex min-h-12 gap-3",
         alignTop ? "items-start" : "items-center",
       )}
     >
@@ -159,11 +161,62 @@ function PropertyRow({ icon: Icon, children, alignTop = false }) {
         aria-hidden="true"
         className={cn(
           "text-muted-foreground size-4 shrink-0",
-          alignTop && "mt-3",
+          alignTop && "mt-4",
         )}
       />
       <div className="min-w-0 flex-1">{children}</div>
     </div>
+  );
+}
+
+/** Case « Début » ou « Fin » : date et heure. */
+function DateTile({ label, date, picker, time }) {
+  return (
+    <div className="bg-muted/40 min-w-0 rounded-xl border px-3 py-2.5">
+      <p className={SECTION_LABEL}>{label}</p>
+      <div className="mt-1 flex min-h-8 items-center justify-between gap-2 text-sm font-medium">
+        {picker || <span className="whitespace-nowrap">{formatDay(date)}</span>}
+        {typeof time === "string" ? (
+          <span className="tabular-nums">{time}</span>
+        ) : (
+          time
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Date cliquable : calendrier dans un menu. */
+function DatePickerButton({
+  label,
+  date,
+  open,
+  onOpenChange,
+  onSelect,
+  disabled,
+}) {
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`${label} : ${format(date, "EEEE d MMMM yyyy", { locale: fr })}`}
+          className={cn(ROW_BUTTON, "-ml-1 whitespace-nowrap")}
+        >
+          {formatDay(date)}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-2" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          defaultMonth={date}
+          locale={fr}
+          disabled={disabled}
+          onSelect={onSelect}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -175,7 +228,7 @@ function TimeSelect({ value, onChange, options, label }) {
         variant="ghost"
         size="sm"
         aria-label={label}
-        className="bg-muted hover:bg-muted/70 w-auto gap-0 px-2 tabular-nums [&>svg]:hidden"
+        className="bg-background border-border hover:bg-accent w-auto gap-0 border px-2 tabular-nums [&>svg]:hidden"
       >
         <SelectValue />
       </SelectTrigger>
@@ -580,17 +633,6 @@ export function EventDialog({
     ? "Votre rôle permet de consulter les événements, pas de les modifier"
     : `Synchronisé depuis ${providerLabels[eventSource] || "un calendrier externe"}`;
 
-  // Date et heures en une ligne (lecture seule)
-  const whenLabel = allDay
-    ? `${
-        multiDay
-          ? `${formatDay(startDate)} → ${formatDay(endDate)}`
-          : formatDay(startDate)
-      } · Toute la journée`
-    : multiDay
-      ? `${formatDay(startDate)} ${formatHour(startDate)} → ${formatDay(endDate)} ${formatHour(endDate)}`
-      : `${formatDay(startDate)} · ${formatHour(startDate)} → ${formatHour(endDate)}`;
-
   // Encadré de la déclaration : site où la déposer et lien direct. Le site
   // seul en titre : « autoentrepreneur.urssaf.fr » tient sur une ligne
   const declarationBanner = filingSite && (
@@ -662,16 +704,16 @@ export function EventDialog({
           </SheetHeader>
 
           {/* En-tête : couleur et titre */}
-          <div className="flex items-start gap-3 py-0 pt-4 pr-12 pl-6">
+          <div className="flex items-start gap-3 pt-6 pr-12 pl-6">
             <span
               aria-hidden="true"
-              className="mt-3 size-3 shrink-0 rounded-full transition-colors"
+              className="mt-3.5 size-3 shrink-0 rounded-full transition-colors"
               style={{ backgroundColor: color }}
             />
             <div className="min-w-0 flex-1">
               {isReadOnly ? (
                 <>
-                  <p className="py-1 text-lg leading-7 font-medium break-words">
+                  <p className="py-1 text-xl leading-8 font-semibold break-words">
                     {title || "(sans titre)"}
                   </p>
                   <SheetDescription className="text-xs">
@@ -693,7 +735,7 @@ export function EventDialog({
                       }
                     }}
                     placeholder="Ajouter un titre"
-                    className="h-auto py-1 text-lg leading-7"
+                    className="h-auto py-1 text-xl leading-8 font-semibold"
                   />
                   {fieldErrors.title && (
                     <p className="text-xs text-red-500">{fieldErrors.title}</p>
@@ -703,7 +745,9 @@ export function EventDialog({
             </div>
           </div>
 
-          <div className="flex-1 space-y-4 overflow-y-auto px-6 pt-3 pb-5">
+          {/* Corps : la description prend la place restante, rien ne reste
+              vide entre les champs et le pied */}
+          <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 pt-4 pb-6">
             {error && (
               <div
                 role="alert"
@@ -718,7 +762,7 @@ export function EventDialog({
               // valeurs en texte simple, sans champ grisé
               <>
                 {selectedCustomType && (
-                  <span className="text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs">
+                  <span className="text-muted-foreground inline-flex items-center gap-1.5 self-start rounded-full border px-2.5 py-1 text-xs">
                     <span
                       aria-hidden="true"
                       className="size-2 rounded-full"
@@ -730,40 +774,59 @@ export function EventDialog({
 
                 {declarationBanner}
 
-                <div className="border-y py-1">
-                  <PropertyRow icon={Clock}>
-                    <p className="text-sm">{whenLabel}</p>
-                  </PropertyRow>
-
-                  {location && (
-                    <PropertyRow icon={MapPin}>
-                      <p className="text-sm break-words">{location}</p>
-                    </PropertyRow>
-                  )}
-
-                  {/* Étiquette connue seulement (couleur d'un calendrier
-                      externe sans étiquette : rien à afficher) */}
-                  {currentLabel && (
-                    <PropertyRow icon={Tag}>
-                      <span className="inline-flex items-center gap-2 text-sm">
-                        <span
-                          aria-hidden="true"
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: color }}
-                        />
-                        {getLabelForColor(color)}
-                      </span>
-                    </PropertyRow>
-                  )}
-
-                  {description && (
-                    <PropertyRow icon={AlignLeft} alignTop>
-                      <p className="py-2.5 text-sm leading-5 break-words whitespace-pre-wrap">
-                        {description}
-                      </p>
-                    </PropertyRow>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <DateTile
+                      label="Début"
+                      date={startDate}
+                      time={allDay ? null : formatHour(startDate)}
+                    />
+                    <DateTile
+                      label="Fin"
+                      date={endDate}
+                      time={allDay ? null : formatHour(endDate)}
+                    />
+                  </div>
+                  {allDay && (
+                    <p className="text-muted-foreground px-1 text-sm">
+                      Toute la journée
+                    </p>
                   )}
                 </div>
+
+                {(location || currentLabel) && (
+                  <div className="divide-y border-y">
+                    {location && (
+                      <PropertyRow icon={MapPin}>
+                        <p className="py-3 text-sm break-words">{location}</p>
+                      </PropertyRow>
+                    )}
+
+                    {/* Étiquette connue seulement (couleur d'un calendrier
+                        externe sans étiquette : rien à afficher) */}
+                    {currentLabel && (
+                      <PropertyRow icon={Tag}>
+                        <span className="inline-flex items-center gap-2 text-sm">
+                          <span
+                            aria-hidden="true"
+                            className="size-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                          {getLabelForColor(color)}
+                        </span>
+                      </PropertyRow>
+                    )}
+                  </div>
+                )}
+
+                {description && (
+                  <div className="space-y-2">
+                    <p className={SECTION_LABEL}>Description</p>
+                    <p className="bg-muted/30 rounded-xl border px-3 py-2.5 text-sm leading-5 break-words whitespace-pre-wrap">
+                      {description}
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -859,154 +922,79 @@ export function EventDialog({
 
                 {declarationBanner}
 
-                <div className="border-y py-1">
-                  {/* Date et heures */}
-                  <PropertyRow icon={Clock}>
-                    <div className="flex items-center gap-3">
-                      {/* Deux groupes insécables, « début » et « → fin » : la
-                          ligne se coupe avant la flèche */}
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0.5">
-                        <span className="inline-flex items-center gap-1">
-                          <Popover
-                            open={startDateOpen}
-                            onOpenChange={setStartDateOpen}
-                          >
-                            <PopoverTrigger asChild>
-                              <button
-                                type="button"
-                                aria-label={`Date de début : ${format(startDate, "EEEE d MMMM yyyy", { locale: fr })}`}
-                                className={cn(ROW_BUTTON, "-ml-1")}
-                              >
-                                {formatDay(startDate)}
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-2"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={startDate}
-                                defaultMonth={startDate}
-                                locale={fr}
-                                onSelect={handleStartDateSelect}
-                              />
-                              {!multiDay && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEndDate(addDays(startDate, 1));
-                                    setError(null);
-                                    setStartDateOpen(false);
-                                  }}
-                                  className="text-muted-foreground mt-1 h-8 w-full gap-1.5 text-xs"
-                                >
-                                  <Plus
-                                    className="size-3.5"
-                                    aria-hidden="true"
-                                  />
-                                  Sur plusieurs jours
-                                </Button>
-                              )}
-                            </PopoverContent>
-                          </Popover>
-                          {!allDay && (
-                            <TimeSelect
-                              value={startTime}
-                              onChange={handleStartTimeChange}
-                              options={timeOptions}
-                              label="Heure de début"
-                            />
-                          )}
-                        </span>
-                        {(multiDay || !allDay) && (
-                          <span className="inline-flex items-center gap-1">
-                            <span
-                              aria-hidden="true"
-                              className="text-muted-foreground px-0.5 text-xs"
-                            >
-                              →
-                            </span>
-                            {multiDay && (
-                              <Popover
-                                open={endDateOpen}
-                                onOpenChange={setEndDateOpen}
-                              >
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    aria-label={`Date de fin : ${format(endDate, "EEEE d MMMM yyyy", { locale: fr })}`}
-                                    className={ROW_BUTTON}
-                                  >
-                                    {formatDay(endDate)}
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                  className="w-auto p-2"
-                                  align="start"
-                                >
-                                  <Calendar
-                                    mode="single"
-                                    selected={endDate}
-                                    defaultMonth={endDate}
-                                    locale={fr}
-                                    disabled={{ before: startDate }}
-                                    onSelect={handleEndDateSelect}
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setEndDate(new Date(startDate));
-                                      setError(null);
-                                      setEndDateOpen(false);
-                                    }}
-                                    className="text-muted-foreground mt-1 h-8 w-full text-xs"
-                                  >
-                                    Sur un seul jour
-                                  </Button>
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                            {!allDay && (
-                              <TimeSelect
-                                value={endTime}
-                                onChange={(value) => {
-                                  setEndTime(value);
-                                  setError(null);
-                                }}
-                                options={timeOptions}
-                                label="Heure de fin"
-                              />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Label
-                          htmlFor="event-all-day"
-                          className="text-muted-foreground cursor-pointer text-xs font-normal"
-                        >
-                          Journée
-                        </Label>
-                        <Switch
-                          id="event-all-day"
-                          size="sm"
-                          className="data-[state=checked]:bg-[#5a50ff]"
-                          aria-label="Toute la journée"
-                          checked={allDay}
-                          onCheckedChange={(checked) => {
-                            setAllDay(checked === true);
-                            setError(null);
-                          }}
+                {/* Début et fin, toujours affichés */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <DateTile
+                      label="Début"
+                      picker={
+                        <DatePickerButton
+                          label="Date de début"
+                          date={startDate}
+                          open={startDateOpen}
+                          onOpenChange={setStartDateOpen}
+                          onSelect={handleStartDateSelect}
                         />
-                      </div>
-                    </div>
-                  </PropertyRow>
+                      }
+                      time={
+                        !allDay && (
+                          <TimeSelect
+                            value={startTime}
+                            onChange={handleStartTimeChange}
+                            options={timeOptions}
+                            label="Heure de début"
+                          />
+                        )
+                      }
+                    />
+                    <DateTile
+                      label="Fin"
+                      picker={
+                        <DatePickerButton
+                          label="Date de fin"
+                          date={endDate}
+                          open={endDateOpen}
+                          onOpenChange={setEndDateOpen}
+                          onSelect={handleEndDateSelect}
+                          disabled={{ before: startDate }}
+                        />
+                      }
+                      time={
+                        !allDay && (
+                          <TimeSelect
+                            value={endTime}
+                            onChange={(value) => {
+                              setEndTime(value);
+                              setError(null);
+                            }}
+                            options={timeOptions}
+                            label="Heure de fin"
+                          />
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <Label
+                      htmlFor="event-all-day"
+                      className="cursor-pointer text-sm font-normal"
+                    >
+                      Toute la journée
+                    </Label>
+                    <Switch
+                      id="event-all-day"
+                      size="sm"
+                      className="data-[state=checked]:bg-[#5a50ff]"
+                      checked={allDay}
+                      onCheckedChange={(checked) => {
+                        setAllDay(checked === true);
+                        setError(null);
+                      }}
+                    />
+                  </div>
+                </div>
 
+                <div className="divide-y border-y">
                   {/* Lieu : sans objet pour une déclaration (gardé s'il est
                       déjà rempli) */}
                   {(!declarationKind || location) && (
@@ -1027,7 +1015,7 @@ export function EventDialog({
                           }
                         }}
                         placeholder="Ajouter un lieu"
-                        className="h-10"
+                        className="h-12"
                       />
                       {fieldErrors.location && (
                         <p className="pb-1 text-xs text-red-500">
@@ -1042,7 +1030,7 @@ export function EventDialog({
                     icon={Users}
                     alignTop={assignedMembers.length > 0}
                   >
-                    <div className={cn(assignedMembers.length > 0 && "py-2")}>
+                    <div className={cn(assignedMembers.length > 0 && "py-3")}>
                       <MemberSelector
                         selectedMembers={assignedMembers}
                         onMembersChange={setAssignedMembers}
@@ -1154,36 +1142,37 @@ export function EventDialog({
                       allDay={allDay}
                     />
                   </PropertyRow>
+                </div>
 
-                  {/* Description */}
-                  <PropertyRow icon={AlignLeft} alignTop>
-                    <Textarea
-                      id="event-description"
-                      aria-label="Description"
-                      aria-invalid={Boolean(fieldErrors.description)}
-                      value={description}
-                      onChange={(e) => {
-                        setDescription(e.target.value);
-                        if (fieldErrors.description) {
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            description: null,
-                          }));
-                        }
-                      }}
-                      placeholder="Ajouter une description"
-                      rows={1}
-                      className={cn(
-                        "field-sizing-content max-h-60 min-h-10 resize-none rounded-none border-0 bg-transparent px-0 py-2.5 leading-5 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
-                        PLACEHOLDER,
-                      )}
-                    />
-                    {fieldErrors.description && (
-                      <p className="pb-1 text-xs text-red-500">
-                        {fieldErrors.description}
-                      </p>
+                {/* Description : occupe la place restante de la fenêtre */}
+                <div className="flex min-h-40 flex-1 flex-col gap-2">
+                  <Label htmlFor="event-description" className={SECTION_LABEL}>
+                    Description
+                  </Label>
+                  <Textarea
+                    id="event-description"
+                    aria-invalid={Boolean(fieldErrors.description)}
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      if (fieldErrors.description) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          description: null,
+                        }));
+                      }
+                    }}
+                    placeholder="Ajouter une description"
+                    className={cn(
+                      "bg-muted/30 min-h-28 flex-1 resize-none rounded-xl border px-3 py-2.5 text-sm leading-5 shadow-none focus-visible:border-[#5a50ff]/40 focus-visible:ring-2 focus-visible:ring-[#5a50ff]/15 focus-visible:ring-offset-0",
+                      PLACEHOLDER,
                     )}
-                  </PropertyRow>
+                  />
+                  {fieldErrors.description && (
+                    <p className="text-xs text-red-500">
+                      {fieldErrors.description}
+                    </p>
+                  )}
                 </div>
               </>
             )}

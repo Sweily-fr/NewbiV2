@@ -60,6 +60,7 @@ const YEAR = new Date().getFullYear();
 const at = (day, hours = 0, minutes = 0) =>
   new Date(YEAR, 10, day, hours, minutes);
 const dayLabel = (date) => format(date, "EEE d MMM", { locale: fr });
+const longDay = (date) => format(date, "EEEE d MMMM", { locale: fr });
 
 const draft = {
   id: "",
@@ -115,6 +116,9 @@ describe("fenêtre d'événement", () => {
           `Date de début : ${format(at(20), "EEEE d MMMM", { locale: fr })}`,
         ),
       }),
+    ).toHaveTextContent(dayLabel(at(20)));
+    expect(
+      screen.getByRole("button", { name: /^Date de fin/ }),
     ).toHaveTextContent(dayLabel(at(20)));
     expect(
       screen.getByRole("combobox", { name: "Heure de début" }),
@@ -201,23 +205,30 @@ describe("fenêtre d'événement", () => {
     ).toBeInTheDocument();
   });
 
-  it("« Sur plusieurs jours » ajoute une date de fin, « Sur un seul jour » la retire", () => {
+  it("début et fin toujours affichés ; un nouveau début garde le nombre de jours", () => {
     renderDialog();
-    expect(screen.queryByRole("button", { name: /^Date de fin/ })).toBeNull();
+    const start = () => screen.getByRole("button", { name: /^Date de début/ });
+    const end = () => screen.getByRole("button", { name: /^Date de fin/ });
+    expect(start()).toHaveTextContent(dayLabel(at(20)));
+    expect(end()).toHaveTextContent(dayLabel(at(20)));
 
-    fireEvent.click(screen.getByRole("button", { name: /^Date de début/ }));
+    // Fin le 22 : l'événement dure trois jours
+    fireEvent.click(end());
     fireEvent.click(
-      screen.getByRole("button", { name: "Sur plusieurs jours" }),
+      screen.getByRole("button", { name: new RegExp(longDay(at(22))) }),
     );
-    const end = screen.getByRole("button", { name: /^Date de fin/ });
-    expect(end).toHaveTextContent(dayLabel(at(21)));
+    expect(end()).toHaveTextContent(dayLabel(at(22)));
 
-    fireEvent.click(end);
-    fireEvent.click(screen.getByRole("button", { name: "Sur un seul jour" }));
-    expect(screen.queryByRole("button", { name: /^Date de fin/ })).toBeNull();
+    // Début le 24 : la fin suit, le 26
+    fireEvent.click(start());
+    fireEvent.click(
+      screen.getByRole("button", { name: new RegExp(longDay(at(24))) }),
+    );
+    expect(start()).toHaveTextContent(dayLabel(at(24)));
+    expect(end()).toHaveTextContent(dayLabel(at(26)));
   });
 
-  it("lecture seule : date et heures en une ligne, raison affichée", () => {
+  it("lecture seule : début et fin en cases, raison affichée", () => {
     renderDialog({
       canEdit: false,
       event: {
@@ -229,9 +240,9 @@ describe("fenêtre d'événement", () => {
       },
     });
     expect(screen.getByText("Point client")).toBeInTheDocument();
-    expect(
-      screen.getByText(`${dayLabel(at(20))} · 14:00 → 15:00`),
-    ).toBeInTheDocument();
+    expect(screen.getAllByText(dayLabel(at(20)))).toHaveLength(2);
+    expect(screen.getByText("14:00")).toBeInTheDocument();
+    expect(screen.getByText("15:00")).toBeInTheDocument();
     expect(screen.getByText("Paris 11e")).toBeInTheDocument();
     expect(screen.getByText("Rouge")).toBeInTheDocument();
     expect(
@@ -255,9 +266,10 @@ describe("fenêtre d'événement", () => {
         source: "google",
       },
     });
-    expect(
-      screen.getByText(`${dayLabel(at(20))} · Toute la journée`),
-    ).toBeInTheDocument();
+    // Début et fin le 20, pas le 21
+    expect(screen.getAllByText(dayLabel(at(20)))).toHaveLength(2);
+    expect(screen.queryByText(dayLabel(at(21)))).toBeNull();
+    expect(screen.getByText("Toute la journée")).toBeInTheDocument();
     expect(
       screen.getByText("Synchronisé depuis Google Calendar"),
     ).toBeInTheDocument();
