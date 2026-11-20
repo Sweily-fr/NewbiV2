@@ -3,18 +3,21 @@ import {
   DECLARATION_PRESETS,
   declarationFilingSite,
   declarationPresetsFor,
+  recommendedDeclarationKinds,
 } from "@/src/utils/declaration-events";
 
-const kinds = (org) => declarationPresetsFor(org).map((p) => p.kind);
+const kinds = (org) => recommendedDeclarationKinds(org);
+const offered = (org) =>
+  declarationPresetsFor(org).map((p) => `${p.kind}${p.recommended ? "*" : ""}`);
 
 describe("événements Newbi de déclaration", () => {
-  it("SAS : la déclaration de TVA", () => {
+  it("SAS : la déclaration de TVA est conseillée", () => {
     expect(kinds({ legalForm: "SAS", isVatSubject: true })).toEqual(["VAT"]);
     expect(kinds({ legalForm: "SAS" })).toEqual(["VAT"]);
     expect(kinds({ legalForm: "SAS unipersonnelle (SASU)" })).toEqual(["VAT"]);
   });
 
-  it("société en franchise ou non assujettie : rien", () => {
+  it("société en franchise ou non assujettie : rien de conseillé", () => {
     expect(kinds({ legalForm: "SARL", vatFranchise: true })).toEqual([]);
     expect(kinds({ legalForm: "SAS", isVatSubject: false })).toEqual([]);
   });
@@ -32,9 +35,18 @@ describe("événements Newbi de déclaration", () => {
     ]);
   });
 
-  it("forme juridique inconnue : les deux", () => {
-    expect(kinds({})).toEqual(["VAT", "URSSAF"]);
-    expect(kinds(null)).toEqual(["VAT", "URSSAF"]);
+  it("les deux déclarations sont toujours proposées, les conseillées d'abord", () => {
+    expect(offered({ legalForm: "SAS" })).toEqual(["VAT*", "URSSAF"]);
+    expect(offered({ legalForm: "Auto-entrepreneur" })).toEqual([
+      "URSSAF*",
+      "VAT",
+    ]);
+    // Indivision en franchise : rien de conseillé, mais rien de masqué
+    expect(offered({ legalForm: "Indivision", vatFranchise: true })).toEqual([
+      "VAT",
+      "URSSAF",
+    ]);
+    expect(offered(null)).toEqual(["VAT", "URSSAF"]);
   });
 
   it("chaque déclaration mène au site où la déposer", () => {

@@ -162,19 +162,18 @@ export function EventDialog({
   // Déclarations proposées selon la forme juridique de l'espace (TVA pour
   // une société, Urssaf pour un micro-entrepreneur…)
   const { organization } = useWorkspace();
-  const typeOptions = useMemo(() => {
-    const presets = declarationPresetsFor(organization);
-    // Déclaration déjà enregistrée sur l'événement : toujours proposée
-    if (
-      declarationKind &&
-      !presets.some((preset) => preset.kind === declarationKind)
-    ) {
-      presets.push(DECLARATION_PRESETS[declarationKind]);
-    }
-    return presets.length
-      ? [{ kind: null, label: "Événement" }, ...presets]
-      : [];
-  }, [organization, declarationKind]);
+  // Toujours les mêmes choix : un type ne disparaît jamais de la fenêtre,
+  // seuls l'ordre et la mention « conseillée » suivent l'espace
+  const typeOptions = useMemo(
+    () => [
+      { kind: null, label: "Événement" },
+      ...declarationPresetsFor(organization),
+    ],
+    [organization],
+  );
+  const recommendedLabels = typeOptions
+    .filter((option) => option.recommended)
+    .map((option) => option.label.toLowerCase());
   const declarationPreset = declarationKind
     ? DECLARATION_PRESETS[declarationKind]
     : null;
@@ -576,6 +575,12 @@ export function EventDialog({
                         );
                       })}
                     </div>
+                    {recommendedLabels.length > 0 && (
+                      <p className="text-muted-foreground text-xs">
+                        Conseillé pour votre entreprise :{" "}
+                        {recommendedLabels.join(" et ")}.
+                      </p>
+                    )}
                   </div>
                 )}
 

@@ -50,38 +50,51 @@ const COMPANY_FORMS = new Set([
 const MICRO_REGIMES = new Set(["micro-entreprise", "micro-bic", "micro-bnc"]);
 
 /**
- * Déclarations à proposer selon la forme juridique et la situation de TVA,
- * la plus probable en premier :
+ * Déclarations conseillées selon la forme juridique et la situation de TVA :
  * - société (SAS, SARL…) : TVA, sauf franchise en base ou non assujettie ;
  * - micro-entrepreneur : Urssaf, plus la TVA s'il y est assujetti ;
  * - entrepreneur individuel au réel : TVA, sauf franchise ;
- * - forme juridique inconnue : les deux.
+ * - forme juridique inconnue : aucune en particulier.
  */
-export function declarationPresetsFor(organization) {
+export function recommendedDeclarationKinds(organization) {
   const legalForm = normalizeLegalForm(organization?.legalForm);
   const noVat =
     organization?.vatFranchise === true || organization?.isVatSubject === false;
-  const vat = noVat ? [] : [DECLARATION_PRESETS.VAT];
+  const vat = noVat ? [] : ["VAT"];
 
   if (COMPANY_FORMS.has(legalForm)) return vat;
 
-  const isIndividual = legalForm === "EI" || legalForm === "Auto-entrepreneur";
-  if (isIndividual) {
+  if (legalForm === "EI" || legalForm === "Auto-entrepreneur") {
     const isMicro =
       legalForm === "Auto-entrepreneur" ||
       MICRO_REGIMES.has(organization?.fiscalRegime);
     if (isMicro) {
       return [
-        DECLARATION_PRESETS.URSSAF,
-        ...(organization?.isVatSubject === true
-          ? [DECLARATION_PRESETS.VAT]
-          : []),
+        "URSSAF",
+        ...(organization?.isVatSubject === true ? ["VAT"] : []),
       ];
     }
     return vat;
   }
 
-  return [DECLARATION_PRESETS.VAT, DECLARATION_PRESETS.URSSAF];
+  return [];
+}
+
+/**
+ * Toutes les déclarations Newbi, toujours proposées (un choix ne disparaît
+ * jamais de la fenêtre) : les conseillées pour l'espace en premier, avec
+ * `recommended`.
+ */
+export function declarationPresetsFor(organization) {
+  const recommended = recommendedDeclarationKinds(organization);
+  const all = Object.values(DECLARATION_PRESETS);
+  return [
+    ...recommended.map((kind) => DECLARATION_PRESETS[kind]),
+    ...all.filter((preset) => !recommended.includes(preset.kind)),
+  ].map((preset) => ({
+    ...preset,
+    recommended: recommended.includes(preset.kind),
+  }));
 }
 
 /** Site où déposer la déclaration d'un événement, null pour les autres. */
