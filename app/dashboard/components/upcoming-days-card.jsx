@@ -36,8 +36,10 @@ const LinkedItemSheet = dynamic(
   { ssr: false },
 );
 
-// Au-delà, « + N autres » ouvre le jour dans le calendrier
+// Au-delà, « + N autres » ouvre le jour dans le calendrier (colonnes du
+// cadre large, programme du jour choisi dans le cadre étroit)
 const MAX_ENTRIES_PER_DAY = 4;
+const MAX_ENTRIES_NARROW = 6;
 
 const calendarDayUrl = (day) => `/dashboard/calendar?jour=${day}`;
 
@@ -119,78 +121,231 @@ function EntryButton({ entry, onOpen }) {
   );
 }
 
+// Couleur de la pastille d'un élément (même teinte que sa barre)
+function entryDot(entry) {
+  if (entry.type === "linked") {
+    return { className: LINKED_SOURCE_META[entry.item.kind]?.dot };
+  }
+  return {
+    style: {
+      backgroundColor: entry.isAppointment
+        ? APPOINTMENT_COLOR
+        : normalizeColor(entry.event.color),
+    },
+  };
+}
+
+function EntryList({ day, entries, loading, onOpen, limit, emptyLabel }) {
+  if (loading) {
+    return (
+      <>
+        <Skeleton className="h-9 w-full rounded-md" />
+        <Skeleton className="h-9 w-4/5 rounded-md" />
+      </>
+    );
+  }
+  if (entries.length === 0) {
+    return (
+      <p className="text-muted-foreground/80 col-span-full px-1.5 py-1.5 text-xs">
+        {emptyLabel}
+      </p>
+    );
+  }
+  const visible = entries.slice(0, limit);
+  const hiddenCount = entries.length - visible.length;
+  return (
+    <>
+      {visible.map((entry) => (
+        <EntryButton key={entry.key} entry={entry} onOpen={onOpen} />
+      ))}
+      {hiddenCount > 0 && (
+        <Link
+          href={calendarDayUrl(day)}
+          className="text-muted-foreground hover:text-foreground col-span-full px-1.5 py-1 text-[11px] transition-colors"
+        >
+          + {hiddenCount} autre{hiddenCount > 1 ? "s" : ""}
+        </Link>
+      )}
+    </>
+  );
+}
+
+function DayHeading({ heading, isToday }) {
+  return (
+    <>
+      <span
+        className={cn(
+          "truncate text-[11px]",
+          isToday ? "font-medium text-[#5a50ff]" : "text-muted-foreground",
+        )}
+      >
+        {heading.weekday}
+      </span>
+      <span className="flex items-baseline gap-1">
+        <span
+          className={cn(
+            "text-xl leading-tight font-medium tabular-nums",
+            isToday && "text-[#5a50ff]",
+          )}
+        >
+          {heading.number}
+        </span>
+        <span className="text-muted-foreground text-xs">{heading.month}</span>
+      </span>
+    </>
+  );
+}
+
+// Cadre large : une colonne par jour
 function DayColumn({ day, index, entries, loading, onOpen }) {
   const heading = dayHeading(day, index);
-  const isToday = index === 0;
-  const visible = entries.slice(0, MAX_ENTRIES_PER_DAY);
-  const hiddenCount = entries.length - visible.length;
-
   return (
     <section
       aria-label={`${heading.weekday} ${heading.number} ${heading.month}`}
       className={cn(
-        "flex min-w-0 gap-4 px-4 py-3 @3xl/days:flex-col @3xl/days:gap-2 @3xl/days:px-3",
+        "flex min-w-0 flex-col gap-2 px-3 py-3",
         heading.isWeekend && "bg-muted/30",
       )}
     >
-      <header className="flex w-20 shrink-0 flex-col @3xl/days:w-auto">
-        <span
-          className={cn(
-            "text-[11px]",
-            isToday ? "font-medium text-[#5a50ff]" : "text-muted-foreground",
-          )}
-        >
-          {heading.weekday}
-        </span>
-        <span className="flex items-baseline gap-1">
-          <span
-            className={cn(
-              "text-xl leading-tight font-medium tabular-nums",
-              isToday && "text-[#5a50ff]",
-            )}
-          >
-            {heading.number}
-          </span>
-          <span className="text-muted-foreground text-xs">{heading.month}</span>
-        </span>
+      <header className="flex flex-col">
+        <DayHeading heading={heading} isToday={index === 0} />
       </header>
-
-      {/* En ligne (cadre étroit) : les éléments du jour sur deux colonnes
-          dès qu'il y a la place */}
-      <div className="grid min-w-0 flex-1 grid-cols-1 content-start gap-x-3 gap-y-0.5 @lg/days:grid-cols-2 @3xl/days:grid-cols-1">
-        {loading ? (
-          <>
-            <Skeleton className="h-9 w-full rounded-md" />
-            <Skeleton className="h-9 w-4/5 rounded-md" />
-          </>
-        ) : entries.length === 0 ? (
-          <p className="text-muted-foreground/80 py-1.5 text-xs @lg/days:col-span-2 @3xl/days:col-span-1 @3xl/days:px-1.5">
-            Rien de prévu
-          </p>
-        ) : (
-          <>
-            {visible.map((entry) => (
-              <EntryButton key={entry.key} entry={entry} onOpen={onOpen} />
-            ))}
-            {hiddenCount > 0 && (
-              <Link
-                href={calendarDayUrl(day)}
-                className="text-muted-foreground hover:text-foreground px-1.5 py-1 text-[11px] transition-colors @lg/days:col-span-2 @3xl/days:col-span-1"
-              >
-                + {hiddenCount} autre{hiddenCount > 1 ? "s" : ""}
-              </Link>
-            )}
-          </>
-        )}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <EntryList
+          day={day}
+          entries={entries}
+          loading={loading}
+          onOpen={onOpen}
+          limit={MAX_ENTRIES_PER_DAY}
+          emptyLabel="Rien de prévu"
+        />
       </div>
     </section>
   );
 }
 
+// Pastilles d'un jour dans la bande : 3 au plus, puis « +N »
+const MAX_DOTS = 3;
+
+// Cadre étroit : bande des 5 jours façon calendrier, puis le programme du
+// jour choisi
+function DayStrip({ columns, loading, activeDay, onSelect, onOpen }) {
+  const active = columns.find((column) => column.day === activeDay);
+  const activeIndex = columns.indexOf(active);
+  const activeHeading = active ? dayHeading(active.day, activeIndex) : null;
+  const panelId = "upcoming-days-panel";
+
+  return (
+    <div className="border-t @3xl/days:hidden">
+      <div
+        role="tablist"
+        aria-label="Les 5 prochains jours"
+        className="grid grid-cols-5 gap-1 p-2"
+      >
+        {columns.map(({ day, entries }, index) => {
+          const heading = dayHeading(day, index);
+          const selected = day === activeDay;
+          const extra = entries.length - MAX_DOTS;
+          return (
+            <button
+              key={day}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={panelId}
+              aria-label={`${heading.weekday} ${heading.number} ${heading.month}, ${
+                entries.length
+                  ? `${entries.length} élément${entries.length > 1 ? "s" : ""}`
+                  : "rien de prévu"
+              }`}
+              onClick={() => onSelect(day)}
+              className={cn(
+                "focus-visible:ring-ring flex min-w-0 cursor-pointer flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                selected
+                  ? "bg-[#5a50ff]/10 ring-1 ring-[#5a50ff]/30"
+                  : "hover:bg-accent",
+              )}
+            >
+              <span
+                className={cn(
+                  "w-full truncate text-center text-[11px]",
+                  index === 0
+                    ? "font-medium text-[#5a50ff]"
+                    : "text-muted-foreground",
+                )}
+              >
+                {heading.weekday}
+              </span>
+              <span
+                className={cn(
+                  "text-lg leading-none font-medium tabular-nums",
+                  index === 0 && "text-[#5a50ff]",
+                )}
+              >
+                {heading.number}
+              </span>
+              <span
+                className="flex h-2 items-center gap-0.5"
+                aria-hidden="true"
+              >
+                {!loading &&
+                  entries.slice(0, MAX_DOTS).map((entry) => {
+                    const dot = entryDot(entry);
+                    return (
+                      <span
+                        key={entry.key}
+                        className={cn("size-1.5 rounded-full", dot.className)}
+                        style={dot.style}
+                      />
+                    );
+                  })}
+                {!loading && extra > 0 && (
+                  <span className="text-muted-foreground text-[9px] leading-none">
+                    +{extra}
+                  </span>
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div
+        id={panelId}
+        role="tabpanel"
+        aria-label={
+          activeHeading
+            ? `${activeHeading.weekday} ${activeHeading.number} ${activeHeading.month}`
+            : undefined
+        }
+        className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-0.5 border-t px-2.5 py-2 @lg/days:grid-cols-2"
+      >
+        {active && (
+          <EntryList
+            day={active.day}
+            entries={active.entries}
+            loading={loading}
+            onOpen={onOpen}
+            limit={MAX_ENTRIES_NARROW}
+            emptyLabel={
+              activeIndex === 0
+                ? "Rien de prévu aujourd'hui."
+                : "Rien de prévu ce jour-là."
+            }
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Affichage seul (données passées en props), testable sans API. */
 export function UpcomingDaysView({ columns, loading, onOpen, className }) {
-  const allEmpty =
-    !loading && columns.every(({ entries }) => entries.length === 0);
+  // Jour ouvert dans la bande (cadre étroit) : aujourd'hui par défaut
+  const [selectedDay, setSelectedDay] = useState(null);
+  const activeDay = columns.some((column) => column.day === selectedDay)
+    ? selectedDay
+    : columns[0]?.day;
+
   return (
     <Card className={cn("@container/days gap-0 py-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between gap-3 px-4 py-3">
@@ -206,19 +361,14 @@ export function UpcomingDaysView({ columns, loading, onOpen, className }) {
         </Link>
       </CardHeader>
       <CardContent className="px-0 pb-0">
-        {/* Cadre étroit et rien de prévu : une seule ligne plutôt que cinq
-            « Rien de prévu » empilés */}
-        {allEmpty && (
-          <p className="text-muted-foreground border-t px-4 py-5 text-center text-sm @3xl/days:hidden">
-            Rien de prévu sur les 5 prochains jours.
-          </p>
-        )}
-        <div
-          className={cn(
-            "divide-border/70 grid-cols-1 divide-y border-t @3xl/days:grid-cols-5 @3xl/days:divide-x @3xl/days:divide-y-0",
-            allEmpty ? "hidden @3xl/days:grid" : "grid",
-          )}
-        >
+        <DayStrip
+          columns={columns}
+          loading={loading}
+          activeDay={activeDay}
+          onSelect={setSelectedDay}
+          onOpen={onOpen}
+        />
+        <div className="divide-border/70 hidden grid-cols-5 divide-x border-t @3xl/days:grid">
           {columns.map(({ day, entries }, index) => (
             <DayColumn
               key={day}

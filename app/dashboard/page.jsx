@@ -562,7 +562,7 @@ function DashboardContent() {
         {!permissionsPending && canReadBanking && !isReadOnly && (
           <BankReconnectAlert />
         )}
-        <div className="flex flex-col @2xl/home:flex-row @2xl/home:items-center @2xl/home:justify-between w-full mb-2 gap-2 @2xl/home:gap-4">
+        <div className="flex flex-wrap items-center justify-between w-full mb-2 gap-x-4 gap-y-2">
           <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},
           </h1>
@@ -697,7 +697,8 @@ function DashboardContent() {
 
         {/* Actions rapides (selon l'action « create » du rôle sur chaque module) */}
         {hasQuickActions && (
-          <div className="flex items-center gap-2 flex-wrap -mt-2">
+          // Cadre étroit : grille de boutons de même largeur ; large : en ligne
+          <div className="grid grid-cols-2 gap-2 -mt-2 @3xl/home:flex @3xl/home:flex-wrap @3xl/home:items-center [&>button]:justify-center @3xl/home:[&>button]:justify-start">
             {canCreateQuotes && (
               <Button
                 variant="primary"
