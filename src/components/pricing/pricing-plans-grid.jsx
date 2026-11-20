@@ -5,20 +5,22 @@ import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
-/* Grille tarifaire de la page /tarifs, reprise à l'identique à l'étape
-   « Choisissez votre abonnement » de l'inscription (sans la colonne d'essai
-   gratuit). Une seule définition des offres pour les deux écrans : avant,
-   l'inscription avait ses propres listes d'avantages, qui divergeaient de
+/* Offres de la page /tarifs et grille qui les affiche.
+
+   Les offres (COLONNES_OFFRES) sont aussi celles de l'étape « Choisissez
+   votre abonnement » de l'inscription (signup-plan-picker.jsx), dans une mise
+   en page plus compacte : une seule définition des avantages pour les deux
+   écrans. Avant, l'inscription avait ses propres listes, qui divergeaient de
    celles de /tarifs.
 
-   Dessin repris de linear.app/pricing, transposé en thème clair. Mesures
-   relevées sur la page Linear : colonnes de 336 px séparées par un filet de
-   1 px, 32 px de padding latéral, titre 24 px/590, ligne de prix 17 px/510,
-   bandeau de facturation de 60 px bordé en haut et en bas, fonctionnalités
-   en 13 px/19,5 px avec une pastille de 16 px, et bouton de 40 px
-   entièrement arrondi, large comme la colonne. */
+   Dessin de la grille repris de linear.app/pricing, transposé en thème
+   clair. Mesures relevées sur la page Linear : colonnes de 336 px séparées
+   par un filet de 1 px, 32 px de padding latéral, titre 24 px/590, ligne de
+   prix 17 px/510, bandeau de facturation de 60 px bordé en haut et en bas,
+   fonctionnalités en 13 px/19,5 px avec une pastille de 16 px, et bouton de
+   40 px entièrement arrondi, large comme la colonne. */
 
-const FILET = "rgba(16,16,32,0.09)";
+export const FILET = "rgba(16,16,32,0.09)";
 
 const euros = (n) => `${n.toFixed(2).replace(".", ",")} €`;
 
@@ -28,7 +30,7 @@ const PAR_CLE = Object.fromEntries(PLANS_DISPLAY.map((p) => [p.key, p]));
 const CONSEILLER = { href: "/contact", label: "Parler à un conseiller" };
 
 // Colonne d'essai gratuit : affichée sur /tarifs seulement. À l'inscription,
-// l'essai est déjà annoncé au-dessus de la grille.
+// l'essai est déjà annoncé au-dessus des offres.
 export const COLONNE_ESSAI = {
   id: "essai",
   nom: "Essai gratuit",
@@ -45,7 +47,8 @@ export const COLONNE_ESSAI = {
 };
 
 // Offres payantes. Chaque ligne de fonctionnalité correspond à une entrée de
-// PLAN_FEATURES_SECTIONS : aucune promesse n'est inventée ici.
+// PLAN_FEATURES_SECTIONS : aucune promesse n'est inventée ici. `intro` est
+// la ligne « Tout X, plus : » qui ouvre la liste.
 export const COLONNES_OFFRES = [
   {
     id: "freelance",
@@ -70,8 +73,8 @@ export const COLONNES_OFFRES = [
     nom: "TPE",
     enAvant: true,
     suffixe: "par mois, TTC",
+    intro: "Tout Freelance, plus :",
     features: [
-      "Tout Freelance, plus :",
       "Jusqu'à 10 utilisateurs · 3 accès comptables",
       "Connexion bancaire · 3 comptes",
       "Modèles et champs personnalisés illimités",
@@ -88,8 +91,8 @@ export const COLONNES_OFFRES = [
     cle: "entreprise",
     nom: "Entreprise",
     suffixe: "par mois, TTC",
+    intro: "Tout TPE, plus :",
     features: [
-      "Tout TPE, plus :",
       "Jusqu'à 25 utilisateurs · 5 accès comptables",
       "Connexion bancaire · 5 comptes",
       "Exports comptables tous formats",
@@ -102,17 +105,9 @@ export const COLONNES_OFFRES = [
   },
 ];
 
-// Classes écrites en entier pour que Tailwind les génère. Trois colonnes
-// restent empilées jusqu'au grand écran : en deux colonnes, l'offre
-// Entreprise se retrouverait seule sur la deuxième ligne.
-const GRILLE = {
-  3: "grid grid-cols-1 lg:grid-cols-3",
-  4: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
-};
-
 /* Pastille de validation, même dessin que celle de Linear : cercle plein
    avec la coche évidée. */
-function Coche() {
+export function Coche() {
   return (
     <svg
       width="16"
@@ -159,47 +154,22 @@ function Bascule({ actif, onChange, id }) {
   );
 }
 
-// Bouton principal par défaut (/tarifs) : lien vers l'inscription.
-function LienPrincipal({ colonne }) {
-  return (
-    <Button
-      asChild
-      size="md"
-      variant={colonne.enAvant ? "primary" : "outline"}
-      className="w-full justify-center px-4"
-    >
-      <Link href={colonne.cta.href}>
-        <span>{colonne.cta.label}</span>
-      </Link>
-    </Button>
-  );
-}
-
 /**
+ * Grille de /tarifs.
  * @param {object} props
- * @param {Array} props.colonnes - colonnes à afficher (COLONNE_ESSAI,
- *   COLONNES_OFFRES).
+ * @param {Array} props.colonnes - COLONNE_ESSAI puis COLONNES_OFFRES.
  * @param {boolean} props.annuel - prix affichés à l'année.
  * @param {(annuel: boolean) => void} props.onAnnuelChange
- * @param {(colonne: object) => React.ReactNode} [props.actionPrincipale] -
- *   remplace le lien d'inscription (ex. « Choisir ce plan » à l'inscription).
- * @param {object} [props.lienConseiller] - attributs ajoutés au lien
- *   « Parler à un conseiller » (ex. ouverture dans un nouvel onglet).
  */
-export function PricingPlansGrid({
-  colonnes,
-  annuel,
-  onAnnuelChange,
-  actionPrincipale,
-  lienConseiller,
-}) {
+export function PricingPlansGrid({ colonnes, annuel, onAnnuelChange }) {
   return (
-    <div className={GRILLE[colonnes.length] ?? GRILLE[4]}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
       {colonnes.map((col, i) => {
         const plan = col.cle ? PAR_CLE[col.cle] : null;
         const montant = plan
           ? euros(annuel ? plan.annualMonthlyPrice : plan.monthlyPrice)
           : col.prix;
+        const lignes = col.intro ? [col.intro, ...col.features] : col.features;
 
         return (
           <section
@@ -246,7 +216,7 @@ export function PricingPlansGrid({
             </div>
 
             <ul className="mt-6 flex flex-col gap-4">
-              {col.features.map((f) => (
+              {lignes.map((f) => (
                 <li key={f} className="flex items-start gap-2">
                   <Coche />
                   <span className="text-[13px] leading-[19.5px] text-gray-700">
@@ -261,11 +231,16 @@ export function PricingPlansGrid({
                 les colonnes : sans cela, les colonnes à deux boutons
                 remonteraient leur bouton principal d'une ligne. */}
             <div className="mt-11 lg:mt-auto lg:pt-11">
-              {actionPrincipale ? (
-                actionPrincipale(col)
-              ) : (
-                <LienPrincipal colonne={col} />
-              )}
+              <Button
+                asChild
+                size="md"
+                variant={col.enAvant ? "primary" : "outline"}
+                className="w-full justify-center px-4"
+              >
+                <Link href={col.cta.href}>
+                  <span>{col.cta.label}</span>
+                </Link>
+              </Button>
               <div className="mt-2 h-8">
                 {col.ctaSecondaire && (
                   <Button
@@ -274,7 +249,7 @@ export function PricingPlansGrid({
                     variant="outline"
                     className="w-full justify-center px-4"
                   >
-                    <Link href={col.ctaSecondaire.href} {...lienConseiller}>
+                    <Link href={col.ctaSecondaire.href}>
                       <span>{col.ctaSecondaire.label}</span>
                     </Link>
                   </Button>

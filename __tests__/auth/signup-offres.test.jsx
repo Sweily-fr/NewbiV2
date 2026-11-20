@@ -4,9 +4,9 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 
 /**
- * Étape « Choisissez votre abonnement » : même grille que /tarifs (offres,
- * avantages, prix, bascule annuelle), sans la colonne d'essai gratuit, avec
- * un lien vers un conseiller sur chaque offre.
+ * Étape « Choisissez votre abonnement » : offres, avantages et prix de
+ * /tarifs, sans la colonne d'essai gratuit, avec une seule bascule
+ * mensuel / annuel et un lien vers un conseiller sous chaque offre.
  */
 
 vi.mock("next/navigation", () => ({
@@ -77,11 +77,14 @@ describe("Inscription : choix de l'offre", () => {
     expect(screen.queryByText("Essai gratuit")).toBeNull();
 
     // Prix mensuels TTC et avantages de la grille /tarifs.
-    expect(within(colonne("freelance")).getByText(/17,99 €/)).toBeTruthy();
-    expect(within(colonne("tpe")).getByText(/48,99 €/)).toBeTruthy();
-    expect(within(colonne("entreprise")).getByText(/94,99 €/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/17,99\s€/)).toBeTruthy();
+    expect(within(colonne("tpe")).getByText(/48,99\s€/)).toBeTruthy();
+    expect(within(colonne("entreprise")).getByText(/94,99\s€/)).toBeTruthy();
     expect(
       within(colonne("freelance")).getByText("Devis et factures illimités"),
+    ).toBeTruthy();
+    expect(
+      within(colonne("tpe")).getByText("Tout Freelance, plus :"),
     ).toBeTruthy();
 
     expect(
@@ -89,14 +92,14 @@ describe("Inscription : choix de l'offre", () => {
     ).toHaveLength(3);
   });
 
-  it("propose de parler à un conseiller sur chaque offre, Freelance compris", async () => {
+  it("propose un conseiller sous chaque offre, Freelance compris", async () => {
     mockFetch();
     render(<SignUpPage />);
     await screen.findByText("7 jours d'essai gratuit, sans engagement");
 
     for (const id of ["freelance", "tpe", "entreprise"]) {
       const lien = within(colonne(id)).getByRole("link", {
-        name: "Parler à un conseiller",
+        name: "ou parler à un conseiller",
       });
       expect(lien).toHaveAttribute("href", "/contact");
       // Nouvel onglet : l'inscription reste ouverte.
@@ -110,14 +113,23 @@ describe("Inscription : choix de l'offre", () => {
     render(<SignUpPage />);
     await screen.findByText("7 jours d'essai gratuit, sans engagement");
 
-    // Une seule bascule pour toute la grille, comme sur /tarifs.
-    const bascules = screen.getAllByRole("switch", {
-      name: "Facturé à l'année",
-    });
-    expect(bascules).toHaveLength(3);
-    await user.click(bascules[0]);
-    bascules.forEach((b) => expect(b).toHaveAttribute("aria-checked", "true"));
-    expect(within(colonne("freelance")).getByText(/16,19 €/)).toBeTruthy();
+    // Une seule bascule au-dessus des offres, plus d'interrupteur par
+    // colonne comme sur /tarifs.
+    expect(screen.queryAllByRole("switch")).toHaveLength(0);
+    const mensuel = screen.getByRole("button", { name: "Mensuel" });
+    const annuel = screen.getByRole("button", { name: /^Annuel/ });
+    expect(mensuel).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(colonne("freelance")).getByText("Facturé chaque mois"),
+    ).toBeTruthy();
+
+    await user.click(annuel);
+    expect(annuel).toHaveAttribute("aria-pressed", "true");
+    expect(mensuel).toHaveAttribute("aria-pressed", "false");
+    expect(within(colonne("freelance")).getByText(/16,19\s€/)).toBeTruthy();
+    expect(
+      within(colonne("freelance")).getByText(/Facturé 194,28\s€ par an/),
+    ).toBeTruthy();
 
     await user.click(
       within(colonne("freelance")).getByRole("button", {
@@ -132,7 +144,7 @@ describe("Inscription : choix de l'offre", () => {
       data: { selectedPlan: "freelance", isAnnual: true },
     });
 
-    // Récapitulatif avec l'offre et le prix annuel par mois.
+    // Récapitulatif avec l'offre et le rythme de facturation.
     expect(await screen.findByText("Plan Freelance")).toBeInTheDocument();
     expect(screen.getByText("Annuelle")).toBeInTheDocument();
   });

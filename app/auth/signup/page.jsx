@@ -27,10 +27,7 @@ import {
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
-import {
-  COLONNES_OFFRES,
-  PricingPlansGrid,
-} from "@/src/components/pricing/pricing-plans-grid";
+import { SignupPlanPicker } from "@/src/components/pricing/signup-plan-picker";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
 import { legalFormFromNatureJuridique } from "@/src/lib/company-registry";
@@ -602,10 +599,10 @@ function SignUpPageContent() {
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
       <main
-        // Étape « plan » : la grille de /tarifs fait ~720 px de haut avec le
-        // titre ; sans marge, elle collait au bord haut et passait sous les
-        // points d'étape sur un écran de 720 px.
-        className={`relative flex min-h-[100dvh] flex-col items-center px-4 md:px-6 overflow-x-hidden ${view === "plan" ? "justify-start py-16 md:justify-center" : "justify-center py-12"}`}
+        // Étape « plan » : les offres et le titre font ~610 px de haut ; avec
+        // 48 px en haut et en bas, l'étape tient sans défiler sur un écran de
+        // 720 px, sans coller au bord ni passer sous les points d'étape.
+        className={`relative flex min-h-[100dvh] flex-col items-center px-4 md:px-6 overflow-x-hidden ${view === "plan" ? "justify-start py-16 md:justify-center md:py-12" : "justify-center py-12"}`}
         style={{ backgroundColor: "rgb(251, 251, 252)" }}
       >
         {/* Header: logout + email (workspace & plan views) */}
@@ -908,38 +905,21 @@ function SignUpPageContent() {
           )}
 
           {/* ─── View: Plan selection ───
-              Même grille que /tarifs (offres, avantages, prix, bascule
-              annuelle), sans la colonne d'essai gratuit : l'essai est
-              annoncé juste au-dessus. */}
+              Offres, avantages et prix de /tarifs, sans la colonne d'essai
+              gratuit (annoncé juste au-dessus), en mise en page compacte. */}
           {view === "plan" && (
-            <div className="w-full max-w-5xl mt-12 md:mt-0">
+            <div className="w-full max-w-5xl">
               {/* Subtitle + trial */}
-              <p className="text-[13px] text-muted-foreground text-center mb-6 lg:mb-12">
+              <p className="text-[13px] text-muted-foreground text-center mb-6">
                 {SIGNUP_TRIAL_DAYS} jours d'essai gratuit, sans engagement
               </p>
 
-              <PricingPlansGrid
-                colonnes={COLONNES_OFFRES}
+              <SignupPlanPicker
                 annuel={isAnnual}
                 onAnnuelChange={setIsAnnual}
-                // Nouvel onglet : l'inscription reste ouverte à cette étape.
-                lienConseiller={{ target: "_blank", rel: "noopener" }}
-                actionPrincipale={(col) => (
-                  <Button
-                    type="button"
-                    size="md"
-                    variant={col.enAvant ? "primary" : "outline"}
-                    className="w-full justify-center px-4"
-                    onClick={() => handleSelectPlan(col.cle)}
-                    disabled={loadingPlan !== null || isSavingStep}
-                  >
-                    {loadingPlan === col.cle ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      "Choisir ce plan"
-                    )}
-                  </Button>
-                )}
+                onChoisir={handleSelectPlan}
+                enCours={isSavingStep ? selectedPlan : null}
+                desactive={loadingPlan !== null || isSavingStep}
               />
             </div>
           )}
@@ -1030,9 +1010,10 @@ function SignUpPageContent() {
               );
             })()}
 
-          {/* ─── Footer ─── */}
+          {/* ─── Footer ───
+              Vide à l'étape « plan » : masqué pour ne pas ajouter 32 px. */}
           <div
-            className={`text-center space-y-4 max-w-[320px] ${view === "email" ? "mt-4" : "mt-8"}`}
+            className={`text-center space-y-4 max-w-[320px] ${view === "email" ? "mt-4" : "mt-8"} ${view === "plan" ? "hidden" : ""}`}
           >
             {view === "signup" && (
               <>

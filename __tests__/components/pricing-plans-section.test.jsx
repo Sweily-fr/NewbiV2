@@ -23,6 +23,13 @@ describe("/tarifs : grille des offres", () => {
     expect(
       screen.getAllByRole("link", { name: "Commencer gratuitement" }),
     ).toHaveLength(4);
+    // La ligne « Tout Freelance, plus : » reste la première puce de TPE,
+    // comme avant le partage des offres avec l'inscription.
+    const puces = within(document.getElementById("tpe"))
+      .getAllByRole("listitem")
+      .map((li) => li.textContent);
+    expect(puces[0]).toBe("Tout Freelance, plus :");
+    expect(puces).toHaveLength(8);
   });
 
   it("propose un conseiller sur les trois offres payantes, pas sur l'essai", () => {
