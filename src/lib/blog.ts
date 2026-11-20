@@ -222,6 +222,41 @@ export function getAllPublishedSlugs(): string[] {
   return getAllPosts().map((p) => p.slug);
 }
 
+let draftSlugsCache: Set<string> | null = null;
+
+/**
+ * Articles écrits d'avance mais pas encore en ligne (`published: false`) : le
+ * robot du blog les publie à leur `publishDate`, et leur adresse répond 404
+ * d'ici là. Sert à ne pas afficher de lien vers eux avant leur sortie.
+ */
+export function getDraftSlugs(): Set<string> {
+  if (draftSlugsCache && process.env.NODE_ENV === "production") {
+    return draftSlugsCache;
+  }
+
+  const published = new Set(getAllPublishedSlugs());
+  draftSlugsCache = new Set(
+    fs
+      .readdirSync(BLOG_DIR)
+      .filter((f) => f.endsWith(".mdx"))
+      .map((f) => f.replace(/\.mdx$/, ""))
+      .filter((slug) => !published.has(slug)),
+  );
+  return draftSlugsCache;
+}
+
+/**
+ * Article visé par un lien interne vers `/blog/<slug>` (chemin relatif ou
+ * adresse newbi.fr complète), sinon null. Les pages auteur, catégorie et
+ * secteur (`/blog/auteur/…`) ne sont pas des articles.
+ */
+export function articleSlugFromHref(href: string): string | null {
+  const match = href.match(
+    /^(?:https?:\/\/(?:www\.)?newbi\.fr)?\/blog\/([a-z0-9-]+)\/?(?:[?#].*)?$/,
+  );
+  return match ? match[1] : null;
+}
+
 export function generateStaticParams() {
   return getAllPublishedSlugs().map((slug) => ({ slug }));
 }

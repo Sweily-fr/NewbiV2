@@ -12,6 +12,7 @@ import {
 } from "@/src/components/blog/mdx-accordion";
 import { ArticleCta } from "@/src/components/blog/article-cta";
 import { ctaIntentFor } from "@/src/lib/blog-cta";
+import { articleSlugFromHref } from "@/src/lib/blog";
 import {
   Table,
   TableBody,
@@ -58,17 +59,39 @@ function SmartLink({
   );
 }
 
-export function getMDXComponents(post?: {
-  slug: string;
-  keyword?: string | null;
-  category?: string | null;
-  cta?: string | null;
-}): MDXComponents {
+/**
+ * Lien du contenu MDX (`[texte](/adresse)` et `<Link>`). Un article cite
+ * parfois un article écrit d'avance que le robot du blog n'a pas encore
+ * publié : son adresse répond 404 jusqu'à sa sortie, et Google relève ces
+ * liens morts. On n'affiche alors que le texte ; le lien revient tout seul au
+ * déploiement qui suit la publication.
+ */
+function mdxLink(draftSlugs: ReadonlySet<string>) {
+  return function MdxLink(
+    props: React.AnchorHTMLAttributes<HTMLAnchorElement>,
+  ) {
+    const slug = props.href ? articleSlugFromHref(props.href) : null;
+    if (slug && draftSlugs.has(slug)) return <>{props.children}</>;
+    return <SmartLink {...props} />;
+  };
+}
+
+export function getMDXComponents(
+  post?: {
+    slug: string;
+    keyword?: string | null;
+    category?: string | null;
+    cta?: string | null;
+  },
+  /** Articles pas encore publiés (getDraftSlugs de src/lib/blog.ts). */
+  draftSlugs: ReadonlySet<string> = new Set(),
+): MDXComponents {
   const defaultIntent = post ? ctaIntentFor(post) : "facture";
+  const MdxLink = mdxLink(draftSlugs);
   return {
     // Next.js components
     Image,
-    Link: SmartLink as any,
+    Link: MdxLink as any,
 
     // UI components used in MDX files
     Button,
@@ -133,7 +156,7 @@ export function getMDXComponents(post?: {
         {children}
       </p>
     ),
-    a: SmartLink as any,
+    a: MdxLink as any,
     strong: ({ children, ...props }: any) => (
       <strong className="text-gray-900 font-medium" {...props}>
         {children}
