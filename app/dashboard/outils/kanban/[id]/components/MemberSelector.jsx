@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Users, X, Plus, Check } from 'lucide-react';
 import { useQuery } from '@apollo/client';
 import { Button } from '@/src/components/ui/button';
@@ -32,9 +32,6 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
     skip: !finalWorkspaceId,
   });
 
-  // Récupérer les infos complètes des membres sélectionnés
-  const { members: selectedMembersInfo } = useAssignedMembersInfo(selectedMembers);
-
   // Traiter les données GraphQL des membres du workspace
   useEffect(() => {
     if (data?.organizationMembers) {
@@ -50,6 +47,29 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
       setMembers([]);
     }
   }, [data]);
+
+  // Membres choisis : lus dans la liste de l'espace, déjà chargée, pour
+  // s'afficher dès le clic. La requête ne sert qu'aux membres absents de la
+  // liste (ancien membre de l'espace…) : avant, chaque ajout attendait un
+  // aller-retour serveur et les pastilles disparaissaient le temps du
+  // chargement.
+  const knownMembers = useMemo(
+    () => new Map(members.map(member => [String(member.id), member])),
+    [members]
+  );
+  const missingIds = useMemo(
+    () => selectedMembers.filter(id => !knownMembers.has(String(id))),
+    [selectedMembers, knownMembers]
+  );
+  const { members: fetchedMembersInfo } = useAssignedMembersInfo(missingIds);
+  const selectedMembersInfo = useMemo(() => {
+    const fetched = new Map(
+      fetchedMembersInfo.map(member => [String(member.id), member])
+    );
+    return selectedMembers
+      .map(id => knownMembers.get(String(id)) || fetched.get(String(id)))
+      .filter(Boolean);
+  }, [selectedMembers, knownMembers, fetchedMembersInfo]);
 
   // Vérifier si un membre est sélectionné
   const isMemberSelected = (memberId) => {
