@@ -1197,7 +1197,7 @@ function DashboardContent() {
           <div className="grid grid-cols-1 @2xl/home:grid-cols-2 @4xl/home:grid-cols-3 @2xl/home:[&>*:last-child:nth-child(odd)]:col-span-2 @4xl/home:[&>*:last-child:nth-child(odd)]:col-span-1 gap-4 md:gap-6 w-full -mt-2">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="shadow-xs">
-                <CardHeader className="pb-3">
+                <CardHeader className="gap-0 pb-0">
                   <Skeleton className="h-4 w-24 mb-1" />
                   <Skeleton className="h-3 w-32" />
                 </CardHeader>
@@ -1214,7 +1214,7 @@ function DashboardContent() {
             {/* Card Comptabilité : transactions (lecture) */}
             {canReadBanking && (
               <Card className="shadow-xs">
-                <CardHeader className="pb-3">
+                <CardHeader className="gap-0 pb-0">
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     <CardTitle className="text-sm font-normal">
                       Comptabilité
@@ -1231,7 +1231,7 @@ function DashboardContent() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2.5">
+                <CardContent className="space-y-0.5">
                   <a
                     href="/dashboard/outils/transactions?filter=unmatched"
                     className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
@@ -1290,7 +1290,7 @@ function DashboardContent() {
             {/* Card Facturation : factures et devis (lecture) */}
             {(canReadInvoices || canReadQuotes) && (
               <Card className="shadow-xs">
-                <CardHeader className="pb-3">
+                <CardHeader className="gap-0 pb-0">
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     <CardTitle className="text-sm font-normal">
                       Facturation
@@ -1314,7 +1314,7 @@ function DashboardContent() {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2.5">
+                <CardContent className="space-y-0.5">
                   {canReadInvoices && (
                     <>
                       <a
@@ -1387,7 +1387,7 @@ function DashboardContent() {
 
             {/* Card Tâches & Activité */}
             <Card className="shadow-xs">
-              <CardHeader className="pb-3">
+              <CardHeader className="gap-0 pb-0">
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                   <CardTitle className="text-sm font-normal">
                     Tâches & Activité
@@ -1404,7 +1404,7 @@ function DashboardContent() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2.5">
+              <CardContent className="space-y-0.5">
                 <a
                   href="#"
                   onClick={(e) => {
