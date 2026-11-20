@@ -99,7 +99,7 @@ describe("Inscription : choix de l'offre", () => {
 
     for (const id of ["freelance", "tpe", "entreprise"]) {
       const lien = within(colonne(id)).getByRole("link", {
-        name: "ou parler à un conseiller",
+        name: "parler à un conseiller",
       });
       expect(lien).toHaveAttribute("href", "/contact");
       // Nouvel onglet : l'inscription reste ouverte.

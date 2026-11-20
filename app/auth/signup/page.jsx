@@ -558,8 +558,8 @@ function SignUpPageContent() {
     );
   };
 
-  // Nom et prix pour le récapitulatif. L'étape de choix affiche la grille de
-  // /tarifs (pricing-plans-grid.jsx), sans la colonne d'essai gratuit.
+  // Nom et prix pour le récapitulatif. L'étape de choix affiche les offres
+  // de /tarifs (pricing-offers.jsx), sans la colonne d'essai gratuit.
   const plans = PLANS_DISPLAY.map((p) => ({
     key: p.key,
     name: p.displayName,
