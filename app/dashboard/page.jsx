@@ -885,7 +885,7 @@ function DashboardContent() {
           )}
         </div>
         {(showBankBalance || showBillingMonth) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
             {kpiLoading ? (
               <>
                 {showBankBalance && (
@@ -1024,7 +1024,7 @@ function DashboardContent() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 mt-3">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
                           <div className="flex items-center gap-1.5">
                             <TrendUpIcon className="size-4 text-emerald-500" />
                             <span className="text-xs text-muted-foreground">
@@ -1195,7 +1195,7 @@ function DashboardContent() {
           </h2>
         )}
         {!showToProcess ? null : invoicesSectionLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="shadow-xs">
                 <CardHeader className="pb-3">
@@ -1211,7 +1211,7 @@ function DashboardContent() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
             {/* Card Comptabilité : transactions (lecture) */}
             {canReadBanking && (
               <Card className="shadow-xs">
@@ -1492,7 +1492,7 @@ function DashboardContent() {
             <h2 className="text-sm font-medium text-foreground mt-4">
               Suivi en temps réel
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
               {showRecentTransactions && (
                 <RecentTransactionsCard
                   className="shadow-xs w-full"
