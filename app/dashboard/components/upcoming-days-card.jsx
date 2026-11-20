@@ -129,11 +129,11 @@ function DayColumn({ day, index, entries, loading, onOpen }) {
     <section
       aria-label={`${heading.weekday} ${heading.number} ${heading.month}`}
       className={cn(
-        "flex min-w-0 gap-4 px-4 py-3 lg:flex-col lg:gap-2 lg:px-3",
+        "flex min-w-0 gap-4 px-4 py-3 @3xl/days:flex-col @3xl/days:gap-2 @3xl/days:px-3",
         heading.isWeekend && "bg-muted/30",
       )}
     >
-      <header className="flex w-20 shrink-0 flex-col lg:w-auto">
+      <header className="flex w-20 shrink-0 flex-col @3xl/days:w-auto">
         <span
           className={cn(
             "text-[11px]",
@@ -155,16 +155,16 @@ function DayColumn({ day, index, entries, loading, onOpen }) {
         </span>
       </header>
 
-      {/* En ligne (moins de 1024 px) : les éléments du jour sur deux
-          colonnes dès qu'il y a la place */}
-      <div className="grid min-w-0 flex-1 grid-cols-1 content-start gap-x-3 gap-y-0.5 sm:grid-cols-2 lg:grid-cols-1">
+      {/* En ligne (cadre étroit) : les éléments du jour sur deux colonnes
+          dès qu'il y a la place */}
+      <div className="grid min-w-0 flex-1 grid-cols-1 content-start gap-x-3 gap-y-0.5 @lg/days:grid-cols-2 @3xl/days:grid-cols-1">
         {loading ? (
           <>
             <Skeleton className="h-9 w-full rounded-md" />
             <Skeleton className="h-9 w-4/5 rounded-md" />
           </>
         ) : entries.length === 0 ? (
-          <p className="text-muted-foreground/80 py-1.5 text-xs sm:col-span-2 lg:col-span-1 lg:px-1.5">
+          <p className="text-muted-foreground/80 py-1.5 text-xs @lg/days:col-span-2 @3xl/days:col-span-1 @3xl/days:px-1.5">
             Rien de prévu
           </p>
         ) : (
@@ -175,7 +175,7 @@ function DayColumn({ day, index, entries, loading, onOpen }) {
             {hiddenCount > 0 && (
               <Link
                 href={calendarDayUrl(day)}
-                className="text-muted-foreground hover:text-foreground px-1.5 py-1 text-[11px] transition-colors sm:col-span-2 lg:col-span-1"
+                className="text-muted-foreground hover:text-foreground px-1.5 py-1 text-[11px] transition-colors @lg/days:col-span-2 @3xl/days:col-span-1"
               >
                 + {hiddenCount} autre{hiddenCount > 1 ? "s" : ""}
               </Link>
@@ -189,8 +189,10 @@ function DayColumn({ day, index, entries, loading, onOpen }) {
 
 /** Affichage seul (données passées en props), testable sans API. */
 export function UpcomingDaysView({ columns, loading, onOpen, className }) {
+  const allEmpty =
+    !loading && columns.every(({ entries }) => entries.length === 0);
   return (
-    <Card className={cn("gap-0 py-0", className)}>
+    <Card className={cn("@container/days gap-0 py-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between gap-3 px-4 py-3">
         <p className="text-muted-foreground text-xs" aria-live="polite">
           {loading ? "Chargement…" : upcomingSummary(columns)}
@@ -204,7 +206,19 @@ export function UpcomingDaysView({ columns, loading, onOpen, className }) {
         </Link>
       </CardHeader>
       <CardContent className="px-0 pb-0">
-        <div className="divide-border/70 grid grid-cols-1 divide-y border-t lg:grid-cols-5 lg:divide-x lg:divide-y-0">
+        {/* Cadre étroit et rien de prévu : une seule ligne plutôt que cinq
+            « Rien de prévu » empilés */}
+        {allEmpty && (
+          <p className="text-muted-foreground border-t px-4 py-5 text-center text-sm @3xl/days:hidden">
+            Rien de prévu sur les 5 prochains jours.
+          </p>
+        )}
+        <div
+          className={cn(
+            "divide-border/70 grid-cols-1 divide-y border-t @3xl/days:grid-cols-5 @3xl/days:divide-x @3xl/days:divide-y-0",
+            allEmpty ? "hidden @3xl/days:grid" : "grid",
+          )}
+        >
           {columns.map(({ day, entries }, index) => (
             <DayColumn
               key={day}

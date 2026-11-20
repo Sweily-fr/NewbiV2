@@ -555,12 +555,14 @@ function DashboardContent() {
           </div>
         )}
 
-      <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
+      {/* Largeurs utiles mesurées sur la zone de contenu (@container/home),
+          pas sur l'écran : le menu latéral ouvert lui retire ~250 px */}
+      <div className="@container/home flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
         {/* Hors lecture seule : la route du statut bancaire répond 402 */}
         {!permissionsPending && canReadBanking && !isReadOnly && (
           <BankReconnectAlert />
         )}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full mb-2 gap-1 md:gap-0">
+        <div className="flex flex-col @2xl/home:flex-row @2xl/home:items-center @2xl/home:justify-between w-full mb-2 gap-2 @2xl/home:gap-4">
           <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},
           </h1>
@@ -885,7 +887,7 @@ function DashboardContent() {
           )}
         </div>
         {(showBankBalance || showBillingMonth) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 @3xl/home:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
             {kpiLoading ? (
               <>
                 {showBankBalance && (
@@ -1195,7 +1197,7 @@ function DashboardContent() {
           </h2>
         )}
         {!showToProcess ? null : invoicesSectionLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 @2xl/home:grid-cols-2 @4xl/home:grid-cols-3 @2xl/home:[&>*:last-child:nth-child(odd)]:col-span-2 @4xl/home:[&>*:last-child:nth-child(odd)]:col-span-1 gap-4 md:gap-6 w-full -mt-2">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="shadow-xs">
                 <CardHeader className="pb-3">
@@ -1211,12 +1213,12 @@ function DashboardContent() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 @2xl/home:grid-cols-2 @4xl/home:grid-cols-3 @2xl/home:[&>*:last-child:nth-child(odd)]:col-span-2 @4xl/home:[&>*:last-child:nth-child(odd)]:col-span-1 gap-4 md:gap-6 w-full -mt-2">
             {/* Card Comptabilité : transactions (lecture) */}
             {canReadBanking && (
               <Card className="shadow-xs">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     <CardTitle className="text-sm font-normal">
                       Comptabilité
                     </CardTitle>
@@ -1292,7 +1294,7 @@ function DashboardContent() {
             {(canReadInvoices || canReadQuotes) && (
               <Card className="shadow-xs">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     <CardTitle className="text-sm font-normal">
                       Facturation
                     </CardTitle>
@@ -1389,7 +1391,7 @@ function DashboardContent() {
             {/* Card Tâches & Activité */}
             <Card className="shadow-xs">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                   <CardTitle className="text-sm font-normal">
                     Tâches & Activité
                   </CardTitle>
@@ -1492,7 +1494,7 @@ function DashboardContent() {
             <h2 className="text-sm font-medium text-foreground mt-4">
               Suivi en temps réel
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
+            <div className="grid grid-cols-1 @3xl/home:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
               {showRecentTransactions && (
                 <RecentTransactionsCard
                   className="shadow-xs w-full"
