@@ -55,7 +55,7 @@ const ECRITURE = {
   // Lignes des catégories qui n'ont que des montants réels sur la période
   // (ventes et dépenses du jeu de test) : présentes ou non selon le jour.
   ...Object.fromEntries(
-    ["Ventes", "Transport", "Matériel", "Autres dépenses"].map((categorie) => [
+    ["Ventes", "Transport", "Matériel", "Repas", "Autres dépenses"].map((categorie) => [
       `button Ajouter une prévision « ${categorie} » en (mois)`,
       { fenetre: "Nouvelle saisie", facultatif: true },
     ]),

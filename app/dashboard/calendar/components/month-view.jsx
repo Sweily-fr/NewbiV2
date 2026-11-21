@@ -53,8 +53,10 @@ const DEFAULT_CONTENT_TOP = 32;
  * @param {Function} onEventCreate
  * @param {Date|null} selectedDay - jour affiché dans le volet du jour
  * @param {Function} onDaySelect - avec le volet : le jour cliqué devient
- *   celui du volet. Un clic sur une case ouvre toujours la fenêtre d'un
- *   nouvel événement ce jour-là.
+ *   celui du volet.
+ * @param {boolean} canCreate - droit de créer : un clic sur une case ouvre
+ *   la fenêtre d'un nouvel événement ce jour-là. Sans ce droit, le numéro
+ *   du jour ne fait que choisir le jour du volet (ou n'est pas un bouton).
  */
 export const MonthView = React.memo(function MonthView({
   currentDate,
@@ -63,6 +65,7 @@ export const MonthView = React.memo(function MonthView({
   onEventCreate,
   selectedDay = null,
   onDaySelect,
+  canCreate = true,
 }) {
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
@@ -178,9 +181,16 @@ export const MonthView = React.memo(function MonthView({
                 const isSelected =
                   Boolean(onDaySelect && selectedDay) &&
                   isSameDay(day, selectedDay);
-                const dayLabel = `${format(day, "EEEE d MMMM", { locale: fr })}${
-                  isToday(day) ? ", aujourd'hui" : ""
-                }`;
+                // Jour J annoncé par aria-current, pas dans le libellé (qui
+                // ne doit pas recouper « Aujourd'hui » de la barre d'outils)
+                const dayLabel = format(day, "EEEE d MMMM", { locale: fr });
+                // Numéro du jour : créer ce jour-là, sinon le choisir pour
+                // le volet, sinon simple texte
+                const dayAction = canCreate
+                  ? `Ajouter un événement le ${dayLabel}`
+                  : onDaySelect
+                    ? `Voir le ${dayLabel}`
+                    : null;
                 const cellId = `month-cell-${day.toISOString()}`;
                 const isReferenceCell = dateToDay(day) === monthFirstDay;
                 const dayEvents = allEvents[dayIndex];
@@ -206,25 +216,40 @@ export const MonthView = React.memo(function MonthView({
                     data-selected={isSelected || undefined}
                   >
                     {/* Un clic sur le jour : fenêtre d'un nouvel événement ce
-                        jour-là (et le jour passe dans le volet) */}
+                        jour-là si le rôle peut créer (et le jour passe dans
+                        le volet) */}
                     <DroppableCell
                       id={cellId}
                       date={day}
-                      onClick={() => {
-                        onDaySelect?.(day);
-                        createOn(day);
-                      }}
+                      onClick={
+                        dayAction
+                          ? () => {
+                              onDaySelect?.(day);
+                              if (canCreate) createOn(day);
+                            }
+                          : undefined
+                      }
                     >
                       {/* Jour férié : son nom, discret, à côté du numéro */}
                       <div className="flex min-w-0 items-center gap-1.5">
                         {/* Numéro : même action, au clavier aussi */}
-                        <button
-                          type="button"
-                          aria-label={`Nouvel événement le ${dayLabel}`}
-                          className="hover:bg-muted focus-visible:ring-ring group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                        >
-                          {format(day, "d")}
-                        </button>
+                        {dayAction ? (
+                          <button
+                            type="button"
+                            aria-label={dayAction}
+                            aria-current={isToday(day) ? "date" : undefined}
+                            className="hover:bg-muted focus-visible:ring-ring group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white group-data-today:hover:bg-[#5a50ff]/90 mt-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          >
+                            {format(day, "d")}
+                          </button>
+                        ) : (
+                          <span
+                            aria-current={isToday(day) ? "date" : undefined}
+                            className="group-data-outside-cell:text-muted-foreground group-data-today:bg-[#5a50ff] group-data-today:font-medium group-data-today:text-white mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm"
+                          >
+                            {format(day, "d")}
+                          </span>
+                        )}
                         {frenchHolidayName(day) && (
                           <span
                             className="text-muted-foreground mt-1 truncate text-[10px] sm:text-xs"

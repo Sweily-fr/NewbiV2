@@ -11,8 +11,8 @@ import { MonthView } from "@/app/dashboard/calendar/components/month-view";
 import { CalendarDndProvider } from "@/app/dashboard/calendar/components/calendar-dnd-context";
 
 /**
- * Calendrier, vue mois : semaine du lundi au dimanche ; avec le volet du
- * jour, un clic choisit le jour et un double clic crée un événement.
+ * Calendrier, vue mois : semaine du lundi au dimanche ; un clic sur un jour
+ * ouvre la création (et passe le jour au volet), sauf sans droit de créer.
  */
 
 const NOVEMBER = new Date(2026, 10, 20, 12);
@@ -59,14 +59,14 @@ describe("vue mois du calendrier", () => {
 
     // Le jour choisi a un contour (s'il n'est pas aujourd'hui)
     const friday = screen.getByRole("button", {
-      name: /^Nouvel événement le vendredi 20 novembre/,
+      name: /^Ajouter un événement le vendredi 20 novembre/,
     });
     expect(friday.closest("div.group")).toHaveAttribute("data-selected");
 
     // Numéro (clavier compris) ou case : nouvel événement ce jour-là, à 9 h
     fireEvent.click(
       screen.getByRole("button", {
-        name: /^Nouvel événement le lundi 23 novembre/,
+        name: /^Ajouter un événement le lundi 23 novembre/,
       }),
     );
     expect(onDaySelect).toHaveBeenCalledWith(new Date(2026, 10, 23));
@@ -130,6 +130,48 @@ describe("vue mois du calendrier", () => {
     expect(onEventCreate).toHaveBeenCalledWith(new Date(2026, 9, 26, 9, 0, 0));
   });
 
+  it("lecture seule : pas de création, le numéro choisit le jour du volet", () => {
+    const onDaySelect = vi.fn();
+    const onEventCreate = vi.fn();
+    const { container } = renderMonth({
+      canCreate: false,
+      onDaySelect,
+      onEventCreate,
+    });
+    expect(
+      screen.queryAllByRole("button", { name: /Ajouter un événement/ }),
+    ).toHaveLength(0);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Voir le lundi 23 novembre" }),
+    );
+    expect(onDaySelect).toHaveBeenCalledWith(new Date(2026, 10, 23));
+    fireEvent.click(container.querySelectorAll("div.group")[0].firstChild);
+    expect(onEventCreate).not.toHaveBeenCalled();
+  });
+
+  it("lecture seule sans volet : les numéros ne sont pas des boutons", () => {
+    const onEventCreate = vi.fn();
+    const { container } = renderMonth({ canCreate: false, onEventCreate });
+    expect(
+      screen.queryAllByRole("button", {
+        name: /^(Ajouter un événement|Voir) le/,
+      }),
+    ).toHaveLength(0);
+    fireEvent.click(container.querySelectorAll("div.group")[0].firstChild);
+    expect(onEventCreate).not.toHaveBeenCalled();
+  });
+
+  it("jour J : aria-current, libellé sans « aujourd'hui » (bouton de la barre)", () => {
+    const now = new Date();
+    renderMonth({ currentDate: now });
+    expect(
+      screen.queryAllByRole("button", { name: /aujourd'hui/i }),
+    ).toHaveLength(0);
+    const current = document.querySelector('[aria-current="date"]');
+    expect(current).toHaveTextContent(String(now.getDate()));
+    expect(current).toHaveAccessibleName(/^Ajouter un événement le /);
+  });
+
   it("jours des mois voisins affichés, barres continues par-dessus", () => {
     renderMonth({
       selectedDay: new Date(2026, 10, 20),
@@ -146,7 +188,7 @@ describe("vue mois du calendrier", () => {
     });
     // 26 octobre → 6 décembre : 6 semaines
     const days = screen.getAllByRole("button", {
-      name: /^Nouvel événement le/,
+      name: /^Ajouter un événement le/,
     });
     expect(days).toHaveLength(42);
     expect(days[0]).toHaveTextContent(/^26$/);

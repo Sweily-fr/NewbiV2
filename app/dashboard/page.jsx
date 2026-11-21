@@ -698,8 +698,12 @@ function DashboardContent() {
         </div>
 
         {/* La semaine à venir, sous le bonjour (droit « Voir » du
-            calendrier) */}
-        {canSeeCalendar && <UpcomingDaysCard className="w-full -mt-1" />}
+            calendrier). Monté une fois les droits connus : sinon ses
+            requêtes partent avant et sont refusées aux rôles sans
+            calendrier */}
+        {!permissionsPending && canSeeCalendar && (
+          <UpcomingDaysCard className="w-full -mt-1" />
+        )}
 
         {/* Actions rapides (selon l'action « create » du rôle sur chaque module) */}
         {hasQuickActions && (
