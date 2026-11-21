@@ -6,7 +6,7 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { getExternalSource } from "@/src/components/document-source-badge";
-import { FileDown, KeyRound, Landmark, Send } from "lucide-react";
+import { CreditCard, FileDown, KeyRound, Landmark, Send } from "lucide-react";
 
 // Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
 // rafraîchir sans recharger la page, par nom d'opération GraphQL.
@@ -235,6 +235,34 @@ export const useActivityNotifications = (options = {}) => {
             : undefined,
         },
       );
+      return;
+    }
+
+    // Transfert payé par le destinataire : liste des transferts à jour et
+    // toast avec un lien vers les transferts (data.url)
+    if (incoming.type === "TRANSFER_PAID") {
+      if (!rememberToasted(incoming.id)) return;
+      apolloClient
+        .refetchQueries({ include: ["GetMyTransfers"] })
+        .catch(() => {});
+      const url = incoming.data?.url;
+      toast.document(incoming.title || "Paiement reçu", {
+        description: incoming.message,
+        fallbackIcon: CreditCard,
+        action: url
+          ? {
+              label: "Voir",
+              onClick: () => {
+                try {
+                  const target = new URL(url, window.location.origin);
+                  router.push(target.pathname + target.search);
+                } catch {
+                  window.location.assign(url);
+                }
+              },
+            }
+          : undefined,
+      });
       return;
     }
 

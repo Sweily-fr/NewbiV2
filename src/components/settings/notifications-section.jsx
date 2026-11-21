@@ -921,6 +921,11 @@ export function NotificationsSection({ onClose }) {
                         <div className="w-8 h-8 rounded-lg bg-[#5b4fff]/10 flex items-center justify-center text-[#5b4fff]">
                           <Landmark className="w-4 h-4" aria-hidden="true" />
                         </div>
+                      ) : notification.type === "TRANSFER_PAID" ? (
+                        // Paiement d'un transfert reçu : pas d'auteur
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                          <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
                       ) : notification.data?.actorImage ? (
                         <img
                           src={notification.data.actorImage}
@@ -941,6 +946,7 @@ export function NotificationsSection({ onClose }) {
                     <div className="flex-1 min-w-0">
                       {notification.type === "PURCHASE_INVOICE_RECEIVED" ||
                       notification.type === "DOCUMENT_IMPORTED" ||
+                      notification.type === "TRANSFER_PAID" ||
                       notification.type === "ACCESS_REQUESTED" ||
                       notification.type === "FISCAL_DEADLINE" ||
                       notification.type === "SOCIAL_POST_PUBLISHED" ||
