@@ -247,7 +247,9 @@ function PreviewDialog({ document, previewUrl, downloadUrl, onClose }) {
       onOpenChange={(next) => !next && onClose()}
     >
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center gap-3 pr-8">
+        {/* min-w-0 : sans lui, le nom sur une ligne élargit la fenêtre et
+            pousse « Télécharger » sous la croix sur un téléphone */}
+        <div className="flex min-w-0 items-center gap-3 pr-8">
           {document && <FileTypeIcon document={document} />}
           <DialogTitle className="text-base font-medium truncate flex-1 min-w-0">
             {document?.name}
@@ -403,15 +405,17 @@ function MoveDialog({ document, tree, onMove, onClose }) {
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="truncate pr-6">
-            Déplacer « {document.name} »
+        {/* min-w-0 : dans la grille de la fenêtre, un long nom ou un long
+            dossier l'élargirait au-delà de l'écran d'un téléphone */}
+        <DialogHeader className="min-w-0">
+          <DialogTitle className="pr-6 break-words">
+            Déplacer «&nbsp;{document.name}&nbsp;»
           </DialogTitle>
           <DialogDescription>
             Choisissez le dossier où ranger ce document.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="min-w-0 space-y-4">
           <RadioGroup
             aria-label="Dossier de destination"
             value={target}
@@ -1152,9 +1156,11 @@ export function SharedFiles({
         onOpenChange={(open) => !open && setToDelete(null)}
       >
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Supprimer « {toDelete?.name} » ?
+          {/* Un nom sans espace (« Scan_2026-11-22_facture.pdf ») passe à
+              la ligne au lieu d'élargir la fenêtre sur un téléphone */}
+          <AlertDialogHeader className="min-w-0">
+            <AlertDialogTitle className="break-words">
+              Supprimer «&nbsp;{toDelete?.name}&nbsp;»&nbsp;?
             </AlertDialogTitle>
             <AlertDialogDescription>
               Le document sera retiré du dossier partagé.
