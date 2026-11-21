@@ -708,6 +708,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
 
       {/* ─── Bottom Navigation Bar ─────────────────────────────── */}
       <nav
+        data-bottom-nav
         className="fixed bottom-0 left-0 right-0 z-[80] md:hidden"
         role="navigation"
         aria-label="Navigation principale mobile"
