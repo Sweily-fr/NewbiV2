@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   isSecretLocation,
   isSecretUrl,
+  isSecretVisit,
   SECRET_HISTORY_GUARD_SOURCE,
   SECRET_PAGE_INLINE_SOURCE,
+  SECRET_VISIT_FLAG,
+  SECRET_VISIT_INLINE_SOURCE,
 } from "@/src/lib/secret-pages";
 
 // Fonction du script du <head>, évaluée comme dans le navigateur
@@ -162,5 +165,46 @@ describe("Navigation interne vers une page à secret : un seul rechargement", ()
     evenement("pageshow", { persisted: true });
     history.pushState({}, "", TRANSFERT);
     expect(releve.assign).toEqual([TRANSFERT_COMPLET, TRANSFERT_COMPLET]);
+  });
+});
+
+// Visite commencée sur une page à secret : marquée par le script du <head>,
+// MarketingPixels ne charge alors rien jusqu'au prochain chargement complet
+const marquerVisite = new Function(
+  `${SECRET_PAGE_INLINE_SOURCE}${SECRET_VISIT_INLINE_SOURCE}; return __markSecretVisit;`,
+)();
+const entree = (adresse) => {
+  const w = { location: new URL(adresse, "https://www.newbi.fr") };
+  marquerVisite(w);
+  return w[SECRET_VISIT_FLAG];
+};
+
+describe("Visite commencée sur une page à secret", () => {
+  it.each([
+    TRANSFERT,
+    "/auth/reset-password?token=abc",
+    "/auth/verify-email?token=abc",
+    "/reactivate-account?email=a%40b.fr&token=abc",
+    "/public/kanban/jeton",
+    "/invitation-gestionnaire/0123456789abcdef01234567",
+  ])("%s : visite marquée", (adresse) => {
+    expect(entree(adresse)).toBe(true);
+  });
+
+  it.each(["/auth/login?invitation=x&email=a%40b.fr", "/tarifs", "/"])(
+    "%s : visite non marquée (adresse e-mail seule ou page publique)",
+    (adresse) => {
+      expect(entree(adresse)).toBeUndefined();
+    },
+  );
+
+  it("isSecretVisit lit le drapeau posé par le script du <head>", () => {
+    expect(isSecretVisit()).toBe(false);
+    window[SECRET_VISIT_FLAG] = true;
+    try {
+      expect(isSecretVisit()).toBe(true);
+    } finally {
+      delete window[SECRET_VISIT_FLAG];
+    }
   });
 });
