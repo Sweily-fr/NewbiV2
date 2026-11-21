@@ -6,7 +6,7 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { getExternalSource } from "@/src/components/document-source-badge";
-import { FileDown, KeyRound, Landmark, Send } from "lucide-react";
+import { CreditCard, FileDown, KeyRound, Landmark, Send } from "lucide-react";
 
 // Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
 // rafraîchir sans recharger la page, par nom d'opération GraphQL.
@@ -220,6 +220,42 @@ export const useActivityNotifications = (options = {}) => {
         {
           description: incoming.message,
           fallbackIcon: Send,
+          action: url
+            ? {
+                label: "Voir",
+                onClick: () => {
+                  try {
+                    const target = new URL(url, window.location.origin);
+                    router.push(target.pathname + target.search);
+                  } catch {
+                    window.location.assign(url);
+                  }
+                },
+              }
+            : undefined,
+        },
+      );
+      return;
+    }
+
+    // Transfert payé par le destinataire, ou virement annoncé par lui
+    // (« J'ai fait le virement ») : liste des transferts à jour et toast avec
+    // un lien vers les transferts (data.url)
+    if (
+      incoming.type === "TRANSFER_PAID" ||
+      incoming.type === "TRANSFER_BANK_DECLARED"
+    ) {
+      if (!rememberToasted(incoming.id)) return;
+      apolloClient
+        .refetchQueries({ include: ["GetMyTransfers"] })
+        .catch(() => {});
+      const url = incoming.data?.url;
+      const bankDeclared = incoming.type === "TRANSFER_BANK_DECLARED";
+      toast.document(
+        incoming.title || (bankDeclared ? "Virement annoncé" : "Paiement reçu"),
+        {
+          description: incoming.message,
+          fallbackIcon: bankDeclared ? Landmark : CreditCard,
           action: url
             ? {
                 label: "Voir",

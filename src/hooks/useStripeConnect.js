@@ -145,10 +145,24 @@ export const useStripeConnect = (organizationId) => {
     stripeStatusData?.myStripeConnectAccount?.chargesEnabled || false;
   const accountStatus =
     stripeStatusData?.myStripeConnectAccount?.accountStatus || "not_connected";
+  // « oauth » : compte Stripe du client (paiements directs, transferts
+  // compris) ; sinon ancien mode Express
+  const connectionType =
+    stripeStatusData?.myStripeConnectAccount?.connectionType || null;
 
   // Fonction pour ouvrir le tableau de bord Stripe
   const openStripeDashboard = useCallback(async () => {
     const accountId = stripeStatusData?.myStripeConnectAccount?.accountId;
+    // Compte Stripe du client relié par OAuth : il se gère sur son propre
+    // tableau de bord Stripe (les liens d'onboarding et de connexion Express
+    // ne concernent que les comptes créés par Newbi)
+    if (
+      accountId &&
+      stripeStatusData?.myStripeConnectAccount?.connectionType === "oauth"
+    ) {
+      window.open("https://dashboard.stripe.com/", "_blank", "noopener");
+      return;
+    }
     if (accountId) {
       // Si le compte n'est pas encore configuré, générer un lien d'onboarding
       if (!isOnboarded || !canReceivePayments) {
@@ -241,6 +255,7 @@ export const useStripeConnect = (organizationId) => {
     isOnboarded,
     canReceivePayments,
     accountStatus,
+    connectionType,
     isLoading: isLoading || statusLoading,
     error,
 
