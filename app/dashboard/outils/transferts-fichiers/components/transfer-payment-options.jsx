@@ -57,6 +57,19 @@ export function getTransferPaymentError(options, availableMethods = []) {
   return null;
 }
 
+/**
+ * Moyens cochés d'office à l'activation du paiement : les moyens en ligne
+ * disponibles (accès immédiat aux fichiers). Le virement, plus lent, reste à
+ * cocher, sauf s'il est le seul moyen disponible.
+ */
+export function defaultTransferPaymentMethods(availableMethods = []) {
+  const online = availableMethods.filter(
+    (method) => method !== "bank_transfer",
+  );
+  if (online.length > 0) return online;
+  return availableMethods.includes("bank_transfer") ? ["bank_transfer"] : [];
+}
+
 function ConnectLink({ onClick, children, disabled }) {
   return (
     <button
@@ -145,9 +158,10 @@ export function TransferPaymentOptions({
   const handleRequiredChange = (checked) => {
     onChange({
       isPaymentRequired: checked,
-      // Première activation : tous les moyens disponibles sont proposés
+      // Première activation : moyens en ligne proposés d'office (virement
+      // seulement s'il est le seul moyen disponible)
       ...(checked && selected.length === 0
-        ? { paymentMethods: [...availableMethods] }
+        ? { paymentMethods: defaultTransferPaymentMethods(availableMethods) }
         : {}),
     });
   };
@@ -235,11 +249,16 @@ export function TransferPaymentOptions({
     </span>
   );
 
+  // Compte bancaire relié à Newbi (autoDetect) : le virement reçu débloque
+  // le transfert tout seul ; sinon le vendeur le débloque à la main
   const bankHint = bank.available ? (
     <span>
-      Vers votre IBAN
-      {bank.ibanLast4 ? ` se terminant par ${bank.ibanLast4}` : ""}. Vous
-      débloquez le transfert à réception du virement.
+      Votre client voit votre IBAN
+      {bank.ibanLast4 ? ` se terminant par ${bank.ibanLast4}` : ""} et une
+      référence.{" "}
+      {bank.autoDetect
+        ? "Le transfert se débloque tout seul dès que le virement arrive sur votre compte bancaire connecté, en général sous 1 jour ouvré."
+        : "À réception du virement, débloquez le transfert avec « Marquer comme payé »."}
     </span>
   ) : (
     <span className="flex flex-wrap items-center gap-x-1.5">

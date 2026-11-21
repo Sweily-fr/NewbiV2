@@ -36,7 +36,9 @@ export const EMPTY_PAYMENT_CONNECTIONS = Object.freeze({
     accountEmail: null,
   },
   paypal: { available: false, connected: false, email: null },
-  bankTransfer: { available: false, ibanLast4: null },
+  // autoDetect : compte bancaire relié à Newbi, le virement reçu débloque le
+  // transfert sans « Marquer comme payé »
+  bankTransfer: { available: false, ibanLast4: null, autoDetect: false },
 });
 
 /**

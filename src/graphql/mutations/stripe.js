@@ -100,6 +100,32 @@ export const CONSUME_PAYMENT_RETURN_TOKEN = gql`
   }
 `;
 
+// Page publique : le destinataire annonce avoir fait le virement (« J'ai
+// fait le virement », protégé par la clé d'accès du lien) et peut laisser
+// son adresse pour recevoir le lien au déblocage. cancel: true retire
+// l'annonce. Tant que le virement est annoncé, la carte et PayPal ne sont
+// plus proposés (createPaymentSessionForFileTransfer refuse).
+export const DECLARE_TRANSFER_BANK_PAYMENT = gql`
+  mutation DeclareTransferBankPayment(
+    $transferId: ID!
+    $accessKey: String!
+    $email: String
+    $cancel: Boolean
+  ) {
+    declareTransferBankPayment(
+      transferId: $transferId
+      accessKey: $accessKey
+      email: $email
+      cancel: $cancel
+    ) {
+      success
+      message
+      declaredAt
+      notifyEmailHint
+    }
+  }
+`;
+
 // Moyens d'encaissement de l'espace actif : compte Stripe du vendeur,
 // compte PayPal, IBAN de l'entreprise pour les virements
 export const GET_PAYMENT_CONNECTIONS = gql`
@@ -122,6 +148,9 @@ export const GET_PAYMENT_CONNECTIONS = gql`
       bankTransfer {
         available
         ibanLast4
+        # Compte bancaire relié à Newbi : le virement reçu débloque le
+        # transfert tout seul
+        autoDetect
       }
     }
   }

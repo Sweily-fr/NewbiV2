@@ -31,7 +31,6 @@ import {
   CircleXIcon,
   TrashIcon,
   CircleCheck,
-  CreditCard,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -103,38 +102,9 @@ import { createSearchMatcher } from "@/src/utils/search-text";
 import { SearchExactToggle } from "@/src/components/search-exact-toggle";
 import {
   canMarkTransferAsPaid,
-  formatTransferAmount,
-  transferPaymentState,
+  transferUnlockEmail,
 } from "../utils/transfer-payment";
-
-// Badge du paiement demandé au destinataire (montant compris)
-function TransferPaymentBadge({ transfer }) {
-  const state = transferPaymentState(transfer);
-  if (!state) return null;
-  const amount = formatTransferAmount(
-    state === "paid" && transfer.paidAmount != null
-      ? transfer.paidAmount
-      : transfer.paymentAmount,
-    transfer.paymentCurrency,
-  );
-  if (state === "paid") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-xs font-medium whitespace-nowrap dark:bg-emerald-900/20 dark:text-emerald-400">
-        <CircleCheck className="w-3 h-3" />
-        Payé · {amount}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#5b4fff]/10 text-[#5b4fff] text-xs font-medium whitespace-nowrap">
-      <CreditCard className="w-3 h-3" />
-      {state === "pending"
-        ? "Paiement en confirmation"
-        : "En attente de paiement"}{" "}
-      · {amount}
-    </span>
-  );
-}
+import { TransferPaymentBadge } from "./transfer-payment-badge";
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -516,7 +486,10 @@ export default function TransferTable({
     if (!transferToMarkPaid) return;
     setIsMarkingPaid(true);
     try {
-      const updated = await markTransferAsPaid(transferToMarkPaid.id);
+      // L'API prévient le client par e-mail quand elle connaît son adresse
+      const updated = await markTransferAsPaid(transferToMarkPaid.id, {
+        clientNotified: Boolean(transferUnlockEmail(transferToMarkPaid)),
+      });
       if (updated && selectedTransfer?.id === transferToMarkPaid.id) {
         setSelectedTransfer((prev) => (prev ? { ...prev, ...updated } : prev));
       }

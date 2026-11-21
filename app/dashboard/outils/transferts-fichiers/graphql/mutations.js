@@ -304,6 +304,10 @@ export const GET_MY_TRANSFERS = gql`
         payerEmail
         paymentReference
         paymentPending
+        # Virement annoncé par le client (« J'ai fait le virement ») et
+        # adresse qu'il a laissée pour être prévenu du déblocage
+        bankTransferDeclaredAt
+        bankTransferDeclaredEmail
         recipientEmail
         createdAt
       }
@@ -353,6 +357,10 @@ export const GET_TRANSFER_BY_LINK = gql`
           bankName
           reference
         }
+        # Virement annoncé par le destinataire, et adresse (masquée) qui
+        # recevra le lien au déblocage
+        bankTransferDeclaredAt
+        notifyEmailHint
         status
         downloadCount
         recipientEmail
@@ -443,6 +451,8 @@ export const MARK_FILE_TRANSFER_AS_PAID = gql`
       payerEmail
       paymentReference
       paymentPending
+      bankTransferDeclaredAt
+      bankTransferDeclaredEmail
     }
   }
 `;

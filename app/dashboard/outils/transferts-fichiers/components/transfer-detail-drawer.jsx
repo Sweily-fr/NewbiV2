@@ -53,6 +53,7 @@ import {
   Check,
   Copy,
   HelpCircle,
+  Landmark,
   Pencil,
   Trash2,
   QrCode as QrCodeIcon,
@@ -65,7 +66,9 @@ import { cn } from "@/src/lib/utils";
 import {
   TRANSFER_PAYMENT_METHOD_LABELS,
   TRANSFER_PAYMENT_PROVIDER_LABELS,
+  TRANSFER_PAYMENT_STATE_LABELS,
   canMarkTransferAsPaid,
+  formatBankTransferDeclaration,
   formatTransferAmount,
   transferPaymentState,
 } from "../utils/transfer-payment";
@@ -392,6 +395,11 @@ export function TransferDetailDrawer({
 
   // Paiement demandé au destinataire
   const paymentState = transferPaymentState(transfer);
+  // Virement annoncé par le client (« J'ai fait le virement ») : à vérifier
+  // sur le compte avant de débloquer
+  const bankTransferDeclaration = formatBankTransferDeclaration(transfer);
+  const showMarkAsPaid =
+    Boolean(onMarkAsPaid) && canMarkTransferAsPaid(transfer);
   const offeredPaymentMethods = (
     transfer.paymentMethods?.length ? transfer.paymentMethods : ["stripe"]
   )
@@ -784,9 +792,7 @@ export function TransferDetailDrawer({
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#5b4fff]/10 text-[#5b4fff] text-xs font-medium">
-                        {paymentState === "pending"
-                          ? "Paiement en confirmation"
-                          : "En attente de paiement"}
+                        {TRANSFER_PAYMENT_STATE_LABELS[paymentState]}
                       </span>
                     )}
                   </div>
@@ -847,22 +853,36 @@ export function TransferDetailDrawer({
                     )}
                   </dl>
 
-                  {onMarkAsPaid && canMarkTransferAsPaid(transfer) && (
+                  {(showMarkAsPaid || bankTransferDeclaration) && (
                     <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onMarkAsPaid(transfer)}
-                        className="cursor-pointer"
-                      >
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        Marquer comme payé
-                      </Button>
-                      <p className="text-xs text-gray-500">
-                        Paiement reçu autrement (virement, espèces…) : le client
-                        pourra télécharger les fichiers.
-                      </p>
+                      {showMarkAsPaid && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onMarkAsPaid(transfer)}
+                          className="cursor-pointer"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Marquer comme payé
+                        </Button>
+                      )}
+                      {bankTransferDeclaration ? (
+                        <p className="flex min-w-0 flex-1 items-start gap-1.5 text-xs text-gray-700">
+                          <Landmark
+                            className="mt-px h-3.5 w-3.5 flex-shrink-0 text-[#5b4fff]"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0 break-words">
+                            {bankTransferDeclaration}
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500">
+                          Paiement reçu autrement (virement, espèces…) : le
+                          client pourra télécharger les fichiers.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

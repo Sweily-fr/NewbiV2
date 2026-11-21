@@ -356,16 +356,20 @@ export const useFileTransfer = () => {
   );
 
   // Débloquer à la main un transfert payant (paiement reçu autrement) : le
-  // transfert renvoyé met à jour le cache Apollo (tableau et détail)
+  // transfert renvoyé met à jour le cache Apollo (tableau et détail).
+  // clientNotified : l'API connaît l'adresse du client (virement annoncé ou
+  // destinataire) et le prévient par e-mail.
   const markTransferAsPaid = useCallback(
-    async (transferId) => {
+    async (transferId, { clientNotified = false } = {}) => {
       try {
         const { data } = await markFileTransferAsPaidMutation({
           variables: { id: transferId },
         });
         if (data?.markFileTransferAsPaid?.isPaid) {
           toast.success("Transfert débloqué", {
-            description: "Le client peut télécharger les fichiers.",
+            description: clientNotified
+              ? "Votre client est prévenu par e-mail."
+              : "Le client peut télécharger les fichiers.",
           });
           return data.markFileTransferAsPaid;
         }

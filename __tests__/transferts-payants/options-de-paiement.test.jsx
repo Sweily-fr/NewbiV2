@@ -5,6 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
   TransferPaymentOptions,
+  defaultTransferPaymentMethods,
   getTransferPaymentError,
   parsePaymentAmount,
 } from "@/app/dashboard/outils/transferts-fichiers/components/transfer-payment-options";
@@ -113,16 +114,117 @@ describe("availableTransferPaymentMethods", () => {
   });
 });
 
+describe("defaultTransferPaymentMethods", () => {
+  it("moyens en ligne cochés d'office, virement laissé à cocher", () => {
+    expect(
+      defaultTransferPaymentMethods(["stripe", "paypal", "bank_transfer"]),
+    ).toEqual(["stripe", "paypal"]);
+    expect(defaultTransferPaymentMethods(["paypal", "bank_transfer"])).toEqual([
+      "paypal",
+    ]);
+  });
+
+  it("virement seul disponible : il est coché", () => {
+    expect(defaultTransferPaymentMethods(["bank_transfer"])).toEqual([
+      "bank_transfer",
+    ]);
+    expect(defaultTransferPaymentMethods([])).toEqual([]);
+  });
+});
+
 describe("TransferPaymentOptions", () => {
-  it("activer le paiement propose d'office tous les moyens disponibles", () => {
+  it("activer le paiement coche d'office les moyens en ligne, pas le virement", () => {
     const { onChange } = afficher();
     fireEvent.click(
       screen.getByRole("switch", { name: "Demander un paiement" }),
     );
     expect(onChange).toHaveBeenCalledWith({
       isPaymentRequired: true,
-      paymentMethods: ["stripe", "paypal", "bank_transfer"],
+      paymentMethods: ["stripe", "paypal"],
     });
+  });
+
+  it("sans carte ni PayPal : le virement, seul moyen, est coché", () => {
+    const { onChange } = afficher({
+      connections: connections({
+        stripe: { oauthAvailable: true },
+        bankTransfer: { available: true, ibanLast4: "1234" },
+      }),
+    });
+    fireEvent.click(
+      screen.getByRole("switch", { name: "Demander un paiement" }),
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      isPaymentRequired: true,
+      paymentMethods: ["bank_transfer"],
+    });
+  });
+
+  it("sans carte mais avec PayPal : PayPal coché, virement non", () => {
+    const { onChange } = afficher({
+      connections: connections({
+        stripe: { oauthAvailable: true },
+        paypal: { available: true, connected: true, email: "pay@studio.fr" },
+        bankTransfer: { available: true, ibanLast4: "1234" },
+      }),
+    });
+    fireEvent.click(
+      screen.getByRole("switch", { name: "Demander un paiement" }),
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      isPaymentRequired: true,
+      paymentMethods: ["paypal"],
+    });
+  });
+
+  it("moyens déjà choisis : réactiver le paiement ne les change pas", () => {
+    const { onChange } = afficher({
+      value: { isPaymentRequired: false, paymentMethods: ["bank_transfer"] },
+    });
+    fireEvent.click(
+      screen.getByRole("switch", { name: "Demander un paiement" }),
+    );
+    expect(onChange).toHaveBeenCalledWith({ isPaymentRequired: true });
+  });
+
+  it("virement : déblocage automatique si le compte bancaire est relié", () => {
+    afficher({
+      value: { isPaymentRequired: true, paymentAmount: "25" },
+      connections: connections({
+        bankTransfer: { available: true, ibanLast4: "1234", autoDetect: true },
+      }),
+    });
+    expect(
+      screen.getByText(
+        "Votre client voit votre IBAN se terminant par 1234 et une référence. Le transfert se débloque tout seul dès que le virement arrive sur votre compte bancaire connecté, en général sous 1 jour ouvré.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("virement : « Marquer comme payé » sans compte relié", () => {
+    afficher({
+      value: { isPaymentRequired: true, paymentAmount: "25" },
+      connections: connections({
+        bankTransfer: { available: true, ibanLast4: "1234" },
+      }),
+    });
+    expect(
+      screen.getByText(
+        "Votre client voit votre IBAN se terminant par 1234 et une référence. À réception du virement, débloquez le transfert avec « Marquer comme payé ».",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("virement : IBAN sans ses 4 derniers chiffres", () => {
+    afficher({
+      value: { isPaymentRequired: true, paymentAmount: "25" },
+      connections: connections({
+        bankTransfer: { available: true, ibanLast4: null, autoDetect: true },
+      }),
+    });
+    expect(
+      screen.getByText(/^Votre client voit votre IBAN et une référence\./),
+    ).toBeInTheDocument();
   });
 
   it("indisponible avec le filigrane", () => {

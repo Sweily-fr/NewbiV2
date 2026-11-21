@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
 import { useStripePayment } from "@/src/hooks/useStripePayment";
+import { useTransferBankDeclaration } from "@/src/hooks/useTransferBankDeclaration";
 import { useZipPreview } from "@/src/hooks/useZipPreview";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { toast } from "@/src/components/ui/sonner";
@@ -333,6 +334,33 @@ export default function TransferPage() {
     }, 5000);
     return () => clearInterval(timer);
   }, [paymentAwaitingConfirmation, refetch]);
+
+  // Virement annoncé par le destinataire (« J'ai fait le virement ») : la
+  // réponse met la page à jour aussitôt, puis la page est relue
+  const { declareBankTransfer, cancelBankTransferDeclaration } =
+    useTransferBankDeclaration({
+      transferId: transfer?.fileTransfer?.id,
+      accessKey,
+      onChange: () => refetch(),
+    });
+
+  // Virement annoncé, pas encore reçu : relecture toutes les minutes pendant
+  // 30 minutes, pour afficher les fichiers dès que le vendeur le débloque
+  // (ou que le virement est détecté sur son compte)
+  const bankTransferAwaited =
+    paymentLocked && Boolean(transfer?.fileTransfer?.bankTransferDeclaredAt);
+  useEffect(() => {
+    if (!bankTransferAwaited) return;
+    const deadline = Date.now() + 30 * 60 * 1000;
+    const timer = setInterval(() => {
+      if (Date.now() > deadline) {
+        clearInterval(timer);
+        return;
+      }
+      refetch().catch(() => {});
+    }, 60 * 1000);
+    return () => clearInterval(timer);
+  }, [bankTransferAwaited, refetch]);
 
   // Messages du retour de paiement, une fois le transfert chargé, puis
   // paramètre retiré de l'adresse (pas de nouveau message au rechargement)
@@ -1226,6 +1254,12 @@ export default function TransferPage() {
                 initiatePayment(transfer?.fileTransfer?.id, accessKey, provider)
               }
               processingProvider={processingProvider}
+              bankTransferDeclaredAt={
+                transfer?.fileTransfer?.bankTransferDeclaredAt
+              }
+              notifyEmailHint={transfer?.fileTransfer?.notifyEmailHint}
+              onDeclareBankTransfer={declareBankTransfer}
+              onCancelBankTransferDeclaration={cancelBankTransferDeclaration}
             />
           ) : (
             /* Contenu principal */
