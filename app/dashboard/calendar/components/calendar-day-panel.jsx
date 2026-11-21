@@ -57,7 +57,9 @@ export function CalendarDayDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[300px] max-w-[85vw] gap-0 p-0 [&>button]:hidden"
+        // Sous 768 px, la barre de navigation du bas (h-16) passe par-dessus
+        // les tiroirs : le contenu s'arrête au-dessus
+        className="w-[300px] max-w-[85vw] gap-0 p-0 max-md:pb-16 [&>button]:hidden"
         onOpenAutoFocus={(e) => {
           // Le tiroir lui-même, pas la croix (sa bulle s'ouvrirait)
           e.preventDefault();
