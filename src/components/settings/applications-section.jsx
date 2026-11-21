@@ -20,6 +20,12 @@ import { useSession } from "@/src/lib/auth-client";
 import { StripeConnectOnboardingModal } from "@/src/components/stripe-connect-onboarding-modal";
 import { useSocialPublishingStatus } from "@/src/hooks/useSocialPublishing";
 import {
+  STRIPE_CONNECT_ERROR_MESSAGES,
+  usePaymentConnections,
+} from "@/src/hooks/usePaymentConnections";
+import { PaypalConnectDialog } from "@/src/components/payments/paypal-connect-dialog";
+import { toast } from "@/src/components/ui/sonner";
+import {
   PENDING_SETTINGS_APP_KEY,
   SOCIAL_APP_ID,
   SocialAccountsPanel,
@@ -98,7 +104,7 @@ const APPLICATIONS = [
     name: "Stripe",
     author: "Stripe",
     description:
-      "Plateforme de paiement en ligne pour encaisser vos factures et gérer vos abonnements.",
+      "Plateforme de paiement en ligne pour encaisser vos factures et vos transferts de fichiers.",
     category: "payment",
     logo: `${BRANDFETCH_CDN}/stripe.com/w/400/h/400`,
     logoBg: "#635BFF",
@@ -184,6 +190,9 @@ const APPLICATIONS = [
     name: "PayPal",
     author: "PayPal",
     description: "Proposez PayPal comme moyen de paiement sur vos factures.",
+    // Texte quand PayPal est ouvert à l'espace (voir appsWithStatus)
+    availableDescription:
+      "Encaissez vos transferts de fichiers par PayPal, directement sur votre compte.",
     category: "payment",
     logo: `${BRANDFETCH_CDN}/paypal.com/w/400/h/400`,
     logoBg: "#003087",
@@ -1874,7 +1883,7 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
 
 // Apps dont la désinstallation coupe aussi la connexion côté API
 // (cf. APP_INTEGRATIONS dans le resolver uninstallApp)
-const APPS_WITH_INTEGRATION = ["abby", "qonto", "pennylane"];
+const APPS_WITH_INTEGRATION = ["abby", "qonto", "pennylane", "paypal"];
 
 // ── Vue détail d'une app installée ──
 
@@ -1884,6 +1893,7 @@ function AppDetailView({
   isConnected,
   connectionDetail,
   stripeActions,
+  paypalActions,
   bankingActions,
   pennylaneActions,
   qontoActions,
@@ -2004,9 +2014,11 @@ function AppDetailView({
             <AlertDialogDescription>
               {app.id === SOCIAL_APP_ID && isConnected
                 ? "Les comptes connectés seront déconnectés et les posts programmés annulés. Les posts déjà publiés restent en ligne."
-                : uninstallDisconnects
-                  ? `La connexion à ${app.name} sera coupée : la clé enregistrée sera supprimée et les synchronisations s'arrêteront. Les documents déjà importés sont conservés. Vous pourrez reconnecter ${app.name} en la réinstallant.`
-                  : `L'application sera retirée de vos applications. Vous pourrez la réinstaller à tout moment.`}
+                : app.id === "paypal" && isConnected
+                  ? "La connexion à PayPal sera coupée : vos clients ne pourront plus payer vos transferts par PayPal. Vous pourrez reconnecter PayPal en la réinstallant."
+                  : uninstallDisconnects
+                    ? `La connexion à ${app.name} sera coupée : la clé enregistrée sera supprimée et les synchronisations s'arrêteront. Les documents déjà importés sont conservés. Vous pourrez reconnecter ${app.name} en la réinstallant.`
+                    : `L'application sera retirée de vos applications. Vous pourrez la réinstaller à tout moment.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2062,10 +2074,50 @@ function AppDetailView({
                               "Application connectée et active."}
                           </p>
                         </div>
-                        <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
-                          Active
-                        </span>
+                        {stripeActions.canReceive ? (
+                          <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-[11px] font-medium bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
+                            À activer
+                          </span>
+                        )}
                       </div>
+
+                      {/* Ancien mode (compte Express créé par Newbi) : les
+                          transferts payants demandent le compte Stripe du
+                          client, relié par OAuth */}
+                      {stripeActions.legacy && stripeActions.oauthAvailable && (
+                        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+                          <Info className="w-4 h-4 mt-0.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                          <div className="space-y-2">
+                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                              Stripe est relié dans l&apos;ancien mode, qui sert
+                              aux factures. Pour encaisser aussi vos transferts
+                              de fichiers, reconnectez votre propre compte
+                              Stripe : les paiements arriveront directement sur
+                              votre compte.
+                            </p>
+                            {stripeActions.canManage && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={stripeActions.onReconnect}
+                                disabled={
+                                  isReadOnly || stripeActions.isConnecting
+                                }
+                                className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
+                                title={readOnlyTooltip}
+                              >
+                                {stripeActions.isConnecting
+                                  ? "Connexion..."
+                                  : "Reconnecter mon compte Stripe"}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Stripe actions : « Gérer les applications » */}
                       {stripeActions.canManage && (
@@ -2080,7 +2132,9 @@ function AppDetailView({
                               title="Finalisez votre configuration Stripe"
                             >
                               <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                              Finaliser la configuration
+                              {stripeActions.isOAuth
+                                ? "Activer mon compte sur Stripe"
+                                : "Finaliser la configuration"}
                             </Button>
                           ) : (
                             <Button
@@ -2119,8 +2173,9 @@ function AppDetailView({
                         <div className="flex items-center gap-3">
                           <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
                           <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                            Connectez Stripe pour recevoir des paiements sur vos
-                            factures.
+                            {stripeActions.oauthAvailable
+                              ? "Connectez votre compte Stripe pour encaisser vos factures et vos transferts de fichiers, directement sur votre compte."
+                              : "Connectez Stripe pour recevoir des paiements sur vos factures."}
                           </p>
                         </div>
                         {stripeActions.canManage && (
@@ -2128,11 +2183,16 @@ function AppDetailView({
                             type="button"
                             size="sm"
                             onClick={stripeActions.onConnect}
-                            disabled={isReadOnly || stripeActions.isLoading}
+                            disabled={
+                              isReadOnly ||
+                              stripeActions.isLoading ||
+                              stripeActions.isConnecting
+                            }
                             className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
                             title={readOnlyTooltip}
                           >
-                            {stripeActions.isLoading
+                            {stripeActions.isLoading ||
+                            stripeActions.isConnecting
                               ? "Connexion..."
                               : "Connecter"}
                           </Button>
@@ -2141,6 +2201,96 @@ function AppDetailView({
                       {!stripeActions.canManage && (
                         <p className="text-xs text-amber-600 dark:text-amber-400">
                           Votre rôle ne permet pas de gérer Stripe Connect
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ── PayPal ── */}
+              {app.id === "paypal" && paypalActions && (
+                <>
+                  {isConnected ? (
+                    <div className="space-y-3">
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <AppLogo
+                            src={app.logo}
+                            name={app.name}
+                            size="xs"
+                            bgColor={app.logoBg}
+                          />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400 truncate">
+                            {paypalActions.email || "Compte PayPal connecté"}
+                          </p>
+                        </div>
+                        <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+                          Active
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        Vos clients paient vos transferts de fichiers par
+                        PayPal, directement sur ce compte. PayPal y prélève ses
+                        frais habituels.
+                      </p>
+                      {paypalActions.canManage ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={paypalActions.onEdit}
+                            disabled={isReadOnly || paypalActions.isLoading}
+                            className="cursor-pointer"
+                            title={readOnlyTooltip}
+                          >
+                            Modifier l&apos;adresse
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={paypalActions.onDisconnect}
+                            disabled={paypalActions.isLoading}
+                            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            {paypalActions.isLoading ? "..." : "Déconnecter"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Votre rôle ne permet pas de gérer PayPal
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                            Indiquez l&apos;adresse e-mail de votre compte
+                            PayPal Business : vos clients paieront directement
+                            sur ce compte.
+                          </p>
+                        </div>
+                        {paypalActions.canManage && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={paypalActions.onConnect}
+                            disabled={isReadOnly || paypalActions.isLoading}
+                            className="bg-[#003087] hover:bg-[#00266b] text-white cursor-pointer"
+                            title={readOnlyTooltip}
+                          >
+                            Connecter
+                          </Button>
+                        )}
+                      </div>
+                      {!paypalActions.canManage && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Votre rôle ne permet pas de gérer PayPal
                         </p>
                       )}
                     </div>
@@ -2533,6 +2683,7 @@ export function ApplicationsSection() {
     isConnected: isStripeConnected,
     canReceivePayments: stripeCanReceive,
     accountStatus: stripeStatus,
+    connectionType: stripeConnectionType,
     isLoading: isStripeLoading,
     stripeAccount,
     connectStripe,
@@ -2607,9 +2758,69 @@ export function ApplicationsSection() {
   // l'API n'a pas la publication activée)
   const socialStatus = useSocialPublishingStatus(workspaceId);
 
+  // Moyens d'encaissement : compte Stripe du client (OAuth), PayPal
+  const payment = usePaymentConnections();
+  const paymentConnections = payment.connections;
+  const stripeOAuthAvailable = paymentConnections.stripe.oauthAvailable;
+  const isStripeOAuth = stripeConnectionType === "oauth";
+  const [isPaypalDialogOpen, setIsPaypalDialogOpen] = useState(false);
+
+  const startStripeOAuth = async () => {
+    try {
+      await payment.connectStripe();
+    } catch (error) {
+      toast.error("Impossible de se connecter à Stripe", {
+        description: error?.message || "Veuillez réessayer.",
+      });
+    }
+  };
+
+  // Retour de la connexion Stripe (OAuth) : l'API redirige vers
+  // /dashboard?parametres=applications&stripe_connect=<résultat>
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("stripe_connect");
+    if (!result) return;
+    params.delete("stripe_connect");
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      document.title,
+      `${window.location.pathname}${query ? `?${query}` : ""}`,
+    );
+    if (result === "success") {
+      toast.success("Votre compte Stripe est connecté", {
+        description:
+          "Les paiements de vos clients arriveront directement sur votre compte.",
+      });
+      refetchStripeStatus();
+      payment.refetch();
+      const stripeApp = APPLICATIONS.find((a) => a.id === "stripe");
+      if (stripeApp) {
+        setSelectedApp(stripeApp);
+        setView("app-detail");
+      }
+    } else {
+      toast.error("La connexion à Stripe n'a pas abouti", {
+        description:
+          STRIPE_CONNECT_ERROR_MESSAGES[result] ||
+          STRIPE_CONNECT_ERROR_MESSAGES.error,
+      });
+    }
+    // Une seule lecture au montage : le paramètre est retiré de l'adresse
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // La désinstallation coupe la connexion côté API : on rafraîchit le statut de
   // l'intégration, sinon la carte reste affichée « Connecté » jusqu'au rechargement.
   const handleUninstallApp = async (appId) => {
+    if (appId === "paypal" && paymentConnections.paypal.connected) {
+      try {
+        await payment.disconnectPaypal();
+      } catch {
+        // La désinstallation suit, la connexion reste visible au besoin
+      }
+    }
     const result = await uninstallApp(appId);
     const refetchByApp = {
       abby: refetchAbbyStatus,
@@ -2685,15 +2896,39 @@ export function ApplicationsSection() {
     ).map((app) => {
       const installed = isAppInstalled(app.id);
       if (app.id === "stripe") {
+        // Compte du client relié par OAuth : son nom (ou e-mail) Stripe
+        const accountLabel =
+          stripeAccount?.displayName || stripeAccount?.accountEmail;
         return {
           ...app,
-          installed,
+          // Un compte connecté (depuis un transfert par exemple) compte
+          // comme une application installée
+          installed: installed || isStripeConnected,
           connected: isStripeConnected,
-          connectionDetail: stripeCanReceive
-            ? "Paiements actifs"
-            : isStripeConnected
-              ? "Onboarding en cours"
-              : null,
+          connectionDetail: !isStripeConnected
+            ? null
+            : isStripeOAuth
+              ? `${accountLabel || "Compte Stripe connecté"}${
+                  stripeCanReceive ? "" : " · activation à terminer sur Stripe"
+                }`
+              : stripeCanReceive
+                ? "Paiements actifs"
+                : "Onboarding en cours",
+        };
+      }
+      if (app.id === "paypal") {
+        const paypal = paymentConnections.paypal;
+        // PayPal ouvert à l'espace (configuré côté Newbi) : application
+        // disponible ; sinon carte « à venir » comme avant
+        return {
+          ...app,
+          comingSoon: !paypal.available,
+          description: paypal.available
+            ? app.availableDescription || app.description
+            : app.description,
+          installed: paypal.available && (installed || paypal.connected),
+          connected: paypal.available && paypal.connected,
+          connectionDetail: paypal.connected ? paypal.email : null,
         };
       }
       if (app.id === "bridge") {
@@ -2757,6 +2992,9 @@ export function ApplicationsSection() {
     socialStatus.accounts,
     isStripeConnected,
     stripeCanReceive,
+    isStripeOAuth,
+    stripeAccount,
+    paymentConnections,
     isBankingConnected,
     bankingAccountsCount,
     isPennylaneConnected,
@@ -2805,17 +3043,61 @@ export function ApplicationsSection() {
   const stripeActions = {
     canManage: canManageStripeConnect,
     isLoading: isStripeLoading,
+    isConnecting: payment.isConnectingStripe,
     stripeAccount,
+    canReceive: stripeCanReceive,
+    isOAuth: isStripeOAuth,
+    // Compte Express créé par Newbi (ancien mode) : factures seulement
+    legacy: isStripeConnected && !isStripeOAuth,
+    oauthAvailable: stripeOAuthAvailable,
     onConnect: () => {
+      if (stripeOAuthAvailable) {
+        startStripeOAuth();
+        return;
+      }
       setStripeOnboardingStep(1);
       setIsStripeOnboardingModalOpen(true);
     },
+    onReconnect: startStripeOAuth,
     onFinishSetup: () => {
+      // Compte du client : il termine son activation sur Stripe
+      if (isStripeOAuth) {
+        openStripeDashboard();
+        return;
+      }
       setStripeOnboardingStep(2);
       setIsStripeOnboardingModalOpen(true);
     },
     onOpenDashboard: openStripeDashboard,
-    onDisconnect: disconnectStripe,
+    onDisconnect: async () => {
+      await disconnectStripe();
+      payment.refetch();
+    },
+  };
+
+  // Actions PayPal pour la vue détail
+  const paypalActions = {
+    canManage: canManageApps,
+    isLoading: payment.isPaypalLoading,
+    email: paymentConnections.paypal.email,
+    onConnect: () => setIsPaypalDialogOpen(true),
+    onEdit: () => setIsPaypalDialogOpen(true),
+    onDisconnect: async () => {
+      try {
+        const result = await payment.disconnectPaypal();
+        if (result?.success) {
+          toast.success("PayPal est déconnecté");
+        } else {
+          toast.error(
+            result?.message || "La déconnexion de PayPal n'a pas abouti",
+          );
+        }
+      } catch (error) {
+        toast.error(
+          error?.message || "La déconnexion de PayPal n'a pas abouti",
+        );
+      }
+    },
   };
 
   // Actions Banking pour la vue détail
@@ -2909,6 +3191,7 @@ export function ApplicationsSection() {
           readOnlyTooltip={readOnlyTooltip}
           workspaceId={workspaceId}
           stripeActions={stripeActions}
+          paypalActions={paypalActions}
           bankingActions={bankingActions}
           pennylaneActions={pennylaneActions}
           qontoActions={qontoActions}
@@ -2931,6 +3214,13 @@ export function ApplicationsSection() {
           onVerifyIdentity={async () => {
             await openStripeDashboard();
           }}
+        />
+        {/* Connexion PayPal : adresse du compte PayPal Business */}
+        <PaypalConnectDialog
+          open={isPaypalDialogOpen}
+          onOpenChange={setIsPaypalDialogOpen}
+          initialEmail={paymentConnections.paypal.email || ""}
+          onConnect={payment.connectPaypal}
         />
       </>
     );

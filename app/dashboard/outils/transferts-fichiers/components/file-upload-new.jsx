@@ -2,16 +2,18 @@
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useFileTransferR2Multipart } from "../hooks/useFileTransferR2Multipart";
-import { useStripeConnect } from "@/src/hooks/useStripeConnect";
-import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
-import { useUser } from "@/src/lib/auth/hooks";
-import dynamic from "next/dynamic";
-
-// Chunk chargé à la première ouverture seulement
-const SettingsModal = dynamic(
-  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
-  { ssr: false },
-);
+import { usePaymentConnections } from "@/src/hooks/usePaymentConnections";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { PaypalConnectDialog } from "@/src/components/payments/paypal-connect-dialog";
+import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
+import { toast } from "@/src/components/ui/sonner";
+import {
+  TransferPaymentOptions,
+  getTransferPaymentError,
+  parsePaymentAmount,
+} from "./transfer-payment-options";
 import {
   AlertCircleIcon,
   FileArchiveIcon,
@@ -30,7 +32,6 @@ import {
   CornerDownLeft,
   Clock,
   Shield,
-  CreditCard,
   Plus,
   Bell,
   Lock,
@@ -53,7 +54,6 @@ import {
 import { Switch } from "@/src/components/ui/switch";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Separator } from "@/src/components/ui/separator";
-import { Callout } from "@/src/components/ui/callout";
 import {
   Tooltip,
   TooltipContent,
@@ -123,16 +123,19 @@ export default function FileUploadNew({
   const uploadStartTimeRef = useRef(0); // Temps de début de l'upload
   const speedHistoryRef = useRef([]); // Historique des vitesses pour moyenne mobile
 
-  // Hooks
-  const { session: user } = useUser();
-  const {
-    isConnected: stripeConnected,
-    canReceivePayments,
-    isLoading: stripeLoading,
-    stripeAccount,
-    checkAndUpdateAccountStatus,
-    refetchStatus,
-  } = useStripeConnect(user?.user?.id);
+  // Paiement demandé au destinataire : accès anticipé (transferPayments),
+  // moyens d'encaissement de l'espace (compte Stripe du vendeur, PayPal,
+  // IBAN pour les virements)
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
+  const canRequestPayment = isFeatureEnabled("transferPayments");
+  const payment = usePaymentConnections({ skip: !canRequestPayment });
+  const { activeOrganization } = useWorkspace();
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  // Connecter Stripe ou PayPal : « Gérer les applications »
+  const canManageConnections =
+    !permissionsReady || canDo("integrations", "manage");
+  const [paypalDialogOpen, setPaypalDialogOpen] = useState(false);
+  const [bankDialogOpen, setBankDialogOpen] = useState(false);
 
   // Utilisation directe de R2 comme stockage unique
   const {
@@ -153,6 +156,8 @@ export default function FileUploadNew({
     isPaymentRequired: false,
     paymentAmount: 0,
     paymentCurrency: "EUR",
+    // Moyens proposés au destinataire : stripe | paypal | bank_transfer
+    paymentMethods: [],
     recipientEmail: "",
     message: "",
     // Nouvelles options
@@ -167,6 +172,10 @@ export default function FileUploadNew({
     watermarkPosition: "diagonal", // 'center', 'bottom-right', 'diagonal', 'tile'
   });
 
+  // Paiement demandé : incompatible avec le filigrane
+  const paymentRequested =
+    canRequestPayment && Boolean(transferOptions.isPaymentRequired);
+
   // Compter le nombre de fichiers supportés pour le filigrane (images + PDFs)
   const watermarkableCount = useMemo(() => {
     return countWatermarkableFiles(selectedFiles);
@@ -174,8 +183,6 @@ export default function FileUploadNew({
 
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState([]);
-  const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -264,120 +271,39 @@ export default function FileUploadNew({
     return `${mins}min ${secs}s`;
   };
 
-  // Sauvegarder les fichiers sélectionnés avant la redirection Stripe
+  // Moyen de paiement devenu disponible pendant la saisie (PayPal ou IBAN
+  // ajouté ici, Stripe connecté dans l'onglet ouvert à côté) : il est
+  // proposé d'office au destinataire
+  const previousAvailableRef = useRef(null);
   useEffect(() => {
-    if (selectedFiles.length > 0) {
-      const filesData = selectedFiles.map((fileObj) => ({
-        id: fileObj.id,
-        name: fileObj.file.name,
-        size: fileObj.file.size,
-        type: fileObj.file.type,
-        lastModified: fileObj.file.lastModified,
-      }));
-      sessionStorage.setItem(
-        "stripe_redirect_files",
-        JSON.stringify(filesData),
-      );
-    }
-  }, [selectedFiles]);
-
-  // Restaurer les fichiers au retour de Stripe
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("stripe_success") === "true") {
-      const savedFilesData = sessionStorage.getItem("stripe_redirect_files");
-      if (savedFilesData) {
-        try {
-          const filesData = JSON.parse(savedFilesData);
-          // Créer des objets File à partir des données sauvegardées
-          const restoredFiles = filesData.map((fileData) => {
-            // Créer un File object fictif avec les métadonnées
-            const file = new File([""], fileData.name, {
-              type: fileData.type,
-              lastModified: fileData.lastModified,
-            });
-            // Ajouter les propriétés de taille (non modifiable sur File)
-            Object.defineProperty(file, "size", {
-              value: fileData.size,
-              writable: false,
-            });
-            return file;
-          });
-
-          // Ajouter les fichiers restaurés
-          if (restoredFiles.length > 0) {
-            addFiles(restoredFiles);
+    if (!canRequestPayment || !payment.isReady) return;
+    const previous = previousAvailableRef.current;
+    previousAvailableRef.current = payment.availableMethods;
+    if (!previous) return;
+    const added = payment.availableMethods.filter((m) => !previous.includes(m));
+    if (added.length === 0) return;
+    setTransferOptions((prev) =>
+      prev.isPaymentRequired
+        ? {
+            ...prev,
+            paymentMethods: [...new Set([...prev.paymentMethods, ...added])],
           }
+        : prev,
+    );
+  }, [canRequestPayment, payment.isReady, payment.availableMethods]);
 
-          // Nettoyer le sessionStorage
-          sessionStorage.removeItem("stripe_redirect_files");
-
-          // Nettoyer l'URL
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, newUrl);
-        } catch (error) {
-          console.error("Erreur lors de la restauration des fichiers:", error);
-          sessionStorage.removeItem("stripe_redirect_files");
-        }
-      }
-    }
-  }, [addFiles]);
-
-  // Vérifier automatiquement le statut Stripe au retour de redirection
+  // Retour sur l'onglet après une connexion Stripe ouverte à côté : on relit
+  // les moyens de paiement de l'espace
+  const refetchPaymentConnections = payment.refetch;
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-
-    // Vérifier si on vient de Stripe
-    const isFromStripe = urlParams.get("stripe_success") === "true";
-
-    if (isFromStripe && user?.user?.id) {
-      console.log("🔄 Retour de Stripe détecté, vérification du statut...");
-
-      const timer = setTimeout(async () => {
-        try {
-          // Récupérer l'accountId depuis la base de données
-          const response = await fetch(
-            `/api/stripe/connect/account?userId=${user.user.id}`,
-          );
-          const accountData = await response.json();
-
-          if (accountData.success && accountData.accountId) {
-            console.log("📋 Account ID trouvé:", accountData.accountId);
-
-            // Vérifier et mettre à jour le statut du compte
-            const statusResponse = await fetch("/api/stripe/connect/status", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                accountId: accountData.accountId,
-                userId: user.user.id,
-              }),
-            });
-
-            const statusData = await statusResponse.json();
-            console.log("✅ Statut mis à jour:", statusData);
-
-            // Refetch les données pour s'assurer qu'elles sont à jour
-            await refetchStatus();
-
-            // Nettoyer l'URL
-            window.history.replaceState({}, "", window.location.pathname);
-          }
-        } catch (error) {
-          console.error(
-            "❌ Erreur lors de la vérification automatique:",
-            error,
-          );
-        }
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
+    if (!canRequestPayment || !transferOptions.isPaymentRequired) return;
+    const onFocus = () => refetchPaymentConnections();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [
-    user?.user?.id,
-    stripeAccount?.accountId,
-    checkAndUpdateAccountStatus,
-    refetchStatus,
+    canRequestPayment,
+    transferOptions.isPaymentRequired,
+    refetchPaymentConnections,
   ]);
 
   // Fonction pour mettre à jour les options de transfert
@@ -441,9 +367,33 @@ export default function FileUploadNew({
         }
       })();
 
+      // Paiement demandé : vérifié avant l'envoi des fichiers (un refus de
+      // l'API après l'envoi obligerait à tout renvoyer)
+      const wantsPayment =
+        canRequestPayment && Boolean(transferOptions.isPaymentRequired);
+      if (wantsPayment) {
+        const paymentError = getTransferPaymentError(
+          transferOptions,
+          payment.availableMethods,
+        );
+        if (paymentError) {
+          toast.error(paymentError);
+          return;
+        }
+      }
+
       const transferOptionsWithDays = {
         ...transferOptions,
         expiryDays,
+        isPaymentRequired: wantsPayment,
+        paymentAmount: wantsPayment
+          ? parsePaymentAmount(transferOptions.paymentAmount)
+          : 0,
+        paymentMethods: wantsPayment
+          ? transferOptions.paymentMethods.filter((method) =>
+              payment.availableMethods.includes(method),
+            )
+          : [],
       };
 
       const result = await createTransfer(transferOptionsWithDays);
@@ -454,7 +404,10 @@ export default function FileUploadNew({
         capture("file_transfer_created", {
           file_count: selectedFiles.length,
           expiry_days: expiryDays,
-          is_paid: transferOptions.isPaid,
+          is_paid: wantsPayment,
+          payment_methods: wantsPayment
+            ? transferOptionsWithDays.paymentMethods.join(",")
+            : undefined,
           is_password_protected: !!transferOptions.accessKey,
         });
 
@@ -790,115 +743,41 @@ export default function FileUploadNew({
               </p>
             </div>
 
-            {/* Separator + Payment — désactivé temporairement, à remettre plus tard
-          <Separator />
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <CreditCard className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">Paiement requis</Label>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm font-normal">
-                    Demander un paiement
-                  </Label>
-                  {!stripeConnected && !transferOptions.applyWatermark && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSettingsModalOpen(true)}
-                      className="text-xs h-6 px-2 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5"
-                    >
-                      Connecter Stripe
-                    </Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {transferOptions.applyWatermark
-                    ? "Non disponible avec le filigrane activé"
-                    : stripeConnected
-                      ? "Exiger un paiement avant le téléchargement"
-                      : "Connectez Stripe Connect pour activer les paiements"}
-                </p>
-              </div>
-              <Switch
-                checked={transferOptions.requirePayment}
-                onCheckedChange={(checked) => {
-                  if (checked && !stripeConnected) {
-                    setShowStripeOnboarding(true);
-                    return;
+            {/* Paiement demandé au destinataire (accès anticipé) */}
+            {canRequestPayment && (
+              <>
+                <Separator />
+                <TransferPaymentOptions
+                  value={transferOptions}
+                  onChange={updateTransferOptions}
+                  connections={payment.connections}
+                  connectionsLoading={payment.loading}
+                  availableMethods={payment.availableMethods}
+                  watermarkEnabled={Boolean(transferOptions.applyWatermark)}
+                  canManageConnections={canManageConnections}
+                  isConnectingStripe={payment.isConnectingStripe}
+                  onConnectStripe={async () => {
+                    try {
+                      // Nouvel onglet : les fichiers choisis restent ici
+                      await payment.connectStripe({ newTab: true });
+                    } catch (error) {
+                      toast.error("Impossible de se connecter à Stripe", {
+                        description: error?.message || "Veuillez réessayer.",
+                      });
+                    }
+                  }}
+                  onOpenStripeDashboard={() =>
+                    window.open(
+                      "https://dashboard.stripe.com/",
+                      "_blank",
+                      "noopener",
+                    )
                   }
-                  handleOptionChange("requirePayment", checked);
-                }}
-                disabled={!user || transferOptions.applyWatermark}
-                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
-              />
-            </div>
-
-            {transferOptions.requirePayment && (
-              <div className="space-y-4 pt-4 border-t">
-                <div className="*:not-first:mt-2">
-                  <Label className="text-sm font-normal">Montant</Label>
-                  <div className="relative">
-                    <Input
-                      className="peer ps-6 pe-12 pr-8"
-                      placeholder="1.00"
-                      type="text"
-                      value={
-                        transferOptions.paymentAmount === 0
-                          ? ""
-                          : transferOptions.paymentAmount
-                      }
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === "" || /^[0-9]*[.,]?[0-9]*$/.test(value)) {
-                          const normalizedValue = value.replace(",", ".");
-                          handleOptionChange(
-                            "paymentAmount",
-                            normalizedValue === "" ? 0 : normalizedValue
-                          );
-                        }
-                      }}
-                    />
-                    <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm peer-disabled:opacity-50">
-                      €
-                    </span>
-                    <span className="text-muted-foreground pointer-events-none absolute inset-y-0 end-0 flex items-center justify-center pe-3 text-sm peer-disabled:opacity-50">
-                      EUR
-                    </span>
-                  </div>
-                </div>
-                {stripeConnected && !canReceivePayments && (
-                  <Callout type="info" noMargin>
-                    <h4 className="text-sm font-medium mb-2">
-                      Configuration Stripe incomplète
-                    </h4>
-                    <p className="text-xs mb-3">
-                      Finalisez votre configuration Stripe pour recevoir des
-                      paiements.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowStripeOnboarding(true)}
-                      className="text-xs h-7"
-                    >
-                      Finaliser la configuration
-                    </Button>
-                  </Callout>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Le paiement sera traité via Stripe. Une commission de 2.9% +
-                  0.30€ s'applique.
-                </p>
-              </div>
+                  onConnectPaypal={() => setPaypalDialogOpen(true)}
+                  onAddIban={() => setBankDialogOpen(true)}
+                />
+              </>
             )}
-          </div>
-
-          <Separator />
-          */}
 
             <Separator />
 
@@ -1048,20 +927,19 @@ export default function FileUploadNew({
                     Appliquer un filigrane
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Ajouter un filigrane sur les images et PDFs
+                    {paymentRequested
+                      ? "Non disponible avec un paiement demandé : votre client doit pouvoir télécharger les originaux."
+                      : "Ajouter un filigrane sur les images et PDFs"}
                   </p>
                 </div>
                 <Switch
                   checked={transferOptions.applyWatermark}
-                  onCheckedChange={(checked) => {
-                    handleOptionChange("applyWatermark", checked);
-                    // Désactiver le paiement si filigrane activé — désactivé temporairement
-                    // if (checked && transferOptions.requirePayment) {
-                    //   handleOptionChange("requirePayment", false);
-                    //   handleOptionChange("paymentAmount", 0);
-                    // }
-                  }}
-                  disabled={watermarkableCount === 0}
+                  onCheckedChange={(checked) =>
+                    handleOptionChange("applyWatermark", checked)
+                  }
+                  // Un transfert filigrané n'est jamais téléchargeable : pas
+                  // de paiement possible avec (et inversement)
+                  disabled={watermarkableCount === 0 || paymentRequested}
                   className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
                 />
               </div>
@@ -1161,23 +1039,22 @@ export default function FileUploadNew({
         </div>
       </div>
 
-      {/* Modal Stripe Connect Onboarding - En dehors du grid */}
-      <StripeConnectOnboarding
-        isOpen={showStripeOnboarding}
-        onClose={() => setShowStripeOnboarding(false)}
-        userId={user?.user?.id}
-        userEmail={user?.user?.email}
-        onSuccess={() => {
-          setShowStripeOnboarding(false);
-        }}
-      />
-      {/* Modal Settings pour configurer Stripe Connect */}
-      {settingsModalOpen && (
-        <SettingsModal
-          open={settingsModalOpen}
-          onOpenChange={setSettingsModalOpen}
-          initialTab="user-info"
-        />
+      {/* Connexion PayPal et IBAN depuis l'option de paiement */}
+      {canRequestPayment && (
+        <>
+          <PaypalConnectDialog
+            open={paypalDialogOpen}
+            onOpenChange={setPaypalDialogOpen}
+            initialEmail={payment.connections.paypal.email || ""}
+            onConnect={payment.connectPaypal}
+          />
+          <BankDetailsDialog
+            open={bankDialogOpen}
+            onOpenChange={setBankDialogOpen}
+            organization={activeOrganization}
+            onSuccess={() => payment.refetch()}
+          />
+        </>
       )}
     </>
   );

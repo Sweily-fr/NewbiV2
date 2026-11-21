@@ -296,6 +296,18 @@ export const GET_MY_TRANSFERS = gql`
         isPaymentRequired
         paymentAmount
         paymentCurrency
+        isPaid
+        paymentDate
+        paymentMethods
+        paymentProvider
+        paidAmount
+        payerEmail
+        paymentReference
+        paymentPending
+        # Virement annoncé par le client (« J'ai fait le virement ») et
+        # adresse qu'il a laissée pour être prévenu du déblocage
+        bankTransferDeclaredAt
+        bankTransferDeclaredEmail
         recipientEmail
         createdAt
       }
@@ -333,6 +345,22 @@ export const GET_TRANSFER_BY_LINK = gql`
         paymentAmount
         paymentCurrency
         isPaid
+        # Paiement : moyens proposés, paiement en cours de confirmation,
+        # coordonnées du virement et nom du vendeur (transfert non payé)
+        paymentMethods
+        paymentPending
+        sellerName
+        bankTransferDetails {
+          holder
+          iban
+          bic
+          bankName
+          reference
+        }
+        # Virement annoncé par le destinataire, et adresse (masquée) qui
+        # recevra le lien au déblocage
+        bankTransferDeclaredAt
+        notifyEmailHint
         status
         downloadCount
         recipientEmail
@@ -402,6 +430,29 @@ export const RENAME_FILE_TRANSFER = gql`
     renameFileTransfer(id: $id, title: $title) {
       id
       title
+    }
+  }
+`;
+
+// Débloquer à la main un transfert payant (virement reçu, paiement en
+// espèces…) : le destinataire peut télécharger les fichiers aussitôt
+export const MARK_FILE_TRANSFER_AS_PAID = gql`
+  mutation MarkFileTransferAsPaid($id: ID!) {
+    markFileTransferAsPaid(id: $id) {
+      id
+      isPaymentRequired
+      paymentAmount
+      paymentCurrency
+      isPaid
+      paymentDate
+      paymentMethods
+      paymentProvider
+      paidAmount
+      payerEmail
+      paymentReference
+      paymentPending
+      bankTransferDeclaredAt
+      bankTransferDeclaredEmail
     }
   }
 `;

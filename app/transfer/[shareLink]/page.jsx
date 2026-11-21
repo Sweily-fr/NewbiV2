@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
 import { useStripePayment } from "@/src/hooks/useStripePayment";
+import { useTransferBankDeclaration } from "@/src/hooks/useTransferBankDeclaration";
 import { useZipPreview } from "@/src/hooks/useZipPreview";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { toast } from "@/src/components/ui/sonner";
@@ -29,7 +30,7 @@ import Image from "next/image";
 import {
   PasswordModal,
   FilePreviewDrawer,
-  PaymentModal,
+  TransferPaymentPanel,
   PdfPreview,
 } from "./components";
 import { requestTransferPasswordAccess } from "./components/password-screen";
@@ -187,7 +188,11 @@ export default function TransferPage() {
   const searchParams = useSearchParams();
   const shareLink = params.shareLink;
   const accessKey = searchParams.get("key");
-  const paymentStatus = searchParams.get("payment_status");
+  // Retour de la page de paiement : paid | pending | canceled | unpaid
+  // (ancien format : payment_status=success)
+  const paymentReturn =
+    searchParams.get("payment") ||
+    (searchParams.get("payment_status") === "success" ? "paid" : null);
 
   // 🔐 Query d'autorisation pour les routes de fichiers de l'API : secret de
   // partage et, pour un transfert protégé, jeton d'accès remis par
@@ -282,32 +287,11 @@ export default function TransferPage() {
     }
   };
 
-  // Hook pour gérer les paiements Stripe
-  const { initiatePayment, isProcessing } = useStripePayment();
-
-  // Déclencher confetti si paiement réussi
-  useEffect(() => {
-    if (paymentStatus === "success") {
-      // Délai pour laisser la page se charger
-      const timer = setTimeout(() => {
-        // Toast de succès
-        toast.success(
-          "Paiement effectué avec succès! Vous pouvez maintenant télécharger vos fichiers.",
-        );
-
-        // Nettoyer l'URL
-        const newUrl =
-          window.location.pathname +
-          window.location.search.replace(/[?&]payment_status=success/, "");
-        window.history.replaceState({}, document.title, newUrl);
-      }, 5000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [paymentStatus]);
+  // Paiement du transfert (Stripe ou PayPal, sur le compte du vendeur)
+  const { initiatePayment, processingProvider } = useStripePayment();
 
   // Query pour récupérer les détails du transfert
-  const { data, loading, error } = useQuery(GET_TRANSFER_BY_LINK, {
+  const { data, loading, error, refetch } = useQuery(GET_TRANSFER_BY_LINK, {
     variables: {
       shareLink,
       accessKey,
@@ -316,6 +300,108 @@ export default function TransferPage() {
   });
 
   const transfer = data?.getFileTransferByLink;
+  // Transfert payant pas encore payé : fichiers listés mais verrouillés
+  // (l'API refuse téléchargements et aperçus avant le paiement)
+  const paymentLocked = Boolean(
+    transfer?.fileTransfer &&
+    (transfer.fileTransfer.isPaymentRequired === true ||
+      transfer.fileTransfer.paymentAmount > 0) &&
+    !transfer.fileTransfer.isPaid,
+  );
+  // Paiement reçu par le prestataire, en attente de confirmation (ou
+  // retour de la page de paiement avant la confirmation)
+  const paymentAwaitingConfirmation =
+    paymentLocked &&
+    Boolean(
+      transfer?.fileTransfer?.paymentPending ||
+      paymentReturn === "pending" ||
+      paymentReturn === "paid",
+    );
+  const [paymentPollTimedOut, setPaymentPollTimedOut] = useState(false);
+
+  // Suivi de la confirmation : relecture toutes les 5 s pendant 2 minutes
+  useEffect(() => {
+    if (!paymentAwaitingConfirmation) return;
+    setPaymentPollTimedOut(false);
+    const deadline = Date.now() + 2 * 60 * 1000;
+    const timer = setInterval(() => {
+      if (Date.now() > deadline) {
+        clearInterval(timer);
+        setPaymentPollTimedOut(true);
+        return;
+      }
+      refetch().catch(() => {});
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [paymentAwaitingConfirmation, refetch]);
+
+  // Virement annoncé par le destinataire (« J'ai fait le virement ») : la
+  // réponse met la page à jour aussitôt, puis la page est relue
+  const { declareBankTransfer, cancelBankTransferDeclaration } =
+    useTransferBankDeclaration({
+      transferId: transfer?.fileTransfer?.id,
+      accessKey,
+      onChange: () => refetch(),
+    });
+
+  // Virement annoncé, pas encore reçu : relecture toutes les minutes pendant
+  // 30 minutes, pour afficher les fichiers dès que le vendeur le débloque
+  // (ou que le virement est détecté sur son compte)
+  const bankTransferAwaited =
+    paymentLocked && Boolean(transfer?.fileTransfer?.bankTransferDeclaredAt);
+  useEffect(() => {
+    if (!bankTransferAwaited) return;
+    const deadline = Date.now() + 30 * 60 * 1000;
+    const timer = setInterval(() => {
+      if (Date.now() > deadline) {
+        clearInterval(timer);
+        return;
+      }
+      refetch().catch(() => {});
+    }, 60 * 1000);
+    return () => clearInterval(timer);
+  }, [bankTransferAwaited, refetch]);
+
+  // Messages du retour de paiement, une fois le transfert chargé, puis
+  // paramètre retiré de l'adresse (pas de nouveau message au rechargement)
+  const paymentReturnHandledRef = useRef(false);
+  useEffect(() => {
+    if (!paymentReturn || paymentReturnHandledRef.current) return;
+    const fileTransfer = transfer?.fileTransfer;
+    if (!fileTransfer) return;
+    const isPaid = Boolean(fileTransfer.isPaid);
+    // Retour « payé » pas encore confirmé : on attend la confirmation
+    if (
+      !isPaid &&
+      (paymentReturn === "paid" || paymentReturn === "pending") &&
+      !paymentPollTimedOut
+    ) {
+      return;
+    }
+    paymentReturnHandledRef.current = true;
+    if (isPaid) {
+      toast.success("Paiement reçu", {
+        description: "Vos fichiers sont disponibles au téléchargement.",
+      });
+    } else if (paymentReturn === "canceled") {
+      toast.info("Paiement annulé", {
+        description: "Aucun montant n'a été débité. Vous pouvez réessayer.",
+      });
+    } else if (paymentReturn === "unpaid") {
+      toast.error("Le paiement n'a pas abouti", {
+        description: "Aucun montant n'a été débité. Vous pouvez réessayer.",
+      });
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete("payment");
+    params.delete("payment_status");
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      document.title,
+      `${window.location.pathname}${query ? `?${query}` : ""}`,
+    );
+  }, [paymentReturn, transfer?.fileTransfer, paymentPollTimedOut]);
   const isPasswordProtected = !!transfer?.fileTransfer?.passwordProtected;
   // Transfert protégé : fichiers et message remis avec le jeton d'accès.
   // Sinon (ou API qui les donne encore), ceux de la requête publique.
@@ -410,7 +496,7 @@ export default function TransferPage() {
     tooLarge: zipTooLarge,
     extractBlob: extractZipBlob,
   } = useZipPreview({
-    enabled: !!zipContainer,
+    enabled: !!zipContainer && !paymentLocked,
     zipUrl: zipPreviewUrl,
   });
 
@@ -946,7 +1032,9 @@ export default function TransferPage() {
     );
   }
 
-  if (error || !transfer) {
+  // Lien inconnu ou expiré : l'API répond sans transfert (success: false),
+  // la page ne doit pas afficher « Vos fichiers sont prêts » à vide
+  if (error || !transfer?.fileTransfer) {
     return (
       <div className="container mx-auto py-20 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">
@@ -955,20 +1043,17 @@ export default function TransferPage() {
         <p className="text-gray-600">
           Le transfert demandé n'existe pas ou a expiré.
         </p>
-        <p className="text-sm text-gray-500 mt-2">{error?.message}</p>
+        <p className="text-sm text-gray-500 mt-2">
+          {error?.message || transfer?.message}
+        </p>
       </div>
     );
   }
 
   const isExpired = new Date(transfer?.fileTransfer?.expiryDate) < new Date();
 
-  // Calculer si paiement requis
-  const isPaymentRequired = !!(
-    (transfer?.fileTransfer?.isPaymentRequired === true ||
-      (transfer?.fileTransfer?.paymentAmount &&
-        transfer?.fileTransfer?.paymentAmount > 0)) &&
-    !transfer?.fileTransfer?.isPaid
-  );
+  // Paiement requis et pas encore reçu
+  const isPaymentRequired = paymentLocked;
 
   // Calculer la taille totale des fichiers
   const totalSize = transferFiles.reduce(
@@ -1097,16 +1182,6 @@ export default function TransferPage() {
         }
       />
 
-      {/* Modal de paiement */}
-      {isPaymentRequired && (
-        <PaymentModal
-          amount={transfer?.fileTransfer?.paymentAmount}
-          currency={transfer?.fileTransfer?.paymentCurrency}
-          onPay={() => initiatePayment(transfer?.fileTransfer?.id, accessKey)}
-          isProcessing={isProcessing}
-        />
-      )}
-
       {/* Panneau gauche - Fond gris avec image */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#F8F8F8] items-center justify-start relative">
         {/* Logo en haut à gauche */}
@@ -1165,7 +1240,32 @@ export default function TransferPage() {
                 Ce lien n'est plus disponible
               </p>
             </div>
-          ) : isPaymentRequired ? null : (
+          ) : isPaymentRequired ? (
+            /* Paiement demandé : fichiers listés et verrouillés */
+            <TransferPaymentPanel
+              amount={transfer?.fileTransfer?.paymentAmount}
+              currency={transfer?.fileTransfer?.paymentCurrency}
+              sellerName={transfer?.fileTransfer?.sellerName}
+              paymentMethods={transfer?.fileTransfer?.paymentMethods}
+              bankTransferDetails={transfer?.fileTransfer?.bankTransferDetails}
+              pending={paymentAwaitingConfirmation}
+              pendingTimedOut={paymentPollTimedOut}
+              expiryLabel={formatExpiryDate(transfer?.fileTransfer?.expiryDate)}
+              message={transferMessage}
+              files={displayFiles}
+              formatSize={formatSize}
+              onPay={(provider) =>
+                initiatePayment(transfer?.fileTransfer?.id, accessKey, provider)
+              }
+              processingProvider={processingProvider}
+              bankTransferDeclaredAt={
+                transfer?.fileTransfer?.bankTransferDeclaredAt
+              }
+              notifyEmailHint={transfer?.fileTransfer?.notifyEmailHint}
+              onDeclareBankTransfer={declareBankTransfer}
+              onCancelBankTransferDeclaration={cancelBankTransferDeclaration}
+            />
+          ) : (
             /* Contenu principal */
             <>
               {/* Carte "Prévisualisation désactivée" quand le transfert

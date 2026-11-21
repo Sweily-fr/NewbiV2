@@ -358,6 +358,12 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
             ? Number(transferOptions.paymentAmount)
             : 0,
           paymentCurrency: transferOptions.paymentCurrency || "EUR",
+          // Moyens proposés au destinataire (stripe | paypal | bank_transfer),
+          // envoyés seulement pour un transfert payant
+          ...(transferOptions.isPaymentRequired &&
+          Array.isArray(transferOptions.paymentMethods)
+            ? { paymentMethods: transferOptions.paymentMethods }
+            : {}),
           recipientEmail: transferOptions.recipientEmail || null,
           message: transferOptions.message || "",
           // Nouvelles options
