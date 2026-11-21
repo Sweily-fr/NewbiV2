@@ -360,7 +360,7 @@ export function TransferDetailDrawer({
   const formatDate = (dateInput) => {
     if (!dateInput) return "Non spécifiée";
     try {
-      return format(new Date(dateInput), "d MMM. yyyy", { locale: fr });
+      return format(new Date(dateInput), "d MMM yyyy", { locale: fr });
     } catch {
       return "Date invalide";
     }
@@ -408,7 +408,7 @@ export function TransferDetailDrawer({
   const formatPaymentDate = (dateInput) => {
     if (!dateInput) return null;
     try {
-      return format(new Date(dateInput), "d MMM. yyyy 'à' HH:mm", {
+      return format(new Date(dateInput), "d MMM yyyy 'à' HH:mm", {
         locale: fr,
       });
     } catch {

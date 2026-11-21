@@ -1032,7 +1032,9 @@ export default function TransferPage() {
     );
   }
 
-  if (error || !transfer) {
+  // Lien inconnu ou expiré : l'API répond sans transfert (success: false),
+  // la page ne doit pas afficher « Vos fichiers sont prêts » à vide
+  if (error || !transfer?.fileTransfer) {
     return (
       <div className="container mx-auto py-20 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">
@@ -1041,7 +1043,9 @@ export default function TransferPage() {
         <p className="text-gray-600">
           Le transfert demandé n'existe pas ou a expiré.
         </p>
-        <p className="text-sm text-gray-500 mt-2">{error?.message}</p>
+        <p className="text-sm text-gray-500 mt-2">
+          {error?.message || transfer?.message}
+        </p>
       </div>
     );
   }
