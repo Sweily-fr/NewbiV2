@@ -16,11 +16,16 @@ import {
   FileText,
   FileVideo,
   FileAudio,
+  FileUp,
   FolderClosed,
+  FolderInput,
   FolderOpen,
   Home,
+  LoaderCircle,
   LogOut,
+  MoreHorizontal,
   PanelLeft,
+  Pencil,
   Search,
   Trash2,
   Upload,
@@ -38,7 +43,14 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +60,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Input } from "@/src/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
 import {
   Sheet,
   SheetContent,
@@ -63,10 +76,12 @@ import {
   UPLOAD_ACCEPT,
   buildShareTree,
   fileKind,
+  folderChoices,
   formatFileSize,
   previewKind,
   searchShare,
   sortDocuments,
+  splitName,
 } from "./shared-files-utils";
 import { UploadPanel, useUploadQueue } from "./upload-queue";
 
@@ -279,16 +294,246 @@ function PreviewDialog({ document, previewUrl, downloadUrl, onClose }) {
 }
 
 /**
+ * Action d'une fenêtre : bouton occupé pendant l'envoi, message de l'API en
+ * cas de refus, fenêtre fermée une fois l'action faite.
+ */
+function useDialogAction(action, onDone) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const run = async (...args) => {
+    setBusy(true);
+    setError("");
+    try {
+      await action(...args);
+      onDone();
+    } catch (failure) {
+      setError(failure?.message || "Une erreur est survenue");
+      setBusy(false);
+    }
+  };
+  return { busy, error, run };
+}
+
+/** Renommer un document déposé par le visiteur : l'extension reste. */
+function RenameDialog({ document, onRename, onClose }) {
+  const { stem, extension } = splitName(document.name);
+  const [value, setValue] = useState(stem);
+  const { busy, error, run } = useDialogAction(async (name) => {
+    await onRename(document, name);
+    toast.success("Document renommé");
+  }, onClose);
+  const cleaned = value.trim();
+
+  const submit = (event) => {
+    event.preventDefault();
+    if (!cleaned || cleaned === stem || busy) return;
+    run(extension ? `${cleaned}.${extension}` : cleaned);
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Renommer le document</DialogTitle>
+          <DialogDescription>
+            Votre interlocuteur verra aussi ce nouveau nom.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Input
+              aria-label="Nouveau nom"
+              autoFocus
+              maxLength={190}
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              onFocus={(event) => event.target.select()}
+            />
+            {extension && (
+              <span className="shrink-0 text-sm text-muted-foreground">
+                .{extension}
+              </span>
+            )}
+          </div>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={onClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={busy || !cleaned || cleaned === stem}
+            >
+              {busy && <LoaderCircle className="size-4 mr-2 animate-spin" />}
+              Renommer
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Ranger un document déposé par le visiteur dans un autre dossier. */
+function MoveDialog({ document, tree, onMove, onClose }) {
+  const choices = useMemo(() => folderChoices(tree), [tree]);
+  const [target, setTarget] = useState(document.folderId);
+  const { busy, error, run } = useDialogAction(async (folderId) => {
+    await onMove(document, folderId);
+    const folder = tree.folderById.get(folderId);
+    toast.success(`Document déplacé dans « ${folder?.name || "le dossier"} »`);
+  }, onClose);
+
+  const submit = (event) => {
+    event.preventDefault();
+    if (target === document.folderId || busy) return;
+    run(target);
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="truncate pr-6">
+            Déplacer « {document.name} »
+          </DialogTitle>
+          <DialogDescription>
+            Choisissez le dossier où ranger ce document.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <RadioGroup
+            aria-label="Dossier de destination"
+            value={target}
+            onValueChange={setTarget}
+            className="gap-0 max-h-72 overflow-y-auto rounded-md border py-1"
+          >
+            {choices.map(({ folder, depth }) => {
+              const isCurrent = folder.id === document.folderId;
+              return (
+                <label
+                  key={folder.id}
+                  className={cn(
+                    "flex items-center gap-2 py-2 pr-3 text-sm cursor-pointer hover:bg-accent/50 transition-colors",
+                    target === folder.id && "bg-accent",
+                  )}
+                  style={{ paddingLeft: `${depth * 16 + 12}px` }}
+                >
+                  <RadioGroupItem value={folder.id} aria-label={folder.name} />
+                  <FolderIcon folder={folder} />
+                  <span className="truncate flex-1 min-w-0">{folder.name}</span>
+                  {isCurrent && (
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      Dossier actuel
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </RadioGroup>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={onClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={busy || target === document.folderId}
+            >
+              {busy && <LoaderCircle className="size-4 mr-2 animate-spin" />}
+              Déplacer
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Menu d'un document déposé par le visiteur : il peut le renommer, le
+ * déplacer, en envoyer une nouvelle version ou le supprimer.
+ */
+function OwnDocumentMenu({ document, canMove, onAction }) {
+  const select = (action) => () => onAction(action, document);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label={`Actions pour ${document.name}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-52"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <DropdownMenuItem onSelect={select("rename")}>
+          <Pencil className="size-4" />
+          Renommer
+        </DropdownMenuItem>
+        {canMove && (
+          <DropdownMenuItem onSelect={select("move")}>
+            <FolderInput className="size-4" />
+            Déplacer
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onSelect={select("replace")}>
+          <FileUp className="size-4" />
+          Remplacer le fichier
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={select("delete")}>
+          <Trash2 className="size-4" />
+          Supprimer
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
  * Espace du visiteur d'un lien client : même visuel que Documents partagés
  * dans Newbi (explorateur à gauche, fil d'Ariane, recherche, colonnes Nom,
  * Taille et Date). Si l'accès le permet, le visiteur dépose des documents
- * dans le dossier ouvert (bouton ou glisser-déposer) et supprime ceux qu'il
- * a déposés. Le contenu arrive à jour en temps réel (page.jsx).
+ * dans le dossier ouvert (bouton ou glisser-déposer), et renomme, déplace,
+ * remplace ou supprime ceux qu'il a déposés, jamais les autres. Le contenu
+ * arrive à jour en temps réel (page.jsx).
  *
  * @param {object} props
  * @param {(folderId: string) => string} props.uploadUrl adresse de dépôt
+ * @param {(documentId: string) => string} props.replaceUrl adresse d'une
+ *   nouvelle version
+ * @param {(document: object, name: string) => Promise<void>} props.onRename
+ * @param {(document: object, folderId: string) => Promise<void>} props.onMove
  * @param {(document: object) => Promise<void>} props.onDelete
- * @param {() => void} props.onChanged un dépôt est arrivé : relire
+ * @param {() => void} props.onChanged un envoi est arrivé : relire
  */
 export function SharedFiles({
   content,
@@ -296,6 +541,9 @@ export function SharedFiles({
   downloadAllUrl,
   onSignOut,
   uploadUrl,
+  replaceUrl,
+  onRename,
+  onMove,
   onDelete,
   onChanged,
 }) {
@@ -316,8 +564,18 @@ export function SharedFiles({
   const [treeOpen, setTreeOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [toDelete, setToDelete] = useState(null);
+  const [toRename, setToRename] = useState(null);
+  const [toMove, setToMove] = useState(null);
   const fileInput = useRef(null);
-  const uploads = useUploadQueue({ uploadUrl, onUploaded: onChanged });
+  const replaceInput = useRef(null);
+  const toReplace = useRef(null);
+  const uploads = useUploadQueue({
+    uploadUrl,
+    replaceUrl,
+    onUploaded: onChanged,
+  });
+  // Un seul dossier dans tout le partage : rien vers où déplacer
+  const canMove = tree.folderById.size > 1;
 
   // Contenu relu en temps réel : un dossier fermé entre-temps ramène à
   // l'accueil, un document retiré ferme son aperçu
@@ -329,10 +587,17 @@ export function SharedFiles({
   const currentFolder =
     currentId === HOME ? null : tree.folderById.get(currentId);
   useEffect(() => {
-    if (previewed && !documents.some((d) => d.id === previewed.id)) {
-      setPreviewed(null);
-    }
-  }, [documents, previewed]);
+    const gone = (document) =>
+      document && !documents.some((d) => d.id === document.id);
+    if (gone(previewed)) setPreviewed(null);
+    if (gone(toRename)) setToRename(null);
+    if (gone(toMove)) setToMove(null);
+    if (gone(toDelete)) setToDelete(null);
+  }, [documents, previewed, toRename, toMove, toDelete]);
+  // Aperçu d'un document renommé ou remplacé entre-temps : à jour
+  const previewedDocument = previewed
+    ? documents.find((d) => d.id === previewed.id) || null
+    : null;
 
   const searching = query.trim().length > 0;
   // Dépôt dans le dossier ouvert (pas sur l'accueil qui liste les dossiers)
@@ -403,6 +668,16 @@ export function SharedFiles({
         },
       }
     : {};
+
+  const onDocumentAction = (action, document) => {
+    if (action === "rename") setToRename(document);
+    else if (action === "move") setToMove(document);
+    else if (action === "delete") setToDelete(document);
+    else if (action === "replace") {
+      toReplace.current = document;
+      replaceInput.current?.click();
+    }
+  };
 
   const confirmDelete = async () => {
     const document = toDelete;
@@ -773,7 +1048,8 @@ export function SharedFiles({
                         <span
                           className={cn(
                             actionsWidth,
-                            "flex justify-end gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity",
+                            // Menu ouvert : les actions restent visibles
+                            "flex justify-end gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 sm:has-[[data-state=open]]:opacity-100 transition-opacity",
                           )}
                         >
                           {canPreview && (
@@ -805,18 +1081,11 @@ export function SharedFiles({
                             </a>
                           </Button>
                           {canUpload && document.mine && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="size-7 text-destructive hover:text-destructive"
-                              aria-label={`Supprimer ${document.name}`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setToDelete(document);
-                              }}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
+                            <OwnDocumentMenu
+                              document={document}
+                              canMove={canMove}
+                              onAction={onDocumentAction}
+                            />
                           )}
                         </span>
                       </div>
@@ -830,11 +1099,53 @@ export function SharedFiles({
       </div>
 
       <PreviewDialog
-        document={previewed}
-        previewUrl={previewed ? fileUrl(previewed, "preview") : undefined}
-        downloadUrl={previewed ? fileUrl(previewed, "download") : undefined}
+        document={previewedDocument}
+        previewUrl={
+          previewedDocument ? fileUrl(previewedDocument, "preview") : undefined
+        }
+        downloadUrl={
+          previewedDocument ? fileUrl(previewedDocument, "download") : undefined
+        }
         onClose={() => setPreviewed(null)}
       />
+
+      {toRename && (
+        <RenameDialog
+          key={toRename.id}
+          document={toRename}
+          onRename={onRename}
+          onClose={() => setToRename(null)}
+        />
+      )}
+
+      {toMove && (
+        <MoveDialog
+          key={toMove.id}
+          document={toMove}
+          tree={tree}
+          onMove={onMove}
+          onClose={() => setToMove(null)}
+        />
+      )}
+
+      {canUpload && (
+        <input
+          ref={replaceInput}
+          type="file"
+          accept={UPLOAD_ACCEPT}
+          className="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+          data-testid="nouvelle-version"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            const document = toReplace.current;
+            event.target.value = "";
+            toReplace.current = null;
+            if (file && document) uploads.replace(file, document);
+          }}
+        />
+      )}
 
       <AlertDialog
         open={Boolean(toDelete)}

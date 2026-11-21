@@ -7,10 +7,12 @@ import {
   HOME,
   buildShareTree,
   fileKind,
+  folderChoices,
   formatFileSize,
   previewKind,
   searchShare,
   sortDocuments,
+  splitName,
   UPLOAD_ACCEPT,
   uploadProblem,
 } from "@/app/public/documents/[token]/components/shared-files-utils";
@@ -195,5 +197,43 @@ describe("uploadProblem", () => {
     expect(uploadProblem(file("film.mp4", 100 * 1024 * 1024 + 1))).toMatch(
       /100 Mo/,
     );
+  });
+});
+
+describe("folderChoices", () => {
+  it("liste tout le partage dans l'ordre de l'explorateur, avec la profondeur", () => {
+    const tree = buildShareTree({
+      folders,
+      documents,
+      rootFolderIds: ["racine", "autre"],
+    });
+    expect(
+      folderChoices(tree).map(({ folder, depth }) => [folder.name, depth]),
+    ).toEqual([
+      ["Client Dupont", 0],
+      ["Factures", 1],
+      ["2026", 2],
+      ["Contrats", 1],
+      ["Équipe", 0],
+    ]);
+  });
+});
+
+describe("splitName", () => {
+  it("sépare la partie modifiable de l'extension", () => {
+    expect(splitName("Relevé mars.pdf")).toEqual({
+      stem: "Relevé mars",
+      extension: "pdf",
+    });
+    expect(splitName("Scan.JPG")).toEqual({ stem: "Scan", extension: "jpg" });
+    expect(splitName("archive.tar.gz")).toEqual({
+      stem: "archive.tar",
+      extension: "gz",
+    });
+    expect(splitName("sans extension")).toEqual({
+      stem: "sans extension",
+      extension: "",
+    });
+    expect(splitName(undefined)).toEqual({ stem: "", extension: "" });
   });
 });

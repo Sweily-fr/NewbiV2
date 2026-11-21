@@ -1,7 +1,7 @@
 /**
- * File des dépôts d'un client (lien client des documents partagés) :
+ * File des envois d'un client (lien client des documents partagés) :
  * contrôle avant l'envoi, trois envois à la fois, progression, refus de
- * l'API, relecture de la page après chaque dépôt.
+ * l'API, relecture de la page après chaque dépôt ou nouvelle version.
  */
 import { describe, it, expect, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
@@ -14,9 +14,9 @@ import {
 function fakeSend() {
   const calls = [];
   const send = vi.fn(
-    (url, file, onProgress) =>
+    (url, file, onProgress, method) =>
       new Promise((resolve, reject) => {
-        calls.push({ url, file, onProgress, resolve, reject });
+        calls.push({ url, file, onProgress, method, resolve, reject });
       }),
   );
   return { send, calls };
@@ -26,6 +26,7 @@ let queue;
 function Harness({ send, onUploaded }) {
   queue = useUploadQueue({
     uploadUrl: (folderId) => `/depot/${folderId}`,
+    replaceUrl: (documentId) => `/version/${documentId}`,
     onUploaded,
     send,
   });
@@ -60,6 +61,7 @@ describe("useUploadQueue", () => {
     );
     expect(send).toHaveBeenCalledTimes(3);
     expect(calls[0].url).toBe("/depot/racine");
+    expect(calls[0].method).toBe("POST");
     expect(screen.getByText("Dépôt en cours (0 sur 4)")).toBeTruthy();
 
     // Progression affichée, puis le premier arrive : le quatrième part
@@ -95,5 +97,27 @@ describe("useUploadQueue", () => {
     expect(close.hasAttribute("disabled")).toBe(false);
     act(() => close.click());
     expect(screen.queryByRole("region", { name: "Dépôts" })).toBeNull();
+  });
+
+  it("envoie une nouvelle version d'un document en PUT", async () => {
+    const { send, calls } = fakeSend();
+    const onUploaded = vi.fn();
+    render(<Harness send={send} onUploaded={onUploaded} />);
+    act(() =>
+      queue.replace(file("lettre-v2.pdf"), { id: "d3", name: "lettre.pdf" }),
+    );
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ url: "/version/d3", method: "PUT" });
+    expect(screen.getByText("Nouvelle version de « lettre.pdf »")).toBeTruthy();
+    await act(async () => calls[0].resolve({ id: "d3" }));
+    expect(onUploaded).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuse d'avance une nouvelle version d'un format non accepté", () => {
+    const { send } = fakeSend();
+    render(<Harness send={send} />);
+    act(() => queue.replace(file("outil.exe"), { id: "d3", name: "a.pdf" }));
+    expect(send).not.toHaveBeenCalled();
+    expect(screen.getByText(/Format non accepté/)).toBeTruthy();
   });
 });
