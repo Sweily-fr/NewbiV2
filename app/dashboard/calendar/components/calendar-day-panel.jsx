@@ -2,10 +2,15 @@
 
 import { format, isSameYear, isToday } from "date-fns";
 import { fr } from "date-fns/locale";
-import { PanelRightClose, Plus } from "lucide-react";
+import { PanelRightClose, PanelRightOpen, Plus, X } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { cn } from "@/src/lib/utils";
 import { frenchHolidayName } from "@/src/utils/french-holidays";
 import { dayToDate } from "@/src/utils/recurrenceDays";
@@ -15,6 +20,34 @@ import {
 } from "@/app/dashboard/components/day-entry-row";
 
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * Barre d'outils de la vue mois : ferme ou rouvre le volet du jour, au même
+ * endroit dans les deux cas (enfoncé tant que le volet est ouvert).
+ */
+export function DayPanelToggle({ hidden, onToggle }) {
+  const label = hidden ? "Ouvrir le volet du jour" : "Fermer le volet du jour";
+  const Icon = hidden ? PanelRightOpen : PanelRightClose;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label={label}
+          onClick={() => onToggle(!hidden)}
+          className={cn(
+            "size-8",
+            !hidden && "bg-[rgba(0,0,0,0.06)] dark:bg-[#2a2a2a]",
+          )}
+        >
+          <Icon className="size-4" aria-hidden="true" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 /**
  * Volet du jour choisi, à droite de la vue mois : les éléments du jour
@@ -47,19 +80,23 @@ export function CalendarDayPanel({
       aria-label={`Journée du ${fullDate}`}
       className={cn("flex min-h-0 flex-col", className)}
     >
-      <div className={cn("relative px-4 pt-4 pb-2", onHide && "pr-10")}>
-        {/* Masquer le volet : la grille prend toute la largeur */}
+      <div className={cn("relative px-4 pt-4 pb-2", onHide && "pr-11")}>
+        {/* Fermer le volet : la grille prend toute la largeur */}
         {onHide && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onHide}
-            aria-label="Masquer le volet du jour"
-            title="Masquer le volet du jour"
-            className="text-muted-foreground hover:text-foreground absolute top-3 right-2 size-7"
-          >
-            <PanelRightClose className="size-4" aria-hidden="true" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onHide}
+                aria-label="Fermer le volet du jour"
+                className="text-muted-foreground hover:text-foreground absolute top-3 right-2 size-7"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Fermer le volet du jour</TooltipContent>
+          </Tooltip>
         )}
         <h3
           className={cn(

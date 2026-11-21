@@ -25,7 +25,6 @@ import {
   Link2,
   MoreHorizontal,
   Palette,
-  PanelRightOpen,
   PlusIcon,
   RefreshCw,
 } from "lucide-react";
@@ -45,7 +44,8 @@ import {
   WeekView,
 } from "./index";
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
-import { CalendarDayPanel } from "./calendar-day-panel";
+import { CalendarDayPanel, DayPanelToggle } from "./calendar-day-panel";
+import { useDayPanelPreference } from "../hooks/use-day-panel-preference";
 import { CalendarFeedDialog } from "./calendar-feed-dialog";
 import { CalendarFiltersButton } from "./calendar-filters";
 import { DefaultStartHour } from "./constants";
@@ -108,8 +108,6 @@ import {
 
 // « Tâches de » : « all » ou l'identifiant d'un membre
 const TASK_ASSIGNEE_KEY = "newbi:calendar:task-assignee";
-// Volet du jour masqué ou affiché (choix gardé dans le navigateur)
-const DAY_PANEL_KEY = "newbi:calendar:day-panel";
 const NO_HIDDEN_SOURCES = new Set();
 const NO_MEMBERS = [];
 // Volet du jour à droite de la vue mois, à partir de cette largeur
@@ -140,9 +138,9 @@ export function EventCalendar({
   const [feedOpen, setFeedOpen] = useState(false);
   // Un élément du menu ouvre une fenêtre : le focus ne revient pas au bouton
   const openingFromMenuRef = useRef(false);
-  // Volet du jour masqué par la personne (plus de place pour la grille,
-  // barre de gauche ouverte par exemple)
-  const [dayPanelHidden, setDayPanelHidden] = useState(false);
+  // Volet du jour fermé par la personne (plus de place pour la grille,
+  // barre de gauche ouverte par exemple), retrouvé à la visite suivante
+  const [dayPanelHidden, setDayPanelHidden] = useDayPanelPreference();
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   // Échéance d'une autre page ouverte dans sa fiche
@@ -180,18 +178,8 @@ export function EventCalendar({
     setHiddenSources(readHiddenSources());
     try {
       setTaskAssignee(localStorage.getItem(TASK_ASSIGNEE_KEY) || "all");
-      setDayPanelHidden(localStorage.getItem(DAY_PANEL_KEY) === "hidden");
     } catch {
-      // Stockage indisponible : les tâches de tout le monde, volet affiché
-    }
-  }, []);
-
-  const toggleDayPanel = useCallback((hidden) => {
-    setDayPanelHidden(hidden);
-    try {
-      localStorage.setItem(DAY_PANEL_KEY, hidden ? "hidden" : "visible");
-    } catch {
-      // Stockage indisponible : choix non retenu
+      // Stockage indisponible : les tâches de tout le monde
     }
   }, []);
 
@@ -986,18 +974,13 @@ export function EventCalendar({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Volet du jour masqué : bouton pour le réafficher */}
-            {dayPanelFits && dayPanelHidden && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-8"
-                aria-label="Afficher le volet du jour"
-                title="Afficher le volet du jour"
-                onClick={() => toggleDayPanel(false)}
-              >
-                <PanelRightOpen className="size-4" aria-hidden="true" />
-              </Button>
+            {/* Volet du jour : le fermer ou le rouvrir, toujours au même
+                endroit */}
+            {dayPanelFits && (
+              <DayPanelToggle
+                hidden={dayPanelHidden}
+                onToggle={setDayPanelHidden}
+              />
             )}
 
             {/* Options : étiquettes, calendriers connectés, synchronisation,
@@ -1156,7 +1139,7 @@ export function EventCalendar({
               entries={dayPanelEntries}
               nextDays={nextDays}
               onSelectDay={selectPanelDay}
-              onHide={() => toggleDayPanel(true)}
+              onHide={() => setDayPanelHidden(true)}
               loading={linkedLoading && dayPanelEntries.length === 0}
               onOpen={openDayEntry}
               onCreate={canCreateEvents ? createOnPanelDay : undefined}

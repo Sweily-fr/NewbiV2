@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within, fireEvent } from "@testing-library/react";
 
-import { CalendarDayPanel } from "@/app/dashboard/calendar/components/calendar-day-panel";
+import {
+  CalendarDayPanel,
+  DayPanelToggle,
+} from "@/app/dashboard/calendar/components/calendar-day-panel";
 import { buildUpcomingDays } from "@/src/utils/upcoming-days";
 import { dateToDay } from "@/src/utils/recurrenceDays";
 
@@ -157,7 +160,7 @@ describe("volet du jour du calendrier", () => {
     expect(onSelectDay).toHaveBeenCalledWith("2026-11-23");
   });
 
-  it("« Masquer le volet du jour » : la grille reprend la place", () => {
+  it("croix « Fermer le volet du jour » : la grille reprend la place", () => {
     const onHide = vi.fn();
     render(
       <CalendarDayPanel
@@ -168,9 +171,26 @@ describe("volet du jour du calendrier", () => {
       />,
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Masquer le volet du jour" }),
+      screen.getByRole("button", { name: "Fermer le volet du jour" }),
     );
     expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
+  it("barre d'outils : un seul bouton ferme puis rouvre le volet", () => {
+    const onToggle = vi.fn();
+    const { rerender } = render(
+      <DayPanelToggle hidden={false} onToggle={onToggle} />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Fermer le volet du jour" }),
+    );
+    expect(onToggle).toHaveBeenLastCalledWith(true);
+
+    rerender(<DayPanelToggle hidden onToggle={onToggle} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ouvrir le volet du jour" }),
+    );
+    expect(onToggle).toHaveBeenLastCalledWith(false);
   });
 
   it("autre jour sans rien : date en titre, message, pas d'ajout sans le droit", () => {
