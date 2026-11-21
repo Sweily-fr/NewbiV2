@@ -12,6 +12,7 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { BASE_URL } from "../config.mjs";
+import { cliquer } from "../navigation.mjs";
 import { oid } from "../donnees/base.mjs";
 import { PARTAGES, TRANSFERTS } from "../donnees/lot-collaboration.mjs";
 import { INVITATIONS } from "../donnees/lot-parametres-auth.mjs";
@@ -107,5 +108,30 @@ test.describe("Navigation interne vers une page à secret", () => {
     expect(chargementsAnnules, "Chargement de la page à secret annulé puis relancé").toEqual([]);
     expect(await page.evaluate(() => typeof window.gtag)).toBe("undefined");
     expect(traceurs.filter((u) => u.includes(TRANSFERT.accessKey)), "La clé du transfert part chez un tiers").toEqual([]);
+  });
+
+  // La page de connexion s'ouvre sans rechargement : l'adresse du lien de
+  // réinitialisation reste dans l'historique de la page (bouton Retour). Un
+  // pixel chargé sur la connexion verrait le jeton au retour arrière.
+  test("Visite commencée sur une page à secret : aucune balise après « Se connecter », ni au retour", async ({ page }) => {
+    const traceurs = [];
+    page.on("request", (req) => {
+      if (TRACEURS.test(req.url())) traceurs.push(req.url());
+    });
+    await page.goto(`/auth/reset-password?token=${JETON}`);
+    await page.waitForLoadState("load");
+    await cliquer(page, page.getByRole("link", { name: "Se connecter" }));
+    await page.waitForURL(/\/auth\/login$/);
+    await page.waitForLoadState("load");
+    // Pixels chargés après le chargement de la page (afterInteractive, consentement)
+    await page.waitForTimeout(4_000);
+    await page.goBack();
+    await page.waitForURL(/\/auth\/reset-password\?token=/);
+    await page.waitForTimeout(2_000);
+    await etape(page, "Aucune requête vers un service de mesure ou de publicité pendant la visite", async () => {
+      expect.soft(traceurs.filter((u) => u.includes(JETON)), "Le jeton de réinitialisation part chez un tiers").toEqual([]);
+      expect(traceurs.map((u) => new URL(u).host + new URL(u).pathname), "Balises tierces chargées pendant la visite").toEqual([]);
+    });
+    expect(await page.evaluate(() => typeof window.gtag), "gtag défini pendant la visite").toBe("undefined");
   });
 });

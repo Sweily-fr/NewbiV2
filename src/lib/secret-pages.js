@@ -91,6 +91,27 @@ export const SECRET_PAGE_INLINE_SOURCE = `${INLINE_MATCH(
 )}${INLINE_MATCH("__needsFullReload", RELOAD_QUERY_KEYS)}`;
 
 /**
+ * Visite commencée sur une adresse à recharger (lien de réinitialisation, de
+ * vérification, de transfert…) : le script du <head> n'y charge aucune balise
+ * et marque la visite (`__markSecretVisit(window)`). Jusqu'au prochain
+ * chargement complet, l'adresse à secret reste dans l'historique de ce
+ * document (bouton Retour) et la visite continue sans rechargement
+ * (« Se connecter », puis le tableau de bord) : aucun pixel ne doit y être
+ * chargé (MarketingPixels), sinon il verrait l'adresse au retour arrière ou à
+ * la navigation suivante vers une page à secret.
+ */
+export const SECRET_VISIT_FLAG = "__newbiSecretVisit";
+
+export const SECRET_VISIT_INLINE_SOURCE = `function __markSecretVisit(w) {
+  if (__needsFullReload(w.location)) w.${SECRET_VISIT_FLAG} = true;
+}`;
+
+/** Visite commencée sur une adresse à recharger (drapeau du <head>) ? */
+export function isSecretVisit() {
+  return typeof window !== "undefined" && window[SECRET_VISIT_FLAG] === true;
+}
+
+/**
  * Script du <head>, sur une page sans secret (balises chargées) :
  * `__guardSecretNavigation(window)`. Un pushState ou un replaceState vers une
  * adresse à recharger (`__needsFullReload`) devient un chargement complet
