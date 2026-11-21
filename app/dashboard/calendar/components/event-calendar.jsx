@@ -44,7 +44,11 @@ import {
   WeekView,
 } from "./index";
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
-import { CalendarDayPanel, DayPanelToggle } from "./calendar-day-panel";
+import {
+  CalendarDayDrawer,
+  CalendarDayPanel,
+  DayPanelToggle,
+} from "./calendar-day-panel";
 import { useDayPanelPreference } from "../hooks/use-day-panel-preference";
 import { CalendarFeedDialog } from "./calendar-feed-dialog";
 import { CalendarFiltersButton } from "./calendar-filters";
@@ -141,6 +145,8 @@ export function EventCalendar({
   // Volet du jour fermé par la personne (plus de place pour la grille,
   // barre de gauche ouverte par exemple), retrouvé à la visite suivante
   const [dayPanelHidden, setDayPanelHidden] = useDayPanelPreference();
+  // Écran étroit : volet ouvert par-dessus la grille, à la demande
+  const [dayDrawerOpen, setDayDrawerOpen] = useState(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   // Échéance d'une autre page ouverte dans sa fiche
@@ -466,7 +472,8 @@ export function EventCalendar({
     [canCreateEvents],
   );
 
-  // --- Volet du jour (vue mois, écran assez large) ---
+  // --- Volet du jour (vue mois) : à droite de la grille si la place le
+  // permet, sinon en tiroir par-dessus ---
   const viewsRef = useRef(null);
   const [viewsWidth, setViewsWidth] = useState(0);
   useEffect(() => {
@@ -482,6 +489,24 @@ export function EventCalendar({
   // masqué
   const dayPanelFits = view === "mois" && viewsWidth >= DAY_PANEL_MIN_WIDTH;
   const showDayPanel = dayPanelFits && !dayPanelHidden;
+  // Pas la place : tiroir ouvert depuis la barre d'outils, sans toucher au
+  // choix retenu pour le volet à droite
+  const dayPanelNarrow = view === "mois" && viewsWidth > 0 && !dayPanelFits;
+  const showDayDrawer = dayPanelNarrow && dayDrawerOpen;
+  const dayPanelActive = showDayPanel || showDayDrawer;
+  // Revenu à un écran large (ou autre vue) : le tiroir ne se rouvrira pas
+  // tout seul
+  useEffect(() => {
+    if (!dayPanelNarrow) setDayDrawerOpen(false);
+  }, [dayPanelNarrow]);
+
+  const toggleDayPanel = useCallback(
+    (hidden) => {
+      if (dayPanelFits) setDayPanelHidden(hidden);
+      else setDayDrawerOpen(!hidden);
+    },
+    [dayPanelFits, setDayPanelHidden],
+  );
 
   // Jour du volet : celui choisi s'il est dans la grille affichée (jours des
   // mois voisins compris), sinon aujourd'hui (mois en cours) ou le 1er
@@ -497,7 +522,7 @@ export function EventCalendar({
   // Mêmes éléments que la case du jour (sources, « Tâches de », réglés
   // compris), présentés comme l'agenda de l'accueil
   const dayPanelEntries = useMemo(() => {
-    if (!showDayPanel) return [];
+    if (!dayPanelActive) return [];
     return buildUpcomingDays({
       days: [panelDayKey],
       events,
@@ -507,7 +532,7 @@ export function EventCalendar({
       includeDone: true,
     })[0].entries;
   }, [
-    showDayPanel,
+    dayPanelActive,
     panelDayKey,
     events,
     visibleLinkedItems,
@@ -518,7 +543,7 @@ export function EventCalendar({
   // « Ensuite » : les jours suivants de la grille qui ont quelque chose
   // (les échéances ne sont chargées que pour les jours affichés)
   const nextDays = useMemo(() => {
-    if (!showDayPanel) return [];
+    if (!dayPanelActive) return [];
     const grid = visibleRange("mois", currentDate);
     const following = [];
     for (let offset = 1; offset <= 7; offset++) {
@@ -549,7 +574,7 @@ export function EventCalendar({
         .slice(0, 4)
     );
   }, [
-    showDayPanel,
+    dayPanelActive,
     currentDate,
     panelDayKey,
     events,
@@ -975,11 +1000,11 @@ export function EventCalendar({
             </DropdownMenu>
 
             {/* Volet du jour : le fermer ou le rouvrir, toujours au même
-                endroit */}
-            {dayPanelFits && (
+                endroit ; en écran étroit, il ouvre le tiroir */}
+            {(dayPanelFits || dayPanelNarrow) && (
               <DayPanelToggle
-                hidden={dayPanelHidden}
-                onToggle={setDayPanelHidden}
+                hidden={dayPanelFits ? dayPanelHidden : !showDayDrawer}
+                onToggle={toggleDayPanel}
               />
             )}
 
@@ -1146,6 +1171,18 @@ export function EventCalendar({
             />
           )}
         </div>
+
+        <CalendarDayDrawer
+          open={showDayDrawer}
+          onOpenChange={setDayDrawerOpen}
+          date={panelDay}
+          entries={dayPanelEntries}
+          nextDays={nextDays}
+          onSelectDay={selectPanelDay}
+          loading={linkedLoading && dayPanelEntries.length === 0}
+          onOpen={openDayEntry}
+          onCreate={canCreateEvents ? createOnPanelDay : undefined}
+        />
 
         <EventDialog
           event={selectedEvent}

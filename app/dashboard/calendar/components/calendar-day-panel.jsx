@@ -1,10 +1,18 @@
 "use client";
 
+import { useRef } from "react";
 import { format, isSameYear, isToday } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PanelRightClose, PanelRightOpen, Plus, X } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/src/components/ui/sheet";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   Tooltip,
@@ -20,6 +28,65 @@ import {
 } from "@/app/dashboard/components/day-entry-row";
 
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * Écran étroit (pas la place à côté de la grille) : le même volet, ouvert
+ * par-dessus le calendrier depuis la barre d'outils. Ouvrir un élément ou
+ * « Ajouter ce jour-là » ferme le tiroir avant d'ouvrir sa fenêtre (pas
+ * deux fenêtres l'une sur l'autre) ; « Ensuite » change de jour sur place.
+ */
+export function CalendarDayDrawer({
+  open,
+  onOpenChange,
+  onOpen,
+  onCreate,
+  ...panelProps
+}) {
+  // Fermé pour ouvrir une fenêtre : le focus va à la fenêtre, pas au bouton
+  // de la barre d'outils
+  const handOffRef = useRef(false);
+  const handOff =
+    (action) =>
+    (...args) => {
+      handOffRef.current = true;
+      onOpenChange(false);
+      action(...args);
+    };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-[300px] max-w-[85vw] gap-0 p-0 [&>button]:hidden"
+        onOpenAutoFocus={(e) => {
+          // Le tiroir lui-même, pas la croix (sa bulle s'ouvrirait)
+          e.preventDefault();
+          e.target?.focus?.();
+        }}
+        onCloseAutoFocus={(e) => {
+          if (handOffRef.current) {
+            e.preventDefault();
+            handOffRef.current = false;
+          }
+        }}
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Volet du jour</SheetTitle>
+          <SheetDescription>
+            Ce qui est prévu ce jour-là, puis les jours suivants
+          </SheetDescription>
+        </SheetHeader>
+        <CalendarDayPanel
+          {...panelProps}
+          className="flex-1"
+          onOpen={onOpen && handOff(onOpen)}
+          onCreate={onCreate && handOff(onCreate)}
+          onHide={() => onOpenChange(false)}
+        />
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 /**
  * Barre d'outils de la vue mois : ferme ou rouvre le volet du jour, au même

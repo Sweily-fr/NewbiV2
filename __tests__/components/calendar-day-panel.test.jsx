@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, within, fireEvent } from "@testing-library/react";
 
 import {
+  CalendarDayDrawer,
   CalendarDayPanel,
   DayPanelToggle,
 } from "@/app/dashboard/calendar/components/calendar-day-panel";
@@ -191,6 +192,65 @@ describe("volet du jour du calendrier", () => {
       screen.getByRole("button", { name: "Ouvrir le volet du jour" }),
     );
     expect(onToggle).toHaveBeenLastCalledWith(false);
+  });
+
+  it("écran étroit : le tiroir montre le jour, la croix le referme", () => {
+    const onOpenChange = vi.fn();
+    render(
+      <CalendarDayDrawer
+        open
+        onOpenChange={onOpenChange}
+        date={today}
+        entries={entriesOf(events)}
+        onOpen={() => {}}
+      />,
+    );
+    const drawer = screen.getByRole("dialog", { name: "Volet du jour" });
+    expect(drawer).toHaveTextContent("Point hebdo équipe");
+    fireEvent.click(
+      within(drawer).getByRole("button", { name: "Fermer le volet du jour" }),
+    );
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("tiroir : « Ensuite » change de jour dedans, un élément le referme puis s'ouvre", () => {
+    const onOpenChange = vi.fn();
+    const onOpen = vi.fn();
+    const onSelectDay = vi.fn();
+    const entries = entriesOf(events);
+    const next = buildUpcomingDays({
+      days: ["2026-11-23"],
+      events: [
+        {
+          id: "l",
+          title: "Lancement projet",
+          start: new Date(2026, 10, 23, 9),
+          end: new Date(2026, 10, 23, 10),
+          allDay: false,
+          color: "#378ADD",
+        },
+      ],
+    });
+    render(
+      <CalendarDayDrawer
+        open
+        onOpenChange={onOpenChange}
+        date={today}
+        entries={entries}
+        nextDays={next}
+        onOpen={onOpen}
+        onSelectDay={onSelectDay}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Lancement projet/ }));
+    expect(onSelectDay).toHaveBeenCalledWith("2026-11-23");
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /Point hebdo équipe/ }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpen).toHaveBeenCalledWith(
+      entries.find((entry) => entry.title === "Point hebdo équipe"),
+    );
   });
 
   it("autre jour sans rien : date en titre, message, pas d'ajout sans le droit", () => {
