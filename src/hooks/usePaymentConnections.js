@@ -187,13 +187,18 @@ export function usePaymentConnections({ skip = false } = {}) {
     return response || { success: false, message: null };
   }, [disconnectPaypalMutation, safeRefetch]);
 
+  const availableMethods = useMemo(
+    () => availableTransferPaymentMethods(connections),
+    [connections],
+  );
+
   return {
     connections,
     // Réponse de l'API reçue : on peut conclure qu'un moyen manque
     isReady: Boolean(data?.paymentConnections),
     loading: loading && !data?.paymentConnections,
     refetch: safeRefetch,
-    availableMethods: availableTransferPaymentMethods(connections),
+    availableMethods,
     connectStripe,
     isConnectingStripe,
     connectPaypal,
