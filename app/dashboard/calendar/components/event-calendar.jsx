@@ -1128,6 +1128,7 @@ export function EventCalendar({
                 onEventCreate={handleEventCreate}
                 selectedDay={showDayPanel ? panelDay : null}
                 onDaySelect={showDayPanel ? setSelectedDay : undefined}
+                canCreate={canCreateEvents}
               />
             )}
             {view === "semaine" && (

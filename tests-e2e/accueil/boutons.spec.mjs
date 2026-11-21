@@ -20,6 +20,8 @@ const COMMUNS = {
   "link /dashboard/outils/kanban": { navigation: "/dashboard/outils/kanban" },
   "link /": { parcours: "liens.spec.mjs : « Notifications non lues » (le clic ne fait rien)" },
   "link /dashboard/outils/transferts-fichiers": { navigation: "/dashboard/outils/transferts-fichiers" },
+  // Agenda du jour et des 6 jours suivants : lien vers le calendrier
+  "link /dashboard/calendar": { navigation: "/dashboard/calendar" },
 };
 const CREATIONS = {
   "button Créer un devis": { navigation: "/dashboard/outils/devis/new" },
@@ -27,6 +29,8 @@ const CREATIONS = {
   "button Ajouter une facture d'achat": { navigation: /\/dashboard\/outils\/factures-achat/, fenetre: "Nouvelle facture d'achat" },
   "button Transférer un fichier": { navigation: /\/dashboard\/outils\/transferts-fichiers/, fenetre: "Nouveau transfert" },
   "link /dashboard/outils/factures/new": { navigation: "/dashboard/outils/factures/new" },
+  // Agenda : nouvel événement sur place (droit de créer du calendrier)
+  "button Nouvel événement": { fenetre: "Nouvel événement" },
 };
 
 test.describe("Accueil (propriétaire)", () => {
