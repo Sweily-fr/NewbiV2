@@ -63,8 +63,8 @@ describe("ModuleRouteGuard", () => {
     expect(screen.getByText("Contenu de la prévision")).toBeTruthy();
   });
 
-  it("page TVA, accès anticipé en cours de chargement : rien de monté", () => {
-    pathname = "/dashboard/outils/tva";
+  it("page en accès anticipé en cours de chargement : rien de monté", () => {
+    pathname = "/dashboard/outils/campagnes-email";
     permissions = { ...base, isReady: true, canDo: () => true };
     render(
       <ModuleRouteGuard>
@@ -75,8 +75,8 @@ describe("ModuleRouteGuard", () => {
     expect(notFound).not.toHaveBeenCalled();
   });
 
-  it("page TVA pour un espace sans accès anticipé : introuvable", () => {
-    pathname = "/dashboard/outils/tva";
+  it("page en accès anticipé pour un espace sans accès : introuvable", () => {
+    pathname = "/dashboard/outils/campagnes-email";
     permissions = { ...base, isReady: true, canDo: () => true };
     features = { isReady: true, isEnabled: () => false };
     expect(() =>

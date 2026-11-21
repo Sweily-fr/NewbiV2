@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { endOfWeek, isSameDay, isWithinInterval, startOfWeek } from "date-fns"
+import { CALENDAR_WEEK_OPTIONS } from "@/src/utils/calendar-linked-items"
 
 import {
   EndHour,
@@ -32,8 +33,8 @@ export function useCurrentTimeIndicator(currentDate, view) {
       if (view === "day") {
         isCurrentTimeVisible = isSameDay(now, currentDate)
       } else if (view === "week") {
-        const startOfWeekDate = startOfWeek(currentDate, { weekStartsOn: 0 })
-        const endOfWeekDate = endOfWeek(currentDate, { weekStartsOn: 0 })
+        const startOfWeekDate = startOfWeek(currentDate, CALENDAR_WEEK_OPTIONS)
+        const endOfWeekDate = endOfWeek(currentDate, CALENDAR_WEEK_OPTIONS)
         isCurrentTimeVisible = isWithinInterval(now, {
           start: startOfWeekDate,
           end: endOfWeekDate,

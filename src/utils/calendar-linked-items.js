@@ -99,6 +99,29 @@ export const CALENDAR_VIEWS = [
 
 export const DEFAULT_VIEW = "essentiel";
 
+// Sources masquées, gardées dans ce navigateur (calendrier et accueil). Sans
+// choix enregistré : vue Essentiel (clé v2 : l'ancienne gardait « tout
+// affiché » par défaut)
+const HIDDEN_SOURCES_KEY = "newbi:calendar:hidden-sources-v2";
+
+export function readHiddenSources() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(HIDDEN_SOURCES_KEY));
+    if (Array.isArray(stored)) return new Set(stored);
+  } catch {
+    // Stockage indisponible ou illisible : vue par défaut
+  }
+  return hiddenSourcesForView(DEFAULT_VIEW);
+}
+
+export function storeHiddenSources(hidden) {
+  try {
+    localStorage.setItem(HIDDEN_SOURCES_KEY, JSON.stringify([...hidden]));
+  } catch {
+    // Stockage indisponible (navigation privée) : choix non retenu
+  }
+}
+
 /** Sources masquées par une vue. */
 export function hiddenSourcesForView(viewKey) {
   const view =
@@ -121,8 +144,10 @@ export function matchingView(hiddenSources, availableKeys) {
   );
 }
 
-// Le calendrier commence la semaine le dimanche (vues mois et semaine)
-const WEEK_OPTIONS = { weekStartsOn: 0 };
+// Le calendrier commence la semaine le lundi (vues mois et semaine), comme
+// en France ; partagé par les vues et les jours chargés
+export const CALENDAR_WEEK_OPTIONS = { weekStartsOn: 1 };
+const WEEK_OPTIONS = CALENDAR_WEEK_OPTIONS;
 
 /**
  * Jours visibles d'une vue, bornes incluses, au format AAAA-MM-JJ.
@@ -287,17 +312,8 @@ export function linkedItemHref(item) {
         : `/dashboard/outils/bons-commande?id=${item.entityId}`;
     case "FILE_TRANSFER":
       return "/dashboard/outils/transferts-fichiers";
-    // Déclaration de TVA ou Urssaf : sa période dans la page de la
-    // déclaration ; les autres échéances fiscales n'ont pas de page dans
-    // l'application
-    case "FISCAL":
-      if (item.vatPeriodKey) {
-        return `/dashboard/outils/tva?periode=${encodeURIComponent(item.vatPeriodKey)}`;
-      }
-      if (item.urssafPeriodKey) {
-        return `/dashboard/outils/urssaf?periode=${encodeURIComponent(item.urssafPeriodKey)}`;
-      }
-      return null;
+    // Échéances fiscales : pas de page dans l'application, la déclaration
+    // se fait sur le site officiel (linkedItemFilingSite)
     default:
       return null;
   }
@@ -454,6 +470,33 @@ export function linkedItemExternalUrl(item) {
   } catch {
     return null;
   }
+}
+
+// Espaces où l'on dépose réellement la déclaration (vérifiés le 20/11/2026) :
+// espace professionnel impots.gouv.fr, onglet « Déclarer et payer » du
+// portail auto-entrepreneur de l'Urssaf
+export const FILING_SITES = {
+  VAT: {
+    url: "https://cfspro.impots.gouv.fr/mire/accueil.do",
+    site: "impots.gouv.fr",
+    label: "Déclarer sur impots.gouv.fr",
+  },
+  URSSAF: {
+    url: "https://www.autoentrepreneur.urssaf.fr/portail/accueil.html",
+    site: "autoentrepreneur.urssaf.fr",
+    label: "Déclarer sur autoentrepreneur.urssaf.fr",
+  },
+};
+
+/**
+ * Déclaration de TVA ou Urssaf : site où la déposer, null pour les autres
+ * échéances (acomptes, IS, CFE n'ont que leur page d'information).
+ */
+export function linkedItemFilingSite(item) {
+  if (item?.kind !== "FISCAL") return null;
+  if (item.vatPeriodKey) return FILING_SITES.VAT;
+  if (item.urssafPeriodKey) return FILING_SITES.URSSAF;
+  return null;
 }
 
 /**

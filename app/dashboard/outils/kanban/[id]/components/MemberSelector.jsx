@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Users, X, Plus, Check } from 'lucide-react';
 import { useQuery } from '@apollo/client';
 import { Button } from '@/src/components/ui/button';
@@ -15,7 +15,8 @@ import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 /**
  * Composant pour sélectionner les membres assignés à une tâche
  */
-export function MemberSelector({ workspaceId, selectedMembers = [], onMembersChange, hideLabel = false }) {
+// variant « inline » : déclencheur en simple texte (fenêtre d'événement)
+export function MemberSelector({ workspaceId, selectedMembers = [], onMembersChange, hideLabel = false, variant = 'default' }) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState([]);
   
@@ -30,9 +31,6 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
     variables: { workspaceId: finalWorkspaceId },
     skip: !finalWorkspaceId,
   });
-
-  // Récupérer les infos complètes des membres sélectionnés
-  const { members: selectedMembersInfo } = useAssignedMembersInfo(selectedMembers);
 
   // Traiter les données GraphQL des membres du workspace
   useEffect(() => {
@@ -49,6 +47,29 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
       setMembers([]);
     }
   }, [data]);
+
+  // Membres choisis : lus dans la liste de l'espace, déjà chargée, pour
+  // s'afficher dès le clic. La requête ne sert qu'aux membres absents de la
+  // liste (ancien membre de l'espace…) : avant, chaque ajout attendait un
+  // aller-retour serveur et les pastilles disparaissaient le temps du
+  // chargement.
+  const knownMembers = useMemo(
+    () => new Map(members.map(member => [String(member.id), member])),
+    [members]
+  );
+  const missingIds = useMemo(
+    () => selectedMembers.filter(id => !knownMembers.has(String(id))),
+    [selectedMembers, knownMembers]
+  );
+  const { members: fetchedMembersInfo } = useAssignedMembersInfo(missingIds);
+  const selectedMembersInfo = useMemo(() => {
+    const fetched = new Map(
+      fetchedMembersInfo.map(member => [String(member.id), member])
+    );
+    return selectedMembers
+      .map(id => knownMembers.get(String(id)) || fetched.get(String(id)))
+      .filter(Boolean);
+  }, [selectedMembers, knownMembers, fetchedMembersInfo]);
 
   // Vérifier si un membre est sélectionné
   const isMemberSelected = (memberId) => {
@@ -122,7 +143,9 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
           <div
             role="button"
             tabIndex={0}
-            className="inline-flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 w-full text-muted-foreground cursor-pointer"
+            className={variant === 'inline'
+              ? "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium text-[rgba(0,0,0,0.35)] dark:text-[rgba(255,255,255,0.35)] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+              : "inline-flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 w-full text-muted-foreground cursor-pointer"}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -130,7 +153,7 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
               }
             }}
           >
-            <Plus className="mr-2 h-4 w-4" />
+            {variant !== 'inline' && <Plus className="mr-2 h-4 w-4" />}
             {selectedMembers.length === 0
               ? 'Ajouter des membres'
               : 'Ajouter d\'autres membres'}

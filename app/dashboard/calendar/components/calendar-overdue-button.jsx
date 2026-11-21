@@ -67,14 +67,17 @@ export const CalendarOverdueButton = memo(function CalendarOverdueButton({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+        {/* Pastille douce plutôt qu'un bouton rouge : le nombre et
+            « en retard » se lisent sans crier */}
         <Button
-          variant="outline"
-          className="gap-1.5 font-normal text-red-600 hover:text-red-700 dark:text-red-400"
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 bg-red-50 px-2.5 font-normal text-red-700 hover:bg-red-100 hover:text-red-800 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 dark:hover:text-red-300"
           aria-label={`${items.length} ${items.length > 1 ? "éléments" : "élément"} en retard`}
         >
-          <CircleAlert className="h-4 w-4" aria-hidden="true" />
+          <CircleAlert className="size-3.5" aria-hidden="true" />
           <span className="tabular-nums">{items.length}</span>
-          <span className="hidden 2xl:inline">en retard</span>
+          <span className="max-sm:hidden">en retard</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[360px] p-0">

@@ -16,6 +16,7 @@ import {
   formatLinkedAmount,
   relativeDayLabel,
 } from "@/src/utils/calendar-linked-items";
+import { dateToDay } from "@/src/utils/recurrenceDays";
 import {
   LINKED_SOURCE_META,
   linkedKindDetail,
@@ -74,7 +75,6 @@ export const LinkedEventItem = memo(function LinkedEventItem({
   const noEmail = item.reminderStatus === "NO_EMAIL";
   // Retard, envoi en échec ou relance qui ne pourra pas partir
   const isAlert = item.state === "OVERDUE" || noEmail;
-  const AlertIcon = noEmail ? MailWarning : CircleAlert;
   const isDone = item.state === "DONE";
   // Échéance fiscale passée : horloge plutôt que coche (rien n'est vérifié)
   const DoneIcon = meta.doneIcon || Check;
@@ -170,7 +170,11 @@ export const LinkedEventItem = memo(function LinkedEventItem({
     );
   }
 
-  // Mois, et lignes « Toute la journée » des vues semaine et jour
+  // Mois, et lignes « Toute la journée » des vues semaine et jour : une
+  // ligne légère (icône de la source, titre, montant discret). Un retard est
+  // signalé par un point rouge plutôt que par un fond ; ce qui est passé ou
+  // réglé pâlit, sauf ce qui est en retard
+  const isPast = item.day < dateToDay(new Date()) && !isAlert;
   return (
     <button
       type="button"
@@ -178,76 +182,40 @@ export const LinkedEventItem = memo(function LinkedEventItem({
       aria-label={label}
       title={label}
       className={cn(
-        "group/linked focus-visible:ring-ring/50 relative mt-[var(--event-gap)] flex h-[var(--event-height)] w-full items-center gap-1 overflow-hidden rounded pr-1 pl-2 text-left text-[10px] font-medium transition outline-none select-none hover:brightness-95 focus-visible:ring-[3px] sm:pr-1.5 sm:text-xs dark:hover:brightness-110",
-        flow
-          ? cn(
-              "border border-dashed pl-1.5",
-              flow.border,
-              isDone ? "text-muted-foreground" : "bg-background/60",
-            )
-          : isAlert
-            ? "bg-red-500/10 text-red-700 dark:text-red-400"
-            : isDone
-              ? "bg-muted/70 text-muted-foreground"
-              : meta.tint,
+        "group/linked focus-visible:ring-ring/50 hover:bg-muted/70 relative mt-[var(--event-gap)] flex h-[var(--event-height)] w-full items-center gap-1 overflow-hidden rounded px-1 text-left text-[10px] transition outline-none select-none focus-visible:ring-[3px] sm:px-1.5 sm:text-xs",
+        (isDone || isPast) && "opacity-50",
         className,
       )}
     >
-      {!flow && (
+      {isAlert && (
         <span
-          className={cn(
-            "absolute inset-y-0 left-0 w-[3px]",
-            meta.accent,
-            isDone && "opacity-50",
-          )}
           aria-hidden="true"
+          className="size-1.5 shrink-0 rounded-full bg-red-500"
         />
       )}
-      {/* Sur mobile, une seule icône faute de place : l'état (retard,
-          réglé) passe avant la source, qui garde sa barre de couleur */}
-      <Icon
-        className={cn(
-          "size-3 shrink-0",
-          iconClass,
-          isDone && "opacity-60",
-          (isAlert || isDone) && "max-sm:hidden",
-        )}
-        aria-hidden="true"
-      />
-      {isAlert && (
-        <AlertIcon className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
-      )}
-      {isDone && (
-        <DoneIcon className="size-3 shrink-0 sm:hidden" aria-hidden="true" />
-      )}
-      <span className="min-w-0 truncate">{item.title}</span>
+      <Icon className={cn("size-3 shrink-0", iconClass)} aria-hidden="true" />
+      <span className="min-w-0 truncate font-medium">{item.title}</span>
       {item.kind === "REMINDER" && (
-        <span className="shrink-0 rounded-sm bg-current/10 px-0.5 text-[9px] font-semibold tabular-nums max-sm:hidden">
+        <span className="shrink-0 rounded-sm bg-current/10 px-0.5 text-[9px] font-semibold tabular-nums max-sm:hidden @max-[8rem]/cell:hidden">
           {item.reminderStep === 0 ? "R+" : `R${item.reminderStep || 1}`}
         </span>
       )}
       {signaturePending && (
         <PenLine
-          className="size-3 shrink-0 text-[#6250d6] max-sm:hidden dark:text-[#9085e9]"
-          aria-hidden="true"
-        />
-      )}
-      {isAlert && (
-        <AlertIcon
-          className="size-3 shrink-0 max-sm:hidden"
+          className="size-3 shrink-0 text-[#6250d6] max-sm:hidden @max-[8rem]/cell:hidden dark:text-[#9085e9]"
           aria-hidden="true"
         />
       )}
       {isDone && (
         <DoneIcon
-          className="size-3 shrink-0 max-sm:hidden"
+          className="text-muted-foreground size-3 shrink-0 max-sm:hidden @max-[8rem]/cell:hidden"
           aria-hidden="true"
         />
       )}
       {(amount || members.length > 0) && (
-        <span className="ml-auto flex shrink-0 items-center gap-1 pl-1">
+        <span className="ml-auto flex shrink-0 items-center gap-1 pl-1 @max-[8rem]/cell:hidden">
           {amount && (
-            <span className="font-normal tabular-nums opacity-80 max-sm:hidden">
+            <span className="text-muted-foreground font-normal tabular-nums max-sm:hidden">
               {amount}
             </span>
           )}

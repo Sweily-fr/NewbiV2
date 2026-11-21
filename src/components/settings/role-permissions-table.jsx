@@ -21,6 +21,11 @@ import { cn } from "@/src/lib/utils";
 const CHECKBOX_CLASS =
   "cursor-pointer data-[state=checked]:bg-[#5b4fff] data-[state=checked]:border-[#5b4fff] data-[state=indeterminate]:bg-[#5b4fff]/40 data-[state=indeterminate]:border-[#5b4fff]";
 
+// Pages retirées du site (déclarations de TVA et Urssaf, 20/11/2026) :
+// l'API les garde dans son catalogue, elles ne s'affichent plus. Leurs droits
+// enregistrés ne sont pas touchés (la grille envoyée les garde telles quelles).
+const RETIRED_MODULES = new Set(["vat", "urssaf"]);
+
 function moduleByKey(catalog, key) {
   return catalog.modules.find((m) => m.key === key);
 }
@@ -191,7 +196,9 @@ export function RolePermissionsTable({ catalog, actions, onChange, disabled }) {
   return (
     <div className="space-y-2">
       {catalog.groups.map((group) => {
-        const modules = catalog.modules.filter((m) => m.group === group.key);
+        const modules = catalog.modules.filter(
+          (m) => m.group === group.key && !RETIRED_MODULES.has(m.key),
+        );
         if (!modules.length) return null;
         const pages = modules.filter((m) => !m.parent);
         const groupKeys = modules.map((m) => m.key);

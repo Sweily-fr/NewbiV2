@@ -28,12 +28,11 @@ import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { cn } from "@/src/lib/utils";
-import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import { dayToDate } from "@/src/utils/recurrenceDays";
 import {
   formatLinkedAmount,
   linkedItemExternalUrl,
+  linkedItemFilingSite,
   linkedItemHref,
   relativeDayLabel,
 } from "@/src/utils/calendar-linked-items";
@@ -325,19 +324,10 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
   const amountSign =
     item.kind === "FORECAST" ? (item.flowType === "EXPENSE" ? "- " : "+ ") : "";
   const detail = linkedKindDetail(item);
-  // Page TVA ou Urssaf sans le droit « Voir », ou pas encore ouverte à
-  // l'espace (accès anticipé) : l'échéance reste affichée, sans lien
-  const { canDo, isReady } = useMyPermissions();
-  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
-  const declarationModule = item.urssafPeriodKey ? "urssaf" : "vat";
-  const canOpenDeclarationPage =
-    isFeatureEnabled(declarationModule) &&
-    (!isReady || canDo(declarationModule, "view"));
-  const href =
-    item.kind === "FISCAL" && !canOpenDeclarationPage
-      ? null
-      : linkedItemHref(item);
+  const href = linkedItemHref(item);
   const externalUrl = linkedItemExternalUrl(item);
+  // Déclaration de TVA ou Urssaf : lien vers le site où la déposer
+  const filingSite = linkedItemFilingSite(item);
   const hint = hintFor(item, longDate);
   const members = item.assignedMembersInfo || [];
   const relative = relativeDayLabel(item.day, item.state);
@@ -535,23 +525,36 @@ function LinkedItemSheetBody({ item, meta, onClose, actions }) {
               className="w-full gap-1.5 bg-[#5a50ff] hover:bg-[#5a50ff]/90"
             >
               <Link href={href}>
-                {item.kind === "FISCAL"
-                  ? item.isDeclared
-                    ? "Voir la déclaration"
-                    : "Préparer la déclaration"
-                  : meta.openLabel}
+                {meta.openLabel}
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
+            </Button>
+          )}
+          {filingSite && (
+            <Button
+              asChild
+              size="sm"
+              className="w-full gap-1.5 bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+            >
+              <a
+                href={filingSite.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {filingSite.label}
+                <ExternalLink className="size-3.5" aria-hidden="true" />
+                <span className="sr-only">(nouvel onglet)</span>
+              </a>
             </Button>
           )}
           {externalUrl && (
             <Button
               asChild
               size="sm"
-              variant={href ? "outline" : "default"}
+              variant={href || filingSite ? "outline" : "default"}
               className={cn(
                 "w-full gap-1.5",
-                !href && "bg-[#5a50ff] hover:bg-[#5a50ff]/90",
+                !href && !filingSite && "bg-[#5a50ff] hover:bg-[#5a50ff]/90",
               )}
             >
               <a href={externalUrl} target="_blank" rel="noopener noreferrer">

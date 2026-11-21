@@ -30,11 +30,20 @@ import { useCalendarColorLabels } from "@/src/hooks/useCalendarColorLabels";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 
 // canEdit : ajout et modification des étiquettes (rôle avec écriture sur le
-// calendrier) ; sinon légende en consultation
-export function ColorLegend({ canEdit = true }) {
+// calendrier) ; sinon légende en consultation.
+// showTrigger={false} : pas de bouton, la légende s'ouvre dans une fenêtre
+// pilotée par open / onOpenChange (menu « … » du calendrier)
+export function ColorLegend({
+  canEdit = true,
+  open,
+  onOpenChange,
+  showTrigger = true,
+}) {
   const { labels, loading, updateLoading, updateLabels } =
     useCalendarColorLabels();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = open ?? internalOpen;
+  const setIsOpen = onOpenChange ?? setInternalOpen;
 
   // Modal state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -120,86 +129,111 @@ export function ColorLegend({ canEdit = true }) {
 
   if (loading) return null;
 
-  return (
+  const legend = (
     <>
-      {/* Bouton de l'en-tête : la légende s'ouvre par-dessus le calendrier
-          au lieu d'occuper une ligne (la page tient dans l'écran) */}
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="gap-1.5 font-normal"
-            aria-label="Étiquettes"
-          >
-            <Palette className="h-4 w-4" />
-            <span className="max-2xl:hidden">Étiquettes</span>
-            <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 opacity-60 transition-transform duration-200 max-2xl:hidden",
-                isOpen && "rotate-180",
-              )}
-            />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-64 p-2">
-          <p className="text-muted-foreground px-1.5 pt-1 pb-2 text-xs font-medium">
-            Étiquettes de couleur
-          </p>
-          <div className="flex flex-col gap-0.5">
-            {labels.map((entry, index) =>
-              canEdit ? (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => {
-                    setIsOpen(false);
-                    openEditDialog(index);
-                  }}
-                  className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
-                >
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-xs text-muted-foreground truncate flex-1 text-left">
-                    {entry.label}
-                  </span>
-                  <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
-                </button>
-              ) : (
-                // Sans « Modifier » : légende en lecture simple
-                <div
-                  key={index}
-                  className="flex items-center gap-2 py-1 px-1.5"
-                >
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-xs text-muted-foreground truncate flex-1 text-left">
-                    {entry.label}
-                  </span>
-                </div>
-              ),
-            )}
-          </div>
-
-          {canEdit && labels.length < 20 && (
-            <Button
-              variant="ghost"
-              size="sm"
+      {/* La fenêtre a déjà ce titre */}
+      {showTrigger && (
+        <p className="text-muted-foreground px-1.5 pt-1 pb-2 text-xs font-medium">
+          Étiquettes de couleur
+        </p>
+      )}
+      <div className="flex flex-col gap-0.5">
+        {labels.map((entry, index) =>
+          canEdit ? (
+            <button
+              key={index}
+              type="button"
               onClick={() => {
                 setIsOpen(false);
-                openAddDialog();
+                openEditDialog(index);
               }}
-              className="mt-1 w-full justify-start gap-1 text-xs text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
             >
-              <Plus className="h-3.5 w-3.5" />
-              Ajouter une étiquette
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-xs text-muted-foreground truncate flex-1 text-left">
+                {entry.label}
+              </span>
+              <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+            </button>
+          ) : (
+            // Sans « Modifier » : légende en lecture simple
+            <div key={index} className="flex items-center gap-2 py-1 px-1.5">
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-xs text-muted-foreground truncate flex-1 text-left">
+                {entry.label}
+              </span>
+            </div>
+          ),
+        )}
+      </div>
+
+      {canEdit && labels.length < 20 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setIsOpen(false);
+            openAddDialog();
+          }}
+          className="mt-1 w-full justify-start gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Ajouter une étiquette
+        </Button>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      {/* Sans bouton (menu « … ») : la légende dans une fenêtre */}
+      {!showTrigger && (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Étiquettes de couleur</DialogTitle>
+              <DialogDescription>
+                {canEdit
+                  ? "La couleur d'un événement et son nom. Cliquez sur une étiquette pour la modifier."
+                  : "La couleur d'un événement et son nom."}
+              </DialogDescription>
+            </DialogHeader>
+            {legend}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Bouton de l'en-tête : la légende s'ouvre par-dessus le calendrier
+          au lieu d'occuper une ligne (la page tient dans l'écran) */}
+      {showTrigger && (
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="gap-1.5 font-normal"
+              aria-label="Étiquettes"
+            >
+              <Palette className="h-4 w-4" />
+              <span className="max-2xl:hidden">Étiquettes</span>
+              <ChevronDown
+                className={cn(
+                  "h-3.5 w-3.5 opacity-60 transition-transform duration-200 max-2xl:hidden",
+                  isOpen && "rotate-180",
+                )}
+              />
             </Button>
-          )}
-        </PopoverContent>
-      </Popover>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-64 p-2">
+            {legend}
+          </PopoverContent>
+        </Popover>
+      )}
 
       {/* Modal ajout / édition */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
