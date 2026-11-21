@@ -6,6 +6,7 @@ import {
   DELETE_FILE_TRANSFER,
   RENAME_FILE_TRANSFER,
   GET_MY_TRANSFERS,
+  MARK_FILE_TRANSFER_AS_PAID,
 } from "../graphql/mutations";
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -37,6 +38,9 @@ export const useFileTransfer = () => {
   );
   const [deleteFileTransferMutation] = useMutation(DELETE_FILE_TRANSFER);
   const [renameFileTransferMutation] = useMutation(RENAME_FILE_TRANSFER);
+  const [markFileTransferAsPaidMutation] = useMutation(
+    MARK_FILE_TRANSFER_AS_PAID,
+  );
 
   // Query pour récupérer les transferts (scopée au workspace actif)
   const {
@@ -351,6 +355,33 @@ export const useFileTransfer = () => {
     [renameFileTransferMutation],
   );
 
+  // Débloquer à la main un transfert payant (paiement reçu autrement) : le
+  // transfert renvoyé met à jour le cache Apollo (tableau et détail)
+  const markTransferAsPaid = useCallback(
+    async (transferId) => {
+      try {
+        const { data } = await markFileTransferAsPaidMutation({
+          variables: { id: transferId },
+        });
+        if (data?.markFileTransferAsPaid?.isPaid) {
+          toast.success("Transfert débloqué", {
+            description: "Le client peut télécharger les fichiers.",
+          });
+          return data.markFileTransferAsPaid;
+        }
+        toast.error("Le transfert n'a pas pu être marqué comme payé");
+        return null;
+      } catch (error) {
+        console.error("Erreur lors du marquage du paiement:", error);
+        toast.error(
+          error.message || "Le transfert n'a pas pu être marqué comme payé",
+        );
+        throw error;
+      }
+    },
+    [markFileTransferAsPaidMutation],
+  );
+
   // Fonction pour copier le lien de partage
   const copyShareLink = useCallback((shareLink, accessKey) => {
     const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
@@ -394,6 +425,7 @@ export const useFileTransfer = () => {
     createTransfer,
     deleteTransfer,
     renameTransfer,
+    markTransferAsPaid,
     copyShareLink,
     refetchTransfers,
   };

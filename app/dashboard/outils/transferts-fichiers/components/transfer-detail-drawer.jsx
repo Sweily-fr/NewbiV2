@@ -62,6 +62,13 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
+import {
+  TRANSFER_PAYMENT_METHOD_LABELS,
+  TRANSFER_PAYMENT_PROVIDER_LABELS,
+  canMarkTransferAsPaid,
+  formatTransferAmount,
+  transferPaymentState,
+} from "../utils/transfer-payment";
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -169,6 +176,8 @@ export function TransferDetailDrawer({
   onOpenChange,
   onDelete,
   onRename,
+  // Débloquer à la main un transfert payant (absent sans le droit)
+  onMarkAsPaid,
   onRefresh,
 }) {
   // Copier le lien
@@ -380,6 +389,24 @@ export function TransferDetailDrawer({
   // Vérifier si expiré
   const isExpired =
     transfer.expiryDate && new Date(transfer.expiryDate) < new Date();
+
+  // Paiement demandé au destinataire
+  const paymentState = transferPaymentState(transfer);
+  const offeredPaymentMethods = (
+    transfer.paymentMethods?.length ? transfer.paymentMethods : ["stripe"]
+  )
+    .map((method) => TRANSFER_PAYMENT_METHOD_LABELS[method])
+    .filter(Boolean);
+  const formatPaymentDate = (dateInput) => {
+    if (!dateInput) return null;
+    try {
+      return format(new Date(dateInput), "d MMM. yyyy 'à' HH:mm", {
+        locale: fr,
+      });
+    } catch {
+      return null;
+    }
+  };
 
   return (
     <>
@@ -734,6 +761,112 @@ export function TransferDetailDrawer({
                   </div>
                 </div>
               </div>
+
+              {/* Paiement demandé au destinataire */}
+              {paymentState && (
+                <div className="border border-gray-200 rounded-2xl p-4 mb-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-0.5">
+                        Paiement demandé
+                      </p>
+                      <p className="text-xl font-medium text-gray-900">
+                        {formatTransferAmount(
+                          transfer.paymentAmount,
+                          transfer.paymentCurrency,
+                        )}
+                      </p>
+                    </div>
+                    {paymentState === "paid" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 text-emerald-600 text-xs font-medium">
+                        <CheckCircle className="w-3 h-3" />
+                        Payé
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#5b4fff]/10 text-[#5b4fff] text-xs font-medium">
+                        {paymentState === "pending"
+                          ? "Paiement en confirmation"
+                          : "En attente de paiement"}
+                      </span>
+                    )}
+                  </div>
+
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div>
+                      <dt className="text-gray-500">Moyens proposés</dt>
+                      <dd className="text-gray-900">
+                        {offeredPaymentMethods.join(", ")}
+                      </dd>
+                    </div>
+                    {paymentState === "paid" && (
+                      <>
+                        <div>
+                          <dt className="text-gray-500">Payé le</dt>
+                          <dd className="text-gray-900">
+                            {formatPaymentDate(transfer.paymentDate) || "-"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500">Moyen</dt>
+                          <dd className="text-gray-900">
+                            {TRANSFER_PAYMENT_PROVIDER_LABELS[
+                              transfer.paymentProvider
+                            ] || "-"}
+                          </dd>
+                        </div>
+                        {transfer.payerEmail && (
+                          <div className="min-w-0">
+                            <dt className="text-gray-500">Payeur</dt>
+                            <dd className="text-gray-900 truncate">
+                              {transfer.payerEmail}
+                            </dd>
+                          </div>
+                        )}
+                        {transfer.paidAmount != null &&
+                          Number(transfer.paidAmount) !==
+                            Number(transfer.paymentAmount) && (
+                            <div>
+                              <dt className="text-gray-500">Montant reçu</dt>
+                              <dd className="text-gray-900">
+                                {formatTransferAmount(
+                                  transfer.paidAmount,
+                                  transfer.paymentCurrency,
+                                )}
+                              </dd>
+                            </div>
+                          )}
+                      </>
+                    )}
+                    {transfer.paymentReference && (
+                      <div>
+                        <dt className="text-gray-500">Référence de virement</dt>
+                        <dd className="text-gray-900 font-medium">
+                          {transfer.paymentReference}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  {onMarkAsPaid && canMarkTransferAsPaid(transfer) && (
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onMarkAsPaid(transfer)}
+                        className="cursor-pointer"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        Marquer comme payé
+                      </Button>
+                      <p className="text-xs text-gray-500">
+                        Paiement reçu autrement (virement, espèces…) : le client
+                        pourra télécharger les fichiers.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Grid secondaire */}
               <div className="grid grid-cols-2 gap-4 mb-4">

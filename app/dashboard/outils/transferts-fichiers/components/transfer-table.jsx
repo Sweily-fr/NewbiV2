@@ -30,6 +30,8 @@ import {
   ChevronRightIcon,
   CircleXIcon,
   TrashIcon,
+  CircleCheck,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -99,6 +101,40 @@ import { DocumentTextIcon } from "@/src/components/icons";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { createSearchMatcher } from "@/src/utils/search-text";
 import { SearchExactToggle } from "@/src/components/search-exact-toggle";
+import {
+  canMarkTransferAsPaid,
+  formatTransferAmount,
+  transferPaymentState,
+} from "../utils/transfer-payment";
+
+// Badge du paiement demandé au destinataire (montant compris)
+function TransferPaymentBadge({ transfer }) {
+  const state = transferPaymentState(transfer);
+  if (!state) return null;
+  const amount = formatTransferAmount(
+    state === "paid" && transfer.paidAmount != null
+      ? transfer.paidAmount
+      : transfer.paymentAmount,
+    transfer.paymentCurrency,
+  );
+  if (state === "paid") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-xs font-medium whitespace-nowrap dark:bg-emerald-900/20 dark:text-emerald-400">
+        <CircleCheck className="w-3 h-3" />
+        Payé · {amount}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#5b4fff]/10 text-[#5b4fff] text-xs font-medium whitespace-nowrap">
+      <CreditCard className="w-3 h-3" />
+      {state === "pending"
+        ? "Paiement en confirmation"
+        : "En attente de paiement"}{" "}
+      · {amount}
+    </span>
+  );
+}
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -145,7 +181,8 @@ export default function TransferTable({
   // (les deux l'étaient, l'un masqué en CSS).
   const isMobileLayout = useIsMobile();
   const inputRef = useRef(null);
-  const { deleteTransfer, renameTransfer, formatFileSize } = useFileTransfer();
+  const { deleteTransfer, renameTransfer, markTransferAsPaid, formatFileSize } =
+    useFileTransfer();
   const { session } = useUser();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canDo, isReady } = useMyPermissions();
@@ -278,7 +315,7 @@ export default function TransferTable({
           const isExpired = transfer.status === "expired";
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-start gap-1">
               {isExpired ? (
                 <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-100 text-red-700 text-xs font-medium dark:bg-red-900/20 dark:text-red-400">
                   <Clock className="w-3 h-3" />
@@ -295,10 +332,11 @@ export default function TransferTable({
                   En attente
                 </span>
               )}
+              <TransferPaymentBadge transfer={transfer} />
             </div>
           );
         },
-        size: 120,
+        size: 190,
       },
       {
         accessorKey: "expiryDate",
@@ -401,6 +439,15 @@ export default function TransferTable({
                     <Copy className="mr-2 h-4 w-4" />
                     Copier le lien
                   </DropdownMenuItem>
+                  {canEditFileTransfers && canMarkTransferAsPaid(transfer) && (
+                    <DropdownMenuItem
+                      onClick={() => setTransferToMarkPaid(transfer)}
+                      className="cursor-pointer"
+                    >
+                      <CircleCheck className="mr-2 h-4 w-4" />
+                      Marquer comme payé
+                    </DropdownMenuItem>
+                  )}
                   {canDeleteFileTransfers && (
                     <>
                       <DropdownMenuSeparator />
@@ -422,7 +469,7 @@ export default function TransferTable({
         enableHiding: false,
       },
     ],
-    [session, formatFileSize, canDeleteFileTransfers],
+    [session, formatFileSize, canDeleteFileTransfers, canEditFileTransfers],
   );
 
   // Cases à cocher masquées sans droit de suppression : la sélection ne sert
@@ -461,6 +508,25 @@ export default function TransferTable({
   const [isRenaming, setIsRenaming] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Transfert payant à débloquer à la main (confirmation)
+  const [transferToMarkPaid, setTransferToMarkPaid] = useState(null);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+
+  const confirmMarkTransferAsPaid = async () => {
+    if (!transferToMarkPaid) return;
+    setIsMarkingPaid(true);
+    try {
+      const updated = await markTransferAsPaid(transferToMarkPaid.id);
+      if (updated && selectedTransfer?.id === transferToMarkPaid.id) {
+        setSelectedTransfer((prev) => (prev ? { ...prev, ...updated } : prev));
+      }
+      setTransferToMarkPaid(null);
+    } catch {
+      // message déjà affiché par le hook
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
 
   // Synchroniser selectedTransfer avec les données fraîches des transfers
   useEffect(() => {
@@ -587,6 +653,41 @@ export default function TransferTable({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      {/* Confirmation : débloquer un transfert payant à la main */}
+      <AlertDialog
+        open={!!transferToMarkPaid}
+        onOpenChange={(open) => {
+          if (!open && !isMarkingPaid) setTransferToMarkPaid(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Marquer ce transfert comme payé ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Le client pourra télécharger les fichiers immédiatement. À
+              utiliser quand vous avez reçu le paiement autrement (virement,
+              espèces…).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMarkingPaid}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                confirmMarkTransferAsPaid();
+              }}
+              disabled={isMarkingPaid}
+            >
+              {isMarkingPaid ? "Enregistrement..." : "Marquer comme payé"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* AlertDialog pour suppression individuelle */}
       <AlertDialog
         open={!!transferToDelete}
@@ -1074,6 +1175,11 @@ export default function TransferTable({
             ? (transfer) => {
                 handleRenameTransfer(transfer);
               }
+            : undefined
+        }
+        onMarkAsPaid={
+          canEditFileTransfers
+            ? (transfer) => setTransferToMarkPaid(transfer)
             : undefined
         }
         onRefresh={onRefresh}
