@@ -9,7 +9,10 @@ import { ForceDesktopViewport } from "@/src/components/force-desktop-viewport";
 import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 import { SITE_URL } from "@/src/lib/site";
-import { SECRET_PAGE_INLINE_SOURCE } from "@/src/lib/secret-pages";
+import {
+  SECRET_HISTORY_GUARD_SOURCE,
+  SECRET_PAGE_INLINE_SOURCE,
+} from "@/src/lib/secret-pages";
 
 // Même police et même variable que geist/font/mono, mais sans préchargement :
 // la variante mono (71 kB) était préchargée sur toutes les pages alors qu'elle
@@ -142,12 +145,13 @@ export default function RootLayout({ children }) {
             Jamais chargé sur une page dont l'adresse porte un secret
             (src/lib/secret-pages.js) : Google recevrait l'adresse complète.
             Une navigation interne vers une telle page recharge la page
-            entière, sans les balises déjà chargées. */}
+            entière (une seule fois), sans les balises déjà chargées. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 ${SECRET_PAGE_INLINE_SOURCE}
+                ${SECRET_HISTORY_GUARD_SOURCE}
                 window.__isSecretPage = __isSecretPage;
                 if (__isSecretPage(window.location)) return;
                 window.dataLayer = window.dataLayer || [];
@@ -165,21 +169,7 @@ export default function RootLayout({ children }) {
                 tag.async = true;
                 tag.src = 'https://www.googletagmanager.com/gtag/js?id=AW-18448267727';
                 document.head.appendChild(tag);
-                ['pushState', 'replaceState'].forEach(function(method) {
-                  var original = history[method];
-                  history[method] = function(state, title, url) {
-                    try {
-                      if (url !== undefined && url !== null) {
-                        var next = new URL(url, window.location.href);
-                        if (next.origin === window.location.origin && __needsFullReload(next)) {
-                          window.location.assign(next.href);
-                          return;
-                        }
-                      }
-                    } catch (e) {}
-                    return original.apply(this, arguments);
-                  };
-                });
+                __guardSecretNavigation(window);
               })();
             `,
           }}
