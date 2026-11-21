@@ -351,18 +351,6 @@ function ClientsContent() {
                 <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
                 Champs
               </Button>
-              {showProspects && (
-                <Button
-                  variant="outline"
-                  onClick={() => setProspectsDialogOpen(true)}
-                  className="self-start gap-1.5 cursor-pointer"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Target size={14} strokeWidth={2} aria-hidden="true" />
-                  Générer des prospects
-                </Button>
-              )}
               {canImportClients && (
                 <Button
                   variant="outline"
@@ -447,6 +435,19 @@ function ClientsContent() {
                   ]),
                 )}
               />
+              {/* Générer des prospects : juste à droite de « Filtres » */}
+              {showProspects && (
+                <Button
+                  variant="outline"
+                  onClick={() => setProspectsDialogOpen(true)}
+                  className="gap-1.5 cursor-pointer"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
+                  <Target size={14} strokeWidth={2} aria-hidden="true" />
+                  Générer des prospects
+                </Button>
+              )}
             </div>
             {/* Actions groupées : chacune suit son action du rôle */}
             {selectedClients.size > 0 &&
