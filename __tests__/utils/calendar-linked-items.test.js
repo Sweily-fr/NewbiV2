@@ -34,18 +34,19 @@ const item = (kind, day, state, amount = null, extra = {}) => ({
 });
 
 describe("visibleRange", () => {
-  it("vue mois : semaines complètes, dimanche en premier", () => {
+  it("vue mois : semaines complètes, lundi en premier", () => {
     // Octobre 2026 : jeudi 1er au samedi 31
     expect(visibleRange("mois", TODAY)).toEqual({
-      from: "2026-09-27",
-      to: "2026-10-31",
+      from: "2026-09-28",
+      to: "2026-11-01",
     });
   });
 
   it("vue semaine, jour et agenda", () => {
+    // Mercredi 28 octobre : du lundi 26 au dimanche 1er novembre
     expect(visibleRange("semaine", TODAY)).toEqual({
-      from: "2026-10-25",
-      to: "2026-10-31",
+      from: "2026-10-26",
+      to: "2026-11-01",
     });
     expect(visibleRange("jour", TODAY)).toEqual({
       from: "2026-10-28",

@@ -432,6 +432,24 @@
   fill: #ffffff !important;
 }
 
+/* Barre de navigation du bas (écran étroit, fixed z-[80]) : elle passait
+   par-dessus les panneaux, tiroirs et fenêtres (z-40/50), dont le pied
+   (« Enregistrer », « Créer l'événement »…) et les boutons flottants
+   restaient cachés dessous. Elle s'efface tant que l'un d'eux est ouvert,
+   comme pendant la fenêtre des réglages. Mêmes repères que
+   useReconciliationToastVisibility : contenus Radix/vaul ouverts, voiles
+   des panneaux maison (data-app-overlay) ; pas les popovers. */
+:root:has(
+    [data-slot="sheet-content"][data-state="open"],
+    [data-slot="drawer-content"][data-state="open"],
+    [data-slot="dialog-content"][data-state="open"],
+    [data-slot="alert-dialog-content"][data-state="open"],
+    [data-app-overlay]
+  )
+  [data-bottom-nav] {
+  display: none;
+}
+
 /* Styles spécifiques pour les footers fixes sur mobile Safari */
 @media (max-width: 640px) {
   .modal-footer-fixed {

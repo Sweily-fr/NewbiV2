@@ -51,13 +51,11 @@ test.describe("Mise en page (propriétaire de « Pilotage »)", () => {
       "button Ventes > Nouvelle facture": { navigation: "/dashboard/outils/factures/new" },
       "button Ventes > Factures clients": { navigation: "/dashboard/outils/factures" },
       "button Ventes > Catalogues": { navigation: "/dashboard/catalogues" },
-      // TVA et Urssaf : en accès anticipé, ouvertes à tous hors production (BETA_FEATURES)
-      "button Pilotage": { menu: ["Vue d'ensemble", "Prévision", "Analytiques", "TVA", "Urssaf"] },
+      // Pages TVA et Urssaf retirées : l'échéance du calendrier renvoie au site officiel
+      "button Pilotage": { menu: ["Vue d'ensemble", "Prévision", "Analytiques"] },
       "button Pilotage > Vue d'ensemble": { navigation: "/dashboard/outils/analytiques/vue-densemble" },
       "button Pilotage > Prévision": { navigation: "/dashboard/outils/prevision" },
       "button Pilotage > Analytiques": { navigation: "/dashboard/outils/analytiques" },
-      "button Pilotage > TVA": { navigation: "/dashboard/outils/tva" },
-      "button Pilotage > Urssaf": { navigation: "/dashboard/outils/urssaf" },
       "button Clients": { menu: ["Nouveau client", "Mes clients", "Listes", "Segments", "Bloqués"] },
       "button Clients > Mes clients": { navigation: "/dashboard/clients" },
       "button Clients > Listes": { navigation: "/dashboard/clients/listes" },

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, Clock, CalendarClock } from "lucide-react";
 import { Label } from "@/src/components/ui/label";
-import { Checkbox } from "@/src/components/ui/checkbox";
+import { Switch } from "@/src/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -11,15 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
 
 /**
- * Composant pour activer/désactiver les rappels email sur une tâche
+ * Rappel par e-mail d'un événement : interrupteur, puis rappel anticipé et
+ * rappel à l'échéance
  */
 export function EmailReminderToggle({
   value,
@@ -96,52 +90,20 @@ export function EmailReminderToggle({
         { value: "3d", label: "3 jours avant" },
       ];
 
+  // Ligne de la fenêtre d'événement : l'icône est portée par la fenêtre
   return (
-    <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Bell className="h-4 w-4 text-muted-foreground" />
-          <Label
-            htmlFor="email-reminder"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Rappel par email
-          </Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 16v-4" />
-                    <path d="M12 8h.01" />
-                  </svg>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs text-xs">
-                  Vous recevrez un email au moment prévu. Vous pouvez gérer vos
-                  préférences dans les paramètres.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <Checkbox
+    <div>
+      <div className="flex min-h-12 items-center justify-between gap-3">
+        <Label
+          htmlFor="email-reminder"
+          className="cursor-pointer text-sm font-normal"
+        >
+          Rappel par e-mail
+        </Label>
+        <Switch
           id="email-reminder"
+          size="sm"
+          className="data-[state=checked]:bg-[#5a50ff]"
           checked={enabled}
           onCheckedChange={handleEnabledChange}
           disabled={disabled}
@@ -149,25 +111,21 @@ export function EmailReminderToggle({
       </div>
 
       {enabled && (
-        <div className="space-y-4 pl-6">
-          {/* Rappel anticipé */}
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
-              <Label className="text-xs text-muted-foreground">
-                Rappel anticipé
-              </Label>
-            </div>
+        <div className="space-y-2 pb-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Select
               value={anticipation || "none"}
               onValueChange={handleAnticipationChange}
               disabled={disabled}
             >
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Aucun" />
+              <SelectTrigger
+                className="h-8 text-xs"
+                aria-label="Rappel anticipé"
+              >
+                <SelectValue placeholder="Rappel anticipé" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Aucun</SelectItem>
+                <SelectItem value="none">Pas de rappel anticipé</SelectItem>
                 {anticipationOptions.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
@@ -175,37 +133,30 @@ export function EmailReminderToggle({
                 ))}
               </SelectContent>
             </Select>
-          </div>
 
-          {/* À l'échéance — uniquement pour les événements non allDay */}
-          {!allDay && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                <Label className="text-xs text-muted-foreground">
-                  À l'échéance
-                </Label>
-              </div>
+            {/* À l'échéance : seulement pour un événement à l'heure */}
+            {!allDay && (
               <Select
                 value={echeance || "none"}
                 onValueChange={handleEcheanceChange}
                 disabled={disabled}
               >
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="Aucun" />
+                <SelectTrigger
+                  className="h-8 text-xs"
+                  aria-label="À l'échéance"
+                >
+                  <SelectValue placeholder="À l'échéance" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Aucun</SelectItem>
+                  <SelectItem value="none">Rien à l'échéance</SelectItem>
                   <SelectItem value="0m">Au début de l'événement</SelectItem>
                   <SelectItem value="5m">5 minutes avant</SelectItem>
                   <SelectItem value="10m">10 minutes avant</SelectItem>
                   <SelectItem value="15m">15 minutes avant</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          )}
-
-          {/* Résumé */}
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {getSummary(anticipation, echeance, allDay)}
           </p>

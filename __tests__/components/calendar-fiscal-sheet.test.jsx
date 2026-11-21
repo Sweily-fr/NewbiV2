@@ -1,33 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 
-const permissions = vi.hoisted(() => ({
-  canViewVat: true,
-  vatOpen: true,
-  canViewUrssaf: true,
-  urssafOpen: true,
-}));
-vi.mock("@/src/hooks/useMyPermissions", () => ({
-  useMyPermissions: () => ({
-    isReady: true,
-    canDo: (module) => {
-      if (module === "vat") return permissions.canViewVat;
-      if (module === "urssaf") return permissions.canViewUrssaf;
-      return true;
-    },
-  }),
-}));
-vi.mock("@/src/hooks/useWorkspaceFeatures", () => ({
-  useWorkspaceFeatures: () => ({
-    isReady: true,
-    isEnabled: (feature) => {
-      if (feature === "vat") return permissions.vatOpen;
-      if (feature === "urssaf") return permissions.urssafOpen;
-      return true;
-    },
-  }),
-}));
-
 import { LinkedItemSheet } from "@/app/dashboard/calendar/components/linked-item-sheet";
 import { FiscalSetupMenuItem } from "@/app/dashboard/calendar/components/fiscal-setup-hint";
 import {
@@ -67,60 +40,8 @@ const item = {
   note: "La date exacte figure dans votre espace professionnel.",
 };
 
-describe("fiche d'une déclaration de TVA", () => {
+describe("fiche d'une déclaration : lien vers le site où la déposer", () => {
   const vatItem = { ...item, vatPeriodKey: "2026-10", isDeclared: false };
-
-  it("ouvre sa période dans la page TVA, en gardant la page officielle", () => {
-    permissions.canViewVat = true;
-    render(<LinkedItemSheet item={vatItem} onClose={() => {}} />);
-    const sheet = screen.getByRole("dialog");
-    expect(
-      within(sheet).getByRole("link", { name: /Préparer la déclaration/ }),
-    ).toHaveAttribute("href", "/dashboard/outils/tva?periode=2026-10");
-    expect(
-      within(sheet).getByRole("link", { name: /Voir la page officielle/ }),
-    ).toHaveAttribute("href", item.infoUrl);
-  });
-
-  it("une fois confirmée : « Déclarée » et lien vers la déclaration", () => {
-    permissions.canViewVat = true;
-    render(
-      <LinkedItemSheet
-        item={{ ...vatItem, isDeclared: true, state: "DONE" }}
-        onClose={() => {}}
-      />,
-    );
-    const sheet = screen.getByRole("dialog");
-    expect(within(sheet).getByText("Déclarée")).toBeInTheDocument();
-    expect(
-      within(sheet).getByRole("link", { name: /Voir la déclaration/ }),
-    ).toBeInTheDocument();
-  });
-
-  it("sans le droit « Voir » de la page TVA : pas de lien vers elle", () => {
-    permissions.canViewVat = false;
-    render(<LinkedItemSheet item={vatItem} onClose={() => {}} />);
-    const sheet = screen.getByRole("dialog");
-    expect(
-      within(sheet).queryByRole("link", { name: /Préparer la déclaration/ }),
-    ).not.toBeInTheDocument();
-    expect(within(sheet).getAllByRole("link")).toHaveLength(1);
-    permissions.canViewVat = true;
-  });
-
-  it("page TVA pas encore ouverte à l'espace : pas de lien vers elle", () => {
-    permissions.vatOpen = false;
-    render(<LinkedItemSheet item={vatItem} onClose={() => {}} />);
-    const sheet = screen.getByRole("dialog");
-    expect(
-      within(sheet).queryByRole("link", { name: /Préparer la déclaration/ }),
-    ).not.toBeInTheDocument();
-    expect(within(sheet).getAllByRole("link")).toHaveLength(1);
-    permissions.vatOpen = true;
-  });
-});
-
-describe("fiche d'une déclaration Urssaf", () => {
   const urssafItem = {
     ...item,
     id: "FISCAL:URSSAF_REVENUE:2026-11-30",
@@ -128,6 +49,8 @@ describe("fiche d'une déclaration Urssaf", () => {
     day: "2026-11-30",
     title: "Déclaration de chiffre d'affaires (Urssaf)",
     counterparty: "Urssaf",
+    infoUrl:
+      "https://www.autoentrepreneur.urssaf.fr/portail/accueil/une-question/toutes-les-fiches-pratiques/declarer-et-payer-mes-cotisation.html",
     isIndicative: false,
     isConditional: false,
     vatPeriodKey: null,
@@ -135,36 +58,49 @@ describe("fiche d'une déclaration Urssaf", () => {
     isDeclared: false,
   };
 
-  it("ouvre sa période dans la page Urssaf", () => {
-    render(<LinkedItemSheet item={urssafItem} onClose={() => {}} />);
+  it("TVA : « Déclarer sur impots.gouv.fr » en premier, la page officielle ensuite", () => {
+    render(<LinkedItemSheet item={vatItem} onClose={() => {}} />);
     const sheet = screen.getByRole("dialog");
-    expect(
-      within(sheet).getByRole("link", { name: /Préparer la déclaration/ }),
-    ).toHaveAttribute("href", "/dashboard/outils/urssaf?periode=2026-10");
-  });
-
-  it("le droit et l'accès de la page Urssaf comptent, pas ceux de la TVA", () => {
-    permissions.canViewVat = false;
-    permissions.vatOpen = false;
-    const { unmount } = render(
-      <LinkedItemSheet item={urssafItem} onClose={() => {}} />,
+    const links = within(sheet).getAllByRole("link");
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveAccessibleName(/Déclarer sur impots\.gouv\.fr/);
+    expect(links[0]).toHaveAttribute(
+      "href",
+      "https://cfspro.impots.gouv.fr/mire/accueil.do",
     );
-    expect(
-      within(screen.getByRole("dialog")).getByRole("link", {
-        name: /Préparer la déclaration/,
-      }),
-    ).toBeInTheDocument();
-    unmount();
-    permissions.canViewVat = true;
-    permissions.vatOpen = true;
-
-    permissions.urssafOpen = false;
-    render(<LinkedItemSheet item={urssafItem} onClose={() => {}} />);
-    const sheet = screen.getByRole("dialog");
+    expect(links[0]).toHaveAttribute("target", "_blank");
+    expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
+    expect(links[1]).toHaveAccessibleName(/Voir la page officielle/);
+    expect(links[1]).toHaveAttribute("href", item.infoUrl);
+    // Plus de page Déclaration de TVA dans l'application
     expect(
       within(sheet).queryByRole("link", { name: /Préparer la déclaration/ }),
     ).not.toBeInTheDocument();
-    permissions.urssafOpen = true;
+  });
+
+  it("Urssaf : « Déclarer sur autoentrepreneur.urssaf.fr »", () => {
+    render(<LinkedItemSheet item={urssafItem} onClose={() => {}} />);
+    const sheet = screen.getByRole("dialog");
+    expect(
+      within(sheet).getByRole("link", {
+        name: /Déclarer sur autoentrepreneur\.urssaf\.fr/,
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.autoentrepreneur.urssaf.fr/portail/accueil.html",
+    );
+  });
+
+  it("déjà confirmée dans Newbi : « Déclarée »", () => {
+    render(
+      <LinkedItemSheet
+        item={{ ...vatItem, isDeclared: true, state: "DONE" }}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      within(screen.getByRole("dialog")).getByText("Déclarée"),
+    ).toBeInTheDocument();
   });
 });
 

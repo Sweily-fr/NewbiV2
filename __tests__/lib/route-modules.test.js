@@ -54,10 +54,10 @@ describe("pages masquées au Comptable par défaut", () => {
 });
 
 describe("pages en accès anticipé", () => {
-  it("rattache la TVA et la prise de rendez-vous à leur fonctionnalité", () => {
-    expect(featureForModule(moduleForPath("/dashboard/outils/tva"))).toBe(
-      "vat",
-    );
+  it("rattache la prise de rendez-vous à sa fonctionnalité", () => {
+    // Pages Déclaration de TVA et Urssaf retirées le 20/11/2026
+    expect(moduleForPath("/dashboard/outils/tva")).toBe(null);
+    expect(moduleForPath("/dashboard/outils/urssaf")).toBe(null);
     expect(
       featureForModule(moduleForPath("/dashboard/outils/rendez-vous?type=1")),
     ).toBe("appointments");

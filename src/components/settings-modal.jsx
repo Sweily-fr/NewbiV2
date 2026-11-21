@@ -432,19 +432,13 @@ export function SettingsModal({
           }
           // L'exercice comptable borne l'encaissement/décaissement et les
           // analytics → invalider ces caches pour un rafraîchissement immédiat
-          // du dashboard sans rechargement de page. Les pages Déclaration de
-          // TVA et Urssaf dépendent aussi des informations légales (régime,
-          // ACRE, versement libératoire…).
+          // du dashboard sans rechargement de page.
           try {
             [
               "dashboardSummary",
               "transactions",
               "financialAnalytics",
               "treasuryForecast",
-              "vatOverview",
-              "vatReturn",
-              "urssafOverview",
-              "urssafDeclaration",
             ].forEach((fieldName) =>
               apolloClient.cache.evict({ id: "ROOT_QUERY", fieldName }),
             );

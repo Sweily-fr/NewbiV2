@@ -34,6 +34,8 @@ export const GET_EVENTS = gql`
         color
         location
         type
+        declarationKind
+        eventTypeId
         bookingId
         invoiceId
         invoice {
@@ -93,6 +95,8 @@ export const GET_EVENT = gql`
         color
         location
         type
+        declarationKind
+        eventTypeId
         invoiceId
         invoice {
           id

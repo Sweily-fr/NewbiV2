@@ -58,6 +58,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
+import { UpcomingDaysCard } from "@/app/dashboard/components/upcoming-days-card";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -179,6 +180,7 @@ function DashboardContent() {
   const canTransferFiles =
     canCreateModule("fileTransfers") && !fileTransfersHidden;
   const canSeeKanban = canReadModule("kanban");
+  const canSeeCalendar = canReadModule("calendar");
   // Cadres de l'accueil (Paramètres > Rôles > Accueil) : chacun masquable
   // par le rôle, en plus des droits des pages d'où viennent ses données.
   // Grille sans la page Accueil (API plus ancienne) : tout reste affiché.
@@ -553,12 +555,16 @@ function DashboardContent() {
           </div>
         )}
 
-      <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
+      {/* Largeurs utiles mesurées sur la zone de contenu (@container/home),
+          pas sur l'écran : le menu latéral ouvert lui retire ~250 px.
+          Cartes de l'accueil allégées ici, en un seul endroit : sans ombre,
+          bordure discrète, marges intérieures réduites. */}
+      <div className="@container/home flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6 [&_[data-slot=card]]:shadow-none [&_[data-slot=card]]:border-border/60 [&_[data-slot=card]]:py-4 [&_[data-slot=card]]:gap-3 [&_[data-slot=card-header]]:px-5 [&_[data-slot=card-content]]:px-5">
         {/* Hors lecture seule : la route du statut bancaire répond 402 */}
         {!permissionsPending && canReadBanking && !isReadOnly && (
           <BankReconnectAlert />
         )}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full mb-2 gap-1 md:gap-0">
+        <div className="flex flex-wrap items-center justify-between w-full mb-2 gap-x-4 gap-y-2">
           <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},
           </h1>
@@ -691,9 +697,18 @@ function DashboardContent() {
           ) : null}
         </div>
 
+        {/* La semaine à venir, sous le bonjour (droit « Voir » du
+            calendrier). Monté une fois les droits connus : sinon ses
+            requêtes partent avant et sont refusées aux rôles sans
+            calendrier */}
+        {!permissionsPending && canSeeCalendar && (
+          <UpcomingDaysCard className="w-full -mt-1" />
+        )}
+
         {/* Actions rapides (selon l'action « create » du rôle sur chaque module) */}
         {hasQuickActions && (
-          <div className="flex items-center gap-2 flex-wrap -mt-2">
+          // Cadre étroit : grille de boutons de même largeur ; large : en ligne
+          <div className="grid grid-cols-2 gap-2 @3xl/home:flex @3xl/home:flex-wrap @3xl/home:items-center [&>button]:justify-center @3xl/home:[&>button]:justify-start">
             {canCreateQuotes && (
               <Button
                 variant="primary"
@@ -863,7 +878,7 @@ function DashboardContent() {
           </div>
         </div> */}
         {/* Deux cards KPI */}
-        <div className="flex items-center justify-end mt-6">
+        <div className="flex items-center justify-end">
           {canReadOverview && (
             <Button
               variant="ghost"
@@ -883,7 +898,7 @@ function DashboardContent() {
           )}
         </div>
         {(showBankBalance || showBillingMonth) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 @3xl/home:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
             {kpiLoading ? (
               <>
                 {showBankBalance && (
@@ -1022,7 +1037,7 @@ function DashboardContent() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 mt-3">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
                           <div className="flex items-center gap-1.5">
                             <TrendUpIcon className="size-4 text-emerald-500" />
                             <span className="text-xs text-muted-foreground">
@@ -1183,10 +1198,10 @@ function DashboardContent() {
           </h2>
         )}
         {!showToProcess ? null : invoicesSectionLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 @2xl/home:grid-cols-2 @4xl/home:grid-cols-3 @2xl/home:[&>*:last-child:nth-child(odd)]:col-span-2 @4xl/home:[&>*:last-child:nth-child(odd)]:col-span-1 gap-4 md:gap-6 w-full -mt-2">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="shadow-xs">
-                <CardHeader className="pb-3">
+                <CardHeader className="gap-0 pb-0">
                   <Skeleton className="h-4 w-24 mb-1" />
                   <Skeleton className="h-3 w-32" />
                 </CardHeader>
@@ -1199,12 +1214,12 @@ function DashboardContent() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+          <div className="grid grid-cols-1 @2xl/home:grid-cols-2 @4xl/home:grid-cols-3 @2xl/home:[&>*:last-child:nth-child(odd)]:col-span-2 @4xl/home:[&>*:last-child:nth-child(odd)]:col-span-1 gap-4 md:gap-6 w-full -mt-2">
             {/* Card Comptabilité : transactions (lecture) */}
             {canReadBanking && (
               <Card className="shadow-xs">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                <CardHeader className="gap-0 pb-0">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     <CardTitle className="text-sm font-normal">
                       Comptabilité
                     </CardTitle>
@@ -1220,7 +1235,7 @@ function DashboardContent() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2.5">
+                <CardContent className="space-y-0.5">
                   <a
                     href="/dashboard/outils/transactions?filter=unmatched"
                     className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
@@ -1279,8 +1294,8 @@ function DashboardContent() {
             {/* Card Facturation : factures et devis (lecture) */}
             {(canReadInvoices || canReadQuotes) && (
               <Card className="shadow-xs">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                <CardHeader className="gap-0 pb-0">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     <CardTitle className="text-sm font-normal">
                       Facturation
                     </CardTitle>
@@ -1303,7 +1318,7 @@ function DashboardContent() {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2.5">
+                <CardContent className="space-y-0.5">
                   {canReadInvoices && (
                     <>
                       <a
@@ -1376,8 +1391,8 @@ function DashboardContent() {
 
             {/* Card Tâches & Activité */}
             <Card className="shadow-xs">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+              <CardHeader className="gap-0 pb-0">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                   <CardTitle className="text-sm font-normal">
                     Tâches & Activité
                   </CardTitle>
@@ -1393,7 +1408,7 @@ function DashboardContent() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2.5">
+              <CardContent className="space-y-0.5">
                 <a
                   href="#"
                   onClick={(e) => {
@@ -1480,7 +1495,7 @@ function DashboardContent() {
             <h2 className="text-sm font-medium text-foreground mt-4">
               Suivi en temps réel
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
+            <div className="grid grid-cols-1 @3xl/home:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
               {showRecentTransactions && (
                 <RecentTransactionsCard
                   className="shadow-xs w-full"

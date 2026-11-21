@@ -9,7 +9,6 @@ import {
   FileMinus,
   MessageCircleQuestionMark,
   Bell,
-  Landmark,
   FileText,
   ClipboardCheck,
   Receipt,
@@ -121,16 +120,6 @@ const data = {
       title: "Analytiques",
       url: "/dashboard/outils/analytiques",
       icon: DiagramIcon,
-    },
-    {
-      title: "TVA",
-      url: "/dashboard/outils/tva",
-      icon: Landmark,
-    },
-    {
-      title: "Urssaf",
-      url: "/dashboard/outils/urssaf",
-      icon: Landmark,
     },
   ],
   navVentes: [

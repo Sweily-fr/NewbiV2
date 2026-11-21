@@ -88,11 +88,20 @@ const providers = [
 ];
 
 // canManage : connecter, synchroniser, déconnecter (rôle avec écriture sur
-// le calendrier) ; sinon consultation des calendriers déjà connectés
-export function CalendarConnectionsPanel({ canManage = true }) {
+// le calendrier) ; sinon consultation des calendriers déjà connectés.
+// showTrigger={false} : pas de bouton, panneau piloté par open /
+// onOpenChange (menu « … » du calendrier)
+export function CalendarConnectionsPanel({
+  canManage = true,
+  open,
+  onOpenChange,
+  showTrigger = true,
+}) {
   const { connections, loading, refetch } = useCalendarConnections();
   const [showAppleDialog, setShowAppleDialog] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = open ?? internalOpen;
+  const setIsOpen = onOpenChange ?? setInternalOpen;
   const [connecting, setConnecting] = useState(null);
   // ?agendas=1 (lien « Connecter un agenda » de la prise de rendez-vous) :
   // panneau ouvert à l'arrivée
@@ -100,6 +109,9 @@ export function CalendarConnectionsPanel({ canManage = true }) {
   const openRequested = searchParams?.get("agendas") === "1";
   useEffect(() => {
     if (openRequested && canManage) setIsOpen(true);
+    // Une fois à l'arrivée : setIsOpen peut changer à chaque rendu (panneau
+    // piloté par le menu « … ») et ne doit pas rouvrir le panneau fermé
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openRequested, canManage]);
   const { data: sessionData } = useSession();
   const isReady = !!sessionData?.user;
@@ -199,17 +211,19 @@ export function CalendarConnectionsPanel({ canManage = true }) {
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1.5 font-normal">
-            <Link2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Calendriers</span>
-            {connections.length > 0 && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                {connections.length}
-              </span>
-            )}
-          </Button>
-        </SheetTrigger>
+        {showTrigger && (
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5 font-normal">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Calendriers</span>
+              {connections.length > 0 && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                  {connections.length}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+        )}
         <SheetContent className="w-full sm:w-[460px] sm:max-w-[460px] flex flex-col">
           <SheetHeader>
             <SheetTitle className="text-base">Calendriers externes</SheetTitle>
