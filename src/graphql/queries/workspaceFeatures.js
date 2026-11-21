@@ -11,6 +11,7 @@ export const GET_WORKSPACE_FEATURES = gql`
       documentShares
       socialPublishing
       emailCampaigns
+      transferPayments
     }
   }
 `;
