@@ -89,3 +89,44 @@ export const SECRET_PAGE_INLINE_SOURCE = `${INLINE_MATCH(
   "__isSecretPage",
   SECRET_QUERY_KEYS,
 )}${INLINE_MATCH("__needsFullReload", RELOAD_QUERY_KEYS)}`;
+
+/**
+ * Script du <head>, sur une page sans secret (balises chargées) :
+ * `__guardSecretNavigation(window)`. Un pushState ou un replaceState vers une
+ * adresse à recharger (`__needsFullReload`) devient un chargement complet
+ * (`location.assign`), et l'appel d'origine est bloqué : la page déjà
+ * chargée, et ses balises, ne voient jamais le secret.
+ *
+ * Un seul `location.assign` par adresse : Next.js passe d'abord par ce
+ * pushState, puis recopie l'adresse dans l'historique (HistoryUpdater,
+ * replaceState). Un second `location.assign` vers la même adresse annulait le
+ * premier chargement (net::ERR_ABORTED). Les appels suivants vers la même
+ * adresse sont donc ignorés, jusqu'à une nouvelle action de l'utilisateur
+ * (clic, touche) ou un retour sur la page depuis le cache du navigateur : un
+ * chargement interrompu (bouton Arrêter) se relance d'un nouveau clic.
+ */
+export const SECRET_HISTORY_GUARD_SOURCE = `function __guardSecretNavigation(w) {
+  var pending = null;
+  function reset() { pending = null; }
+  w.addEventListener("pointerdown", reset, true);
+  w.addEventListener("keydown", reset, true);
+  w.addEventListener("pageshow", function(e) { if (e.persisted) reset(); });
+  ["pushState", "replaceState"].forEach(function(method) {
+    var original = w.history[method];
+    w.history[method] = function(state, title, url) {
+      try {
+        if (url !== undefined && url !== null) {
+          var next = new URL(url, w.location.href);
+          if (next.origin === w.location.origin && __needsFullReload(next)) {
+            if (pending !== next.href) {
+              w.location.assign(next.href);
+              pending = next.href;
+            }
+            return;
+          }
+        }
+      } catch (e) {}
+      return original.apply(this, arguments);
+    };
+  });
+}`;

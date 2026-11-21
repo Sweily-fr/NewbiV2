@@ -93,11 +93,18 @@ test.describe("Navigation interne vers une page à secret", () => {
     page.on("request", (req) => {
       if (TRACEURS.test(req.url())) traceurs.push(req.url());
     });
+    // Un seul chargement : un second location.assign vers la même adresse
+    // annulait le premier (net::ERR_ABORTED, échec intermittent de ce test)
+    const chargementsAnnules = [];
+    page.on("requestfailed", (req) => {
+      if (req.isNavigationRequest() && req.url().includes("/transfer/")) chargementsAnnules.push(req.failure()?.errorText);
+    });
     await page.evaluate((chemin) => window.history.pushState({}, "", chemin), `/transfer/${TRANSFERT.shareLink}?key=${TRANSFERT.accessKey}`);
     await page.waitForURL(/\/transfer\//);
     await page.waitForLoadState("load");
     await page.waitForTimeout(3_000);
     expect(await page.evaluate(() => window.__avantNavigation ?? null), "La page n'a pas été rechargée entière").toBeNull();
+    expect(chargementsAnnules, "Chargement de la page à secret annulé puis relancé").toEqual([]);
     expect(await page.evaluate(() => typeof window.gtag)).toBe("undefined");
     expect(traceurs.filter((u) => u.includes(TRANSFERT.accessKey)), "La clé du transfert part chez un tiers").toEqual([]);
   });

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isSecretLocation,
   isSecretUrl,
+  SECRET_HISTORY_GUARD_SOURCE,
   SECRET_PAGE_INLINE_SOURCE,
 } from "@/src/lib/secret-pages";
 
@@ -68,5 +69,98 @@ describe("Pages à secret : aucune balise tierce", () => {
   it("adresse illisible : pas de plantage", () => {
     expect(isSecretUrl(undefined)).toBe(false);
     expect(isSecretLocation(undefined)).toBe(false);
+  });
+});
+
+// Garde de l'historique du script du <head>, sur une fenêtre simulée : les
+// appels qui atteignent l'historique du navigateur et les location.assign
+// sont relevés.
+const garde = new Function(
+  `${SECRET_PAGE_INLINE_SOURCE}${SECRET_HISTORY_GUARD_SOURCE}; return __guardSecretNavigation;`,
+)();
+
+function fenetre(adresse = "https://www.newbi.fr/mentions-legales") {
+  const ecouteurs = {};
+  const releve = { assign: [], pushState: [], replaceState: [] };
+  const w = {
+    location: {
+      href: adresse,
+      origin: new URL(adresse).origin,
+      assign: (url) => releve.assign.push(url),
+    },
+    history: {
+      pushState: (state, title, url) => releve.pushState.push(url),
+      replaceState: (state, title, url) => releve.replaceState.push(url),
+    },
+    addEventListener: (type, ecouteur) => {
+      (ecouteurs[type] ||= []).push(ecouteur);
+    },
+  };
+  garde(w);
+  const evenement = (type, detail = {}) =>
+    (ecouteurs[type] || []).forEach((ecouteur) => ecouteur(detail));
+  return { history: w.history, releve, evenement };
+}
+
+const TRANSFERT = "/transfer/abc123?key=xyz";
+const TRANSFERT_COMPLET = `https://www.newbi.fr${TRANSFERT}`;
+
+describe("Navigation interne vers une page à secret : un seul rechargement", () => {
+  it("pushState puis replaceState de Next.js vers la même adresse : un seul location.assign, rien dans l'historique", () => {
+    const { history, releve } = fenetre();
+    // pushState externe (lien, router.push), puis HistoryUpdater de Next.js
+    // qui recopie l'adresse avec son état interne
+    history.pushState({}, "", TRANSFERT);
+    history.replaceState({ __NA: true }, "", TRANSFERT);
+    history.replaceState({ __NA: true }, "", TRANSFERT_COMPLET);
+    expect(releve.assign).toEqual([TRANSFERT_COMPLET]);
+    expect(releve.pushState).toEqual([]);
+    expect(releve.replaceState).toEqual([]);
+  });
+
+  it("adresse sans secret, adresse e-mail seule ou état sans adresse : l'historique du navigateur est appelé", () => {
+    const { history, releve } = fenetre();
+    history.pushState({}, "", "/tarifs");
+    history.pushState({}, "", "/auth/login?invitation=x&email=a%40b.fr");
+    history.replaceState({ a: 1 }, "");
+    expect(releve.pushState).toEqual([
+      "/tarifs",
+      "/auth/login?invitation=x&email=a%40b.fr",
+    ]);
+    expect(releve.replaceState).toEqual([undefined]);
+    expect(releve.assign).toEqual([]);
+  });
+
+  it("une autre adresse à secret : nouveau chargement", () => {
+    const { history, releve } = fenetre();
+    history.pushState({}, "", TRANSFERT);
+    history.pushState({}, "", "/auth/reset-password?token=abc");
+    expect(releve.assign).toEqual([
+      TRANSFERT_COMPLET,
+      "https://www.newbi.fr/auth/reset-password?token=abc",
+    ]);
+  });
+
+  it.each(["pointerdown", "keydown"])(
+    "nouvelle action de l'utilisateur (%s) : la même adresse se recharge de nouveau (chargement interrompu)",
+    (type) => {
+      const { history, releve, evenement } = fenetre();
+      history.pushState({}, "", TRANSFERT);
+      evenement(type);
+      history.pushState({}, "", TRANSFERT);
+      expect(releve.assign).toEqual([TRANSFERT_COMPLET, TRANSFERT_COMPLET]);
+      expect(releve.pushState).toEqual([]);
+    },
+  );
+
+  it("retour sur la page depuis le cache du navigateur : la même adresse se recharge de nouveau", () => {
+    const { history, releve, evenement } = fenetre();
+    history.pushState({}, "", TRANSFERT);
+    evenement("pageshow", { persisted: false });
+    history.pushState({}, "", TRANSFERT);
+    expect(releve.assign).toEqual([TRANSFERT_COMPLET]);
+    evenement("pageshow", { persisted: true });
+    history.pushState({}, "", TRANSFERT);
+    expect(releve.assign).toEqual([TRANSFERT_COMPLET, TRANSFERT_COMPLET]);
   });
 });
