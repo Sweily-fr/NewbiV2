@@ -12,6 +12,7 @@ import { SITE_URL } from "@/src/lib/site";
 import {
   SECRET_HISTORY_GUARD_SOURCE,
   SECRET_PAGE_INLINE_SOURCE,
+  SECRET_VISIT_INLINE_SOURCE,
 } from "@/src/lib/secret-pages";
 
 // Même police et même variable que geist/font/mono, mais sans préchargement :
@@ -145,15 +146,21 @@ export default function RootLayout({ children }) {
             Jamais chargé sur une page dont l'adresse porte un secret
             (src/lib/secret-pages.js) : Google recevrait l'adresse complète.
             Une navigation interne vers une telle page recharge la page
-            entière (une seule fois), sans les balises déjà chargées. */}
+            entière (une seule fois), sans les balises déjà chargées. Une
+            visite qui commence sur une telle page est marquée : aucun pixel
+            jusqu'au prochain chargement complet. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 ${SECRET_PAGE_INLINE_SOURCE}
                 ${SECRET_HISTORY_GUARD_SOURCE}
+                ${SECRET_VISIT_INLINE_SOURCE}
                 window.__isSecretPage = __isSecretPage;
-                if (__isSecretPage(window.location)) return;
+                if (__isSecretPage(window.location)) {
+                  __markSecretVisit(window);
+                  return;
+                }
                 window.dataLayer = window.dataLayer || [];
                 window.gtag = function gtag(){dataLayer.push(arguments);};
                 gtag('consent', 'default', {
