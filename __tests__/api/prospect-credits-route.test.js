@@ -207,7 +207,12 @@ describe("POST /api/billing/prospect-credits", () => {
         userId,
       },
     });
-    expect(params.success_url).toContain("session_id={CHECKOUT_SESSION_ID}");
+    // Pas de « session_id » : le tableau de bord le prendrait pour un retour
+    // d'abonnement et viderait l'adresse avant la confirmation de l'achat
+    expect(params.success_url).toContain(
+      "credits_session={CHECKOUT_SESSION_ID}",
+    );
+    expect(params.success_url).not.toMatch(/[?&]session_id=/);
   });
 
   it.each([24, 1001, 25.5, "abc", null])(

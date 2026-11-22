@@ -169,7 +169,9 @@ function ClientsContent() {
   // Retour du paiement Stripe des crédits de prospection : crédits ajoutés
   // tout de suite (sans attendre le webhook), solde relu, fenêtre rouverte
   const creditsReturn = searchParams.get("credits_prospects");
-  const creditsSessionId = searchParams.get("session_id");
+  // « credits_session » et pas « session_id » (pris par le tableau de bord
+  // pour un retour d'abonnement, voir la route d'achat)
+  const creditsSessionId = searchParams.get("credits_session");
   // Le nettoyage de l'adresse relance l'effet : on ne traite qu'une fois
   const handledCreditsReturn = useRef(null);
   useEffect(() => {
