@@ -131,6 +131,10 @@ async function handler(request, { params }) {
     periodStart: subscription.periodStart || subscription.createdAt,
     periodEnd: subscription.periodEnd,
     cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+    // Baisse d'offre programmée en fin de période payée
+    scheduledPlan: subscription.scheduledPlan || null,
+    scheduledIsAnnual: subscription.scheduledIsAnnual ?? null,
+    scheduledPlanAt: subscription.scheduledPlanAt || null,
     // Abonnement pris pendant la dernière période payée par le cabinet :
     // premier prélèvement à cette date (ce n'est pas un essai)
     billingStartsAt: subscription.billingStartsAt || null,
