@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { planLabel } from "@/src/lib/plans-display";
 import { z } from "zod";
 import Stripe from "stripe";
 import { auth } from "@/src/lib/auth";
@@ -226,7 +227,7 @@ async function handler(request) {
       submit: {
         message: deferredBillingStart
           ? `Aucun prélèvement avant le ${deferredBillingStart.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })} : votre cabinet paie votre abonnement jusqu'à cette date.`
-          : `Souscription au plan ${plan.toUpperCase()} — paiement immédiat, sans essai supplémentaire`,
+          : `Souscription au plan ${planLabel(plan)} : paiement immédiat, sans essai supplémentaire`,
       },
     },
   });

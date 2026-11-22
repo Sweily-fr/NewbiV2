@@ -8,15 +8,19 @@ import { uploadProblem } from "./shared-files-utils";
 
 // Fichiers envoyés en même temps
 const CONCURRENCY = 3;
+// Encart des dépôts refermé seul, ce délai après des envois tous réussis
+export const PANEL_CLOSE_DELAY = 5000;
 
 /**
- * Envoi d'un fichier avec sa progression (fetch ne la donne pas). Rejette
- * avec le message de l'API quand elle refuse le fichier.
+ * Envoi d'un fichier avec sa progression (fetch ne la donne pas) : POST
+ * pour un dépôt, PUT pour une nouvelle version, avec `fields` (le nom choisi
+ * pour une nouvelle version). Rejette avec le message de l'API quand elle
+ * refuse le fichier.
  */
-export function sendFile(url, file, onProgress) {
+export function sendFile(url, file, onProgress, method = "POST", fields = {}) {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
-    request.open("POST", url);
+    request.open(method, url);
     request.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress(event.loaded / event.total);
     };
@@ -36,6 +40,9 @@ export function sendFile(url, file, onProgress) {
     request.onerror = () =>
       reject(new Error("Connexion interrompue, réessayez."));
     const body = new FormData();
+    for (const [key, value] of Object.entries(fields || {})) {
+      body.append(key, value);
+    }
     body.append("file", file);
     request.send(body);
   });
@@ -43,12 +50,33 @@ export function sendFile(url, file, onProgress) {
 
 let nextId = 0;
 
+/** Envoi d'un fichier, refusé d'avance s'il ne peut pas partir. */
+function makeJob(file, changes) {
+  const problem = uploadProblem(file);
+  nextId += 1;
+  return {
+    id: nextId,
+    file,
+    name: file.name,
+    method: "POST",
+    status: problem ? "error" : "waiting",
+    message: problem,
+    progress: 0,
+    ...changes,
+  };
+}
+
 /**
- * File des dépôts du visiteur : fichiers contrôlés avant l'envoi, trois à
- * la fois, progression et erreur de chacun. `onUploaded` après chaque
- * fichier arrivé (la page se relit).
+ * File des envois du visiteur (dépôts et nouvelles versions) : fichiers
+ * contrôlés avant l'envoi, trois à la fois, progression et erreur de
+ * chacun. `onUploaded` après chaque fichier arrivé (la page se relit).
  */
-export function useUploadQueue({ uploadUrl, onUploaded, send = sendFile }) {
+export function useUploadQueue({
+  uploadUrl,
+  replaceUrl,
+  onUploaded,
+  send = sendFile,
+}) {
   const [items, setItems] = useState([]);
   const waiting = useRef([]);
   const active = useRef(0);
@@ -66,7 +94,13 @@ export function useUploadQueue({ uploadUrl, onUploaded, send = sendFile }) {
       const job = waiting.current.shift();
       active.current += 1;
       update(job.id, { status: "uploading" });
-      send(job.url, job.file, (progress) => update(job.id, { progress }))
+      send(
+        job.url,
+        job.file,
+        (progress) => update(job.id, { progress }),
+        job.method,
+        job.fields,
+      )
         .then(() => {
           update(job.id, { status: "done", progress: 1 });
           onUploadedRef.current?.();
@@ -81,28 +115,41 @@ export function useUploadQueue({ uploadUrl, onUploaded, send = sendFile }) {
     }
   }, [send, update]);
 
-  /** Ajoute des fichiers à déposer dans `folder`. */
-  const add = useCallback(
-    (files, folder) => {
-      const jobs = [...files].map((file) => {
-        const problem = uploadProblem(file);
-        nextId += 1;
-        return {
-          id: nextId,
-          file,
-          name: file.name,
-          folderName: folder.name,
-          url: uploadUrl(folder.id),
-          status: problem ? "error" : "waiting",
-          message: problem,
-          progress: 0,
-        };
-      });
+  const enqueue = useCallback(
+    (jobs) => {
       setItems((previous) => [...previous, ...jobs]);
       waiting.current.push(...jobs.filter((job) => job.status === "waiting"));
       pump();
     },
-    [pump, uploadUrl],
+    [pump],
+  );
+
+  /** Ajoute des fichiers à déposer dans `folder`. */
+  const add = useCallback(
+    (files, folder) =>
+      enqueue(
+        [...files].map((file) =>
+          makeJob(file, { detail: folder.name, url: uploadUrl(folder.id) }),
+        ),
+      ),
+    [enqueue, uploadUrl],
+  );
+
+  /**
+   * Envoie `file` comme nouvelle version de `document` (un des siens), sous
+   * le nom `name` choisi par le visiteur (sans lui, l'API garde le nom).
+   */
+  const replace = useCallback(
+    (file, document, name) =>
+      enqueue([
+        makeJob(file, {
+          detail: `Nouvelle version de « ${document.name} »`,
+          url: replaceUrl(document.id),
+          method: "PUT",
+          fields: name ? { name } : undefined,
+        }),
+      ]),
+    [enqueue, replaceUrl],
   );
 
   /** Retire de la liste les envois terminés (réussis ou non). */
@@ -116,6 +163,16 @@ export function useUploadQueue({ uploadUrl, onUploaded, send = sendFile }) {
     ["waiting", "uploading"].includes(item.status),
   );
 
+  // Encart refermé seul peu après des envois tous réussis ; un refus reste
+  // affiché jusqu'à ce que le visiteur le ferme
+  const allDone =
+    items.length > 0 && items.every((item) => item.status === "done");
+  useEffect(() => {
+    if (!allDone) return undefined;
+    const timer = setTimeout(clear, PANEL_CLOSE_DELAY);
+    return () => clearTimeout(timer);
+  }, [allDone, clear]);
+
   // Quitter la page couperait les envois en cours
   useEffect(() => {
     if (!busy) return undefined;
@@ -127,7 +184,7 @@ export function useUploadQueue({ uploadUrl, onUploaded, send = sendFile }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [busy]);
 
-  return { items, add, clear, busy };
+  return { items, add, replace, clear, busy };
 }
 
 /** Encart des dépôts en cours, en bas à droite. */
@@ -205,7 +262,7 @@ export function UploadPanel({ items, busy, onClose }) {
                 )}
               >
                 {item.status === "waiting" ? "En attente · " : ""}
-                {item.folderName}
+                {item.detail}
               </p>
             )}
           </li>

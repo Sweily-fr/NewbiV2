@@ -7,10 +7,13 @@ import {
   HOME,
   buildShareTree,
   fileKind,
+  folderChoices,
   formatFileSize,
   previewKind,
+  replacementNames,
   searchShare,
   sortDocuments,
+  splitName,
   UPLOAD_ACCEPT,
   uploadProblem,
 } from "@/app/public/documents/[token]/components/shared-files-utils";
@@ -195,5 +198,71 @@ describe("uploadProblem", () => {
     expect(uploadProblem(file("film.mp4", 100 * 1024 * 1024 + 1))).toMatch(
       /100 Mo/,
     );
+  });
+});
+
+describe("folderChoices", () => {
+  it("liste tout le partage dans l'ordre de l'explorateur, avec la profondeur", () => {
+    const tree = buildShareTree({
+      folders,
+      documents,
+      rootFolderIds: ["racine", "autre"],
+    });
+    expect(
+      folderChoices(tree).map(({ folder, depth }) => [folder.name, depth]),
+    ).toEqual([
+      ["Client Dupont", 0],
+      ["Factures", 1],
+      ["2026", 2],
+      ["Contrats", 1],
+      ["Équipe", 0],
+    ]);
+  });
+});
+
+describe("splitName", () => {
+  it("sépare la partie modifiable de l'extension", () => {
+    expect(splitName("Relevé mars.pdf")).toEqual({
+      stem: "Relevé mars",
+      extension: "pdf",
+    });
+    expect(splitName("Scan.JPG")).toEqual({ stem: "Scan", extension: "jpg" });
+    expect(splitName("archive.tar.gz")).toEqual({
+      stem: "archive.tar",
+      extension: "gz",
+    });
+    expect(splitName("sans extension")).toEqual({
+      stem: "sans extension",
+      extension: "",
+    });
+    expect(splitName(undefined)).toEqual({ stem: "", extension: "" });
+  });
+});
+
+describe("replacementNames", () => {
+  it("nom du nouveau fichier ou nom actuel, avec l'extension du nouveau fichier", () => {
+    expect(replacementNames("lettre.pdf", "Lettre signée.pdf")).toEqual({
+      fromFile: "Lettre signée.pdf",
+      keep: "lettre.pdf",
+    });
+    // Autre format : le nom actuel prend l'extension du nouveau fichier
+    expect(replacementNames("Carte grise.png", "SCAN 12.PDF")).toEqual({
+      fromFile: "SCAN 12.pdf",
+      keep: "Carte grise.pdf",
+    });
+  });
+
+  it("espaces et points de fin retirés, comme l'API", () => {
+    expect(
+      replacementNames("Relevé  mars .pdf", "  Relevé   avril. .pdf"),
+    ).toEqual({
+      fromFile: "Relevé avril.pdf",
+      keep: "Relevé mars.pdf",
+    });
+  });
+
+  it("fichier sans nom utilisable : seul le nom actuel est proposé", () => {
+    expect(replacementNames("lettre.pdf", ".pdf").fromFile).toBeNull();
+    expect(replacementNames("lettre.pdf", " .pdf").fromFile).toBeNull();
   });
 });

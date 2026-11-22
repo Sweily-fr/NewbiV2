@@ -58,7 +58,7 @@ import { PLAN_LIMITS } from "@/src/lib/plan-limits";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 
-// Map dérivée du module central — garantit nom (TPE pour pme) + prix
+// Map dérivée du module central — garantit nom (Premium pour pme) + prix
 // alignés avec landing/pricing-modal/settings/signup/workspace.
 const PLANS_CONFIG = PLANS_DISPLAY.reduce((acc, p) => {
   acc[p.key] = { name: p.displayName, monthlyPrice: p.monthlyPrice };

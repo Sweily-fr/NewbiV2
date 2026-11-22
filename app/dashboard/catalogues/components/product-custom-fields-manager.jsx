@@ -400,7 +400,7 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
   const customFieldsLimit = planLimits.customFields;
   const isLimitReached =
     customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
-  // Offre qui lève la limite (TPE pour Freelance)
+  // Offre qui lève la limite (Premium pour Standard)
   const nextPlanName =
     upgradePlanNameFor("customFields", customFieldsLimit) || "Entreprise";
 

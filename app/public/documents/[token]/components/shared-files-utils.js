@@ -154,6 +154,57 @@ export function buildShareTree({ folders, documents, rootFolderIds }) {
 }
 
 /**
+ * Dossiers où le visiteur peut ranger un document : tout le partage, dans
+ * l'ordre de l'explorateur, chacun avec sa profondeur.
+ * @returns {{ folder: object, depth: number }[]}
+ */
+export function folderChoices(tree) {
+  const choices = [];
+  const seen = new Set();
+  const visit = (folder, depth) => {
+    if (seen.has(folder.id)) return;
+    seen.add(folder.id);
+    choices.push({ folder, depth });
+    for (const child of tree.subfolders(folder.id)) visit(child, depth + 1);
+  };
+  for (const root of tree.roots) visit(root, 0);
+  return choices;
+}
+
+/**
+ * Nom d'un document coupé pour le renommer : la partie modifiable et
+ * l'extension, que l'API garde (« Relevé.pdf » : « Relevé » et « pdf »).
+ */
+export function splitName(name) {
+  const text = String(name || "");
+  const extension = extensionOf(text);
+  return {
+    stem: extension ? text.slice(0, -(extension.length + 1)) : text,
+    extension,
+  };
+}
+
+/**
+ * Noms possibles d'une nouvelle version, toujours avec l'extension du
+ * nouveau fichier (comme l'API) : `fromFile`, celui du nouveau fichier (null
+ * s'il n'en a pas d'utilisable), et `keep`, le nom actuel du document.
+ */
+export function replacementNames(currentName, fileName) {
+  const { stem: fileStem, extension } = splitName(fileName);
+  const tidy = (stem) =>
+    stem
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[.\s]+$/, "");
+  const named = (stem) => (extension ? `${stem}.${extension}` : stem);
+  const fromFile = tidy(fileStem);
+  return {
+    fromFile: fromFile ? named(fromFile) : null,
+    keep: named(tidy(splitName(currentName).stem)),
+  };
+}
+
+/**
  * Recherche dans tout le partage (comme la barre de Documents partagés) :
  * dossiers et documents dont le nom contient la saisie, sans tenir compte
  * des majuscules ni des accents.

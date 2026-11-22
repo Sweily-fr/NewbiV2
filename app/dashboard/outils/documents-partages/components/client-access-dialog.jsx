@@ -743,8 +743,9 @@ export default function ClientAccessDialog({
                       Le client peut déposer des documents
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      Ils arrivent dans vos dossiers. Il peut supprimer ceux
-                      qu&apos;il a déposés, rien d&apos;autre.
+                      Ils arrivent dans vos dossiers. Il peut renommer,
+                      déplacer, remplacer ou supprimer ceux qu&apos;il a
+                      déposés, rien d&apos;autre.
                     </span>
                   </span>
                 </label>

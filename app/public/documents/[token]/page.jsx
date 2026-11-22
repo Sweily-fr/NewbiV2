@@ -66,6 +66,24 @@ async function postJson(url, body) {
   return { ok: response.ok && data.success !== false, data };
 }
 
+/**
+ * Action du visiteur sur l'un de ses documents (renommer, déplacer,
+ * supprimer) : rejette avec le message de l'API quand elle refuse.
+ */
+async function documentAction(url, options, fallback) {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch {
+    throw new Error("Connexion impossible. Réessayez.");
+  }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || fallback);
+  }
+  return data;
+}
+
 function ErrorText({ children }) {
   if (!children) return null;
   return (
@@ -588,6 +606,19 @@ export default function PublicDocumentsPage({ params }) {
     case "ready": {
       const sessionQuery = `?session=${encodeURIComponent(state.session)}`;
       const base = `${API_URL}/api/public-documents/${token}`;
+      // Renommer ou déplacer : session dans le corps, pas dans l'adresse
+      const editDocument = async (document, changes) => {
+        await documentAction(
+          `${base}/files/${document.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session: state.session, ...changes }),
+          },
+          "Modification impossible",
+        );
+        scheduleRefresh();
+      };
       return (
         <SharedFiles
           content={state}
@@ -598,15 +629,17 @@ export default function PublicDocumentsPage({ params }) {
           uploadUrl={(folderId) =>
             `${base}/folders/${folderId}/files${sessionQuery}`
           }
+          replaceUrl={(documentId) =>
+            `${base}/files/${documentId}/content${sessionQuery}`
+          }
+          onRename={(document, name) => editDocument(document, { name })}
+          onMove={(document, folderId) => editDocument(document, { folderId })}
           onDelete={async (document) => {
-            const response = await fetch(
+            await documentAction(
               `${base}/files/${document.id}${sessionQuery}`,
               { method: "DELETE" },
+              "Suppression impossible",
             );
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || data.success === false) {
-              throw new Error(data.message || "Suppression impossible");
-            }
             scheduleRefresh();
           }}
           onChanged={scheduleRefresh}

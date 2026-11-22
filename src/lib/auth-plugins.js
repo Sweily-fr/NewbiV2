@@ -26,6 +26,7 @@ import {
   accountant,
 } from "./permissions";
 import { organizationAc, organizationRoles } from "./organization-roles";
+import { planLabel } from "./plans-display";
 
 // ✅ Fonction de déduplication atomique avec MongoDB
 async function isEventAlreadyProcessed(eventId, eventType) {
@@ -307,7 +308,7 @@ export const stripePlugin = stripe({
           invoices: 500,
         },
         metadata: {
-          displayName: "Pack Freelance",
+          displayName: planLabel("freelance"),
           monthlyPrice: 17.99,
           annualPrice: 16.19, // -10% de réduction
           workspaceAddonPrice: 11.99,
@@ -326,7 +327,7 @@ export const stripePlugin = stripe({
           invoices: 2000,
         },
         metadata: {
-          displayName: "Pack PME",
+          displayName: planLabel("pme"),
           monthlyPrice: 48.99,
           annualPrice: 44.09, // -10% de réduction (48.99 * 12 * 0.90 / 12)
           workspaceAddonPrice: 11.99,
@@ -345,7 +346,7 @@ export const stripePlugin = stripe({
           invoices: 5000,
         },
         metadata: {
-          displayName: "Pack Entreprise",
+          displayName: planLabel("entreprise"),
           monthlyPrice: 94.99,
           annualPrice: 85.49, // -10% de réduction (94.99 * 12 * 0.90 / 12)
           workspaceAddonPrice: 11.99,
@@ -1305,7 +1306,7 @@ export const stripePlugin = stripe({
               await sendSubscriptionCancelledEmail({
                 to: customer.email,
                 customerName: customer.name || customer.email,
-                plan: planName.toUpperCase(),
+                plan: planLabel(planName),
                 endDate: endDate,
               });
 
@@ -1357,8 +1358,9 @@ export const stripePlugin = stripe({
             );
 
             // Récupérer le plan et le prix
-            const trialPlanName =
-              trialEndingSub.metadata?.planName?.toUpperCase() || "FREELANCE";
+            const trialPlanName = planLabel(
+              trialEndingSub.metadata?.planName || "freelance",
+            );
 
             // Formater la date de fin d'essai
             let trialEndDateFormatted = "Date non disponible";
@@ -1466,7 +1468,7 @@ export const stripePlugin = stripe({
             );
 
             // Récupérer l'abonnement pour avoir le nom du plan
-            let planName = "FREELANCE";
+            let planName = planLabel("freelance");
             let nextRenewalDate = "Date non disponible";
             let subscription = null;
 
@@ -1474,8 +1476,9 @@ export const stripePlugin = stripe({
               subscription = await stripe.subscriptions.retrieve(
                 paidInvoice.subscription,
               );
-              planName =
-                subscription.metadata?.planName?.toUpperCase() || "FREELANCE";
+              planName = planLabel(
+                subscription.metadata?.planName || "freelance",
+              );
 
               // Formater la date de prochain renouvellement avec vérification
               if (subscription.current_period_end) {

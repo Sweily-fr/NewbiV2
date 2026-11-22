@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import { PLAN_FEATURES_SECTIONS } from "@/src/lib/plans-display";
+import { PLAN_FEATURES_SECTIONS, planLabel } from "@/src/lib/plans-display";
 import {
   Tooltip,
   TooltipContent,
@@ -34,14 +34,14 @@ const COLONNES = [
   {
     id: "freelance",
     cle: "freelance",
-    nom: "Freelance",
+    nom: planLabel("freelance"),
     cta: { href: "/auth/signup", label: "Commencer gratuitement" },
     lien: { href: "/contact", label: "parler à un conseiller" },
   },
   {
     id: "tpe",
     cle: "pme",
-    nom: "TPE",
+    nom: planLabel("pme"),
     enAvant: true,
     cta: { href: "/auth/signup", label: "Commencer gratuitement" },
     lien: { href: "/contact", label: "parler à un conseiller" },
@@ -49,7 +49,7 @@ const COLONNES = [
   {
     id: "entreprise",
     cle: "entreprise",
-    nom: "Entreprise",
+    nom: planLabel("entreprise"),
     cta: { href: "/auth/signup", label: "Commencer gratuitement" },
     lien: { href: "/contact", label: "parler à un conseiller" },
   },

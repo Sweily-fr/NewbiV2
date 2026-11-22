@@ -8,7 +8,7 @@ import PricingPlansSection from "@/app/(main)/tarifs/section/PricingPlansSection
 /**
  * Grille de /tarifs : essai gratuit + trois offres, une seule bascule
  * mensuel / annuel, et un lien vers un conseiller sous chaque offre payante
- * (Freelance compris depuis le 20/11/2026).
+ * (Standard compris, ex-Freelance, depuis le 20/11/2026).
  */
 const colonne = (id) => document.getElementById(id);
 
@@ -20,18 +20,18 @@ describe("/tarifs : grille des offres", () => {
       .map((h) => h.textContent);
     expect(colonnes).toEqual([
       "Essai gratuit",
-      "Freelance",
-      "TPE",
+      "Standard",
+      "Premium",
       "Entreprise",
     ]);
     expect(
       screen.getAllByRole("link", { name: "Commencer gratuitement" }),
     ).toHaveLength(4);
-    // « Tout Freelance, plus : » ouvre la liste de TPE.
+    // « Tout Standard, plus : » ouvre la liste de Premium.
     const puces = within(colonne("tpe"))
       .getAllByRole("listitem")
       .map((li) => li.textContent);
-    expect(puces[0]).toBe("Tout Freelance, plus :");
+    expect(puces[0]).toBe("Tout Standard, plus :");
     expect(puces).toHaveLength(8);
   });
 

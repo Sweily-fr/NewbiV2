@@ -1,7 +1,8 @@
 /**
  * Espace du visiteur d'un lien client, au visuel de Documents partagés :
  * explorateur, fil d'Ariane, recherche dans tout le partage, colonnes
- * triables, aperçu et déconnexion.
+ * triables, aperçu et déconnexion ; dépôt, et sur ses propres dépôts
+ * renommage, déplacement, nouvelle version et suppression.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
@@ -25,12 +26,13 @@ vi.mock("@/src/components/ui/sonner", () => ({
 
 // File des dépôts : testée à part (public-upload-queue.test.jsx) ; ici on
 // vérifie ce que l'explorateur lui confie
-const queue = vi.hoisted(() => ({ add: vi.fn() }));
+const queue = vi.hoisted(() => ({ add: vi.fn(), replace: vi.fn() }));
 vi.mock("@/app/public/documents/[token]/components/upload-queue", () => ({
   useUploadQueue: () => ({
     items: [],
     busy: false,
     add: queue.add,
+    replace: queue.replace,
     clear: () => {},
   }),
   UploadPanel: () => null,
@@ -92,11 +94,23 @@ const renderFiles = (overrides, props = {}) =>
       fileUrl={(document, kind) => `/api/${document.id}/${kind}`}
       downloadAllUrl="/api/tout"
       uploadUrl={(folderId) => `/depot/${folderId}`}
+      replaceUrl={(documentId) => `/version/${documentId}`}
+      onRename={props.onRename || (async () => {})}
+      onMove={props.onMove || (async () => {})}
       onDelete={props.onDelete || (async () => {})}
       onChanged={props.onChanged || (() => {})}
       onSignOut={props.onSignOut || (() => {})}
     />,
   );
+
+/** Menu « ⋯ » d'un document déposé par le visiteur. */
+const openMenu = (name) =>
+  fireEvent.keyDown(
+    screen.getByRole("button", { name: `Actions pour ${name}` }),
+    { key: "Enter" },
+  );
+const choose = (label) =>
+  fireEvent.click(screen.getByRole("menuitem", { name: label }));
 
 const breadcrumb = () =>
   screen.getByRole("navigation", { name: "Emplacement" });
@@ -229,12 +243,12 @@ describe("Dépôt par le client", () => {
     return { names: [...files].map((file) => file.name), folder };
   };
 
-  it("dépôt fermé : ni bouton ni suppression", () => {
+  it("dépôt fermé : ni bouton, ni menu sur ses documents", () => {
     const { container } = renderFiles({
       documents: [{ ...content().documents[2], mine: true }],
     });
     expect(screen.queryByRole("button", { name: /Déposer/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Supprimer/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Actions pour/ })).toBeNull();
     expect(fileInput(container)).toBeNull();
   });
 
@@ -306,13 +320,12 @@ describe("Dépôt par le client", () => {
     );
     renderFiles({ allowUploads: true, documents }, { onDelete });
     expect(screen.getByText("Déposé par vous")).toBeTruthy();
-    // Les autres documents du dossier : pas de suppression
-    expect(screen.getAllByRole("button", { name: /^Supprimer/ })).toHaveLength(
-      1,
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Supprimer lettre.pdf" }),
-    );
+    // Les autres documents du dossier : pas de menu
+    expect(
+      screen.getAllByRole("button", { name: /^Actions pour/ }),
+    ).toHaveLength(1);
+    openMenu("lettre.pdf");
+    choose("Supprimer");
     expect(screen.getByText("Supprimer « lettre.pdf » ?")).toBeTruthy();
     expect(onDelete).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
@@ -339,5 +352,221 @@ describe("Dépôt par le client", () => {
     view.rerender(<SharedFiles content={next} {...props} />);
     expect(list().getByText("lettre.pdf")).toBeTruthy();
     expect(list().queryByText("Contrats")).toBeNull();
+  });
+});
+
+describe("Modification de ses documents par le client", () => {
+  beforeEach(() => {
+    queue.replace.mockClear();
+  });
+
+  // lettre.pdf (dossier « Client Dupont ») a été déposé par le visiteur
+  const withMine = (overrides = {}) => ({
+    allowUploads: true,
+    documents: content().documents.map((document) =>
+      document.id === "d3" ? { ...document, mine: true } : document,
+    ),
+    ...overrides,
+  });
+
+  it("menu sur ses seuls documents : renommer, déplacer, remplacer, supprimer", () => {
+    renderFiles(withMine());
+    expect(
+      screen.getAllByRole("button", { name: /^Actions pour/ }),
+    ).toHaveLength(1);
+    openMenu("lettre.pdf");
+    expect(
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["Renommer", "Déplacer", "Remplacer le fichier", "Supprimer"]);
+  });
+
+  it("renomme en gardant l'extension du fichier", async () => {
+    const onRename = vi.fn(async () => {});
+    renderFiles(withMine(), { onRename });
+    openMenu("lettre.pdf");
+    choose("Renommer");
+
+    const field = screen.getByRole("textbox", { name: "Nouveau nom" });
+    expect(field).toHaveValue("lettre");
+    expect(screen.getByText(".pdf")).toBeTruthy();
+    const submit = screen.getByRole("button", { name: "Renommer" });
+    // Nom inchangé ou vide : rien à envoyer
+    expect(submit).toBeDisabled();
+    fireEvent.change(field, { target: { value: "   " } });
+    expect(submit).toBeDisabled();
+
+    fireEvent.change(field, { target: { value: "  Lettre de mission  " } });
+    fireEvent.click(submit);
+    await waitFor(() => expect(onRename).toHaveBeenCalledTimes(1));
+    const [document, name] = onRename.mock.calls[0];
+    expect(document.id).toBe("d3");
+    expect(name).toBe("Lettre de mission.pdf");
+    await waitFor(() =>
+      expect(screen.queryByRole("textbox", { name: "Nouveau nom" })).toBeNull(),
+    );
+  });
+
+  it("refus de l'API : la fenêtre reste ouverte avec son message", async () => {
+    const onRename = vi.fn(async () => {
+      throw new Error(
+        "Les documents de cet espace ne peuvent pas être modifiés pour le moment.",
+      );
+    });
+    renderFiles(withMine(), { onRename });
+    openMenu("lettre.pdf");
+    choose("Renommer");
+    fireEvent.change(screen.getByRole("textbox", { name: "Nouveau nom" }), {
+      target: { value: "Autre nom" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Renommer" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "ne peuvent pas être modifiés",
+    );
+    expect(screen.getByRole("textbox", { name: "Nouveau nom" })).toBeTruthy();
+  });
+
+  it("déplace dans un autre dossier du partage", async () => {
+    const onMove = vi.fn(async () => {});
+    renderFiles(withMine(), { onMove });
+    openMenu("lettre.pdf");
+    choose("Déplacer");
+
+    const dialog = screen.getByRole("dialog");
+    // Tout le partage, dans l'ordre de l'explorateur
+    expect(
+      within(dialog)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("aria-label")),
+    ).toEqual(["Client Dupont", "Contrats", "Archives"]);
+    expect(within(dialog).getByText("Dossier actuel")).toBeTruthy();
+    const submit = within(dialog).getByRole("button", { name: "Déplacer" });
+    expect(submit).toBeDisabled();
+
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Contrats" }));
+    fireEvent.click(submit);
+    await waitFor(() => expect(onMove).toHaveBeenCalledTimes(1));
+    expect(onMove.mock.calls[0][0].id).toBe("d3");
+    expect(onMove.mock.calls[0][1]).toBe("contrats");
+  });
+
+  it("un seul dossier dans le partage : pas de déplacement", () => {
+    renderFiles(
+      withMine({
+        folders: [content().folders[0]],
+        documents: [{ ...content().documents[2], mine: true }],
+      }),
+    );
+    openMenu("lettre.pdf");
+    expect(screen.queryByRole("menuitem", { name: "Déplacer" })).toBeNull();
+  });
+
+  /** « Remplacer le fichier » sur lettre.pdf, puis choix de `file`. */
+  const pickNewVersion = (container, file) => {
+    const input = container.querySelector('[data-testid="nouvelle-version"]');
+    const pick = vi.spyOn(input, "click").mockImplementation(() => {});
+    openMenu("lettre.pdf");
+    choose("Remplacer le fichier");
+    expect(pick).toHaveBeenCalledTimes(1);
+    expect(input.multiple).toBe(false);
+    fireEvent.change(input, { target: { files: [file] } });
+  };
+  const pdf = (name) =>
+    new File(["%PDF-1.7"], name, { type: "application/pdf" });
+
+  it("nouvelle version : le nom du nouveau fichier est proposé d'abord", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, pdf("Lettre signée.pdf"));
+    // Rien ne part avant la confirmation
+    expect(queue.replace).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading")).toHaveTextContent(
+      "Remplacer « lettre.pdf »",
+    );
+    expect(
+      within(dialog).getByRole("radio", { name: "Nom du nouveau fichier" }),
+    ).toBeChecked();
+    expect(
+      within(dialog).getByRole("radio", { name: "Garder le nom actuel" }),
+    ).not.toBeChecked();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remplacer" }));
+    expect(queue.replace).toHaveBeenCalledTimes(1);
+    const [sent, document, name] = queue.replace.mock.calls[0];
+    expect(sent.name).toBe("Lettre signée.pdf");
+    expect(document.id).toBe("d3");
+    expect(name).toBe("Lettre signée.pdf");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("nouvelle version : garder le nom actuel, avec l'extension du nouveau fichier", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(
+      container,
+      new File(["png"], "IMG_2034.png", { type: "image/png" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: "Garder le nom actuel" }),
+    );
+    expect(within(dialog).getByText("lettre.png")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remplacer" }));
+    expect(queue.replace.mock.calls[0][2]).toBe("lettre.png");
+  });
+
+  it("nouvelle version du même nom : rien à choisir, juste confirmer", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, pdf("lettre.pdf"));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByRole("radio")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remplacer" }));
+    expect(queue.replace.mock.calls[0][2]).toBe("lettre.pdf");
+  });
+
+  it("nouvelle version annulée : rien n'est envoyé", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, pdf("Lettre signée.pdf"));
+    fireEvent.click(screen.getByRole("button", { name: "Annuler" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(queue.replace).not.toHaveBeenCalled();
+  });
+
+  it("nouvelle version d'un format refusé : la file dit pourquoi, sans fenêtre", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, new File(["MZ"], "outil.exe"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(queue.replace).toHaveBeenCalledTimes(1);
+    const [sent, document, name] = queue.replace.mock.calls[0];
+    expect(sent.name).toBe("outil.exe");
+    expect(document.id).toBe("d3");
+    expect(name).toBeUndefined();
+  });
+
+  it("document retiré entre-temps : sa fenêtre se ferme", () => {
+    const props = {
+      fileUrl: (document, kind) => `/api/${document.id}/${kind}`,
+      downloadAllUrl: "/api/tout",
+      uploadUrl: (folderId) => `/depot/${folderId}`,
+      replaceUrl: (documentId) => `/version/${documentId}`,
+      onRename: async () => {},
+      onMove: async () => {},
+      onDelete: async () => {},
+      onChanged: () => {},
+      onSignOut: () => {},
+    };
+    const view = render(
+      <SharedFiles content={content(withMine())} {...props} />,
+    );
+    openMenu("lettre.pdf");
+    choose("Renommer");
+    expect(screen.getByRole("textbox", { name: "Nouveau nom" })).toBeTruthy();
+
+    const next = content(
+      withMine({
+        documents: content().documents.filter((d) => d.id !== "d3"),
+      }),
+    );
+    view.rerender(<SharedFiles content={next} {...props} />);
+    expect(screen.queryByRole("textbox", { name: "Nouveau nom" })).toBeNull();
   });
 });

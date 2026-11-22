@@ -1,5 +1,6 @@
 "use client";
 
+import { planLabel } from "@/src/lib/plans-display";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import {
@@ -66,7 +67,9 @@ export function SaveQuoteTemplateDialog({
     (quoteTemplatesData?.quoteTemplates?.length || 0);
   const isLimitReached = templateLimit !== -1 && currentCount >= templateLimit;
 
-  const nextPlanLabel = planName === "freelance" ? "TPE" : "Entreprise";
+  const nextPlanLabel = planLabel(
+    planName === "freelance" ? "pme" : "entreprise",
+  );
 
   useEffect(() => {
     if (open) {
