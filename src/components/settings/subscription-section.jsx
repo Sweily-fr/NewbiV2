@@ -29,6 +29,7 @@ import {
   PLANS_DISPLAY,
   PLAN_FEATURES_SECTIONS,
   getAnnualTotalAmount,
+  planLabel,
 } from "@/src/lib/plans-display";
 
 // Prix, labels ET matrice de features dérivés du module central
@@ -220,6 +221,45 @@ export function SubscriptionSection({
     }
   };
 
+  // Annule la baisse d'offre programmée : l'offre actuelle continue
+  const cancelScheduledChange = async () => {
+    setIsLoading(true);
+    try {
+      const { data: sessionData } = await authClient.getSession();
+      const activeOrgId = sessionData?.session?.activeOrganizationId;
+      const response = await fetch("/api/change-subscription-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId: activeOrgId,
+          cancelScheduledChange: true,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success(data.message || "Changement d'offre annulé");
+        try {
+          localStorage.removeItem(`subscription-${activeOrgId}`);
+        } catch (e) {
+          console.warn("Erreur vidage cache:", e);
+        }
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      } else {
+        toast.error(
+          data.error ||
+            data.message ||
+            "Impossible d'annuler le changement d'offre",
+        );
+      }
+    } catch {
+      toast.error("Impossible d'annuler le changement d'offre");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const confirmPlanChange = async () => {
     if (!selectedPlan || !planChangePreview) return;
     setIsLoading(true);
@@ -367,6 +407,38 @@ export function SubscriptionSection({
               Votre abonnement est résilié. Vous conservez l'accès jusqu'au{" "}
               <strong>{formatDate(subscription.periodEnd)}</strong>.
             </p>
+          </Callout>
+        )}
+
+      {/* Baisse d'offre programmée en fin de période payée */}
+      {isActive() &&
+        subscription?.scheduledPlan &&
+        !paidByManager &&
+        !subscription.cancelAtPeriodEnd && (
+          <Callout type="info" noMargin>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                Votre offre passera à{" "}
+                <strong>{planLabel(subscription.scheduledPlan)}</strong> le{" "}
+                <strong>{formatDate(subscription.scheduledPlanAt)}</strong>.
+                Vous gardez l'offre {planLabel(subscription.plan)} jusque-là.
+              </p>
+              {isOwner && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelScheduledChange}
+                  disabled={isLoading}
+                  className="shrink-0 cursor-pointer"
+                >
+                  {isLoading && (
+                    <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+                  )}
+                  Garder l'offre {planLabel(subscription.plan)}
+                </Button>
+              )}
+            </div>
           </Callout>
         )}
 
@@ -964,6 +1036,15 @@ export function SubscriptionSection({
                     <span>{planChangePreview.change.effectiveDate}</span>
                   </div>
                 </div>
+
+                {planChangePreview.change.scheduled &&
+                  planChangePreview.change.scheduledMessage && (
+                    <Callout type="info" noMargin>
+                      <p className="text-sm">
+                        {planChangePreview.change.scheduledMessage}
+                      </p>
+                    </Callout>
+                  )}
 
                 {planChangePreview.proration && (
                   <div

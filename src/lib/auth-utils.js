@@ -203,12 +203,15 @@ export async function sendSubscriptionChangedEmail({
   newPrice,
   isUpgrade,
   effectiveDate,
+  scheduled = false,
 }) {
   await sendEmail({
     to,
-    subject: isUpgrade
-      ? "Votre abonnement Newbi a été amélioré !"
-      : "Votre abonnement Newbi a été modifié",
+    subject: scheduled
+      ? "Votre changement d'offre Newbi est programmé"
+      : isUpgrade
+        ? "Votre abonnement Newbi a été amélioré !"
+        : "Votre abonnement Newbi a été modifié",
     html: emailTemplates.subscriptionChanged({
       customerName,
       oldPlan,
@@ -216,6 +219,7 @@ export async function sendSubscriptionChangedEmail({
       newPrice,
       isUpgrade,
       effectiveDate,
+      scheduled,
     }),
   });
 }

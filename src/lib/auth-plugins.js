@@ -1076,6 +1076,22 @@ export const stripePlugin = stripe({
                 { $set: updateData },
               );
 
+            // Baisse d'offre programmée appliquée par Stripe (phase suivante
+            // du calendrier) : le changement n'est plus à venir
+            if (newPlan) {
+              await mongoDb.collection("subscription").updateOne(
+                { stripeSubscriptionId: updatedSub.id, scheduledPlan: newPlan },
+                {
+                  $unset: {
+                    scheduledPlan: 1,
+                    scheduledIsAnnual: 1,
+                    scheduledPlanAt: 1,
+                    stripeScheduleId: 1,
+                  },
+                },
+              );
+            }
+
             // Reprise d'un client par son cabinet en attente du paiement
             if (
               updatedSub.metadata?.payerHandover === "from_client" &&
@@ -1142,6 +1158,34 @@ export const stripePlugin = stripe({
             console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
           }
           break;
+
+        // Calendrier d'une baisse d'offre programmée retiré ou annulé hors
+        // du site (tableau de bord Stripe) : plus de changement à venir
+        case "subscription_schedule.released":
+        case "subscription_schedule.canceled": {
+          const scheduleId = event.data.object?.id;
+          if (!scheduleId) break;
+          try {
+            const { mongoDb } = await import("./mongodb.js");
+            await mongoDb.collection("subscription").updateMany(
+              { stripeScheduleId: scheduleId },
+              {
+                $unset: {
+                  scheduledPlan: 1,
+                  scheduledIsAnnual: 1,
+                  scheduledPlanAt: 1,
+                  stripeScheduleId: 1,
+                },
+              },
+            );
+          } catch (scheduleError) {
+            console.error(
+              `❌ [STRIPE WEBHOOK] Changement d'offre programmé non effacé:`,
+              scheduleError,
+            );
+          }
+          break;
+        }
 
         // Achat de crédits de prospection remboursé ou contesté : ses
         // crédits sortent du solde (sans effet sur les autres paiements).

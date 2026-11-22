@@ -6,6 +6,8 @@ export const subscriptionChanged = ({
   newPrice,
   isUpgrade,
   effectiveDate,
+  // Baisse programmée en fin de période payée : pas d'avoir au prorata
+  scheduled = false,
 }) => `
     <!DOCTYPE html>
     <html lang="fr">
@@ -59,15 +61,21 @@ export const subscriptionChanged = ({
           
           <!-- Message principal -->
           <p style="font-size: 15px; color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
-            Votre abonnement a été modifié du plan <strong style="color: #1a1a1a;">${oldPlan}</strong> vers le plan <strong style="color: #1a1a1a;">${newPlan}</strong>. Ce changement prendra effet le ${effectiveDate}.
+            ${
+              scheduled
+                ? `Votre abonnement passera du plan <strong style="color: #1a1a1a;">${oldPlan}</strong> au plan <strong style="color: #1a1a1a;">${newPlan}</strong> le&nbsp;${effectiveDate}. Vous gardez le plan ${oldPlan} jusqu'à cette date.`
+                : `Votre abonnement a été modifié du plan <strong style="color: #1a1a1a;">${oldPlan}</strong> vers le plan <strong style="color: #1a1a1a;">${newPlan}</strong>. Ce changement prendra effet le ${effectiveDate}.`
+            }
           </p>
-          
+
           <!-- Note prorata -->
           <p style="font-size: 14px; color: #6b7280; margin: 0 0 24px 0; line-height: 1.6;">
             ${
-              isUpgrade
-                ? "Le montant de votre prochaine facture a été ajusté au prorata."
-                : "Un crédit au prorata vous sera appliqué sur votre prochaine facture."
+              scheduled
+                ? `Aucun remboursement n'est appliqué sur la période en cours. Votre facture suivante sera au tarif du plan ${newPlan}&nbsp;: ${newPrice}.`
+                : isUpgrade
+                  ? "Le montant de votre prochaine facture a été ajusté au prorata."
+                  : "Un crédit au prorata vous sera appliqué sur votre prochaine facture."
             }
           </p>
           
