@@ -75,7 +75,8 @@ async function getHandler(request) {
 /**
  * POST /api/billing/prospect-credits
  * Body : { organizationId, credits }. Ouvre un paiement Stripe unique pour
- * ce nombre de crédits ; ils sont ajoutés à l'espace une fois payés.
+ * ce nombre de crédits ; payés, ils forment une commande activée par l'API
+ * dès que son stock chez le fournisseur la couvre.
  */
 async function postHandler(request) {
   const { user } = await requireSession(request);
@@ -174,7 +175,7 @@ async function postHandler(request) {
     cancel_url: `${baseUrl}/dashboard/clients?credits_prospects=annule`,
     custom_text: {
       submit: {
-        message: `${credits} crédits de prospection, ajoutés à votre espace dès le paiement. Sans expiration, utilisés après les crédits offerts du mois.`,
+        message: `${credits} crédits de prospection, ajoutés à votre espace dès qu'ils sont prêts (en général sous 24 h) : vous serez prévenu par e-mail. Sans expiration, utilisés après les crédits offerts du mois.`,
       },
     },
   });

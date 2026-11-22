@@ -961,6 +961,7 @@ function CreditsCard({
   const monthly = quota.monthlyCredits ?? 0;
   const used = quota.monthlyUsed ?? 0;
   const purchased = quota.purchasedRemaining ?? 0;
+  const ordered = quota.purchasedPending ?? 0;
   const resetDate = formatResetDate(quota.resetsAt);
   const usedRatio = monthly > 0 ? Math.min(1, used / monthly) : 0;
   const canPurchase = Boolean(quota.canPurchase);
@@ -1030,6 +1031,13 @@ function CreditsCard({
         <p className="text-xs text-muted-foreground">
           Dont {plural(purchased, "crédit")} acheté{purchased > 1 ? "s" : ""},
           sans expiration
+        </p>
+      )}
+      {ordered > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {plural(ordered, "crédit")} commandé{ordered > 1 ? "s" : ""}, en
+          préparation : ajouté{ordered > 1 ? "s" : ""} dès qu&apos;ils sont
+          prêts
         </p>
       )}
       {upsell && (
