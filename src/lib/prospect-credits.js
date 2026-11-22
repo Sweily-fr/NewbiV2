@@ -137,3 +137,42 @@ export async function recordProspectCreditPurchase(mongoDb, session) {
   );
   return { credits, created: Boolean(result.upsertedCount) };
 }
+
+/**
+ * Achat de crédits remboursé en entier (`charge.refunded`) ou contesté par
+ * la banque du client (`charge.dispute.created`) : l'achat passe en
+ * « refunded » et ses crédits sortent du solde de l'espace (ceux déjà
+ * dépensés le restent). Contestation gagnée ensuite ou remboursement
+ * partiel : rien d'automatique, à traiter à la main.
+ * Renvoie null si le paiement n'est pas un achat de crédits.
+ */
+export async function handleProspectCreditsRefund(mongoDb, event) {
+  const object = event?.data?.object || {};
+  const paymentIntentId =
+    typeof object.payment_intent === "string"
+      ? object.payment_intent
+      : object.payment_intent?.id || null;
+  if (!paymentIntentId) return null;
+
+  const purchases = mongoDb.collection(PROSPECT_CREDIT_PURCHASES);
+  const purchase = await purchases.findOne({
+    stripePaymentIntentId: paymentIntentId,
+  });
+  if (!purchase) return null;
+
+  const full =
+    event.type === "charge.dispute.created" ||
+    (Number.isFinite(object.amount) &&
+      Number(object.amount_refunded) >= object.amount);
+  if (!full) {
+    return { credits: purchase.credits, refunded: false, partial: true };
+  }
+  if (purchase.status !== "refunded") {
+    const now = new Date();
+    await purchases.updateOne(
+      { _id: purchase._id, status: { $ne: "refunded" } },
+      { $set: { status: "refunded", refundedAt: now, updatedAt: now } },
+    );
+  }
+  return { credits: purchase.credits, refunded: true, partial: false };
+}

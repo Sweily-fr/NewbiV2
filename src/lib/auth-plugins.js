@@ -1143,6 +1143,34 @@ export const stripePlugin = stripe({
           }
           break;
 
+        // Achat de crédits de prospection remboursé ou contesté : ses
+        // crédits sortent du solde (sans effet sur les autres paiements).
+        // Opération idempotente : pas de déduplication par événement.
+        case "charge.refunded":
+        case "charge.dispute.created": {
+          try {
+            const { mongoDb } = await import("./mongodb.js");
+            const { handleProspectCreditsRefund } =
+              await import("./prospect-credits.js");
+            const refund = await handleProspectCreditsRefund(mongoDb, event);
+            if (refund?.partial) {
+              console.warn(
+                `⚠️ [STRIPE WEBHOOK] Remboursement partiel d'un achat de ${refund.credits} crédits de prospection : crédits laissés, à traiter à la main`,
+              );
+            } else if (refund?.refunded) {
+              console.log(
+                `✅ [STRIPE WEBHOOK] Achat de ${refund.credits} crédits de prospection remboursé : crédits retirés du solde`,
+              );
+            }
+          } catch (refundError) {
+            console.error(
+              `❌ [STRIPE WEBHOOK] Remboursement de crédits de prospection non traité:`,
+              refundError,
+            );
+          }
+          break;
+        }
+
         case "invoice.payment_failed":
           const failedInvoice = event.data.object;
 
