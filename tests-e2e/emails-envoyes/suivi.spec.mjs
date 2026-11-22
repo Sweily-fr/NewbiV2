@@ -79,7 +79,14 @@ test.describe("E-mails envoyés : suivi d'ouverture et de clic", () => {
 });
 
 test.describe("E-mails envoyés : l'ouverture se lit sur la page de l'envoi", () => {
-  test.use({ storageState: connecte(COMPTES_ENVOIS.proprietaire.token) });
+  // Cadre isolé de l'e-mail (sandbox sans scripts) : les scripts de surveillance de
+  // Playwright y sont bloqués, ce que le navigateur signale en console selon le
+  // moment où le cadre se charge (comme dans page.spec.mjs). Sans ce motif, le
+  // test échouait par intermittence en CI (release du 22/11/2026).
+  test.use({
+    storageState: connecte(COMPTES_ENVOIS.proprietaire.token),
+    erreursConsoleAutorisees: /Blocked script execution in 'about:srcdoc'/,
+  });
 
   test("Après le pixel, l'étape « Ouvert » est datée", async ({ page }) => {
     await page.request.get(`${API_URL}/tracking/open/${SUIVI.ouvertureUi}`);
