@@ -49,12 +49,14 @@ async function handler(request) {
   await requireOrgMembership(user.id, session.metadata.organizationId);
 
   if (session.payment_status !== "paid") {
-    return NextResponse.json({ paid: false, credits: 0 });
+    return NextResponse.json({ paid: false, credits: 0, pending: false });
   }
   const recorded = await recordProspectCreditPurchase(mongoDb, session);
   return NextResponse.json({
     paid: Boolean(recorded),
     credits: recorded?.credits || 0,
+    // Crédits commandés : utilisables une fois la commande activée
+    pending: Boolean(recorded?.pending),
   });
 }
 

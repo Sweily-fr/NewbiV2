@@ -245,7 +245,7 @@ describe("POST /api/billing/prospect-credits", () => {
 });
 
 describe("POST /api/billing/prospect-credits/confirm", () => {
-  it("ajoute les crédits d'un paiement réussi, une seule fois par paiement", async () => {
+  it("enregistre la commande d'un paiement réussi, une seule fois par paiement", async () => {
     m.sessionRetrieve.mockResolvedValue(paiement());
     m.purchaseUpdateOne
       .mockResolvedValueOnce({ upsertedCount: 1 })
@@ -254,7 +254,8 @@ describe("POST /api/billing/prospect-credits/confirm", () => {
     for (let i = 0; i < 2; i += 1) {
       const res = await confirmer("cs_test_abc123");
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ paid: true, credits: 25 });
+      // Commande : crédits utilisables une fois activée par l'API
+      expect(await res.json()).toEqual({ paid: true, credits: 25, pending: true });
     }
     // Clé = la session de paiement, écrite seulement à la création :
     // un second passage (webhook, rechargement) ne rajoute rien
@@ -264,7 +265,7 @@ describe("POST /api/billing/prospect-credits/confirm", () => {
       expect(maj.$setOnInsert).toMatchObject({
         credits: 25,
         amountTotal: 750,
-        status: "paid",
+        status: "pending",
         stripePaymentIntentId: "pi_test_1",
       });
       expect(String(maj.$setOnInsert.workspaceId)).toBe(orgId);
@@ -307,6 +308,7 @@ describe("POST /api/billing/prospect-credits/confirm", () => {
     expect(await (await confirmer("cs_test_abc123")).json()).toEqual({
       paid: false,
       credits: 0,
+      pending: false,
     });
     expect(m.purchaseUpdateOne).not.toHaveBeenCalled();
   });
