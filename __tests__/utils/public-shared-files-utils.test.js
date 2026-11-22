@@ -10,6 +10,7 @@ import {
   folderChoices,
   formatFileSize,
   previewKind,
+  replacementNames,
   searchShare,
   sortDocuments,
   splitName,
@@ -235,5 +236,33 @@ describe("splitName", () => {
       extension: "",
     });
     expect(splitName(undefined)).toEqual({ stem: "", extension: "" });
+  });
+});
+
+describe("replacementNames", () => {
+  it("nom du nouveau fichier ou nom actuel, avec l'extension du nouveau fichier", () => {
+    expect(replacementNames("lettre.pdf", "Lettre signée.pdf")).toEqual({
+      fromFile: "Lettre signée.pdf",
+      keep: "lettre.pdf",
+    });
+    // Autre format : le nom actuel prend l'extension du nouveau fichier
+    expect(replacementNames("Carte grise.png", "SCAN 12.PDF")).toEqual({
+      fromFile: "SCAN 12.pdf",
+      keep: "Carte grise.pdf",
+    });
+  });
+
+  it("espaces et points de fin retirés, comme l'API", () => {
+    expect(
+      replacementNames("Relevé  mars .pdf", "  Relevé   avril. .pdf"),
+    ).toEqual({
+      fromFile: "Relevé avril.pdf",
+      keep: "Relevé mars.pdf",
+    });
+  });
+
+  it("fichier sans nom utilisable : seul le nom actuel est proposé", () => {
+    expect(replacementNames("lettre.pdf", ".pdf").fromFile).toBeNull();
+    expect(replacementNames("lettre.pdf", " .pdf").fromFile).toBeNull();
   });
 });

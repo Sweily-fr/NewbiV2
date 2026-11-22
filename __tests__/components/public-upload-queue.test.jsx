@@ -1,11 +1,13 @@
 /**
  * File des envois d'un client (lien client des documents partagés) :
  * contrôle avant l'envoi, trois envois à la fois, progression, refus de
- * l'API, relecture de la page après chaque dépôt ou nouvelle version.
+ * l'API, relecture de la page après chaque dépôt ou nouvelle version, nom
+ * choisi pour une nouvelle version, encart refermé seul après succès.
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import {
+  PANEL_CLOSE_DELAY,
   UploadPanel,
   useUploadQueue,
 } from "@/app/public/documents/[token]/components/upload-queue";
@@ -14,13 +16,17 @@ import {
 function fakeSend() {
   const calls = [];
   const send = vi.fn(
-    (url, file, onProgress, method) =>
+    (url, file, onProgress, method, fields) =>
       new Promise((resolve, reject) => {
-        calls.push({ url, file, onProgress, method, resolve, reject });
+        calls.push({ url, file, onProgress, method, fields, resolve, reject });
       }),
   );
   return { send, calls };
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 let queue;
 function Harness({ send, onUploaded }) {
@@ -108,9 +114,28 @@ describe("useUploadQueue", () => {
     );
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({ url: "/version/d3", method: "PUT" });
+    // Sans nom choisi, rien d'autre que le fichier : l'API garde le nom
+    expect(calls[0].fields).toBeUndefined();
     expect(screen.getByText("Nouvelle version de « lettre.pdf »")).toBeTruthy();
     await act(async () => calls[0].resolve({ id: "d3" }));
     expect(onUploaded).toHaveBeenCalledTimes(1);
+  });
+
+  it("envoie avec la nouvelle version le nom choisi par le visiteur", () => {
+    const { send, calls } = fakeSend();
+    render(<Harness send={send} />);
+    act(() =>
+      queue.replace(
+        file("Lettre signée.pdf"),
+        { id: "d3", name: "lettre.pdf" },
+        "Lettre signée.pdf",
+      ),
+    );
+    expect(calls[0]).toMatchObject({
+      url: "/version/d3",
+      method: "PUT",
+      fields: { name: "Lettre signée.pdf" },
+    });
   });
 
   it("refuse d'avance une nouvelle version d'un format non accepté", () => {
@@ -119,5 +144,56 @@ describe("useUploadQueue", () => {
     act(() => queue.replace(file("outil.exe"), { id: "d3", name: "a.pdf" }));
     expect(send).not.toHaveBeenCalled();
     expect(screen.getByText(/Format non accepté/)).toBeTruthy();
+  });
+});
+
+describe("Encart des dépôts", () => {
+  const panel = () => screen.queryByRole("region", { name: "Dépôts" });
+
+  it("se referme seul peu après des envois tous réussis", async () => {
+    vi.useFakeTimers();
+    const { send, calls } = fakeSend();
+    render(<Harness send={send} />);
+    act(() => queue.add([file("a.pdf")], folder));
+    await act(async () => calls[0].resolve({}));
+    expect(screen.getByText("1 document déposé")).toBeTruthy();
+
+    act(() => vi.advanceTimersByTime(PANEL_CLOSE_DELAY - 1));
+    expect(panel()).toBeTruthy();
+    act(() => vi.advanceTimersByTime(1));
+    expect(panel()).toBeNull();
+  });
+
+  it("un nouvel envoi repousse la fermeture à sa propre fin", async () => {
+    vi.useFakeTimers();
+    const { send, calls } = fakeSend();
+    render(<Harness send={send} />);
+    act(() => queue.add([file("a.pdf")], folder));
+    await act(async () => calls[0].resolve({}));
+    act(() => vi.advanceTimersByTime(PANEL_CLOSE_DELAY - 1000));
+
+    // Encore un envoi en cours au moment prévu : l'encart reste
+    act(() => queue.add([file("b.pdf")], folder));
+    act(() => vi.advanceTimersByTime(2000));
+    expect(panel()).toBeTruthy();
+
+    await act(async () => calls[1].resolve({}));
+    expect(screen.getByText("2 documents déposés")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(PANEL_CLOSE_DELAY));
+    expect(panel()).toBeNull();
+  });
+
+  it("un refus reste affiché jusqu'à ce que le visiteur ferme l'encart", async () => {
+    vi.useFakeTimers();
+    const { send, calls } = fakeSend();
+    render(<Harness send={send} />);
+    act(() => queue.add([file("a.pdf"), file("b.pdf")], folder));
+    await act(async () => {
+      calls[0].resolve({});
+      calls[1].reject(new Error("Le dépôt a échoué."));
+    });
+    act(() => vi.advanceTimersByTime(PANEL_CLOSE_DELAY * 3));
+    expect(panel()).toBeTruthy();
+    expect(screen.getByText("1 déposé, 1 refusé")).toBeTruthy();
   });
 });

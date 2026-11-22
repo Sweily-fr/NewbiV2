@@ -185,6 +185,26 @@ export function splitName(name) {
 }
 
 /**
+ * Noms possibles d'une nouvelle version, toujours avec l'extension du
+ * nouveau fichier (comme l'API) : `fromFile`, celui du nouveau fichier (null
+ * s'il n'en a pas d'utilisable), et `keep`, le nom actuel du document.
+ */
+export function replacementNames(currentName, fileName) {
+  const { stem: fileStem, extension } = splitName(fileName);
+  const tidy = (stem) =>
+    stem
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[.\s]+$/, "");
+  const named = (stem) => (extension ? `${stem}.${extension}` : stem);
+  const fromFile = tidy(fileStem);
+  return {
+    fromFile: fromFile ? named(fromFile) : null,
+    keep: named(tidy(splitName(currentName).stem)),
+  };
+}
+
+/**
  * Recherche dans tout le partage (comme la barre de Documents partagés) :
  * dossiers et documents dont le nom contient la saisie, sans tenir compte
  * des majuscules ni des accents.
