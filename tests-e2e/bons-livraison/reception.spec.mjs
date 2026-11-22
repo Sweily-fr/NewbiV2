@@ -74,12 +74,17 @@ test.describe("Bons de livraison : réception", () => {
     await etape(page, "Saisir le réceptionnaire et confirmer au clavier", async () => {
       // Le menu « ... » se referme en 150 ms ; à sa disparition, Radix rend le
       // focus au bouton du menu, la fenêtre le reprend et sélectionne le champ :
-      // une saisie commencée avant serait écrasée (« Lé » perdu). Aucun humain
-      // ne tape aussi vite : on attend que le menu soit parti.
-      await expect(page.getByRole("menu")).toHaveCount(0);
-      await fenetre.getByRole("textbox", { name: "Réceptionné par" }).focus();
-      await expect(fenetre.getByRole("textbox", { name: "Réceptionné par" })).toBeFocused();
+      // une saisie commencée avant serait écrasée (« Lé » perdu, « Léon C » en
+      // CI le 22/11). Aucun humain ne tape aussi vite : on attend que le menu
+      // soit parti. includeHidden : la fenêtre, modale, cache le reste de la
+      // page aux lecteurs d'écran (aria-hidden), menu compris ; sans lui, la
+      // garde ne voyait plus le menu dès l'ouverture et n'attendait rien.
+      await expect(page.getByRole("menu", { includeHidden: true })).toHaveCount(0);
+      const champ = fenetre.getByRole("textbox", { name: "Réceptionné par" });
+      await champ.focus();
+      await expect(champ).toBeFocused();
       await page.keyboard.type("Léon Clavier");
+      await expect(champ, "Saisie écrasée pendant la frappe").toHaveValue("Léon Clavier");
       await fenetre.getByRole("button", { name: "Marquer comme livré" }).focus();
       await page.keyboard.press("Enter");
       await expect(notification(page, "Bon de livraison marqué comme livré")).toBeVisible();
