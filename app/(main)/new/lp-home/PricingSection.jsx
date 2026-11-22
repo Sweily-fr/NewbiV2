@@ -413,7 +413,7 @@ export default function PricingSection({ variant = "home" }) {
                     {plan.cta}
                   </Link>
 
-                  {/* Accompagnement par un expert (TPE / Entreprise) */}
+                  {/* Accompagnement par un expert (Premium / Entreprise) */}
                   <div className="h-6 mt-3 flex items-center justify-center">
                     {plan.expertSupport && <ExpertLink />}
                   </div>
@@ -535,7 +535,7 @@ export default function PricingSection({ variant = "home" }) {
                   {isAnnual && `, facturé ${plan.annualTotal}`}
                 </p>
 
-                {/* Accompagnement par un expert (TPE / Entreprise) */}
+                {/* Accompagnement par un expert (Premium / Entreprise) */}
                 {plan.expertSupport && (
                   <div className="mt-3">
                     <ExpertLink />

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { baseItemOf } from "@/src/lib/storage-packs";
+import { planLabel } from "@/src/lib/plans-display";
 import Stripe from "stripe";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
@@ -404,13 +405,13 @@ async function handler(request) {
     preview: {
       currentPlan: {
         name: currentPlan,
-        displayName: currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1),
+        displayName: planLabel(currentPlan),
         price: currentPrice,
         limits: currentPlanLimits,
       },
       newPlan: {
         name: newPlan,
-        displayName: newPlan.charAt(0).toUpperCase() + newPlan.slice(1),
+        displayName: planLabel(newPlan),
         price: newPrice,
         limits: newPlanLimits,
       },

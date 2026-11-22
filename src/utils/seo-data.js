@@ -493,9 +493,9 @@ export const seoData = {
 
   // Page Tarifs
   pricing: {
-    title: "Tarifs Newbi - Offres Freelance, TPE et Entreprise",
+    title: "Tarifs Newbi - Offres Standard, Premium et Entreprise",
     description:
-      "Comparez les offres Newbi : Freelance dès 17,99 € TTC/mois, TPE et Entreprise. 7 jours gratuits, sans engagement.",
+      "Comparez les offres Newbi pour freelances et TPE : Standard dès 17,99 € TTC/mois, Premium et Entreprise. 7 jours gratuits, sans engagement.",
     keywords:
       "tarifs newbi, prix abonnement, plan entrepreneur, facturation prix, devis tarif, essai gratuit, abonnement mensuel",
     canonical: `${baseUrl}/tarifs`,
@@ -536,7 +536,7 @@ export const seoData = {
         },
         {
           "@type": "Offer",
-          name: "Freelance",
+          name: "Standard",
           price: "17.99",
           priceCurrency: "EUR",
           description: "Abonnement mensuel TTC, 1 utilisateur",

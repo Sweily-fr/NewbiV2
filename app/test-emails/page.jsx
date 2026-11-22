@@ -110,7 +110,7 @@ export default function TestEmailsPage() {
       params: [
         {
           customerName: "Sofiane",
-          plan: "Pro",
+          plan: "Standard",
           price: "14,99 €",
           billingInterval: "mois",
         },
@@ -121,8 +121,8 @@ export default function TestEmailsPage() {
       params: [
         {
           customerName: "Jean Dupont",
-          oldPlan: "Freelance",
-          newPlan: "PME",
+          oldPlan: "Standard",
+          newPlan: "Premium",
           newPrice: "48,99 €/mois",
           isUpgrade: true,
           effectiveDate: "17 décembre 2025",
@@ -134,7 +134,7 @@ export default function TestEmailsPage() {
       params: [
         {
           customerName: "Jean Dupont",
-          plan: "PME",
+          plan: "Premium",
           endDate: "17 janvier 2026",
         },
       ],
@@ -144,7 +144,7 @@ export default function TestEmailsPage() {
       params: [
         {
           customerName: "Jean Dupont",
-          plan: "PME",
+          plan: "Premium",
           price: "48,99 €/mois",
           renewalDate: "17 janvier 2026",
           amount: "48,99 € TTC",
@@ -156,7 +156,7 @@ export default function TestEmailsPage() {
       params: [
         {
           customerName: "Jean Dupont",
-          plan: "PME",
+          plan: "Premium",
           amount: "48,99 €",
           invoiceNumber: "INV-2025-001234",
           paymentDate: "17 décembre 2025",
@@ -169,7 +169,7 @@ export default function TestEmailsPage() {
       params: [
         {
           customerName: "Jean Dupont",
-          plan: "PME",
+          plan: "Premium",
           amount: "48,99 €",
           failureReason: "Carte expirée",
           retryDate: "20 décembre 2025",

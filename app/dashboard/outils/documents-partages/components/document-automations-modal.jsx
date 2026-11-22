@@ -1,5 +1,6 @@
 "use client";
 
+import { planLabel } from "@/src/lib/plans-display";
 import React, {
   useState,
   useMemo,
@@ -793,8 +794,9 @@ export default function DocumentAutomationsModal({
               </p>
               <p className="text-sm text-muted-foreground max-w-sm">
                 Les automatisations de documents ne sont pas incluses dans le
-                plan Freelance. Passez au plan PME ou Entreprise pour
-                automatiser le classement de vos documents.
+                plan {planLabel("freelance")}. Passez au plan {planLabel("pme")}{" "}
+                ou {planLabel("entreprise")} pour automatiser le classement de
+                vos documents.
               </p>
             </div>
           </div>

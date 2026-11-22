@@ -14,8 +14,11 @@
  *   - Les TOTAUX ANNUELS sont DÉRIVÉS par calcul (annualMonthlyPrice × 12).
  *     Jamais écrits en dur — sinon le bug Freelance peut réapparaître à la
  *     prochaine modification de prix.
- *   - Les clés techniques (freelance / pme / entreprise) NE CHANGENT PAS.
- *     Le label affiché du plan `pme` est désormais "TPE" partout.
+ *   - Les clés techniques (freelance / pme / entreprise) NE CHANGENT PAS :
+ *     elles sont en base, dans Stripe et dans les limites.
+ *   - Les noms affichés viennent d'ici seulement (displayName, planLabel).
+ *     Depuis le 22/11/2026 : Standard (clé freelance), Premium (clé pme),
+ *     Entreprise (clé entreprise). Avant : Freelance, TPE, Entreprise.
  *   - Tous les prix sont en TTC.
  *
  * Pas d'imports server-only ici : ce module doit être consommable depuis
@@ -27,14 +30,14 @@ import { PLAN_LIMITS } from "@/src/lib/plan-limits";
 export const PLANS_DISPLAY = [
   {
     key: "freelance",
-    displayName: "Freelance",
+    displayName: "Standard",
     description: "Pour les indépendants",
     monthlyPrice: 17.99,
     annualMonthlyPrice: 16.19,
   },
   {
     key: "pme",
-    displayName: "TPE",
+    displayName: "Premium",
     description: "Pour les équipes en croissance",
     monthlyPrice: 48.99,
     annualMonthlyPrice: 44.09,
@@ -310,7 +313,7 @@ export const PLAN_FEATURES_SECTIONS = [
 /**
  * Offre à proposer quand une limite est atteinte : la moins chère dont la
  * limite dépasse la limite actuelle (-1 = illimité). Pour les 5 champs
- * personnalisés de Freelance, c'est TPE (le message proposait Entreprise).
+ * personnalisés de Standard, c'est Premium (le message proposait Entreprise).
  * null si aucune offre ne la lève.
  */
 export function upgradePlanNameFor(limitKey, currentLimit) {
@@ -327,6 +330,24 @@ export function upgradePlanNameFor(limitKey, currentLimit) {
  */
 export function getPlanDisplay(key) {
   return PLANS_DISPLAY.find((p) => p.key === key) ?? null;
+}
+
+// Anciennes clés encore présentes dans des métadonnées Stripe et des
+// abonnements anciens (cf. storage-plans.js).
+const ALIAS_CLES = { pro: "pme", enterprise: "entreprise" };
+
+/**
+ * Nom d'offre à montrer au client à partir d'une clé technique, quelle que
+ * soit sa casse : "freelance" ou "FREELANCE" → "Standard", "pme" →
+ * "Premium". À utiliser dans tout texte visible (e-mails, messages, page de
+ * paiement) au lieu de la clé mise en majuscules. Clé inconnue : renvoyée
+ * telle quelle, première lettre en capitale.
+ */
+export function planLabel(key) {
+  if (typeof key !== "string" || !key) return "";
+  const cle = key.toLowerCase();
+  const plan = getPlanDisplay(ALIAS_CLES[cle] ?? cle);
+  return plan ? plan.displayName : cle.charAt(0).toUpperCase() + cle.slice(1);
 }
 
 /**

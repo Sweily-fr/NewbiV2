@@ -3,6 +3,7 @@ import { getPlanLimits as getCentralizedPlanLimits } from "../lib/plan-limits.js
 import { isAppTrialEnabled } from "../lib/feature-flags.js";
 import { isTrialAppActive } from "../lib/trial-app.js";
 import { withoutCabinetMembers } from "../lib/cabinet-members.js";
+import { planLabel } from "../lib/plans-display.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -146,7 +147,7 @@ export class SeatSyncService {
         if (totalAccountants >= planLimits.accountants) {
           return {
             canInvite: false,
-            reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${planName.toUpperCase()}. Passez à un plan supérieur pour inviter plus de comptables.`,
+            reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${planLabel(planName)}. Passez à un plan supérieur pour inviter plus de comptables.`,
             planName,
             currentAccountants,
             pendingAccountants,
@@ -195,7 +196,7 @@ export class SeatSyncService {
           if (maxPaidSeats >= 0 && additionalSeats > maxPaidSeats) {
             return {
               canInvite: false,
-              reason: `Limite de ${maxPaidSeats} utilisateur(s) supplémentaire(s) atteinte pour le plan ${planName.toUpperCase()}. Passez à un plan supérieur pour inviter plus d'utilisateurs.`,
+              reason: `Limite de ${maxPaidSeats} utilisateur(s) supplémentaire(s) atteinte pour le plan ${planLabel(planName)}. Passez à un plan supérieur pour inviter plus d'utilisateurs.`,
               planName,
               currentUsers,
               pendingUsers,
@@ -475,7 +476,7 @@ export class SeatSyncService {
               await sendAdditionalSeatAddedEmail({
                 to: owner.email,
                 customerName: owner.name || owner.email,
-                plan: subscription.plan.toUpperCase(),
+                plan: planLabel(subscription.plan),
                 currentMembers,
                 includedSeats,
                 additionalSeats,
@@ -543,7 +544,7 @@ export class SeatSyncService {
           await sendSeatLimitWarningEmail({
             to: owner.email,
             customerName: owner.name || owner.email,
-            plan: subscription.plan.toUpperCase(),
+            plan: planLabel(subscription.plan),
             currentMembers,
             includedSeats,
             availableSeats,

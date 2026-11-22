@@ -34,7 +34,7 @@ test.describe("Stockage : écran et bandeaux (propriétaire, espace plein)", () 
     await expect(page.getByTestId("stockage-resume")).toHaveText(
       "75 Go utilisés sur 75 Go, il vous reste 0 Go.",
     );
-    await expect(page.getByText("Offre Freelance : 75 Go.")).toBeVisible();
+    await expect(page.getByText("Offre Standard : 75 Go.")).toBeVisible();
   });
 
   test("Le détail est donné par type de fichier et par personne, avec « Non attribué »", async ({ page }) => {
@@ -53,9 +53,9 @@ test.describe("Stockage : écran et bandeaux (propriétaire, espace plein)", () 
     // L'absence de packs est expliquée, pas seulement cachée
     await expect(page.getByTestId("packs-indisponibles")).toBeVisible();
     const offre = page.getByTestId("offre-superieure");
-    await expect(offre).toContainText("Passer à l'offre TPE");
+    await expect(offre).toContainText("Passer à l'offre Premium");
     await expect(offre).toContainText("400 Go de stockage, 48,99 € TTC/mois");
-    await offre.getByRole("button", { name: "Passer à l'offre TPE" }).click();
+    await offre.getByRole("button", { name: "Passer à l'offre Premium" }).click();
     await expect(page.getByText("Choisissez le plan adapté à vos besoins.")).toBeVisible();
   });
 
@@ -111,7 +111,7 @@ test.describe("Stockage : refus des nouveaux envois", () => {
     expect(reponse.errors[0].message).toMatch(REFUS);
     expect(reponse.errors[0].message).not.toMatch(/€|http/);
     const offre = reponse.errors[0].extensions.details.offer;
-    expect(offre.upgrade).toMatchObject({ plan: "pme", label: "TPE" });
+    expect(offre.upgrade).toMatchObject({ plan: "pme", label: "Premium" });
     expect(offre.packs.additionalPacks).toBe(1);
     expect(await (await base()).collection("shareddocuments").countDocuments({ workspaceId: PLEIN })).toBe(0);
   });

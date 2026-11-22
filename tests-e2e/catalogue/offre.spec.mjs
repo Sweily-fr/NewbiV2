@@ -35,9 +35,9 @@ test.describe("Offre d'entrée : plafonds du catalogue", () => {
     }, { capture: "ecran" });
   });
 
-  test("Champs personnalisés produits : le message de limite propose l'offre qui la lève (TPE)", async ({ page }) => {
+  test("Champs personnalisés produits : le message de limite propose l'offre qui la lève (Premium)", async ({ page }) => {
     const panneau = await ouvrirChamps(page);
-    await expect(panneau.getByText(/Limite atteinte/).first(), "Le message propose l'offre Entreprise alors que l'offre TPE lève déjà la limite").toContainText(/TPE/);
+    await expect(panneau.getByText(/Limite atteinte/).first(), "Le message propose l'offre Entreprise alors que l'offre Premium lève déjà la limite").toContainText(/Premium/);
   });
 
   test("Champs personnalisés produits : un 6e champ créé par l'API est refusé", async ({ page }) => {
