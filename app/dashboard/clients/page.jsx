@@ -166,6 +166,52 @@ function ClientsContent() {
     }
   }, [searchParams, router, canCreateClients, isReady]);
 
+  // Retour du paiement Stripe des crédits de prospection : crédits ajoutés
+  // tout de suite (sans attendre le webhook), solde relu, fenêtre rouverte
+  const creditsReturn = searchParams.get("credits_prospects");
+  // « credits_session » et pas « session_id » (pris par le tableau de bord
+  // pour un retour d'abonnement, voir la route d'achat)
+  const creditsSessionId = searchParams.get("credits_session");
+  // Le nettoyage de l'adresse relance l'effet : on ne traite qu'une fois
+  const handledCreditsReturn = useRef(null);
+  useEffect(() => {
+    if (!creditsReturn) return;
+    const key = `${creditsReturn}:${creditsSessionId}`;
+    if (handledCreditsReturn.current === key) return;
+    handledCreditsReturn.current = key;
+    window.history.replaceState(null, "", "/dashboard/clients");
+    if (creditsReturn !== "ok" || !creditsSessionId) {
+      toast.info("Achat de crédits annulé.");
+      return;
+    }
+    const pending = () =>
+      toast.info(
+        "Paiement en cours de validation : vos crédits apparaîtront dans quelques instants.",
+      );
+    (async () => {
+      try {
+        const response = await fetch("/api/billing/prospect-credits/confirm", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: creditsSessionId }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.paid) {
+          pending();
+          return;
+        }
+        toast.success(
+          `${data.credits} crédit${data.credits > 1 ? "s" : ""} ajouté${data.credits > 1 ? "s" : ""} à votre espace`,
+        );
+        await refetchProspectSettings();
+        setProspectsDialogOpen(true);
+      } catch {
+        pending();
+      }
+    })();
+  }, [creditsReturn, creditsSessionId, refetchProspectSettings]);
+
   // Colonne « Factures » proposée seulement avec la lecture des factures
   const canReadInvoices = !isReady || canRead("invoices");
   const allToggleableColumns = useMemo(() => {

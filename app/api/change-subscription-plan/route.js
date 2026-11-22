@@ -13,6 +13,14 @@ import { findManagerPaidSubscription } from "@/src/lib/manager-billing";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 import { getPlanDisplay, planLabel } from "@/src/lib/plans-display";
+import {
+  formatChangeDate,
+  phaseItemsOf,
+  releaseScheduledChange,
+  scheduleChangeAtPeriodEnd,
+  SCHEDULED_CHANGE_FIELDS,
+  subscriptionScheduleId,
+} from "@/src/lib/plan-change-schedule";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const seatSyncService = new SeatSyncService();
@@ -120,10 +128,17 @@ async function handler(request) {
   }
 
   // 2. Récupérer les paramètres
-  const { newPlan, isAnnual, organizationId, validationToken } =
-    await request.json();
+  const {
+    newPlan,
+    isAnnual,
+    organizationId,
+    validationToken,
+    // Annuler la baisse d'offre programmée (garder l'offre actuelle)
+    cancelScheduledChange: cancelRequested,
+  } = await request.json();
+  const cancelScheduledChange = cancelRequested === true;
 
-  if (!newPlan || !organizationId) {
+  if ((!newPlan && !cancelScheduledChange) || !organizationId) {
     return NextResponse.json(
       { error: "Plan et organizationId requis" },
       { status: 400 },
@@ -139,7 +154,7 @@ async function handler(request) {
   }
 
   // ✅ CRITIQUE #2: Valider le nom du plan (whitelist)
-  if (!VALID_PLANS.includes(newPlan)) {
+  if (!cancelScheduledChange && !VALID_PLANS.includes(newPlan)) {
     return NextResponse.json(
       { error: "Plan invalide", validPlans: VALID_PLANS },
       { status: 400 },
@@ -250,6 +265,49 @@ async function handler(request) {
     const stripeSubscription = await stripe.subscriptions.retrieve(
       subscription.stripeSubscriptionId,
     );
+
+    // Annulation d'une baisse programmée : le calendrier Stripe est retiré,
+    // l'abonnement garde son offre et sa périodicité actuelles
+    if (cancelScheduledChange) {
+      if (
+        !subscriptionScheduleId(stripeSubscription) &&
+        !subscription.scheduledPlan
+      ) {
+        return NextResponse.json({
+          success: true,
+          cancelledScheduledChange: false,
+          message: "Aucun changement d'offre n'est programmé.",
+        });
+      }
+      try {
+        await releaseScheduledChange(stripe, stripeSubscription);
+      } catch (releaseError) {
+        console.error(
+          `❌ [CHANGE PLAN] Changement programmé non annulé:`,
+          releaseError,
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Impossible d'annuler le changement d'offre programmé. Réessayez dans un instant.",
+          },
+          { status: 502 },
+        );
+      }
+      await mongoDb
+        .collection("subscription")
+        .updateOne(
+          { referenceId: organizationId },
+          { $unset: SCHEDULED_CHANGE_FIELDS },
+        );
+      console.log(`↩️ [CHANGE PLAN] Changement programmé annulé`);
+      return NextResponse.json({
+        success: true,
+        cancelledScheduledChange: true,
+        message: `Changement d'offre annulé : vous gardez l'offre ${planLabel(currentPlan)}.`,
+        newPlan: currentPlan,
+      });
+    }
 
     // ✅ AMÉLIORATION CRITIQUE #3: Vérifier les états problématiques
     if (BLOCKED_SUBSCRIPTION_STATES.includes(stripeSubscription.status)) {
@@ -487,6 +545,194 @@ async function handler(request) {
       );
     }
 
+    // E-mail de confirmation (changement immédiat ou programmé) : son échec
+    // n'annule rien, il est signalé en avertissement.
+    const notifyPlanChange = async ({ scheduled = false, effectiveAt }) => {
+      const customer = await stripe.customers.retrieve(
+        subscription.stripeCustomerId,
+      );
+      const { sendSubscriptionChangedEmail } =
+        await import("@/src/lib/auth-utils");
+      // Prix dérivés du module central (plans-display.js) — plus de table
+      // hardcodée qui divergeait en silence des autres écrans.
+      const newPlanDisplay = getPlanDisplay(newPlan);
+      const priceAmount = isAnnual
+        ? newPlanDisplay?.annualMonthlyPrice
+        : newPlanDisplay?.monthlyPrice;
+      const formattedPrice =
+        typeof priceAmount === "number"
+          ? `${priceAmount.toFixed(2).replace(".", ",")}€`
+          : "—";
+      await sendSubscriptionChangedEmail({
+        to: customer.email,
+        customerName: customer.name || customer.email,
+        oldPlan: planLabel(currentPlan),
+        newPlan: planLabel(newPlan),
+        newPrice: `${formattedPrice}/mois`,
+        isUpgrade: planHierarchy[newPlan] > planHierarchy[currentPlan],
+        scheduled,
+        effectiveDate: formatChangeDate(effectiveAt || new Date()),
+      });
+      console.log(
+        `✅ [CHANGE PLAN] Email de confirmation envoyé à ${customer.email}`,
+      );
+    };
+
+    // Un changement déjà programmé (baisse en fin de période) est annulé
+    // avant toute nouvelle demande ; redemander l'offre et la périodicité
+    // actuelles revient simplement à l'annuler.
+    const currentIsAnnual = basePlanItem.price?.recurring?.interval === "year";
+    let liveSubscription = stripeSubscription;
+    if (
+      subscriptionScheduleId(stripeSubscription) ||
+      subscription.scheduledPlan
+    ) {
+      try {
+        await releaseScheduledChange(stripe, stripeSubscription);
+      } catch (releaseError) {
+        console.error(
+          `❌ [CHANGE PLAN] Changement programmé non annulé:`,
+          releaseError,
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Impossible d'annuler le changement d'offre programmé. Réessayez dans un instant.",
+          },
+          { status: 502 },
+        );
+      }
+      liveSubscription = { ...stripeSubscription, schedule: null };
+      await mongoDb
+        .collection("subscription")
+        .updateOne(
+          { referenceId: organizationId },
+          { $unset: SCHEDULED_CHANGE_FIELDS },
+        );
+      console.log(`↩️ [CHANGE PLAN] Changement programmé annulé`);
+
+      if (newPlan === currentPlan && Boolean(isAnnual) === currentIsAnnual) {
+        return NextResponse.json({
+          success: true,
+          cancelledScheduledChange: true,
+          message: `Changement d'offre annulé : vous gardez l'offre ${planLabel(currentPlan)}.`,
+          newPlan: currentPlan,
+          isAnnual: currentIsAnnual,
+        });
+      }
+    }
+
+    // Baisse d'offre : l'offre payée reste active jusqu'à la fin de sa
+    // période, puis la nouvelle prend le relais (calendrier Stripe), sans
+    // prorata ni remboursement. Pendant l'essai, rien n'a été payé : la
+    // baisse reste immédiate (chemin ci-dessous).
+    if (isDowngrade && stripeSubscription.status !== "trialing") {
+      if (stripeSubscription.cancel_at_period_end) {
+        return NextResponse.json(
+          {
+            error: "Changement d'offre impossible",
+            message:
+              "Votre abonnement s'arrête à la fin de la période payée : réactivez-le avant de changer d'offre.",
+          },
+          { status: 409 },
+        );
+      }
+
+      const swapPack = storagePackSwap.length > 0;
+      const nextItems = stripeSubscription.items.data.map((item) => {
+        if (item.id === basePlanItem.id) {
+          return { price: newPriceId, quantity: item.quantity ?? 1 };
+        }
+        if (swapPack && item.id === storagePackItem.id) {
+          return { price: storagePackPrice, quantity: item.quantity };
+        }
+        return phaseItemsOf([item])[0];
+      });
+
+      let scheduled;
+      try {
+        scheduled = await scheduleChangeAtPeriodEnd(stripe, liveSubscription, {
+          nextItems,
+          metadata: {
+            ...stripeSubscription.metadata,
+            planName: newPlan,
+            isAnnual: isAnnual ? "true" : "false",
+          },
+        });
+      } catch (scheduleError) {
+        console.error(
+          `❌ [CHANGE PLAN] Baisse non programmée chez Stripe:`,
+          scheduleError,
+        );
+        return NextResponse.json(
+          { error: "Erreur lors de la programmation du changement d'offre" },
+          { status: 500 },
+        );
+      }
+
+      try {
+        await mongoDb.collection("subscription").updateOne(
+          { referenceId: organizationId },
+          {
+            $set: {
+              scheduledPlan: newPlan,
+              scheduledIsAnnual: Boolean(isAnnual),
+              scheduledPlanAt: scheduled.effectiveAt,
+              stripeScheduleId: scheduled.scheduleId,
+              updatedAt: new Date(),
+            },
+          },
+        );
+      } catch (mongoError) {
+        console.error(
+          `❌ [CHANGE PLAN] Baisse programmée non enregistrée, calendrier retiré:`,
+          mongoError,
+        );
+        try {
+          await stripe.subscriptionSchedules.release(scheduled.scheduleId);
+        } catch (rollbackError) {
+          console.error(
+            `❌ [CHANGE PLAN] CRITIQUE: calendrier ${scheduled.scheduleId} non retiré!`,
+            rollbackError,
+          );
+        }
+        return NextResponse.json(
+          { error: "Erreur lors de la mise à jour. Veuillez réessayer." },
+          { status: 500 },
+        );
+      }
+      console.log(
+        `📅 [CHANGE PLAN] Baisse ${currentPlan} → ${newPlan} programmée au ${scheduled.effectiveAt.toISOString()}`,
+      );
+
+      const scheduledWarnings = [];
+      try {
+        await notifyPlanChange({
+          scheduled: true,
+          effectiveAt: scheduled.effectiveAt,
+        });
+      } catch (emailError) {
+        console.error(
+          `⚠️ [CHANGE PLAN] Erreur envoi email confirmation:`,
+          emailError,
+        );
+        scheduledWarnings.push({
+          type: "email",
+          message: "L'email de confirmation n'a pas pu être envoyé.",
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        scheduled: true,
+        effectiveDate: scheduled.effectiveAt.toISOString(),
+        message: `Votre offre passera à ${planLabel(newPlan)} le ${formatChangeDate(scheduled.effectiveAt)}. Vous gardez l'offre ${planLabel(currentPlan)} jusque-là.`,
+        newPlan,
+        isAnnual,
+        warnings: scheduledWarnings.length > 0 ? scheduledWarnings : undefined,
+      });
+    }
+
     // ✅ CRITIQUE #4: Clé d'idempotence pour éviter les doubles charges
     const idempotencyKey = `plan_change_${organizationId}_${newPlan}_${isAnnual}_${Date.now()}`;
 
@@ -603,43 +849,7 @@ async function handler(request) {
 
     // 11. Envoyer l'email de confirmation
     try {
-      const customer = await stripe.customers.retrieve(
-        subscription.stripeCustomerId,
-      );
-
-      const { sendSubscriptionChangedEmail } =
-        await import("@/src/lib/auth-utils");
-
-      const upgradeCheck = planHierarchy[newPlan] > planHierarchy[currentPlan];
-
-      // Prix dérivés du module central (plans-display.js) — plus de table
-      // hardcodée qui divergeait en silence des autres écrans.
-      const newPlanDisplay = getPlanDisplay(newPlan);
-      const priceAmount = isAnnual
-        ? newPlanDisplay?.annualMonthlyPrice
-        : newPlanDisplay?.monthlyPrice;
-      const formattedPrice =
-        typeof priceAmount === "number"
-          ? `${priceAmount.toFixed(2).replace(".", ",")}€`
-          : "—";
-
-      await sendSubscriptionChangedEmail({
-        to: customer.email,
-        customerName: customer.name || customer.email,
-        oldPlan: planLabel(currentPlan),
-        newPlan: planLabel(newPlan),
-        newPrice: `${formattedPrice}/mois`,
-        isUpgrade: upgradeCheck,
-        effectiveDate: new Date().toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }),
-      });
-
-      console.log(
-        `✅ [CHANGE PLAN] Email de confirmation envoyé à ${customer.email}`,
-      );
+      await notifyPlanChange({ scheduled: false, effectiveAt: new Date() });
     } catch (emailError) {
       console.error(
         `⚠️ [CHANGE PLAN] Erreur envoi email confirmation:`,

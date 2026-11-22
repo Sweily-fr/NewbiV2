@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { baseItemOf } from "@/src/lib/storage-packs";
 import { planLabel } from "@/src/lib/plans-display";
+import {
+  formatChangeDate,
+  subscriptionPeriodEnd,
+  subscriptionPeriodStart,
+} from "@/src/lib/plan-change-schedule";
 import Stripe from "stripe";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
@@ -343,22 +348,26 @@ async function handler(request) {
   const newPrice = planPrices[newPlan]?.[isAnnual ? "annual" : "monthly"] || 0;
   const priceDifference = newPrice - currentPrice;
 
-  // 9. Calculer les dates
-  const currentPeriodEnd = stripeSubscription.current_period_end
-    ? new Date(stripeSubscription.current_period_end * 1000)
-    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  // 9. Calculer les dates (API Stripe basil : dates de période sur les
+  // lignes de l'abonnement ; repli « maintenant + 30 jours » si absentes)
+  const periodEnd =
+    subscriptionPeriodEnd(stripeSubscription) ||
+    Date.now() / 1000 + 30 * 24 * 60 * 60;
+  const periodStart =
+    subscriptionPeriodStart(stripeSubscription) || Date.now() / 1000;
+  const currentPeriodEnd = new Date(periodEnd * 1000);
 
   const daysRemaining = Math.max(
     0,
     Math.ceil((currentPeriodEnd - new Date()) / (1000 * 60 * 60 * 24)),
   );
 
+  // Baisse d'offre (hors essai) : prise d'effet en fin de période payée,
+  // sans prorata ni remboursement (voir plan-change-schedule.js)
+  const scheduledChange =
+    isDowngrade && stripeSubscription.status !== "trialing";
+
   // 10. Calculer le prorata manuellement
-  const periodEnd =
-    stripeSubscription.current_period_end ||
-    Date.now() / 1000 + 30 * 24 * 60 * 60;
-  const periodStart =
-    stripeSubscription.current_period_start || Date.now() / 1000;
   const now = Math.floor(Date.now() / 1000);
   const totalDays = Math.max(1, (periodEnd - periodStart) / (60 * 60 * 24));
   const remainingDays = Math.max(0, (periodEnd - now) / (60 * 60 * 24));
@@ -366,7 +375,7 @@ async function handler(request) {
 
   const prorationAmount = priceDifference * prorationRatio;
 
-  const prorationPreview = {
+  const prorationPreview = scheduledChange ? null : {
     totalAmount: prorationAmount,
     prorationAmount: prorationAmount,
     subtotal: prorationAmount,
@@ -431,7 +440,13 @@ async function handler(request) {
       change: {
         isUpgrade,
         isDowngrade,
-        effectiveDate: "Immédiat",
+        effectiveDate: scheduledChange
+          ? `Le ${formatChangeDate(currentPeriodEnd)}`
+          : "Immédiat",
+        scheduled: scheduledChange,
+        scheduledMessage: scheduledChange
+          ? `Vous gardez l'offre ${planLabel(currentPlan)} jusqu'au ${formatChangeDate(currentPeriodEnd)}, fin de la période déjà payée. Aucun remboursement n'est appliqué.`
+          : null,
         memberCheck: memberCheckResult,
         paidSeats: paidSeatsCount,
       },
