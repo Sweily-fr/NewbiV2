@@ -360,13 +360,18 @@ export function WorkspacePreview({ step = 1, isNameFocused = false, companyName 
               </div>
               <span className="text-sm font-semibold text-foreground">{plan.name}</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            {/* Avantages de /tarifs (pricing-offers.jsx), sur une colonne :
+                ils sont plus nombreux et plus longs que les trois d'avant */}
+            <div className="flex flex-col gap-2">
+              {plan.intro && (
+                <p className="text-xs font-medium text-muted-foreground">{plan.intro}</p>
+              )}
               {plan.features.map((feature) => (
-                <div key={feature} className="flex items-center gap-2">
+                <div key={feature} className="flex items-start gap-2">
                   <div className="size-5 rounded-md bg-accent flex items-center justify-center shrink-0">
                     <Check className="size-3 text-muted-foreground" />
                   </div>
-                  <span className="text-xs text-muted-foreground">{feature}</span>
+                  <span className="text-xs leading-5 text-muted-foreground">{feature}</span>
                 </div>
               ))}
             </div>

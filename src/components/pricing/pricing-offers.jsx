@@ -7,15 +7,15 @@ import {
   planLabel,
 } from "@/src/lib/plans-display";
 
-/* Offres affichées sur la page /tarifs et à l'étape « Choisissez votre
-   abonnement » de l'inscription, et les pièces communes aux deux écrans : la
-   bascule mensuel / annuel et le contenu d'une colonne. Avant, l'inscription
-   avait ses propres listes d'avantages, qui divergeaient de celles de
-   /tarifs.
+/* Offres affichées sur la page /tarifs, à l'étape « Choisissez votre
+   abonnement » de l'inscription et à l'étape d'offre de /create-workspace,
+   et les pièces communes à ces écrans : la bascule mensuel / annuel, les
+   lignes de prix et le contenu d'une colonne. Avant, l'inscription et la
+   création d'espace avaient leurs propres listes d'avantages, qui
+   divergeaient de celles de /tarifs.
 
-   Chaque écran garde sa grille (nombre de colonnes, points de rupture) et
-   son bouton : lien vers l'inscription sur /tarifs, choix de l'offre à
-   l'inscription. */
+   Chaque écran garde sa mise en page (grille, liste) et son bouton : lien
+   vers l'inscription sur /tarifs, choix de l'offre ailleurs. */
 
 export const FILET = "rgba(16,16,32,0.09)";
 
@@ -24,6 +24,22 @@ const eur = new Intl.NumberFormat("fr-FR", {
   style: "currency",
   currency: "EUR",
 });
+
+/**
+ * Prix mensuel affiché et rythme de facturation d'une offre, au format des
+ * écrans d'offres : { prix: "17,99 €", facturation: "Facturé chaque mois" }
+ * ou, à l'année, { prix: "16,19 €", facturation: "Facturé 194,28 € par an" }.
+ */
+export function prixOffre(cle, annuel) {
+  const plan = getPlanDisplay(cle);
+  if (!plan) return { prix: "", facturation: "" };
+  return {
+    prix: eur.format(annuel ? plan.annualMonthlyPrice : plan.monthlyPrice),
+    facturation: annuel
+      ? `Facturé ${eur.format(getAnnualTotalAmount(plan))} par an`
+      : "Facturé chaque mois",
+  };
+}
 
 const CONSEILLER = { href: "/contact", label: "parler à un conseiller" };
 
@@ -121,21 +137,21 @@ function Coche() {
   );
 }
 
-/* Une seule bascule mensuel / annuel pour toutes les offres. */
+/* Une seule bascule mensuel / annuel pour toutes les offres. Variantes
+   sombres pour /create-workspace, qui suit le thème du tableau de bord. */
 export function BasculeFacturation({ annuel, onChange, className = "" }) {
   const option = (actif) =>
     `rounded-full px-3.5 py-1 text-[13px] font-medium transition-colors ${
       actif
-        ? "bg-white text-gray-950 shadow-[0_1px_2px_rgba(16,16,32,0.1)]"
-        : "text-gray-500 hover:text-gray-900"
+        ? "bg-white text-gray-950 shadow-[0_1px_2px_rgba(16,16,32,0.1)] dark:bg-[#2a2a2a] dark:text-white"
+        : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
     }`;
 
   return (
     <div
       role="group"
       aria-label="Facturation"
-      className={`flex w-fit items-center rounded-full p-1 ${className}`}
-      style={{ backgroundColor: "rgba(16,16,32,0.05)" }}
+      className={`flex w-fit items-center rounded-full bg-[rgba(16,16,32,0.05)] p-1 dark:bg-white/10 ${className}`}
     >
       <button
         type="button"
@@ -173,6 +189,7 @@ export function BasculeFacturation({ annuel, onChange, className = "" }) {
  */
 export function ContenuOffre({ colonne, annuel, action, lienConseiller }) {
   const plan = colonne.cle ? getPlanDisplay(colonne.cle) : null;
+  const { prix, facturation } = prixOffre(colonne.cle, annuel);
 
   return (
     <>
@@ -185,20 +202,14 @@ export function ContenuOffre({ colonne, annuel, action, lienConseiller }) {
 
       <p className="mt-3 flex items-baseline gap-1.5">
         <span className="text-[28px] font-semibold leading-none tracking-[-0.02em] text-gray-950">
-          {plan
-            ? eur.format(annuel ? plan.annualMonthlyPrice : plan.monthlyPrice)
-            : colonne.prix}
+          {plan ? prix : colonne.prix}
         </span>
         <span className="text-[13px] text-gray-500">
           {plan ? "/mois TTC" : colonne.suffixe}
         </span>
       </p>
       <p className="mt-2 text-xs text-gray-500">
-        {!plan
-          ? colonne.mention
-          : annuel
-            ? `Facturé ${eur.format(getAnnualTotalAmount(plan))} par an`
-            : "Facturé chaque mois"}
+        {plan ? facturation : colonne.mention}
       </p>
 
       <div className="mt-5">{action}</div>
