@@ -167,7 +167,10 @@ async function postHandler(request) {
     customer_update: { address: "auto", name: "auto" },
     metadata,
     payment_intent_data: { metadata },
-    success_url: `${baseUrl}/dashboard/clients?credits_prospects=ok&session_id={CHECKOUT_SESSION_ID}`,
+    // Pas de « session_id » : le tableau de bord (useDashboardLayoutSimple)
+    // le prend pour un retour d'abonnement, vide l'adresse et recharge la
+    // page avant que la page Contacts ne confirme l'achat
+    success_url: `${baseUrl}/dashboard/clients?credits_prospects=ok&credits_session={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/dashboard/clients?credits_prospects=annule`,
     custom_text: {
       submit: {
