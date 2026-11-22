@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
+import { planLabel } from "@/src/lib/plans-display";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { getUserFacingRefusal } from "@/src/utils/errorMessages";
@@ -103,12 +104,6 @@ const plural = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
 const refusal = (errors, fallback) =>
   getUserFacingRefusal({ graphQLErrors: errors }) || fallback;
 
-const PLAN_LABELS = {
-  freelance: "Freelance",
-  pme: "TPE",
-  entreprise: "Entreprise",
-};
-
 /** Solde de crédits de l'espace, en clair (en-tête de la fenêtre). */
 export function describeProspectQuota(quota) {
   if (!quota) return "";
@@ -117,7 +112,7 @@ export function describeProspectQuota(quota) {
     return "Réservé aux abonnements payés.";
   }
   if (quota.monthlyCredits === 0 && available === 0 && quota.nextPlan) {
-    return `Inclus à partir de l'offre ${PLAN_LABELS[quota.nextPlan]}.`;
+    return `Inclus à partir de l'offre ${planLabel(quota.nextPlan)}.`;
   }
   const left = `${plural(available, "crédit")} disponible${available > 1 ? "s" : ""}`;
   if (quota.purchasedRemaining > 0 && !quota.monthlyRemaining) {
@@ -950,7 +945,7 @@ export default function GenerateProspectsDialog({
 
 /**
  * Crédits de l'espace : solde, crédits du mois utilisés, crédits achetés,
- * et la marche suivante quand il n'y en a plus assez (offre TPE, offre
+ * et la marche suivante quand il n'y en a plus assez (offre Premium, offre
  * Entreprise, puis achat à l'unité).
  */
 function CreditsCard({
@@ -982,9 +977,9 @@ function CreditsCard({
       upsell = {
         text:
           monthly === 0
-            ? `Incluse à partir de l'offre ${PLAN_LABELS[upgradeTo]} : ${quota.nextPlanCredits} crédits par mois.`
-            : `Pour plus de crédits, passez à l'offre ${PLAN_LABELS[upgradeTo]} : ${quota.nextPlanCredits} crédits par mois.`,
-        action: `Passer à l'offre ${PLAN_LABELS[upgradeTo]}`,
+            ? `Incluse à partir de l'offre ${planLabel(upgradeTo)} : ${quota.nextPlanCredits} crédits par mois.`
+            : `Pour plus de crédits, passez à l'offre ${planLabel(upgradeTo)} : ${quota.nextPlanCredits} crédits par mois.`,
+        action: `Passer à l'offre ${planLabel(upgradeTo)}`,
         onClick: onUpgrade,
       };
     } else if (canPurchase) {

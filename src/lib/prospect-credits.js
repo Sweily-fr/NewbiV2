@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 /**
  * Crédits de prospection achetés à l'unité (paiement Stripe ponctuel).
  *
- * Ouvert à l'offre Entreprise seulement : en Freelance et en TPE, on passe
+ * Ouvert à l'offre Entreprise seulement : en Standard et en Premium, on passe
  * d'abord à l'offre au-dessus. Le prix est celui du tarif Stripe
  * STRIPE_PROSPECT_CREDIT_PRICE_ID (paiement unique, prix d'UN crédit) :
  * sans lui, l'achat n'est pas proposé.
@@ -15,7 +15,7 @@ import { ObjectId } from "mongodb";
 export const PROSPECT_CREDIT_PURCHASES = "prospect_credit_purchases";
 export const PROSPECT_CREDITS_PURPOSE = "prospect_credits";
 export const PROSPECT_CREDITS_PLAN = "entreprise";
-export const MIN_PROSPECT_CREDITS = 10;
+export const MIN_PROSPECT_CREDITS = 25;
 export const MAX_PROSPECT_CREDITS = 1000;
 
 export class ProspectCreditsError extends Error {

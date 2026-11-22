@@ -65,7 +65,7 @@ export default function BuyProspectCreditsDialog({
     };
   }, [open, workspaceId, suggested]);
 
-  const min = offer?.min ?? 10;
+  const min = offer?.min ?? 25;
   const max = offer?.max ?? 1000;
   const valid = Number.isInteger(credits) && credits >= min && credits <= max;
   const total = valid && offer?.unitAmount ? offer.unitAmount * credits : null;

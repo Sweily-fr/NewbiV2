@@ -97,7 +97,7 @@ async function postHandler(request) {
     );
   }
 
-  // En Freelance et en TPE, on passe d'abord à l'offre au-dessus
+  // En Standard et en Premium, on passe d'abord à l'offre au-dessus
   if ((await getPaidPlan(mongoDb, organizationId)) !== PROSPECT_CREDITS_PLAN) {
     return apiError(
       409,
