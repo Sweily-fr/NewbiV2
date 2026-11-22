@@ -1,46 +1,33 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
-import { PLANS_DISPLAY, formatPrice } from "@/src/lib/plans-display";
+import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 import { capture } from "@/src/lib/analytics";
+import {
+  BasculeFacturation,
+  COLONNES_OFFRES,
+  prixOffre,
+} from "@/src/components/pricing/pricing-offers";
 
-// Liste UI dérivée du module central. Les features/popular/description sont
-// spécifiques à cet écran ; les prix et le label viennent du central.
-const PLAN_UI_EXTRA = {
-  freelance: {
-    features: [
-      "Facturation & Devis illimités",
-      "CRM client",
-      "Un accès comptable gratuit",
-    ],
-  },
-  pme: {
-    popular: true,
-    features: [
-      "Jusqu'à 10 utilisateurs",
-      "E-signature & automatisations",
-      "Support prioritaire",
-    ],
-  },
-  entreprise: {
-    features: [
-      "Jusqu'à 25 utilisateurs",
-      "Permissions avancées",
-      "Archivage légal & API",
-    ],
-  },
-};
-
-export const PLANS = PLANS_DISPLAY.map((p) => ({
-  key: p.key,
-  name: p.displayName,
-  monthlyPrice: p.monthlyPrice,
-  annualPrice: p.annualMonthlyPrice,
-  description: p.description,
-  ...PLAN_UI_EXTRA[p.key],
-}));
+// Offres de /tarifs : noms et prix de plans-display.js, avantages (et ligne
+// « Tout X, plus : ») de pricing-offers.jsx. Avant, cet écran avait ses
+// propres avantages, dont « Permissions avancées » et « Archivage légal &
+// API », absents de /tarifs. L'aperçu (workspace-preview) affiche les
+// avantages de l'offre choisie, la confirmation son nom et son prix.
+export const PLANS = PLANS_DISPLAY.map((p) => {
+  const offre = COLONNES_OFFRES.find((c) => c.cle === p.key);
+  return {
+    key: p.key,
+    name: p.displayName,
+    monthlyPrice: p.monthlyPrice,
+    annualPrice: p.annualMonthlyPrice,
+    description: p.description,
+    intro: offre?.intro ?? null,
+    features: offre?.features ?? [],
+  };
+});
 
 function CubeIcon() {
   return (
@@ -208,79 +195,58 @@ export function PlanForm({
           tout moment.
         </p>
 
-        {/* Toggle Annuel / Mensuel */}
-        <div className="inline-flex items-center self-start rounded-lg border border-border p-0.5 text-xs mb-6">
-          <button
-            type="button"
-            onClick={() => setIsAnnual(true)}
-            className={cn(
-              "px-2.5 py-1 rounded-md cursor-pointer transition-colors flex items-center gap-1.5",
-              isAnnual
-                ? "bg-card font-medium shadow-sm"
-                : "text-muted-foreground",
-            )}
-          >
-            Annuel
-            <span className="text-[10px] text-[#5A50FF] bg-[#5A50FF]/10 rounded px-1 py-0.5 font-medium">
-              -10%
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsAnnual(false)}
-            className={cn(
-              "px-2.5 py-1 rounded-md cursor-pointer transition-colors",
-              !isAnnual
-                ? "bg-card font-medium shadow-sm"
-                : "text-muted-foreground",
-            )}
-          >
-            Mensuel
-          </button>
-        </div>
+        {/* Même bascule que /tarifs et l'inscription */}
+        <BasculeFacturation
+          annuel={isAnnual}
+          onChange={setIsAnnual}
+          className="mb-6"
+        />
 
-        {/* Plan cards */}
+        {/* Offres : la choisie s'encadre, ses avantages s'affichent dans
+            l'aperçu à droite */}
         <div className="space-y-3">
           {PLANS.map((plan) => {
-            const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
+            const { prix, facturation } = prixOffre(plan.key, isAnnual);
             const isSelected = selectedPlan === plan.key;
 
             return (
-              <div
+              <button
+                type="button"
                 key={plan.key}
+                aria-pressed={isSelected}
                 onClick={() => setSelectedPlan(plan.key)}
                 className={cn(
-                  "rounded-xl border p-3 cursor-pointer transition-all",
+                  "w-full rounded-xl border p-3 text-left cursor-pointer transition-all",
                   isSelected
                     ? "border-[#5A50FF] ring-[2px] ring-[#5A50FF]/20"
                     : "border-border hover:border-muted-foreground/30",
                 )}
               >
-                {plan.popular && (
-                  <div className="mb-2">
-                    <Badge className="bg-[#5A50FF]/10 text-[#5A50FF] text-[10px] font-medium border border-[#5A50FF]/20 px-1.5 py-0">
-                      Populaire
-                    </Badge>
-                  </div>
-                )}
                 <div className="flex items-center gap-3">
                   <CubeIcon />
                   <div>
                     <span className="text-sm font-semibold">{plan.name}</span>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span>
-                        {formatPrice(price)}/mois TTC
-                        {isAnnual
-                          ? ", facturé annuellement"
-                          : ", facturé mensuellement"}
-                      </span>
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {prix}/mois TTC · {facturation}
+                    </p>
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          Une question avant de choisir ?{" "}
+          <Link
+            href="/contact"
+            target="_blank"
+            rel="noopener"
+            className="underline underline-offset-2 transition-colors hover:text-foreground"
+          >
+            Parler à un conseiller
+          </Link>
+        </p>
 
         {/* Continue button */}
         <div className="mt-8">
