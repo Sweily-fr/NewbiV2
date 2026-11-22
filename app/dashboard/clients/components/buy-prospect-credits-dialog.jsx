@@ -210,7 +210,8 @@ export default function BuyProspectCreditsDialog({
                 </div>
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Paiement unique par carte, facture envoyée par e-mail. Les
-                  crédits sont ajoutés à l&apos;espace dès le paiement validé.
+                  crédits sont ajoutés à votre espace dès qu&apos;ils sont
+                  prêts, en général sous 24 h : vous êtes prévenu par e-mail.
                 </p>
               </>
             )}

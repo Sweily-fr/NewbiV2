@@ -7,6 +7,7 @@ const PROSPECT_QUOTA_FIELDS = gql`
     monthlyUsed
     monthlyRemaining
     purchasedRemaining
+    purchasedPending
     available
     resetsAt
     nextPlan

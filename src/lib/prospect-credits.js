@@ -124,7 +124,9 @@ export async function recordProspectCreditPurchase(mongoDb, session) {
         credits,
         amountTotal: session.amount_total ?? null,
         currency: session.currency || "eur",
-        status: "paid",
+        // Commande : activée par l'API dès que son stock chez le fournisseur
+        // la couvre (newbi-api, services/prospects/prospectOrders.js)
+        status: "pending",
         stripePaymentIntentId: paymentIntent,
         userId: ObjectId.isValid(meta.userId)
           ? new ObjectId(meta.userId)
@@ -135,7 +137,7 @@ export async function recordProspectCreditPurchase(mongoDb, session) {
     },
     { upsert: true },
   );
-  return { credits, created: Boolean(result.upsertedCount) };
+  return { credits, created: Boolean(result.upsertedCount), pending: true };
 }
 
 /**

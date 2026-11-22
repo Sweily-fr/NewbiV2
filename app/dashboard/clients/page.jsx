@@ -201,8 +201,13 @@ function ClientsContent() {
           pending();
           return;
         }
+        const pluriel = data.credits > 1 ? "s" : "";
         toast.success(
-          `${data.credits} crédit${data.credits > 1 ? "s" : ""} ajouté${data.credits > 1 ? "s" : ""} à votre espace`,
+          // Achat = commande, activée dès que le stock du fournisseur la
+          // couvre (en général sous 24 h) : le client est prévenu par e-mail
+          data.pending
+            ? `Commande de ${data.credits} crédit${pluriel} enregistrée : ajouté${pluriel} à votre espace dès qu'ils sont prêts, vous serez prévenu par e-mail.`
+            : `${data.credits} crédit${pluriel} ajouté${pluriel} à votre espace`,
         );
         await refetchProspectSettings();
         setProspectsDialogOpen(true);
