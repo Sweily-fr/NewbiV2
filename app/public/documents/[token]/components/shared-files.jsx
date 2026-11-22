@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -79,9 +79,11 @@ import {
   folderChoices,
   formatFileSize,
   previewKind,
+  replacementNames,
   searchShare,
   sortDocuments,
   splitName,
+  uploadProblem,
 } from "./shared-files-utils";
 import { UploadPanel, useUploadQueue } from "./upload-queue";
 
@@ -428,7 +430,8 @@ function MoveDialog({ document, tree, onMove, onClose }) {
                 <label
                   key={folder.id}
                   className={cn(
-                    "flex items-center gap-2 py-2 pr-3 text-sm cursor-pointer hover:bg-accent/50 transition-colors",
+                    // min-w-0 : un long nom de dossier n'élargit pas la liste
+                    "flex min-w-0 items-center gap-2 py-2 pr-3 text-sm cursor-pointer hover:bg-accent/50 transition-colors",
                     target === folder.id && "bg-accent",
                   )}
                   style={{ paddingLeft: `${depth * 16 + 12}px` }}
@@ -466,6 +469,109 @@ function MoveDialog({ document, tree, onMove, onClose }) {
             >
               {busy && <LoaderCircle className="size-4 mr-2 animate-spin" />}
               Déplacer
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Nouvelle version d'un document déposé par le visiteur, avant l'envoi : il
+ * choisit le nom, celui du nouveau fichier (proposé d'abord) ou le nom
+ * actuel. Même nom des deux côtés : rien à choisir, juste confirmer.
+ */
+function ReplaceDialog({ document, file, onReplace, onClose }) {
+  const labelId = useId();
+  const { fromFile, keep } = replacementNames(document.name, file.name);
+  const choices = [
+    fromFile && {
+      value: "file",
+      name: fromFile,
+      label: "Nom du nouveau fichier",
+    },
+    { value: "keep", name: keep, label: "Garder le nom actuel" },
+  ].filter(Boolean);
+  const [choice, setChoice] = useState(choices[0].value);
+  const chosen = choices.find((option) => option.value === choice) || {};
+  const sameName = choices.length < 2 || fromFile === keep;
+
+  const submit = (event) => {
+    event.preventDefault();
+    onReplace(chosen.name || keep);
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="min-w-0">
+          <DialogTitle className="pr-6 break-words">
+            Remplacer «&nbsp;{document.name}&nbsp;»
+          </DialogTitle>
+          <DialogDescription>
+            Votre interlocuteur verra la nouvelle version à la place de
+            l&apos;ancienne.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="min-w-0 space-y-4">
+          <div className="flex items-center gap-3 rounded-md border px-3 py-2">
+            <FileTypeIcon
+              document={{ name: file.name, mimeType: file.type }}
+              className="size-5"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium break-words">{file.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatFileSize(file.size)}
+              </p>
+            </div>
+          </div>
+          {!sameName && (
+            <div className="space-y-2">
+              <p id={labelId} className="text-sm font-medium">
+                Nom du document
+              </p>
+              <RadioGroup
+                aria-labelledby={labelId}
+                value={choice}
+                onValueChange={setChoice}
+                className="gap-0 rounded-md border py-1"
+              >
+                {choices.map((option) => (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      // min-w-0 : un long nom sans espace passe à la ligne
+                      // au lieu d'élargir la liste (grille du RadioGroup)
+                      "flex min-w-0 items-start gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors",
+                      choice === option.value && "bg-accent",
+                    )}
+                  >
+                    <RadioGroupItem
+                      value={option.value}
+                      aria-label={option.label}
+                      className="mt-0.5"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm break-words">
+                        {option.name}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {option.label}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit" variant="primary">
+              Remplacer
             </Button>
           </DialogFooter>
         </form>
@@ -570,6 +676,8 @@ export function SharedFiles({
   const [toDelete, setToDelete] = useState(null);
   const [toRename, setToRename] = useState(null);
   const [toMove, setToMove] = useState(null);
+  // Nouvelle version choisie, en attente du nom : { document, file }
+  const [replacing, setReplacing] = useState(null);
   const fileInput = useRef(null);
   const replaceInput = useRef(null);
   const toReplace = useRef(null);
@@ -597,7 +705,8 @@ export function SharedFiles({
     if (gone(toRename)) setToRename(null);
     if (gone(toMove)) setToMove(null);
     if (gone(toDelete)) setToDelete(null);
-  }, [documents, previewed, toRename, toMove, toDelete]);
+    if (gone(replacing?.document)) setReplacing(null);
+  }, [documents, previewed, toRename, toMove, toDelete, replacing]);
   // Aperçu d'un document renommé ou remplacé entre-temps : à jour
   const previewedDocument = previewed
     ? documents.find((d) => d.id === previewed.id) || null
@@ -1146,8 +1255,24 @@ export function SharedFiles({
             const document = toReplace.current;
             event.target.value = "";
             toReplace.current = null;
-            if (file && document) uploads.replace(file, document);
+            if (!file || !document) return;
+            // Fichier refusé d'avance : la file dit pourquoi, sans fenêtre
+            if (uploadProblem(file)) uploads.replace(file, document);
+            else setReplacing({ document, file });
           }}
+        />
+      )}
+
+      {replacing && (
+        <ReplaceDialog
+          key={replacing.document.id}
+          document={replacing.document}
+          file={replacing.file}
+          onReplace={(name) => {
+            uploads.replace(replacing.file, replacing.document, name);
+            setReplacing(null);
+          }}
+          onClose={() => setReplacing(null)}
         />
       )}
 

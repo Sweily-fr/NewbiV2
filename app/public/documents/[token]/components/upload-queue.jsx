@@ -8,13 +8,16 @@ import { uploadProblem } from "./shared-files-utils";
 
 // Fichiers envoyés en même temps
 const CONCURRENCY = 3;
+// Encart des dépôts refermé seul, ce délai après des envois tous réussis
+export const PANEL_CLOSE_DELAY = 5000;
 
 /**
  * Envoi d'un fichier avec sa progression (fetch ne la donne pas) : POST
- * pour un dépôt, PUT pour une nouvelle version. Rejette avec le message de
- * l'API quand elle refuse le fichier.
+ * pour un dépôt, PUT pour une nouvelle version, avec `fields` (le nom choisi
+ * pour une nouvelle version). Rejette avec le message de l'API quand elle
+ * refuse le fichier.
  */
-export function sendFile(url, file, onProgress, method = "POST") {
+export function sendFile(url, file, onProgress, method = "POST", fields = {}) {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open(method, url);
@@ -37,6 +40,9 @@ export function sendFile(url, file, onProgress, method = "POST") {
     request.onerror = () =>
       reject(new Error("Connexion interrompue, réessayez."));
     const body = new FormData();
+    for (const [key, value] of Object.entries(fields || {})) {
+      body.append(key, value);
+    }
     body.append("file", file);
     request.send(body);
   });
@@ -93,6 +99,7 @@ export function useUploadQueue({
         job.file,
         (progress) => update(job.id, { progress }),
         job.method,
+        job.fields,
       )
         .then(() => {
           update(job.id, { status: "done", progress: 1 });
@@ -128,14 +135,18 @@ export function useUploadQueue({
     [enqueue, uploadUrl],
   );
 
-  /** Envoie `file` comme nouvelle version de `document` (un des siens). */
+  /**
+   * Envoie `file` comme nouvelle version de `document` (un des siens), sous
+   * le nom `name` choisi par le visiteur (sans lui, l'API garde le nom).
+   */
   const replace = useCallback(
-    (file, document) =>
+    (file, document, name) =>
       enqueue([
         makeJob(file, {
           detail: `Nouvelle version de « ${document.name} »`,
           url: replaceUrl(document.id),
           method: "PUT",
+          fields: name ? { name } : undefined,
         }),
       ]),
     [enqueue, replaceUrl],
@@ -151,6 +162,16 @@ export function useUploadQueue({
   const busy = items.some((item) =>
     ["waiting", "uploading"].includes(item.status),
   );
+
+  // Encart refermé seul peu après des envois tous réussis ; un refus reste
+  // affiché jusqu'à ce que le visiteur le ferme
+  const allDone =
+    items.length > 0 && items.every((item) => item.status === "done");
+  useEffect(() => {
+    if (!allDone) return undefined;
+    const timer = setTimeout(clear, PANEL_CLOSE_DELAY);
+    return () => clearTimeout(timer);
+  }, [allDone, clear]);
 
   // Quitter la page couperait les envois en cours
   useEffect(() => {

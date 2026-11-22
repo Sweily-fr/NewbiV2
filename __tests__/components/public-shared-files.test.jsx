@@ -460,23 +460,86 @@ describe("Modification de ses documents par le client", () => {
     expect(screen.queryByRole("menuitem", { name: "Déplacer" })).toBeNull();
   });
 
-  it("nouvelle version : le fichier choisi part dans la file d'envoi", () => {
-    const { container } = renderFiles(withMine());
+  /** « Remplacer le fichier » sur lettre.pdf, puis choix de `file`. */
+  const pickNewVersion = (container, file) => {
     const input = container.querySelector('[data-testid="nouvelle-version"]');
     const pick = vi.spyOn(input, "click").mockImplementation(() => {});
     openMenu("lettre.pdf");
     choose("Remplacer le fichier");
     expect(pick).toHaveBeenCalledTimes(1);
     expect(input.multiple).toBe(false);
-
-    const file = new File(["%PDF-1.7"], "lettre-v2.pdf", {
-      type: "application/pdf",
-    });
     fireEvent.change(input, { target: { files: [file] } });
+  };
+  const pdf = (name) =>
+    new File(["%PDF-1.7"], name, { type: "application/pdf" });
+
+  it("nouvelle version : le nom du nouveau fichier est proposé d'abord", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, pdf("Lettre signée.pdf"));
+    // Rien ne part avant la confirmation
+    expect(queue.replace).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading")).toHaveTextContent(
+      "Remplacer « lettre.pdf »",
+    );
+    expect(
+      within(dialog).getByRole("radio", { name: "Nom du nouveau fichier" }),
+    ).toBeChecked();
+    expect(
+      within(dialog).getByRole("radio", { name: "Garder le nom actuel" }),
+    ).not.toBeChecked();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remplacer" }));
     expect(queue.replace).toHaveBeenCalledTimes(1);
-    const [sent, document] = queue.replace.mock.calls[0];
-    expect(sent.name).toBe("lettre-v2.pdf");
+    const [sent, document, name] = queue.replace.mock.calls[0];
+    expect(sent.name).toBe("Lettre signée.pdf");
     expect(document.id).toBe("d3");
+    expect(name).toBe("Lettre signée.pdf");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("nouvelle version : garder le nom actuel, avec l'extension du nouveau fichier", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(
+      container,
+      new File(["png"], "IMG_2034.png", { type: "image/png" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: "Garder le nom actuel" }),
+    );
+    expect(within(dialog).getByText("lettre.png")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remplacer" }));
+    expect(queue.replace.mock.calls[0][2]).toBe("lettre.png");
+  });
+
+  it("nouvelle version du même nom : rien à choisir, juste confirmer", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, pdf("lettre.pdf"));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByRole("radio")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remplacer" }));
+    expect(queue.replace.mock.calls[0][2]).toBe("lettre.pdf");
+  });
+
+  it("nouvelle version annulée : rien n'est envoyé", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, pdf("Lettre signée.pdf"));
+    fireEvent.click(screen.getByRole("button", { name: "Annuler" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(queue.replace).not.toHaveBeenCalled();
+  });
+
+  it("nouvelle version d'un format refusé : la file dit pourquoi, sans fenêtre", () => {
+    const { container } = renderFiles(withMine());
+    pickNewVersion(container, new File(["MZ"], "outil.exe"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(queue.replace).toHaveBeenCalledTimes(1);
+    const [sent, document, name] = queue.replace.mock.calls[0];
+    expect(sent.name).toBe("outil.exe");
+    expect(document.id).toBe("d3");
+    expect(name).toBeUndefined();
   });
 
   it("document retiré entre-temps : sa fenêtre se ferme", () => {
