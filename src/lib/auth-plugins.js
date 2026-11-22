@@ -397,6 +397,32 @@ export const stripePlugin = stripe({
             break;
           }
 
+          // Crédits de prospection achetés à l'unité (paiement unique) :
+          // ajoutés une seule fois, ici ou au retour de Checkout
+          if (
+            event.type === "checkout.session.completed" &&
+            event.data.object?.metadata?.purpose === "prospect_credits"
+          ) {
+            try {
+              const { mongoDb } = await import("./mongodb.js");
+              const { recordProspectCreditPurchase } =
+                await import("./prospect-credits.js");
+              const recorded = await recordProspectCreditPurchase(
+                mongoDb,
+                event.data.object,
+              );
+              console.log(
+                `✅ [STRIPE WEBHOOK] Crédits de prospection : ${recorded?.credits ?? 0} (${recorded?.created ? "ajoutés" : "déjà enregistrés ou non payés"})`,
+              );
+            } catch (creditsError) {
+              console.error(
+                `❌ [STRIPE WEBHOOK] Crédits de prospection non enregistrés:`,
+                creditsError,
+              );
+            }
+            break;
+          }
+
           let subscription;
           let referenceId;
           let userId;
@@ -1116,6 +1142,34 @@ export const stripePlugin = stripe({
             console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
           }
           break;
+
+        // Achat de crédits de prospection remboursé ou contesté : ses
+        // crédits sortent du solde (sans effet sur les autres paiements).
+        // Opération idempotente : pas de déduplication par événement.
+        case "charge.refunded":
+        case "charge.dispute.created": {
+          try {
+            const { mongoDb } = await import("./mongodb.js");
+            const { handleProspectCreditsRefund } =
+              await import("./prospect-credits.js");
+            const refund = await handleProspectCreditsRefund(mongoDb, event);
+            if (refund?.partial) {
+              console.warn(
+                `⚠️ [STRIPE WEBHOOK] Remboursement partiel d'un achat de ${refund.credits} crédits de prospection : crédits laissés, à traiter à la main`,
+              );
+            } else if (refund?.refunded) {
+              console.log(
+                `✅ [STRIPE WEBHOOK] Achat de ${refund.credits} crédits de prospection remboursé : crédits retirés du solde`,
+              );
+            }
+          } catch (refundError) {
+            console.error(
+              `❌ [STRIPE WEBHOOK] Remboursement de crédits de prospection non traité:`,
+              refundError,
+            );
+          }
+          break;
+        }
 
         case "invoice.payment_failed":
           const failedInvoice = event.data.object;
