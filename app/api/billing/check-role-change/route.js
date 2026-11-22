@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { planLabel } from "@/src/lib/plans-display";
 import { auth } from "@/src/lib/auth";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { withErrorHandler } from "@/src/lib/security";
@@ -139,7 +140,7 @@ async function handler(request) {
     if (adjustedTotal >= planLimits.accountants) {
       return NextResponse.json({
         canChange: false,
-        reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${planName.toUpperCase()}. Passez à un plan supérieur pour ajouter plus de comptables.`,
+        reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${planLabel(planName)}. Passez à un plan supérieur pour ajouter plus de comptables.`,
         currentAccountants,
         pendingAccountants,
         limit: planLimits.accountants,

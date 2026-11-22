@@ -62,7 +62,7 @@ const offer = {
   },
   upgrade: {
     plan: "pme",
-    label: "TPE",
+    label: "Premium",
     packs: 0,
     planMonthlyPrice: 48.99,
     monthlyCost: 48.99,
@@ -75,7 +75,7 @@ function storage(overrides = {}) {
     workspaceId: "org1",
     ready: true,
     plan: "freelance",
-    planLabel: "Freelance",
+    planLabel: "Standard",
     interval: "month",
     subscriptionActive: true,
     usedBytes: 30 * GB,
@@ -134,14 +134,14 @@ describe("Paramètres > Stockage", () => {
     expect(people).toContain("Non attribué");
   });
 
-  it("propose d'ajouter du stockage ou de passer à l'offre TPE", () => {
+  it("propose d'ajouter du stockage ou de passer à l'offre Premium", () => {
     mockStorage.value = storage();
     render(<StorageSection />);
     expect(
       screen.getByText("Ajouter du stockage", { selector: "button" }),
     ).toBeTruthy();
     expect(
-      screen.getByText("Passer à l'offre TPE", { selector: "button" }),
+      screen.getByText("Passer à l'offre Premium", { selector: "button" }),
     ).toBeTruthy();
     expect(screen.getByTestId("offre-packs").textContent).toContain(
       "2,99 € TTC/mois de plus",

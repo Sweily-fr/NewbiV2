@@ -319,7 +319,6 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
                 }
               />
             </div>
-
           </div>
 
           <div className="flex justify-end border-t border-border/40 px-5 py-3 flex-shrink-0">
@@ -332,9 +331,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
                 onClick={handleSubmit}
                 disabled={isLoading}
               >
-                {isLoading && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? "Enregistrer" : "Créer"}
               </Button>
             </div>
@@ -467,7 +464,7 @@ export default function CustomFieldsPanel({
   const customFieldsLimit = planLimits?.customFields ?? -1;
   const isLimitReached =
     customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
-  // Offre qui lève la limite (TPE pour Freelance)
+  // Offre qui lève la limite (Premium pour Standard)
   const nextPlanName =
     upgradePlanNameFor("customFields", customFieldsLimit) || "Entreprise";
 

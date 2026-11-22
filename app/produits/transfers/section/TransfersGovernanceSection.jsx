@@ -1,6 +1,7 @@
 import React from "react";
 import { Mail, MonitorSmartphone, ShieldCheck, Timer } from "lucide-react";
 import { SHEET, VISUEL } from "@/src/lib/lp-visuels";
+import { planLabel } from "@/src/lib/plans-display";
 import {
   VisuelFiche,
   VisuelListe,
@@ -55,9 +56,13 @@ export default function TransfersGovernanceSection() {
                 className={SHEET}
                 titre="Taille d'un transfert, selon votre offre"
                 tuiles={[
-                  { label: "Freelance", valeur: "5 Go" },
-                  { label: "TPE", valeur: "15 Go" },
-                  { label: "Entreprise", valeur: "50 Go", enAvant: true },
+                  { label: planLabel("freelance"), valeur: "5 Go" },
+                  { label: planLabel("pme"), valeur: "15 Go" },
+                  {
+                    label: planLabel("entreprise"),
+                    valeur: "50 Go",
+                    enAvant: true,
+                  },
                 ]}
                 chip="Sans compression, tous formats"
               />

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { planLabel } from "@/src/lib/plans-display";
 import { auth } from "@/src/lib/auth";
 import Stripe from "stripe";
 import { createOrgSubscriptionSchema } from "@/src/lib/schemas/create-org-subscription";
@@ -518,14 +519,14 @@ async function handler(request) {
       custom_text: {
         submit: {
           message: convertedTrialEndUnix
-            ? `Aucun prélèvement avant la fin de votre essai (${new Date(convertedTrialEndUnix * 1000).toLocaleDateString("fr-FR")}). Toutes les fonctionnalités du plan ${planName.toUpperCase()} sont accessibles immédiatement.`
+            ? `Aucun prélèvement avant la fin de votre essai (${new Date(convertedTrialEndUnix * 1000).toLocaleDateString("fr-FR")}). Toutes les fonctionnalités du plan ${planLabel(planName)} sont accessibles immédiatement.`
             : deferredBillingUnix
               ? `Aucun prélèvement avant le ${new Date(deferredBillingUnix * 1000).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })} : votre cabinet paie votre abonnement jusqu'à cette date.`
               : trialDays > 0
                 ? isOnboarding
                   ? `${trialDays} jours d'essai gratuit : aucun prélèvement avant le ${new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}. Résiliable à tout moment depuis votre espace, sans frais pendant l'essai.`
-                  : `Souscription au plan ${planName.toUpperCase()} - ${trialDays} jours d'essai gratuit`
-                : `Souscription au plan ${planName.toUpperCase()} - Paiement immédiat`,
+                  : `Souscription au plan ${planLabel(planName)} - ${trialDays} jours d'essai gratuit`
+                : `Souscription au plan ${planLabel(planName)} - Paiement immédiat`,
         },
       },
     });

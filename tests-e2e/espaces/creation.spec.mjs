@@ -34,7 +34,7 @@ test.describe("Créer un espace", () => {
     await page.getByRole("button", { name: /BOULANGERIE DU MARCHE/ }).first().click();
     await page.getByRole("button", { name: "Continuer", exact: true }).click();
     await etape(page, "Étape de l'offre", async () => {
-      await expect(page.getByText(/Freelance|PME|Entreprise/).first()).toBeVisible();
+      await expect(page.getByText(/Standard|Premium|Entreprise/).first()).toBeVisible();
     }, { capture: "ecran" });
     expect(await (await base()).collection("organization").countDocuments({}), "Un espace a été créé avant le paiement").toBe(avant);
   });

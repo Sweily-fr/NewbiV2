@@ -28,7 +28,7 @@ const offer = {
   },
   upgrade: {
     plan: "pme",
-    label: "TPE",
+    label: "Premium",
     packs: 0,
     planMonthlyPrice: 48.99,
     monthlyCost: 48.99,
@@ -95,7 +95,7 @@ describe("Stockage : propositions", () => {
     expect(described.packs.title).toBe("Ajouter 1 pack de 50 Go");
     expect(described.packs.price).toBe("2,99 € TTC/mois de plus");
     expect(described.packs.total).toBe("Total : 20,98 € TTC/mois");
-    expect(described.upgrade.title).toBe("Passer à l'offre TPE");
+    expect(described.upgrade.title).toBe("Passer à l'offre Premium");
     expect(described.upgrade.quota).toBe("400 Go");
     expect(described.upgrade.price).toBe("48,99 € TTC/mois");
     expect(described.recommended).toBe("packs");

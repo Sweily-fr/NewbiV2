@@ -25,7 +25,7 @@ export function planStorageGb(planKey) {
   return PLAN_LIMITS[key]?.storage ?? PLAN_LIMITS.freelance.storage;
 }
 
-/** « pro » et « pme » = TPE ; « enterprise » et « entreprise » = Entreprise. */
+/** « pro » et « pme » = Premium ; « enterprise » et « entreprise » = Entreprise. */
 export function normalizeStoragePlan(plan) {
   const value = String(plan || "").toLowerCase();
   if (value === "pro" || value === "pme" || value === "tpe") return "pme";

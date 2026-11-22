@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { getAnnualTotalAmount, getPlanDisplay } from "@/src/lib/plans-display";
+import {
+  getAnnualTotalAmount,
+  getPlanDisplay,
+  planLabel,
+} from "@/src/lib/plans-display";
 
 /* Offres affichées sur la page /tarifs et à l'étape « Choisissez votre
    abonnement » de l'inscription, et les pièces communes aux deux écrans : la
@@ -47,7 +51,7 @@ export const COLONNES_OFFRES = [
   {
     id: "freelance",
     cle: "freelance",
-    nom: "Freelance",
+    nom: planLabel("freelance"),
     features: [
       "1 utilisateur · 1 accès comptable",
       "Devis et factures illimités",
@@ -63,9 +67,9 @@ export const COLONNES_OFFRES = [
   {
     id: "tpe",
     cle: "pme",
-    nom: "TPE",
+    nom: planLabel("pme"),
     enAvant: true,
-    intro: "Tout Freelance, plus :",
+    intro: `Tout ${planLabel("freelance")}, plus :`,
     features: [
       "Jusqu'à 10 utilisateurs · 3 accès comptables",
       "Connexion bancaire · 3 comptes",
@@ -81,8 +85,8 @@ export const COLONNES_OFFRES = [
   {
     id: "entreprise",
     cle: "entreprise",
-    nom: "Entreprise",
-    intro: "Tout TPE, plus :",
+    nom: planLabel("entreprise"),
+    intro: `Tout ${planLabel("pme")}, plus :`,
     features: [
       "Jusqu'à 25 utilisateurs · 5 accès comptables",
       "Connexion bancaire · 5 comptes",

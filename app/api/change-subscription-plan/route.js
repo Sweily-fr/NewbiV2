@@ -12,7 +12,7 @@ import { withErrorHandler } from "@/src/lib/security";
 import { findManagerPaidSubscription } from "@/src/lib/manager-billing";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
-import { getPlanDisplay } from "@/src/lib/plans-display";
+import { getPlanDisplay, planLabel } from "@/src/lib/plans-display";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const seatSyncService = new SeatSyncService();
@@ -376,8 +376,8 @@ async function handler(request) {
         const excess = totalAfterPending - newLimit;
         const message =
           pendingInvitationCount > 0
-            ? `Vous avez ${memberCount} membre(s) actif(s) et ${pendingInvitationCount} invitation(s) en attente, soit ${totalAfterPending} au total. Le plan ${newPlan.toUpperCase()} limite à ${newLimit}. Veuillez retirer ${excess} membre(s) ou annuler des invitations avant de downgrader.`
-            : `Vous avez ${memberCount} membres mais le plan ${newPlan.toUpperCase()} limite à ${newLimit}. Veuillez retirer ${excess} membre(s) avant de downgrader.`;
+            ? `Vous avez ${memberCount} membre(s) actif(s) et ${pendingInvitationCount} invitation(s) en attente, soit ${totalAfterPending} au total. Le plan ${planLabel(newPlan)} limite à ${newLimit}. Veuillez retirer ${excess} membre(s) ou annuler des invitations avant de downgrader.`
+            : `Vous avez ${memberCount} membres mais le plan ${planLabel(newPlan)} limite à ${newLimit}. Veuillez retirer ${excess} membre(s) avant de downgrader.`;
 
         return NextResponse.json(
           {
@@ -410,7 +410,7 @@ async function handler(request) {
         return NextResponse.json(
           {
             error: "Impossible de downgrader",
-            message: `Vous avez ${currentAccountants} comptable(s) actif(s) et ${pendingAccountants} invitation(s) comptable en attente, soit ${totalAccountants} au total. Le plan ${newPlan.toUpperCase()} limite à ${newPlanLimits.accountants}. Veuillez retirer ${excess} comptable(s) ou annuler des invitations avant de downgrader.`,
+            message: `Vous avez ${currentAccountants} comptable(s) actif(s) et ${pendingAccountants} invitation(s) comptable en attente, soit ${totalAccountants} au total. Le plan ${planLabel(newPlan)} limite à ${newPlanLimits.accountants}. Veuillez retirer ${excess} comptable(s) ou annuler des invitations avant de downgrader.`,
             currentAccountants,
             pendingAccountants,
             totalAccountants,
@@ -626,8 +626,8 @@ async function handler(request) {
       await sendSubscriptionChangedEmail({
         to: customer.email,
         customerName: customer.name || customer.email,
-        oldPlan: currentPlan.toUpperCase(),
-        newPlan: newPlan.toUpperCase(),
+        oldPlan: planLabel(currentPlan),
+        newPlan: planLabel(newPlan),
         newPrice: `${formattedPrice}/mois`,
         isUpgrade: upgradeCheck,
         effectiveDate: new Date().toLocaleDateString("fr-FR", {
@@ -656,8 +656,8 @@ async function handler(request) {
       success: true,
       message:
         warnings.length > 0
-          ? `Plan changé vers ${newPlan.toUpperCase()} avec ${warnings.length} avertissement(s)`
-          : `Plan changé avec succès vers ${newPlan.toUpperCase()}`,
+          ? `Plan changé vers ${planLabel(newPlan)} avec ${warnings.length} avertissement(s)`
+          : `Plan changé avec succès vers ${planLabel(newPlan)}`,
       newPlan,
       isAnnual,
       warnings: warnings.length > 0 ? warnings : undefined,

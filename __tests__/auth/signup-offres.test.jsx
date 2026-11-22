@@ -73,7 +73,7 @@ describe("Inscription : choix de l'offre", () => {
     const offres = screen
       .getAllByRole("heading", { level: 3 })
       .map((h) => h.textContent);
-    expect(offres).toEqual(["Freelance", "TPE", "Entreprise"]);
+    expect(offres).toEqual(["Standard", "Premium", "Entreprise"]);
     expect(screen.queryByText("Essai gratuit")).toBeNull();
 
     // Prix mensuels TTC et avantages de la grille /tarifs.
@@ -84,7 +84,7 @@ describe("Inscription : choix de l'offre", () => {
       within(colonne("freelance")).getByText("Devis et factures illimités"),
     ).toBeTruthy();
     expect(
-      within(colonne("tpe")).getByText("Tout Freelance, plus :"),
+      within(colonne("tpe")).getByText("Tout Standard, plus :"),
     ).toBeTruthy();
 
     expect(
@@ -92,7 +92,7 @@ describe("Inscription : choix de l'offre", () => {
     ).toHaveLength(3);
   });
 
-  it("propose un conseiller sous chaque offre, Freelance compris", async () => {
+  it("propose un conseiller sous chaque offre, Standard compris", async () => {
     mockFetch();
     render(<SignUpPage />);
     await screen.findByText("7 jours d'essai gratuit, sans engagement");
@@ -145,7 +145,7 @@ describe("Inscription : choix de l'offre", () => {
     });
 
     // Récapitulatif avec l'offre et le rythme de facturation.
-    expect(await screen.findByText("Plan Freelance")).toBeInTheDocument();
+    expect(await screen.findByText("Plan Standard")).toBeInTheDocument();
     expect(screen.getByText("Annuelle")).toBeInTheDocument();
   });
 });
