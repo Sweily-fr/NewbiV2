@@ -67,8 +67,8 @@ async function postJson(url, body) {
 }
 
 /**
- * Action du visiteur sur l'un de ses documents (renommer, déplacer,
- * supprimer) : rejette avec le message de l'API quand elle refuse.
+ * Action du visiteur sur ses documents ou ses dossiers (créer, renommer,
+ * déplacer, supprimer) : rejette avec le message de l'API quand elle refuse.
  */
 async function documentAction(url, options, fallback) {
   let response;
@@ -606,15 +606,23 @@ export default function PublicDocumentsPage({ params }) {
     case "ready": {
       const sessionQuery = `?session=${encodeURIComponent(state.session)}`;
       const base = `${API_URL}/api/public-documents/${token}`;
-      // Renommer ou déplacer : session dans le corps, pas dans l'adresse
-      const editDocument = async (document, changes) => {
-        await documentAction(
-          `${base}/files/${document.id}`,
+      // Créer, renommer ou déplacer : session dans le corps, pas dans
+      // l'adresse
+      const sendJson = (url, method, body, fallback) =>
+        documentAction(
+          url,
           {
-            method: "PUT",
+            method,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session: state.session, ...changes }),
+            body: JSON.stringify({ session: state.session, ...body }),
           },
+          fallback,
+        );
+      const editDocument = async (document, changes) => {
+        await sendJson(
+          `${base}/files/${document.id}`,
+          "PUT",
+          changes,
           "Modification impossible",
         );
         scheduleRefresh();
@@ -637,6 +645,35 @@ export default function PublicDocumentsPage({ params }) {
           onDelete={async (document) => {
             await documentAction(
               `${base}/files/${document.id}${sessionQuery}`,
+              { method: "DELETE" },
+              "Suppression impossible",
+            );
+            scheduleRefresh();
+          }}
+          onCreateFolders={async (folderId, paths) => {
+            const { folders } = await sendJson(
+              `${base}/folders/${folderId}/folders`,
+              "POST",
+              { paths },
+              "Création du dossier impossible",
+            );
+            // Relu tout de suite : le visiteur ouvre aussitôt le nouveau
+            // dossier ou y dépose ses fichiers
+            await refresh();
+            return folders || [];
+          }}
+          onRenameFolder={async (folder, name) => {
+            await sendJson(
+              `${base}/folders/${folder.id}`,
+              "PUT",
+              { name },
+              "Modification impossible",
+            );
+            scheduleRefresh();
+          }}
+          onDeleteFolder={async (folder) => {
+            await documentAction(
+              `${base}/folders/${folder.id}${sessionQuery}`,
               { method: "DELETE" },
               "Suppression impossible",
             );
