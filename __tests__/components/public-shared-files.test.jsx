@@ -1,8 +1,10 @@
 /**
  * Espace du visiteur d'un lien client, au visuel de Documents partagés :
  * explorateur, fil d'Ariane, recherche dans tout le partage, colonnes
- * triables, aperçu et déconnexion ; dépôt, et sur ses propres dépôts
- * renommage, déplacement, nouvelle version et suppression.
+ * triables, aperçu et déconnexion ; dépôt de fichiers ou d'un dossier (dans
+ * le dossier ouvert, ou depuis l'accueil dans le dossier choisi), nouveau
+ * dossier ; sur ses propres dépôts renommage, déplacement, nouvelle version
+ * et suppression, sur ses propres dossiers renommage et suppression.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
@@ -39,6 +41,7 @@ vi.mock("@/app/public/documents/[token]/components/upload-queue", () => ({
 }));
 
 import { SharedFiles } from "@/app/public/documents/[token]/components/shared-files";
+import { toast } from "@/src/components/ui/sonner";
 
 const content = (overrides = {}) => ({
   name: "Dossiers Dupont",
@@ -98,6 +101,9 @@ const renderFiles = (overrides, props = {}) =>
       onRename={props.onRename || (async () => {})}
       onMove={props.onMove || (async () => {})}
       onDelete={props.onDelete || (async () => {})}
+      onCreateFolders={props.onCreateFolders || (async () => [])}
+      onRenameFolder={props.onRenameFolder || (async () => {})}
+      onDeleteFolder={props.onDeleteFolder || (async () => {})}
       onChanged={props.onChanged || (() => {})}
       onSignOut={props.onSignOut || (() => {})}
     />,
@@ -111,6 +117,36 @@ const openMenu = (name) =>
   );
 const choose = (label) =>
   fireEvent.click(screen.getByRole("menuitem", { name: label }));
+
+/** Menu « Ajouter » de la barre du dossier. */
+const openAddMenu = () =>
+  fireEvent.keyDown(screen.getByRole("button", { name: /Ajouter/ }), {
+    key: "Enter",
+  });
+/** Menu « ⋯ » d'un dossier créé par le visiteur. */
+const openFolderMenu = (name) =>
+  fireEvent.keyDown(
+    screen.getByRole("button", { name: `Actions pour le dossier ${name}` }),
+    { key: "Enter" },
+  );
+/** Deux dossiers partagés : l'accès s'ouvre sur l'accueil qui les liste. */
+const twoShared = (overrides = {}) => ({
+  allowUploads: true,
+  rootFolderIds: ["racine", "autre"],
+  folders: [
+    ...content().folders,
+    { id: "autre", name: "Factures", parentId: null, order: 1 },
+  ],
+  ...overrides,
+});
+/** Dossiers renvoyés par l'API, un par chemin demandé. */
+const createdFolders = vi.fn(async (parentId, paths) =>
+  paths.map((names) => ({
+    id: `id-${names.join("-")}`,
+    name: names[names.length - 1],
+    created: true,
+  })),
+);
 
 const breadcrumb = () =>
   screen.getByRole("navigation", { name: "Emplacement" });
@@ -231,6 +267,9 @@ describe("SharedFiles", () => {
 describe("Dépôt par le client", () => {
   beforeEach(() => {
     queue.add.mockClear();
+    createdFolders.mockClear();
+    toast.error.mockClear();
+    toast.success.mockClear();
   });
 
   const pdf = (name = "releve.pdf") =>
@@ -242,11 +281,28 @@ describe("Dépôt par le client", () => {
     const [files, folder] = queue.add.mock.calls[0];
     return { names: [...files].map((file) => file.name), folder };
   };
+  /** Chaque envoi confié à la file : noms des fichiers et dossier. */
+  const sentGroups = () =>
+    queue.add.mock.calls.map(([files, folder]) => [
+      [...files].map((file) => file.name),
+      folder,
+    ]);
+  /** Fichier d'un dossier choisi par le sélecteur, avec son chemin. */
+  const inFolder = (path) => {
+    const file = pdf(path.split("/").pop());
+    Object.defineProperty(file, "webkitRelativePath", { value: path });
+    return file;
+  };
+  const pickFolder = (files) =>
+    fireEvent.change(screen.getByTestId("depot-dossier"), {
+      target: { files },
+    });
 
   it("dépôt fermé : ni bouton, ni menu sur ses documents", () => {
     const { container } = renderFiles({
       documents: [{ ...content().documents[2], mine: true }],
     });
+    expect(screen.queryByRole("button", { name: /Ajouter/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Déposer/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Actions pour/ })).toBeNull();
     expect(fileInput(container)).toBeNull();
@@ -254,9 +310,14 @@ describe("Dépôt par le client", () => {
 
   it("dépose dans le dossier ouvert, formats acceptés seulement", () => {
     const { container } = renderFiles({ allowUploads: true });
+    openAddMenu();
     expect(
-      screen.getAllByRole("button", { name: /Déposer des documents/ }).length,
-    ).toBeGreaterThan(0);
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual([
+      "Déposer des fichiers",
+      "Déposer un dossier",
+      "Nouveau dossier",
+    ]);
     const input = fileInput(container);
     expect(input.multiple).toBe(true);
     expect(input.accept).toContain(".pdf");
@@ -279,14 +340,11 @@ describe("Dépôt par le client", () => {
     const main = screen.getByRole("main");
     const dataTransfer = { types: ["Files"], files: [pdf()] };
     fireEvent.dragEnter(main, { dataTransfer });
-    expect(
-      screen.getByText("Déposez vos fichiers dans « Client Dupont »"),
-    ).toBeTruthy();
+    const hint = "Déposez vos fichiers ou dossiers dans « Client Dupont »";
+    expect(screen.getByText(hint)).toBeTruthy();
     fireEvent.drop(main, { dataTransfer });
     expect(deposited().folder.id).toBe("racine");
-    expect(
-      screen.queryByText("Déposez vos fichiers dans « Client Dupont »"),
-    ).toBeNull();
+    expect(screen.queryByText(hint)).toBeNull();
   });
 
   it("pendant une recherche : pas de dépôt", () => {
@@ -294,23 +352,203 @@ describe("Dépôt par le client", () => {
     fireEvent.change(screen.getByLabelText("Rechercher un document"), {
       target: { value: "contrat" },
     });
+    expect(screen.queryByRole("button", { name: /Ajouter/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Déposer/ })).toBeNull();
   });
 
-  it("accueil de plusieurs dossiers : on dépose une fois un dossier ouvert", () => {
-    renderFiles({
-      allowUploads: true,
-      rootFolderIds: ["racine", "autre"],
-      folders: [
-        ...content().folders,
-        { id: "autre", name: "Factures", parentId: null, order: 1 },
-      ],
+  it("accueil de plusieurs dossiers : on choisit ensuite le dossier où déposer", async () => {
+    const { container } = renderFiles(twoShared());
+    expect(screen.getByRole("button", { name: /Ajouter/ })).toBeTruthy();
+    fireEvent.change(fileInput(container), {
+      target: { files: [pdf("a.pdf"), pdf("b.pdf"), pdf("c.pdf")] },
     });
-    expect(screen.queryByRole("button", { name: /Déposer/ })).toBeNull();
-    fireEvent.click(list().getByText("Factures"));
+    expect(queue.add).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Déposer 3 fichiers")).toBeTruthy();
+    expect(within(dialog).getByText("a.pdf, b.pdf et 1 autre")).toBeTruthy();
+    // Tout le partage, sous-dossiers compris, rien de choisi d'avance
     expect(
-      screen.getAllByRole("button", { name: /Déposer des documents/ }).length,
-    ).toBeGreaterThan(0);
+      within(dialog)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("aria-label")),
+    ).toEqual(["Client Dupont", "Contrats", "Archives", "Factures"]);
+    const submit = within(dialog).getByRole("button", { name: "Déposer" });
+    expect(submit).toBeDisabled();
+
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Contrats" }));
+    fireEvent.click(submit);
+    await waitFor(() => expect(queue.add).toHaveBeenCalledTimes(1));
+    expect(deposited()).toEqual({
+      names: ["a.pdf", "b.pdf", "c.pdf"],
+      folder: expect.objectContaining({ id: "contrats" }),
+    });
+    // Le dossier choisi s'ouvre : les fichiers y arrivent sous ses yeux
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(within(breadcrumb()).getByText("Contrats")).toBeTruthy();
+  });
+
+  it("accueil : un glisser-déposer demande aussi le dossier", () => {
+    renderFiles(twoShared());
+    const main = screen.getByRole("main");
+    const dataTransfer = { types: ["Files"], files: [pdf()] };
+    fireEvent.dragEnter(main, { dataTransfer });
+    expect(
+      screen.getByText(
+        "Déposez vos fichiers ou dossiers : vous choisirez ensuite le dossier",
+      ),
+    ).toBeTruthy();
+    fireEvent.drop(main, { dataTransfer });
+    expect(queue.add).not.toHaveBeenCalled();
+    expect(
+      within(screen.getByRole("dialog")).getByText("Déposer 1 fichier"),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Annuler" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(queue.add).not.toHaveBeenCalled();
+  });
+
+  it("dépose un dossier et ses sous-dossiers dans le dossier ouvert", async () => {
+    renderFiles({ allowUploads: true }, { onCreateFolders: createdFolders });
+    pickFolder([
+      inFolder("Factures/janvier.pdf"),
+      inFolder("Factures/2026/fevrier.pdf"),
+      inFolder("Factures/2026/mars.pdf"),
+      // Fichiers et dossiers cachés : laissés de côté
+      inFolder("Factures/.DS_Store"),
+      inFolder("Factures/.git/config.pdf"),
+    ]);
+    await waitFor(() => expect(queue.add).toHaveBeenCalledTimes(2));
+    // Les dossiers d'abord, en une fois, parents avant enfants
+    expect(createdFolders).toHaveBeenCalledTimes(1);
+    expect(createdFolders).toHaveBeenCalledWith("racine", [
+      ["Factures"],
+      ["Factures", "2026"],
+    ]);
+    expect(sentGroups()).toEqual([
+      [
+        ["janvier.pdf"],
+        { id: "id-Factures", name: "Client Dupont › Factures" },
+      ],
+      [
+        ["fevrier.pdf", "mars.pdf"],
+        { id: "id-Factures-2026", name: "Client Dupont › Factures › 2026" },
+      ],
+    ]);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("accueil : un dossier déposé attend lui aussi le choix du dossier", async () => {
+    renderFiles(twoShared(), { onCreateFolders: createdFolders });
+    pickFolder([inFolder("Relevés/2026/a.pdf"), inFolder("Relevés/b.pdf")]);
+    expect(createdFolders).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByText(/^Déposer le dossier «\sRelevés\s»$/),
+    ).toBeTruthy();
+    expect(within(dialog).getByText("2 fichiers dans 2 dossiers")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Factures" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Déposer" }));
+
+    await waitFor(() => expect(queue.add).toHaveBeenCalledTimes(2));
+    expect(createdFolders).toHaveBeenCalledWith("autre", [
+      ["Relevés"],
+      ["Relevés", "2026"],
+    ]);
+    expect(sentGroups().map(([names, folder]) => [names, folder.id])).toEqual([
+      [["a.pdf"], "id-Relevés-2026"],
+      [["b.pdf"], "id-Relevés"],
+    ]);
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(within(breadcrumb()).getByText("Factures")).toBeTruthy();
+  });
+
+  it("dossiers refusés par l'API : rien n'est envoyé, le message reste", async () => {
+    const onCreateFolders = vi.fn(async () => {
+      throw new Error(
+        "Cet espace ne peut pas recevoir de documents pour le moment.",
+      );
+    });
+    renderFiles(twoShared(), { onCreateFolders });
+    pickFolder([inFolder("Relevés/a.pdf")]);
+    fireEvent.click(screen.getByRole("radio", { name: "Factures" }));
+    fireEvent.click(screen.getByRole("button", { name: "Déposer" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "ne peut pas recevoir",
+    );
+    expect(queue.add).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("glisser-déposer d'un dossier : parcouru avec ses sous-dossiers, même vides", async () => {
+    renderFiles({ allowUploads: true }, { onCreateFolders: createdFolders });
+    const fileEntry = (path) => ({
+      isFile: true,
+      isDirectory: false,
+      name: path.split("/").pop(),
+      fullPath: `/${path}`,
+      file: (resolve) => resolve(pdf(path.split("/").pop())),
+    });
+    const directoryEntry = (path, children) => ({
+      isFile: false,
+      isDirectory: true,
+      name: path.split("/").pop(),
+      fullPath: `/${path}`,
+      createReader: () => {
+        let read = false;
+        return {
+          readEntries: (resolve) => {
+            resolve(read ? [] : children);
+            read = true;
+          },
+        };
+      },
+    });
+    const dropped = directoryEntry("Factures", [
+      fileEntry("Factures/a.pdf"),
+      directoryEntry("Factures/Vide", []),
+      directoryEntry("Factures/.cache", [fileEntry("Factures/.cache/x.pdf")]),
+    ]);
+    fireEvent.drop(screen.getByRole("main"), {
+      dataTransfer: {
+        types: ["Files"],
+        files: [],
+        items: [{ kind: "file", webkitGetAsEntry: () => dropped }],
+      },
+    });
+    await waitFor(() => expect(queue.add).toHaveBeenCalledTimes(1));
+    expect(createdFolders).toHaveBeenCalledWith("racine", [
+      ["Factures"],
+      ["Factures", "Vide"],
+    ]);
+    expect(sentGroups()).toEqual([
+      [["a.pdf"], { id: "id-Factures", name: "Client Dupont › Factures" }],
+    ]);
+  });
+
+  it("navigateur qui ne sait pas choisir un dossier : de simples fichiers", () => {
+    renderFiles({ allowUploads: true }, { onCreateFolders: createdFolders });
+    pickFolder([pdf("a.pdf")]);
+    expect(createdFolders).not.toHaveBeenCalled();
+    expect(deposited()).toEqual({
+      names: ["a.pdf"],
+      folder: expect.objectContaining({ id: "racine" }),
+    });
+  });
+
+  it("dossier trop gros : refusé avant tout envoi", () => {
+    renderFiles({ allowUploads: true }, { onCreateFolders: createdFolders });
+    pickFolder(
+      Array.from({ length: 501 }, (_, index) =>
+        inFolder(`Photos/photo-${index}.pdf`),
+      ),
+    );
+    expect(toast.error).toHaveBeenCalledWith(
+      "Trop de fichiers d'un coup (500 au plus).",
+    );
+    expect(createdFolders).not.toHaveBeenCalled();
+    expect(queue.add).not.toHaveBeenCalled();
   });
 
   it("supprime seulement ses propres documents, après confirmation", async () => {
@@ -568,5 +806,166 @@ describe("Modification de ses documents par le client", () => {
     );
     view.rerender(<SharedFiles content={next} {...props} />);
     expect(screen.queryByRole("textbox", { name: "Nouveau nom" })).toBeNull();
+  });
+});
+
+describe("Dossiers créés par le client", () => {
+  beforeEach(() => {
+    createdFolders.mockClear();
+    toast.error.mockClear();
+    toast.success.mockClear();
+  });
+
+  // « Archives » (dans « Client Dupont ») a été créé par le visiteur
+  const withMineFolder = (overrides = {}) => ({
+    allowUploads: true,
+    folders: content().folders.map((folder) =>
+      folder.id === "vide" ? { ...folder, mine: true } : folder,
+    ),
+    ...overrides,
+  });
+
+  it("nouveau dossier dans le dossier ouvert, puis il s'ouvre", async () => {
+    // L'API renvoie le dossier créé ; ici, un dossier déjà dans le partage
+    const onCreateFolders = vi.fn(async () => [
+      { id: "vide", name: "Archives", created: true },
+    ]);
+    renderFiles({ allowUploads: true }, { onCreateFolders });
+    openAddMenu();
+    choose("Nouveau dossier");
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/Il sera créé dans/)).toHaveTextContent(
+      "Client Dupont",
+    );
+    // Dossier ouvert : pas de choix d'emplacement
+    expect(within(dialog).queryAllByRole("radio")).toHaveLength(0);
+    const field = within(dialog).getByRole("textbox", {
+      name: "Nom du dossier",
+    });
+    const submit = within(dialog).getByRole("button", { name: "Créer" });
+    expect(submit).toBeDisabled();
+
+    // Nom déjà pris à cet endroit : signalé avant l'envoi
+    fireEvent.change(field, { target: { value: "Contrats " } });
+    expect(
+      within(dialog).getByText("Un dossier porte déjà ce nom à cet endroit."),
+    ).toBeTruthy();
+    expect(submit).toBeDisabled();
+
+    fireEvent.change(field, { target: { value: "  Factures   2026 " } });
+    fireEvent.click(submit);
+    await waitFor(() =>
+      expect(onCreateFolders).toHaveBeenCalledWith("racine", [
+        ["Factures 2026"],
+      ]),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(within(breadcrumb()).getByText("Archives")).toBeTruthy();
+    expect(toast.success).toHaveBeenCalledWith("Dossier « Archives » créé");
+  });
+
+  it("nouveau dossier depuis l'accueil : on choisit où le créer", async () => {
+    renderFiles(twoShared(), { onCreateFolders: createdFolders });
+    openAddMenu();
+    choose("Nouveau dossier");
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Choisissez où le créer.")).toBeTruthy();
+    fireEvent.change(
+      within(dialog).getByRole("textbox", { name: "Nom du dossier" }),
+      { target: { value: "Relevés" } },
+    );
+    const submit = within(dialog).getByRole("button", { name: "Créer" });
+    expect(submit).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Factures" }));
+    fireEvent.click(submit);
+    await waitFor(() =>
+      expect(createdFolders).toHaveBeenCalledWith("autre", [["Relevés"]]),
+    );
+  });
+
+  it("ses dossiers : marqués, avec un menu ; jamais ceux des autres ni un dossier partagé", () => {
+    renderFiles(withMineFolder());
+    expect(list().getByText("Créé par vous")).toBeTruthy();
+    expect(
+      screen.getAllByRole("button", { name: /^Actions pour le dossier/ }),
+    ).toHaveLength(1);
+    openFolderMenu("Archives");
+    expect(
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["Renommer", "Supprimer"]);
+  });
+
+  it("dossier partagé par le propriétaire : jamais de menu, même créé par le visiteur", () => {
+    renderFiles(
+      twoShared({
+        folders: twoShared().folders.map((folder) =>
+          folder.id === "racine" ? { ...folder, mine: true } : folder,
+        ),
+      }),
+    );
+    expect(list().getByText("Créé par vous")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: /^Actions pour le dossier/ }),
+    ).toBeNull();
+  });
+
+  it("dépôt fermé : ses dossiers restent marqués, sans menu", () => {
+    renderFiles(withMineFolder({ allowUploads: false }));
+    expect(list().getByText("Créé par vous")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: /^Actions pour le dossier/ }),
+    ).toBeNull();
+  });
+
+  it("renomme son dossier ; un nom déjà pris est signalé", async () => {
+    const onRenameFolder = vi.fn(async () => {});
+    renderFiles(withMineFolder(), { onRenameFolder });
+    openFolderMenu("Archives");
+    choose("Renommer");
+
+    const field = screen.getByRole("textbox", { name: "Nouveau nom" });
+    expect(field).toHaveValue("Archives");
+    const submit = screen.getByRole("button", { name: "Renommer" });
+    expect(submit).toBeDisabled();
+    fireEvent.change(field, { target: { value: "Contrats" } });
+    expect(
+      screen.getByText("Un dossier porte déjà ce nom à cet endroit."),
+    ).toBeTruthy();
+    expect(submit).toBeDisabled();
+
+    fireEvent.change(field, { target: { value: " Archives  2026 " } });
+    fireEvent.click(submit);
+    await waitFor(() => expect(onRenameFolder).toHaveBeenCalledTimes(1));
+    const [folder, name] = onRenameFolder.mock.calls[0];
+    expect(folder.id).toBe("vide");
+    expect(name).toBe("Archives 2026");
+    await waitFor(() =>
+      expect(screen.queryByRole("textbox", { name: "Nouveau nom" })).toBeNull(),
+    );
+    expect(toast.success).toHaveBeenCalledWith("Dossier renommé");
+  });
+
+  it("supprime son dossier après confirmation ; un refus de l'API est affiché", async () => {
+    const onDeleteFolder = vi.fn(async () => {
+      throw new Error(
+        "Ce dossier contient des éléments que vous n'avez pas ajoutés : seul votre interlocuteur peut le supprimer.",
+      );
+    });
+    renderFiles(withMineFolder(), { onDeleteFolder });
+    openFolderMenu("Archives");
+    choose("Supprimer");
+    expect(screen.getByText(/Supprimer le dossier/)).toHaveTextContent(
+      "Archives",
+    );
+    expect(onDeleteFolder).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    await waitFor(() => expect(onDeleteFolder).toHaveBeenCalledTimes(1));
+    expect(onDeleteFolder.mock.calls[0][0].id).toBe("vide");
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining("pas ajoutés"),
+      ),
+    );
   });
 });
