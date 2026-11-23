@@ -2,7 +2,10 @@
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useFileTransferR2Multipart } from "../hooks/useFileTransferR2Multipart";
-import { usePaymentConnections } from "@/src/hooks/usePaymentConnections";
+import {
+  availableTransferPaymentMethods,
+  usePaymentConnections,
+} from "@/src/hooks/usePaymentConnections";
 import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -124,14 +127,14 @@ export default function FileUploadNew({
   const speedHistoryRef = useRef([]); // Historique des vitesses pour moyenne mobile
 
   // Paiement demandé au destinataire : accès anticipé (transferPayments),
-  // moyens d'encaissement de l'espace (compte Stripe du vendeur, PayPal,
-  // IBAN pour les virements)
+  // moyens d'encaissement de l'espace (compte Stripe du vendeur, SumUp,
+  // PayPal, IBAN pour les virements)
   const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
   const canRequestPayment = isFeatureEnabled("transferPayments");
   const payment = usePaymentConnections({ skip: !canRequestPayment });
   const { activeOrganization } = useWorkspace();
   const { canDo, isReady: permissionsReady } = useMyPermissions();
-  // Connecter Stripe ou PayPal : « Gérer les applications »
+  // Connecter Stripe, SumUp ou PayPal : « Gérer les applications »
   const canManageConnections =
     !permissionsReady || canDo("integrations", "manage");
   const [paypalDialogOpen, setPaypalDialogOpen] = useState(false);
@@ -156,7 +159,8 @@ export default function FileUploadNew({
     isPaymentRequired: false,
     paymentAmount: 0,
     paymentCurrency: "EUR",
-    // Moyens proposés au destinataire : stripe | paypal | bank_transfer
+    // Moyens proposés au destinataire : stripe | sumup | paypal |
+    // bank_transfer
     paymentMethods: [],
     recipientEmail: "",
     message: "",
@@ -171,6 +175,17 @@ export default function FileUploadNew({
     watermarkText: "CONFIDENTIEL",
     watermarkPosition: "diagonal", // 'center', 'bottom-right', 'diagonal', 'tile'
   });
+
+  // Moyens utilisables pour la devise choisie : SumUp n'encaisse que la
+  // devise du compte marchand du vendeur
+  const usablePaymentMethods = useMemo(
+    () =>
+      availableTransferPaymentMethods(
+        payment.connections,
+        transferOptions.paymentCurrency,
+      ),
+    [payment.connections, transferOptions.paymentCurrency],
+  );
 
   // Paiement demandé : incompatible avec le filigrane
   const paymentRequested =
@@ -272,8 +287,8 @@ export default function FileUploadNew({
   };
 
   // Moyen de paiement devenu disponible pendant la saisie (PayPal ou IBAN
-  // ajouté ici, Stripe connecté dans l'onglet ouvert à côté) : il est
-  // proposé d'office au destinataire
+  // ajouté ici, Stripe ou SumUp connecté dans l'onglet ouvert à côté) : il
+  // est proposé d'office au destinataire
   const previousAvailableRef = useRef(null);
   useEffect(() => {
     if (!canRequestPayment || !payment.isReady) return;
@@ -292,8 +307,8 @@ export default function FileUploadNew({
     );
   }, [canRequestPayment, payment.isReady, payment.availableMethods]);
 
-  // Retour sur l'onglet après une connexion Stripe ouverte à côté : on relit
-  // les moyens de paiement de l'espace
+  // Retour sur l'onglet après une connexion Stripe ou SumUp ouverte à côté :
+  // on relit les moyens de paiement de l'espace
   const refetchPaymentConnections = payment.refetch;
   useEffect(() => {
     if (!canRequestPayment || !transferOptions.isPaymentRequired) return;
@@ -374,7 +389,7 @@ export default function FileUploadNew({
       if (wantsPayment) {
         const paymentError = getTransferPaymentError(
           transferOptions,
-          payment.availableMethods,
+          usablePaymentMethods,
         );
         if (paymentError) {
           toast.error(paymentError);
@@ -391,7 +406,7 @@ export default function FileUploadNew({
           : 0,
         paymentMethods: wantsPayment
           ? transferOptions.paymentMethods.filter((method) =>
-              payment.availableMethods.includes(method),
+              usablePaymentMethods.includes(method),
             )
           : [],
       };
@@ -752,7 +767,7 @@ export default function FileUploadNew({
                   onChange={updateTransferOptions}
                   connections={payment.connections}
                   connectionsLoading={payment.loading}
-                  availableMethods={payment.availableMethods}
+                  availableMethods={usablePaymentMethods}
                   watermarkEnabled={Boolean(transferOptions.applyWatermark)}
                   canManageConnections={canManageConnections}
                   isConnectingStripe={payment.isConnectingStripe}
@@ -773,6 +788,17 @@ export default function FileUploadNew({
                       "noopener",
                     )
                   }
+                  isConnectingSumup={payment.isConnectingSumup}
+                  onConnectSumup={async () => {
+                    try {
+                      // Nouvel onglet : les fichiers choisis restent ici
+                      await payment.connectSumup({ newTab: true });
+                    } catch (error) {
+                      toast.error("Impossible de se connecter à SumUp", {
+                        description: error?.message || "Veuillez réessayer.",
+                      });
+                    }
+                  }}
                   onConnectPaypal={() => setPaypalDialogOpen(true)}
                   onAddIban={() => setBankDialogOpen(true)}
                 />

@@ -16,7 +16,23 @@ import { Label } from "@/src/components/ui/label";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 
-const KNOWN_METHODS = ["stripe", "paypal", "bank_transfer"];
+const KNOWN_METHODS = ["stripe", "sumup", "paypal", "bank_transfer"];
+
+// Prestataires des paiements en ligne, pour la mention sous les boutons
+const ONLINE_PROVIDER_NAMES = {
+  stripe: "Stripe",
+  sumup: "SumUp",
+  paypal: "PayPal",
+};
+
+/** « Stripe », « Stripe ou PayPal », « Stripe, SumUp ou PayPal ». */
+export function onlineProvidersLabel(methods) {
+  const names = KNOWN_METHODS.filter((method) => ONLINE_PROVIDER_NAMES[method])
+    .filter((method) => methods.includes(method))
+    .map((method) => ONLINE_PROVIDER_NAMES[method]);
+  if (names.length <= 1) return names[0] || "";
+  return `${names.slice(0, -1).join(", ")} ou ${names[names.length - 1]}`;
+}
 
 // Délai d'accès aux fichiers, annoncé sous chaque moyen avant le choix
 export const ONLINE_PAYMENT_DELAY = "Accès immédiat aux fichiers";
@@ -401,6 +417,35 @@ export function TransferPaymentPanel({
             </div>
           )}
 
+          {methods.includes("sumup") && (
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => onPay?.("sumup")}
+                disabled={isProcessing}
+                aria-describedby={delayId("sumup")}
+                className="flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-black text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              >
+                {processingProvider === "sumup" ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    Redirection…
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="h-4 w-4" />
+                    {methods.includes("stripe")
+                      ? "Payer par carte avec SumUp"
+                      : "Payer par carte"}
+                  </>
+                )}
+              </button>
+              <MethodDelay id={delayId("sumup")}>
+                {ONLINE_PAYMENT_DELAY}
+              </MethodDelay>
+            </div>
+          )}
+
           {methods.includes("paypal") && (
             <div className="space-y-1">
               <button
@@ -523,15 +568,10 @@ export function TransferPaymentPanel({
             </div>
           )}
 
-          {(methods.includes("stripe") || methods.includes("paypal")) && (
+          {onlineProvidersLabel(methods) && (
             <p className="pt-1 text-center text-[11px] text-gray-400">
-              Paiement sécurisé sur la page de{" "}
-              {methods.includes("stripe") && methods.includes("paypal")
-                ? "Stripe ou PayPal"
-                : methods.includes("paypal")
-                  ? "PayPal"
-                  : "Stripe"}
-              . Les fichiers se débloquent dès le paiement confirmé.
+              Paiement sécurisé sur la page de {onlineProvidersLabel(methods)}.
+              Les fichiers se débloquent dès le paiement confirmé.
             </p>
           )}
 
