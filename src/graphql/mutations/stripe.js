@@ -169,6 +169,34 @@ export const GET_PAYMENT_CONNECTIONS = gql`
   }
 `;
 
+// Même question sans SumUp : relue quand l'API n'a pas encore SumUp (site
+// mis en ligne avant elle), pour garder Stripe, PayPal et le virement
+export const GET_PAYMENT_CONNECTIONS_LEGACY = gql`
+  query PaymentConnectionsLegacy {
+    paymentConnections {
+      stripe {
+        connected
+        ready
+        legacy
+        oauthAvailable
+        chargesEnabled
+        displayName
+        accountEmail
+      }
+      paypal {
+        available
+        connected
+        email
+      }
+      bankTransfer {
+        available
+        ibanLast4
+        autoDetect
+      }
+    }
+  }
+`;
+
 // Connecter le compte PayPal Business de l'espace (adresse e-mail du compte)
 export const CONNECT_PAYPAL = gql`
   mutation ConnectPaypal($email: String!) {

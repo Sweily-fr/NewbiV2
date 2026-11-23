@@ -7,6 +7,7 @@ import {
   DISCONNECT_PAYPAL,
   DISCONNECT_SUMUP,
   GET_PAYMENT_CONNECTIONS,
+  GET_PAYMENT_CONNECTIONS_LEGACY,
 } from "@/src/graphql/mutations/stripe";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -198,7 +199,7 @@ export function usePaymentConnections({ skip = false } = {}) {
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   const [isConnectingSumup, setIsConnectingSumup] = useState(false);
 
-  const { data, loading, refetch } = useQuery(GET_PAYMENT_CONNECTIONS, {
+  const full = useQuery(GET_PAYMENT_CONNECTIONS, {
     skip: skip || !workspaceId,
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
@@ -206,6 +207,18 @@ export function usePaymentConnections({ skip = false } = {}) {
     errorPolicy: "all",
     context: { skipErrorToast: true },
   });
+  // Question refusée (API pas encore à jour, sans SumUp) : relue sans
+  // SumUp, Stripe, PayPal et le virement restent proposés
+  const fullFailed = Boolean(full.error) && !full.data?.paymentConnections;
+  const legacy = useQuery(GET_PAYMENT_CONNECTIONS_LEGACY, {
+    skip: skip || !workspaceId || !fullFailed,
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
+    context: { skipErrorToast: true },
+  });
+  const data = full.data?.paymentConnections ? full.data : legacy.data;
+  const loading = full.loading || (fullFailed && legacy.loading);
+  const refetch = fullFailed ? legacy.refetch : full.refetch;
 
   const connections = useMemo(() => {
     const raw = data?.paymentConnections;
