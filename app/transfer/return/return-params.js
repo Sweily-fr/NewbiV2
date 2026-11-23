@@ -6,6 +6,8 @@
  *   &canceled=1 sans session_id) ;
  * - PayPal : ?rt=<jeton>&provider=paypal, PayPal ajoute &token=<commande>
  *   et &PayerID=… (annulation : &canceled=1, avec &token=<commande>) ;
+ * - SumUp : ?rt=<jeton>&provider=sumup (le paiement est retrouvé par le
+ *   jeton, SumUp peut ajouter ses propres paramètres, ignorés) ;
  * - ancien format (sessions ouvertes avant la vérification au retour) :
  *   ?token=<jeton>&status=success|cancel.
  */
@@ -17,7 +19,9 @@ export function buildPaymentReturnRequest(searchParams) {
 
   const returnToken = get("rt");
   if (returnToken) {
-    const provider = get("provider") === "paypal" ? "paypal" : "stripe";
+    const provider = ["paypal", "sumup"].includes(get("provider"))
+      ? get("provider")
+      : "stripe";
     return {
       kind: "confirm",
       canceled: get("canceled") === "1",

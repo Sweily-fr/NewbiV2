@@ -40,8 +40,9 @@ export const CHECK_STRIPE_CONNECT_ACCOUNT_STATUS = gql`
 `;
 
 // Créer une session de paiement pour un transfert de fichiers, sur le
-// compte du vendeur : provider « stripe » (carte, par défaut) ou « paypal ».
-// sessionUrl : page de paiement du prestataire à ouvrir.
+// compte du vendeur : provider « stripe » (carte, par défaut), « paypal » ou
+// « sumup » (carte, compte SumUp du vendeur). sessionUrl : page de paiement
+// du prestataire à ouvrir.
 export const CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER = gql`
   mutation CreatePaymentSessionForFileTransfer(
     $transferId: ID!
@@ -61,8 +62,8 @@ export const CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER = gql`
   }
 `;
 
-// Retour de la page de paiement (Stripe ou PayPal) : l'API vérifie le
-// paiement auprès du prestataire et rend le lien du transfert.
+// Retour de la page de paiement (Stripe, PayPal ou SumUp) : l'API vérifie
+// le paiement auprès du prestataire et rend le lien du transfert.
 // status : paid | pending | unpaid
 export const CONFIRM_TRANSFER_PAYMENT = gql`
   mutation ConfirmTransferPayment(
@@ -127,9 +128,51 @@ export const DECLARE_TRANSFER_BANK_PAYMENT = gql`
 `;
 
 // Moyens d'encaissement de l'espace actif : compte Stripe du vendeur,
-// compte PayPal, IBAN de l'entreprise pour les virements
+// compte PayPal, compte SumUp, IBAN de l'entreprise pour les virements
 export const GET_PAYMENT_CONNECTIONS = gql`
   query PaymentConnections {
+    paymentConnections {
+      stripe {
+        connected
+        ready
+        legacy
+        oauthAvailable
+        chargesEnabled
+        displayName
+        accountEmail
+      }
+      paypal {
+        available
+        connected
+        email
+      }
+      sumup {
+        # Connexion SumUp proposée par Newbi et ouverte à l'espace
+        available
+        connected
+        # Accès retiré ou expiré côté SumUp : compte à reconnecter
+        needsReconnect
+        businessName
+        email
+        merchantCode
+        # Devise du compte marchand : seule devise encaissable par SumUp
+        currency
+      }
+      bankTransfer {
+        available
+        ibanLast4
+        # Compte bancaire relié à Newbi : le virement reçu débloque le
+        # transfert tout seul
+        autoDetect
+      }
+    }
+  }
+`;
+
+// Même question sans SumUp : relue quand l'API n'a pas encore SumUp (site
+// mis en ligne avant elle), pour garder Stripe, PayPal et le virement
+export const GET_PAYMENT_CONNECTIONS_LEGACY = gql`
+  query PaymentConnectionsLegacy {
     paymentConnections {
       stripe {
         connected
@@ -148,8 +191,6 @@ export const GET_PAYMENT_CONNECTIONS = gql`
       bankTransfer {
         available
         ibanLast4
-        # Compte bancaire relié à Newbi : le virement reçu débloque le
-        # transfert tout seul
         autoDetect
       }
     }
@@ -173,6 +214,17 @@ export const DISCONNECT_PAYPAL = gql`
       success
       message
       email
+    }
+  }
+`;
+
+// Déconnecter le compte SumUp de l'espace (la connexion se fait par OAuth,
+// voir requestSumupOAuthUrl)
+export const DISCONNECT_SUMUP = gql`
+  mutation DisconnectSumup {
+    disconnectSumup {
+      success
+      message
     }
   }
 `;

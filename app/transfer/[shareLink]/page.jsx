@@ -287,7 +287,7 @@ export default function TransferPage() {
     }
   };
 
-  // Paiement du transfert (Stripe ou PayPal, sur le compte du vendeur)
+  // Paiement du transfert (Stripe, SumUp ou PayPal, sur le compte du vendeur)
   const { initiatePayment, processingProvider } = useStripePayment();
 
   // Query pour récupérer les détails du transfert

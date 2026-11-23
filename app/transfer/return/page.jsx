@@ -46,7 +46,7 @@ function TransferReturnContent() {
     (async () => {
       try {
         if (request.kind === "confirm") {
-          // Paiement vérifié par l'API auprès de Stripe ou PayPal
+          // Paiement vérifié par l'API auprès de Stripe, SumUp ou PayPal
           const { data } = await confirmPayment({
             variables: request.variables,
           });
