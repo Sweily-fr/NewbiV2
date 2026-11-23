@@ -137,6 +137,8 @@ export function TransferPaymentOptions({
   onConnectStripe,
   isConnectingStripe = false,
   onOpenStripeDashboard,
+  onConnectSumup,
+  isConnectingSumup = false,
   onConnectPaypal,
   onAddIban,
 }) {
@@ -146,6 +148,9 @@ export function TransferPaymentOptions({
     TRANSFER_PAYMENT_CURRENCIES[0];
   const stripe = connections.stripe;
   const paypal = connections.paypal;
+  // Réponse d'une API sans SumUp : rien à proposer
+  const sumup = connections.sumup || {};
+  const sumupUsable = availableMethods.includes("sumup");
   const bank = connections.bankTransfer;
 
   const toggleMethod = (method, checked) => {
@@ -234,6 +239,62 @@ export function TransferPaymentOptions({
             "Connecter"
           )}
         </ConnectLink>
+      </span>
+    );
+  })();
+
+  const connectSumupLink = (label) => (
+    <ConnectLink onClick={onConnectSumup} disabled={isConnectingSumup}>
+      {isConnectingSumup ? (
+        <span className="inline-flex items-center gap-1">
+          <LoaderCircle className="size-3 animate-spin" />
+          Connexion…
+        </span>
+      ) : (
+        label
+      )}
+    </ConnectLink>
+  );
+
+  // SumUp : compte marchand du vendeur, connecté par OAuth ; une seule
+  // devise encaissable (celle du compte)
+  const sumupHint = (() => {
+    if (sumup.connected && sumup.needsReconnect) {
+      if (!canManageConnections) {
+        return (
+          <span>
+            La connexion SumUp a expiré. Demandez à un administrateur de
+            l&apos;espace de la renouveler.
+          </span>
+        );
+      }
+      return (
+        <span className="flex flex-wrap items-center gap-x-1.5">
+          La connexion à votre compte SumUp a expiré.
+          {connectSumupLink("Reconnecter")}
+        </span>
+      );
+    }
+    if (sumup.connected) {
+      if (!sumupUsable && sumup.currency) {
+        return (
+          <span>
+            Votre compte SumUp encaisse uniquement en {sumup.currency}.
+          </span>
+        );
+      }
+      const label = sumup.businessName || sumup.email;
+      return (
+        <span className="break-all">
+          Sur votre compte SumUp{label ? ` ${label}` : ""}.
+        </span>
+      );
+    }
+    if (!canManageConnections) return askAdmin;
+    return (
+      <span className="flex flex-wrap items-center gap-x-1.5">
+        Connectez votre compte SumUp.
+        {connectSumupLink("Connecter")}
       </span>
     );
   })();
@@ -374,6 +435,19 @@ export function TransferPaymentOptions({
                 >
                   {stripeHint}
                 </MethodRow>
+                {sumup.available && (
+                  <MethodRow
+                    id="transfer-payment-sumup"
+                    label="Carte bancaire (SumUp)"
+                    checked={sumupUsable && selected.includes("sumup")}
+                    disabled={!sumupUsable}
+                    onCheckedChange={(checked) =>
+                      toggleMethod("sumup", checked)
+                    }
+                  >
+                    {sumupHint}
+                  </MethodRow>
+                )}
                 {paypal.available && (
                   <MethodRow
                     id="transfer-payment-paypal"
@@ -409,8 +483,8 @@ export function TransferPaymentOptions({
 
           <p className="text-xs text-muted-foreground">
             L&apos;argent arrive directement sur votre compte. Newbi ne prend
-            aucune commission, seuls les frais de Stripe ou PayPal
-            s&apos;appliquent.
+            aucune commission, seuls les frais de votre prestataire (Stripe,
+            SumUp ou PayPal) s&apos;appliquent.
           </p>
         </div>
       )}

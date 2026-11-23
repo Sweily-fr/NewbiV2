@@ -9,11 +9,11 @@ const PAYMENT_START_ERROR =
 
 /**
  * Paiement d'un transfert par le destinataire du lien : la page de paiement
- * du prestataire (Stripe ou PayPal, sur le compte du vendeur) s'ouvre à la
+ * du prestataire (Stripe, SumUp ou PayPal, sur le compte du vendeur) s'ouvre à la
  * place de la page du transfert.
  */
 export const useStripePayment = () => {
-  // Moyen en cours de redirection (« stripe » ou « paypal »)
+  // Moyen en cours de redirection (« stripe », « sumup » ou « paypal »)
   const [processingProvider, setProcessingProvider] = useState(null);
 
   const [createPaymentSession] = useMutation(

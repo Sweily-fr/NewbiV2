@@ -7,6 +7,7 @@ import { fr } from "date-fns/locale";
 
 export const TRANSFER_PAYMENT_PROVIDER_LABELS = {
   stripe: "Carte bancaire (Stripe)",
+  sumup: "Carte bancaire (SumUp)",
   paypal: "PayPal",
   bank_transfer: "Virement bancaire",
   manual: "Marqué payé à la main",
@@ -14,6 +15,7 @@ export const TRANSFER_PAYMENT_PROVIDER_LABELS = {
 
 export const TRANSFER_PAYMENT_METHOD_LABELS = {
   stripe: "Carte",
+  sumup: "Carte (SumUp)",
   paypal: "PayPal",
   bank_transfer: "Virement",
 };

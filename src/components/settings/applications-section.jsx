@@ -21,9 +21,11 @@ import { StripeConnectOnboardingModal } from "@/src/components/stripe-connect-on
 import { useSocialPublishingStatus } from "@/src/hooks/useSocialPublishing";
 import {
   STRIPE_CONNECT_ERROR_MESSAGES,
+  SUMUP_CONNECT_ERROR_MESSAGES,
   usePaymentConnections,
 } from "@/src/hooks/usePaymentConnections";
 import { PaypalConnectDialog } from "@/src/components/payments/paypal-connect-dialog";
+import { showsGenericConnectionPanel } from "@/src/components/settings/applications-connection-panels";
 import { toast } from "@/src/components/ui/sonner";
 import {
   PENDING_SETTINGS_APP_KEY,
@@ -202,6 +204,25 @@ const APPLICATIONS = [
     website: "https://paypal.com",
     docs: "https://developer.paypal.com/docs",
     support: "https://paypal.com/support",
+  },
+  {
+    id: "sumup",
+    name: "SumUp",
+    author: "SumUp",
+    description:
+      "Encaissez vos transferts de fichiers par carte avec votre compte SumUp.",
+    // Texte quand SumUp est ouvert à l'espace (voir appsWithStatus)
+    availableDescription:
+      "Encaissez vos transferts de fichiers par carte, directement sur votre compte SumUp.",
+    category: "payment",
+    logo: `${BRANDFETCH_CDN}/sumup.com/w/400/h/400`,
+    logoBg: "#000000",
+    installed: false,
+    verified: true,
+    comingSoon: true,
+    website: "https://www.sumup.com/fr-fr/",
+    docs: "https://developer.sumup.com",
+    support: "https://help.sumup.com/fr-FR",
   },
   {
     id: "zapier",
@@ -1883,7 +1904,7 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
 
 // Apps dont la désinstallation coupe aussi la connexion côté API
 // (cf. APP_INTEGRATIONS dans le resolver uninstallApp)
-const APPS_WITH_INTEGRATION = ["abby", "qonto", "pennylane", "paypal"];
+const APPS_WITH_INTEGRATION = ["abby", "qonto", "pennylane", "paypal", "sumup"];
 
 // ── Vue détail d'une app installée ──
 
@@ -1894,6 +1915,7 @@ function AppDetailView({
   connectionDetail,
   stripeActions,
   paypalActions,
+  sumupActions,
   bankingActions,
   pennylaneActions,
   qontoActions,
@@ -2016,9 +2038,11 @@ function AppDetailView({
                 ? "Les comptes connectés seront déconnectés et les posts programmés annulés. Les posts déjà publiés restent en ligne."
                 : app.id === "paypal" && isConnected
                   ? "La connexion à PayPal sera coupée : vos clients ne pourront plus payer vos transferts par PayPal. Vous pourrez reconnecter PayPal en la réinstallant."
-                  : uninstallDisconnects
-                    ? `La connexion à ${app.name} sera coupée : la clé enregistrée sera supprimée et les synchronisations s'arrêteront. Les documents déjà importés sont conservés. Vous pourrez reconnecter ${app.name} en la réinstallant.`
-                    : `L'application sera retirée de vos applications. Vous pourrez la réinstaller à tout moment.`}
+                  : app.id === "sumup" && isConnected
+                    ? "La connexion à SumUp sera coupée : vos clients ne pourront plus payer vos transferts avec SumUp. Vous pourrez reconnecter SumUp en la réinstallant."
+                    : uninstallDisconnects
+                      ? `La connexion à ${app.name} sera coupée : la clé enregistrée sera supprimée et les synchronisations s'arrêteront. Les documents déjà importés sont conservés. Vous pourrez reconnecter ${app.name} en la réinstallant.`
+                      : `L'application sera retirée de vos applications. Vous pourrez la réinstaller à tout moment.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2298,6 +2322,109 @@ function AppDetailView({
                 </>
               )}
 
+              {/* ── SumUp ── */}
+              {app.id === "sumup" && sumupActions && (
+                <>
+                  {isConnected ? (
+                    <div className="space-y-3">
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <AppLogo
+                            src={app.logo}
+                            name={app.name}
+                            size="xs"
+                            bgColor={app.logoBg}
+                          />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400 truncate">
+                            {sumupActions.label || "Compte SumUp connecté"}
+                          </p>
+                        </div>
+                        {sumupActions.needsReconnect ? (
+                          <span className="px-2 py-0.5 text-[11px] font-medium bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
+                            À reconnecter
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        {sumupActions.needsReconnect
+                          ? "SumUp ne donne plus accès à ce compte (autorisation retirée ou expirée). Reconnectez-le pour que vos clients puissent de nouveau payer avec SumUp."
+                          : `Vos clients paient vos transferts de fichiers par carte sur la page de paiement de SumUp, directement sur ce compte${
+                              sumupActions.currency
+                                ? ` (en ${sumupActions.currency})`
+                                : ""
+                            }. SumUp y prélève ses frais habituels.`}
+                      </p>
+                      {sumupActions.canManage ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={sumupActions.onConnect}
+                            disabled={isReadOnly || sumupActions.isConnecting}
+                            className="cursor-pointer"
+                            title={readOnlyTooltip}
+                          >
+                            {sumupActions.isConnecting
+                              ? "Connexion…"
+                              : "Reconnecter"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={sumupActions.onDisconnect}
+                            disabled={sumupActions.isLoading}
+                            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            {sumupActions.isLoading ? "..." : "Déconnecter"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Votre rôle ne permet pas de gérer SumUp
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                            Connectez votre compte SumUp : vos clients paieront
+                            par carte directement sur ce compte.
+                          </p>
+                        </div>
+                        {sumupActions.canManage && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={sumupActions.onConnect}
+                            disabled={isReadOnly || sumupActions.isConnecting}
+                            className="bg-black hover:bg-gray-800 text-white cursor-pointer"
+                            title={readOnlyTooltip}
+                          >
+                            {sumupActions.isConnecting
+                              ? "Connexion…"
+                              : "Connecter"}
+                          </Button>
+                        )}
+                      </div>
+                      {!sumupActions.canManage && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Votre rôle ne permet pas de gérer SumUp
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
               {/* ── Bridge ── */}
               {app.id === "bridge" && bankingActions && (
                 <>
@@ -2392,55 +2519,51 @@ function AppDetailView({
               )}
 
               {/* ── Autres apps (générique) ── */}
-              {app.id !== "stripe" &&
-                app.id !== "bridge" &&
-                app.id !== "pennylane" &&
-                app.id !== "qonto" &&
-                app.id !== "abby" && (
-                  <>
-                    {isConnected ? (
-                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
-                        <div className="flex items-center gap-3">
-                          <AppLogo
-                            src={app.logo}
-                            name={app.name}
-                            size="xs"
-                            bgColor={app.logoBg}
-                          />
-                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                            {connectionDetail ||
-                              "Application connectée et active."}
-                          </p>
-                        </div>
-                        <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
-                          Active
-                        </span>
+              {showsGenericConnectionPanel(app.id) && (
+                <>
+                  {isConnected ? (
+                    <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+                      <div className="flex items-center gap-3">
+                        <AppLogo
+                          src={app.logo}
+                          name={app.name}
+                          size="xs"
+                          bgColor={app.logoBg}
+                        />
+                        <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                          {connectionDetail ||
+                            "Application connectée et active."}
+                        </p>
                       </div>
-                    ) : (
-                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
-                        <div className="flex items-center gap-3">
-                          <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                            Cette application nécessite une connexion pour être
-                            utilisée.
-                          </p>
-                        </div>
-                        {canManage && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={isReadOnly}
-                            title={readOnlyTooltip}
-                            className="bg-[#5b4eff] hover:bg-[#4a3eee] dark:text-white cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5 mr-1.5" />
-                            Connecter
-                          </Button>
-                        )}
+                      <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+                        Active
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
+                      <div className="flex items-center gap-3">
+                        <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                          Cette application nécessite une connexion pour être
+                          utilisée.
+                        </p>
                       </div>
-                    )}
-                  </>
-                )}
+                      {canManage && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={isReadOnly}
+                          title={readOnlyTooltip}
+                          className="bg-[#5b4eff] hover:bg-[#4a3eee] dark:text-white cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1.5" />
+                          Connecter
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </TabsNewContent>
         )}
@@ -2775,6 +2898,51 @@ export function ApplicationsSection() {
     }
   };
 
+  const startSumupOAuth = async () => {
+    try {
+      await payment.connectSumup();
+    } catch (error) {
+      toast.error("Impossible de se connecter à SumUp", {
+        description: error?.message || "Veuillez réessayer.",
+      });
+    }
+  };
+
+  // Retour de la connexion SumUp (OAuth) : l'API redirige vers
+  // /dashboard?parametres=applications&sumup_connect=<résultat>
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("sumup_connect");
+    if (!result) return;
+    params.delete("sumup_connect");
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      document.title,
+      `${window.location.pathname}${query ? `?${query}` : ""}`,
+    );
+    if (result === "success") {
+      toast.success("Votre compte SumUp est connecté", {
+        description:
+          "Vos clients pourront payer vos transferts par carte, directement sur votre compte SumUp.",
+      });
+      payment.refetch();
+      const sumupApp = APPLICATIONS.find((a) => a.id === "sumup");
+      if (sumupApp) {
+        setSelectedApp(sumupApp);
+        setView("app-detail");
+      }
+    } else {
+      toast.error("La connexion à SumUp n'a pas abouti", {
+        description:
+          SUMUP_CONNECT_ERROR_MESSAGES[result] ||
+          SUMUP_CONNECT_ERROR_MESSAGES.error,
+      });
+    }
+    // Une seule lecture au montage : le paramètre est retiré de l'adresse
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Retour de la connexion Stripe (OAuth) : l'API redirige vers
   // /dashboard?parametres=applications&stripe_connect=<résultat>
   useEffect(() => {
@@ -2817,6 +2985,13 @@ export function ApplicationsSection() {
     if (appId === "paypal" && paymentConnections.paypal.connected) {
       try {
         await payment.disconnectPaypal();
+      } catch {
+        // La désinstallation suit, la connexion reste visible au besoin
+      }
+    }
+    if (appId === "sumup" && paymentConnections.sumup.connected) {
+      try {
+        await payment.disconnectSumup();
       } catch {
         // La désinstallation suit, la connexion reste visible au besoin
       }
@@ -2929,6 +3104,26 @@ export function ApplicationsSection() {
           installed: paypal.available && (installed || paypal.connected),
           connected: paypal.available && paypal.connected,
           connectionDetail: paypal.connected ? paypal.email : null,
+        };
+      }
+      if (app.id === "sumup") {
+        const sumup = paymentConnections.sumup;
+        const label = sumup.businessName || sumup.email || sumup.merchantCode;
+        // SumUp ouvert à l'espace (configuré côté Newbi) : application
+        // disponible ; sinon carte « à venir »
+        return {
+          ...app,
+          comingSoon: !sumup.available,
+          description: sumup.available
+            ? app.availableDescription || app.description
+            : app.description,
+          installed: sumup.available && (installed || sumup.connected),
+          connected: sumup.available && sumup.connected,
+          connectionDetail: sumup.connected
+            ? `${label || "Compte SumUp connecté"}${
+                sumup.needsReconnect ? " · à reconnecter" : ""
+              }`
+            : null,
         };
       }
       if (app.id === "bridge") {
@@ -3100,6 +3295,35 @@ export function ApplicationsSection() {
     },
   };
 
+  // Actions SumUp pour la vue détail (connexion par OAuth)
+  const sumupConnection = paymentConnections.sumup;
+  const sumupActions = {
+    canManage: canManageApps,
+    isLoading: payment.isSumupLoading,
+    isConnecting: payment.isConnectingSumup,
+    label:
+      sumupConnection.businessName ||
+      sumupConnection.email ||
+      sumupConnection.merchantCode,
+    currency: sumupConnection.currency,
+    needsReconnect: sumupConnection.needsReconnect,
+    onConnect: startSumupOAuth,
+    onDisconnect: async () => {
+      try {
+        const result = await payment.disconnectSumup();
+        if (result?.success) {
+          toast.success("SumUp est déconnecté");
+        } else {
+          toast.error(
+            result?.message || "La déconnexion de SumUp n'a pas abouti",
+          );
+        }
+      } catch (error) {
+        toast.error(error?.message || "La déconnexion de SumUp n'a pas abouti");
+      }
+    },
+  };
+
   // Actions Banking pour la vue détail
   const bankingActions = {
     // Déconnecter la banque : « Gérer les applications »
@@ -3192,6 +3416,7 @@ export function ApplicationsSection() {
           workspaceId={workspaceId}
           stripeActions={stripeActions}
           paypalActions={paypalActions}
+          sumupActions={sumupActions}
           bankingActions={bankingActions}
           pennylaneActions={pennylaneActions}
           qontoActions={qontoActions}
