@@ -125,6 +125,19 @@ for (const [nom, chemin, prefixe] of [
       );
       expect(sansLibelle, "Champs sans libellé associé (le texte au-dessus n'est pas relié au champ)").toEqual([]);
     });
+
+    test("Visite un autre jour que la mise en ligne : aucune erreur d'affichage, dates du jour de la visite", async ({ page }) => {
+      // La page est pré-rendue à la mise en ligne du site. Quand l'aperçu y
+      // figurait, il portait faute de date celle de ce jour-là : un visiteur
+      // venu un autre jour déclenchait une erreur d'hydratation (React #418,
+      // relevée par la surveillance de la page), en CI entre minuit et 1 h.
+      await page.clock.setFixedTime(new Date("2027-03-15T10:00:00+01:00"));
+      await ouvrirGenerateur(page);
+      const [libelleSeconde, seconde] = nom === "facture" ? ["Date d'échéance", "2027-04-14"] : ["Valable jusqu'au", "2027-06-13"];
+      await expect(page.locator("main").getByLabel("Date d'émission", { exact: true })).toHaveValue("2027-03-15");
+      await expect(page.locator("main").getByLabel(libelleSeconde, { exact: true })).toHaveValue(seconde);
+      await expect(page.getByText("Date d'émission:", { exact: true }).first().locator("xpath=following-sibling::span[1]")).toHaveText("15/03/2027");
+    });
   });
 }
 

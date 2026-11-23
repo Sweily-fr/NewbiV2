@@ -311,6 +311,15 @@ export default function DocumentGenerator({ config }) {
     }));
   }, [config.secondDate.defaultDays]);
 
+  // L'aperçu n'est rendu que dans le navigateur, avec ces dates. Rendu dans
+  // la page pré-rendue, le gabarit y affichait faute de date celle du jour de
+  // la mise en ligne : tout visiteur venu un autre jour déclenchait une erreur
+  // d'hydratation (React #418) et le navigateur refaisait tout l'affichage.
+  const [apercuPret, setApercuPret] = useState(false);
+  useEffect(() => {
+    setApercuPret(true);
+  }, []);
+
   const [items, setItems] = useState([ligneVide()]);
 
   const [logo, setLogo] = useState("");
@@ -1207,18 +1216,26 @@ export default function DocumentGenerator({ config }) {
         <div
           ref={frameRef}
           className="rounded-xl border border-gray-200 overflow-hidden bg-white"
-          style={frame.height ? { height: frame.height } : undefined}
+          // Avant la mesure (et dans la page pré-rendue, sans aperçu), la
+          // place d'une page A4 est réservée : l'aperçu ne décale pas la page
+          style={
+            frame.height
+              ? { height: frame.height }
+              : { aspectRatio: "794 / 1123" }
+          }
         >
           <div
             className="w-[794px] origin-top-left"
             style={{ transform: `scale(${frame.scale})` }}
           >
             <div ref={previewRef}>
-              <UniversalPreviewPDF
-                data={previewData}
-                type={config.type}
-                ignoreOrganization
-              />
+              {apercuPret && (
+                <UniversalPreviewPDF
+                  data={previewData}
+                  type={config.type}
+                  ignoreOrganization
+                />
+              )}
             </div>
           </div>
         </div>
