@@ -7,6 +7,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  ChevronDown,
   ChevronRight,
   Download,
   Eye,
@@ -17,15 +18,17 @@ import {
   FileVideo,
   FileAudio,
   FileUp,
-  FolderClosed,
   FolderInput,
   FolderOpen,
+  FolderPlus,
+  FolderUp,
   Home,
   LoaderCircle,
   LogOut,
   MoreHorizontal,
   PanelLeft,
   Pencil,
+  Plus,
   Search,
   Trash2,
   Upload,
@@ -72,13 +75,25 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { NewbiSignature, WorkspaceIdentity } from "./access-screen";
 import {
+  DepositDialog,
+  FolderIcon,
+  FolderPicker,
+  NewFolderDialog,
+  RenameFolderDialog,
+  useDialogAction,
+} from "./folder-dialogs";
+import {
   HOME,
   UPLOAD_ACCEPT,
   buildShareTree,
+  depositPlan,
+  depositPlanProblem,
   fileKind,
-  folderChoices,
+  filesPlan,
   formatFileSize,
+  pickedFolderPlan,
   previewKind,
+  readDroppedEntries,
   replacementNames,
   searchShare,
   sortDocuments,
@@ -104,18 +119,6 @@ export function FileTypeIcon({ document, className = "size-4" }) {
     <Icon
       aria-hidden="true"
       className={cn("text-muted-foreground shrink-0", className)}
-    />
-  );
-}
-
-/** Dossier de la couleur choisie dans Newbi. */
-function FolderIcon({ folder, open = false, className = "size-4" }) {
-  const Icon = open ? FolderOpen : FolderClosed;
-  return (
-    <Icon
-      aria-hidden="true"
-      className={cn("shrink-0", className)}
-      style={{ color: folder?.color || "currentColor", opacity: 0.75 }}
     />
   );
 }
@@ -297,27 +300,6 @@ function PreviewDialog({ document, previewUrl, downloadUrl, onClose }) {
   );
 }
 
-/**
- * Action d'une fenêtre : bouton occupé pendant l'envoi, message de l'API en
- * cas de refus, fenêtre fermée une fois l'action faite.
- */
-function useDialogAction(action, onDone) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const run = async (...args) => {
-    setBusy(true);
-    setError("");
-    try {
-      await action(...args);
-      onDone();
-    } catch (failure) {
-      setError(failure?.message || "Une erreur est survenue");
-      setBusy(false);
-    }
-  };
-  return { busy, error, run };
-}
-
 /** Renommer un document déposé par le visiteur : l'extension reste. */
 function RenameDialog({ document, onRename, onClose }) {
   const { stem, extension } = splitName(document.name);
@@ -390,7 +372,6 @@ function RenameDialog({ document, onRename, onClose }) {
 
 /** Ranger un document déposé par le visiteur dans un autre dossier. */
 function MoveDialog({ document, tree, onMove, onClose }) {
-  const choices = useMemo(() => folderChoices(tree), [tree]);
   const [target, setTarget] = useState(document.folderId);
   const { busy, error, run } = useDialogAction(async (folderId) => {
     await onMove(document, folderId);
@@ -418,36 +399,12 @@ function MoveDialog({ document, tree, onMove, onClose }) {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="min-w-0 space-y-4">
-          <RadioGroup
-            aria-label="Dossier de destination"
+          <FolderPicker
+            tree={tree}
             value={target}
-            onValueChange={setTarget}
-            className="gap-0 max-h-72 overflow-y-auto rounded-md border py-1"
-          >
-            {choices.map(({ folder, depth }) => {
-              const isCurrent = folder.id === document.folderId;
-              return (
-                <label
-                  key={folder.id}
-                  className={cn(
-                    // min-w-0 : un long nom de dossier n'élargit pas la liste
-                    "flex min-w-0 items-center gap-2 py-2 pr-3 text-sm cursor-pointer hover:bg-accent/50 transition-colors",
-                    target === folder.id && "bg-accent",
-                  )}
-                  style={{ paddingLeft: `${depth * 16 + 12}px` }}
-                >
-                  <RadioGroupItem value={folder.id} aria-label={folder.name} />
-                  <FolderIcon folder={folder} />
-                  <span className="truncate flex-1 min-w-0">{folder.name}</span>
-                  {isCurrent && (
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      Dossier actuel
-                    </span>
-                  )}
-                </label>
-              );
-            })}
-          </RadioGroup>
+            onChange={setTarget}
+            currentId={document.folderId}
+          />
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
@@ -628,13 +585,54 @@ function OwnDocumentMenu({ document, canMove, onAction }) {
   );
 }
 
+/** Menu d'un dossier créé par le visiteur : le renommer ou le supprimer. */
+function OwnFolderMenu({ folder, onAction }) {
+  const select = (action) => () => onAction(action, folder);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label={`Actions pour le dossier ${folder.name}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-52"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <DropdownMenuItem onSelect={select("rename")}>
+          <Pencil className="size-4" />
+          Renommer
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={select("delete")}>
+          <Trash2 className="size-4" />
+          Supprimer
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Le glisser-déposer apporte des fichiers (ou des dossiers). */
+const carriesFiles = (event) =>
+  [...(event.dataTransfer?.types || [])].includes("Files");
+
 /**
  * Espace du visiteur d'un lien client : même visuel que Documents partagés
  * dans Newbi (explorateur à gauche, fil d'Ariane, recherche, colonnes Nom,
- * Taille et Date). Si l'accès le permet, le visiteur dépose des documents
- * dans le dossier ouvert (bouton ou glisser-déposer), et renomme, déplace,
- * remplace ou supprime ceux qu'il a déposés, jamais les autres. Le contenu
- * arrive à jour en temps réel (page.jsx).
+ * Taille et Date). Si l'accès le permet, le visiteur ajoute des fichiers ou
+ * un dossier de son ordinateur (bouton « Ajouter » ou glisser-déposer) et
+ * crée des dossiers : dans le dossier ouvert, ou depuis l'accueil dans le
+ * dossier qu'il choisit. Il renomme, déplace, remplace ou supprime les
+ * documents qu'il a déposés, renomme ou supprime les dossiers qu'il a créés,
+ * jamais le reste. Le contenu arrive à jour en temps réel (page.jsx).
  *
  * @param {object} props
  * @param {(folderId: string) => string} props.uploadUrl adresse de dépôt
@@ -643,6 +641,12 @@ function OwnDocumentMenu({ document, canMove, onAction }) {
  * @param {(document: object, name: string) => Promise<void>} props.onRename
  * @param {(document: object, folderId: string) => Promise<void>} props.onMove
  * @param {(document: object) => Promise<void>} props.onDelete
+ * @param {(parentId: string, paths: string[][]) => Promise<object[]>}
+ *   props.onCreateFolders crée les dossiers (chacun par la liste de ses
+ *   noms) et renvoie, dans l'ordre, ceux où mènent les chemins, une fois le
+ *   contenu relu
+ * @param {(folder: object, name: string) => Promise<void>} props.onRenameFolder
+ * @param {(folder: object) => Promise<void>} props.onDeleteFolder
  * @param {() => void} props.onChanged un envoi est arrivé : relire
  */
 export function SharedFiles({
@@ -655,6 +659,9 @@ export function SharedFiles({
   onRename,
   onMove,
   onDelete,
+  onCreateFolders,
+  onRenameFolder,
+  onDeleteFolder,
   onChanged,
 }) {
   const { folders, documents, rootFolderIds, workspace, visitor } = content;
@@ -678,7 +685,13 @@ export function SharedFiles({
   const [toMove, setToMove] = useState(null);
   // Nouvelle version choisie, en attente du nom : { document, file }
   const [replacing, setReplacing] = useState(null);
+  // Dépôt depuis l'accueil, en attente du dossier choisi (depositPlan)
+  const [pending, setPending] = useState(null);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [folderToRename, setFolderToRename] = useState(null);
+  const [folderToDelete, setFolderToDelete] = useState(null);
   const fileInput = useRef(null);
+  const folderInput = useRef(null);
   const replaceInput = useRef(null);
   const toReplace = useRef(null);
   const uploads = useUploadQueue({
@@ -707,14 +720,22 @@ export function SharedFiles({
     if (gone(toDelete)) setToDelete(null);
     if (gone(replacing?.document)) setReplacing(null);
   }, [documents, previewed, toRename, toMove, toDelete, replacing]);
+  useEffect(() => {
+    const gone = (folder) =>
+      folder && !folders.some((other) => other.id === folder.id);
+    if (gone(folderToRename)) setFolderToRename(null);
+    if (gone(folderToDelete)) setFolderToDelete(null);
+  }, [folders, folderToRename, folderToDelete]);
   // Aperçu d'un document renommé ou remplacé entre-temps : à jour
   const previewedDocument = previewed
     ? documents.find((d) => d.id === previewed.id) || null
     : null;
 
   const searching = query.trim().length > 0;
-  // Dépôt dans le dossier ouvert (pas sur l'accueil qui liste les dossiers)
-  const dropTarget = canUpload && !searching ? currentFolder : null;
+  // Ajout hors recherche : dans le dossier ouvert, ou depuis l'accueil (qui
+  // liste les dossiers partagés) dans le dossier choisi ensuite
+  const canAdd = canUpload && !searching;
+  const dropTarget = canAdd ? currentFolder : null;
   const actionsWidth = canUpload ? "w-[88px]" : "w-[60px]";
   const results = useMemo(
     () => (searching ? searchShare({ folders, documents }, query) : null),
@@ -752,20 +773,75 @@ export function SharedFiles({
     );
 
   const pickFiles = () => fileInput.current?.click();
-  const depositFiles = (files) => {
-    if (dropTarget && files?.length) uploads.add(files, dropTarget);
+  const pickFolder = () => folderInput.current?.click();
+
+  /**
+   * Dépose `plan` (depositPlan) dans le dossier `target` : ses dossiers
+   * d'abord, en une requête, puis chaque fichier dans le sien par la file
+   * des dépôts.
+   */
+  const depositInto = async (plan, target) => {
+    const created =
+      plan.folders.length > 0
+        ? await onCreateFolders(target.id, plan.folders)
+        : [];
+    const folderAt = new Map(
+      plan.folders.map((names, index) => [
+        names.join("/"),
+        { folder: created[index], names },
+      ]),
+    );
+    const groups = new Map();
+    for (const { file, folder } of plan.files) {
+      const key = folder.join("/");
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(file);
+    }
+    for (const [key, files] of groups) {
+      if (!key) {
+        uploads.add(files, target);
+        continue;
+      }
+      const destination = folderAt.get(key);
+      if (!destination?.folder) {
+        throw new Error("Un dossier n'a pas pu être créé. Réessayez.");
+      }
+      uploads.add(files, {
+        id: destination.folder.id,
+        name: [target.name, ...destination.names].join(" › "),
+      });
+    }
   };
-  const hasFiles = (event) =>
-    [...(event.dataTransfer?.types || [])].includes("Files");
-  const dropHandlers = dropTarget
+
+  /**
+   * Fichiers ou dossier reçus (bouton ou glisser-déposer) : déposés dans le
+   * dossier ouvert ; sur l'accueil, le visiteur choisit d'abord le dossier.
+   */
+  const receive = (plan) => {
+    if (!canAdd) return;
+    const problem = depositPlanProblem(plan);
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
+    if (!dropTarget) {
+      setPending(plan);
+      return;
+    }
+    depositInto(plan, dropTarget).catch((error) =>
+      toast.error(error?.message || "Dépôt impossible"),
+    );
+  };
+
+  const dropHandlers = canAdd
     ? {
         onDragEnter: (event) => {
-          if (!hasFiles(event)) return;
+          if (!carriesFiles(event)) return;
           event.preventDefault();
           setDragging(true);
         },
         onDragOver: (event) => {
-          if (!hasFiles(event)) return;
+          if (!carriesFiles(event)) return;
           event.preventDefault();
           event.dataTransfer.dropEffect = "copy";
         },
@@ -777,10 +853,55 @@ export function SharedFiles({
         onDrop: (event) => {
           event.preventDefault();
           setDragging(false);
-          depositFiles(event.dataTransfer.files);
+          // Lus pendant l'événement : ensuite, le navigateur n'y donne plus
+          // accès
+          const entries = [...(event.dataTransfer.items || [])]
+            .filter((item) => item.kind === "file")
+            .map((item) => item.webkitGetAsEntry?.())
+            .filter(Boolean);
+          if (entries.some((entry) => entry.isDirectory)) {
+            readDroppedEntries(entries)
+              .then(({ entries: files, directories }) =>
+                receive(depositPlan(files, directories)),
+              )
+              .catch(() =>
+                toast.error(
+                  "Lecture du dossier impossible. Essayez avec le bouton « Ajouter ».",
+                ),
+              );
+          } else if (event.dataTransfer.files?.length) {
+            receive(filesPlan(event.dataTransfer.files));
+          }
         },
       }
     : {};
+
+  const createFolder = async (parent, name) => {
+    const [folder] = await onCreateFolders(parent.id, [[name]]);
+    if (!folder) return;
+    openFolder(folder.id);
+    toast.success(
+      folder.created
+        ? `Dossier « ${folder.name} » créé`
+        : `Le dossier « ${folder.name} » existait déjà`,
+    );
+  };
+
+  const onFolderAction = (action, folder) => {
+    if (action === "rename") setFolderToRename(folder);
+    else if (action === "delete") setFolderToDelete(folder);
+  };
+
+  const confirmDeleteFolder = async () => {
+    const folder = folderToDelete;
+    setFolderToDelete(null);
+    try {
+      await onDeleteFolder(folder);
+      toast.success("Dossier supprimé");
+    } catch (error) {
+      toast.error(error.message || "Suppression impossible");
+    }
+  };
 
   const onDocumentAction = (action, document) => {
     if (action === "rename") setToRename(document);
@@ -912,11 +1033,13 @@ export function SharedFiles({
           className="relative flex-1 min-w-0 flex flex-col"
           {...dropHandlers}
         >
-          {dragging && dropTarget && (
+          {dragging && canAdd && (
             <div className="absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary bg-background/90 pointer-events-none">
               <Upload className="size-6 text-primary" />
               <p className="text-sm font-medium text-center px-4">
-                Déposez vos fichiers dans « {dropTarget.name} »
+                {dropTarget
+                  ? `Déposez vos fichiers ou dossiers dans « ${dropTarget.name} »`
+                  : "Déposez vos fichiers ou dossiers : vous choisirez ensuite le dossier"}
               </p>
             </div>
           )}
@@ -975,33 +1098,31 @@ export function SharedFiles({
                 ({count})
               </span>
             </nav>
-            {dropTarget && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0"
-                  onClick={pickFiles}
-                >
-                  <Upload className="size-4 sm:mr-1.5" />
-                  <span className="sr-only sm:not-sr-only">
-                    Déposer des documents
-                  </span>
-                </Button>
-                <input
-                  ref={fileInput}
-                  type="file"
-                  multiple
-                  accept={UPLOAD_ACCEPT}
-                  className="hidden"
-                  aria-hidden="true"
-                  tabIndex={-1}
-                  onChange={(event) => {
-                    depositFiles(event.target.files);
-                    event.target.value = "";
-                  }}
-                />
-              </>
+            {canAdd && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="shrink-0">
+                    <Plus className="size-4 sm:mr-1.5" />
+                    <span className="sr-only sm:not-sr-only">Ajouter</span>
+                    <ChevronDown className="hidden sm:block size-3.5 ml-1 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onSelect={pickFiles}>
+                    <Upload className="size-4" />
+                    Déposer des fichiers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={pickFolder}>
+                    <FolderUp className="size-4" />
+                    Déposer un dossier
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setCreatingFolder(true)}>
+                    <FolderPlus className="size-4" />
+                    Nouveau dossier
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <div className="relative w-full sm:w-56">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
@@ -1047,7 +1168,7 @@ export function SharedFiles({
                 {dropTarget && (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      Glissez vos fichiers ici pour les déposer.
+                      Glissez vos fichiers ou dossiers ici pour les déposer.
                     </p>
                     <Button size="sm" variant="outline" onClick={pickFiles}>
                       <Upload className="size-4 mr-1.5" />
@@ -1089,17 +1210,23 @@ export function SharedFiles({
                     const inside =
                       tree.subfolders(folder.id).length +
                       tree.documentsIn(folder.id).length;
+                    // Ses propres dossiers, jamais un dossier partagé
+                    // par le propriétaire (racine de l'accès)
+                    const manageable =
+                      canUpload &&
+                      folder.mine &&
+                      !rootFolderIds.includes(folder.id);
                     return (
                       <div
                         key={folder.id}
-                        className="flex items-center gap-3 px-3 sm:px-4 py-1.5 min-h-11 hover:bg-accent/50 transition-colors cursor-pointer"
+                        className="group flex items-center gap-3 px-3 sm:px-4 py-1.5 min-h-11 hover:bg-accent/50 transition-colors cursor-pointer"
                         onClick={() => openFolder(folder.id)}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <FolderIcon folder={folder} />
                           <button
                             type="button"
-                            className="text-sm truncate text-left"
+                            className="text-sm truncate text-left min-w-0"
                             onClick={(event) => {
                               event.stopPropagation();
                               openFolder(folder.id);
@@ -1107,12 +1234,30 @@ export function SharedFiles({
                           >
                             {folder.name}
                           </button>
+                          {folder.mine && (
+                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                              Créé par vous
+                            </span>
+                          )}
                         </div>
                         <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
                           {inside} élément{inside > 1 ? "s" : ""}
                         </span>
                         <span className="w-28 hidden md:block" />
-                        <span className={cn(actionsWidth, "flex justify-end")}>
+                        <span
+                          className={cn(
+                            actionsWidth,
+                            "flex items-center justify-end gap-0.5",
+                          )}
+                        >
+                          {manageable && (
+                            <span className="sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 sm:has-[[data-state=open]]:opacity-100 transition-opacity">
+                              <OwnFolderMenu
+                                folder={folder}
+                                onAction={onFolderAction}
+                              />
+                            </span>
+                          )}
                           <ChevronRight className="size-4 text-muted-foreground" />
                         </span>
                       </div>
@@ -1240,6 +1385,98 @@ export function SharedFiles({
           onClose={() => setToMove(null)}
         />
       )}
+
+      {canUpload && (
+        <>
+          <input
+            ref={fileInput}
+            type="file"
+            multiple
+            accept={UPLOAD_ACCEPT}
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+            onChange={(event) => {
+              // Lus avant la remise à zéro, qui vide la liste
+              const files = [...(event.target.files || [])];
+              event.target.value = "";
+              if (files.length > 0) receive(filesPlan(files));
+            }}
+          />
+          {/* Dossier entier, avec ses sous-dossiers ; un navigateur qui ne
+              sait pas choisir un dossier propose de simples fichiers */}
+          <input
+            ref={folderInput}
+            type="file"
+            multiple
+            webkitdirectory=""
+            directory=""
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+            data-testid="depot-dossier"
+            onChange={(event) => {
+              const files = [...(event.target.files || [])];
+              event.target.value = "";
+              if (files.length > 0) receive(pickedFolderPlan(files));
+            }}
+          />
+        </>
+      )}
+
+      {pending && (
+        <DepositDialog
+          plan={pending}
+          tree={tree}
+          onDeposit={async (folder) => {
+            await depositInto(pending, folder);
+            openFolder(folder.id);
+          }}
+          onClose={() => setPending(null)}
+        />
+      )}
+
+      {creatingFolder && (
+        <NewFolderDialog
+          parent={currentFolder}
+          tree={tree}
+          onCreate={createFolder}
+          onClose={() => setCreatingFolder(false)}
+        />
+      )}
+
+      {folderToRename && (
+        <RenameFolderDialog
+          key={folderToRename.id}
+          folder={folderToRename}
+          tree={tree}
+          onRename={onRenameFolder}
+          onClose={() => setFolderToRename(null)}
+        />
+      )}
+
+      <AlertDialog
+        open={Boolean(folderToDelete)}
+        onOpenChange={(open) => !open && setFolderToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader className="min-w-0">
+            <AlertDialogTitle className="break-words">
+              Supprimer le dossier «&nbsp;{folderToDelete?.name}&nbsp;»&nbsp;?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Le dossier et tout ce qu&apos;il contient seront retirés du
+              dossier partagé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteFolder}>
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {canUpload && (
         <input

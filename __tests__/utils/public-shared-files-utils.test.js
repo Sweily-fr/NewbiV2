@@ -1,15 +1,27 @@
 /**
  * Page du visiteur d'un lien client : familles de fichiers, tri des
- * colonnes, arbre du partage et recherche sans accents.
+ * colonnes, arbre du partage, recherche sans accents, et dépôt de fichiers
+ * ou d'un dossier (noms de dossiers, plan d'envoi, dossier glissé-déposé).
  */
 import { describe, it, expect } from "vitest";
 import {
   HOME,
+  IMPORT_MAX_DEPTH,
+  IMPORT_MAX_FILES,
+  IMPORT_MAX_FOLDERS,
   buildShareTree,
+  cleanFolderName,
+  depositPlan,
+  depositPlanProblem,
+  depositSummary,
   fileKind,
+  filesPlan,
   folderChoices,
   formatFileSize,
+  isHiddenName,
+  pickedFolderPlan,
   previewKind,
+  readDroppedEntries,
   replacementNames,
   searchShare,
   sortDocuments,
@@ -264,5 +276,234 @@ describe("replacementNames", () => {
   it("fichier sans nom utilisable : seul le nom actuel est proposé", () => {
     expect(replacementNames("lettre.pdf", ".pdf").fromFile).toBeNull();
     expect(replacementNames("lettre.pdf", " .pdf").fromFile).toBeNull();
+  });
+});
+
+describe("cleanFolderName", () => {
+  it("nettoie comme l'API : espaces, séparateurs, fin du nom", () => {
+    expect(cleanFolderName("  Factures   2026  ")).toBe("Factures 2026");
+    expect(cleanFolderName("2025/2026")).toBe("2025-2026");
+    expect(cleanFolderName("Archives... ")).toBe("Archives");
+    expect(cleanFolderName("a".repeat(300))).toHaveLength(120);
+  });
+
+  it("rien d'utilisable : chaîne vide", () => {
+    for (const name of ["", "   ", "...", 42, null, undefined]) {
+      expect(cleanFolderName(name)).toBe("");
+    }
+  });
+});
+
+describe("isHiddenName", () => {
+  it("fichiers et dossiers cachés ou du système", () => {
+    for (const name of [".DS_Store", ".git", "__MACOSX", "Thumbs.db"]) {
+      expect(isHiddenName(name)).toBe(true);
+    }
+    for (const name of ["Factures", "relevé.pdf", "desktop.pdf"]) {
+      expect(isHiddenName(name)).toBe(false);
+    }
+  });
+});
+
+const file = (name) => ({ name });
+
+describe("depositPlan", () => {
+  it("dossiers à créer (parents d'abord) et dossier de chaque fichier", () => {
+    const plan = depositPlan([
+      { file: file("a.pdf"), path: "Factures/2026/Janvier/a.pdf" },
+      { file: file("b.pdf"), path: "Factures/b.pdf" },
+      { file: file("c.pdf"), path: "c.pdf" },
+      { file: file("d.pdf"), path: "Factures/2026/d.pdf" },
+    ]);
+    expect(plan.folders).toEqual([
+      ["Factures"],
+      ["Factures", "2026"],
+      ["Factures", "2026", "Janvier"],
+    ]);
+    expect(plan.files.map(({ file, folder }) => [file.name, folder])).toEqual([
+      ["a.pdf", ["Factures", "2026", "Janvier"]],
+      ["b.pdf", ["Factures"]],
+      ["c.pdf", []],
+      ["d.pdf", ["Factures", "2026"]],
+    ]);
+  });
+
+  it("laisse de côté ce qui est caché, garde les dossiers vides", () => {
+    const plan = depositPlan(
+      [
+        { file: file(".DS_Store"), path: "Factures/.DS_Store" },
+        { file: file("x.pdf"), path: "Factures/.git/x.pdf" },
+        { file: file("a.pdf"), path: "Factures/a.pdf" },
+      ],
+      ["Factures/Vide", "Factures/.cache"],
+    );
+    expect(plan.folders).toEqual([["Factures"], ["Factures", "Vide"]]);
+    expect(plan.files.map(({ file }) => file.name)).toEqual(["a.pdf"]);
+  });
+});
+
+describe("filesPlan et pickedFolderPlan", () => {
+  it("fichiers choisis sans dossier : tous pour le dossier choisi", () => {
+    expect(filesPlan([file("a.pdf"), file("b.pdf")])).toEqual({
+      folders: [],
+      files: [
+        { file: file("a.pdf"), folder: [] },
+        { file: file("b.pdf"), folder: [] },
+      ],
+    });
+  });
+
+  it("dossier choisi par le sélecteur : chemins relatifs", () => {
+    const picked = [
+      { name: "a.pdf", webkitRelativePath: "Relevés/2026/a.pdf" },
+      { name: "b.pdf", webkitRelativePath: "Relevés/b.pdf" },
+    ];
+    expect(pickedFolderPlan(picked).folders).toEqual([
+      ["Relevés"],
+      ["Relevés", "2026"],
+    ]);
+  });
+
+  it("navigateur sans choix de dossier : de simples fichiers", () => {
+    const picked = [{ name: "a.pdf", webkitRelativePath: "" }];
+    expect(pickedFolderPlan(picked)).toEqual(filesPlan(picked));
+  });
+});
+
+describe("depositPlanProblem", () => {
+  const many = (count, make) =>
+    Array.from({ length: count }, (_, i) => make(i));
+
+  it("dépôt acceptable : aucun problème", () => {
+    expect(depositPlanProblem(filesPlan([file("a.pdf")]))).toBeNull();
+  });
+
+  it("vide, trop de fichiers, de dossiers ou de niveaux : refusé", () => {
+    expect(depositPlanProblem({ folders: [], files: [] })).toContain("vide");
+    expect(
+      depositPlanProblem(
+        filesPlan(many(IMPORT_MAX_FILES + 1, (i) => file(`${i}.pdf`))),
+      ),
+    ).toContain(`${IMPORT_MAX_FILES} au plus`);
+    expect(
+      depositPlanProblem({
+        folders: many(IMPORT_MAX_FOLDERS + 1, (i) => [`D${i}`]),
+        files: [],
+      }),
+    ).toContain(`${IMPORT_MAX_FOLDERS} au plus`);
+    expect(
+      depositPlanProblem({
+        folders: [many(IMPORT_MAX_DEPTH + 1, (i) => `N${i}`)],
+        files: [],
+      }),
+    ).toContain(`${IMPORT_MAX_DEPTH} au plus`);
+  });
+});
+
+describe("depositSummary", () => {
+  it("des fichiers : leur nombre et leurs noms", () => {
+    expect(depositSummary(filesPlan([file("a.pdf")]))).toEqual({
+      title: "Déposer 1 fichier",
+      detail: "a.pdf",
+      withFolders: false,
+    });
+    expect(
+      depositSummary(filesPlan([file("a.pdf"), file("b.pdf")])).detail,
+    ).toBe("a.pdf et b.pdf");
+    expect(
+      depositSummary(
+        filesPlan(["a", "b", "c", "d"].map((name) => file(`${name}.pdf`))),
+      ),
+    ).toMatchObject({
+      title: "Déposer 4 fichiers",
+      detail: "a.pdf, b.pdf et 2 autres",
+    });
+  });
+
+  it("un dossier : son nom, ses fichiers et ses sous-dossiers", () => {
+    const summary = depositSummary(
+      depositPlan([
+        { file: file("a.pdf"), path: "Relevés/2026/a.pdf" },
+        { file: file("b.pdf"), path: "Relevés/b.pdf" },
+      ]),
+    );
+    // Insécables autour du nom : le guillemet ne part pas seul à la ligne
+    expect(summary).toEqual({
+      title: "Déposer le dossier «\u00a0Relevés\u00a0»",
+      detail: "2 fichiers dans 2 dossiers",
+      withFolders: true,
+    });
+  });
+
+  it("plusieurs dossiers et des fichiers ; un dossier sans fichier", () => {
+    expect(
+      depositSummary(
+        depositPlan([
+          { file: file("a.pdf"), path: "A/a.pdf" },
+          { file: file("b.pdf"), path: "B/b.pdf" },
+          { file: file("c.pdf"), path: "c.pdf" },
+        ]),
+      ).title,
+    ).toBe("Déposer 2 dossiers et 1 fichier");
+    expect(depositSummary(depositPlan([], ["Vide"])).detail).toBe(
+      "1 dossier, sans fichier",
+    );
+  });
+});
+
+describe("readDroppedEntries", () => {
+  const fileEntry = (path) => ({
+    isFile: true,
+    isDirectory: false,
+    name: path.split("/").pop(),
+    fullPath: `/${path}`,
+    file: (resolve) => resolve(file(path.split("/").pop())),
+  });
+  // Lecture par lots, comme Chrome (100 éléments au plus par lot)
+  const directoryEntry = (path, children, batch = 2) => ({
+    isFile: false,
+    isDirectory: true,
+    name: path.split("/").pop(),
+    fullPath: `/${path}`,
+    createReader: () => {
+      let next = 0;
+      return {
+        readEntries: (resolve) => {
+          resolve(children.slice(next, next + batch));
+          next += batch;
+        },
+      };
+    },
+  });
+
+  it("parcourt les dossiers par lots, chemins depuis l'élément déposé", async () => {
+    const result = await readDroppedEntries([
+      directoryEntry("Factures", [
+        fileEntry("Factures/a.pdf"),
+        fileEntry("Factures/b.pdf"),
+        fileEntry("Factures/c.pdf"),
+        directoryEntry("Factures/Vide", []),
+        directoryEntry("Factures/.git", [fileEntry("Factures/.git/HEAD")]),
+      ]),
+      fileEntry("seul.pdf"),
+    ]);
+    expect(result.entries.map(({ path }) => path)).toEqual([
+      "Factures/a.pdf",
+      "Factures/b.pdf",
+      "Factures/c.pdf",
+      "seul.pdf",
+    ]);
+    expect(result.directories).toEqual(["Factures/Vide"]);
+  });
+
+  it("s'arrête au-delà du plafond de fichiers", async () => {
+    const children = Array.from({ length: 10 }, (_, i) =>
+      fileEntry(`Gros/${i}.pdf`),
+    );
+    const result = await readDroppedEntries(
+      [directoryEntry("Gros", children, 100)],
+      3,
+    );
+    expect(result.entries).toHaveLength(4);
   });
 });
