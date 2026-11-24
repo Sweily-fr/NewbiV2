@@ -19,7 +19,7 @@
  * Comptes gestionnaires : le cabinet (Claire Comptable) et un « cabinet
  * fantôme » sans utilisateur, dont le cabinet ne doit jamais rien atteindre.
  */
-import { COMPTES, MEMBRES, DANS, MAINTENANT, oid } from "./base.mjs";
+import { COMPTES, MEMBRES, DANS, DANS_HEURES, MAINTENANT, oid } from "./base.mjs";
 import { facture } from "./factures-liste.mjs";
 import { articles, documentVente, entreprise, ligne, snapshotClient, totaux } from "./documents.mjs";
 
@@ -270,7 +270,7 @@ function facturesBoulangerie() {
         echeance: DANS(-(10 + i)),
         payeeLe: DANS(-(20 + i)),
         // Créées récemment (reprise de l'historique) : les plus récentes de l'espace
-        creeeLe: DANS(-(i / 10)),
+        creeeLe: DANS_HEURES(-2.4 * i),
         client: C.restaurant,
         articles: [ligne(`Pains et viennoiseries lot ${i}`, 1, 100 + i)],
         envoyee: true,

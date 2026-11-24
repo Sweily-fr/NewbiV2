@@ -23,7 +23,7 @@
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { API_URL, BASE_URL, connecte, SESSION_TOKEN_FACTURES, SESSION_TOKEN_FACTURES_EDITEUR, SESSION_TOKEN_FACTURES_LECTEUR, SESSION_TOKEN_INTRUS } from "../config.mjs";
-import { COMPTES } from "../donnees/base.mjs";
+import { COMPTES, jourParis } from "../donnees/base.mjs";
 import { AVOIRS_FACTURES, CLIENTS_FACTURES, F, IMPORTEES, MODELES, RECURRENCES } from "../donnees/lot-factures.mjs";
 import { appelApi, envoiFichierApi, jetonApi, verifierRefus, id } from "../securite.mjs";
 import { base } from "../base.mjs";
@@ -31,9 +31,9 @@ import { base } from "../base.mjs";
 const ORG = id(COMPTES.factures.organisation);
 const ORG_ID = COMPTES.factures.organisation._id;
 const ORG_INTRUS = id(COMPTES.intrus.organisation);
-const AUJOURDHUI = new Date().toISOString().slice(0, 10);
-const DEMAIN = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-const DANS_30 = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+const AUJOURDHUI = jourParis();
+const DEMAIN = jourParis(1);
+const DANS_30 = jourParis(30);
 
 const clientDe = (c) => ({
   id: id(c),

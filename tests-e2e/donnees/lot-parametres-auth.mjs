@@ -14,7 +14,7 @@
  *     se déconnecter ou révoquer ne touche jamais un autre compte de test ;
  *   - les membres et invitations visés par les actions des tests.
  */
-import { oid, MAINTENANT, DANS, COMPTES, MEMBRES } from "./base.mjs";
+import { oid, MAINTENANT, DANS, DANS_HEURES, COMPTES, MEMBRES } from "./base.mjs";
 
 /** Mot de passe de tous les comptes qui se connectent par le formulaire. */
 export const MOT_DE_PASSE = "Newbi-Test-2026!";
@@ -394,8 +394,8 @@ export const INVITATIONS = {
  * Better Auth les écrit quand il envoie le lien par e-mail.
  */
 export const JETONS_REINITIALISATION = {
-  expire: { n: 1, compte: "jetonExpire", jeton: "e2eJetonReinitialisationExpireUniquement01", expire: DANS(-1 / 24) },
-  sessions: { n: 2, compte: "reinitialisationSessions", jeton: "e2eJetonReinitialisationSessionsUniquement2", expire: DANS(1 / 24) },
+  expire: { n: 1, compte: "jetonExpire", jeton: "e2eJetonReinitialisationExpireUniquement01", expire: DANS_HEURES(-1) },
+  sessions: { n: 2, compte: "reinitialisationSessions", jeton: "e2eJetonReinitialisationSessionsUniquement2", expire: DANS_HEURES(1) },
 };
 
 const utilisateurPret = (u) => ({

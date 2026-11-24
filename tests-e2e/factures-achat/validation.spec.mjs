@@ -6,6 +6,7 @@
  */
 import { ObjectId } from "mongodb";
 import { test, expect } from "../outils.mjs";
+import { jourParis } from "../donnees/base.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { base } from "../base.mjs";
 import { SESSION_TOKEN_SAISIE_ACHATS, connecte } from "../config.mjs";
@@ -16,7 +17,7 @@ import { ORG_SAISIE, photo } from "../achats-banque.mjs";
 test.use({ storageState: connecte(SESSION_TOKEN_SAISIE_ACHATS) });
 
 const ESPACE = new ObjectId(ORG_SAISIE);
-const aujourdhui = () => new Date().toISOString().slice(0, 10);
+const aujourdhui = () => jourParis();
 const messages = (reponse) => reponse.errors.map((e) => e.message).join(" | ");
 const appeler = (page, requete, variables) => appelApi(page, requete, variables, { organisation: ORG_SAISIE, delai: 15_000 });
 const facturePar = (fournisseur) => base().then((db) => db.collection("purchaseinvoices").findOne({ workspaceId: ESPACE, supplierName: fournisseur }));
