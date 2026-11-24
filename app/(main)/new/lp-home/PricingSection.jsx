@@ -61,7 +61,7 @@ const PLAN_UI_EXTRA = {
       "Connexion bancaire · 1 compte",
       "CRM client & catalogue produits",
       "Un accès comptable gratuit",
-      "75 Go de stockage (+50 Go à 2,99 €/mois)",
+      "100 Go de stockage",
     ],
   },
   pme: {
@@ -75,7 +75,7 @@ const PLAN_UI_EXTRA = {
       "Facturation électronique 2026 incluse",
       "Connexion bancaire · 3 comptes",
       "E-signature & automatisations illimitées",
-      "400 Go de stockage (+50 Go à 2,99 €/mois)",
+      "500 Go de stockage",
     ],
   },
   entreprise: {
@@ -88,7 +88,7 @@ const PLAN_UI_EXTRA = {
       "Facturation électronique 2026 incluse",
       "Connexion bancaire · 5 comptes",
       "Exports comptables tous formats",
-      "1 To de stockage (+50 Go à 2,99 €/mois)",
+      "2 To de stockage (+50 Go à 2,99 €/mois)",
     ],
   },
 };

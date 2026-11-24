@@ -13,13 +13,17 @@ import { getPlanDisplay } from "@/src/lib/plans-display";
 export const BYTES_PER_GB = 1_000_000_000;
 export const STORAGE_PACK_GB = 50;
 export const STORAGE_PACK_PRICES = { month: 2.99, year: 29.9 };
+// Packs en vente sur l'offre Entreprise seulement : Standard et Premium
+// passent à l'offre supérieure (miroir de PACK_PLANS dans storageConfig.js
+// de l'API). Les packs déjà achetés sur une autre offre restent retirables.
+export const STORAGE_PACK_PLANS = ["entreprise"];
 export const STORAGE_QUOTA_EXCEEDED = "STORAGE_QUOTA_EXCEEDED";
 
 // Événement émis quand un envoi est refusé faute de place (detail : details
 // de l'erreur GraphQL), écouté par la fenêtre de proposition
 export const STORAGE_QUOTA_EVENT = "newbi:storage-quota-exceeded";
 
-/** Quota de l'offre, en Go (75 / 400 / 1 000). */
+/** Quota de l'offre, en Go (100 / 500 / 2 000). */
 export function planStorageGb(planKey) {
   const key = normalizeStoragePlan(planKey);
   return PLAN_LIMITS[key]?.storage ?? PLAN_LIMITS.freelance.storage;
@@ -31,6 +35,11 @@ export function normalizeStoragePlan(plan) {
   if (value === "pro" || value === "pme" || value === "tpe") return "pme";
   if (value === "entreprise" || value === "enterprise") return "entreprise";
   return "freelance";
+}
+
+/** L'offre permet-elle d'acheter des packs de stockage ? */
+export function canBuyStoragePacks(plan) {
+  return STORAGE_PACK_PLANS.includes(normalizeStoragePlan(plan));
 }
 
 /** « 1,5 Go », « 400 Go », « 1 To », « 12 Mo ». */

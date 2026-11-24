@@ -1,10 +1,11 @@
 /**
  * Stockage des espaces : écran Paramètres > Stockage, bandeaux 80 % et
  * 100 %, refus des nouveaux envois (code STORAGE_QUOTA_EXCEEDED) et
- * proposition « packs ou offre supérieure ».
+ * propositions : offre supérieure en Standard et Premium, packs en
+ * Entreprise (seule offre qui en vend).
  *
- * Les prix Stripe des packs ne sont pas configurés en CI : l'achat de packs
- * est masqué et seule la montée en gamme est proposée (comportement voulu
+ * Les prix Stripe des packs ne sont pas configurés en CI : sur Entreprise,
+ * l'achat de packs est masqué et un message le dit (comportement voulu
  * quand les variables manquent).
  */
 import { test, expect } from "../outils.mjs";
@@ -16,8 +17,9 @@ import { COMPTES_STOCKAGE, MEMBRES_STOCKAGE } from "../donnees/lot-stockage.mjs"
 
 const PLEIN = COMPTES_STOCKAGE.plein.organisation._id;
 const PLEIN_ID = PLEIN.toHexString();
+const ENTREPRISE_ID = COMPTES_STOCKAGE.entreprise.organisation._id.toHexString();
 const PDF = Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF");
-const REFUS = /Espace de stockage plein : 75 Go utilisés sur 75 Go/;
+const REFUS = /Espace de stockage plein : 100 Go utilisés sur 100 Go/;
 
 const ouvrirStockage = async (page) => {
   await ouvrir(page, "/dashboard?parametres=stockage");
@@ -32,29 +34,30 @@ test.describe("Stockage : écran et bandeaux (propriétaire, espace plein)", () 
   test("Paramètres > Stockage dit l'espace utilisé, le quota et le reste", async ({ page }) => {
     await ouvrirStockage(page);
     await expect(page.getByTestId("stockage-resume")).toHaveText(
-      "75 Go utilisés sur 75 Go, il vous reste 0 Go.",
+      "100 Go utilisés sur 100 Go, il vous reste 0 Go.",
     );
-    await expect(page.getByText("Offre Standard : 75 Go.")).toBeVisible();
+    await expect(page.getByText("Offre Standard : 100 Go.")).toBeVisible();
   });
 
   test("Le détail est donné par type de fichier et par personne, avec « Non attribué »", async ({ page }) => {
     await ouvrirStockage(page);
     const types = page.getByTestId("stockage-par-type");
     await expect(types).toContainText("Documents partagés");
-    await expect(types).toContainText("60 Go");
+    await expect(types).toContainText("80 Go");
     const personnes = page.getByTestId("stockage-par-personne");
     await expect(personnes).toContainText("Sacha Stockage");
     await expect(personnes).toContainText("Non attribué");
   });
 
-  test("Sans prix Stripe des packs, seule l'offre supérieure est proposée, avec son prix", async ({ page }) => {
+  test("Standard : seule l'offre supérieure est proposée, avec son prix, sans pack", async ({ page }) => {
     await ouvrirStockage(page);
     await expect(page.getByTestId("offre-packs")).toHaveCount(0);
-    // L'absence de packs est expliquée, pas seulement cachée
-    await expect(page.getByTestId("packs-indisponibles")).toBeVisible();
+    // Pas de pack en Standard : rien à expliquer, pas de rubrique « Packs actifs »
+    await expect(page.getByTestId("packs-indisponibles")).toHaveCount(0);
+    await expect(page.getByText("Packs actifs", { exact: true })).toHaveCount(0);
     const offre = page.getByTestId("offre-superieure");
     await expect(offre).toContainText("Passer à l'offre Premium");
-    await expect(offre).toContainText("400 Go de stockage, 48,99 € TTC/mois");
+    await expect(offre).toContainText("500 Go de stockage, 48,99 € TTC/mois");
     await offre.getByRole("button", { name: "Passer à l'offre Premium" }).click();
     await expect(page.getByText("Choisissez le plan adapté à vos besoins.")).toBeVisible();
   });
@@ -74,8 +77,40 @@ test.describe("Stockage : alerte à 80 %", () => {
   test("Le bandeau prévient à 80 % sans bloquer", async ({ page }) => {
     await ouvrir(page, "/dashboard");
     await expect(page.getByTestId("bandeau-stockage")).toContainText(
-      "Espace de stockage utilisé à 82 % (330 Go sur 400 Go)",
+      "Espace de stockage utilisé à 84 % (420 Go sur 500 Go)",
     );
+  });
+});
+
+test.describe("Stockage : offre Entreprise (packs seulement)", () => {
+  test.use({
+    storageState: connecte(COMPTES_STOCKAGE.entreprise.token),
+    erreursConsoleAutorisees: /Erreur upload|Espace de stockage plein/,
+  });
+
+  test("Entreprise pleine : pas d'offre supérieure, l'ajout de packs est proposé (indisponible sans prix Stripe)", async ({ page }) => {
+    await ouvrirStockage(page);
+    await expect(page.getByTestId("stockage-resume")).toHaveText(
+      "2 To utilisés sur 2 To, il vous reste 0 Go.",
+    );
+    await expect(page.getByTestId("offre-superieure")).toHaveCount(0);
+    await expect(page.getByTestId("packs-indisponibles")).toBeVisible();
+    await expect(page.getByText("Packs actifs", { exact: true })).toBeVisible();
+  });
+
+  test("Refus d'envoi : l'API propose des packs et aucune offre supérieure", async ({ page }) => {
+    await ouvrir(page, "/dashboard");
+    const reponse = await envoiFichierApi(
+      page,
+      `mutation($w: ID!, $file: Upload!) { uploadSharedDocument(workspaceId: $w, file: $file) { success message } }`,
+      { w: ENTREPRISE_ID },
+      { name: "devis.pdf", mimeType: "application/pdf", buffer: PDF },
+      { organisation: ENTREPRISE_ID },
+    );
+    expect(codeRefus(reponse)).toBe("STORAGE_QUOTA_EXCEEDED");
+    const offre = reponse.errors[0].extensions.details.offer;
+    expect(offre.upgrade).toBeNull();
+    expect(offre.packs.additionalPacks).toBe(1);
   });
 });
 
@@ -84,7 +119,7 @@ test.describe("Stockage : membre sans accès à l'abonnement", () => {
 
   test("Le membre voit l'état, sans détail ni achat", async ({ page }) => {
     await ouvrirStockage(page);
-    await expect(page.getByTestId("stockage-resume")).toContainText("75 Go utilisés sur 75 Go");
+    await expect(page.getByTestId("stockage-resume")).toContainText("100 Go utilisés sur 100 Go");
     await expect(page.getByTestId("stockage-par-type")).toHaveCount(0);
     await expect(page.getByTestId("offre-superieure")).toHaveCount(0);
     await expect(page.getByText(/réservés aux personnes qui gèrent l.abonnement/)).toBeVisible();
@@ -112,7 +147,8 @@ test.describe("Stockage : refus des nouveaux envois", () => {
     expect(reponse.errors[0].message).not.toMatch(/€|http/);
     const offre = reponse.errors[0].extensions.details.offer;
     expect(offre.upgrade).toMatchObject({ plan: "pme", label: "Premium" });
-    expect(offre.packs.additionalPacks).toBe(1);
+    // Standard : pas de pack, seulement l'offre supérieure
+    expect(offre.packs).toBeNull();
     expect(await (await base()).collection("shareddocuments").countDocuments({ workspaceId: PLEIN })).toBe(0);
   });
 
