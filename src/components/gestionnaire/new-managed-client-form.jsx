@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
@@ -140,12 +139,16 @@ export default function NewManagedClientForm() {
           {inviteEmail && (
             <>
               {" "}
-              <Link
+              {/* Lien classique (chargement complet), pas <Link> : la
+                  navigation interne de Next.js vers cette page restait
+                  parfois bloquée après le refus (page reçue, jamais
+                  affichée), vu deux fois par les tests e2e le 24/11/2026. */}
+              <a
                 href={`/dashboard/gestionnaire/clients/inviter?email=${encodeURIComponent(inviteEmail)}`}
                 className="font-medium underline underline-offset-4"
               >
                 Inviter ce client
-              </Link>
+              </a>
             </>
           )}
         </p>
