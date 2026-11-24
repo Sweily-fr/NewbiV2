@@ -10,6 +10,7 @@ import { useWorkspaceStorage } from "@/src/hooks/useWorkspaceStorage";
 import { useStoragePacks } from "@/src/hooks/useStoragePacks";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
+  canBuyStoragePacks,
   formatStorageBytes,
   packPriceLabel,
   STORAGE_PACK_GB,
@@ -155,32 +156,37 @@ export function StorageSection({ onTabChange }) {
             />
           </section>
 
-          <section className="space-y-2">
-            <h3 className="text-sm font-medium">Packs actifs</h3>
-            {storage.packs > 0 ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 p-3 text-sm dark:border-[#2c2c2c]">
-                <span data-testid="stockage-packs">
-                  {storage.packs} pack{storage.packs > 1 ? "s" : ""} de{" "}
-                  {STORAGE_PACK_GB} Go ({formatStorageBytes(storage.packBytes)}
-                  ), {packPriceLabel(storage.interval)} chacun
-                </span>
-                {canManage && packsAvailable && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={packs.saving}
-                    onClick={removePack}
-                  >
-                    Retirer un pack
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Aucun pack de stockage.
-              </p>
-            )}
-          </section>
+          {/* Packs en vente sur Entreprise ; ailleurs, seulement ceux déjà
+              achetés, qui restent retirables */}
+          {(storage.packs > 0 || canBuyStoragePacks(storage.plan)) && (
+            <section className="space-y-2">
+              <h3 className="text-sm font-medium">Packs actifs</h3>
+              {storage.packs > 0 ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 p-3 text-sm dark:border-[#2c2c2c]">
+                  <span data-testid="stockage-packs">
+                    {storage.packs} pack{storage.packs > 1 ? "s" : ""} de{" "}
+                    {STORAGE_PACK_GB} Go (
+                    {formatStorageBytes(storage.packBytes)}
+                    ), {packPriceLabel(storage.interval)} chacun
+                  </span>
+                  {canManage && packsAvailable && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={packs.saving}
+                      onClick={removePack}
+                    >
+                      Retirer un pack
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Aucun pack de stockage.
+                </p>
+              )}
+            </section>
+          )}
 
           <section className="space-y-1">
             <h3 className="text-sm font-medium">Par type de fichier</h3>

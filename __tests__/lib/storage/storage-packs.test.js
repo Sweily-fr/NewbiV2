@@ -63,9 +63,10 @@ const packItem = (quantity, priceId = "price_pack_m") => ({
   quantity,
   price: { id: priceId, recurring: { interval: "month" } },
 });
+// Offre Entreprise : la seule qui vend des packs
 const activeSubscription = {
   referenceId: orgId,
-  plan: "freelance",
+  plan: "entreprise",
   status: "active",
   stripeSubscriptionId: "sub_1",
 };
@@ -96,9 +97,9 @@ describe("Packs de stockage : lecture de l'abonnement Stripe", () => {
   });
 
   it("calcule le quota avec les packs (50 Go chacun)", () => {
-    expect(quotaBytesWith("freelance", 0)).toBe(75 * GB);
-    expect(quotaBytesWith("pro", 2)).toBe(500 * GB);
-    expect(quotaBytesWith("enterprise", 1)).toBe(1050 * GB);
+    expect(quotaBytesWith("freelance", 0)).toBe(100 * GB);
+    expect(quotaBytesWith("pro", 2)).toBe(600 * GB);
+    expect(quotaBytesWith("enterprise", 1)).toBe(2050 * GB);
   });
 });
 
@@ -163,12 +164,46 @@ describe("Packs de stockage : achat et retrait", () => {
     expect(error.status).toBe(409);
   });
 
+  it("refuse l'ajout de packs hors Entreprise : l'offre supérieure est proposée", async () => {
+    for (const plan of ["freelance", "pme", "pro"]) {
+      const stripe = fakeStripe([monthlyBase]);
+      const error = await setStoragePacks({
+        mongoDb: fakeDb({ subscription: { ...activeSubscription, plan } }),
+        stripe,
+        organizationId: orgId,
+        quantity: 1,
+      }).catch((e) => e);
+      expect(error).toBeInstanceOf(StoragePackError);
+      expect(error.status).toBe(403);
+      expect(error.message).toMatch(/réservé à l'offre Entreprise/);
+      expect(stripe.subscriptionItems.create).not.toHaveBeenCalled();
+    }
+  });
+
+  it("laisse retirer un pack déjà acheté sur Premium", async () => {
+    const stripe = fakeStripe([monthlyBase, packItem(2)]);
+    await setStoragePacks({
+      mongoDb: fakeDb({
+        subscription: { ...activeSubscription, plan: "pme" },
+        usage: { totalBytes: 100 * GB, computedAt: new Date() },
+      }),
+      stripe,
+      organizationId: orgId,
+      quantity: 1,
+    });
+    expect(stripe.subscriptionItems.update).toHaveBeenCalledWith(
+      "si_pack",
+      expect.objectContaining({ quantity: 1 }),
+      expect.any(Object),
+    );
+  });
+
   it("refuse un retrait qui ferait dépasser le quota", async () => {
     const stripe = fakeStripe([monthlyBase, packItem(2)]);
     const error = await setStoragePacks({
       mongoDb: fakeDb({
         subscription: activeSubscription,
-        usage: { totalBytes: 140 * GB, computedAt: new Date() },
+        usage: { totalBytes: 2060 * GB, computedAt: new Date() },
       }),
       stripe,
       organizationId: orgId,
