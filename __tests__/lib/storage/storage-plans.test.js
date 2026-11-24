@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   BYTES_PER_GB,
+  canBuyStoragePacks,
   describeStorageOffer,
   findStorageQuotaError,
   formatStorageBytes,
@@ -14,7 +15,7 @@ import { PLAN_FEATURES_SECTIONS, PLANS_DISPLAY } from "@/src/lib/plans-display";
 const GB = BYTES_PER_GB;
 
 const offer = {
-  neededBytes: 76 * GB,
+  neededBytes: 101 * GB,
   currentMonthlyCost: 17.99,
   recommended: "packs",
   packs: {
@@ -32,33 +33,44 @@ const offer = {
     packs: 0,
     planMonthlyPrice: 48.99,
     monthlyCost: 48.99,
-    quotaBytes: 400 * GB,
+    quotaBytes: 500 * GB,
   },
 };
 
 describe("Stockage : quotas par organisation", () => {
-  it("donne 75 Go, 400 Go et 1 To selon l'offre, quel que soit le nombre d'utilisateurs", () => {
-    expect(planStorageGb("freelance")).toBe(75);
-    expect(planStorageGb("pme")).toBe(400);
-    expect(planStorageGb("pro")).toBe(400);
-    expect(planStorageGb("entreprise")).toBe(1000);
-    expect(planStorageGb("enterprise")).toBe(1000);
+  it("donne 100 Go, 500 Go et 2 To selon l'offre, quel que soit le nombre d'utilisateurs", () => {
+    expect(planStorageGb("freelance")).toBe(100);
+    expect(planStorageGb("pme")).toBe(500);
+    expect(planStorageGb("pro")).toBe(500);
+    expect(planStorageGb("entreprise")).toBe(2000);
+    expect(planStorageGb("enterprise")).toBe(2000);
     expect(normalizeStoragePlan(undefined)).toBe("freelance");
   });
 
-  it("affiche 75 Go, 400 Go et 1 To dans la grille des offres, sans toucher aux prix", () => {
+  it("ne vend des packs que sur l'offre Entreprise", () => {
+    expect(canBuyStoragePacks("freelance")).toBe(false);
+    expect(canBuyStoragePacks("pme")).toBe(false);
+    expect(canBuyStoragePacks("pro")).toBe(false);
+    expect(canBuyStoragePacks("entreprise")).toBe(true);
+    expect(canBuyStoragePacks("enterprise")).toBe(true);
+    expect(canBuyStoragePacks(undefined)).toBe(false);
+  });
+
+  it("affiche 100 Go, 500 Go et 2 To dans la grille des offres, packs sur Entreprise seulement, sans toucher aux prix", () => {
     const row = PLAN_FEATURES_SECTIONS.flatMap((s) => s.features).find(
       (f) => f.name === "Stockage documents",
     );
     expect(row).toMatchObject({
-      freelance: "75 Go",
-      pme: "400 Go",
-      entreprise: "1 To",
+      freelance: "100 Go",
+      pme: "500 Go",
+      entreprise: "2 To",
     });
     const packs = PLAN_FEATURES_SECTIONS.flatMap((s) => s.features).find(
       (f) => f.name === "Stockage supplémentaire",
     );
-    expect(packs.freelance).toMatch(/\+50 Go/);
+    expect(packs.freelance).toBe(false);
+    expect(packs.pme).toBe(false);
+    expect(packs.entreprise).toMatch(/\+50 Go/);
     expect(
       PLANS_DISPLAY.map((p) => [p.monthlyPrice, p.annualMonthlyPrice]),
     ).toEqual([
@@ -96,9 +108,20 @@ describe("Stockage : propositions", () => {
     expect(described.packs.price).toBe("2,99 € TTC/mois de plus");
     expect(described.packs.total).toBe("Total : 20,98 € TTC/mois");
     expect(described.upgrade.title).toBe("Passer à l'offre Premium");
-    expect(described.upgrade.quota).toBe("400 Go");
+    expect(described.upgrade.quota).toBe("500 Go");
     expect(described.upgrade.price).toBe("48,99 € TTC/mois");
     expect(described.recommended).toBe("packs");
+  });
+
+  it("Standard et Premium : l'API ne propose que l'offre supérieure, mise en avant", () => {
+    const described = describeStorageOffer(
+      { ...offer, packs: null, recommended: "upgrade" },
+      { packsAvailable: true },
+    );
+    expect(described.packs).toBeNull();
+    expect(described.upgrade.title).toBe("Passer à l'offre Premium");
+    expect(described.upgrade.quota).toBe("500 Go");
+    expect(described.recommended).toBe("upgrade");
   });
 
   it("masque les packs quand les prix Stripe manquent : seule la montée en gamme reste", () => {

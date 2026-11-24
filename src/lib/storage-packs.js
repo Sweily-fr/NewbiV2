@@ -8,11 +8,15 @@
  * variable de l'intervalle de l'abonnement, l'achat de packs est indisponible
  * (seule la montée en gamme est proposée).
  *
+ * Achat réservé à l'offre Entreprise (STORAGE_PACK_PLANS) ; les packs déjà
+ * achetés sur une autre offre restent retirables.
+ *
  * Le nombre de packs actifs est recopié dans la collection
  * workspace_storage_usage (champ `packs`), que l'API lit pour le quota.
  */
 import {
   BYTES_PER_GB,
+  canBuyStoragePacks,
   normalizeStoragePlan,
   planStorageGb,
   STORAGE_PACK_GB,
@@ -143,7 +147,8 @@ export class StoragePackError extends Error {
 
 /**
  * Fixe le nombre total de packs de l'espace sur son abonnement Stripe.
- * Retrait refusé si l'espace dépasserait alors son quota.
+ * Ajout réservé à l'offre Entreprise ; retrait refusé si l'espace
+ * dépasserait alors son quota.
  * @returns {Promise<{ quantity: number, interval: string }>}
  */
 export async function setStoragePacks({
@@ -171,6 +176,18 @@ export async function setStoragePacks({
   const stripeSubscription = await stripe.subscriptions.retrieve(
     subscription.stripeSubscriptionId,
   );
+  const items = stripeSubscription.items?.data || [];
+  const packItem = storagePackItemOf(items);
+  const current = packQuantityFromItems(items);
+
+  // Ajout réservé à l'offre Entreprise ; un retrait reste possible partout
+  if (target > current && !canBuyStoragePacks(subscription.plan)) {
+    throw new StoragePackError(
+      403,
+      "L'ajout de stockage est réservé à l'offre Entreprise. Passez à l'offre supérieure pour avoir plus d'espace.",
+    );
+  }
+
   const interval = subscriptionInterval(stripeSubscription);
   const priceId = storagePackPriceFor(interval);
   if (!priceId) {
@@ -179,10 +196,6 @@ export async function setStoragePacks({
       "L'ajout de stockage n'est pas disponible pour le moment.",
     );
   }
-
-  const items = stripeSubscription.items?.data || [];
-  const packItem = storagePackItemOf(items);
-  const current = packQuantityFromItems(items);
 
   if (target < current) {
     const usage = await mongoDb

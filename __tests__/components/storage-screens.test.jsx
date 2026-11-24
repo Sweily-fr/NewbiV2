@@ -47,27 +47,37 @@ import { StorageBanner } from "@/src/components/storage/storage-banner";
 import { StorageQuotaDialog } from "@/src/components/storage/storage-quota-dialog";
 import { STORAGE_QUOTA_EVENT } from "@/src/lib/storage-plans";
 
+// Propositions de l'API : Standard plein = offre supérieure seulement (packs
+// réservés à Entreprise) ; Entreprise pleine = packs seulement
 const offer = {
-  neededBytes: 76 * GB,
+  neededBytes: 101 * GB,
   currentMonthlyCost: 17.99,
-  recommended: "packs",
-  packs: {
-    additionalPacks: 1,
-    totalPacks: 1,
-    monthlyCost: 20.98,
-    extraMonthlyCost: 2.99,
-    billedPrice: 2.99,
-    interval: "month",
-    addedBytes: 50 * GB,
-  },
+  recommended: "upgrade",
+  packs: null,
   upgrade: {
     plan: "pme",
     label: "Premium",
     packs: 0,
     planMonthlyPrice: 48.99,
     monthlyCost: 48.99,
-    quotaBytes: 400 * GB,
+    quotaBytes: 500 * GB,
   },
+};
+
+const enterpriseOffer = {
+  neededBytes: 2001 * GB,
+  currentMonthlyCost: 94.99,
+  recommended: "packs",
+  packs: {
+    additionalPacks: 1,
+    totalPacks: 1,
+    monthlyCost: 97.98,
+    extraMonthlyCost: 2.99,
+    billedPrice: 2.99,
+    interval: "month",
+    addedBytes: 50 * GB,
+  },
+  upgrade: null,
 };
 
 function storage(overrides = {}) {
@@ -79,10 +89,10 @@ function storage(overrides = {}) {
     interval: "month",
     subscriptionActive: true,
     usedBytes: 30 * GB,
-    quotaBytes: 75 * GB,
-    baseQuotaBytes: 75 * GB,
-    remainingBytes: 45 * GB,
-    percent: 40,
+    quotaBytes: 100 * GB,
+    baseQuotaBytes: 100 * GB,
+    remainingBytes: 70 * GB,
+    percent: 30,
     level: "ok",
     packs: 0,
     packBytes: 0,
@@ -108,6 +118,19 @@ function storage(overrides = {}) {
   };
 }
 
+function enterprise(overrides = {}) {
+  return storage({
+    plan: "entreprise",
+    planLabel: "Entreprise",
+    quotaBytes: 2000 * GB,
+    baseQuotaBytes: 2000 * GB,
+    remainingBytes: 1970 * GB,
+    percent: 1.5,
+    offer: enterpriseOffer,
+    ...overrides,
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockPacks.available = true;
@@ -119,7 +142,7 @@ describe("Paramètres > Stockage", () => {
     mockStorage.value = storage();
     render(<StorageSection />);
     expect(screen.getByTestId("stockage-resume").textContent).toBe(
-      "30 Go utilisés sur 75 Go, il vous reste 45 Go.",
+      "30 Go utilisés sur 100 Go, il vous reste 70 Go.",
     );
   });
 
@@ -134,46 +157,47 @@ describe("Paramètres > Stockage", () => {
     expect(people).toContain("Non attribué");
   });
 
-  it("propose d'ajouter du stockage ou de passer à l'offre Premium", () => {
+  it("Standard : propose seulement de passer à l'offre Premium, sans pack", () => {
     mockStorage.value = storage();
+    render(<StorageSection />);
+    expect(
+      screen.getByText("Passer à l'offre Premium", { selector: "button" }),
+    ).toBeTruthy();
+    expect(screen.getByTestId("offre-superieure").textContent).toContain(
+      "500 Go de stockage, 48,99 € TTC/mois",
+    );
+    expect(screen.queryByTestId("offre-packs")).toBeNull();
+    expect(screen.queryByTestId("packs-indisponibles")).toBeNull();
+    // Pas de rubrique « Packs actifs » sur une offre qui n'en vend pas
+    expect(screen.queryByText("Packs actifs")).toBeNull();
+  });
+
+  it("Entreprise : propose d'ajouter des packs, sans offre supérieure", () => {
+    mockStorage.value = enterprise();
     render(<StorageSection />);
     expect(
       screen.getByText("Ajouter du stockage", { selector: "button" }),
     ).toBeTruthy();
-    expect(
-      screen.getByText("Passer à l'offre Premium", { selector: "button" }),
-    ).toBeTruthy();
     expect(screen.getByTestId("offre-packs").textContent).toContain(
       "2,99 € TTC/mois de plus",
     );
+    expect(screen.queryByTestId("offre-superieure")).toBeNull();
+    expect(screen.getByText("Aucun pack de stockage.")).toBeTruthy();
   });
 
-  it("masque l'achat de packs quand les prix Stripe ne sont pas configurés", () => {
+  it("Entreprise sans prix Stripe : l'achat est masqué et le message le dit, sans case vide", () => {
     mockPacks.available = false;
-    mockStorage.value = storage();
+    mockStorage.value = enterprise();
     render(<StorageSection />);
     expect(screen.queryByTestId("offre-packs")).toBeNull();
-    expect(screen.getByTestId("offre-superieure")).toBeTruthy();
+    expect(screen.queryByTestId("offre-superieure")).toBeNull();
     expect(screen.getByTestId("packs-indisponibles").textContent).toContain(
       "n'est pas disponible pour le moment",
     );
   });
 
-  it("offre Entreprise sans prix Stripe : le message reste, sans case vide", () => {
-    mockPacks.available = false;
-    mockStorage.value = storage({
-      plan: "entreprise",
-      planLabel: "Entreprise",
-      offer: { ...offer, upgrade: null, recommended: "packs" },
-    });
-    render(<StorageSection />);
-    expect(screen.queryByTestId("offre-packs")).toBeNull();
-    expect(screen.queryByTestId("offre-superieure")).toBeNull();
-    expect(screen.getByTestId("packs-indisponibles")).toBeTruthy();
-  });
-
   it("sans abonnement actif : un abonnement est demandé pour les packs", () => {
-    mockStorage.value = storage({ subscriptionActive: false });
+    mockStorage.value = enterprise({ subscriptionActive: false });
     render(<StorageSection />);
     expect(screen.queryByTestId("offre-packs")).toBeNull();
     expect(screen.getByTestId("packs-indisponibles").textContent).toContain(
@@ -182,15 +206,46 @@ describe("Paramètres > Stockage", () => {
   });
 
   it("montre les packs actifs", () => {
-    mockStorage.value = storage({
+    mockStorage.value = enterprise({
       packs: 2,
       packBytes: 100 * GB,
-      quotaBytes: 175 * GB,
+      quotaBytes: 2100 * GB,
     });
     render(<StorageSection />);
     expect(screen.getByTestId("stockage-packs").textContent).toContain(
       "2 packs de 50 Go",
     );
+  });
+
+  it("garde retirables les packs déjà achetés sur Premium, sans en proposer d'autres", () => {
+    mockStorage.value = storage({
+      plan: "pme",
+      planLabel: "Premium",
+      packs: 1,
+      packBytes: 50 * GB,
+      quotaBytes: 550 * GB,
+      baseQuotaBytes: 500 * GB,
+      offer: {
+        ...offer,
+        upgrade: {
+          plan: "entreprise",
+          label: "Entreprise",
+          packs: 0,
+          planMonthlyPrice: 94.99,
+          monthlyCost: 94.99,
+          quotaBytes: 2000 * GB,
+        },
+      },
+    });
+    render(<StorageSection />);
+    expect(screen.getByTestId("stockage-packs").textContent).toContain(
+      "1 pack de 50 Go",
+    );
+    expect(screen.getByText("Retirer un pack")).toBeTruthy();
+    expect(screen.queryByTestId("offre-packs")).toBeNull();
+    expect(
+      screen.getByText("Passer à l'offre Entreprise", { selector: "button" }),
+    ).toBeTruthy();
   });
 
   it("ne montre que l'état aux membres qui ne voient pas l'abonnement", () => {
@@ -228,7 +283,7 @@ describe("Bandeau de stockage", () => {
     mockStorage.value = storage({
       level: "warning",
       percent: 82,
-      usedBytes: 61.5 * GB,
+      usedBytes: 82 * GB,
     });
     render(<StorageBanner onOpenStorage={open} />);
     expect(screen.getByTestId("bandeau-stockage").textContent).toContain(
@@ -243,7 +298,7 @@ describe("Bandeau de stockage", () => {
     mockStorage.value = storage({
       level: "full",
       percent: 100,
-      usedBytes: 75 * GB,
+      usedBytes: 100 * GB,
     });
     render(<StorageBanner />);
     const text = screen.getByTestId("bandeau-stockage").textContent;
@@ -253,26 +308,42 @@ describe("Bandeau de stockage", () => {
 });
 
 describe("Fenêtre de refus d'envoi", () => {
-  it("s'ouvre sur le refus avec le message de l'API et les deux options", () => {
+  it("s'ouvre sur le refus avec le message de l'API et l'offre supérieure (Standard)", () => {
     render(<StorageQuotaDialog />);
     act(() => {
       window.dispatchEvent(
         new CustomEvent(STORAGE_QUOTA_EVENT, {
           detail: {
             message:
-              "Espace de stockage plein : 74 Go utilisés sur 75 Go. Ce fichier (2 Go) ne peut pas être enregistré.",
+              "Espace de stockage plein : 99 Go utilisés sur 100 Go. Ce fichier (2 Go) ne peut pas être enregistré.",
             details: { offer, interval: "month" },
           },
         }),
       );
     });
-    expect(screen.getByText(/74 Go utilisés sur 75 Go/)).toBeTruthy();
-    expect(screen.getByTestId("offre-packs").textContent).toContain(
-      "Ajouter 1 pack de 50 Go",
-    );
+    expect(screen.getByText(/99 Go utilisés sur 100 Go/)).toBeTruthy();
+    expect(screen.queryByTestId("offre-packs")).toBeNull();
     expect(screen.getByTestId("offre-superieure").textContent).toContain(
       "48,99 € TTC/mois",
     );
+  });
+
+  it("Entreprise : la fenêtre propose d'ajouter des packs", () => {
+    render(<StorageQuotaDialog />);
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(STORAGE_QUOTA_EVENT, {
+          detail: {
+            message: "Espace de stockage plein : 2 To utilisés sur 2 To.",
+            details: { offer: enterpriseOffer, interval: "month" },
+          },
+        }),
+      );
+    });
+    expect(screen.getByTestId("offre-packs").textContent).toContain(
+      "Ajouter 1 pack de 50 Go",
+    );
+    expect(screen.queryByTestId("offre-superieure")).toBeNull();
   });
 
   it("prix des packs non configurés : la fenêtre le dit", () => {
@@ -283,7 +354,7 @@ describe("Fenêtre de refus d'envoi", () => {
         new CustomEvent(STORAGE_QUOTA_EVENT, {
           detail: {
             message: "Espace de stockage plein",
-            details: { offer, interval: "month" },
+            details: { offer: enterpriseOffer, interval: "month" },
           },
         }),
       );
@@ -298,7 +369,10 @@ describe("Fenêtre de refus d'envoi", () => {
     act(() => {
       window.dispatchEvent(
         new CustomEvent(STORAGE_QUOTA_EVENT, {
-          detail: { message: "Espace de stockage plein", details: { offer } },
+          detail: {
+            message: "Espace de stockage plein",
+            details: { offer: enterpriseOffer },
+          },
         }),
       );
     });
