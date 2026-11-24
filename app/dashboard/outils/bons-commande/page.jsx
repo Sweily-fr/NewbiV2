@@ -106,9 +106,14 @@ function PurchaseOrdersContent() {
   // Récupérer les BC pour les stats
   const {
     purchaseOrders,
-    loading: poLoading,
+    complete: poComplete,
     refetch: refetchPurchaseOrders,
   } = usePurchaseOrders();
+  // Totaux affichés avec la liste, une fois toutes les données là (liste
+  // entière, BC importés du tableau) : ils ne bougent plus en cours de
+  // chargement. Le tableau signale quand il est prêt.
+  const [tableReady, setTableReady] = useState(false);
+  const statsReady = poComplete && tableReady;
 
   // Calculer les statistiques
   const poStats = useMemo(() => {
@@ -225,7 +230,7 @@ function PurchaseOrdersContent() {
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-lg font-medium tracking-tight">
-                        {poLoading
+                        {!statsReady
                           ? "..."
                           : `${formatAmount(poStats.totalAmount)} €`}
                       </span>
@@ -243,7 +248,7 @@ function PurchaseOrdersContent() {
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-lg font-medium tracking-tight">
-                        {poLoading
+                        {!statsReady
                           ? "..."
                           : `${formatAmount(poStats.confirmedAmount)} €`}
                       </span>
@@ -257,7 +262,7 @@ function PurchaseOrdersContent() {
                     <span className="text-xs text-muted-foreground">
                       En cours de traitement
                     </span>
-                    {poStats.inProgressCount > 0 && (
+                    {statsReady && poStats.inProgressCount > 0 && (
                       <span className="h-4 w-4 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 text-[10px] font-medium">
                         {poStats.inProgressCount}
                       </span>
@@ -265,7 +270,7 @@ function PurchaseOrdersContent() {
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-lg font-medium tracking-tight">
-                      {poLoading
+                      {!statsReady
                         ? "..."
                         : `${formatAmount(poStats.inProgressAmount)} €`}
                     </span>
@@ -282,6 +287,7 @@ function PurchaseOrdersContent() {
                   triggerImport={triggerImport}
                   onImportTriggered={() => setTriggerImport(false)}
                   onBalancesRefetch={refetchPurchaseOrders}
+                  onDataReadyChange={setTableReady}
                 />
               </Suspense>
             </div>

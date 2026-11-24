@@ -2,7 +2,7 @@
 
 import { sortByDateDesc } from "@/src/lib/document-dates";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
@@ -100,12 +100,19 @@ export default function PurchaseOrderTable({
   triggerImport,
   onImportTriggered,
   onBalancesRefetch,
+  onDataReadyChange,
 }) {
   // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
   // (les deux l'étaient, l'un masqué en CSS).
   const isMobileLayout = useIsMobile();
   const inputRef = useRef(null);
-  const { purchaseOrders, loading, error, refetch } = usePurchaseOrders();
+  const {
+    purchaseOrders,
+    loading,
+    complete: purchaseOrdersComplete,
+    error,
+    refetch,
+  } = usePurchaseOrders();
   const { workspaceId } = useRequiredWorkspace();
 
   // Subscription temps réel pour le tracking d'ouverture d'email
@@ -137,10 +144,26 @@ export default function PurchaseOrderTable({
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailPO, setSendEmailPO] = useState(null);
 
-  const { importedPurchaseOrders, refetch: refetchImported } =
-    useImportedPurchaseOrders(
-      canReadImportedPurchaseOrders ? workspaceId : null,
-    );
+  const {
+    importedPurchaseOrders,
+    initialLoading: importedInitialLoading,
+    refetch: refetchImported,
+  } = useImportedPurchaseOrders(
+    canReadImportedPurchaseOrders ? workspaceId : null,
+  );
+
+  // Liste, onglets et totaux de la page n'apparaissent qu'avec toutes leurs
+  // données : la liste entière des bons de commande et les BC importés.
+  // Chaque requête arrivait à son rythme et les totaux changeaient en cours
+  // de chargement, ce qui se voyait sur un poste lent. Au retour sur la page,
+  // le cache suffit : pas d'attente.
+  const isDataReady = purchaseOrdersComplete && !importedInitialLoading;
+
+  // La page n'affiche ses totaux qu'avec la liste : signalé avant que le
+  // navigateur ne peigne (useLayoutEffect), pour qu'ils apparaissent ensemble.
+  useLayoutEffect(() => {
+    onDataReadyChange?.(isDataReady);
+  }, [onDataReadyChange, isDataReady]);
 
   // Fusionner les BC natifs et les BC importés (lignes "À vérifier" / "Terminé")
   const combinedPurchaseOrders = useMemo(() => {
@@ -264,9 +287,11 @@ export default function PurchaseOrderTable({
     }
   }, [triggerImport, onImportTriggered]);
 
-  // Skeleton uniquement au premier chargement : si le cache Apollo a déjà des
-  // bons de commande, on les affiche pendant le refetch silencieux
-  if (loading && (!purchaseOrders || purchaseOrders.length === 0)) {
+  // Skeleton jusqu'à ce que toutes les données soient là (premier
+  // chargement) : la liste s'affiche alors d'un coup, avec les totaux. Au
+  // retour sur la page, le cache Apollo suffit : la liste s'affiche aussitôt
+  // et le refetch reste silencieux.
+  if (!isDataReady) {
     return <PurchaseOrderTableSkeleton />;
   }
 
