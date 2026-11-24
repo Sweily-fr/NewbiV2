@@ -58,15 +58,15 @@ const offer = {
     plan: "pme",
     label: "Premium",
     packs: 0,
-    planMonthlyPrice: 48.99,
-    monthlyCost: 48.99,
+    planMonthlyPrice: 50,
+    monthlyCost: 50,
     quotaBytes: 500 * GB,
   },
 };
 
 const enterpriseOffer = {
   neededBytes: 2001 * GB,
-  currentMonthlyCost: 94.99,
+  currentMonthlyCost: 200,
   recommended: "packs",
   packs: {
     additionalPacks: 1,
@@ -164,7 +164,7 @@ describe("Paramètres > Stockage", () => {
       screen.getByText("Passer à l'offre Premium", { selector: "button" }),
     ).toBeTruthy();
     expect(screen.getByTestId("offre-superieure").textContent).toContain(
-      "500 Go de stockage, 48,99 € TTC/mois",
+      "500 Go de stockage, 50,00 € TTC/mois",
     );
     expect(screen.queryByTestId("offre-packs")).toBeNull();
     expect(screen.queryByTestId("packs-indisponibles")).toBeNull();
@@ -231,8 +231,8 @@ describe("Paramètres > Stockage", () => {
           plan: "entreprise",
           label: "Entreprise",
           packs: 0,
-          planMonthlyPrice: 94.99,
-          monthlyCost: 94.99,
+          planMonthlyPrice: 200,
+          monthlyCost: 200,
           quotaBytes: 2000 * GB,
         },
       },
@@ -324,7 +324,7 @@ describe("Fenêtre de refus d'envoi", () => {
     expect(screen.getByText(/99 Go utilisés sur 100 Go/)).toBeTruthy();
     expect(screen.queryByTestId("offre-packs")).toBeNull();
     expect(screen.getByTestId("offre-superieure").textContent).toContain(
-      "48,99 € TTC/mois",
+      "50,00 € TTC/mois",
     );
   });
 
@@ -334,7 +334,7 @@ describe("Fenêtre de refus d'envoi", () => {
       window.dispatchEvent(
         new CustomEvent(STORAGE_QUOTA_EVENT, {
           detail: {
-            message: "Espace de stockage plein : 2 To utilisés sur 2 To.",
+            message: "Espace de stockage plein : 5 To utilisés sur 5 To.",
             details: { offer: enterpriseOffer, interval: "month" },
           },
         }),

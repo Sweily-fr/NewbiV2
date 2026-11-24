@@ -32,7 +32,7 @@ describe("/tarifs : grille des offres", () => {
       .getAllByRole("listitem")
       .map((li) => li.textContent);
     expect(puces[0]).toBe("Tout Standard, plus :");
-    expect(puces).toHaveLength(8);
+    expect(puces).toHaveLength(11);
   });
 
   it("propose un conseiller sous les trois offres payantes, pas sous l'essai", () => {
@@ -67,10 +67,10 @@ describe("/tarifs : grille des offres", () => {
     await user.click(screen.getByRole("button", { name: /^Annuel/ }));
 
     expect(within(colonne("freelance")).getByText(/16,19\s€/)).toBeTruthy();
-    expect(within(colonne("tpe")).getByText(/44,09\s€/)).toBeTruthy();
-    expect(within(colonne("entreprise")).getByText(/85,49\s€/)).toBeTruthy();
+    expect(within(colonne("tpe")).getByText(/45,00\s€/)).toBeTruthy();
+    expect(within(colonne("entreprise")).getByText(/180,00\s€/)).toBeTruthy();
     expect(
-      within(colonne("entreprise")).getByText(/Facturé 1\s025,88\s€ par an/),
+      within(colonne("entreprise")).getByText(/Facturé 2\s160,00\s€ par an/),
     ).toBeTruthy();
     // L'essai reste à 0 €.
     expect(within(colonne("essai")).getByText("0 €")).toBeTruthy();

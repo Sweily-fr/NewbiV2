@@ -78,8 +78,8 @@ describe("Inscription : choix de l'offre", () => {
 
     // Prix mensuels TTC et avantages de la grille /tarifs.
     expect(within(colonne("freelance")).getByText(/17,99\s€/)).toBeTruthy();
-    expect(within(colonne("tpe")).getByText(/48,99\s€/)).toBeTruthy();
-    expect(within(colonne("entreprise")).getByText(/94,99\s€/)).toBeTruthy();
+    expect(within(colonne("tpe")).getByText(/50,00\s€/)).toBeTruthy();
+    expect(within(colonne("entreprise")).getByText(/200,00\s€/)).toBeTruthy();
     expect(
       within(colonne("freelance")).getByText("Devis et factures illimités"),
     ).toBeTruthy();

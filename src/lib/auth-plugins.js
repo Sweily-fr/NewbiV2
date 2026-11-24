@@ -328,8 +328,8 @@ export const stripePlugin = stripe({
         },
         metadata: {
           displayName: planLabel("pme"),
-          monthlyPrice: 48.99,
-          annualPrice: 44.09, // -10% de réduction (48.99 * 12 * 0.90 / 12)
+          monthlyPrice: 50,
+          annualPrice: 45, // -10% de réduction (50 * 12 * 0.90 / 12)
           workspaceAddonPrice: 11.99,
           description: "Pour les petites et moyennes entreprises",
         },
@@ -347,8 +347,8 @@ export const stripePlugin = stripe({
         },
         metadata: {
           displayName: planLabel("entreprise"),
-          monthlyPrice: 94.99,
-          annualPrice: 85.49, // -10% de réduction (94.99 * 12 * 0.90 / 12)
+          monthlyPrice: 200,
+          annualPrice: 180, // -10% de réduction (200 * 12 * 0.90 / 12)
           workspaceAddonPrice: 11.99,
           description: "Pour les grandes équipes",
         },

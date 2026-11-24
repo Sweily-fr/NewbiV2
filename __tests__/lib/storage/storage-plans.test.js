@@ -31,19 +31,19 @@ const offer = {
     plan: "pme",
     label: "Premium",
     packs: 0,
-    planMonthlyPrice: 48.99,
-    monthlyCost: 48.99,
+    planMonthlyPrice: 50,
+    monthlyCost: 50,
     quotaBytes: 500 * GB,
   },
 };
 
 describe("Stockage : quotas par organisation", () => {
-  it("donne 100 Go, 500 Go et 2 To selon l'offre, quel que soit le nombre d'utilisateurs", () => {
+  it("donne 100 Go, 500 Go et 5 To selon l'offre, quel que soit le nombre d'utilisateurs", () => {
     expect(planStorageGb("freelance")).toBe(100);
     expect(planStorageGb("pme")).toBe(500);
     expect(planStorageGb("pro")).toBe(500);
-    expect(planStorageGb("entreprise")).toBe(2000);
-    expect(planStorageGb("enterprise")).toBe(2000);
+    expect(planStorageGb("entreprise")).toBe(5000);
+    expect(planStorageGb("enterprise")).toBe(5000);
     expect(normalizeStoragePlan(undefined)).toBe("freelance");
   });
 
@@ -56,14 +56,14 @@ describe("Stockage : quotas par organisation", () => {
     expect(canBuyStoragePacks(undefined)).toBe(false);
   });
 
-  it("affiche 100 Go, 500 Go et 2 To dans la grille des offres, packs sur Entreprise seulement, sans toucher aux prix", () => {
+  it("affiche 100 Go, 500 Go et 5 To dans la grille des offres, packs sur Entreprise seulement, sans toucher aux prix", () => {
     const row = PLAN_FEATURES_SECTIONS.flatMap((s) => s.features).find(
       (f) => f.name === "Stockage documents",
     );
     expect(row).toMatchObject({
       freelance: "100 Go",
       pme: "500 Go",
-      entreprise: "2 To",
+      entreprise: "5 To",
     });
     const packs = PLAN_FEATURES_SECTIONS.flatMap((s) => s.features).find(
       (f) => f.name === "Stockage supplémentaire",
@@ -75,8 +75,8 @@ describe("Stockage : quotas par organisation", () => {
       PLANS_DISPLAY.map((p) => [p.monthlyPrice, p.annualMonthlyPrice]),
     ).toEqual([
       [17.99, 16.19],
-      [48.99, 44.09],
-      [94.99, 85.49],
+      [50, 45],
+      [200, 180],
     ]);
   });
 });
@@ -109,7 +109,7 @@ describe("Stockage : propositions", () => {
     expect(described.packs.total).toBe("Total : 20,98 € TTC/mois");
     expect(described.upgrade.title).toBe("Passer à l'offre Premium");
     expect(described.upgrade.quota).toBe("500 Go");
-    expect(described.upgrade.price).toBe("48,99 € TTC/mois");
+    expect(described.upgrade.price).toBe("50,00 € TTC/mois");
     expect(described.recommended).toBe("packs");
   });
 

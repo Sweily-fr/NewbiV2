@@ -112,16 +112,16 @@ export const PLAN_LIMITS = {
     seatPrice: 5.99,
     workspaces: 1,
     bankAccounts: 5,
-    storage: 2000,
+    storage: 5000,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 50,
     // Rôles prédéfinis proposés à l'invitation (+ rôles personnalisés)
     availableRoles: ["viewer", "member", "admin", "accountant"],
     // Exports comptables (tous les formats)
     exports: ["csv", "excel", "fec", "sage", "cegid"],
-    // E-signature (SES + QES, illimité)
+    // E-signature (SES + QES, 200 demandes par mois)
     esignature: "qes",
-    esignatureMonthlyQuota: -1,
+    esignatureMonthlyQuota: 200,
     // Automatisations (illimité = -1)
     documentAutomations: -1,
     clientAutomations: true,
