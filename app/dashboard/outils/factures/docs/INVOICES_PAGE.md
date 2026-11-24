@@ -445,6 +445,7 @@ Calculés dans `page.jsx:127-185` à partir des données **filtrées** (pas du d
 - `dueDate` peut arriver en plusieurs formats (timestamp string, timestamp number, ISO) — le code teste `/^\d+$/` avant de parser (`page.jsx:165-169`)
 - Pour les factures importées (`_type === "imported"`), seules les `VALIDATED` ou `COMPLETED` comptent dans `totalBilled` (pas de DRAFT possible côté importé)
 - Les KPIs réagissent aux filtres : changer un filtre = recalcul des montants affichés
+- Au premier chargement, KPIs et tableau attendent toutes les données (liste entière des factures, factures importées, compteurs d'avoirs et de récurrentes) et apparaissent ensemble ; « ... » en attendant. Avant, les soldes se recalculaient à chaque requête arrivée, ce qui se voyait sur un poste lent. Au retour sur la page, le cache Apollo s'affiche aussitôt.
 
 ### 6.3 Boutons header (desktop)
 
@@ -496,7 +497,7 @@ Hook associé : `app/dashboard/outils/factures/hooks/use-invoice-table.js` (1045
 
 Deux datasets fusionnés (`invoice-table.jsx:172-196`) :
 
-- **Factures normales** : `useInvoices()` GraphQL → `_type: "normal"`
+- **Factures normales** : `useInvoices()` GraphQL → `_type: "normal"`, liste demandée entière d'une seule requête jusqu'à 1 000 factures (par pages de 1 000 au-delà), `complete` vrai une fois la liste entière reçue
 - **Factures importées** : `useImportedInvoices(workspaceId)` GraphQL → `_type: "imported"` (PDF déposés sans rédaction interne)
 
 Triés par `issueDate` desc et combinés dans `combinedInvoices` (useMemo).

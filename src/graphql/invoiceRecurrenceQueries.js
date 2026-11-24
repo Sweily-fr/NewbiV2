@@ -120,6 +120,8 @@ export const useInvoiceRecurrences = () => {
   return {
     recurrences: data?.invoiceRecurrences || [],
     loading,
+    // Premier chargement : rien encore, ni en cache ni du réseau
+    initialLoading: loading && !data,
     error,
     refetch,
   };
