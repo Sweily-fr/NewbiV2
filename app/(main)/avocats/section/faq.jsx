@@ -1,5 +1,6 @@
 import React from "react";
 import PublicFaq, { faqJsonLd } from "@/src/components/public-faq";
+import { planLabel } from "@/src/lib/plans-display";
 
 /* Les règles métier viennent des articles « Facture d'avocat » et
    « Facturation cabinet d'avocats » du blog. Ce qui relève de l'application —
@@ -44,8 +45,7 @@ const questions = [
   },
   {
     title: "Mon cabinet peut-il travailler à plusieurs sur le même espace ?",
-    content:
-      "Oui. La formule Freelance couvre un utilisateur, TPE jusqu'à dix et Entreprise jusqu'à vingt-cinq, auxquels s'ajoutent les accès comptables gratuits. Chacun travaille sur les mêmes dossiers et les mêmes documents, sans fichier qui circule par e-mail.",
+    content: `Oui. La formule ${planLabel("freelance")} couvre un utilisateur, ${planLabel("pme")} jusqu'à dix et ${planLabel("entreprise")} jusqu'à vingt-cinq, auxquels s'ajoutent les accès comptables gratuits. Chacun travaille sur les mêmes dossiers et les mêmes documents, sans fichier qui circule par e-mail.`,
   },
   {
     title: "Que se passe-t-il pendant les 7 jours offerts ?",

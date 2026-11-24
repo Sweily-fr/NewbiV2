@@ -1,4 +1,5 @@
 import React from "react";
+import { planLabel } from "@/src/lib/plans-display";
 import {
   FileCheck2,
   FileDown,
@@ -199,8 +200,7 @@ export const contenu = {
       },
       {
         title: "Mon expert-comptable peut-il accéder à mes données ?",
-        content:
-          "Oui, et son accès est inclus gratuitement : un en formule Freelance, trois en TPE, cinq en Entreprise. Il consulte vos documents et lance ses exports sans occuper une place d'utilisateur et sans que vous ayez à lui envoyer quoi que ce soit.",
+        content: `Oui, et son accès est inclus gratuitement : un en formule ${planLabel("freelance")}, trois en ${planLabel("pme")}, cinq en ${planLabel("entreprise")}. Il consulte vos documents et lance ses exports sans occuper une place d'utilisateur et sans que vous ayez à lui envoyer quoi que ce soit.`,
       },
       {
         title: "Et la TVA, si je suis redevable ?",
