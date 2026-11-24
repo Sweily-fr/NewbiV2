@@ -1,5 +1,6 @@
 import React from "react";
 import PublicFaq, { faqJsonLd } from "@/src/components/public-faq";
+import { planLabel } from "@/src/lib/plans-display";
 
 /* Les règles métier viennent de l'article « Facture de photographe : modèle,
    droits d'auteur, TVA et mentions » du blog. Ce qui relève de l'application —
@@ -34,8 +35,7 @@ const questions = [
   },
   {
     title: "Quel volume puis-je envoyer par transfert ?",
-    content:
-      "Cela dépend de votre formule : 5 Go par transfert en Freelance, 15 Go en TPE et 50 Go en Entreprise. De quoi envoyer un reportage complet ou des rushes sans passer par un service tiers.",
+    content: `Cela dépend de votre formule : 5 Go par transfert en ${planLabel("freelance")}, 15 Go en ${planLabel("pme")} et 50 Go en ${planLabel("entreprise")}. De quoi envoyer un reportage complet ou des rushes sans passer par un service tiers.`,
   },
   {
     title: "Et si je suis en franchise en base de TVA ?",

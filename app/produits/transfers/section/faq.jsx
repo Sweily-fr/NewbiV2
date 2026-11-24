@@ -1,5 +1,6 @@
 import React from "react";
 import PublicFaq, { faqJsonLd } from "@/src/components/public-faq";
+import { planLabel } from "@/src/lib/plans-display";
 
 const questions = [
   {
@@ -14,10 +15,11 @@ const questions = [
       "Quelle est la taille maximale des fichiers que je peux transférer ?",
     content: (
       <>
-        La taille d'un transfert dépend de votre offre : 5 Go en Freelance, 15
-        Go en TPE et 50 Go en Entreprise. Dans tous les cas, il n'y a aucune
-        limite sur le nombre de transferts que vous pouvez effectuer. Pour des
-        volumes supérieurs,{" "}
+        La taille d'un transfert dépend de votre offre : 5 Go en{" "}
+        {planLabel("freelance")}, 15 Go en {planLabel("pme")} et 50 Go en{" "}
+        {planLabel("entreprise")}. Dans tous les cas, il n'y a aucune limite sur
+        le nombre de transferts que vous pouvez effectuer. Pour des volumes
+        supérieurs,{" "}
         <a href="/contact" className="underline underline-offset-4">
           contactez notre équipe
         </a>{" "}

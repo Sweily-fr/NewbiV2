@@ -1,4 +1,5 @@
 import React from "react";
+import { planLabel } from "@/src/lib/plans-display";
 
 export default function SectionAvantages() {
   return (
@@ -52,10 +53,10 @@ export default function SectionAvantages() {
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
                 Partagez des fichiers lourds sans compresser ni fractionner : 5
-                Go par transfert en Freelance, 15 Go en TPE et 50 Go en
-                Entreprise. Téléversement stable, reprise automatique en cas de
-                coupure et prise en charge des formats professionnels les plus
-                courants.
+                Go par transfert en {planLabel("freelance")}, 15 Go en{" "}
+                {planLabel("pme")} et 50 Go en {planLabel("entreprise")}.
+                Téléversement stable, reprise automatique en cas de coupure et
+                prise en charge des formats professionnels les plus courants.
               </p>
             </div>
           </div>
