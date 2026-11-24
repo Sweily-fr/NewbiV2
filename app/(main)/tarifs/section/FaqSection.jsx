@@ -25,7 +25,7 @@ const questions = [
   {
     id: "item-1",
     title: "Combien coûte Newbi ?",
-    content: `Trois formules, toutes ${PRICE_QUALIFIER} : ${prixMensuels}. En réglant à l'année, le mois revient à ${formatPrice(freelance.annualMonthlyPrice)} en Freelance, ${formatPrice(tpe.annualMonthlyPrice)} en TPE et ${formatPrice(entreprise.annualMonthlyPrice)} en Entreprise, soit ${formatPrice(getAnnualTotalAmount(freelance))} pour une année complète en Freelance.`,
+    content: `Trois formules, toutes ${PRICE_QUALIFIER} : ${prixMensuels}. En réglant à l'année, le mois revient à ${formatPrice(freelance.annualMonthlyPrice)} en ${freelance.displayName}, ${formatPrice(tpe.annualMonthlyPrice)} en ${tpe.displayName} et ${formatPrice(entreprise.annualMonthlyPrice)} en ${entreprise.displayName}, soit ${formatPrice(getAnnualTotalAmount(freelance))} pour une année complète en ${freelance.displayName}.`,
   },
   {
     id: "item-2",
@@ -53,14 +53,12 @@ const questions = [
     id: "item-6",
     title:
       "Que se passe-t-il si j'ajoute des collaborateurs au-delà de ma limite ?",
-    content:
-      "Chaque utilisateur supplémentaire est facturé 7,49 € par mois sur les formules Freelance et TPE, et 5,99 € par mois sur la formule Entreprise. Vous n'avez pas besoin de changer de formule pour ajouter une personne.",
+    content: `Chaque utilisateur supplémentaire est facturé 7,49 € par mois sur les formules ${freelance.displayName} et ${tpe.displayName}, et 5,99 € par mois sur la formule ${entreprise.displayName}. Vous n'avez pas besoin de changer de formule pour ajouter une personne.`,
   },
   {
     id: "item-7",
     title: "L'accès de mon comptable est-il facturé ?",
-    content:
-      "Non. Chaque formule comprend des accès comptables gratuits : un en Freelance, trois en TPE, cinq en Entreprise. Votre comptable consulte vos documents sans occuper une place d'utilisateur.",
+    content: `Non. Chaque formule comprend des accès comptables gratuits : un en ${freelance.displayName}, trois en ${tpe.displayName}, cinq en ${entreprise.displayName}. Votre comptable consulte vos documents sans occuper une place d'utilisateur.`,
   },
   {
     id: "item-8",
@@ -77,8 +75,7 @@ const questions = [
   {
     id: "item-10",
     title: "Quelle formule choisir pour commencer ?",
-    content:
-      "Si vous travaillez seul, Freelance couvre l'essentiel : devis, factures, clients, projets, trésorerie et un compte bancaire connecté. TPE s'adresse aux équipes jusqu'à dix personnes qui ont besoin de modèles et d'automatisations illimités. Entreprise ajoute les exports comptables tous formats, la signature électronique illimitée et jusqu'à vingt-cinq utilisateurs. Le tableau ci-dessus détaille ligne par ligne ce qui les sépare.",
+    content: `Si vous travaillez seul, ${freelance.displayName} couvre l'essentiel : devis, factures, clients, projets, trésorerie et un compte bancaire connecté. ${tpe.displayName} s'adresse aux équipes jusqu'à dix personnes qui ont besoin de modèles et d'automatisations illimités. ${entreprise.displayName} ajoute les exports comptables tous formats, la signature électronique illimitée et jusqu'à vingt-cinq utilisateurs. Le tableau ci-dessus détaille ligne par ligne ce qui les sépare.`,
   },
 ];
 
