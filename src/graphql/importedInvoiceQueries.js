@@ -393,6 +393,8 @@ export function useImportedInvoices(workspaceId, options = {}) {
     total: data?.importedInvoices?.total || 0,
     hasMore: data?.importedInvoices?.hasMore || false,
     loading,
+    // Premier chargement : rien encore, ni en cache ni du réseau
+    initialLoading: loading && !data,
     error,
     refetch,
   };
