@@ -526,7 +526,7 @@ import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { useAllPagesQuery } from "@/src/hooks/useAllPagesQuery";
+import { useAllPagesQuery, MAX_PAGE_SIZE } from "@/src/hooks/useAllPagesQuery";
 
 // Hook pour récupérer le dernier préfixe de bon de commande
 export const useLastPurchaseOrderPrefix = () => {
@@ -548,9 +548,12 @@ export const useLastPurchaseOrderPrefix = () => {
   );
 };
 
-// Liste des bons de commande : toute la liste de l'organisation (la première page
-// s'affiche aussitôt, le reste suit) : onglets, recherche et exports sont
-// calculés sur elle.
+// Liste des bons de commande : toute la liste de l'organisation, car onglets,
+// recherche, exports et totaux de la page sont calculés sur elle. Elle est
+// demandée entière d'une seule requête (jusqu'à 1 000 BC) : avec une première
+// page de 50 puis le reste, les totaux changeaient pendant le chargement, et
+// de nouveau à chaque retour sur la page (la première page relue remplaçait
+// la liste en cache).
 export const usePurchaseOrders = (filters = {}) => {
   const {
     workspaceId,
@@ -558,7 +561,13 @@ export const usePurchaseOrders = (filters = {}) => {
     error: workspaceError,
   } = useRequiredWorkspace();
 
-  const { data, loading, error, refetch } = useAllPagesQuery(
+  const {
+    data,
+    loading,
+    error,
+    refetch,
+    complete: listComplete,
+  } = useAllPagesQuery(
     GET_PURCHASE_ORDERS,
     {
       variables: { workspaceId, ...filters },
@@ -566,7 +575,11 @@ export const usePurchaseOrders = (filters = {}) => {
       errorPolicy: "all",
       fetchPolicy: "cache-and-network",
     },
-    { field: "purchaseOrders", listField: "purchaseOrders" },
+    {
+      field: "purchaseOrders",
+      listField: "purchaseOrders",
+      firstPageSize: MAX_PAGE_SIZE,
+    },
   );
 
   const purchaseOrders = useMemo(
@@ -575,13 +588,15 @@ export const usePurchaseOrders = (filters = {}) => {
   );
   const totalCount = data?.purchaseOrders?.totalCount || 0;
   const hasNextPage = data?.purchaseOrders?.hasNextPage || false;
+  const workspacePending = workspaceLoading && !workspaceId;
 
   return {
     purchaseOrders,
     totalCount,
     hasNextPage,
-    loading:
-      (workspaceLoading && !workspaceId) || (loading && !purchaseOrders.length),
+    loading: workspacePending || (loading && !purchaseOrders.length),
+    // Liste entière reçue (toutes les pages), ou plus rien à attendre
+    complete: !workspacePending && listComplete,
     error: error || workspaceError,
     refetch,
   };

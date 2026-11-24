@@ -224,6 +224,8 @@ export function useImportedPurchaseOrders(workspaceId, options = {}) {
     total: data?.importedPurchaseOrders?.total || 0,
     hasMore: data?.importedPurchaseOrders?.hasMore || false,
     loading,
+    // Premier chargement : rien encore, ni en cache ni du réseau
+    initialLoading: loading && !data,
     error,
     refetch,
   };
