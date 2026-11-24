@@ -72,9 +72,9 @@ const PLAN_UI_EXTRA = {
     highlights: [
       "Support prioritaire",
       "Jusqu'à 10 utilisateurs · 3 accès comptables",
-      "Facturation électronique 2026 incluse",
+      "Prospection · 30 crédits par mois",
       "Connexion bancaire · 3 comptes",
-      "E-signature & automatisations illimitées",
+      "100 signatures de devis · automatisations illimitées",
       "500 Go de stockage",
     ],
   },
@@ -85,10 +85,10 @@ const PLAN_UI_EXTRA = {
     highlights: [
       "Support prioritaire",
       "Jusqu'à 25 utilisateurs · 5 accès comptables",
-      "Facturation électronique 2026 incluse",
+      "Prospection · 100 crédits par mois",
       "Connexion bancaire · 5 comptes",
-      "Exports comptables tous formats",
-      "2 To de stockage (+50 Go à 2,99 €/mois)",
+      "200 signatures de devis · exports tous formats",
+      "5 To de stockage (+50 Go à 2,99 €/mois)",
     ],
   },
 };

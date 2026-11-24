@@ -123,7 +123,7 @@ export default function TestEmailsPage() {
           customerName: "Jean Dupont",
           oldPlan: "Standard",
           newPlan: "Premium",
-          newPrice: "48,99 €/mois",
+          newPrice: "50,00 €/mois",
           isUpgrade: true,
           effectiveDate: "17 décembre 2025",
         },
@@ -145,9 +145,9 @@ export default function TestEmailsPage() {
         {
           customerName: "Jean Dupont",
           plan: "Premium",
-          price: "48,99 €/mois",
+          price: "50,00 €/mois",
           renewalDate: "17 janvier 2026",
-          amount: "48,99 € TTC",
+          amount: "50,00 € TTC",
         },
       ],
       label: "Abonnement - Rappel de renouvellement",
@@ -157,7 +157,7 @@ export default function TestEmailsPage() {
         {
           customerName: "Jean Dupont",
           plan: "Premium",
-          amount: "48,99 €",
+          amount: "50,00 €",
           invoiceNumber: "INV-2025-001234",
           paymentDate: "17 décembre 2025",
           nextRenewalDate: "17 janvier 2026",
@@ -170,7 +170,7 @@ export default function TestEmailsPage() {
         {
           customerName: "Jean Dupont",
           plan: "Premium",
-          amount: "48,99 €",
+          amount: "50,00 €",
           failureReason: "Carte expirée",
           retryDate: "20 décembre 2025",
         },

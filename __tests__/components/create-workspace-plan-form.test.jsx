@@ -48,7 +48,7 @@ describe("Création d'espace : étape d'offre", () => {
     expect(
       screen.getByText(/17,99\s€\/mois TTC · Facturé chaque mois/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/48,99\s€\/mois TTC/)).toBeInTheDocument();
+    expect(screen.getByText(/50,00\s€\/mois TTC/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continuer" })).toBeDisabled();
   });
 

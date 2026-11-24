@@ -74,7 +74,7 @@ async function testSubscriptionEmails() {
       html: emailTemplates.subscriptionCreated({
         customerName: "Luffy",
         plan: "PME",
-        price: "48,99€/mois",
+        price: "50,00€/mois",
         billingInterval: "Mensuelle",
         features: [
           "10 utilisateurs inclus",
@@ -99,7 +99,7 @@ async function testSubscriptionEmails() {
       html: emailTemplates.subscriptionCreated({
         customerName: "Luffy",
         plan: "ENTREPRISE",
-        price: "94,99€/mois",
+        price: "200,00€/mois",
         billingInterval: "Mensuelle",
         features: [
           "25 utilisateurs inclus",
@@ -124,7 +124,7 @@ async function testSubscriptionEmails() {
       html: emailTemplates.subscriptionCreated({
         customerName: "Luffy",
         plan: "PME",
-        price: "44,09€/mois",
+        price: "45,00€/mois",
         billingInterval: "Annuelle",
         features: [
           "10 utilisateurs inclus",
@@ -202,9 +202,9 @@ async function testSubscriptionEmails() {
       html: emailTemplates.renewalReminder({
         customerName: "Luffy",
         plan: "ENTREPRISE",
-        price: "94,99€/mois",
+        price: "200,00€/mois",
         renewalDate: "7 décembre 2025",
-        amount: "94,99€",
+        amount: "200,00€",
       }),
     });
     console.log("✅ Email rappel renouvellement envoyé avec succès\n");
