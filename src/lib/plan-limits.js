@@ -23,8 +23,9 @@ export const PLAN_LIMITS = {
     seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 1,
-    // Stockage de l'espace, en Go (packs de 50 Go en plus)
-    storage: 75,
+    // Stockage de l'espace, en Go (packs de 50 Go en plus sur l'offre
+    // Entreprise seulement)
+    storage: 100,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 5,
     // Rôles prédéfinis proposés à l'invitation (viewer = Membre, member =
@@ -69,7 +70,7 @@ export const PLAN_LIMITS = {
     seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 3,
-    storage: 400,
+    storage: 500,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 15,
     // Rôles prédéfinis proposés à l'invitation (+ rôles personnalisés)
@@ -111,7 +112,7 @@ export const PLAN_LIMITS = {
     seatPrice: 5.99,
     workspaces: 1,
     bankAccounts: 5,
-    storage: 1000,
+    storage: 2000,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 50,
     // Rôles prédéfinis proposés à l'invitation (+ rôles personnalisés)
