@@ -655,11 +655,14 @@ import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
-import { useAllPagesQuery } from "@/src/hooks/useAllPagesQuery";
+import { useAllPagesQuery, MAX_PAGE_SIZE } from "@/src/hooks/useAllPagesQuery";
 
-// Liste des factures : toutes celles de l'organisation (la première page
-// s'affiche aussitôt, le reste suit), car onglets, recherche, tri, exports et
-// chiffres de l'accueil sont calculés sur la liste chargée.
+// Liste des factures : toutes celles de l'organisation, car onglets,
+// recherche, tri, exports et chiffres (soldes de la page Factures, accueil)
+// sont calculés sur la liste chargée. Elle est demandée entière d'une seule
+// requête (jusqu'à 1 000 factures) : avec une première page de 50 puis le
+// reste, les soldes changeaient pendant le chargement, et de nouveau à chaque
+// retour sur la page (la première page relue remplaçait la liste en cache).
 export const useInvoices = ({ skip = false } = {}) => {
   // Récupérer le workspace actuel
   const {
@@ -673,6 +676,7 @@ export const useInvoices = ({ skip = false } = {}) => {
     loading: queryLoading,
     error: queryError,
     refetch,
+    complete: listComplete,
   } = useAllPagesQuery(
     GET_INVOICES,
     {
@@ -682,30 +686,33 @@ export const useInvoices = ({ skip = false } = {}) => {
       notifyOnNetworkStatusChange: true,
       skip: skip || !workspaceId, // Ne pas exécuter la query sans workspaceId
     },
-    { field: "invoices", listField: "invoices" },
+    { field: "invoices", listField: "invoices", firstPageSize: MAX_PAGE_SIZE },
   );
 
   // Valeurs de retour optimisées
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const loading =
+      (workspaceLoading && !workspaceId) || (queryLoading && !invoicesData);
+    return {
       invoices: invoicesData?.invoices?.invoices || [],
       totalCount: invoicesData?.invoices?.totalCount || 0,
       hasNextPage: invoicesData?.invoices?.hasNextPage || false,
-      loading:
-        (workspaceLoading && !workspaceId) || (queryLoading && !invoicesData),
+      loading,
+      // Liste entière reçue (toutes les pages), ou plus rien à attendre
+      complete: !loading && listComplete,
       error: workspaceError || queryError,
       refetch,
-    }),
-    [
-      invoicesData,
-      workspaceId,
-      workspaceLoading,
-      queryLoading,
-      workspaceError,
-      queryError,
-      refetch,
-    ],
-  );
+    };
+  }, [
+    invoicesData,
+    workspaceId,
+    workspaceLoading,
+    queryLoading,
+    listComplete,
+    workspaceError,
+    queryError,
+    refetch,
+  ]);
 };
 
 // Hook pour récupérer les soldes agrégés (factures créées + importées)

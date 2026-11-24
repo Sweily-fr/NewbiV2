@@ -3,7 +3,14 @@
 import dynamic from "next/dynamic";
 import { sortByDateDesc } from "@/src/lib/document-dates";
 
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -152,7 +159,13 @@ export default function InvoiceTable({
   const isMobileLayout = useIsMobile();
   const router = useRouter();
   const inputRef = useRef(null);
-  const { invoices, loading, error, refetch } = useInvoices();
+  const {
+    invoices,
+    loading,
+    complete: invoicesComplete,
+    error,
+    refetch,
+  } = useInvoices();
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : la
@@ -201,24 +214,35 @@ export default function InvoiceTable({
   // Hook pour les factures importées
   const {
     importedInvoices,
-    loading: importedLoading,
+    initialLoading: importedInitialLoading,
     refetch: refetchImported,
   } = useImportedInvoices(canReadImportedInvoices ? workspaceId : null);
 
   // Hook pour les avoirs (count pour le badge du tab) : seul le total sert,
   // limit 1 évite de rapatrier toute la liste d'avoirs.
-  const { totalCount: creditNotesCount } = useCreditNotes(
-    { page: 1, limit: 1 },
-    { skip: !canReadCreditNotes },
-  );
+  const { totalCount: creditNotesCount, loading: creditNotesLoading } =
+    useCreditNotes({ page: 1, limit: 1 }, { skip: !canReadCreditNotes });
 
   // Factures récurrentes : badge dans la liste, onglet dédié, dialog
   const {
     recurrences,
     loading: recurrencesLoading,
+    initialLoading: recurrencesInitialLoading,
     error: recurrencesError,
     refetch: refetchRecurrences,
   } = useInvoiceRecurrences();
+
+  // Liste, onglets et soldes de la page n'apparaissent qu'avec toutes leurs
+  // données : la liste entière des factures, les factures importées, les
+  // compteurs d'avoirs et de récurrentes. Chaque requête arrivait à son
+  // rythme et les soldes se recalculaient à chaque arrivée, ce qui se voyait
+  // sur un poste lent. Au retour sur la page, le cache suffit : pas d'attente.
+  const isDataReady =
+    invoicesComplete &&
+    !importedInitialLoading &&
+    !creditNotesLoading &&
+    !recurrencesInitialLoading;
+
   const recurrencesBySource = useMemo(
     () => new Map(recurrences.map((r) => [r.sourceInvoiceId, r])),
     [recurrences],
@@ -384,12 +408,25 @@ export default function InvoiceTable({
       })
       .join("|");
   }, [combinedInvoices]);
-  useEffect(() => {
-    if (onFilteredDataChange) {
-      const rows = table.getFilteredRowModel().rows;
-      onFilteredDataChange(rows.map((row) => row.original));
+  // Soldes en attente (« ... ») tant que les données ne sont pas toutes là ;
+  // remontés avant que le navigateur ne peigne (useLayoutEffect), pour que
+  // soldes et liste apparaissent ensemble.
+  useLayoutEffect(() => {
+    if (!onFilteredDataChange) return;
+    if (!isDataReady) {
+      onFilteredDataChange(null);
+      return;
     }
-  }, [table, onFilteredDataChange, filterKey, dataLength, statsSignature]);
+    const rows = table.getFilteredRowModel().rows;
+    onFilteredDataChange(rows.map((row) => row.original));
+  }, [
+    table,
+    onFilteredDataChange,
+    filterKey,
+    dataLength,
+    statsSignature,
+    isDataReady,
+  ]);
 
   // Factures cochées : l'export de la page n'exporte qu'elles (il exportait
   // toute la liste, la sélection ne lui était pas transmise)
@@ -590,9 +627,11 @@ export default function InvoiceTable({
     }
   }, [invoiceIdToOpen, invoices, combinedInvoices]);
 
-  // Skeleton uniquement au premier chargement : si le cache Apollo a déjà des
-  // factures (retour sur la page), on les affiche pendant le refetch silencieux
-  if (loading && (!invoices || invoices.length === 0)) {
+  // Skeleton jusqu'à ce que toutes les données soient là (premier
+  // chargement) : la liste s'affiche alors d'un coup, avec les soldes. Au
+  // retour sur la page, le cache Apollo suffit : la liste s'affiche aussitôt
+  // et le refetch reste silencieux.
+  if (!isDataReady) {
     return <InvoiceTableSkeleton />;
   }
 
