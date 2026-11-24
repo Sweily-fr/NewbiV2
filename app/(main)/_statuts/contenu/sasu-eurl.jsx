@@ -1,4 +1,5 @@
 import React from "react";
+import { planLabel } from "@/src/lib/plans-display";
 import { Archive, FileCheck2, FileDown, Landmark, Users } from "lucide-react";
 
 /* Contenu de la page /sasu-eurl.
@@ -185,8 +186,7 @@ export const contenu = {
       },
       {
         title: "Comment mon expert-comptable accède-t-il à mes données ?",
-        content:
-          "Vous l'invitez depuis votre espace : son accès est gratuit et n'occupe pas de place d'utilisateur — un en formule Freelance, trois en TPE, cinq en Entreprise. Il consulte vos documents et lance ses exports (CSV, Excel ou FEC selon votre formule) sans que vous ayez à lui envoyer quoi que ce soit.",
+        content: `Vous l'invitez depuis votre espace : son accès est gratuit et n'occupe pas de place d'utilisateur (un en formule ${planLabel("freelance")}, trois en ${planLabel("pme")}, cinq en ${planLabel("entreprise")}). Il consulte vos documents et lance ses exports (CSV, Excel ou FEC selon votre formule) sans que vous ayez à lui envoyer quoi que ce soit.`,
       },
       {
         title: "Quelle différence de gestion entre une EURL et une SASU ?",
@@ -195,13 +195,11 @@ export const contenu = {
       },
       {
         title: "Puis-je connecter les comptes bancaires de ma société ?",
-        content:
-          "Oui, un compte en formule Freelance, trois en TPE et cinq en Entreprise. Les mouvements sont rapprochés de vos factures et de vos dépenses, ce qui permet de suivre la trésorerie de la société pour elle-même, sans la mélanger à vos comptes personnels.",
+        content: `Oui, un compte en formule ${planLabel("freelance")}, trois en ${planLabel("pme")} et cinq en ${planLabel("entreprise")}. Les mouvements sont rapprochés de vos factures et de vos dépenses, ce qui permet de suivre la trésorerie de la société pour elle-même, sans la mélanger à vos comptes personnels.`,
       },
       {
         title: "Puis-je travailler à plusieurs sur le même espace ?",
-        content:
-          "Oui. La formule Freelance couvre un utilisateur, TPE jusqu'à dix et Entreprise jusqu'à vingt-cinq, en plus des accès comptables. Vous ajoutez un collaborateur au-delà de votre limite sans changer de formule, pour un supplément mensuel par utilisateur.",
+        content: `Oui. La formule ${planLabel("freelance")} couvre un utilisateur, ${planLabel("pme")} jusqu'à dix et ${planLabel("entreprise")} jusqu'à vingt-cinq, en plus des accès comptables. Vous ajoutez un collaborateur au-delà de votre limite sans changer de formule, pour un supplément mensuel par utilisateur.`,
       },
       {
         title:

@@ -1,4 +1,5 @@
 import React from "react";
+import { planLabel } from "@/src/lib/plans-display";
 import { Archive, BadgePercent, Landmark, ScanLine, Users } from "lucide-react";
 
 /* Contenu de la page /association.
@@ -211,8 +212,7 @@ export const contenu = {
       {
         title:
           "Le trésorier et le président peuvent-ils accéder au même espace ?",
-        content:
-          "Oui. La formule Freelance couvre un utilisateur, TPE jusqu'à dix et Entreprise jusqu'à vingt-cinq. S'y ajoutent les accès comptables, gratuits et sans occuper de place : un, trois ou cinq selon la formule. Chacun travaille sur les mêmes données, sans fichier qui circule par e-mail.",
+        content: `Oui. La formule ${planLabel("freelance")} couvre un utilisateur, ${planLabel("pme")} jusqu'à dix et ${planLabel("entreprise")} jusqu'à vingt-cinq. S'y ajoutent les accès comptables, gratuits et sans occuper de place : un, trois ou cinq selon la formule. Chacun travaille sur les mêmes données, sans fichier qui circule par e-mail.`,
       },
       {
         title:
