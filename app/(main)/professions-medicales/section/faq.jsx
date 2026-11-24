@@ -1,5 +1,6 @@
 import React from "react";
 import PublicFaq, { faqJsonLd } from "@/src/components/public-faq";
+import { planLabel } from "@/src/lib/plans-display";
 
 /* Les réponses reprennent deux articles du blog : « Facture d'ostéopathe :
    note d'honoraires, TVA et mentions obligatoires » et « Professions libérales
@@ -43,8 +44,7 @@ const questions = [
   },
   {
     title: "Mon expert-comptable peut-il accéder à mes documents ?",
-    content:
-      "Oui, et son accès est inclus gratuitement : un en formule Freelance, trois en TPE, cinq en Entreprise. Il consulte vos documents et lance ses exports (CSV, Excel ou FEC selon votre formule) sans occuper de place d'utilisateur.",
+    content: `Oui, et son accès est inclus gratuitement : un en formule ${planLabel("freelance")}, trois en ${planLabel("pme")}, cinq en ${planLabel("entreprise")}. Il consulte vos documents et lance ses exports (CSV, Excel ou FEC selon votre formule) sans occuper de place d'utilisateur.`,
   },
   {
     title: "Que se passe-t-il pendant les 7 jours offerts ?",
