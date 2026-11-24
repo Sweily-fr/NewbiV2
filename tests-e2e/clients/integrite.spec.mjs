@@ -7,6 +7,7 @@
  */
 import { readFileSync } from "node:fs";
 import { test, expect, etape, fenetre } from "../outils.mjs";
+import { jourParis } from "../donnees/base.mjs";
 import { ouvrir, cliquer, attendreCalme } from "../navigation.mjs";
 import { ouvrirEditeur } from "../editeur.mjs";
 import { connecte, API_URL } from "../config.mjs";
@@ -92,7 +93,7 @@ test.describe("Contacts : documents émis jamais réécrits", () => {
 test.describe("Contacts : contact bloqué exclu des documents", () => {
   const client = { id: id(C.bloque), name: C.bloque.name, email: C.bloque.email, type: "COMPANY", address: adresse };
   const ligne = { description: "Prestation", quantity: 1, unitPrice: 100, vatRate: 20, unit: "unité" };
-  const jour = new Date().toISOString().slice(0, 10);
+  const jour = jourParis();
 
   for (const [nom, champ, collection, requete, input] of [
     ["Facture", "createInvoice", "invoices", `mutation($w: ID!, $input: CreateInvoiceInput!) { createInvoice(workspaceId: $w, input: $input) { id } }`, { client, items: [ligne], issueDate: jour, dueDate: jour }],
@@ -356,7 +357,7 @@ test.describe("Contacts : automatisations de listes déclenchées par les docume
   test("« Facture payée » avec un minimum de 500 € : seule la facture au-dessus déclenche", async ({ page }) => {
     const auto = await appel(page, CREER, { input: { name: "Grosse facture payée", triggerType: "INVOICE_PAID", triggerConfig: { minAmount: 500 }, actionType: "ADD_TO_LIST", targetListId: id(LISTES_CC.gros), isActive: true } });
     expect(auto.errors).toEqual([]);
-    const payer = (f) => appel(page, `mutation($w: ID!, $id: ID!, $d: String!) { markInvoiceAsPaid(workspaceId: $w, id: $id, paymentDate: $d) { id status } }`, { id: id(f), d: new Date().toISOString().slice(0, 10) });
+    const payer = (f) => appel(page, `mutation($w: ID!, $id: ID!, $d: String!) { markInvoiceAsPaid(workspaceId: $w, id: $id, paymentDate: $d) { id status } }`, { id: id(f), d: jourParis() });
     expect((await payer(FACTURES_CC.payee400)).errors).toEqual([]);
     await page.waitForTimeout(1_000);
     expect(await dansListe(LISTES_CC.gros, C.facturePayee), "Facture de 400 € HT : déclenchée malgré le minimum").toBe(false);

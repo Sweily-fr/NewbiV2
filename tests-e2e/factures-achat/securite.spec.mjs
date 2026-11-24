@@ -10,7 +10,7 @@ import { ObjectId } from "mongodb";
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir } from "../navigation.mjs";
 import { BASE_URL, connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_FREELANCE_ACHATS, SESSION_TOKEN_INTRUS, SESSION_TOKEN_ROLE_ACHATS, SESSION_TOKEN_SAISIE_ACHATS } from "../config.mjs";
-import { COMPTES } from "../donnees/base.mjs";
+import { COMPTES, jourParis } from "../donnees/base.mjs";
 import {
   FACTURES_ACHAT,
   FACTURES_ACHAT_SAISIE,
@@ -75,7 +75,7 @@ const CIBLES = {
 const PDF = [...Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF")];
 const cibles = (w) => CIBLES[w] || CIBLES[ORG];
 const parId = (doc) => ({ _id: doc._id });
-const aujourdhui = () => new Date().toISOString().slice(0, 10);
+const aujourdhui = () => jourParis();
 
 const LECTURES = [
   { nom: "Une facture d'achat", champ: "purchaseInvoice", requete: `query($id: ID!) { purchaseInvoice(id: $id) { id supplierName amountTTC } }`, variables: () => ({ id: id(FA.hotel) }) },

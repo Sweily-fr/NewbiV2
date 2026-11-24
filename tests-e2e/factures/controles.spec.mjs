@@ -15,6 +15,7 @@
 import { createHmac } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { test, expect, etape } from "../outils.mjs";
+import { jourParis } from "../donnees/base.mjs";
 import { base } from "../base.mjs";
 import {
   API_URL,
@@ -36,7 +37,7 @@ const ORG = id(ESPACES_FACTURES.controles.organisation);
 const ORG_ID = ESPACES_FACTURES.controles.organisation._id;
 const ORG_SOLDES = id(ESPACES_FACTURES.soldes.organisation);
 const ORG_EFACT = id(ESPACES_FACTURES.efacturation.organisation);
-const jour = (decalage = 0) => new Date(Date.now() + decalage * 86_400_000).toISOString().slice(0, 10);
+const jour = (decalage = 0) => jourParis(decalage);
 const AUJOURDHUI = jour();
 
 const clientDe = (c) => ({

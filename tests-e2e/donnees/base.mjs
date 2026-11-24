@@ -202,7 +202,37 @@ export function oid(type, n) {
 }
 
 export const MAINTENANT = new Date();
-export const DANS = (jours) => new Date(MAINTENANT.getTime() + jours * 86_400_000);
+
+/**
+ * Fuseau du navigateur des tests (`timezoneId` de playwright.config.mjs). Le
+ * runner, l'API et Next.js tournent en UTC, comme la prod : entre minuit et
+ * 1 h à Paris (2 h l'été), Paris a déjà changé de jour quand l'UTC est encore
+ * la veille. Le site saisit les dates au jour de Paris ; les données de test
+ * font pareil, sinon un brouillon semé « aujourd'hui » tombe la veille d'une
+ * facture validée depuis le site et l'API refuse de le valider (release #1659,
+ * tests lancés le 24/11/2026 vers 0 h 15).
+ */
+export const FUSEAU = "Europe/Paris";
+
+/** Jour du calendrier à Paris, « AAAA-MM-JJ », décalé de `jours`. */
+export function jourParis(jours = 0, instant = new Date()) {
+  const parties = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { timeZone: FUSEAU, year: "numeric", month: "numeric", day: "numeric" })
+      .formatToParts(instant)
+      .map(({ type, value }) => [type, value]),
+  );
+  const minuitUtc = Date.UTC(Number(parties.year), Number(parties.month) - 1, Number(parties.day) + jours);
+  return new Date(minuitUtc).toISOString().slice(0, 10);
+}
+
+// Origine des dates comptées en jours : MAINTENANT, sauf quand Paris a déjà
+// changé de jour, où elle passe à minuit UTC de ce jour (au plus 2 h plus
+// tard). Une date « dans N jours » tombe alors le même jour pour l'API (UTC)
+// et pour le navigateur (Paris). Le reste de la journée, rien ne change.
+const ORIGINE_JOURS = Math.max(MAINTENANT.getTime(), Date.parse(jourParis(0, MAINTENANT)));
+export const DANS = (jours) => new Date(ORIGINE_JOURS + jours * 86_400_000);
+/** Instant exact dans `heures` heures (négatif : il y a), compté depuis MAINTENANT. */
+export const DANS_HEURES = (heures) => new Date(MAINTENANT.getTime() + heures * 3_600_000);
 
 function organisation(n, nom) {
   return {
