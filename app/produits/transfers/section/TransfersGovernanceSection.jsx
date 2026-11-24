@@ -46,9 +46,10 @@ export default function TransfersGovernanceSection() {
               Rushes vidéo, maquettes, archives de projet, plans 3D : vous
               déposez vos fichiers volumineux tels quels, dans n&apos;importe
               quel format, et ils arrivent intacts. Le volume dépend de votre
-              offre : 5 Go par transfert en Freelance, 15 Go en TPE, 50 Go en
-              Entreprise. Pas de découpage en plusieurs envois, pas de qualité
-              sacrifiée pour tenir dans une pièce jointe.
+              offre : 5 Go par transfert en {planLabel("freelance")}, 15 Go en{" "}
+              {planLabel("pme")}, 50 Go en {planLabel("entreprise")}. Pas de
+              découpage en plusieurs envois, pas de qualité sacrifiée pour tenir
+              dans une pièce jointe.
             </p>
             <div className={VISUEL}>
               {/* Les trois paliers que le texte énumère, rien de plus. */}
