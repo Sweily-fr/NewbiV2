@@ -67,8 +67,12 @@ describe("historique de prospection d'un contact", () => {
     expect(result.current).toEqual([]);
   });
 
-  it("une ligne par envoi : statut, dates, adresse", () => {
+  it("une ligne par envoi : prospection liée, statut, dates, adresse", () => {
     render(<ClientProspectingHistory items={[replied]} />);
+    const link = screen.getByRole("link", { name: "Menuisiers Lyon" });
+    expect(link.getAttribute("href")).toBe(
+      "/dashboard/outils/prospection/seq-1",
+    );
     expect(screen.getByText("A répondu")).toBeTruthy();
     expect(
       screen.getByText(

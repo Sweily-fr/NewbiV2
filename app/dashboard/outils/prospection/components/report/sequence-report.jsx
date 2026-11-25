@@ -258,6 +258,15 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
   );
 
   const end = sending ? estimatedEndLabel(sequence.estimatedEndDate) : null;
+  // V1 : la boîte n'est pas lue, aucun rejet n'est détecté ; le compteur ne
+  // s'affiche que s'il y en a
+  const smallStats = [
+    { label: "Non envoyés", count: stats.skipped || 0 },
+    ...(stats.bounced
+      ? [{ label: "Rejets", count: stats.bounced, warn: true }]
+      : []),
+    { label: "Échecs d'envoi", count: stats.failed || 0, warn: true },
+  ];
 
   return (
     <div className="h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-y-auto">
@@ -448,12 +457,13 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
         <div
           className={cn(
             CARD_CLASS,
-            "grid grid-cols-1 divide-y divide-[#EEEFF1] sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-[#232323]",
+            "grid grid-cols-1 divide-y divide-[#EEEFF1] sm:divide-x sm:divide-y-0 dark:divide-[#232323]",
+            smallStats.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2",
           )}
         >
-          <SmallStat label="Non envoyés" count={stats.skipped || 0} />
-          <SmallStat label="Rejets" count={stats.bounced || 0} warn />
-          <SmallStat label="Échecs d'envoi" count={stats.failed || 0} warn />
+          {smallStats.map((item) => (
+            <SmallStat key={item.label} {...item} />
+          ))}
         </div>
 
         <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">

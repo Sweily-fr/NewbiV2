@@ -17,8 +17,9 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { SEND_PROSPECTING_TEST } from "@/src/graphql/prospectingQueries";
 import { parseEmailList } from "@/src/utils/email-campaigns";
+import { testSentTitle } from "@/src/utils/prospecting";
 import { FIELD_LABEL } from "@/app/dashboard/outils/campagnes-email/components/setup/setup-section";
-import { errorMessage } from "../shared";
+import { SendModeNotice, errorMessage } from "../shared";
 
 const MAX_TEST_EMAILS = 5;
 
@@ -33,6 +34,7 @@ export function TestDialog({
   workspaceId,
   sequence,
   unsaved = false,
+  sendMode,
 }) {
   const mailboxEmail = sequence.mailbox?.accountEmail || "";
   const [text, setText] = useState(mailboxEmail);
@@ -65,7 +67,7 @@ export function TestDialog({
       const served = data?.sendProspectingTest?.length
         ? data.sendProspectingTest
         : valid;
-      toast.success("E-mail de test envoyé", {
+      toast.success(testSentTitle(sendMode), {
         description: served.join(", "),
       });
       onOpenChange(false);
@@ -118,6 +120,7 @@ export function TestDialog({
                 </p>
               )}
             </div>
+            <SendModeNotice sendMode={sendMode} />
             {unsaved && (
               <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />

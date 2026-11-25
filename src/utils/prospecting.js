@@ -671,6 +671,24 @@ export function recipientDate(recipient) {
   );
 }
 
+// ── Mode d'envoi du serveur ──────────────────────────────────────────────
+
+/** Envois simulés ou restreints (tout sauf LIVE ; inconnu = rien à dire). */
+export const isSimulatedSendMode = (sendMode) =>
+  Boolean(sendMode) && sendMode !== "LIVE";
+
+export const SIMULATED_SEND_NOTICE =
+  "Envois simulés dans cet environnement : seules les adresses autorisées reçoivent vraiment les e-mails.";
+
+/**
+ * Titre du message après un envoi de test : l'API renvoie aussi les
+ * adresses simulées, sans les distinguer.
+ */
+export const testSentTitle = (sendMode) =>
+  isSimulatedSendMode(sendMode)
+    ? "E-mail de test envoyé (ou simulé selon l'environnement)"
+    : "E-mail de test envoyé";
+
 // ── Vérification avant lancement ─────────────────────────────────────────
 
 /**

@@ -78,6 +78,23 @@ describe("suivi d'une prospection", () => {
     expect(screen.getAllByText("14")).toHaveLength(2);
   });
 
+  it("rejets : compteur masqué tant qu'il vaut 0 (boîte non lue en V1)", () => {
+    renderReport(fullSequence({ status: "ACTIVE", stats: running }));
+    expect(screen.queryByText("Rejets")).toBeNull();
+    expect(screen.getByText("Non envoyés")).toBeTruthy();
+    expect(screen.getByText("Échecs d'envoi")).toBeTruthy();
+  });
+
+  it("rejets : compteur affiché s'il y en a", () => {
+    renderReport(
+      fullSequence({
+        status: "COMPLETED",
+        stats: stats({ recipients: 10, sent: 8, bounced: 2 }),
+      }),
+    );
+    expect(screen.getByText("Rejets")).toBeTruthy();
+  });
+
   it("boîte d'un autre membre : consultation seule", () => {
     renderReport(
       fullSequence({

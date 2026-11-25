@@ -18,6 +18,7 @@ import {
   formatEndDate,
   formatSendWindow,
   isLaunched,
+  isSimulatedSendMode,
   isLive,
   mailboxAuthorizePath,
   mailboxAuthorizeUrl,
@@ -45,6 +46,7 @@ import {
   sequenceFromListInput,
   sequenceProgress,
   sequenceStatusMeta,
+  testSentTitle,
   unsubscribeRate,
   validateMailboxSettings,
 } from "@/src/utils/prospecting";
@@ -573,6 +575,22 @@ describe("historique d'un contact", () => {
       "Non envoyé",
     );
     expect(recipientHistoryLabel(null)).toBe("");
+  });
+});
+
+describe("mode d'envoi du serveur", () => {
+  it("simulé ou restreint : tout sauf LIVE", () => {
+    expect(isSimulatedSendMode("LIVE")).toBe(false);
+    expect(isSimulatedSendMode("SIMULATION")).toBe(true);
+    expect(isSimulatedSendMode("RESTRICTED")).toBe(true);
+    expect(isSimulatedSendMode(undefined)).toBe(false);
+  });
+
+  it("titre du message après un test", () => {
+    expect(testSentTitle("LIVE")).toBe("E-mail de test envoyé");
+    expect(testSentTitle("RESTRICTED")).toBe(
+      "E-mail de test envoyé (ou simulé selon l'environnement)",
+    );
   });
 });
 

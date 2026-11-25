@@ -22,7 +22,7 @@ import {
   formatSendWindow,
 } from "@/src/utils/prospecting";
 import { TextWithVariables } from "@/app/dashboard/outils/campagnes-email/components/setup/subject-section";
-import { errorMessage } from "../shared";
+import { SendModeNotice, errorMessage } from "../shared";
 
 /** Attestation obligatoire, tracée par l'API (consentAt, consentBy). */
 export const CONSENT_LABEL =
@@ -47,6 +47,7 @@ export function LaunchDialog({
   workspaceId,
   sequence,
   verification,
+  sendMode,
 }) {
   const [consent, setConsent] = useState(false);
   useEffect(() => {
@@ -122,6 +123,8 @@ export function LaunchDialog({
               <TextWithVariables text={sequence.subject} />
             </SummaryRow>
           </dl>
+
+          <SendModeNotice sendMode={sendMode} />
 
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e6e7ea] p-3.5 transition-colors hover:bg-[#fafafa] has-[[data-state=checked]]:border-[#5a50ff]/40 has-[[data-state=checked]]:bg-[#5a50ff]/[0.04] dark:border-[#2E2E32] dark:hover:bg-white/[0.03]">
             <Checkbox

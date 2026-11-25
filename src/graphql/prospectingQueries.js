@@ -107,9 +107,12 @@ export const PROSPECTING_SEQUENCE_FIELDS = gql`
   ${PROSPECTING_STATS_FIELDS}
 `;
 
+// sequenceId / sequenceName : prospection du message (fiche contact)
 export const PROSPECTING_RECIPIENT_FIELDS = gql`
   fragment ProspectingRecipientFields on ProspectingRecipient {
     id
+    sequenceId
+    sequenceName
     clientId
     email
     name
@@ -124,7 +127,9 @@ export const PROSPECTING_RECIPIENT_FIELDS = gql`
 `;
 
 // Fournisseurs configurés sur le serveur, boîte du membre et de l'équipe,
-// variables, bornes de la limite quotidienne, page « Vos données »
+// variables, bornes de la limite quotidienne, page « Vos données », mode
+// d'envoi du serveur (LIVE, SIMULATION ou RESTRICTED : en local, seules les
+// adresses autorisées reçoivent vraiment les e-mails)
 export const GET_PROSPECTING_SETTINGS = gql`
   query ProspectingSettings($workspaceId: ID!) {
     prospectingSettings(workspaceId: $workspaceId) {
@@ -146,6 +151,7 @@ export const GET_PROSPECTING_SETTINGS = gql`
       defaultDailyLimit
       maxDailyLimit
       dataPageUrl
+      sendMode
     }
   }
   ${PROSPECTING_MAILBOX_FIELDS}

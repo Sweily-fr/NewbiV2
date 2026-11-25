@@ -202,6 +202,7 @@ export function SequenceSetup({ sequence, workspaceId, settings }) {
         workspaceId={workspaceId}
         sequence={sequence}
         unsaved={Boolean(messageDraft)}
+        sendMode={settings?.sendMode}
       />
       <LaunchDialog
         open={launchOpen}
@@ -209,6 +210,7 @@ export function SequenceSetup({ sequence, workspaceId, settings }) {
         workspaceId={workspaceId}
         sequence={sequence}
         verification={verification}
+        sendMode={settings?.sendMode}
       />
       {ownMailbox && (
         <MailboxSettingsSheet

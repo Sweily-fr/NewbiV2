@@ -135,6 +135,18 @@ describe("page Prospection", () => {
     ).toBeTruthy();
   });
 
+  it("environnement de simulation : bandeau discret", async () => {
+    renderPage([
+      sequencesMock([listSequence()]),
+      settingsMock(settingsFixture({ sendMode: "SIMULATION" })),
+    ]);
+    expect(
+      await screen.findByText(
+        /seules les adresses autorisées reçoivent vraiment les e-mails/,
+      ),
+    ).toBeTruthy();
+  });
+
   it("boîte expirée : bandeau pour la reconnecter", async () => {
     const expired = mailbox({ status: "EXPIRED" });
     renderPage([

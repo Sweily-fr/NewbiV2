@@ -56,6 +56,7 @@ import { MailboxSettingsSheet } from "./components/mailbox-settings-sheet";
 import { SequenceCards, SequencesTable } from "./components/sequences-list";
 import {
   FOCUS_RING,
+  SendModeNotice,
   errorMessage,
   useProspectingAccess,
 } from "./components/shared";
@@ -313,7 +314,8 @@ export default function ProspectionPage() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="px-4 pt-4 sm:px-6">
+        <div className="flex flex-col gap-3 px-4 pt-4 sm:px-6">
+          <SendModeNotice sendMode={settings?.sendMode} />
           <MailboxCard
             settings={settings}
             loading={settingsLoading}

@@ -90,6 +90,18 @@ describe("fenêtre de lancement", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it("environnement de test : envois simulés signalés", () => {
+    renderDialog([], { sendMode: "RESTRICTED" });
+    expect(
+      screen.getByText(/Envois simulés dans cet environnement/),
+    ).toBeTruthy();
+  });
+
+  it("en production : pas de bandeau", () => {
+    renderDialog([], { sendMode: "LIVE" });
+    expect(screen.queryByText(/Envois simulés/)).toBeNull();
+  });
+
   it("aucun destinataire : lancement impossible même coché", async () => {
     const user = userEvent.setup();
     renderDialog([], {

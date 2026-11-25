@@ -60,6 +60,7 @@ export function settings(overrides = {}) {
     defaultDailyLimit: 30,
     maxDailyLimit: 50,
     dataPageUrl: "https://api.newbi.fr/api/prospection/donnees/jeton",
+    sendMode: "LIVE",
     ...overrides,
   };
 }
@@ -184,6 +185,8 @@ export function recipient(overrides = {}) {
   return {
     __typename: "ProspectingRecipient",
     id: "r-1",
+    sequenceId: "seq-1",
+    sequenceName: "Menuisiers Lyon",
     clientId: "c-1",
     email: "contact@menuiserie-durand.fr",
     name: "Marie Durand",

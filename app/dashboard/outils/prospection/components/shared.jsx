@@ -1,7 +1,10 @@
 "use client";
 
+import { FlaskConical } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
+  SIMULATED_SEND_NOTICE,
+  isSimulatedSendMode,
   mailboxStatusMeta,
   recipientStatusMeta,
   sequenceStatusMeta,
@@ -89,6 +92,25 @@ export function MicrosoftIcon({ className }) {
       <rect x="1" y="13" width="10" height="10" fill="#00A4EF" />
       <rect x="13" y="13" width="10" height="10" fill="#FFB900" />
     </svg>
+  );
+}
+
+/**
+ * Envois simulés ou restreints sur ce serveur (sendMode autre que LIVE) :
+ * seules les adresses autorisées reçoivent vraiment les e-mails.
+ */
+export function SendModeNotice({ sendMode, className }) {
+  if (!isSimulatedSendMode(sendMode)) return null;
+  return (
+    <p
+      className={cn(
+        "flex items-start gap-2 rounded-lg bg-sky-50 px-3 py-2.5 text-xs leading-5 text-sky-900 dark:bg-sky-500/10 dark:text-sky-200",
+        className,
+      )}
+    >
+      <FlaskConical className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+      <span>{SIMULATED_SEND_NOTICE}</span>
+    </p>
   );
 }
 
