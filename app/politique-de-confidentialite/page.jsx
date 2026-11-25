@@ -21,7 +21,7 @@ export default function PolitiqueDeConfidentialite() {
               Politique de Confidentialité
             </h1>
             <p className="text-sm text-gray-500 mb-8">
-              Dernière mise à jour : 02 novembre 2026
+              Dernière mise à jour : 25 novembre 2026
             </p>
 
             <div className="prose prose-gray max-w-none">
@@ -316,9 +316,124 @@ export default function PolitiqueDeConfidentialite() {
                 </p>
               </section>
 
+              <section id="boites-mail" className="mb-8 scroll-mt-32">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                  6. Boîtes mail et agendas connectés (Google, Microsoft)
+                </h2>
+                <p className="text-gray-600 leading-relaxed mb-6">
+                  Newbi vous permet de connecter un compte Google (Gmail, Google
+                  Agenda) ou Microsoft (Outlook, Microsoft 365) pour trois
+                  fonctionnalités : importer vos factures fournisseurs reçues
+                  sur Gmail, synchroniser votre agenda et envoyer vos e-mails de
+                  prospection depuis votre propre boîte. Chaque accès est
+                  demandé séparément, sur l'écran d'autorisation de Google ou de
+                  Microsoft. Cette section ne s'applique que si vous utilisez
+                  l'une de ces fonctionnalités.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-700 mb-3">
+                  6.1 Données auxquelles Newbi accède
+                </h3>
+                <ul className="text-gray-600 space-y-2 mb-6">
+                  <li>
+                    <strong>Prospection :</strong> l'autorisation d'envoyer des
+                    e-mails en votre nom (Gmail : « gmail.send » ; Microsoft : «
+                    Mail.Send »), ainsi que le nom et l'adresse du compte. Newbi
+                    ne lit pas votre boîte : il envoie, au rythme que vous
+                    réglez, les messages que vous avez rédigés aux destinataires
+                    que vous avez choisis. Pour chaque envoi, nous gardons la
+                    date, le destinataire et l'identifiant technique du message.
+                  </li>
+                  <li>
+                    <strong>Import des factures depuis Gmail :</strong> la
+                    lecture seule de votre boîte (« gmail.readonly »), pour
+                    trouver sur la période choisie (1 à 12 mois) les e-mails qui
+                    contiennent une facture en PDF et l'importer dans vos
+                    factures d'achat. Nous conservons les factures importées et,
+                    pour chaque e-mail traité, son identifiant technique, son
+                    objet, son expéditeur et sa date, afin de ne pas l'importer
+                    deux fois.
+                  </li>
+                  <li>
+                    <strong>Agenda :</strong> la lecture et l'écriture de vos
+                    événements (Google Agenda : « calendar.readonly » et «
+                    calendar.events » ; Microsoft : « Calendars.ReadWrite »),
+                    pour les afficher et les synchroniser avec le calendrier de
+                    Newbi.
+                  </li>
+                  <li>
+                    Dans tous les cas, des jetons d'accès, conservés chiffrés,
+                    qui permettent ces opérations.
+                  </li>
+                </ul>
+
+                <h3 className="text-xl font-semibold text-gray-700 mb-3">
+                  6.2 Utilisation limitée des données Google
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  L'utilisation et le transfert à toute autre application, par
+                  Newbi, des informations reçues des API Google respectent le{" "}
+                  <a
+                    href="https://developers.google.com/terms/api-services-user-data-policy"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    règlement sur les données utilisateur des services API
+                    Google
+                  </a>{" "}
+                  (Google API Services User Data Policy), y compris les
+                  exigences d'utilisation limitée (Limited Use requirements).
+                </p>
+                <p lang="en" className="text-gray-600 leading-relaxed mb-4">
+                  Newbi&apos;s use and transfer to any other app of information
+                  received from Google APIs will adhere to the Google API
+                  Services User Data Policy, including the Limited Use
+                  requirements.
+                </p>
+                <p className="text-gray-600 leading-relaxed mb-6">
+                  Concrètement, Newbi utilise ces données uniquement pour
+                  fournir la fonctionnalité que vous avez activée, ne les vend
+                  pas, ne s'en sert pas pour de la publicité, ne les utilise pas
+                  pour entraîner des modèles d'intelligence artificielle et ne
+                  les laisse lire par aucune personne, sauf avec votre accord
+                  pour un message précis, pour la sécurité ou pour respecter la
+                  loi. Les mêmes règles s'appliquent aux données reçues de
+                  Microsoft.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-700 mb-3">
+                  6.3 Retirer l'accès
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-6">
+                  Vous pouvez déconnecter une boîte ou un agenda à tout moment
+                  dans Newbi (Prospection, Factures d'achat ou Calendrier), ou
+                  retirer l'accès depuis les réglages de votre compte Google
+                  (myaccount.google.com/permissions) ou Microsoft (applications
+                  autorisées). Newbi efface alors les jetons d'accès. Les
+                  factures importées restent dans vos factures d'achat, et
+                  l'historique des envois reste dans la prospection concernée
+                  jusqu'à sa suppression.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-700 mb-3">
+                  6.4 Données de vos prospects
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Lorsque vous prospectez avec Newbi, vous êtes responsable du
+                  traitement des données de vos prospects et Newbi agit comme
+                  sous-traitant : il conserve leurs fiches, envoie vos messages,
+                  enregistre les désinscriptions (gardées au moins 3 ans pour
+                  qu'aucun message ne reparte vers ces adresses) et publie pour
+                  vous la page « Vos données » vers laquelle renvoie chaque
+                  message. Newbi n'ajoute à ces messages ni pixel de suivi ni
+                  lien traçant.
+                </p>
+              </section>
+
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  6. Conservation des données
+                  7. Conservation des données
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
                   Nous conservons vos données personnelles aussi longtemps que
@@ -331,7 +446,7 @@ export default function PolitiqueDeConfidentialite() {
 
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  7. Sécurité des données
+                  8. Sécurité des données
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
                   Nous mettons en œuvre des mesures de sécurité techniques et
@@ -343,7 +458,7 @@ export default function PolitiqueDeConfidentialite() {
 
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  8. Vos droits
+                  9. Vos droits
                 </h2>
                 <p className="text-gray-600 leading-relaxed mb-4">
                   Conformément au Règlement Général sur la Protection des
@@ -392,7 +507,7 @@ export default function PolitiqueDeConfidentialite() {
 
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  9. Cookies
+                  10. Cookies
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
                   Nous utilisons des cookies et des technologies similaires pour
@@ -433,7 +548,7 @@ export default function PolitiqueDeConfidentialite() {
 
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  10. Modifications de notre politique de confidentialité
+                  11. Modifications de notre politique de confidentialité
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
                   Nous pouvons mettre à jour cette politique de confidentialité
@@ -445,7 +560,7 @@ export default function PolitiqueDeConfidentialite() {
 
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  11. Contact
+                  12. Contact
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
                   Si vous avez des questions concernant cette politique de
