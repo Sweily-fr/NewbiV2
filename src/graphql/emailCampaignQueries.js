@@ -36,6 +36,9 @@ export const EMAIL_CAMPAIGN_LIST_FIELDS = gql`
     createdByName
     createdAt
     updatedAt
+    trackOpens
+    trackClicks
+    trackedRecipients
     stats {
       ...EmailCampaignStatsFields
     }
@@ -43,6 +46,9 @@ export const EMAIL_CAMPAIGN_LIST_FIELDS = gql`
   ${EMAIL_CAMPAIGN_STATS_FIELDS}
 `;
 
+// trackedRecipients : destinataires suivis au lancement (ceux qui avaient
+// accepté le suivi) ; null = campagne lancée avant les accords par contact,
+// tous suivis
 export const EMAIL_CAMPAIGN_FIELDS = gql`
   fragment EmailCampaignFields on EmailCampaign {
     id
@@ -64,6 +70,7 @@ export const EMAIL_CAMPAIGN_FIELDS = gql`
     trackClicks
     privacyPolicyUrl
     trackingPurgedAt
+    trackedRecipients
     scheduledAt
     startedAt
     completedAt
@@ -195,7 +202,8 @@ export const GET_EMAIL_CAMPAIGN_TEMPLATES = gql`
   }
 `;
 
-// Décompte en direct des destinataires d'une audience (avant enregistrement)
+// Décompte en direct des destinataires d'une audience (avant enregistrement).
+// trackingGranted : destinataires envoyables qui ont accepté le suivi
 export const GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT = gql`
   query EmailCampaignAudienceCount(
     $workspaceId: ID!
@@ -212,6 +220,7 @@ export const GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT = gql`
       excludedByList
       missingFirstName
       prospects
+      trackingGranted
     }
   }
 `;
@@ -260,6 +269,7 @@ export const GET_EMAIL_CAMPAIGN_DELIVERABILITY = gql`
   }
 `;
 
+// tracked : ouvertures et clics suivis pour ce destinataire (accord donné)
 export const GET_EMAIL_CAMPAIGN_RECIPIENTS = gql`
   query EmailCampaignRecipients(
     $workspaceId: ID!
@@ -292,6 +302,7 @@ export const GET_EMAIL_CAMPAIGN_RECIPIENTS = gql`
         unsubscribedAt
         openCount
         clickCount
+        tracked
         error
       }
       total
@@ -336,6 +347,48 @@ export const GET_EMAIL_SUPPRESSIONS = gql`
       limit
     }
   }
+`;
+
+// Accords de suivi (ouvertures et clics) par adresse et par espace :
+// GRANTED / REFUSED, aucun document = aucun choix (pas de suivi). Source
+// CONTACT : choix du destinataire sur sa page de préférences, définitif
+// pour l'espace ; SENDER : saisi par un membre de l'espace
+export const EMAIL_TRACKING_CONSENT_FIELDS = gql`
+  fragment EmailTrackingConsentFields on EmailTrackingConsent {
+    id
+    email
+    status
+    source
+    note
+    decidedAt
+    decidedByName
+  }
+`;
+
+export const GET_EMAIL_TRACKING_CONSENTS = gql`
+  query EmailTrackingConsents(
+    $workspaceId: ID!
+    $status: EmailTrackingConsentStatus
+    $search: String
+    $page: Int
+    $limit: Int
+  ) {
+    emailTrackingConsents(
+      workspaceId: $workspaceId
+      status: $status
+      search: $search
+      page: $page
+      limit: $limit
+    ) {
+      items {
+        ...EmailTrackingConsentFields
+      }
+      total
+      page
+      limit
+    }
+  }
+  ${EMAIL_TRACKING_CONSENT_FIELDS}
 `;
 
 // Contacts proposés pour personnaliser l'aperçu ou l'e-mail de test
@@ -428,22 +481,21 @@ export const SEND_EMAIL_CAMPAIGN_TEST = gql`
   }
 `;
 
-// Sans date : envoi immédiat. `consent` doit valoir true (case cochée),
-// `trackingConsent` aussi quand la campagne suit les ouvertures ou les clics
+// Sans date : envoi immédiat. `consent` doit valoir true (case cochée). Le
+// suivi ne s'applique qu'aux destinataires qui l'ont accepté (accords de
+// suivi) : plus d'attestation globale à l'envoi
 export const SEND_EMAIL_CAMPAIGN = gql`
   mutation SendEmailCampaign(
     $workspaceId: ID!
     $id: ID!
     $scheduledAt: DateTime
     $consent: Boolean!
-    $trackingConsent: Boolean
   ) {
     sendEmailCampaign(
       workspaceId: $workspaceId
       id: $id
       scheduledAt: $scheduledAt
       consent: $consent
-      trackingConsent: $trackingConsent
     ) {
       ...EmailCampaignFields
     }
@@ -512,6 +564,52 @@ export const ADD_EMAIL_SUPPRESSION = gql`
 export const REMOVE_EMAIL_SUPPRESSION = gql`
   mutation RemoveEmailSuppression($workspaceId: ID!, $id: ID!) {
     removeEmailSuppression(workspaceId: $workspaceId, id: $id)
+  }
+`;
+
+// ── Accords de suivi (droit emailCampaigns.edit) ─────────────────────────
+
+// Accords saisis par l'espace : 500 adresses au plus, `attestation` à true
+// (case cochée), note facultative (comment l'accord a été recueilli).
+// Adresses écartées : INVALID, CONTACT_REFUSED (refus du contact, que lui
+// seul peut changer)
+export const GRANT_EMAIL_TRACKING = gql`
+  mutation GrantEmailTracking(
+    $workspaceId: ID!
+    $emails: [String!]!
+    $note: String
+    $attestation: Boolean!
+  ) {
+    grantEmailTracking(
+      workspaceId: $workspaceId
+      emails: $emails
+      note: $note
+      attestation: $attestation
+    ) {
+      granted
+      skipped {
+        email
+        reason
+      }
+    }
+  }
+`;
+
+// Refus noté par l'espace : ouvertures et clics déjà enregistrés pour cette
+// adresse effacés dans tout l'espace, plus rien n'est suivi ensuite
+export const REFUSE_EMAIL_TRACKING = gql`
+  mutation RefuseEmailTracking($workspaceId: ID!, $email: String!) {
+    refuseEmailTracking(workspaceId: $workspaceId, email: $email) {
+      ...EmailTrackingConsentFields
+    }
+  }
+  ${EMAIL_TRACKING_CONSENT_FIELDS}
+`;
+
+// Source SENDER seulement. Accord retiré : même effacement qu'un refus
+export const REMOVE_EMAIL_TRACKING_CONSENT = gql`
+  mutation RemoveEmailTrackingConsent($workspaceId: ID!, $id: ID!) {
+    removeEmailTrackingConsent(workspaceId: $workspaceId, id: $id)
   }
 `;
 

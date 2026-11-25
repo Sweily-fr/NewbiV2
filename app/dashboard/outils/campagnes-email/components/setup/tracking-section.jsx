@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ShieldCheck } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import {
+  formatCount,
   isCampaignTracked,
+  plural,
   privacyPolicyUrlError,
 } from "@/src/utils/email-campaigns";
 import { CARD_CLASS } from "../shared";
+import { TrackingConsentsSheet } from "../tracking-consents-sheet";
 import { Field, StepIcon } from "./setup-section";
 
 function TrackingRow({ id, label, description, checked, disabled, onChange }) {
@@ -76,13 +81,31 @@ function PrivacyPolicyField({ campaign, editable, onSave }) {
 /**
  * Suivi des ouvertures et des clics : coupé par défaut (recommandation CNIL
  * sur les pixels de suivi : accord préalable de chaque destinataire),
- * enregistré dès le changement. Activé, l'envoi demande d'attester cet
- * accord et une phrase en bas de l'e-mail l'annonce aux destinataires.
+ * enregistré dès le changement. Activé, il ne s'applique qu'aux contacts
+ * qui l'ont accepté (accords de suivi de l'espace, gérés dans une fenêtre
+ * latérale) ; les autres reçoivent le même e-mail sans suivi.
+ * `audienceCount` : décompte de l'audience enregistrée (trackingGranted sur
+ * sendable). `canEditConsents` : droit de saisir des accords, que la
+ * campagne soit modifiable ou non (ils valent pour tout l'espace).
  */
-export function TrackingSection({ campaign, canEdit, onSave }) {
+export function TrackingSection({
+  campaign,
+  canEdit,
+  onSave,
+  workspaceId,
+  audienceCount,
+  canEditConsents = false,
+}) {
   const [saving, setSaving] = useState(null);
+  const [consentsOpen, setConsentsOpen] = useState(false);
   const editable = canEdit && campaign.status === "DRAFT";
   const tracked = isCampaignTracked(campaign);
+  const granted = audienceCount?.trackingGranted;
+  const sendable = audienceCount?.sendable;
+  const share =
+    Number.isFinite(granted) && Number.isFinite(sendable)
+      ? `${formatCount(granted)} sur ${plural(sendable, "destinataire")} de cette campagne`
+      : null;
 
   const toggle = async (field, value) => {
     setSaving(field);
@@ -103,8 +126,8 @@ export function TrackingSection({ campaign, canEdit, onSave }) {
             Suivi
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Désactivé par défaut : n&apos;activez le suivi que si vos
-            destinataires l&apos;ont accepté.
+            Désactivé par défaut. Activé, il ne concerne que les contacts qui
+            l&apos;ont accepté.
           </p>
         </div>
       </div>
@@ -128,13 +151,32 @@ export function TrackingSection({ campaign, canEdit, onSave }) {
       </div>
       {tracked && (
         <div className="mt-4 flex flex-col gap-4 sm:pl-11">
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-            La CNIL exige l&apos;accord préalable de chaque destinataire pour ce
-            suivi, clients compris. À l&apos;envoi, vous confirmerez
-            l&apos;avoir obtenu ; une phrase en bas de l&apos;e-mail
-            l&apos;annonce, et le détail par destinataire est effacé au bout de
-            13 mois.
-          </p>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+            <p>
+              Le suivi ne s&apos;applique qu&apos;aux contacts qui l&apos;ont
+              accepté
+              {share ? (
+                <>
+                  {" "}
+                  : <span className="font-medium">{share}</span>
+                </>
+              ) : null}
+              . Les autres reçoivent le même e-mail, sans suivi. Chaque e-mail
+              contient un lien « Gérer mes préférences » pour accepter ou
+              refuser ; un refus efface ce qui a déjà été enregistré. Le détail
+              par destinataire est effacé au bout de 13 mois.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3 bg-white dark:bg-transparent"
+              onClick={() => setConsentsOpen(true)}
+            >
+              <ShieldCheck className="size-3.5" aria-hidden />
+              Gérer les accords
+            </Button>
+          </div>
           <PrivacyPolicyField
             campaign={campaign}
             editable={editable}
@@ -142,6 +184,12 @@ export function TrackingSection({ campaign, canEdit, onSave }) {
           />
         </div>
       )}
+      <TrackingConsentsSheet
+        open={consentsOpen}
+        onOpenChange={setConsentsOpen}
+        workspaceId={workspaceId}
+        canEdit={canEditConsents}
+      />
     </section>
   );
 }

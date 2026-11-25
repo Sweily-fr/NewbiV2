@@ -141,7 +141,7 @@ export function PricingModal({ isOpen, onClose }) {
         "Jusqu'à 25 utilisateurs",
         "Facturation & Devis",
         "Relances automatiques",
-        "E-signature illimitée (QES)",
+        "E-signature devis (200/mois)",
         "Scan OCR illimité",
         "Automatisations illimitées",
         "CRM client avancé",
