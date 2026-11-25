@@ -62,6 +62,8 @@ export const EMAIL_CAMPAIGN_FIELDS = gql`
     }
     trackOpens
     trackClicks
+    privacyPolicyUrl
+    trackingPurgedAt
     scheduledAt
     startedAt
     completedAt
@@ -425,19 +427,22 @@ export const SEND_EMAIL_CAMPAIGN_TEST = gql`
   }
 `;
 
-// Sans date : envoi immédiat. `consent` doit valoir true (case cochée)
+// Sans date : envoi immédiat. `consent` doit valoir true (case cochée),
+// `trackingConsent` aussi quand la campagne suit les ouvertures ou les clics
 export const SEND_EMAIL_CAMPAIGN = gql`
   mutation SendEmailCampaign(
     $workspaceId: ID!
     $id: ID!
     $scheduledAt: DateTime
     $consent: Boolean!
+    $trackingConsent: Boolean
   ) {
     sendEmailCampaign(
       workspaceId: $workspaceId
       id: $id
       scheduledAt: $scheduledAt
       consent: $consent
+      trackingConsent: $trackingConsent
     ) {
       ...EmailCampaignFields
     }

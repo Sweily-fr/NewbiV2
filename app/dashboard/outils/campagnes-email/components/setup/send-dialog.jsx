@@ -24,7 +24,9 @@ import {
 import {
   formatCount,
   formatLongDateTime,
+  isCampaignTracked,
   plural,
+  trackingConsentLabel,
 } from "@/src/utils/email-campaigns";
 import { effectiveSenderEmail } from "@/src/utils/email-sending-domain";
 import { TextWithVariables } from "./subject-section";
@@ -43,10 +45,30 @@ function SummaryRow({ label, children }) {
   );
 }
 
+function ConsentCheckbox({ checked, onChange, label, hint }) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e6e7ea] p-3.5 transition-colors hover:bg-[#fafafa] has-[[data-state=checked]]:border-[#5a50ff]/40 has-[[data-state=checked]]:bg-[#5a50ff]/[0.04] dark:border-[#2E2E32] dark:hover:bg-white/[0.03]">
+      <Checkbox
+        checked={checked}
+        onCheckedChange={(value) => onChange(value === true)}
+        className="mt-0.5 data-[state=checked]:border-[#5a50ff] data-[state=checked]:bg-[#5a50ff]"
+      />
+      <span className="text-sm leading-5">
+        {label}
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          {hint}
+        </span>
+      </span>
+    </label>
+  );
+}
+
 /**
  * Envoi immédiat ou programmé (date et heure de Paris), après un résumé et
  * la case de consentement obligatoire (« Ces contacts sont mes clients ou
- * ont accepté de recevoir mes e-mails »).
+ * ont accepté de recevoir mes e-mails »). Campagne qui suit les ouvertures
+ * ou les clics : seconde case obligatoire, l'accord des destinataires pour
+ * ce suivi (recommandation CNIL sur les pixels de suivi).
  */
 export function SendDialog({
   open,
@@ -58,12 +80,15 @@ export function SendDialog({
   settings,
 }) {
   const [consent, setConsent] = useState(false);
+  const [trackingConsent, setTrackingConsent] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
+  const tracked = isCampaignTracked(campaign);
 
   useEffect(() => {
     if (!open) return;
     setConsent(false);
+    setTrackingConsent(false);
     const parts = getDefaultScheduleParts();
     setDate(parts.date);
     setTime(parts.time);
@@ -89,6 +114,7 @@ export function SendDialog({
     sendable !== null && remaining !== undefined && sendable > remaining;
   const blocked =
     !consent ||
+    (tracked && !trackingConsent) ||
     loading ||
     Boolean(scheduleError) ||
     sendable === 0 ||
@@ -103,6 +129,7 @@ export function SendDialog({
           id: campaign.id,
           scheduledAt: scheduled ? scheduledAt : null,
           consent: true,
+          trackingConsent: tracked && trackingConsent,
         },
       });
       if (scheduled) {
@@ -214,21 +241,20 @@ export function SendDialog({
 
           <SendModeNote sendMode={settings?.sendMode} />
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e6e7ea] p-3.5 transition-colors hover:bg-[#fafafa] has-[[data-state=checked]]:border-[#5a50ff]/40 has-[[data-state=checked]]:bg-[#5a50ff]/[0.04] dark:border-[#2E2E32] dark:hover:bg-white/[0.03]">
-            <Checkbox
-              checked={consent}
-              onCheckedChange={(value) => setConsent(value === true)}
-              className="mt-0.5 data-[state=checked]:border-[#5a50ff] data-[state=checked]:bg-[#5a50ff]"
+          <ConsentCheckbox
+            checked={consent}
+            onChange={setConsent}
+            label="Ces contacts sont mes clients ou ont accepté de recevoir mes e-mails."
+            hint="Obligatoire (RGPD) : n'envoyez jamais à des adresses achetées ou récupérées sans accord."
+          />
+          {tracked && (
+            <ConsentCheckbox
+              checked={trackingConsent}
+              onChange={setTrackingConsent}
+              label={trackingConsentLabel(campaign)}
+              hint="Obligatoire (CNIL) : sans cet accord préalable, désactivez le suivi dans la section « Suivi ». Une phrase en bas de l'e-mail l'annonce aux destinataires."
             />
-            <span className="text-sm leading-5">
-              Ces contacts sont mes clients ou ont accepté de recevoir mes
-              e-mails.
-              <span className="mt-0.5 block text-xs text-muted-foreground">
-                Obligatoire (RGPD) : n&apos;envoyez jamais à des adresses
-                achetées ou récupérées sans accord.
-              </span>
-            </span>
-          </label>
+          )}
         </div>
 
         <DialogFooter className="border-t border-[#EEEFF1] px-6 py-4 dark:border-[#232323]">
