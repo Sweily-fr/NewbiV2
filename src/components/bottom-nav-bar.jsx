@@ -26,6 +26,7 @@ import {
   Users,
   ReceiptText,
   Send,
+  Target,
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { isDeliveryNotesAllowed } from "@/src/hooks/useDeliveryNotesAccess";
@@ -131,6 +132,11 @@ const moreMenuSections = [
         label: "Campagnes e-mail",
         href: "/dashboard/outils/campagnes-email",
         icon: Send,
+      },
+      {
+        label: "Prospection",
+        href: "/dashboard/outils/prospection",
+        icon: Target,
       },
     ],
   },

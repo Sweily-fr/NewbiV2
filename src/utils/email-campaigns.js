@@ -310,16 +310,30 @@ const EXCLUSIONS = [
   ["suppressed", "désinscrit ou exclu", "désinscrits ou exclus"],
   ["duplicates", "doublon", "doublons"],
   ["excludedByList", "dans une liste exclue", "dans une liste exclue"],
+  // Prospects générés : jamais écrits par une campagne, seulement depuis la
+  // boîte mail du membre (Prospection)
+  ["prospects", "prospect généré", "prospects générés"],
 ];
 
-/** Exclusions non nulles : [{ key, count, label }]. */
-export function audienceExclusions(count) {
+/** Complément des prospects générés écartés : où leur écrire. */
+export const PROSPECTS_EXCLUSION_HINT =
+  "à contacter depuis votre boîte, avec la Prospection";
+
+/**
+ * Exclusions non nulles : [{ key, count, label, hint? }]. Compteur absent
+ * ou nul = rien. `prospectsHint` : complément des prospects générés, quand
+ * la Prospection est ouverte à l'espace.
+ */
+export function audienceExclusions(count, { prospectsHint = false } = {}) {
   if (!count) return [];
-  return EXCLUSIONS.filter(([key]) => (count[key] || 0) > 0).map(
+  return EXCLUSIONS.filter(([key]) => (count[key] ?? 0) > 0).map(
     ([key, one, many]) => ({
       key,
       count: count[key],
       label: count[key] >= 2 ? many : one,
+      ...(key === "prospects" && prospectsHint
+        ? { hint: PROSPECTS_EXCLUSION_HINT }
+        : {}),
     }),
   );
 }

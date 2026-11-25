@@ -183,6 +183,35 @@ describe("destinataires", () => {
     expect(audienceExclusions(null)).toEqual([]);
   });
 
+  it("prospects générés écartés, avec où leur écrire si la Prospection est ouverte", () => {
+    expect(audienceExclusions({ total: 4, sendable: 3, prospects: 1 })).toEqual(
+      [{ key: "prospects", count: 1, label: "prospect généré" }],
+    );
+    expect(
+      audienceExclusions(
+        { total: 10, sendable: 7, prospects: 3 },
+        { prospectsHint: true },
+      ),
+    ).toEqual([
+      {
+        key: "prospects",
+        count: 3,
+        label: "prospects générés",
+        hint: "à contacter depuis votre boîte, avec la Prospection",
+      },
+    ]);
+    // Compteur absent (API plus ancienne) ou nul : rien
+    expect(
+      audienceExclusions(
+        { total: 2, sendable: 1, noEmail: 1 },
+        { prospectsHint: true },
+      ),
+    ).toEqual([{ key: "noEmail", count: 1, label: "sans adresse e-mail" }]);
+    expect(
+      audienceExclusions({ total: 2, sendable: 2, prospects: null }),
+    ).toEqual([]);
+  });
+
   it("retient l'activité la plus parlante d'un destinataire", () => {
     expect(
       recipientActivity({ status: "DELIVERED", openedAt: "x", clickedAt: "y" })

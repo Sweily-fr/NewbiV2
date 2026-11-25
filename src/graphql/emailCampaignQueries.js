@@ -219,6 +219,7 @@ export const GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT = gql`
       duplicates
       excludedByList
       missingFirstName
+      prospects
       trackingGranted
     }
   }

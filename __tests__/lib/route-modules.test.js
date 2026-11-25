@@ -77,6 +77,15 @@ describe("pages en accès anticipé", () => {
     );
   });
 
+  it("rattache la prospection, page d'une prospection comprise, à son module et à sa fonctionnalité", () => {
+    expect(moduleForPath("/dashboard/outils/prospection")).toBe("prospecting");
+    expect(
+      featureForModule(moduleForPath("/dashboard/outils/prospection/abc")),
+    ).toBe("prospecting");
+    expect(pathForModule("prospecting")).toBe("/dashboard/outils/prospection");
+    expect(actionForPath("/dashboard/outils/prospection/abc")).toBe("view");
+  });
+
   it("aucune fonctionnalité pour les autres pages", () => {
     expect(featureForModule(moduleForPath("/dashboard/outils/factures"))).toBe(
       null,

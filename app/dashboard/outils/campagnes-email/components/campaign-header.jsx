@@ -8,7 +8,7 @@ import { cn } from "@/src/lib/utils";
 import { CAMPAIGNS_URL, FOCUS_RING, StatusBadge } from "./shared";
 
 /** Nom de la campagne modifiable sur place (enregistré à la sortie du champ). */
-function NameInput({ name, onRename }) {
+function NameInput({ name, onRename, label = "Nom de la campagne" }) {
   const [value, setValue] = useState(name);
   useEffect(() => setValue(name), [name]);
   const commit = () => {
@@ -44,7 +44,7 @@ function NameInput({ name, onRename }) {
           }
         }}
         maxLength={120}
-        aria-label="Nom de la campagne"
+        aria-label={label}
         className={cn(
           field,
           "absolute inset-0 w-full min-w-0 shadow-none hover:border-[#e6e7ea] focus:border-[#D1D3D8] dark:border-transparent dark:hover:border-[#2E2E32] dark:focus:border-[#44444A]",
@@ -57,7 +57,8 @@ function NameInput({ name, onRename }) {
 /**
  * En-tête de la page d'une campagne (préparation ou rapport) : retour à la
  * liste, nom (modifiable pour un brouillon), statut, ligne d'information et
- * actions.
+ * actions. Repris par la prospection (`backHref`, `backLabel`, `badge`,
+ * `nameLabel`).
  */
 export function CampaignHeader({
   campaign,
@@ -65,30 +66,38 @@ export function CampaignHeader({
   actions,
   onRename,
   className,
+  backHref = CAMPAIGNS_URL,
+  backLabel = "Campagnes e-mail",
+  badge,
+  nameLabel,
 }) {
   return (
     <header className={cn("flex flex-col gap-3", className)}>
       <Link
-        href={CAMPAIGNS_URL}
+        href={backHref}
         className={cn(
           "inline-flex w-fit items-center gap-1.5 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground",
           FOCUS_RING,
         )}
       >
         <ArrowLeft className="size-3.5" aria-hidden />
-        Campagnes e-mail
+        {backLabel}
       </Link>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-4">
         <div className="min-w-0 sm:flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
             {onRename ? (
-              <NameInput name={campaign.name} onRename={onRename} />
+              <NameInput
+                name={campaign.name}
+                onRename={onRename}
+                label={nameLabel}
+              />
             ) : (
               <h1 className="min-w-0 text-xl font-medium [overflow-wrap:anywhere] sm:text-2xl">
                 {campaign.name}
               </h1>
             )}
-            <StatusBadge status={campaign.status} />
+            {badge ?? <StatusBadge status={campaign.status} />}
           </div>
           {meta && <p className="mt-1 text-sm text-muted-foreground">{meta}</p>}
         </div>

@@ -26,6 +26,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/signatures-mail", "signatures"],
   ["/dashboard/outils/rendez-vous", "appointments"],
   ["/dashboard/outils/campagnes-email", "emailCampaigns"],
+  ["/dashboard/outils/prospection", "prospecting"],
 ];
 
 // Pages en accès anticipé : module → fonctionnalité de useWorkspaceFeatures
@@ -33,6 +34,7 @@ const ROUTE_MODULES = [
 const MODULE_FEATURES = {
   appointments: "appointments",
   emailCampaigns: "emailCampaigns",
+  prospecting: "prospecting",
 };
 
 /** Fonctionnalité en accès anticipé d'un module, ou null. */
