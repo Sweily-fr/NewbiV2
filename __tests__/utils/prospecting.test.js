@@ -35,6 +35,7 @@ import {
   readMailboxReturn,
   recipientActions,
   recipientFilters,
+  recipientHistoryLabel,
   recipientStatusFilter,
   recipientStatusMeta,
   replyRate,
@@ -539,6 +540,34 @@ describe("destinataires", () => {
       replied: false,
       doNotContact: false,
     });
+  });
+});
+
+describe("historique d'un contact", () => {
+  it("dates d'envoi, de réponse ou de désinscription, sinon l'état", () => {
+    expect(
+      recipientHistoryLabel(
+        {
+          status: "REPLIED",
+          sentAt: "2026-11-20T08:00:00Z",
+          repliedAt: "2026-11-21T09:15:00Z",
+        },
+        NOW,
+      ),
+    ).toBe("Envoyé le 20 nov. à 09:00 · réponse le 21 nov. à 10:15");
+    expect(
+      recipientHistoryLabel(
+        { status: "UNSUBSCRIBED", unsubscribedAt: "2026-11-22T08:00:00Z" },
+        NOW,
+      ),
+    ).toBe("Désinscrit le 22 nov. à 09:00");
+    expect(recipientHistoryLabel({ status: "PENDING" }, NOW)).toBe(
+      "En attente d'envoi",
+    );
+    expect(recipientHistoryLabel({ status: "SKIPPED" }, NOW)).toBe(
+      "Non envoyé",
+    );
+    expect(recipientHistoryLabel(null)).toBe("");
   });
 });
 

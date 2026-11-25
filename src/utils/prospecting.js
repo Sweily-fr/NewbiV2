@@ -633,6 +633,31 @@ export function recipientActions(recipient) {
   };
 }
 
+/**
+ * Ligne d'historique d'un envoi (fiche contact) : « Envoyé le 20 nov. à
+ * 09:00 · réponse le 21 nov. à 10:15 », sinon l'état sans date.
+ */
+export function recipientHistoryLabel(recipient, now = new Date()) {
+  if (!recipient) return "";
+  const at = (value) => formatDateTime(value, now);
+  const parts = [
+    recipient.sentAt && `Envoyé le ${at(recipient.sentAt)}`,
+    recipient.repliedAt && `réponse le ${at(recipient.repliedAt)}`,
+    recipient.unsubscribedAt && `désinscrit le ${at(recipient.unsubscribedAt)}`,
+    recipient.bouncedAt && `rejeté le ${at(recipient.bouncedAt)}`,
+  ].filter(Boolean);
+  if (parts.length) {
+    const text = parts.join(" · ");
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+  const fallback = {
+    PENDING: "En attente d'envoi",
+    FAILED: "Envoi en échec",
+    SKIPPED: "Non envoyé",
+  };
+  return fallback[recipient.status] || "";
+}
+
 /** Dernière date utile d'un destinataire, pour la fiche contact. */
 export function recipientDate(recipient) {
   return (

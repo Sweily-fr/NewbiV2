@@ -48,6 +48,10 @@ import {
 } from "@/src/graphql/prospectQueries";
 import ProspectActivityPicker from "./prospect-activity-picker";
 import BuyProspectCreditsDialog from "./buy-prospect-credits-dialog";
+import {
+  WriteToProspectsStep,
+  useCanWriteToProspects,
+} from "./write-to-prospects-step";
 
 const MAX_PLACES = 5;
 const DEFAULT_COUNT = 10;
@@ -249,6 +253,10 @@ export default function GenerateProspectsDialog({
     Math.min(available - 1, settings?.maxPerUnlock || 50),
   );
   const [buyOpen, setBuyOpen] = useState(false);
+  // Fin de la génération : « Écrire à ces prospects » (Prospection ouverte
+  // à l'espace et droit de créer), sinon la fenêtre se ferme
+  const canWriteToProspects = useCanWriteToProspects();
+  const [added, setAdded] = useState(null);
 
   const [activities, setActivities] = useState([]);
   const [places, setPlaces] = useState([]);
@@ -282,6 +290,7 @@ export default function GenerateProspectsDialog({
       setCount(Math.max(1, Math.min(DEFAULT_COUNT, maxCount)));
       return;
     }
+    setAdded(null);
     setActivities([]);
     setPlaces([]);
     setRadiusKm("0");
@@ -445,11 +454,27 @@ export default function GenerateProspectsDialog({
       outcome.creditsUsed != null
         ? `${plural(outcome.creditsUsed, "crédit")} utilisé${outcome.creditsUsed > 1 ? "s" : ""}`
         : undefined;
+    const writeStep =
+      canWriteToProspects && outcome.unlockedCount > 0 && outcome.listId
+        ? {
+            listId: outcome.listId,
+            listName:
+              destination === NEW_LIST
+                ? newListName.trim() || null
+                : lists?.find((list) => list.id === outcome.listId)?.name ||
+                  null,
+            count: outcome.unlockedCount,
+            spent,
+          }
+        : null;
     if (outcome.unlockedCount > 0) {
-      toast.success(
-        `${plural(outcome.unlockedCount, "prospect")} ajouté${outcome.unlockedCount > 1 ? "s" : ""} à vos contacts`,
-        { description: spent },
-      );
+      // La fin de la fenêtre le dit déjà quand elle propose d'écrire
+      if (!writeStep) {
+        toast.success(
+          `${plural(outcome.unlockedCount, "prospect")} ajouté${outcome.unlockedCount > 1 ? "s" : ""} à vos contacts`,
+          { description: spent },
+        );
+      }
     } else {
       toast.info("Aucun nouveau prospect ne correspond à ces critères.", {
         description: spent,
@@ -458,6 +483,10 @@ export default function GenerateProspectsDialog({
     const details = describeOutcome(outcome, Number(radiusKm));
     if (details && outcome.unlockedCount > 0) toast.info(details);
     if (outcome.providerError) toast.error(outcome.providerError);
+    if (writeStep) {
+      setAdded(writeStep);
+      return;
+    }
     onOpenChange(false);
   };
 
@@ -519,8 +548,20 @@ export default function GenerateProspectsDialog({
             </button>
           </div>
 
+          {added && (
+            <WriteToProspectsStep
+              added={added}
+              onClose={() => onOpenChange(false)}
+            />
+          )}
+
           {/* Formulaire à gauche, récapitulatif et coût à droite */}
-          <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px]">
+          <div
+            className={cn(
+              "grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px]",
+              added && "hidden",
+            )}
+          >
             <div className="flex min-w-0 flex-col gap-8 px-5 py-6">
               <Section
                 title="Qui cherchez-vous ?"
@@ -903,7 +944,12 @@ export default function GenerateProspectsDialog({
           </div>
 
           {/* Pied */}
-          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border/40 px-5 py-3">
+          <div
+            className={cn(
+              "flex shrink-0 items-center justify-end gap-3 border-t border-border/40 px-5 py-3",
+              added && "hidden",
+            )}
+          >
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
