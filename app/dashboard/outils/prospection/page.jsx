@@ -74,12 +74,12 @@ const FEATURES = [
   {
     icon: Inbox,
     title: "Depuis votre boîte",
-    text: "Chaque message part de votre Gmail ou Outlook, à votre nom : les réponses arrivent chez vous.",
+    text: "Chaque message part de votre Gmail ou Outlook, à votre nom : les réponses arrivent chez vous.",
   },
   {
     icon: Timer,
     title: "Un rythme humain",
-    text: "Quelques dizaines d'e-mails par jour, espacés de quelques minutes, aux heures de bureau.",
+    text: "Quelques dizaines d'e-⁠mails par jour, espacés de quelques minutes, aux heures de bureau.",
   },
   {
     icon: ShieldCheck,
@@ -98,8 +98,8 @@ function FirstProspection({ createButton, hasMailbox }) {
       <h2 className="text-lg font-medium">Écrivez à vos premiers prospects</h2>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
         Choisissez une liste d&apos;entreprises, écrivez un message court et
-        personnalisé : chacun le reçoit de votre boîte, comme un e-mail que vous
-        auriez envoyé vous-même.
+        personnalisé : chacun le reçoit de votre boîte, comme un e-⁠mail que
+        vous auriez envoyé vous-même.
       </p>
       {hasMailbox ? (
         createButton && <div className="mt-6">{createButton}</div>
@@ -272,28 +272,31 @@ export default function ProspectionPage() {
     : hasMailbox
       ? null
       : "Connectez d'abord votre boîte d'envoi.";
-  const createButton = access.canCreate && (
-    <span title={createBlockedReason || undefined} className="inline-flex">
-      <Button
-        variant="primary"
-        onClick={handleCreate}
-        disabled={Boolean(createBlockedReason) || creating}
-        className={isMobile ? "size-9 rounded-full p-0" : undefined}
-        aria-label={isMobile ? "Nouvelle prospection" : undefined}
-      >
-        {creating ? (
-          <Loader2
-            className={
-              isMobile ? "size-4 animate-spin" : "size-3.5 animate-spin"
-            }
-          />
-        ) : (
-          <Plus className={isMobile ? "size-4.5" : "size-3.5"} aria-hidden />
-        )}
-        {!isMobile && "Nouvelle prospection"}
-      </Button>
-    </span>
-  );
+  // Rond avec « + » dans l'en-tête sur téléphone, libellé complet sinon
+  const renderCreateButton = (compact) =>
+    access.canCreate && (
+      <span title={createBlockedReason || undefined} className="inline-flex">
+        <Button
+          variant="primary"
+          onClick={handleCreate}
+          disabled={Boolean(createBlockedReason) || creating}
+          className={compact ? "size-9 rounded-full p-0" : undefined}
+          aria-label={compact ? "Nouvelle prospection" : undefined}
+        >
+          {creating ? (
+            <Loader2
+              className={
+                compact ? "size-4 animate-spin" : "size-3.5 animate-spin"
+              }
+            />
+          ) : (
+            <Plus className={compact ? "size-4.5" : "size-3.5"} aria-hidden />
+          )}
+          {!compact && "Nouvelle prospection"}
+        </Button>
+      </span>
+    );
+  const createButton = renderCreateButton(isMobile);
   const firstUse = (sequences || []).length === 0 && !error;
 
   return (
@@ -302,7 +305,7 @@ export default function ProspectionPage() {
         <div className="min-w-[12rem] flex-1">
           <h1 className="text-2xl font-medium">Prospection</h1>
           <p className="text-sm text-muted-foreground">
-            Écrivez à vos prospects depuis votre propre boîte mail : un message
+            Écrivez à vos prospects depuis votre propre boîte mail : un message
             chacun, à votre nom, à un rythme qui protège votre adresse.
           </p>
         </div>
@@ -321,7 +324,7 @@ export default function ProspectionPage() {
 
         {firstUse ? (
           <FirstProspection
-            createButton={createButton}
+            createButton={renderCreateButton(false)}
             hasMailbox={hasMailbox}
           />
         ) : (
@@ -398,7 +401,7 @@ export default function ProspectionPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Supprimer « {toDelete?.name} » ?
+              Supprimer « {toDelete?.name} » ?
             </AlertDialogTitle>
             <AlertDialogDescription>
               {deleteDescription(toDelete)}

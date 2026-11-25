@@ -254,10 +254,10 @@ export function MailboxSettingsSheet({
               error={errors.dailyLimit}
               hint={
                 <>
-                  Conseil : {RECOMMENDED_DAILY_LIMIT} par jour, entre{" "}
+                  Conseil : {RECOMMENDED_DAILY_LIMIT} par jour, entre{" "}
                   {MIN_DAILY_LIMIT} et {maxDailyLimit}.{" "}
                   {ramp ||
-                    "Les 14 premiers jours, la limite monte d'elle-même : 10 la première semaine, 20 la deuxième."}
+                    "Les 14 premiers jours, la limite monte d'elle-même : 10 la première semaine, 20 la deuxième."}
                 </>
               }
             >
@@ -315,7 +315,7 @@ export function MailboxSettingsSheet({
             <FieldBlock
               label="Heures d'envoi (heure de Paris)"
               error={errors.hours}
-              hint="Jamais un jour férié. Un message envoyé au bureau, en semaine, ressemble à un vrai e-mail."
+              hint="Jamais un jour férié. Un message envoyé au bureau, en semaine, ressemble à un vrai e-⁠mail."
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">De</span>
@@ -426,11 +426,11 @@ export function MailboxSettingsSheet({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Déconnecter {mailbox.accountEmail} ?
+              Déconnecter {mailbox.accountEmail} ?
             </AlertDialogTitle>
             <AlertDialogDescription>
               Newbi n&apos;aura plus accès à cette boîte. Les prospections en
-              cours qui en partent seront mises en pause : vous pourrez les
+              cours qui en partent seront mises en pause : vous pourrez les
               reprendre après avoir reconnecté une boîte.
             </AlertDialogDescription>
           </AlertDialogHeader>

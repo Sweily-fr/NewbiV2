@@ -78,12 +78,12 @@ export function WriteToProspectsStep({ added, onClose }) {
           vos contacts
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          {[added.listName && `Liste « ${added.listName} »`, added.spent]
+          {[added.listName && `Liste « ${added.listName} »`, added.spent]
             .filter(Boolean)
             .join(" · ")}
         </p>
         <p className="mt-5 max-w-md text-sm text-muted-foreground">
-          Écrivez-leur depuis votre boîte mail : un message chacun, à votre nom,
+          Écrivez-leur depuis votre boîte mail : un message chacun, à votre nom,
           au rythme que vous choisissez.
         </p>
         {!loading && !hasMailbox && (

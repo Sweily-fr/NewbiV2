@@ -160,9 +160,9 @@ export function MailboxCard({
                 Boîte d&apos;envoi
               </h2>
               <p className="mt-0.5 max-w-xl text-sm leading-5 text-muted-foreground">
-                Connectez la boîte mail d&apos;où partiront vos messages : vos
+                Connectez la boîte mail d&apos;où partiront vos messages : vos
                 prospects vous répondent directement. Newbi demande seulement le
-                droit d&apos;envoyer, jamais celui de lire vos e-mails.
+                droit d&apos;envoyer, jamais celui de lire vos e-⁠mails.
               </p>
             </div>
           </div>
@@ -256,7 +256,7 @@ export function MailboxCard({
           )}
 
           {state === "active" && ramp && (
-            <p className="text-xs leading-5 text-muted-foreground">
+            <p className="text-xs leading-5 text-muted-foreground sm:pl-12">
               {ramp} Une boîte qui démarre en douceur reste mieux vue des
               messageries.
             </p>
@@ -264,7 +264,7 @@ export function MailboxCard({
 
           {mailbox.isPersonalAddress && (
             <Notice tone="info" icon={Info}>
-              Conseil : une adresse à votre nom de domaine
+              Conseil : une adresse à votre nom de domaine
               (vous@votre-entreprise.fr) inspire plus confiance et arrive plus
               souvent en boîte de réception qu&apos;une adresse gratuite.
             </Notice>
@@ -274,7 +274,7 @@ export function MailboxCard({
 
       {team.length > 0 && (
         <p className="border-t border-[#EEEFF1] pt-3 text-xs leading-5 text-muted-foreground dark:border-[#232323]">
-          Aussi connectées dans l&apos;espace :{" "}
+          Aussi connectées dans l&apos;espace :{" "}
           {team
             .map((item) =>
               item.ownerName

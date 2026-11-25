@@ -62,6 +62,12 @@ const HEAD =
 // Après un marquage : la ligne, les compteurs et le filtre suivent
 const AFTER_MARK = ["ProspectingRecipients", "ProspectingSequence"];
 
+// Non envoyé (désinscrit, déjà prospecté) : une protection, pas une erreur
+const errorTone = (recipient) =>
+  recipient.status === "SKIPPED"
+    ? "text-muted-foreground"
+    : "text-red-700 dark:text-red-400";
+
 function recipientTitle(recipient) {
   return recipient.company || recipient.name || recipient.email;
 }
@@ -338,7 +344,7 @@ export function RecipientsTable({
                       )}
                     </div>
                     {recipient.error && (
-                      <p className="mt-1 text-xs text-red-700 dark:text-red-400">
+                      <p className={cn("mt-1 text-xs", errorTone(recipient))}>
                         {recipient.error}
                       </p>
                     )}
@@ -382,7 +388,7 @@ export function RecipientsTable({
                       <p className="truncate text-xs text-muted-foreground">
                         {recipientSubtitle(recipient)}
                         {recipient.error && (
-                          <span className="text-red-700 dark:text-red-400">
+                          <span className={errorTone(recipient)}>
                             {" "}
                             · {recipient.error}
                           </span>
@@ -462,11 +468,11 @@ export function RecipientsTable({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Ne plus contacter {toBlock?.email} ?
+              Ne plus contacter {toBlock?.email} ?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              L&apos;adresse rejoint les désinscrits de votre espace : elle ne
-              recevra plus ni prospection ni campagne e-mail.
+              L&apos;adresse rejoint les désinscrits de votre espace : elle ne
+              recevra plus ni prospection ni campagne e-⁠mail.
               {toBlock?.status === "PENDING" &&
                 " Son message en attente ne partira pas."}
             </AlertDialogDescription>

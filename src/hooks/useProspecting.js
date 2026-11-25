@@ -73,7 +73,7 @@ export function useMailboxConnect() {
         });
         const { token } = await tokenResponse.json().catch(() => ({}));
         if (!token) {
-          throw new Error("Votre session a expiré : reconnectez-vous.");
+          throw new Error("Votre session a expiré : reconnectez-vous.");
         }
         const response = await fetch(url, {
           credentials: "include",

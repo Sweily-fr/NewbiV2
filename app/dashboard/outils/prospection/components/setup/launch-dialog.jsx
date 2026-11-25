@@ -132,7 +132,7 @@ export function LaunchDialog({
             <span className="text-sm leading-5">
               {CONSENT_LABEL}
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                Obligatoire : sans accord préalable, la prospection par e-mail
+                Obligatoire : sans accord préalable, la prospection par e-⁠mail
                 n&apos;est permise qu&apos;auprès des professionnels, pour une
                 offre en lien avec leur métier.
               </span>

@@ -150,7 +150,7 @@ export function SequenceSetup({ sequence, workspaceId, settings }) {
         {!ownMailbox && mailbox && (
           <Notice tone="info" icon={Info}>
             Cette prospection part de la boîte de{" "}
-            {mailbox.ownerName || mailbox.accountEmail} : seul son propriétaire
+            {mailbox.ownerName || mailbox.accountEmail} : seul son propriétaire
             peut l&apos;essayer et la lancer.
           </Notice>
         )}

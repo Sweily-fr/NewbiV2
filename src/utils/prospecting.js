@@ -400,9 +400,9 @@ export function rampUpHint(connectedAt, dailyLimit, now = new Date()) {
   if (!ramp.active || ramp.cap >= limit) return null;
   const until = formatDayMonth(ramp.lastDay, now);
   if (ramp.cap === 10 && limit > 20) {
-    return `Montée progressive : 10 e-mails par jour au plus jusqu'au ${until}, puis 20 jusqu'au ${formatDayMonth(ramp.nextLastDay, now)}.`;
+    return `Montée progressive : 10 e-⁠mails par jour au plus jusqu'au ${until}, puis 20 jusqu'au ${formatDayMonth(ramp.nextLastDay, now)}.`;
   }
-  return `Montée progressive : ${ramp.cap} e-mails par jour au plus jusqu'au ${until}.`;
+  return `Montée progressive : ${ramp.cap} e-⁠mails par jour au plus jusqu'au ${until}.`;
 }
 
 export const MIN_DAILY_LIMIT = 5;

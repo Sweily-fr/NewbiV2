@@ -24,7 +24,7 @@ const MAX_TEST_EMAILS = 5;
 
 /**
  * « M'envoyer un test » : le brouillon enregistré part de la boîte, objet
- * précédé de « [Test] », à l'adresse de la boîte par défaut (5 adresses au
+ * précédé de « [Test] », à l'adresse de la boîte par défaut (5 adresses au
  * plus). `unsaved` : un message est en cours de modification.
  */
 export function TestDialog({
@@ -85,7 +85,7 @@ export function TestDialog({
               M&apos;envoyer un test
             </DialogTitle>
             <DialogDescription>
-              Le message part de votre boîte, objet précédé de « [Test] »,
+              Le message part de votre boîte, objet précédé de « [Test] »,
               personnalisé avec votre premier destinataire ou des valeurs
               d&apos;exemple.
             </DialogDescription>
@@ -106,7 +106,7 @@ export function TestDialog({
               />
               {invalid.length > 0 ? (
                 <p className="text-xs text-red-600 dark:text-red-400">
-                  Adresse invalide : {invalid.join(", ")}
+                  Adresse invalide : {invalid.join(", ")}
                 </p>
               ) : tooMany ? (
                 <p className="text-xs text-red-600 dark:text-red-400">
@@ -121,7 +121,7 @@ export function TestDialog({
             {unsaved && (
               <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                Le test part de la dernière version enregistrée : enregistrez
+                Le test part de la dernière version enregistrée : enregistrez
                 d&apos;abord le message en cours de modification.
               </p>
             )}

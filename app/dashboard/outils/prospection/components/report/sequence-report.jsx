@@ -114,11 +114,16 @@ function SmallStat({ label, count, warn = false }) {
 
 /** Raison de la pause, selon son origine. */
 function pauseText(sequence) {
+  // Coupe-circuit : « Reprendre » relance aussi les envois de la boîte (API)
+  if (sequence.pauseKind === "REPUTATION") {
+    const reason =
+      sequence.pausedReason ||
+      "Trop de désinscriptions récentes : les envois de la boîte sont suspendus pour protéger votre adresse.";
+    return `${reason} Avant de reprendre, relisez votre message et vos destinataires : « Reprendre » relance aussi les envois de la boîte.`;
+  }
   if (sequence.pausedReason) return sequence.pausedReason;
   if (sequence.pauseKind === "MAILBOX")
     return "La boîte d'envoi n'est plus disponible (déconnectée ou accès expiré). Reconnectez-la depuis la page Prospection, puis reprenez.";
-  if (sequence.pauseKind === "REPUTATION")
-    return "Trop de désinscriptions récentes : les envois de la boîte sont suspendus pour protéger votre adresse.";
   return "Les messages restants partiront à la reprise.";
 }
 
@@ -236,7 +241,7 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
     </>
   );
 
-  const end = live ? estimatedEndLabel(sequence.estimatedEndDate) : null;
+  const end = active ? estimatedEndLabel(sequence.estimatedEndDate) : null;
 
   return (
     <div className="h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-y-auto">
@@ -252,7 +257,7 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
 
         {sequence.subject && (
           <p className="-mt-2 truncate text-sm text-muted-foreground">
-            Objet : <TextWithVariables text={sequence.subject} />
+            Objet : <TextWithVariables text={sequence.subject} />
           </p>
         )}
 
@@ -333,9 +338,9 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
             <p className="leading-5">
               <span className="font-medium">
                 {plural(simulated, "envoi simulé", "envois simulés")}
-              </span>{" "}
-              : sur ce serveur de test, ces messages ne sont pas réellement
-              partis. Le suivi avance comme pour un vrai envoi.
+              </span>
+              {"\u00a0"}: sur ce serveur de test, ces messages ne sont pas
+              réellement partis. Le suivi avance comme pour un vrai envoi.
             </p>
           </div>
         )}
@@ -370,7 +375,7 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
             detail={
               replied
                 ? `${formatPercent(replyRate(stats))} des messages partis`
-                : "Marquez « A répondu » ci-dessous"
+                : "Marquez « A répondu » ci-dessous"
             }
             ratio={replyRate(stats) ?? 0}
           />
@@ -381,7 +386,9 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
             detail={
               unsubscribed
                 ? `${formatPercent(unsubscribeRate(stats))} des messages partis`
-                : "Aucune pour le moment"
+                : live
+                  ? "Aucune pour le moment"
+                  : "Aucune"
             }
             ratio={unsubscribeRate(stats) ?? 0}
             accent="#f59e0b"
@@ -401,7 +408,7 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
 
         <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          Les réponses arrivent dans votre boîte : marquez-les « A répondu »
+          Les réponses arrivent dans votre boîte : marquez-les « A répondu »
           pour suivre vos retours. Aucun suivi d&apos;ouverture ni de clic,
           comme le recommande la CNIL.
         </p>
@@ -425,7 +432,7 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Arrêter la prospection ?</AlertDialogTitle>
+            <AlertDialogTitle>Arrêter la prospection ?</AlertDialogTitle>
             <AlertDialogDescription>
               {progress.pending > 0
                 ? `Les ${formatCount(progress.pending)} messages en attente ne partiront pas. `

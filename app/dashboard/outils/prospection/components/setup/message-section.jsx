@@ -121,7 +121,7 @@ export function MessageSection({
         </span>
       )}
       <span className="text-xs">
-        {signatureName ? `Signature : ${signatureName}` : "Sans signature"}
+        {signatureName ? `Signature : ${signatureName}` : "Sans signature"}
       </span>
     </div>
   ) : (
@@ -157,7 +157,7 @@ export function MessageSection({
               }
             />
           }
-          hint="Court et personnel, comme un e-mail écrit à la main : ni majuscules ni points d'exclamation."
+          hint="Court et personnel, comme un e-⁠mail écrit à la main : ni majuscules ni points d'exclamation."
         >
           <Input
             ref={subjectRef}
@@ -173,7 +173,7 @@ export function MessageSection({
 
         <Field
           label="Message"
-          hint="Quelques lignes, une seule question à la fin : un message simple, sans image, arrive mieux. Votre entreprise, le lien de désinscription et la page « Vos données » sont ajoutés en pied de message."
+          hint="Quelques lignes, une seule question à la fin : un message simple, sans image, arrive mieux. Votre entreprise, le lien de désinscription et la page « Vos données » sont ajoutés en pied de message."
         >
           <MessageEditor html={body} onChange={setBody} variables={variables} />
         </Field>

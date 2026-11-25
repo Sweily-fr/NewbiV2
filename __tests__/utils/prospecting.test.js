@@ -328,14 +328,14 @@ describe("montée progressive", () => {
   it("phrase seulement si la montée bride la limite", () => {
     const connectedAt = "2026-11-24T10:00:00Z";
     expect(rampUpHint(connectedAt, 30, NOW)).toBe(
-      "Montée progressive : 10 e-mails par jour au plus jusqu'au 30 novembre, puis 20 jusqu'au 7 décembre.",
+      "Montée progressive : 10 e-⁠mails par jour au plus jusqu'au 30 novembre, puis 20 jusqu'au 7 décembre.",
     );
     expect(rampUpHint(connectedAt, 15, NOW)).toBe(
-      "Montée progressive : 10 e-mails par jour au plus jusqu'au 30 novembre.",
+      "Montée progressive : 10 e-⁠mails par jour au plus jusqu'au 30 novembre.",
     );
     expect(rampUpHint(connectedAt, 10, NOW)).toBeNull();
     expect(rampUpHint("2026-11-15T10:00:00Z", 30, NOW)).toBe(
-      "Montée progressive : 20 e-mails par jour au plus jusqu'au 28 novembre.",
+      "Montée progressive : 20 e-⁠mails par jour au plus jusqu'au 28 novembre.",
     );
     expect(rampUpHint("2026-11-01T10:00:00Z", 30, NOW)).toBeNull();
   });
