@@ -105,7 +105,7 @@ export function SequenceSetup({ sequence, workspaceId, settings }) {
 
   const actions = (
     <>
-      {ownMailbox && (access.canEdit || access.canSend) && (
+      {sequence.canSend && (
         <Button
           variant="outline"
           onClick={() => setTestOpen(true)}

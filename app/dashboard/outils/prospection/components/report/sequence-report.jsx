@@ -14,6 +14,7 @@ import {
   Play,
   Send,
   ShieldCheck,
+  TriangleAlert,
   UserMinus,
   Users,
 } from "lucide-react";
@@ -30,6 +31,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
+import { useMailboxConnect } from "@/src/hooks/useProspecting";
 import {
   CANCEL_PROSPECTING_SEQUENCE,
   PAUSE_PROSPECTING_SEQUENCE,
@@ -143,6 +145,11 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
   const paused = sequence.status === "PAUSED";
   const live = isLive(sequence.status);
   const mailbox = sequence.mailbox;
+  // Accès expiré : les prospections restent en cours et repartent seules
+  // après la reconnexion ; une prospection en pause ne reprend pas avant
+  const mailboxExpired = mailbox?.status === "EXPIRED";
+  const sending = active && !mailboxExpired;
+  const { connect, connecting } = useMailboxConnect();
   const simulated = stats.simulated || 0;
   const replied = stats.replied || 0;
   const unsubscribed = stats.unsubscribed || 0;
@@ -212,20 +219,28 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
         </Button>
       )}
       {canSend && paused && (
-        <Button
-          variant="primary"
-          onClick={() =>
-            run(resumeSequence, "Prospection reprise", "Reprise impossible")
+        <span
+          title={
+            mailboxExpired
+              ? "Reconnectez d'abord votre boîte d'envoi."
+              : undefined
           }
-          disabled={resuming}
         >
-          {resuming ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Play className="size-3.5" aria-hidden />
-          )}
-          Reprendre
-        </Button>
+          <Button
+            variant="primary"
+            onClick={() =>
+              run(resumeSequence, "Prospection reprise", "Reprise impossible")
+            }
+            disabled={resuming || mailboxExpired}
+          >
+            {resuming ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Play className="size-3.5" aria-hidden />
+            )}
+            Reprendre
+          </Button>
+        </span>
       )}
       {canSend && live && (
         <Button
@@ -242,7 +257,7 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
     </>
   );
 
-  const end = active ? estimatedEndLabel(sequence.estimatedEndDate) : null;
+  const end = sending ? estimatedEndLabel(sequence.estimatedEndDate) : null;
 
   return (
     <div className="h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-y-auto">
@@ -260,6 +275,36 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
           <p className="-mt-2 truncate text-sm text-muted-foreground">
             Objet : <TextWithVariables text={sequence.subject} />
           </p>
+        )}
+
+        {live && mailboxExpired && (
+          <Notice
+            tone="danger"
+            icon={TriangleAlert}
+            title="Reconnectez votre boîte d'envoi"
+            action={
+              mailbox.isMine ? (
+                <Button
+                  variant="outline"
+                  onClick={() => connect(mailbox.provider)}
+                  disabled={
+                    Boolean(connecting) || !access.canCreate || access.readOnly
+                  }
+                  className="bg-white dark:bg-transparent"
+                >
+                  {connecting && <Loader2 className="size-3.5 animate-spin" />}
+                  Reconnecter
+                </Button>
+              ) : null
+            }
+          >
+            {mailbox.isMine
+              ? `L'accès de Newbi à ${mailbox.accountEmail} a expiré ou a été retiré.`
+              : `La boîte de ${mailbox.ownerName || mailbox.accountEmail} doit être reconnectée par son propriétaire.`}{" "}
+            {active
+              ? "Les messages en attente repartiront d'eux-mêmes après la reconnexion."
+              : "Reconnectez-la, puis reprenez la prospection."}
+          </Notice>
         )}
 
         {paused && (
@@ -280,13 +325,17 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-medium">
-                  {active && (
+                  {sending && (
                     <span className="relative flex size-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#5a50ff] opacity-60" />
                       <span className="relative inline-flex size-2 rounded-full bg-[#5a50ff]" />
                     </span>
                   )}
-                  {active ? "Envois en cours" : "Envois interrompus"}
+                  {sending
+                    ? "Envois en cours"
+                    : active
+                      ? "Envois en attente de la boîte"
+                      : "Envois interrompus"}
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   <span className="font-medium text-foreground tabular-nums">

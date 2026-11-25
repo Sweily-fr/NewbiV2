@@ -623,13 +623,15 @@ export const recipientStatusFilter = (filter) =>
 
 /**
  * Actions possibles sur un destinataire : « A répondu » une fois le
- * message parti, « Ne plus contacter » tant qu'il n'est pas désinscrit.
+ * message parti, « Ne plus contacter » tant qu'il n'est ni désinscrit ni
+ * écarté (un destinataire en attente passe alors en « Non envoyé »).
  */
 export function recipientActions(recipient) {
   const status = recipient?.status;
   return {
     replied: status === "SENT" || status === "SIMULATED",
-    doNotContact: Boolean(status) && status !== "UNSUBSCRIBED",
+    doNotContact:
+      Boolean(status) && status !== "UNSUBSCRIBED" && status !== "SKIPPED",
   };
 }
 

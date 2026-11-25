@@ -540,6 +540,11 @@ describe("destinataires", () => {
       replied: false,
       doNotContact: false,
     });
+    // Déjà écarté (désinscrit, déjà prospecté, ne plus contacter)
+    expect(recipientActions({ status: "SKIPPED" })).toEqual({
+      replied: false,
+      doNotContact: false,
+    });
   });
 });
 
