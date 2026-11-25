@@ -259,6 +259,9 @@ export function CampaignSetup({ campaign, workspaceId, settings }) {
               campaign={campaign}
               canEdit={canEdit}
               onSave={save}
+              workspaceId={workspaceId}
+              audienceCount={savedAudience.count}
+              canEditConsents={access.canEdit && !access.readOnly}
             />
           </div>
           <DeliverabilityPanel

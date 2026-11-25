@@ -26,7 +26,6 @@ import {
   formatLongDateTime,
   isCampaignTracked,
   plural,
-  trackingConsentLabel,
 } from "@/src/utils/email-campaigns";
 import { effectiveSenderEmail } from "@/src/utils/email-sending-domain";
 import { TextWithVariables } from "./subject-section";
@@ -36,11 +35,11 @@ import { FIELD_LABEL } from "./setup-section";
 
 const MIN_DELAY_MS = 10 * 60 * 1000;
 
-function SummaryRow({ label, children }) {
+function SummaryRow({ label, wrap = false, children }) {
   return (
     <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 py-2 text-sm first:pt-0 last:pb-0">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 truncate">{children}</dd>
+      <dd className={wrap ? "min-w-0" : "min-w-0 truncate"}>{children}</dd>
     </div>
   );
 }
@@ -67,8 +66,8 @@ function ConsentCheckbox({ checked, onChange, label, hint }) {
  * Envoi immédiat ou programmé (date et heure de Paris), après un résumé et
  * la case de consentement obligatoire (« Ces contacts sont mes clients ou
  * ont accepté de recevoir mes e-mails »). Campagne qui suit les ouvertures
- * ou les clics : seconde case obligatoire, l'accord des destinataires pour
- * ce suivi (recommandation CNIL sur les pixels de suivi).
+ * ou les clics : le résumé indique combien de destinataires ont accepté ce
+ * suivi, seuls suivis (recommandation CNIL sur les pixels de suivi).
  */
 export function SendDialog({
   open,
@@ -80,7 +79,6 @@ export function SendDialog({
   settings,
 }) {
   const [consent, setConsent] = useState(false);
-  const [trackingConsent, setTrackingConsent] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
   const tracked = isCampaignTracked(campaign);
@@ -88,7 +86,6 @@ export function SendDialog({
   useEffect(() => {
     if (!open) return;
     setConsent(false);
-    setTrackingConsent(false);
     const parts = getDefaultScheduleParts();
     setDate(parts.date);
     setTime(parts.time);
@@ -109,12 +106,12 @@ export function SendDialog({
   }, [scheduled, scheduledAt]);
 
   const sendable = audienceCount?.sendable ?? null;
+  const trackingGranted = audienceCount?.trackingGranted ?? null;
   const remaining = settings?.quota?.remaining;
   const overQuota =
     sendable !== null && remaining !== undefined && sendable > remaining;
   const blocked =
     !consent ||
-    (tracked && !trackingConsent) ||
     loading ||
     Boolean(scheduleError) ||
     sendable === 0 ||
@@ -129,7 +126,6 @@ export function SendDialog({
           id: campaign.id,
           scheduledAt: scheduled ? scheduledAt : null,
           consent: true,
-          trackingConsent: tracked && trackingConsent,
         },
       });
       if (scheduled) {
@@ -213,6 +209,19 @@ export function SendDialog({
                 </span>
               )}
             </SummaryRow>
+            {tracked && (
+              <SummaryRow label="Suivi" wrap>
+                {trackingGranted === null || sendable === null ? (
+                  "…"
+                ) : trackingGranted === 0 ? (
+                  <span className="text-muted-foreground">
+                    Aucun contact n&apos;a accepté : envoi sans suivi
+                  </span>
+                ) : (
+                  `${plural(trackingGranted, "contact")} sur ${formatCount(sendable)}`
+                )}
+              </SummaryRow>
+            )}
             <SummaryRow label="Expéditeur">
               {campaign.fromName}
               <span className="text-muted-foreground">
@@ -247,14 +256,6 @@ export function SendDialog({
             label="Ces contacts sont mes clients ou ont accepté de recevoir mes e-mails."
             hint="Obligatoire (RGPD) : n'envoyez jamais à des adresses achetées ou récupérées sans accord."
           />
-          {tracked && (
-            <ConsentCheckbox
-              checked={trackingConsent}
-              onChange={setTrackingConsent}
-              label={trackingConsentLabel(campaign)}
-              hint="Obligatoire (CNIL) : sans cet accord préalable, désactivez le suivi dans la section « Suivi ». Une phrase en bas de l'e-mail l'annonce aux destinataires."
-            />
-          )}
         </div>
 
         <DialogFooter className="border-t border-[#EEEFF1] px-6 py-4 dark:border-[#232323]">

@@ -489,16 +489,18 @@ export const suppressionReasonLabel = (reason) =>
 
 // ─── Suivi des ouvertures et des clics ───────────────────────────────────
 // Coupé par défaut (recommandation CNIL sur les pixels de suivi : accord
-// préalable de chaque destinataire). Activé, l'envoi demande une
-// attestation et l'API l'annonce dans le pied de l'e-mail.
+// préalable de chaque destinataire). Activé, il ne s'applique qu'aux
+// adresses qui l'ont accepté (accords de suivi de l'espace) ; les autres
+// reçoivent le même e-mail sans suivi. L'API l'annonce dans le pied.
 
 /** La campagne suit-elle les ouvertures ou les clics ? */
 export const isCampaignTracked = (campaign) =>
   Boolean(campaign?.trackOpens || campaign?.trackClicks);
 
 /**
- * Phrase ajoutée par l'API au pied des e-mails d'une campagne suivie (même
- * texte que services/emailCampaigns/render.js), ou null sans suivi.
+ * Phrase ajoutée par l'API au pied des e-mails d'une campagne suivie, pour
+ * un destinataire qui a accepté le suivi (même texte que
+ * services/emailCampaigns/render.js), ou null sans suivi.
  */
 export function trackingNoticeSentence(
   companyName,
@@ -511,7 +513,92 @@ export function trackingNoticeSentence(
       : opens
         ? "l'ouverture de cet e-mail"
         : "les clics sur les liens de cet e-mail";
-  return `${companyName || "l'expéditeur"} mesure ${measured}. Pour refuser ce suivi, répondez à cet e-mail.`;
+  return `${companyName || "l'expéditeur"} mesure ${measured}, avec votre accord.`;
+}
+
+/**
+ * Taux d'ouverture et de clics du rapport. Seuls les destinataires qui
+ * avaient accepté le suivi au lancement sont suivis : la base est leur
+ * nombre (`trackedRecipients`). Campagne lancée avant les accords par
+ * contact (trackedRecipients null) : tous étaient suivis, base = e-mails
+ * remis, comme campaignRates.
+ */
+export function trackingRates(campaign) {
+  const stats = campaign?.stats || {};
+  const tracked = campaign?.trackedRecipients;
+  const perContact = tracked !== null && tracked !== undefined;
+  const base = perContact ? Math.max(0, tracked) : campaignRates(stats).reached;
+  return {
+    base,
+    perContact,
+    openRate: ratio(stats.opened || 0, base),
+    clickRate: ratio(stats.clicked || 0, base),
+  };
+}
+
+/** Adresses au plus par ajout d'accords (l'API refuse au-delà). */
+export const MAX_TRACKING_GRANT_EMAILS = 500;
+
+/** Onglets des accords de suivi : filtre `status` de la requête. */
+export const TRACKING_CONSENT_TABS = [
+  { value: "all", label: "Tous", status: null },
+  { value: "granted", label: "Acceptés", status: "GRANTED" },
+  { value: "refused", label: "Refusés", status: "REFUSED" },
+];
+
+/** Origine d'un accord ou d'un refus : le contact lui-même ou l'espace. */
+export function trackingConsentOrigin(consent) {
+  if (consent?.source === "CONTACT") return "Choix du contact";
+  return `Saisi par ${consent?.decidedByName || "un membre de l'espace"}`;
+}
+
+/** Raisons pour lesquelles une adresse n'a pas reçu d'accord. */
+export const TRACKING_SKIP_REASONS = {
+  INVALID: "adresse invalide",
+  CONTACT_REFUSED: "refus du contact, lui seul peut changer d'avis",
+};
+
+export const trackingSkipReasonLabel = (reason) =>
+  TRACKING_SKIP_REASONS[reason] || reason;
+
+const MAX_LISTED_SKIPS = 10;
+
+/**
+ * Résultat d'un ajout d'accords, pour le toast : nombre d'accords
+ * enregistrés, puis adresses écartées avec leur raison (10 au plus).
+ * `invalid` : adresses illisibles écartées avant l'envoi.
+ */
+export function trackingGrantMessage(result, invalid = []) {
+  const granted = result?.granted || 0;
+  const skipped = [
+    ...invalid.map((email) => ({ email, reason: "INVALID" })),
+    ...(result?.skipped || []),
+  ];
+  const lines = skipped
+    .slice(0, MAX_LISTED_SKIPS)
+    .map(
+      ({ email, reason }) => `${email} (${trackingSkipReasonLabel(reason)})`,
+    );
+  if (skipped.length > MAX_LISTED_SKIPS) {
+    lines.push(
+      `et ${plural(skipped.length - MAX_LISTED_SKIPS, "autre", "autres")}`,
+    );
+  }
+  return {
+    ok: granted > 0,
+    title:
+      granted > 0
+        ? plural(granted, "accord enregistré", "accords enregistrés")
+        : "Aucun accord enregistré",
+    description: skipped.length
+      ? [
+          `${plural(skipped.length, "adresse écartée", "adresses écartées")} :`,
+          ...lines,
+        ].join("\n")
+      : granted > 0
+        ? "Ces adresses pourront être suivies dans vos prochaines campagnes."
+        : null,
+  };
 }
 
 /**
@@ -535,19 +622,6 @@ export function recipientFiltersFor(campaign) {
     if (item.value === "CLICKED") return clicks;
     return true;
   });
-}
-
-/** Attestation demandée à l'envoi d'une campagne suivie. */
-export function trackingConsentLabel(campaign) {
-  const opens = Boolean(campaign?.trackOpens);
-  const clicks = Boolean(campaign?.trackClicks);
-  const measured =
-    opens && clicks
-      ? "l'ouverture de mes e-mails et les clics sur leurs liens"
-      : opens
-        ? "l'ouverture de mes e-mails"
-        : "les clics sur les liens de mes e-mails";
-  return `Mes destinataires ont accepté que je mesure ${measured}.`;
 }
 
 /**

@@ -39,11 +39,23 @@ function Count({ value }) {
   );
 }
 
+/** Ouvertures ou clics d'un destinataire, « Non suivi » sans son accord. */
+function TrackedCount({ recipient, value }) {
+  return recipient.tracked === false ? (
+    <span className="text-xs whitespace-nowrap text-muted-foreground/60">
+      Non suivi
+    </span>
+  ) : (
+    <Count value={value} />
+  );
+}
+
 /**
  * Destinataires de la campagne, filtrables (ont ouvert, ont cliqué,
  * rejetés…) et cherchables, avec l'activité de chacun. `live` : rafraîchi
  * pendant l'envoi. Ouvertures et clics : filtres et colonnes seulement
- * s'ils ont été suivis, et tant que leur détail n'est pas effacé (13 mois).
+ * s'ils ont été suivis, et tant que leur détail n'est pas effacé (13 mois) ;
+ * « Non suivi » pour un destinataire qui n'avait pas accepté le suivi.
  */
 export function RecipientsTable({ workspaceId, campaign, live }) {
   const campaignId = campaign.id;
@@ -262,12 +274,18 @@ export function RecipientsTable({ workspaceId, campaign, live }) {
                     </td>
                     {tracking.opens && (
                       <td className="px-3 py-2.5 text-right align-middle text-sm">
-                        <Count value={recipient.openCount} />
+                        <TrackedCount
+                          recipient={recipient}
+                          value={recipient.openCount}
+                        />
                       </td>
                     )}
                     {tracking.clicks && (
                       <td className="px-3 py-2.5 text-right align-middle text-sm">
-                        <Count value={recipient.clickCount} />
+                        <TrackedCount
+                          recipient={recipient}
+                          value={recipient.clickCount}
+                        />
                       </td>
                     )}
                     <td className="truncate py-2.5 pr-5 pl-3 align-middle text-sm text-muted-foreground">

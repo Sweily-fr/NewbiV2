@@ -26,8 +26,10 @@ import {
   sendProgress,
   sortChecks,
   statusLabel,
-  trackingConsentLabel,
+  trackingConsentOrigin,
+  trackingGrantMessage,
   trackingNoticeSentence,
+  trackingRates,
 } from "@/src/utils/email-campaigns";
 
 const NBSP = " ";
@@ -292,32 +294,20 @@ describe("suivi des ouvertures et des clics", () => {
     expect(isCampaignTracked(null)).toBe(false);
   });
 
-  it("phrase du pied identique à celle de l'API", () => {
+  it("phrase du pied identique à celle de l'API (destinataire suivi)", () => {
     expect(
       trackingNoticeSentence("Atelier Durand", { opens: true, clicks: true }),
     ).toBe(
-      "Atelier Durand mesure l'ouverture de cet e-mail et les clics sur ses liens. Pour refuser ce suivi, répondez à cet e-mail.",
+      "Atelier Durand mesure l'ouverture de cet e-mail et les clics sur ses liens, avec votre accord.",
     );
     expect(trackingNoticeSentence("Atelier", { opens: true })).toBe(
-      "Atelier mesure l'ouverture de cet e-mail. Pour refuser ce suivi, répondez à cet e-mail.",
+      "Atelier mesure l'ouverture de cet e-mail, avec votre accord.",
     );
     expect(trackingNoticeSentence("", { clicks: true })).toBe(
-      "l'expéditeur mesure les clics sur les liens de cet e-mail. Pour refuser ce suivi, répondez à cet e-mail.",
+      "l'expéditeur mesure les clics sur les liens de cet e-mail, avec votre accord.",
     );
     expect(trackingNoticeSentence("Atelier", {})).toBe(null);
     expect(trackingNoticeSentence("Atelier")).toBe(null);
-  });
-
-  it("attestation adaptée à ce qui est suivi", () => {
-    expect(trackingConsentLabel({ trackOpens: true, trackClicks: true })).toBe(
-      "Mes destinataires ont accepté que je mesure l'ouverture de mes e-mails et les clics sur leurs liens.",
-    );
-    expect(trackingConsentLabel({ trackOpens: true })).toBe(
-      "Mes destinataires ont accepté que je mesure l'ouverture de mes e-mails.",
-    );
-    expect(trackingConsentLabel({ trackClicks: true })).toBe(
-      "Mes destinataires ont accepté que je mesure les clics sur les liens de mes e-mails.",
-    );
   });
 
   it("lien de politique de confidentialité : adresse web ou vide", () => {
@@ -398,5 +388,112 @@ describe("rapport : ouvertures et clics seulement s'ils ont été suivis", () =>
       "UNSUBSCRIBED",
       "FAILED",
     ]);
+  });
+});
+
+describe("rapport : taux sur les contacts suivis", () => {
+  const stats = {
+    sent: 100,
+    simulated: 0,
+    bounced: 10,
+    opened: 12,
+    clicked: 4,
+  };
+
+  it("campagne lancée avec les accords : base = contacts suivis au lancement", () => {
+    const rates = trackingRates({ trackedRecipients: 40, stats });
+    expect(rates.perContact).toBe(true);
+    expect(rates.base).toBe(40);
+    expect(rates.openRate).toBeCloseTo(0.3);
+    expect(rates.clickRate).toBeCloseTo(0.1);
+  });
+
+  it("campagne lancée avant (trackedRecipients null) : base = e-mails remis", () => {
+    const rates = trackingRates({ trackedRecipients: null, stats });
+    expect(rates.perContact).toBe(false);
+    expect(rates.base).toBe(campaignRates(stats).reached);
+    expect(rates.base).toBe(90);
+    expect(rates.openRate).toBeCloseTo(12 / 90);
+    // Champ absent (ancienne réponse) : même chose
+    expect(trackingRates({ stats }).base).toBe(90);
+  });
+
+  it("aucun contact suivi : pas de taux", () => {
+    const rates = trackingRates({ trackedRecipients: 0, stats });
+    expect(rates.perContact).toBe(true);
+    expect(rates.base).toBe(0);
+    expect(rates.openRate).toBe(null);
+    expect(rates.clickRate).toBe(null);
+    expect(trackingRates(null).openRate).toBe(null);
+  });
+});
+
+describe("accords de suivi", () => {
+  it("origine : choix du contact ou saisie de l'espace", () => {
+    expect(trackingConsentOrigin({ source: "CONTACT" })).toBe(
+      "Choix du contact",
+    );
+    expect(
+      trackingConsentOrigin({ source: "SENDER", decidedByName: "Jean Dupont" }),
+    ).toBe("Saisi par Jean Dupont");
+    expect(
+      trackingConsentOrigin({ source: "SENDER", decidedByName: null }),
+    ).toBe("Saisi par un membre de l'espace");
+  });
+
+  // plural() lie le nombre au mot par une espace insécable
+  it("ajout réussi : nombre d'accords enregistrés", () => {
+    expect(trackingGrantMessage({ granted: 3, skipped: [] })).toEqual({
+      ok: true,
+      title: `3${NBSP}accords enregistrés`,
+      description:
+        "Ces adresses pourront être suivies dans vos prochaines campagnes.",
+    });
+    expect(trackingGrantMessage({ granted: 1, skipped: [] }).title).toBe(
+      `1${NBSP}accord enregistré`,
+    );
+  });
+
+  it("adresses écartées : saisie illisible puis refus de l'API, avec la raison", () => {
+    const message = trackingGrantMessage(
+      {
+        granted: 1,
+        skipped: [
+          { email: "refus@exemple.fr", reason: "CONTACT_REFUSED" },
+          { email: "a@b", reason: "INVALID" },
+        ],
+      },
+      ["jean@"],
+    );
+    expect(message.ok).toBe(true);
+    expect(message.title).toBe(`1${NBSP}accord enregistré`);
+    expect(message.description).toBe(
+      [
+        `3${NBSP}adresses écartées :`,
+        "jean@ (adresse invalide)",
+        "refus@exemple.fr (refus du contact, lui seul peut changer d'avis)",
+        "a@b (adresse invalide)",
+      ].join("\n"),
+    );
+  });
+
+  it("aucun accord : échec, liste limitée à 10 adresses", () => {
+    const skipped = Array.from({ length: 12 }, (_, index) => ({
+      email: `contact${index}@exemple.fr`,
+      reason: "CONTACT_REFUSED",
+    }));
+    const message = trackingGrantMessage({ granted: 0, skipped });
+    expect(message.ok).toBe(false);
+    expect(message.title).toBe("Aucun accord enregistré");
+    const lines = message.description.split("\n");
+    expect(lines[0]).toBe(`12${NBSP}adresses écartées :`);
+    expect(lines).toHaveLength(12);
+    expect(lines[1]).toBe(
+      "contact0@exemple.fr (refus du contact, lui seul peut changer d'avis)",
+    );
+    expect(lines.at(-1)).toBe(`et 2${NBSP}autres`);
+    expect(trackingGrantMessage({ granted: 0, skipped: [] }).description).toBe(
+      null,
+    );
   });
 });
