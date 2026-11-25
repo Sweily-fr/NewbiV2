@@ -55,7 +55,7 @@ describe("Création d'espace : étape d'offre", () => {
   it("affiche les prix à l'année avec le total facturé", () => {
     render(<PlanForm {...props} isAnnual />);
     expect(
-      screen.getByText(/16,20\s€\/mois TTC · Facturé 194,40\s€ par an/),
+      screen.getByText(/16,17\s€\/mois TTC · Facturé 194,00\s€ par an/),
     ).toBeInTheDocument();
   });
 

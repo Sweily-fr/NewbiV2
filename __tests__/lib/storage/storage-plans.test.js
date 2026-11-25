@@ -74,7 +74,7 @@ describe("Stockage : quotas par organisation", () => {
     expect(
       PLANS_DISPLAY.map((p) => [p.monthlyPrice, p.annualMonthlyPrice]),
     ).toEqual([
-      [18, 16.2],
+      [18, 194 / 12],
       [50, 45],
       [200, 180],
     ]);

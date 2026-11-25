@@ -66,7 +66,7 @@ describe("/tarifs : grille des offres", () => {
 
     await user.click(screen.getByRole("button", { name: /^Annuel/ }));
 
-    expect(within(colonne("freelance")).getByText(/16,20\s€/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/16,17\s€/)).toBeTruthy();
     expect(within(colonne("tpe")).getByText(/45,00\s€/)).toBeTruthy();
     expect(within(colonne("entreprise")).getByText(/180,00\s€/)).toBeTruthy();
     expect(

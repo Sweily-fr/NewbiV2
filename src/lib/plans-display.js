@@ -33,7 +33,8 @@ export const PLANS_DISPLAY = [
     displayName: "Standard",
     description: "Pour les indépendants",
     monthlyPrice: 18,
-    annualMonthlyPrice: 16.2,
+    // Annuel Stripe : 194 € TTC par an tout rond (16,17 € par mois).
+    annualMonthlyPrice: 194 / 12,
   },
   {
     key: "pme",
