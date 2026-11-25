@@ -18,14 +18,28 @@ import {
 import { cn } from "@/src/lib/utils";
 import {
   campaignDateLabel,
-  campaignRates,
   canDeleteStatus,
   formatCount,
   formatPercent,
   isReportStatus,
+  trackingRates,
 } from "@/src/utils/email-campaigns";
 import { FOCUS_RING, StatusBadge } from "./shared";
 import { TextWithVariables } from "./setup/subject-section";
+
+/**
+ * Taux d'ouverture et de clics de la liste, sur la même base que le rapport
+ * (contacts suivis) ; null quand ils ne sont pas suivis ou qu'aucun contact
+ * ne l'est.
+ */
+function listRates(campaign) {
+  const rates = trackingRates(campaign);
+  const measurable = !rates.perContact || rates.base > 0;
+  return {
+    openRate: campaign.trackOpens && measurable ? rates.openRate : null,
+    clickRate: campaign.trackClicks && measurable ? rates.clickRate : null,
+  };
+}
 
 /** Taux affiché dans le tableau (rien tant que l'envoi n'a pas commencé). */
 function Rate({ value, count }) {
@@ -146,7 +160,7 @@ export function CampaignsTable({
       </thead>
       <tbody>
         {campaigns.map((campaign) => {
-          const rates = campaignRates(campaign.stats);
+          const rates = listRates(campaign);
           const started = isReportStatus(campaign.status);
           return (
             <tr
@@ -230,7 +244,7 @@ export function CampaignCards({
   return (
     <ul className="flex flex-col gap-2 px-4 py-3">
       {campaigns.map((campaign) => {
-        const rates = campaignRates(campaign.stats);
+        const rates = listRates(campaign);
         const started = isReportStatus(campaign.status);
         return (
           <li
@@ -264,18 +278,22 @@ export function CampaignCards({
                     </span>{" "}
                     destinataires
                   </span>
-                  <span>
-                    <span className="font-medium text-foreground">
-                      {formatPercent(rates.openRate) || "0 %"}
-                    </span>{" "}
-                    ouvertures
-                  </span>
-                  <span>
-                    <span className="font-medium text-foreground">
-                      {formatPercent(rates.clickRate) || "0 %"}
-                    </span>{" "}
-                    clics
-                  </span>
+                  {rates.openRate !== null && (
+                    <span>
+                      <span className="font-medium text-foreground">
+                        {formatPercent(rates.openRate) || "0 %"}
+                      </span>{" "}
+                      ouvertures
+                    </span>
+                  )}
+                  {rates.clickRate !== null && (
+                    <span>
+                      <span className="font-medium text-foreground">
+                        {formatPercent(rates.clickRate) || "0 %"}
+                      </span>{" "}
+                      clics
+                    </span>
+                  )}
                 </span>
               )}
             </button>

@@ -357,7 +357,9 @@ export function BlockView({
  * Pied de page ajouté par l'API à chaque envoi (identité de l'entreprise,
  * raison de l'envoi, suivi s'il est actif, désinscription), sous le cadre :
  * affiché tel quel, jamais modifiable. Adresse manquante : signalée, jamais
- * inventée.
+ * inventée. Campagne suivie : version d'un destinataire qui a accepté le
+ * suivi (phrase), et lien « Gérer mes préférences » (accepter ou refuser le
+ * suivi) avant la désinscription, comme l'API.
  *
  * @param {{ opens?: boolean, clicks?: boolean, privacyPolicyUrl?: string }} [trackingNotice]
  */
@@ -374,6 +376,7 @@ export function EmailFooterView({
     companyName,
     trackingNotice || {},
   );
+  const tracked = Boolean(trackingNotice?.opens || trackingNotice?.clicks);
   const line = {
     margin: 0,
     fontSize: 12,
@@ -412,7 +415,17 @@ export function EmailFooterView({
           ) : null}
         </p>
       )}
-      <p style={{ ...line, textDecoration: "underline" }}>Se désinscrire</p>
+      {tracked ? (
+        <p style={line}>
+          <span style={{ textDecoration: "underline" }}>
+            Gérer mes préférences
+          </span>
+          {" · "}
+          <span style={{ textDecoration: "underline" }}>Se désinscrire</span>
+        </p>
+      ) : (
+        <p style={{ ...line, textDecoration: "underline" }}>Se désinscrire</p>
+      )}
     </div>
   );
 }
