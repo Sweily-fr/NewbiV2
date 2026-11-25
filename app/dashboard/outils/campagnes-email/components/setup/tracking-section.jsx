@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
+import {
+  isCampaignTracked,
+  privacyPolicyUrlError,
+} from "@/src/utils/email-campaigns";
 import { CARD_CLASS } from "../shared";
-import { StepIcon } from "./setup-section";
+import { Field, StepIcon } from "./setup-section";
 
 function TrackingRow({ id, label, description, checked, disabled, onChange }) {
   return (
@@ -28,13 +33,56 @@ function TrackingRow({ id, label, description, checked, disabled, onChange }) {
   );
 }
 
+/** Lien vers la politique de confidentialité, enregistré en quittant le champ. */
+function PrivacyPolicyField({ campaign, editable, onSave }) {
+  const saved = campaign.privacyPolicyUrl || "";
+  const [value, setValue] = useState(saved);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => setValue(saved), [saved]);
+
+  const error = privacyPolicyUrlError(value);
+  const save = async () => {
+    const next = value.trim();
+    if (error || next === saved) return;
+    setSaving(true);
+    await onSave({ privacyPolicyUrl: next }, { quiet: true });
+    setSaving(false);
+  };
+
+  return (
+    <Field
+      label="Lien vers votre politique de confidentialité"
+      htmlFor="privacy-policy-url"
+      error={error}
+      hint="Recommandé : il est ajouté à côté de la phrase qui annonce le suivi."
+    >
+      <Input
+        id="privacy-policy-url"
+        type="url"
+        inputMode="url"
+        placeholder="https://votre-site.fr/confidentialite"
+        value={value}
+        disabled={!editable || saving}
+        aria-invalid={Boolean(error)}
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={save}
+        autoComplete="off"
+      />
+    </Field>
+  );
+}
+
 /**
- * Suivi des ouvertures et des clics : enregistré dès le changement (rien
- * d'autre à saisir), toujours complet.
+ * Suivi des ouvertures et des clics : coupé par défaut (recommandation CNIL
+ * sur les pixels de suivi : accord préalable de chaque destinataire),
+ * enregistré dès le changement. Activé, l'envoi demande d'attester cet
+ * accord et une phrase en bas de l'e-mail l'annonce aux destinataires.
  */
 export function TrackingSection({ campaign, canEdit, onSave }) {
   const [saving, setSaving] = useState(null);
   const editable = canEdit && campaign.status === "DRAFT";
+  const tracked = isCampaignTracked(campaign);
 
   const toggle = async (field, value) => {
     setSaving(field);
@@ -55,7 +103,8 @@ export function TrackingSection({ campaign, canEdit, onSave }) {
             Suivi
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Mesurez qui ouvre l&apos;e-mail et clique sur ses liens.
+            Désactivé par défaut : n&apos;activez le suivi que si vos
+            destinataires l&apos;ont accepté.
           </p>
         </div>
       </div>
@@ -77,6 +126,22 @@ export function TrackingSection({ campaign, canEdit, onSave }) {
           onChange={(value) => toggle("trackClicks", value)}
         />
       </div>
+      {tracked && (
+        <div className="mt-4 flex flex-col gap-4 sm:pl-11">
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+            La CNIL exige l&apos;accord préalable de chaque destinataire pour ce
+            suivi, clients compris. À l&apos;envoi, vous confirmerez
+            l&apos;avoir obtenu ; une phrase en bas de l&apos;e-mail
+            l&apos;annonce, et le détail par destinataire est effacé au bout de
+            13 mois.
+          </p>
+          <PrivacyPolicyField
+            campaign={campaign}
+            editable={editable}
+            onSave={onSave}
+          />
+        </div>
+      )}
     </section>
   );
 }
