@@ -55,6 +55,7 @@ import {
   RotateCcw,
   History,
   Send,
+  Target,
 } from "lucide-react";
 import { normalizeSearchText } from "@/src/utils/search-text";
 import { GET_CLIENTS } from "@/src/graphql/clientQueries";
@@ -1208,6 +1209,20 @@ export function SearchCommand() {
                         <Send className="size-3.5" />
                       </IconWrapper>
                       <span>Campagnes e-mail</span>
+                    </CommandItem>
+                  )}
+                  {canList("/dashboard/outils/prospection") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/prospection"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <Target className="size-3.5" />
+                      </IconWrapper>
+                      <span>Prospection</span>
                     </CommandItem>
                   )}
                   {canList("/dashboard/outils/documents-partages") && (

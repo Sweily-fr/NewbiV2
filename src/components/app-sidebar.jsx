@@ -39,6 +39,7 @@ import {
   DocumentCloudIcon,
   DocumentTextIcon,
   SendIcon,
+  DirectboxSendIcon,
   NoteTextIcon as Calendar,
   Element4Icon,
   ChartIcon,
@@ -221,6 +222,12 @@ const data = {
       url: "/dashboard/outils/campagnes-email",
       isPro: false,
       icon: SendIcon,
+    },
+    {
+      title: "Prospection",
+      url: "/dashboard/outils/prospection",
+      isPro: false,
+      icon: DirectboxSendIcon,
     },
   ],
   navSecondary: [
