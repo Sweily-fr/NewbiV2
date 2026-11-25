@@ -75,7 +75,7 @@ const questions = [
   {
     id: "item-10",
     title: "Quelle formule choisir pour commencer ?",
-    content: `Si vous travaillez seul, ${freelance.displayName} couvre l'essentiel : devis, factures, clients, projets, trésorerie et un compte bancaire connecté. ${tpe.displayName} s'adresse aux équipes jusqu'à dix personnes qui ont besoin de modèles et d'automatisations illimités. ${entreprise.displayName} ajoute les exports comptables tous formats, la signature électronique illimitée et jusqu'à vingt-cinq utilisateurs. Le tableau ci-dessus détaille ligne par ligne ce qui les sépare.`,
+    content: `Si vous travaillez seul, ${freelance.displayName} couvre l'essentiel : devis, factures, clients, projets, trésorerie et un compte bancaire connecté. ${tpe.displayName} s'adresse aux équipes jusqu'à dix personnes qui ont besoin de modèles et d'automatisations illimités. ${entreprise.displayName} ajoute les exports comptables tous formats, 200 signatures électroniques et 100 crédits de prospection par mois, 5 To de stockage et jusqu'à vingt-cinq utilisateurs. Le tableau ci-dessus détaille ligne par ligne ce qui les sépare.`,
   },
 ];
 

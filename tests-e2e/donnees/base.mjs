@@ -297,7 +297,7 @@ export const COMPTES = {
   // ── Lot devis-bc-bl (organisations et utilisateurs 15 à 19) ──
   // Devis, bons de commande et de livraison vus par chaque rôle (membres
   // « Membre » et « Éditeur » ci-dessous), cibles des contrôles de droits et
-  // des parcours qui modifient. Offre Entreprise : signatures illimitées.
+  // des parcours qui modifient. Offre Entreprise : 200 signatures par mois.
   ventes: {
     utilisateur: { _id: oid("utilisateur", 15), email: "ventes@e2e.test", name: "Valentin Ventes" },
     organisation: organisation(15, "Ventes Test SASU"),
