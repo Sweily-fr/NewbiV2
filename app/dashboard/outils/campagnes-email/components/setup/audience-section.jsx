@@ -13,6 +13,7 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import { cn } from "@/src/lib/utils";
 import { GET_CLIENT_LISTS } from "@/src/graphql/queries/clientLists";
 import { GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT } from "@/src/graphql/emailCampaignQueries";
@@ -159,6 +160,7 @@ export function ListPicker({
 /**
  * Décompte en direct : destinataires, et pourquoi certains sont écartés.
  * `exclusions` / `zeroText` : écarts et message propres à la prospection.
+ * `prospectsHint` : dit où écrire aux prospects générés écartés.
  */
 export function AudienceCountPanel({
   count,
@@ -169,8 +171,10 @@ export function AudienceCountPanel({
   className,
   exclusions: customExclusions,
   zeroText = "Aucun contact ne peut recevoir cette campagne.",
+  prospectsHint = false,
 }) {
-  const exclusions = customExclusions ?? audienceExclusions(count);
+  const exclusions =
+    customExclusions ?? audienceExclusions(count, { prospectsHint });
   const overQuota = count && quota && count.sendable > quota.remaining;
   return (
     <div
@@ -221,6 +225,7 @@ export function AudienceCountPanel({
                       {formatCount(item.count)}
                     </span>{" "}
                     {item.label}
+                    {item.hint && <>, {item.hint}</>}
                   </li>
                 ))}
               </ul>
@@ -281,6 +286,9 @@ export function AudienceSection({
   );
   const lists = useMemo(() => listsData?.clientLists || [], [listsData]);
   const live = useAudienceCount(workspaceId, draft, { skip: !editing });
+  // Prospects générés écartés : renvoyés vers la Prospection si l'espace y
+  // a accès
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
 
   const startEdit = () => {
     const current = audienceInput(campaign.audience);
@@ -464,6 +472,7 @@ export function AudienceSection({
           error={noList ? null : live.error}
           quota={quota}
           emptyText="Cochez au moins une liste pour voir le nombre de destinataires."
+          prospectsHint={isFeatureEnabled("prospecting")}
           className="self-start"
         />
       </div>
