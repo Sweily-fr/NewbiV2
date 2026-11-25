@@ -196,7 +196,21 @@ export default function HomePricingSection({
               Découvre le détail complet de chaque offre, fonctionnalité par
               fonctionnalité, et choisis celle qui correspond à ton activité.
             </p>
-            <ArrowLink href="/tarifs">Voir toutes nos offres</ArrowLink>
+            {/* Même bouton que les autres colonnes ; le comparatif reste
+                accessible par le lien en dessous. */}
+            <ArrowLink
+              href="/auth/signup"
+              sub={
+                <Link
+                  href="/tarifs"
+                  className="underline underline-offset-2 transition-colors hover:text-gray-900 dark:hover:text-gray-100"
+                >
+                  Voir toutes nos offres
+                </Link>
+              }
+            >
+              Commencer gratuitement
+            </ArrowLink>
           </Column>
         </div>
 
