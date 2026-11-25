@@ -79,7 +79,7 @@ export function SignupPlanPicker({
                   {enCours === col.cle ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    "Choisir ce plan"
+                    "Commencer gratuitement"
                   )}
                 </Button>
               }
