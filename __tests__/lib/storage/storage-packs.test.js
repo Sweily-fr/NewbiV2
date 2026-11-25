@@ -99,7 +99,7 @@ describe("Packs de stockage : lecture de l'abonnement Stripe", () => {
   it("calcule le quota avec les packs (50 Go chacun)", () => {
     expect(quotaBytesWith("freelance", 0)).toBe(100 * GB);
     expect(quotaBytesWith("pro", 2)).toBe(600 * GB);
-    expect(quotaBytesWith("enterprise", 1)).toBe(2050 * GB);
+    expect(quotaBytesWith("enterprise", 1)).toBe(5050 * GB);
   });
 });
 
@@ -203,7 +203,7 @@ describe("Packs de stockage : achat et retrait", () => {
     const error = await setStoragePacks({
       mongoDb: fakeDb({
         subscription: activeSubscription,
-        usage: { totalBytes: 2060 * GB, computedAt: new Date() },
+        usage: { totalBytes: 5060 * GB, computedAt: new Date() },
       }),
       stripe,
       organizationId: orgId,

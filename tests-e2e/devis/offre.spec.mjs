@@ -1,7 +1,7 @@
 /**
  * Plafonds des offres pour les devis (src/lib/plan-limits.js côté site,
  * src/services/esignatureQuota.js côté API) : signatures électroniques par
- * mois (offre d'entrée 10, PME 100, Entreprise illimité), signature qualifiée
+ * mois (offre d'entrée 10, PME 100, Entreprise 200), signature qualifiée
  * réservée à l'offre Entreprise, 10 modèles de documents sur l'offre
  * d'entrée. L'interface les applique ; l'API doit les appliquer aussi, sinon
  * un appel direct les contourne (signatures payées par Newbi au prestataire,
@@ -107,17 +107,20 @@ test.describe("Offre PME : signatures électroniques (100 par mois)", () => {
   });
 });
 
-test.describe("Offre Entreprise : signatures illimitées", () => {
+test.describe("Offre Entreprise : signatures électroniques (200 par mois)", () => {
   test.use({ storageState: connecte(SESSION_TOKEN_VENTES) });
 
-  test("150 demandes ce mois-ci : aucun plafond, la demande suivante n'est pas refusée pour le quota", async ({ page }) => {
+  test("150 demandes ce mois-ci : sous le plafond de 200, la demande suivante n'est pas refusée pour le quota", async ({ page }) => {
     await ouvrir(page, "/dashboard");
     const quota = await appelApi(page, QUOTA, {}, { organisation: w("ventes") });
-    expect(quota.data?.esignatureQuota).toMatchObject({ plan: "entreprise", unlimited: true, monthlyQuota: null, remaining: null });
-    expect(quota.data.esignatureQuota.used).toBeGreaterThanOrEqual(150);
+    expect(quota.data?.esignatureQuota).toMatchObject({ plan: "entreprise", unlimited: false, monthlyQuota: 200 });
+    const { used, remaining } = quota.data.esignatureQuota;
+    expect(used).toBeGreaterThanOrEqual(150);
+    expect(used, "Le lot de données dépasse déjà le plafond de l'offre Entreprise").toBeLessThan(200);
+    expect(remaining).toBe(200 - used);
     const reponse = await demander(page, "ventes", D.aSigner);
     // Le prestataire de signature est injoignable en test : seule l'absence de refus pour le quota compte.
-    expect(messages(reponse), "Refus pour le quota sur l'offre illimitée").not.toMatch(MESSAGE_QUOTA);
+    expect(messages(reponse), "Refus pour le quota sous le plafond de 200").not.toMatch(MESSAGE_QUOTA);
   });
 });
 

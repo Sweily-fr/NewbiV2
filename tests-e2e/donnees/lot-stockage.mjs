@@ -5,7 +5,7 @@
  *     envoi est refusé ; propriétaire et un « Membre » (lecture seule, ne voit
  *     pas l'abonnement) ;
  *   - « Stockage Presque » (Premium, 500 Go) : compteur à 420 Go, alerte 80 % ;
- *   - « Stockage Entreprise » (Entreprise, 2 To) : compteur à 2 To, plein ;
+ *   - « Stockage Entreprise » (Entreprise, 5 To) : compteur à 5 To, plein ;
  *     seule offre qui vend des packs, sans offre supérieure.
  *
  * Le compteur est écrit directement dans la collection workspace_storage_usage
@@ -88,9 +88,9 @@ export function donneesStockage() {
       ),
       compteur(
         COMPTES_STOCKAGE.entreprise,
-        2000 * GO,
-        { sharedDocuments: 2000 * GO },
-        { unattributed: 2000 * GO },
+        5000 * GO,
+        { sharedDocuments: 5000 * GO },
+        { unattributed: 5000 * GO },
       ),
     ],
   };

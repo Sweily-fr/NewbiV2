@@ -82,7 +82,7 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.canAddPaidUsers).toBe(true);
     expect(plan.workspaces).toBe(1);
     expect(plan.bankAccounts).toBe(5);
-    expect(plan.storage).toBe(2000);
+    expect(plan.storage).toBe(5000);
     expect(plan.fileTransferMaxGB).toBe(50);
     expect(plan.availableRoles).toEqual([
       "viewer",

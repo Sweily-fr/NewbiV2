@@ -39,15 +39,15 @@ export const PLANS_DISPLAY = [
     key: "pme",
     displayName: "Premium",
     description: "Pour les équipes en croissance",
-    monthlyPrice: 48.99,
-    annualMonthlyPrice: 44.09,
+    monthlyPrice: 50,
+    annualMonthlyPrice: 45,
   },
   {
     key: "entreprise",
     displayName: "Entreprise",
     description: "Pour les structures avancées",
-    monthlyPrice: 94.99,
-    annualMonthlyPrice: 85.49,
+    monthlyPrice: 200,
+    annualMonthlyPrice: 180,
   },
 ];
 
@@ -94,7 +94,7 @@ export const PLAN_FEATURES_SECTIONS = [
           "Espace de stockage de l'organisation pour tous ses documents et fichiers",
         freelance: "100 Go",
         pme: "500 Go",
-        entreprise: "2 To",
+        entreprise: "5 To",
       },
       {
         name: "Stockage supplémentaire",
@@ -142,7 +142,7 @@ export const PLAN_FEATURES_SECTIONS = [
         tooltip: "Faites signer vos devis électroniquement",
         freelance: "10/mois",
         pme: "100/mois",
-        entreprise: "Illimité",
+        entreprise: "200/mois",
       },
       {
         name: "Facturation électronique",
@@ -240,6 +240,26 @@ export const PLAN_FEATURES_SECTIONS = [
         freelance: "1",
         pme: "3",
         entreprise: "Illimité",
+      },
+    ],
+  },
+  {
+    title: "Prospection et marketing",
+    features: [
+      {
+        name: "Prospection",
+        tooltip:
+          "Trouvez de nouveaux clients par métier et par zone. Un crédit correspond à un prospect ajouté à vos clients ou à une page de 25 entreprises consultée. Crédits supplémentaires en vente avec l'offre Entreprise.",
+        freelance: false,
+        pme: "30 crédits/mois",
+        entreprise: "100 crédits/mois",
+      },
+      {
+        name: "Campagnes e-mail",
+        tooltip: "Envoyez des campagnes e-mail à vos clients et à vos prospects.",
+        freelance: "500 e-mails/mois",
+        pme: "2 500 e-mails/mois",
+        entreprise: "10 000 e-mails/mois",
       },
     ],
   },

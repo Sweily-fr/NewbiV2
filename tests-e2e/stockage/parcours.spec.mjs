@@ -57,7 +57,7 @@ test.describe("Stockage : écran et bandeaux (propriétaire, espace plein)", () 
     await expect(page.getByText("Packs actifs", { exact: true })).toHaveCount(0);
     const offre = page.getByTestId("offre-superieure");
     await expect(offre).toContainText("Passer à l'offre Premium");
-    await expect(offre).toContainText("500 Go de stockage, 48,99 € TTC/mois");
+    await expect(offre).toContainText("500 Go de stockage, 50,00 € TTC/mois");
     await offre.getByRole("button", { name: "Passer à l'offre Premium" }).click();
     await expect(page.getByText("Choisissez le plan adapté à vos besoins.")).toBeVisible();
   });
@@ -91,7 +91,7 @@ test.describe("Stockage : offre Entreprise (packs seulement)", () => {
   test("Entreprise pleine : pas d'offre supérieure, l'ajout de packs est proposé (indisponible sans prix Stripe)", async ({ page }) => {
     await ouvrirStockage(page);
     await expect(page.getByTestId("stockage-resume")).toHaveText(
-      "2 To utilisés sur 2 To, il vous reste 0 Go.",
+      "5 To utilisés sur 5 To, il vous reste 0 Go.",
     );
     await expect(page.getByTestId("offre-superieure")).toHaveCount(0);
     await expect(page.getByTestId("packs-indisponibles")).toBeVisible();
@@ -186,7 +186,7 @@ test.describe("Stockage : refus des nouveaux envois", () => {
     await expect(fenetre).toBeVisible({ timeout: 30_000 });
     await expect(fenetre).toContainText(REFUS);
     await expect(fenetre).toContainText("Vos fichiers existants restent disponibles");
-    await expect(fenetre.getByTestId("offre-superieure")).toContainText("48,99 € TTC/mois");
+    await expect(fenetre.getByTestId("offre-superieure")).toContainText("50,00 € TTC/mois");
     expect(await (await base()).collection("shareddocuments").countDocuments({ workspaceId: PLEIN })).toBe(0);
   });
 });
