@@ -27,6 +27,7 @@ import {
 } from "./permissions";
 import { organizationAc, organizationRoles } from "./organization-roles";
 import { planLabel } from "./plans-display";
+import { listeOffresAvecAnciensPrix } from "./stripe-anciens-prix";
 
 // ✅ Fonction de déduplication atomique avec MongoDB
 async function isEventAlreadyProcessed(eventId, eventType) {
@@ -279,10 +280,72 @@ async function handleCabinetWebhook(object) {
   });
 }
 
+const stripeClientPlugin = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-02-24.acacia",
+});
+
+const OFFRES_STRIPE = [
+  {
+    name: "freelance",
+    priceId: process.env.STRIPE_FREELANCE_MONTHLY_PRICE_ID,
+    annualDiscountPriceId: process.env.STRIPE_FREELANCE_YEARLY_PRICE_ID,
+    limits: {
+      users: 1, // 1 seul utilisateur (pas de collaborateurs)
+      workspaces: 1, // 1 workspace inclus
+      projects: 50,
+      storage: 50,
+      invoices: 500,
+    },
+    metadata: {
+      displayName: planLabel("freelance"),
+      monthlyPrice: 18,
+      annualPrice: 194 / 12, // 194 € TTC par an
+      workspaceAddonPrice: 11.99,
+      description: "Pour les indépendants et freelances",
+    },
+  },
+  {
+    name: "pme",
+    priceId: process.env.STRIPE_PME_MONTHLY_PRICE_ID,
+    annualDiscountPriceId: process.env.STRIPE_PME_YEARLY_PRICE_ID,
+    limits: {
+      users: 10, // Jusqu'à 10 utilisateurs inclus
+      workspaces: 1, // 1 workspace inclus
+      projects: 200,
+      storage: 200,
+      invoices: 2000,
+    },
+    metadata: {
+      displayName: planLabel("pme"),
+      monthlyPrice: 50,
+      annualPrice: 45, // -10% de réduction (50 * 12 * 0.90 / 12)
+      workspaceAddonPrice: 11.99,
+      description: "Pour les petites et moyennes entreprises",
+    },
+  },
+  {
+    name: "entreprise",
+    priceId: process.env.STRIPE_ENTREPRISE_MONTHLY_PRICE_ID,
+    annualDiscountPriceId: process.env.STRIPE_ENTREPRISE_YEARLY_PRICE_ID,
+    limits: {
+      users: 25, // Jusqu'à 25 utilisateurs inclus
+      workspaces: 1, // 1 workspace inclus
+      projects: 500,
+      storage: 500,
+      invoices: 5000,
+    },
+    metadata: {
+      displayName: planLabel("entreprise"),
+      monthlyPrice: 200,
+      annualPrice: 180, // -10% de réduction (200 * 12 * 0.90 / 12)
+      workspaceAddonPrice: 11.99,
+      description: "Pour les grandes équipes",
+    },
+  },
+];
+
 export const stripePlugin = stripe({
-  stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-02-24.acacia",
-  }),
+  stripeClient: stripeClientPlugin,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   createCustomerOnSignUp: false, // Désactivé car on gère les abonnements au niveau organisation
   subscription: {
@@ -295,65 +358,18 @@ export const stripePlugin = stripe({
       /* eslint-enable @typescript-eslint/no-unused-vars */
       return authorizeSubscriptionReference({ user, referenceId, action });
     },
-    plans: [
-      {
-        name: "freelance",
-        priceId: process.env.STRIPE_FREELANCE_MONTHLY_PRICE_ID,
-        annualDiscountPriceId: process.env.STRIPE_FREELANCE_YEARLY_PRICE_ID,
-        limits: {
-          users: 1, // 1 seul utilisateur (pas de collaborateurs)
-          workspaces: 1, // 1 workspace inclus
-          projects: 50,
-          storage: 50,
-          invoices: 500,
-        },
-        metadata: {
-          displayName: planLabel("freelance"),
-          monthlyPrice: 18,
-          annualPrice: 194 / 12, // 194 € TTC par an
-          workspaceAddonPrice: 11.99,
-          description: "Pour les indépendants et freelances",
-        },
-      },
-      {
-        name: "pme",
-        priceId: process.env.STRIPE_PME_MONTHLY_PRICE_ID,
-        annualDiscountPriceId: process.env.STRIPE_PME_YEARLY_PRICE_ID,
-        limits: {
-          users: 10, // Jusqu'à 10 utilisateurs inclus
-          workspaces: 1, // 1 workspace inclus
-          projects: 200,
-          storage: 200,
-          invoices: 2000,
-        },
-        metadata: {
-          displayName: planLabel("pme"),
-          monthlyPrice: 50,
-          annualPrice: 45, // -10% de réduction (50 * 12 * 0.90 / 12)
-          workspaceAddonPrice: 11.99,
-          description: "Pour les petites et moyennes entreprises",
-        },
-      },
-      {
-        name: "entreprise",
-        priceId: process.env.STRIPE_ENTREPRISE_MONTHLY_PRICE_ID,
-        annualDiscountPriceId: process.env.STRIPE_ENTREPRISE_YEARLY_PRICE_ID,
-        limits: {
-          users: 25, // Jusqu'à 25 utilisateurs inclus
-          workspaces: 1, // 1 workspace inclus
-          projects: 500,
-          storage: 500,
-          invoices: 5000,
-        },
-        metadata: {
-          displayName: planLabel("entreprise"),
-          monthlyPrice: 200,
-          annualPrice: 180, // -10% de réduction (200 * 12 * 0.90 / 12)
-          workspaceAddonPrice: 11.99,
-          description: "Pour les grandes équipes",
-        },
-      },
-    ],
+    // Offres actuelles + une copie par ancien prix Stripe, pour que les
+    // webhooks des abonnés d'avant un changement de prix restent traités.
+    plans: listeOffresAvecAnciensPrix({
+      stripe: stripeClientPlugin,
+      plans: OFFRES_STRIPE,
+      exclus: [
+        process.env.STRIPE_SEAT_PRICE_ID,
+        process.env.STRIPE_STORAGE_PACK_MONTHLY_PRICE_ID,
+        process.env.STRIPE_STORAGE_PACK_YEARLY_PRICE_ID,
+        process.env.STRIPE_PROSPECT_CREDIT_PRICE_ID,
+      ],
+    }),
     // [Lot 6 cleanup] `getCheckoutSessionParams` removed — was the Better
     // Auth plugin callback for `auth.subscription.upgrade()`. We never call
     // that API: every checkout goes through our custom routes
