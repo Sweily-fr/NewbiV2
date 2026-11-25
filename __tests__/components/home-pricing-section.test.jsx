@@ -23,4 +23,18 @@ describe("bloc de prix condensé", () => {
     ]);
     expect(document.body.textContent).not.toMatch(/\bTPE\b/);
   });
+
+  it("propose « Commencer gratuitement » dans chaque colonne, sans perdre le lien vers /tarifs", () => {
+    render(<HomePricingSection />);
+    const boutons = screen.getAllByRole("link", {
+      name: "Commencer gratuitement",
+    });
+    expect(boutons).toHaveLength(3);
+    for (const bouton of boutons) {
+      expect(bouton).toHaveAttribute("href", "/auth/signup");
+    }
+    expect(
+      screen.getByRole("link", { name: "Voir toutes nos offres" }),
+    ).toHaveAttribute("href", "/tarifs");
+  });
 });
