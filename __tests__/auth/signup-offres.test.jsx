@@ -88,7 +88,7 @@ describe("Inscription : choix de l'offre", () => {
     ).toBeTruthy();
 
     expect(
-      screen.getAllByRole("button", { name: "Choisir ce plan" }),
+      screen.getAllByRole("button", { name: "Commencer gratuitement" }),
     ).toHaveLength(3);
   });
 
@@ -133,7 +133,7 @@ describe("Inscription : choix de l'offre", () => {
 
     await user.click(
       within(colonne("freelance")).getByRole("button", {
-        name: "Choisir ce plan",
+        name: "Commencer gratuitement",
       }),
     );
 
