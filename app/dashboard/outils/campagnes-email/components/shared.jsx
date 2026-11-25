@@ -108,11 +108,12 @@ export function errorMessage(
 /**
  * Droits du rôle sur les campagnes (tout permis tant que la grille n'est
  * pas chargée : l'API refuse de toute façon) et abonnement en lecture seule.
+ * `moduleKey` : autre module aux mêmes actions (« prospecting »).
  */
-export function useCampaignAccess() {
+export function useCampaignAccess(moduleKey = "emailCampaigns") {
   const { canDo, isReady } = useMyPermissions();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
-  const can = (action) => !isReady || canDo("emailCampaigns", action);
+  const can = (action) => !isReady || canDo(moduleKey, action);
   return {
     canCreate: can("create"),
     canEdit: can("edit"),

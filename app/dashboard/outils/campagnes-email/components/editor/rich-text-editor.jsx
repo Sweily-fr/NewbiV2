@@ -225,7 +225,13 @@ function LinkButton({ editor, active }) {
 }
 
 /** Barre flottante au-dessus du bloc de texte sélectionné. */
-function RichToolbar({ editor, variables, allowLists }) {
+function RichToolbar({
+  editor,
+  variables,
+  allowLists,
+  allowUnderline = true,
+  allowStrike = true,
+}) {
   const state = useEditorState({
     editor,
     selector: ({ editor: current }) => ({
@@ -260,20 +266,24 @@ function RichToolbar({ editor, variables, allowLists }) {
       >
         <Italic className="size-3.5" />
       </ToolbarButton>
-      <ToolbarButton
-        label="Souligné"
-        active={state.underline}
-        onClick={run((c) => c.toggleUnderline())}
-      >
-        <Underline className="size-3.5" />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Barré"
-        active={state.strike}
-        onClick={run((c) => c.toggleStrike())}
-      >
-        <Strikethrough className="size-3.5" />
-      </ToolbarButton>
+      {allowUnderline && (
+        <ToolbarButton
+          label="Souligné"
+          active={state.underline}
+          onClick={run((c) => c.toggleUnderline())}
+        >
+          <Underline className="size-3.5" />
+        </ToolbarButton>
+      )}
+      {allowStrike && (
+        <ToolbarButton
+          label="Barré"
+          active={state.strike}
+          onClick={run((c) => c.toggleStrike())}
+        >
+          <Strikethrough className="size-3.5" />
+        </ToolbarButton>
+      )}
       <span
         className="mx-1 h-4 w-px bg-[#e6e7ea] dark:bg-white/10"
         aria-hidden
@@ -320,12 +330,17 @@ const sameHtml = (a, b) =>
  * styles que la toile). Rend le contenu éditable et sa barre flottante, à
  * placer séparément. `onChange(html)` à chaque frappe ; un HTML changé
  * d'ailleurs (Annuler) remplace le contenu sans émettre de modification.
+ * `allowUnderline` / `allowStrike` / `linkProtocols` : texte simple de la
+ * prospection (gras, italique, liens http, https et mailto, listes).
  */
 export function useRichTextEditor({
   html,
   onChange,
   variables,
   allowLists = true,
+  allowUnderline = true,
+  allowStrike = true,
+  linkProtocols = ["http", "https", "mailto", "tel"],
   placeholder = "Écrivez votre texte",
   richClass = RICH_CLASS,
   className,
@@ -349,11 +364,13 @@ export function useRichTextEditor({
         orderedList: allowLists ? {} : false,
         listItem: allowLists ? {} : false,
         listKeymap: allowLists ? {} : false,
+        underline: allowUnderline ? {} : false,
+        strike: allowStrike ? {} : false,
         link: {
           openOnClick: false,
           autolink: true,
           defaultProtocol: "https",
-          protocols: ["http", "https", "mailto", "tel"],
+          protocols: linkProtocols,
           HTMLAttributes: { target: null, rel: null, class: null },
         },
       }),
@@ -395,6 +412,8 @@ export function useRichTextEditor({
         editor={editor}
         variables={variables}
         allowLists={allowLists}
+        allowUnderline={allowUnderline}
+        allowStrike={allowStrike}
       />
     ) : null,
   };
