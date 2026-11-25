@@ -338,7 +338,7 @@ async function handler(request) {
 
   // 8. Définir les prix pour l'affichage
   const planPrices = {
-    freelance: { monthly: 17.99, annual: 16.19 },
+    freelance: { monthly: 18, annual: 16.2 },
     pme: { monthly: 50, annual: 45 },
     entreprise: { monthly: 200, annual: 180 },
   };

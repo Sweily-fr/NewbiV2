@@ -309,8 +309,8 @@ export const stripePlugin = stripe({
         },
         metadata: {
           displayName: planLabel("freelance"),
-          monthlyPrice: 17.99,
-          annualPrice: 16.19, // -10% de réduction
+          monthlyPrice: 18,
+          annualPrice: 16.2, // -10% de réduction
           workspaceAddonPrice: 11.99,
           description: "Pour les indépendants et freelances",
         },
@@ -964,7 +964,7 @@ export const stripePlugin = stripe({
                   await sendMetaConversion({
                     eventName: "Lead",
                     email: leadEmail,
-                    value: 17.99,
+                    value: 18,
                     currency: "EUR",
                   });
                 } catch (metaError) {
@@ -979,7 +979,7 @@ export const stripePlugin = stripe({
                     eventName: "Lead",
                     email: leadEmail,
                     externalId: referenceId,
-                    value: 17.99,
+                    value: 18,
                     currency: "EUR",
                   });
                 } catch (tiktokError) {

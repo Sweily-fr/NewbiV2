@@ -77,7 +77,7 @@ describe("Inscription : choix de l'offre", () => {
     expect(screen.queryByText("Essai gratuit")).toBeNull();
 
     // Prix mensuels TTC et avantages de la grille /tarifs.
-    expect(within(colonne("freelance")).getByText(/17,99\s€/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/18,00\s€/)).toBeTruthy();
     expect(within(colonne("tpe")).getByText(/50,00\s€/)).toBeTruthy();
     expect(within(colonne("entreprise")).getByText(/200,00\s€/)).toBeTruthy();
     expect(
@@ -126,9 +126,9 @@ describe("Inscription : choix de l'offre", () => {
     await user.click(annuel);
     expect(annuel).toHaveAttribute("aria-pressed", "true");
     expect(mensuel).toHaveAttribute("aria-pressed", "false");
-    expect(within(colonne("freelance")).getByText(/16,19\s€/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/16,20\s€/)).toBeTruthy();
     expect(
-      within(colonne("freelance")).getByText(/Facturé 194,28\s€ par an/),
+      within(colonne("freelance")).getByText(/Facturé 194,40\s€ par an/),
     ).toBeTruthy();
 
     await user.click(
