@@ -486,3 +486,87 @@ export const SUPPRESSION_REASONS = {
 
 export const suppressionReasonLabel = (reason) =>
   SUPPRESSION_REASONS[reason] || reason;
+
+// ─── Suivi des ouvertures et des clics ───────────────────────────────────
+// Coupé par défaut (recommandation CNIL sur les pixels de suivi : accord
+// préalable de chaque destinataire). Activé, l'envoi demande une
+// attestation et l'API l'annonce dans le pied de l'e-mail.
+
+/** La campagne suit-elle les ouvertures ou les clics ? */
+export const isCampaignTracked = (campaign) =>
+  Boolean(campaign?.trackOpens || campaign?.trackClicks);
+
+/**
+ * Phrase ajoutée par l'API au pied des e-mails d'une campagne suivie (même
+ * texte que services/emailCampaigns/render.js), ou null sans suivi.
+ */
+export function trackingNoticeSentence(
+  companyName,
+  { opens = false, clicks = false } = {},
+) {
+  if (!opens && !clicks) return null;
+  const measured =
+    opens && clicks
+      ? "l'ouverture de cet e-mail et les clics sur ses liens"
+      : opens
+        ? "l'ouverture de cet e-mail"
+        : "les clics sur les liens de cet e-mail";
+  return `${companyName || "l'expéditeur"} mesure ${measured}. Pour refuser ce suivi, répondez à cet e-mail.`;
+}
+
+/**
+ * Ce que le rapport peut montrer par destinataire : ouvertures et clics
+ * seulement s'ils ont été suivis et pas encore effacés (13 mois).
+ */
+export function recipientTracking(campaign) {
+  const purged = Boolean(campaign?.trackingPurgedAt);
+  return {
+    opens: Boolean(campaign?.trackOpens) && !purged,
+    clicks: Boolean(campaign?.trackClicks) && !purged,
+    purged,
+  };
+}
+
+/** Filtres du tableau des destinataires utiles pour cette campagne. */
+export function recipientFiltersFor(campaign) {
+  const { opens, clicks } = recipientTracking(campaign);
+  return RECIPIENT_FILTERS.filter((item) => {
+    if (item.value === "OPENED" || item.value === "NOT_OPENED") return opens;
+    if (item.value === "CLICKED") return clicks;
+    return true;
+  });
+}
+
+/** Attestation demandée à l'envoi d'une campagne suivie. */
+export function trackingConsentLabel(campaign) {
+  const opens = Boolean(campaign?.trackOpens);
+  const clicks = Boolean(campaign?.trackClicks);
+  const measured =
+    opens && clicks
+      ? "l'ouverture de mes e-mails et les clics sur leurs liens"
+      : opens
+        ? "l'ouverture de mes e-mails"
+        : "les clics sur les liens de mes e-mails";
+  return `Mes destinataires ont accepté que je mesure ${measured}.`;
+}
+
+/**
+ * Lien vers une politique de confidentialité : message d'erreur, ou null
+ * (vide permis). L'API n'accepte qu'une adresse web.
+ */
+export function privacyPolicyUrlError(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (
+      ["http:", "https:"].includes(url.protocol) &&
+      url.hostname.includes(".")
+    ) {
+      return null;
+    }
+  } catch {
+    // Adresse illisible : même message
+  }
+  return "Adresse invalide : elle doit commencer par https://";
+}

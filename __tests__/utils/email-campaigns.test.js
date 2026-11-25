@@ -12,16 +12,22 @@ import {
   formatCount,
   formatPercent,
   formatScore,
+  isCampaignTracked,
   isReportStatus,
   isValidEmail,
   parseEmailList,
+  privacyPolicyUrlError,
   quotaSummary,
   recipientActivity,
+  recipientFiltersFor,
   recipientLastActivity,
+  recipientTracking,
   scoreTone,
   sendProgress,
   sortChecks,
   statusLabel,
+  trackingConsentLabel,
+  trackingNoticeSentence,
 } from "@/src/utils/email-campaigns";
 
 const NBSP = " ";
@@ -273,5 +279,124 @@ describe("étapes de la campagne", () => {
     expect(summary.tone).toBe("warning");
     expect(summary.remaining).toBe(400);
     expect(quotaSummary(null)).toBe(null);
+  });
+});
+
+describe("suivi des ouvertures et des clics", () => {
+  it("campagne suivie si l'un des deux est actif", () => {
+    expect(isCampaignTracked({ trackOpens: false, trackClicks: false })).toBe(
+      false,
+    );
+    expect(isCampaignTracked({ trackOpens: true })).toBe(true);
+    expect(isCampaignTracked({ trackClicks: true })).toBe(true);
+    expect(isCampaignTracked(null)).toBe(false);
+  });
+
+  it("phrase du pied identique à celle de l'API", () => {
+    expect(
+      trackingNoticeSentence("Atelier Durand", { opens: true, clicks: true }),
+    ).toBe(
+      "Atelier Durand mesure l'ouverture de cet e-mail et les clics sur ses liens. Pour refuser ce suivi, répondez à cet e-mail.",
+    );
+    expect(trackingNoticeSentence("Atelier", { opens: true })).toBe(
+      "Atelier mesure l'ouverture de cet e-mail. Pour refuser ce suivi, répondez à cet e-mail.",
+    );
+    expect(trackingNoticeSentence("", { clicks: true })).toBe(
+      "l'expéditeur mesure les clics sur les liens de cet e-mail. Pour refuser ce suivi, répondez à cet e-mail.",
+    );
+    expect(trackingNoticeSentence("Atelier", {})).toBe(null);
+    expect(trackingNoticeSentence("Atelier")).toBe(null);
+  });
+
+  it("attestation adaptée à ce qui est suivi", () => {
+    expect(trackingConsentLabel({ trackOpens: true, trackClicks: true })).toBe(
+      "Mes destinataires ont accepté que je mesure l'ouverture de mes e-mails et les clics sur leurs liens.",
+    );
+    expect(trackingConsentLabel({ trackOpens: true })).toBe(
+      "Mes destinataires ont accepté que je mesure l'ouverture de mes e-mails.",
+    );
+    expect(trackingConsentLabel({ trackClicks: true })).toBe(
+      "Mes destinataires ont accepté que je mesure les clics sur les liens de mes e-mails.",
+    );
+  });
+
+  it("lien de politique de confidentialité : adresse web ou vide", () => {
+    expect(privacyPolicyUrlError("")).toBe(null);
+    expect(privacyPolicyUrlError("   ")).toBe(null);
+    expect(privacyPolicyUrlError(" https://atelier.fr/rgpd ")).toBe(null);
+    for (const invalid of [
+      "atelier.fr/rgpd",
+      "javascript:alert(1)",
+      "mailto:rgpd@atelier.fr",
+      "https://localhost",
+    ]) {
+      expect(privacyPolicyUrlError(invalid), invalid).toBe(
+        "Adresse invalide : elle doit commencer par https://",
+      );
+    }
+  });
+});
+
+describe("rapport : ouvertures et clics seulement s'ils ont été suivis", () => {
+  const values = (campaign) =>
+    recipientFiltersFor(campaign).map((f) => f.value);
+
+  it("suivi complet : tous les filtres", () => {
+    const campaign = { trackOpens: true, trackClicks: true };
+    expect(recipientTracking(campaign)).toEqual({
+      opens: true,
+      clicks: true,
+      purged: false,
+    });
+    expect(values(campaign)).toEqual([
+      "ALL",
+      "OPENED",
+      "CLICKED",
+      "NOT_OPENED",
+      "BOUNCED",
+      "UNSUBSCRIBED",
+      "FAILED",
+    ]);
+  });
+
+  it("sans suivi : ni filtres ni colonnes d'ouvertures et de clics", () => {
+    const campaign = { trackOpens: false, trackClicks: false };
+    expect(recipientTracking(campaign)).toEqual({
+      opens: false,
+      clicks: false,
+      purged: false,
+    });
+    expect(values(campaign)).toEqual([
+      "ALL",
+      "BOUNCED",
+      "UNSUBSCRIBED",
+      "FAILED",
+    ]);
+    expect(values({ trackClicks: true })).toEqual([
+      "ALL",
+      "CLICKED",
+      "BOUNCED",
+      "UNSUBSCRIBED",
+      "FAILED",
+    ]);
+  });
+
+  it("détail effacé après 13 mois : plus de filtres d'activité", () => {
+    const campaign = {
+      trackOpens: true,
+      trackClicks: true,
+      trackingPurgedAt: "2027-12-26T02:30:00.000Z",
+    };
+    expect(recipientTracking(campaign)).toEqual({
+      opens: false,
+      clicks: false,
+      purged: true,
+    });
+    expect(values(campaign)).toEqual([
+      "ALL",
+      "BOUNCED",
+      "UNSUBSCRIBED",
+      "FAILED",
+    ]);
   });
 });

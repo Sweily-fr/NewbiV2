@@ -537,7 +537,7 @@ export function CampaignReport({ campaign, workspaceId, settings }) {
 
         <RecipientsTable
           workspaceId={workspaceId}
-          campaignId={campaign.id}
+          campaign={campaign}
           live={sending}
         />
       </div>
