@@ -32,8 +32,8 @@ export const PLANS_DISPLAY = [
     key: "freelance",
     displayName: "Standard",
     description: "Pour les indépendants",
-    monthlyPrice: 17.99,
-    annualMonthlyPrice: 16.19,
+    monthlyPrice: 18,
+    annualMonthlyPrice: 16.2,
   },
   {
     key: "pme",
