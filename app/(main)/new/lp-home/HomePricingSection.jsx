@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { ArrowUpRight } from "lucide-react";
-import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { PLANS_DISPLAY, planLabel } from "@/src/lib/plans-display";
 import { cn } from "@/src/lib/utils";
 
 // Version condensée des tarifs (home + LP) : essai gratuit, offre Freelance,
@@ -187,7 +187,7 @@ export default function HomePricingSection({
           <Column>
             <PriceLine price="Toutes nos offres" />
             <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
-              TPE, Entreprise et comparatif détaillé
+              {`${planLabel("pme")}, ${planLabel("entreprise")} et comparatif détaillé`}
             </h3>
             <p className="mt-8 text-[15px] text-gray-800 dark:text-gray-200">
               Tu as une équipe ou plusieurs comptes bancaires ?
