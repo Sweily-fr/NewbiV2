@@ -530,13 +530,14 @@ export function bodyExcerpt(html, max = 140) {
 }
 
 /**
- * Étapes complètes du brouillon : boîte active, destinataires (au moins une
+ * Étapes complètes du brouillon : boîte active ou suspendue par le
+ * coupe-circuit (le lancement la réactive), destinataires (au moins une
  * liste si « Des listes »), message (objet et texte).
  */
 export function sequenceCompletion(sequence) {
   const audience = sequence?.audience || {};
   return {
-    mailbox: sequence?.mailbox?.status === "ACTIVE",
+    mailbox: ["ACTIVE", "PAUSED"].includes(sequence?.mailbox?.status),
     audience:
       audience.mode === "ALL" ||
       (audience.mode === "LISTS" && (audience.listIds || []).length > 0),

@@ -483,6 +483,10 @@ describe("brouillon", () => {
         body: "<p>Bonjour</p>",
       }),
     ).toEqual({ mailbox: false, audience: true, message: true });
+    // Boîte suspendue par le coupe-circuit : le lancement la réactive
+    expect(sequenceCompletion({ mailbox: { status: "PAUSED" } }).mailbox).toBe(
+      true,
+    );
   });
 });
 

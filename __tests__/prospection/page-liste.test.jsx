@@ -147,6 +147,24 @@ describe("page Prospection", () => {
     ).toBeTruthy();
   });
 
+  it("boîte suspendue par le coupe-circuit : création toujours possible", async () => {
+    const paused = mailbox({
+      status: "PAUSED",
+      pausedReason: "Trop de désinscriptions récentes.",
+    });
+    renderPage([
+      sequencesMock([listSequence()]),
+      settingsMock(settingsFixture({ myMailbox: paused, mailboxes: [paused] })),
+    ]);
+    expect(await screen.findByText("Envois suspendus")).toBeTruthy();
+    expect(
+      screen.getByText(/en lancer une nouvelle réactive la boîte/),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /Nouvelle prospection/ }).disabled,
+    ).toBe(false);
+  });
+
   it("boîte expirée : bandeau pour la reconnecter", async () => {
     const expired = mailbox({ status: "EXPIRED" });
     renderPage([

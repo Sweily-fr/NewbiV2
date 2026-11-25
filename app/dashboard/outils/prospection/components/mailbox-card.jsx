@@ -251,7 +251,7 @@ export function MailboxCard({
 
           {state === "paused" && (
             <Notice tone="warning" icon={PauseCircle} title="Envois suspendus">
-              {`${mailbox.pausedReason ? `${mailbox.pausedReason} ` : ""}Pour reprendre, ouvrez une prospection en pause puis cliquez sur «\u00a0Reprendre\u00a0».`}
+              {`${mailbox.pausedReason ? `${mailbox.pausedReason} ` : ""}Reprendre une prospection en pause ou en lancer une nouvelle réactive la boîte.`}
             </Notice>
           )}
 
