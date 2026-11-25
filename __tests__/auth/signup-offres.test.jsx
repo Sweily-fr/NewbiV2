@@ -126,9 +126,9 @@ describe("Inscription : choix de l'offre", () => {
     await user.click(annuel);
     expect(annuel).toHaveAttribute("aria-pressed", "true");
     expect(mensuel).toHaveAttribute("aria-pressed", "false");
-    expect(within(colonne("freelance")).getByText(/16,20\s€/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/16,17\s€/)).toBeTruthy();
     expect(
-      within(colonne("freelance")).getByText(/Facturé 194,40\s€ par an/),
+      within(colonne("freelance")).getByText(/Facturé 194,00\s€ par an/),
     ).toBeTruthy();
 
     await user.click(

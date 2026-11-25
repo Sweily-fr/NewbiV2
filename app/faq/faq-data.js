@@ -34,7 +34,7 @@ export const faqData = [
     questions: [
       {
         q: "Quelles formules et quels prix propose Newbi ? Y a-t-il un essai gratuit ?",
-        a: "À l'inscription vous bénéficiez de 7 jours gratuits, sans aucun prélèvement, durant lesquels vous pouvez résilier à tout moment.\n\nEnsuite, trois formules, toutes en TTC :\n• Standard : 18 €/mois, ou 16,20 €/mois en réglant à l'année\n• Premium : 50 €/mois, ou 45 €/mois à l'année\n• Entreprise : 200 €/mois, ou 180 €/mois à l'année\n\nL'engagement annuel revient à 10 % de moins que le mensuel. Vous pouvez à tout moment changer de formule ou résilier sans conditions.",
+        a: "À l'inscription vous bénéficiez de 7 jours gratuits, sans aucun prélèvement, durant lesquels vous pouvez résilier à tout moment.\n\nEnsuite, trois formules, toutes en TTC :\n• Standard : 18 €/mois, ou 16,17 €/mois en réglant à l'année (194 € par an)\n• Premium : 50 €/mois, ou 45 €/mois à l'année\n• Entreprise : 200 €/mois, ou 180 €/mois à l'année\n\nL'engagement annuel revient à 10 % de moins que le mensuel. Vous pouvez à tout moment changer de formule ou résilier sans conditions.",
       },
       {
         q: "Quels moyens de paiement sont acceptés pour l'abonnement Newbi ?",

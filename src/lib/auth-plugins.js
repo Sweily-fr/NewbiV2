@@ -310,7 +310,7 @@ export const stripePlugin = stripe({
         metadata: {
           displayName: planLabel("freelance"),
           monthlyPrice: 18,
-          annualPrice: 16.2, // -10% de réduction
+          annualPrice: 194 / 12, // 194 € TTC par an
           workspaceAddonPrice: 11.99,
           description: "Pour les indépendants et freelances",
         },
