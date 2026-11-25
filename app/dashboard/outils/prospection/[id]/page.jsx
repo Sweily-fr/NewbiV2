@@ -79,14 +79,17 @@ export default function ProspectionDetailPage() {
     );
   }
 
+  // Une autre prospection ouverte : états de la page remis à zéro
   return isLaunched(sequence.status) ? (
     <SequenceReport
+      key={sequence.id}
       sequence={sequence}
       workspaceId={workspaceId}
       settings={settings}
     />
   ) : (
     <SequenceSetup
+      key={sequence.id}
       sequence={sequence}
       workspaceId={workspaceId}
       settings={settings}

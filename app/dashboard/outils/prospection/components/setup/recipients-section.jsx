@@ -153,7 +153,9 @@ export function RecipientsSection({
       saving={saving}
       saveDisabled={noList}
     >
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+      {/* Décompte à côté des choix seulement sur un très grand écran : la
+          carte n'occupe que la colonne de gauche de la page */}
+      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_260px]">
         <div className="flex min-w-0 flex-col gap-4">
           <div
             role="radiogroup"

@@ -232,7 +232,8 @@ export function SequenceReport({ sequence, workspaceId, settings }) {
           variant="ghost"
           onClick={() => setConfirmCancel(true)}
           disabled={canceling}
-          className="text-red-600 hover:text-red-700 dark:text-red-400"
+          // Téléphone : sur toute la largeur, sous les deux autres actions
+          className="col-span-2 text-red-600 hover:text-red-700 sm:col-span-1 dark:text-red-400"
         >
           <CircleSlash className="size-3.5" aria-hidden />
           Arrêter
