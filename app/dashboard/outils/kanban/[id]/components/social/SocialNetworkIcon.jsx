@@ -145,9 +145,15 @@ export function SocialNetworkIcon({ platform, size = 16, className, title }) {
 }
 
 /**
- * Logos superposés de plusieurs réseaux (badges de carte).
+ * Logos superposés de plusieurs réseaux (badges de carte). `decorative` :
+ * logos sans nom ni infobulle, quand l'élément parent porte déjà le libellé.
  */
-export function SocialNetworkIconStack({ platforms, size = 14, className }) {
+export function SocialNetworkIconStack({
+  platforms,
+  size = 14,
+  className,
+  decorative = false,
+}) {
   const list = Array.from(new Set(platforms || []));
   if (list.length === 0) return null;
   return (
@@ -158,7 +164,11 @@ export function SocialNetworkIconStack({ platforms, size = 14, className }) {
           className="rounded-[5px] ring-2 ring-background"
           style={{ lineHeight: 0 }}
         >
-          <SocialNetworkIcon platform={platform} size={size} />
+          <SocialNetworkIcon
+            platform={platform}
+            size={size}
+            title={decorative ? "" : undefined}
+          />
         </span>
       ))}
     </span>

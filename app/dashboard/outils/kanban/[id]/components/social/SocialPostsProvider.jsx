@@ -12,8 +12,8 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Send } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { SocialNetworkIconStack } from "./SocialNetworkIcon";
 import {
   POLL_INTERVAL_MS,
   shouldPollSocialPosts,
@@ -241,7 +241,11 @@ export function ScheduleSocialPostButton({ disabled, title }) {
       title={title || "Programmer un post sur les réseaux sociaux"}
       aria-label="Programmer un post"
     >
-      <Send size={14} strokeWidth={2} aria-hidden="true" />
+      <SocialNetworkIconStack
+        platforms={["instagram", "tiktok", "linkedin"]}
+        size={16}
+        decorative
+      />
       <span className="hidden sm:inline">Programmer un post</span>
     </Button>
   );
