@@ -240,9 +240,7 @@ export function seatsLabel({ seatsTaken = 0, capacity = null } = {}) {
 export function seatsLeftLabel(seatsLeft) {
   if (seatsLeft == null) return null;
   if (seatsLeft <= 0) return "Complet";
-  return seatsLeft === 1
-    ? "Dernière place"
-    : `${seatsLeft} places restantes`;
+  return seatsLeft === 1 ? "Dernière place" : `${seatsLeft} places restantes`;
 }
 
 /** Quantités proposées : 1 à min(max par commande, places restantes). */
@@ -302,10 +300,7 @@ export function parseTicketCode(raw) {
       : null;
   }
   if (TICKET_TOKEN.test(text)) return { kind: "token", code: text };
-  const compact = text
-    .toUpperCase()
-    .replace(/[\s-]/g, "")
-    .replace(/^EVT/, "");
+  const compact = text.toUpperCase().replace(/[\s-]/g, "").replace(/^EVT/, "");
   if (/^[A-Z0-9]{4,12}$/.test(compact)) {
     return { kind: "number", code: `EVT-${compact}` };
   }
@@ -495,13 +490,19 @@ export function eventFormErrors(
 
 /**
  * Formulaire → AppointmentTypeInput. `kind` n'est envoyé qu'à la
- * création (l'API refuse de le changer ensuite).
+ * création (l'API refuse de le changer ensuite). Modification : le prix
+ * n'est envoyé que s'il change (`initialPriceCents` : prix enregistré).
  */
 export function eventFormToInput(
   form,
-  { timeZone = DEFAULT_TIME_ZONE, isCreation = false } = {},
+  {
+    timeZone = DEFAULT_TIME_ZONE,
+    isCreation = false,
+    initialPriceCents = 0,
+  } = {},
 ) {
   const cents = eurosToCents(form.priceText);
+  const priceChanged = isCreation || cents !== (Number(initialPriceCents) || 0);
   const location = String(form.locationValue || "").trim();
   return {
     ...(isCreation ? { kind: EVENT_KIND } : {}),
@@ -518,7 +519,9 @@ export function eventFormToInput(
     imageUrl: form.imageUrl || null,
     capacity: form.capacity ?? null,
     maxPerOrder: form.maxPerOrder,
-    price: cents > 0 ? { amount: cents, currency: "EUR" } : null,
+    ...(priceChanged
+      ? { price: cents > 0 ? { amount: cents, currency: "EUR" } : null }
+      : {}),
     location: { kind: form.locationKind, value: location },
     color: form.color,
     isActive: form.isActive,
@@ -583,7 +586,9 @@ export function registrationValidationOutcome(fields) {
   for (const [key, value] of Object.entries(fields || {})) {
     const name = key.replace(/^buyer\./, "");
     const text = typeof value === "string" && value ? value : "Valeur invalide";
-    if (["firstName", "lastName", "email", "phone", "quantity"].includes(name)) {
+    if (
+      ["firstName", "lastName", "email", "phone", "quantity"].includes(name)
+    ) {
       inputs[name] = text;
     } else if (name === "turnstileToken" || name === "provider") {
       message = text;
@@ -614,4 +619,21 @@ export function returnRequestFromParams(params) {
     orderId: get("token"),
     canceled: get("canceled") === "1",
   };
+}
+
+// Paiement en confirmation chez le prestataire (ou API saturée, 429) :
+// nouvelle vérification après 3 s, 6 s, 10 s, puis toutes les 15 s, trois
+// minutes au plus
+const RETURN_POLL_DELAYS_MS = [3000, 6000, 10000];
+const RETURN_POLL_EVERY_MS = 15000;
+export const RETURN_POLL_MAX_MS = 3 * 60 * 1000;
+
+/**
+ * Délai avant la vérification suivante du retour de paiement (`attempt` :
+ * vérifications déjà faites, à partir de 1 ; `elapsedMs` : temps écoulé
+ * depuis la première). null : on arrête d'attendre.
+ */
+export function nextReturnPollDelay(attempt, elapsedMs) {
+  const delay = RETURN_POLL_DELAYS_MS[attempt - 1] ?? RETURN_POLL_EVERY_MS;
+  return elapsedMs + delay > RETURN_POLL_MAX_MS ? null : delay;
 }

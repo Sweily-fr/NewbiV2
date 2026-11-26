@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { returnRequestFromParams } from "@/src/utils/booking-events";
+import {
+  nextReturnPollDelay,
+  returnRequestFromParams,
+} from "@/src/utils/booking-events";
 import { bookingErrorText, confirmEventPayment } from "../_lib/booking-api";
 import { useGuestTimeZone } from "../_lib/use-guest-time-zone";
 import { BookingCard, BookingShell } from "./booking-shell";
 import { EventConfirmation } from "./event-confirmation";
 
-// Paiement en cours de confirmation chez le prestataire : relu toutes les
-// 5 secondes, une minute au plus
-const POLL_INTERVAL_MS = 5000;
-const POLL_MAX_ATTEMPTS = 12;
+// Refus passagers : la vérification est retentée plus tard (rythme et
+// durée maximale : nextReturnPollDelay)
+const RETRYABLE_ERRORS = ["RATE_LIMITED", "NETWORK"];
 
 function Message({ title, text, action, busy }) {
   return (
@@ -48,20 +50,34 @@ export function EventReturnView({ slug, typeSlug, params }) {
     const controller = new AbortController();
     let timer = null;
     let attempts = 0;
+    const startedAt = Date.now();
+    // null : plus de nouvelle tentative (trois minutes écoulées)
+    const later = () => {
+      const delay = nextReturnPollDelay(attempts, Date.now() - startedAt);
+      if (delay != null) timer = setTimeout(check, delay);
+      return delay != null;
+    };
     const check = async () => {
       attempts += 1;
       try {
         const data = await confirmEventPayment(body, {
           signal: controller.signal,
         });
-        if (data.paymentStatus === "pending" && attempts < POLL_MAX_ATTEMPTS) {
+        if (data.paymentStatus === "pending" && later()) {
           setState({ status: "pending", data });
-          timer = setTimeout(check, POLL_INTERVAL_MS);
           return;
         }
         setState({ status: "done", data });
       } catch (error) {
         if (error?.name === "AbortError") return;
+        // API saturée ou réseau coupé : on réessaie plus tard sans rien
+        // conclure
+        if (RETRYABLE_ERRORS.includes(error?.code) && later()) {
+          setState((prev) =>
+            prev.status === "pending" ? prev : { status: "loading" },
+          );
+          return;
+        }
         setState({ status: "error", error });
       }
     };

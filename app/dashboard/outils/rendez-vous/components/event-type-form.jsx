@@ -282,7 +282,11 @@ export function EventTypeForm({
     setSaving(true);
     try {
       const saved = await onSave(
-        eventFormToInput(form, { timeZone, isCreation: !isEdit }),
+        eventFormToInput(form, {
+          timeZone,
+          isCreation: !isEdit,
+          initialPriceCents: type?.price?.amount,
+        }),
         type,
       );
       if (saved) onClose();
