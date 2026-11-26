@@ -108,6 +108,17 @@ const plural = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
 const refusal = (errors, fallback) =>
   getUserFacingRefusal({ graphQLErrors: errors }) || fallback;
 
+/**
+ * Crédits sans expiration de l'espace : achetés, et offerts par Newbi
+ * (geste commercial). `purchasedRemaining` les compte tous les deux ;
+ * `offeredRemaining` donne la part offerte, à ne pas afficher comme achetée.
+ */
+export function splitNonExpiringCredits(quota) {
+  const total = Math.max(0, quota?.purchasedRemaining ?? 0);
+  const offered = Math.min(total, Math.max(0, quota?.offeredRemaining ?? 0));
+  return { total, bought: total - offered, offered };
+}
+
 /** Solde de crédits de l'espace, en clair (en-tête de la fenêtre). */
 export function describeProspectQuota(quota) {
   if (!quota) return "";
@@ -118,12 +129,22 @@ export function describeProspectQuota(quota) {
   if (quota.monthlyCredits === 0 && available === 0 && quota.nextPlan) {
     return `Inclus à partir de l'offre ${planLabel(quota.nextPlan)}.`;
   }
-  const left = `${plural(available, "crédit")} disponible${available > 1 ? "s" : ""}`;
-  if (quota.purchasedRemaining > 0 && !quota.monthlyRemaining) {
-    return `${plural(available, "crédit")} acheté${available > 1 ? "s" : ""} disponible${available > 1 ? "s" : ""}`;
+  const s = available > 1 ? "s" : "";
+  const left = `${plural(available, "crédit")} disponible${s}`;
+  const { total, bought, offered } = splitNonExpiringCredits(quota);
+  if (total > 0 && !quota.monthlyRemaining && !offered) {
+    return `${plural(available, "crédit")} acheté${s} disponible${s}`;
   }
-  if (quota.purchasedRemaining > 0) {
-    return `${left}, dont ${quota.purchasedRemaining} acheté${quota.purchasedRemaining > 1 ? "s" : ""}`;
+  if (total > 0 && !quota.monthlyRemaining && !bought) {
+    return `${plural(available, "crédit")} offert${s} par Newbi disponible${s}`;
+  }
+  if (total > 0) {
+    const parts = [];
+    if (bought) parts.push(`${bought} acheté${bought > 1 ? "s" : ""}`);
+    if (offered) {
+      parts.push(`${offered} offert${offered > 1 ? "s" : ""} par Newbi`);
+    }
+    return `${left}, dont ${parts.join(" et ")}`;
   }
   return `${left} ce mois-ci`;
 }
@@ -1006,7 +1027,9 @@ function CreditsCard({
   if (!quota) return null;
   const monthly = quota.monthlyCredits ?? 0;
   const used = quota.monthlyUsed ?? 0;
+  // Crédits sans expiration (achetés et offerts) : comptent pour l'accès
   const purchased = quota.purchasedRemaining ?? 0;
+  const nonExpiring = splitNonExpiringCredits(quota);
   const ordered = quota.purchasedPending ?? 0;
   const resetDate = formatResetDate(quota.resetsAt);
   const usedRatio = monthly > 0 ? Math.min(1, used / monthly) : 0;
@@ -1073,10 +1096,16 @@ function CreditsCard({
           </p>
         </div>
       )}
-      {purchased > 0 && (
+      {nonExpiring.bought > 0 && (
         <p className="text-xs text-muted-foreground">
-          Dont {plural(purchased, "crédit")} acheté{purchased > 1 ? "s" : ""},
-          sans expiration
+          Dont {plural(nonExpiring.bought, "crédit")} acheté
+          {nonExpiring.bought > 1 ? "s" : ""}, sans expiration
+        </p>
+      )}
+      {nonExpiring.offered > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Dont {plural(nonExpiring.offered, "crédit")} offert
+          {nonExpiring.offered > 1 ? "s" : ""} par Newbi, sans expiration
         </p>
       )}
       {ordered > 0 && (
