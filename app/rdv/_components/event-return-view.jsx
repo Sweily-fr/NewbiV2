@@ -148,7 +148,7 @@ export function EventReturnView({ slug, typeSlug, params }) {
     content = (
       <Message
         title="Événement complet"
-        text="Votre paiement est arrivé après la fin de la réservation de vos places et l'événement est désormais complet. Vous êtes remboursé automatiquement."
+        text="Votre paiement est arrivé après la fin de la réservation de vos places et l'événement est désormais complet. Il vous sera remboursé."
         action={restart}
       />
     );
