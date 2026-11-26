@@ -398,13 +398,18 @@ export function useBookingMutations() {
 
 // --- Billetterie ------------------------------------------------------------
 
-/** Inscrits d'un événement (recherche : nom, e-mail ou numéro de billet). */
+/**
+ * Inscrits d'un événement (recherche : nom, e-mail ou numéro de billet),
+ * par pages de `pageSize` (200 au plus pour l'API) : `loadMore` ajoute la
+ * page suivante (offset = nombre déjà chargé) tant qu'il en reste.
+ */
 export function useEventRegistrations(
   typeId,
-  { search = "", status = null, limit = 50, skip = false } = {},
+  { search = "", status = null, pageSize = 50, skip = false } = {},
 ) {
   const { workspaceId } = useWorkspace();
-  const { data, previousData, loading, error, refetch } = useQuery(
+  const [loadingMore, setLoadingMore] = useState(false);
+  const { data, previousData, loading, error, refetch, fetchMore } = useQuery(
     GET_EVENT_REGISTRATIONS,
     {
       variables: {
@@ -412,7 +417,7 @@ export function useEventRegistrations(
         typeId,
         search: search.trim() || null,
         status: status || null,
-        limit,
+        limit: Math.min(pageSize, 200),
         offset: 0,
       },
       skip: skip || !workspaceId || !typeId,
@@ -422,11 +427,46 @@ export function useEventRegistrations(
   );
   // Pendant une nouvelle recherche, la liste précédente reste affichée
   const shown = data || previousData;
+  const registrations = shown?.eventRegistrations?.items || EMPTY;
+  const totalCount = shown?.eventRegistrations?.totalCount || 0;
+  const hasMore = Boolean(data) && registrations.length < totalCount;
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      await fetchMore({
+        variables: { offset: registrations.length },
+        updateQuery(previous, { fetchMoreResult }) {
+          const next = fetchMoreResult?.eventRegistrations;
+          if (!next) return previous;
+          const known = new Set(
+            previous.eventRegistrations.items.map((item) => item.id),
+          );
+          return {
+            eventRegistrations: {
+              ...next,
+              items: [
+                ...previous.eventRegistrations.items,
+                ...next.items.filter((item) => !known.has(item.id)),
+              ],
+            },
+          };
+        },
+      });
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loadingMore, fetchMore, registrations.length]);
+
   return {
-    registrations: shown?.eventRegistrations?.items || EMPTY,
-    totalCount: shown?.eventRegistrations?.totalCount || 0,
+    registrations,
+    totalCount,
+    hasMore,
+    loadMore,
+    loadingMore,
     loading: loading && !shown,
-    searching: loading && Boolean(shown),
+    searching: loading && Boolean(shown) && !loadingMore,
     error,
     refetch,
   };
