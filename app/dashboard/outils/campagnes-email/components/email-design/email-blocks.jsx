@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, Signature } from "lucide-react";
 import {
   HEADING_SIZES,
@@ -10,7 +10,6 @@ import {
   resolveStyle,
 } from "@/src/utils/email-campaign-design";
 import { trackingNoticeSentence } from "@/src/utils/email-campaigns";
-import { EmailFrame } from "../email-frame";
 import { useCampaignData } from "./campaign-data";
 import { highlightVariables, sanitizeCampaignHtml } from "./rich-html";
 import { SocialIcon } from "./social-icons";
@@ -118,15 +117,53 @@ function signatureDocument(html, align) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}body{text-align:${align};font-family:Arial,Helvetica,sans-serif;}.nb-sig{display:inline-block;text-align:left;vertical-align:top;}</style></head><body><div class="nb-sig">${html}</div></body></html>`;
 }
 
-/** Signature telle qu'elle partira ; les clics sélectionnent le bloc. */
+/**
+ * Signature telle qu'elle partira, dans une iframe sans script ; les clics
+ * sélectionnent le bloc. Sa hauteur suit celle de la signature (images
+ * chargées, autre signature choisie, plus courte ou plus longue).
+ */
 function SignatureFrame({ html, align, name }) {
+  const ref = useRef(null);
+  const [height, setHeight] = useState(null);
   const doc = useMemo(() => signatureDocument(html, align), [html, align]);
+
+  useEffect(() => {
+    const frame = ref.current;
+    if (!frame) return undefined;
+    let observer;
+    const content = () => frame.contentDocument?.querySelector(".nb-sig");
+    const measure = () => {
+      const element = content();
+      if (element) setHeight(Math.ceil(element.getBoundingClientRect().height));
+    };
+    const onLoad = () => {
+      measure();
+      const element = content();
+      if (element && typeof ResizeObserver !== "undefined") {
+        observer?.disconnect();
+        observer = new ResizeObserver(measure);
+        observer.observe(element);
+      }
+    };
+    frame.addEventListener("load", onLoad);
+    // Document déjà chargé avant l'abonnement : mesuré tout de suite
+    if (frame.contentDocument?.readyState === "complete") onLoad();
+    return () => {
+      frame.removeEventListener("load", onLoad);
+      observer?.disconnect();
+    };
+  }, [doc]);
+
   return (
-    <EmailFrame
-      html={doc}
+    <iframe
+      ref={ref}
       title={name ? `Signature ${name}` : "Signature"}
-      fit
-      className="pointer-events-none bg-transparent"
+      srcDoc={doc}
+      // Pas de script ; même origine pour mesurer la hauteur
+      sandbox="allow-same-origin"
+      tabIndex={-1}
+      className="pointer-events-none block w-full border-0 bg-transparent"
+      style={{ height: height ?? 96 }}
     />
   );
 }
