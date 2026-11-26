@@ -114,7 +114,14 @@ export function EventConfirmation({
             Présentez le QR code à l&apos;entrée, sur votre téléphone ou
             imprimé.
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          {/* Un seul billet : centré, sans colonne vide à côté */}
+          <div
+            className={
+              tickets.length > 1
+                ? "grid gap-3 sm:grid-cols-2"
+                : "mx-auto grid w-full max-w-sm gap-3"
+            }
+          >
             {tickets.map((ticket) => (
               <a
                 key={ticket.number}
