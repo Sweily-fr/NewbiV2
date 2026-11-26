@@ -536,3 +536,82 @@ export function eventImageError(file) {
   if (file.size > EVENT_LIMITS.imageMaxBytes) return "5 Mo au maximum";
   return null;
 }
+
+// --- Inscription publique -----------------------------------------------------
+
+export const PAYMENT_PROVIDER_LABELS = {
+  stripe: "Carte bancaire",
+  sumup: "Carte bancaire avec SumUp",
+  paypal: "PayPal",
+};
+
+/** Moyens proposés, dans un ordre stable (carte d'abord). */
+export function orderedPaymentMethods(methods) {
+  return ["stripe", "sumup", "paypal"].filter((method) =>
+    (methods || []).includes(method),
+  );
+}
+
+/** Corps de POST /:slug/:typeSlug/register, champs nettoyés. */
+export function buildRegistrationPayload(
+  values,
+  { quantity, timezone, provider = null, turnstileToken = "", website = "" },
+) {
+  const clean = (value) => String(value || "").trim();
+  return {
+    buyer: {
+      firstName: clean(values.firstName),
+      lastName: clean(values.lastName),
+      email: clean(values.email).toLowerCase(),
+      phone: clean(values.phone) || null,
+    },
+    quantity,
+    timezone,
+    ...(provider ? { provider } : {}),
+    turnstileToken,
+    website,
+  };
+}
+
+/**
+ * Refus 400 VALIDATION d'une inscription : erreurs des champs du formulaire
+ * (prénom, nom, e-mail, téléphone, quantité) et message général.
+ */
+export function registrationValidationOutcome(fields) {
+  const inputs = {};
+  let message = "Certaines informations sont à corriger.";
+  for (const [key, value] of Object.entries(fields || {})) {
+    const name = key.replace(/^buyer\./, "");
+    const text = typeof value === "string" && value ? value : "Valeur invalide";
+    if (["firstName", "lastName", "email", "phone", "quantity"].includes(name)) {
+      inputs[name] = text;
+    } else if (name === "turnstileToken" || name === "provider") {
+      message = text;
+    } else if (!Object.keys(inputs).length) {
+      message = text;
+    }
+  }
+  return { inputs, message };
+}
+
+/**
+ * Paramètres de l'adresse de retour du paiement → corps de
+ * POST /registrations/return. null si le jeton de retour manque.
+ */
+export function returnRequestFromParams(params) {
+  const get = (key) => {
+    const value =
+      typeof params?.get === "function" ? params.get(key) : params?.[key];
+    return Array.isArray(value) ? value[0] : value || null;
+  };
+  const returnToken = get("rt");
+  if (!returnToken) return null;
+  return {
+    returnToken,
+    provider: get("provider"),
+    sessionId: get("session_id"),
+    // PayPal ajoute « token » (identifiant de la commande)
+    orderId: get("token"),
+    canceled: get("canceled") === "1",
+  };
+}

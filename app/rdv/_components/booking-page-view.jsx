@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Clock } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock, Ticket } from "lucide-react";
 import { durationLabel, locationKindLabel } from "@/src/utils/booking";
+import {
+  eventPriceLabel,
+  shortDateTimeLabel,
+} from "@/src/utils/booking-events";
 import { bookingErrorText, fetchBookingPage } from "../_lib/booking-api";
 import {
   BookingCard,
@@ -109,16 +113,40 @@ export function BookingPageView({ slug, embed = false }) {
                         {type.name}
                       </span>
                       <span className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="size-3.5" aria-hidden="true" />
-                          {durationLabel(type.durationMinutes)}
-                        </span>
+                        {type.kind === "EVENT" && type.event ? (
+                          <>
+                            <span className="flex items-center gap-1.5">
+                              <CalendarDays
+                                className="size-3.5"
+                                aria-hidden="true"
+                              />
+                              {shortDateTimeLabel(
+                                type.event.startAt,
+                                page.timezone,
+                              )}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Ticket className="size-3.5" aria-hidden="true" />
+                              {type.event.soldOut
+                                ? "Complet"
+                                : eventPriceLabel(type.event.price)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="size-3.5" aria-hidden="true" />
+                            {durationLabel(type.durationMinutes)}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1.5">
                           <LocationIcon
                             kind={type.locationKind}
                             className="size-3.5"
                           />
-                          {locationKindLabel(type.locationKind)}
+                          {type.kind === "EVENT" &&
+                          type.locationKind === "CUSTOM_LINK"
+                            ? "En ligne"
+                            : locationKindLabel(type.locationKind)}
                         </span>
                       </span>
                       {type.description && (

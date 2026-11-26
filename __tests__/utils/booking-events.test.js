@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   addMinutesToInput,
+  buildRegistrationPayload,
+  orderedPaymentMethods,
+  registrationValidationOutcome,
+  returnRequestFromParams,
   centsToEurosInput,
   checkInOutcome,
   eurosToCents,
@@ -343,5 +347,88 @@ describe("formulaire d'événement", () => {
     expect(
       eventImageError({ type: "image/jpeg", size: 6 * 1024 * 1024 }),
     ).toMatch(/5 Mo/);
+  });
+});
+
+describe("inscription publique", () => {
+  it("corps de l'inscription", () => {
+    expect(
+      buildRegistrationPayload(
+        {
+          firstName: " Élise ",
+          lastName: "Martin",
+          email: " Elise@Exemple.FR ",
+          phone: "",
+        },
+        { quantity: 2, timezone: "Europe/Paris", provider: "stripe" },
+      ),
+    ).toEqual({
+      buyer: {
+        firstName: "Élise",
+        lastName: "Martin",
+        email: "elise@exemple.fr",
+        phone: null,
+      },
+      quantity: 2,
+      timezone: "Europe/Paris",
+      provider: "stripe",
+      turnstileToken: "",
+      website: "",
+    });
+    expect(
+      buildRegistrationPayload(
+        { firstName: "A", lastName: "B", email: "a@b.fr" },
+        { quantity: 1, timezone: "UTC" },
+      ),
+    ).not.toHaveProperty("provider");
+  });
+  it("refus de l'API", () => {
+    expect(
+      registrationValidationOutcome({
+        email: "Adresse e-mail invalide",
+        quantity: "Choisissez entre 1 et 3 places.",
+      }),
+    ).toEqual({
+      inputs: {
+        email: "Adresse e-mail invalide",
+        quantity: "Choisissez entre 1 et 3 places.",
+      },
+      message: "Certaines informations sont à corriger.",
+    });
+    expect(
+      registrationValidationOutcome({ turnstileToken: "Vérification échouée" })
+        .message,
+    ).toBe("Vérification échouée");
+  });
+  it("moyens de paiement dans l'ordre", () => {
+    expect(orderedPaymentMethods(["paypal", "stripe", "x"])).toEqual([
+      "stripe",
+      "paypal",
+    ]);
+  });
+  it("retour du paiement", () => {
+    expect(
+      returnRequestFromParams(
+        new URLSearchParams("rt=abc&provider=stripe&session_id=cs_1"),
+      ),
+    ).toEqual({
+      returnToken: "abc",
+      provider: "stripe",
+      sessionId: "cs_1",
+      orderId: null,
+      canceled: false,
+    });
+    expect(
+      returnRequestFromParams({
+        rt: "abc",
+        provider: "paypal",
+        token: "ORDER1",
+        PayerID: "P",
+      }),
+    ).toMatchObject({ orderId: "ORDER1", sessionId: null });
+    expect(
+      returnRequestFromParams({ rt: "abc", canceled: "1" }).canceled,
+    ).toBe(true);
+    expect(returnRequestFromParams({})).toBeNull();
   });
 });
