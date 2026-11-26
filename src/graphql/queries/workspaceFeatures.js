@@ -12,6 +12,7 @@ export const GET_WORKSPACE_FEATURES = gql`
       socialPublishing
       emailCampaigns
       transferPayments
+      prospecting
     }
   }
 `;

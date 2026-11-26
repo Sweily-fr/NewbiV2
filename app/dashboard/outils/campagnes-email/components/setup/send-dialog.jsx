@@ -24,6 +24,7 @@ import {
 import {
   formatCount,
   formatLongDateTime,
+  isCampaignTracked,
   plural,
 } from "@/src/utils/email-campaigns";
 import { effectiveSenderEmail } from "@/src/utils/email-sending-domain";
@@ -34,19 +35,39 @@ import { FIELD_LABEL } from "./setup-section";
 
 const MIN_DELAY_MS = 10 * 60 * 1000;
 
-function SummaryRow({ label, children }) {
+function SummaryRow({ label, wrap = false, children }) {
   return (
     <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 py-2 text-sm first:pt-0 last:pb-0">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 truncate">{children}</dd>
+      <dd className={wrap ? "min-w-0" : "min-w-0 truncate"}>{children}</dd>
     </div>
+  );
+}
+
+function ConsentCheckbox({ checked, onChange, label, hint }) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e6e7ea] p-3.5 transition-colors hover:bg-[#fafafa] has-[[data-state=checked]]:border-[#5a50ff]/40 has-[[data-state=checked]]:bg-[#5a50ff]/[0.04] dark:border-[#2E2E32] dark:hover:bg-white/[0.03]">
+      <Checkbox
+        checked={checked}
+        onCheckedChange={(value) => onChange(value === true)}
+        className="mt-0.5 data-[state=checked]:border-[#5a50ff] data-[state=checked]:bg-[#5a50ff]"
+      />
+      <span className="text-sm leading-5">
+        {label}
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          {hint}
+        </span>
+      </span>
+    </label>
   );
 }
 
 /**
  * Envoi immédiat ou programmé (date et heure de Paris), après un résumé et
  * la case de consentement obligatoire (« Ces contacts sont mes clients ou
- * ont accepté de recevoir mes e-mails »).
+ * ont accepté de recevoir mes e-mails »). Campagne qui suit les ouvertures
+ * ou les clics : le résumé indique combien de destinataires ont accepté ce
+ * suivi, seuls suivis (recommandation CNIL sur les pixels de suivi).
  */
 export function SendDialog({
   open,
@@ -60,6 +81,7 @@ export function SendDialog({
   const [consent, setConsent] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
+  const tracked = isCampaignTracked(campaign);
 
   useEffect(() => {
     if (!open) return;
@@ -84,6 +106,7 @@ export function SendDialog({
   }, [scheduled, scheduledAt]);
 
   const sendable = audienceCount?.sendable ?? null;
+  const trackingGranted = audienceCount?.trackingGranted ?? null;
   const remaining = settings?.quota?.remaining;
   const overQuota =
     sendable !== null && remaining !== undefined && sendable > remaining;
@@ -186,6 +209,19 @@ export function SendDialog({
                 </span>
               )}
             </SummaryRow>
+            {tracked && (
+              <SummaryRow label="Suivi" wrap>
+                {trackingGranted === null || sendable === null ? (
+                  "…"
+                ) : trackingGranted === 0 ? (
+                  <span className="text-muted-foreground">
+                    Aucun contact n&apos;a accepté : envoi sans suivi
+                  </span>
+                ) : (
+                  `${plural(trackingGranted, "contact")} sur ${formatCount(sendable)}`
+                )}
+              </SummaryRow>
+            )}
             <SummaryRow label="Expéditeur">
               {campaign.fromName}
               <span className="text-muted-foreground">
@@ -214,21 +250,12 @@ export function SendDialog({
 
           <SendModeNote sendMode={settings?.sendMode} />
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e6e7ea] p-3.5 transition-colors hover:bg-[#fafafa] has-[[data-state=checked]]:border-[#5a50ff]/40 has-[[data-state=checked]]:bg-[#5a50ff]/[0.04] dark:border-[#2E2E32] dark:hover:bg-white/[0.03]">
-            <Checkbox
-              checked={consent}
-              onCheckedChange={(value) => setConsent(value === true)}
-              className="mt-0.5 data-[state=checked]:border-[#5a50ff] data-[state=checked]:bg-[#5a50ff]"
-            />
-            <span className="text-sm leading-5">
-              Ces contacts sont mes clients ou ont accepté de recevoir mes
-              e-mails.
-              <span className="mt-0.5 block text-xs text-muted-foreground">
-                Obligatoire (RGPD) : n&apos;envoyez jamais à des adresses
-                achetées ou récupérées sans accord.
-              </span>
-            </span>
-          </label>
+          <ConsentCheckbox
+            checked={consent}
+            onChange={setConsent}
+            label="Ces contacts sont mes clients ou ont accepté de recevoir mes e-mails."
+            hint="Obligatoire (RGPD) : n'envoyez jamais à des adresses achetées ou récupérées sans accord."
+          />
         </div>
 
         <DialogFooter className="border-t border-[#EEEFF1] px-6 py-4 dark:border-[#232323]">

@@ -355,6 +355,7 @@ export function EditorCanvas({
   variables,
   companyName,
   companyAddress,
+  trackingNotice,
   canvasRef,
   focusRequest,
   onSelect,
@@ -434,6 +435,7 @@ export function EditorCanvas({
                   companyName={companyName}
                   companyAddress={companyAddress}
                   addressMissingHint
+                  trackingNotice={trackingNotice}
                 />
               </div>
               <span

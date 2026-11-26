@@ -47,6 +47,10 @@ import { toast } from "@/src/components/ui/sonner";
 import { useClientListsByClient } from "@/src/hooks/useClientLists";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import {
+  ClientProspectingHistory,
+  useClientProspectingHistory,
+} from "./client-prospecting-history";
 
 function SidebarSection({ title, defaultOpen = true, children }) {
   return (
@@ -162,6 +166,8 @@ export default function ClientDetailSidebar({
     canReadClientLists ? workspaceId : null,
     client?.id,
   );
+  // Envois de prospection reçus (section masquée sans envoi)
+  const prospectingHistory = useClientProspectingHistory(client?.id);
 
   const customFieldsDisplay = useMemo(() => {
     if (!client?.customFields?.length || !customFieldDefs?.length) return [];
@@ -564,6 +570,15 @@ export default function ClientDetailSidebar({
                   value={formatCurrency(invoiceStats.pending)}
                 />
               </div>
+            </SidebarSection>
+          </>
+        )}
+
+        {prospectingHistory.length > 0 && (
+          <>
+            <div className="border-t border-[#eeeff1] dark:border-[#232323]" />
+            <SidebarSection title="Prospection" defaultOpen>
+              <ClientProspectingHistory items={prospectingHistory} />
             </SidebarSection>
           </>
         )}

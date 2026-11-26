@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BadgeEuro,
   CameraOff,
   CheckCircle2,
   Loader2,
@@ -17,7 +18,12 @@ import {
 } from "@/src/components/ui/dialog";
 import { cn } from "@/src/lib/utils";
 import { bookingErrorMessage, useEventMutations } from "@/src/hooks/useBooking";
-import { checkInOutcome, parseTicketCode } from "@/src/utils/booking-events";
+import {
+  checkInOutcome,
+  dueOnSiteLabel,
+  formatCents,
+  parseTicketCode,
+} from "@/src/utils/booking-events";
 
 // Même code relu par la caméra : ignoré pendant ce délai
 const SAME_CODE_DELAY_MS = 4000;
@@ -93,7 +99,8 @@ export function TicketScannerDialog({ type, timeZone, onClose }) {
   const [result, setResult] = useState(null);
   const [checking, setChecking] = useState(false);
   const [manual, setManual] = useState("");
-  const { checkIn } = useEventMutations();
+  const [markingPaid, setMarkingPaid] = useState(false);
+  const { checkIn, markPaidOnSite } = useEventMutations();
 
   const clearResult = useCallback(() => {
     clearTimeout(resultTimerRef.current);
@@ -110,6 +117,9 @@ export function TicketScannerDialog({ type, timeZone, onClose }) {
         // Vibration indisponible
       }
       clearTimeout(resultTimerRef.current);
+      // Reste à encaisser : le résultat reste affiché jusqu'au geste du
+      // contrôleur (réglé, ou scanner le suivant)
+      if (outcome.dueOnSite && !outcome.duePaid) return;
       resultTimerRef.current = setTimeout(
         clearResult,
         RESULT_DURATION_MS[outcome.tone] || 3000,
@@ -117,6 +127,23 @@ export function TicketScannerDialog({ type, timeZone, onClose }) {
     },
     [clearResult],
   );
+
+  const markPaid = useCallback(async () => {
+    if (!result?.registrationId || markingPaid) return;
+    setMarkingPaid(true);
+    try {
+      await markPaidOnSite(result.registrationId, true);
+      showResult({ ...result, duePaid: true, paidError: "" });
+    } catch (error) {
+      setResult((current) =>
+        current
+          ? { ...current, paidError: bookingErrorMessage(error) }
+          : current,
+      );
+    } finally {
+      setMarkingPaid(false);
+    }
+  }, [result, markingPaid, markPaidOnSite, showResult]);
 
   const verify = useCallback(
     async (raw, { fromCamera = false } = {}) => {
@@ -303,16 +330,14 @@ export function TicketScannerDialog({ type, timeZone, onClose }) {
               <span className="sr-only">Vérification du billet</span>
             </div>
           )}
-          {result && (
-            <button
-              type="button"
-              onClick={clearResult}
+          {result && result.dueOnSite ? (
+            <div
               className={cn(
-                "absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-3 px-6 text-center",
+                "absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center",
                 tone.className,
               )}
             >
-              <tone.Icon className="size-20" aria-hidden="true" />
+              <tone.Icon className="size-16" aria-hidden="true" />
               <span role="status" aria-live="assertive" className="contents">
                 <span className="text-4xl font-semibold">{result.title}</span>
                 {result.name && (
@@ -323,11 +348,79 @@ export function TicketScannerDialog({ type, timeZone, onClose }) {
                     {result.detail}
                   </span>
                 )}
+                <span className="mt-2 w-full max-w-md rounded-2xl bg-white px-5 py-4 text-gray-900">
+                  {result.duePaid ? (
+                    <span className="block text-xl font-semibold text-emerald-700">
+                      Réglé sur place :{" "}
+                      {formatCents(result.dueOnSite, result.currency)}
+                    </span>
+                  ) : (
+                    <span className="block text-2xl font-semibold">
+                      {dueOnSiteLabel(result.dueOnSite, result.currency)}
+                    </span>
+                  )}
+                  {result.paidError && (
+                    <span className="mt-1 block text-sm text-red-700">
+                      {result.paidError}
+                    </span>
+                  )}
+                </span>
               </span>
-              <span className="mt-6 rounded-full bg-white/20 px-5 py-2.5 text-sm font-medium">
-                Scanner le suivant
-              </span>
-            </button>
+              <div className="mt-4 flex w-full max-w-md flex-col gap-2">
+                {!result.duePaid && (
+                  <button
+                    type="button"
+                    onClick={markPaid}
+                    disabled={markingPaid}
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-base font-medium text-gray-900 disabled:opacity-70"
+                  >
+                    {markingPaid ? (
+                      <Loader2
+                        className="size-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <BadgeEuro className="size-4" aria-hidden="true" />
+                    )}
+                    Marquer comme réglé
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={clearResult}
+                  className="cursor-pointer rounded-full bg-white/20 px-5 py-2.5 text-sm font-medium"
+                >
+                  Scanner le suivant
+                </button>
+              </div>
+            </div>
+          ) : (
+            result && (
+              <button
+                type="button"
+                onClick={clearResult}
+                className={cn(
+                  "absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-3 px-6 text-center",
+                  tone.className,
+                )}
+              >
+                <tone.Icon className="size-20" aria-hidden="true" />
+                <span role="status" aria-live="assertive" className="contents">
+                  <span className="text-4xl font-semibold">{result.title}</span>
+                  {result.name && (
+                    <span className="text-2xl font-medium">{result.name}</span>
+                  )}
+                  {result.detail && (
+                    <span className="max-w-md text-base text-white/90">
+                      {result.detail}
+                    </span>
+                  )}
+                </span>
+                <span className="mt-6 rounded-full bg-white/20 px-5 py-2.5 text-sm font-medium">
+                  Scanner le suivant
+                </span>
+              </button>
+            )
           )}
         </div>
 

@@ -91,6 +91,170 @@ export function eventPriceLabel(price) {
 
 export const isPaidEvent = (price) => Boolean(price && price.amount > 0);
 
+// --- Mode de paiement d'un événement payant ---------------------------------
+
+/**
+ * ONLINE : tout payé en ligne à l'inscription ; DEPOSIT : acompte en ligne,
+ * le reste sur place ; ON_SITE : tout sur place, le jour de l'événement.
+ */
+export const EVENT_PAYMENT_MODES = ["ONLINE", "DEPOSIT", "ON_SITE"];
+
+/**
+ * Mode effectif d'un type ou d'un événement public ({ price, paymentMode }) :
+ * null si gratuit, ONLINE si le champ manque (événements d'avant le choix).
+ */
+export function eventPaymentMode(source) {
+  if (!isPaidEvent(source?.price)) return null;
+  return EVENT_PAYMENT_MODES.includes(source?.paymentMode)
+    ? source.paymentMode
+    : "ONLINE";
+}
+
+/** Acompte par place (centimes), seulement en mode DEPOSIT, sinon 0. */
+export function eventDepositAmount(source) {
+  if (eventPaymentMode(source) !== "DEPOSIT") return 0;
+  const deposit = Number(source?.depositAmount) || 0;
+  return deposit > 0 && deposit < source.price.amount ? deposit : 0;
+}
+
+/** Montants d'une commande de `quantity` places : en ligne et sur place. */
+export function eventOrderAmounts(source, quantity = 1) {
+  const mode = eventPaymentMode(source);
+  const count = Math.max(1, Number(quantity) || 1);
+  if (!mode) return { mode, total: 0, online: 0, onSite: 0 };
+  const total = source.price.amount * count;
+  if (mode === "ON_SITE") return { mode, total, online: 0, onSite: total };
+  if (mode === "DEPOSIT") {
+    const online = eventDepositAmount(source) * count;
+    return { mode, total, online, onSite: total - online };
+  }
+  return { mode, total, online: total, onSite: 0 };
+}
+
+/** L'inscription passe par un paiement en ligne (ONLINE ou DEPOSIT). */
+export const eventNeedsOnlinePayment = (source) =>
+  ["ONLINE", "DEPOSIT"].includes(eventPaymentMode(source));
+
+/** « 5 € » ou « 5,50 € » : montant court (cartes). */
+export function compactCents(cents, currency = "EUR") {
+  const value = Number(cents) || 0;
+  if (value % 100 !== 0) return formatCents(value, currency);
+  try {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: currency || "EUR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value / 100);
+  } catch {
+    return `${value / 100} €`;
+  }
+}
+
+/** Mention courte de la carte d'un type : « acompte 5 € », « sur place ». */
+export function eventPaymentShortLabel(type) {
+  const mode = eventPaymentMode(type);
+  if (mode === "ON_SITE") return "sur place";
+  if (mode === "DEPOSIT") {
+    return `acompte ${compactCents(eventDepositAmount(type), type.price.currency)}`;
+  }
+  return null;
+}
+
+/**
+ * Phrase de la page publique sous le prix ; null en ligne ou gratuit.
+ * « Paiement sur place le jour de l'événement » ; « Acompte de 5,00 € par
+ * place à la réservation, reste 15,00 € sur place ».
+ */
+export function eventPaymentNotice(event) {
+  const mode = eventPaymentMode(event);
+  if (mode === "ON_SITE") return "Paiement sur place le jour de l'événement";
+  if (mode === "DEPOSIT") {
+    const deposit = eventDepositAmount(event);
+    const currency = event.price.currency;
+    return `Acompte de ${formatCents(deposit, currency)} par place à la réservation, reste ${formatCents(event.price.amount - deposit, currency)} sur place`;
+  }
+  return null;
+}
+
+/** Libellé du bouton d'inscription selon le mode et la quantité. */
+export function registrationSubmitLabel(event, quantity = 1) {
+  const { mode, online } = eventOrderAmounts(event, quantity);
+  const currency = event?.price?.currency;
+  if (mode === "ONLINE") return `Payer ${formatCents(online, currency)}`;
+  if (mode === "DEPOSIT")
+    return `Payer l'acompte ${formatCents(online, currency)}`;
+  return quantity > 1 ? `Réserver ${quantity} places` : "Je m'inscris";
+}
+
+/**
+ * Montants d'une inscription, avec repli pour celles d'avant le choix du
+ * mode : payé en ligne = total si un prestataire est connu, reste dû = 0.
+ */
+export function registrationPayment(registration) {
+  const amount = Number(registration?.amount) || 0;
+  if (amount <= 0) {
+    return {
+      mode: null,
+      amount: 0,
+      online: 0,
+      dueOnSite: 0,
+      paidOnSite: false,
+    };
+  }
+  const mode = EVENT_PAYMENT_MODES.includes(registration.paymentMode)
+    ? registration.paymentMode
+    : "ONLINE";
+  const online =
+    registration.amountOnline ??
+    (mode === "ONLINE" ? amount : registration.paymentProvider ? amount : 0);
+  const dueOnSite = Number(registration.amountDueOnSite) || 0;
+  return {
+    mode,
+    amount,
+    online: Number(online) || 0,
+    dueOnSite,
+    paidOnSite: Boolean(registration.onSitePaidAt),
+  };
+}
+
+/** Reste à encaisser sur place (0 s'il n'y en a pas ou s'il est réglé). */
+export function registrationDueOnSite(registration) {
+  const { dueOnSite, paidOnSite } = registrationPayment(registration);
+  return paidOnSite ? 0 : dueOnSite;
+}
+
+/**
+ * Ligne de paiement d'une inscription (confirmation, page de l'inscription,
+ * billet), comme dans les e-mails : « Payé en ligne : 10,00 € » ;
+ * « Acompte payé : 5,00 €. Reste à régler sur place : 15,00 € » ;
+ * « À régler sur place : 20,00 € ». Gratuit : « Gratuit ».
+ * `paid` : le paiement en ligne a eu lieu (inscription confirmée ou
+ * paiement reçu puis remboursé).
+ */
+export function registrationPaymentLine(registration) {
+  const payment = registrationPayment(registration);
+  const currency = registration?.currency;
+  const money = (cents) => formatCents(cents, currency);
+  if (!payment.mode) return "Gratuit";
+  const paid =
+    registration.status === "CONFIRMED" ||
+    ["REFUNDED", "MANUAL"].includes(registration.refundStatus);
+  const rest = payment.paidOnSite
+    ? `${payment.mode === "DEPOSIT" ? "Reste réglé" : "Réglé"} sur place : ${money(payment.dueOnSite)}`
+    : `${payment.mode === "DEPOSIT" ? "Reste à régler" : "À régler"} sur place : ${money(payment.dueOnSite)}`;
+  if (payment.mode === "ON_SITE") return rest;
+  if (payment.mode === "DEPOSIT") {
+    const deposit = paid
+      ? `Acompte payé : ${money(payment.online)}`
+      : `Acompte à payer en ligne : ${money(payment.online)}`;
+    return payment.dueOnSite > 0 ? `${deposit}. ${rest}` : deposit;
+  }
+  return paid
+    ? `Payé en ligne : ${money(payment.online)}`
+    : `À payer en ligne : ${money(payment.online)}`;
+}
+
 // --- Dates dans le fuseau de la page ---------------------------------------
 
 const zonedPartsFormatters = new Map();
@@ -307,8 +471,36 @@ export function parseTicketCode(raw) {
   return null;
 }
 
-/** Résultat d'un contrôle → ton (vert, orange, rouge) et textes. */
-export function checkInOutcome(checkIn, { timeZone } = {}) {
+/**
+ * Résultat d'un contrôle → ton (vert, orange, rouge) et textes. Billet
+ * valable d'une inscription avec un reste dû non réglé : `dueOnSite`
+ * (centimes), `currency` et `registrationId` pour « Marquer comme réglé ».
+ */
+export function checkInOutcome(checkIn, options = {}) {
+  const outcome = baseCheckInOutcome(checkIn, options);
+  const registration = checkIn?.registration;
+  if (
+    ["VALID", "ALREADY_CHECKED_IN"].includes(checkIn?.result) &&
+    registration?.status === "CONFIRMED"
+  ) {
+    const due = registrationDueOnSite(registration);
+    if (due > 0) {
+      return {
+        ...outcome,
+        dueOnSite: due,
+        currency: registration.currency || "EUR",
+        registrationId: registration.id,
+      };
+    }
+  }
+  return outcome;
+}
+
+/** Texte du reste dû d'un contrôle : « Reste à régler sur place : 15,00 € ». */
+export const dueOnSiteLabel = (cents, currency) =>
+  `Reste à régler sur place : ${formatCents(cents, currency)}`;
+
+function baseCheckInOutcome(checkIn, { timeZone } = {}) {
   const result = checkIn?.result || "UNKNOWN";
   const ticket = checkIn?.ticket;
   const name = ticket?.attendeeName || "";
@@ -393,6 +585,8 @@ export function eventTypeToForm(type, { timeZone = DEFAULT_TIME_ZONE } = {}) {
     capacity: type?.capacity ?? null,
     maxPerOrder: type?.maxPerOrder ?? EVENT_LIMITS.defaultMaxPerOrder,
     priceText: centsToEurosInput(type?.price?.amount),
+    paymentMode: eventPaymentMode(type) || "ONLINE",
+    depositText: centsToEurosInput(eventDepositAmount(type)),
     locationKind: kind,
     locationValue: type?.location?.value || "",
     color: type?.color || BOOKING_COLORS[0],
@@ -470,6 +664,23 @@ export function eventFormErrors(
   else if (cents > EVENT_LIMITS.maxPriceCents)
     errors.price = "10 000 € au maximum";
 
+  if (cents > 0 && !Number.isNaN(cents)) {
+    const mode = form.paymentMode || "ONLINE";
+    if (!EVENT_PAYMENT_MODES.includes(mode))
+      errors.paymentMode = "Choisissez comment le prix est réglé";
+    else if (mode === "DEPOSIT") {
+      const deposit = eurosToCents(form.depositText);
+      if (Number.isNaN(deposit))
+        errors.deposit = "Montant invalide, par exemple 5 ou 7,50";
+      else if (deposit <= 0)
+        errors.deposit = "Indiquez le montant de l'acompte";
+      else if (deposit < EVENT_LIMITS.minPriceCents)
+        errors.deposit = "0,50 € minimum";
+      else if (deposit >= cents)
+        errors.deposit = "L'acompte doit être inférieur au prix par place";
+    }
+  }
+
   const value = String(form.locationValue || "").trim();
   if (form.locationKind === "CUSTOM_LINK") {
     let valid = false;
@@ -488,10 +699,28 @@ export function eventFormErrors(
   return errors;
 }
 
+/** Prix, mode et acompte du formulaire tels que l'API les enregistre. */
+function formPricing(form) {
+  const cents = eurosToCents(form.priceText);
+  if (!(cents > 0))
+    return { price: null, paymentMode: null, depositAmount: null };
+  const paymentMode = EVENT_PAYMENT_MODES.includes(form.paymentMode)
+    ? form.paymentMode
+    : "ONLINE";
+  return {
+    price: { amount: cents, currency: "EUR" },
+    paymentMode,
+    depositAmount:
+      paymentMode === "DEPOSIT" ? eurosToCents(form.depositText) : null,
+  };
+}
+
 /**
  * Formulaire → AppointmentTypeInput. `kind` n'est envoyé qu'à la
- * création (l'API refuse de le changer ensuite). Modification : le prix
- * n'est envoyé que s'il change (`initialPriceCents` : prix enregistré).
+ * création (l'API refuse de le changer ensuite). Modification : prix, mode
+ * de paiement et acompte ne sont envoyés que si l'un d'eux change, et alors
+ * ensemble (`initialPriceCents`, `initialPaymentMode`,
+ * `initialDepositAmount` : valeurs enregistrées).
  */
 export function eventFormToInput(
   form,
@@ -499,10 +728,22 @@ export function eventFormToInput(
     timeZone = DEFAULT_TIME_ZONE,
     isCreation = false,
     initialPriceCents = 0,
+    initialPaymentMode = null,
+    initialDepositAmount = null,
   } = {},
 ) {
-  const cents = eurosToCents(form.priceText);
-  const priceChanged = isCreation || cents !== (Number(initialPriceCents) || 0);
+  const pricing = formPricing(form);
+  const initialSource = {
+    price: { amount: Number(initialPriceCents) || 0 },
+    paymentMode: initialPaymentMode,
+    depositAmount: initialDepositAmount,
+  };
+  const initialMode = eventPaymentMode(initialSource);
+  const pricingChanged =
+    isCreation ||
+    (pricing.price?.amount || 0) !== initialSource.price.amount ||
+    pricing.paymentMode !== initialMode ||
+    (pricing.depositAmount || 0) !== eventDepositAmount(initialSource);
   const location = String(form.locationValue || "").trim();
   return {
     ...(isCreation ? { kind: EVENT_KIND } : {}),
@@ -519,9 +760,7 @@ export function eventFormToInput(
     imageUrl: form.imageUrl || null,
     capacity: form.capacity ?? null,
     maxPerOrder: form.maxPerOrder,
-    ...(priceChanged
-      ? { price: cents > 0 ? { amount: cents, currency: "EUR" } : null }
-      : {}),
+    ...(pricingChanged ? pricing : {}),
     location: { kind: form.locationKind, value: location },
     color: form.color,
     isActive: form.isActive,

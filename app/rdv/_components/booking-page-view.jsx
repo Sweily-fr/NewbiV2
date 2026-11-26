@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronRight, Clock, Ticket } from "lucide-react";
 import { durationLabel, locationKindLabel } from "@/src/utils/booking";
 import {
+  eventPaymentShortLabel,
   eventPriceLabel,
   shortDateTimeLabel,
 } from "@/src/utils/booking-events";
@@ -129,7 +130,11 @@ export function BookingPageView({ slug, embed = false }) {
                               <Ticket className="size-3.5" aria-hidden="true" />
                               {type.event.soldOut
                                 ? "Complet"
-                                : eventPriceLabel(type.event.price)}
+                                : `${eventPriceLabel(type.event.price)}${
+                                    eventPaymentShortLabel(type.event)
+                                      ? `, ${eventPaymentShortLabel(type.event)}`
+                                      : ""
+                                  }`}
                             </span>
                           </>
                         ) : (

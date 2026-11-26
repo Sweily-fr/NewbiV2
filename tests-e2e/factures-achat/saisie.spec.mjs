@@ -9,7 +9,7 @@
 import { test, expect, etape } from "../outils.mjs";
 import { ouvrir, attendreCalme } from "../navigation.mjs";
 import { base } from "../base.mjs";
-import { COMPTES } from "../donnees/base.mjs";
+import { COMPTES, jourParis } from "../donnees/base.mjs";
 import { CANDIDAT, FACTURES_ACHAT_SAISIE } from "../donnees/lot-achats-banque.mjs";
 import { SESSION_TOKEN_SAISIE_ACHATS } from "../config.mjs";
 import { connecteAchats } from "../achats-banque.mjs";
@@ -249,7 +249,7 @@ test.describe("Saisie manuelle : doublon signalé avant la création", () => {
     const reponse = await appelApi(
       page,
       `mutation($input: CreatePurchaseInvoiceInput!) { createPurchaseInvoice(input: $input) { id } }`,
-      { input: { workspaceId: ORG.toHexString(), supplierName: source.supplierName, invoiceNumber: source.invoiceNumber, issueDate: new Date().toISOString().slice(0, 10), amountTTC: source.amountTTC } },
+      { input: { workspaceId: ORG.toHexString(), supplierName: source.supplierName, invoiceNumber: source.invoiceNumber, issueDate: jourParis(), amountTTC: source.amountTTC } },
       { organisation: ORG.toHexString() },
     );
     expect(reponse.data?.createPurchaseInvoice ?? null).toBeNull();
@@ -305,7 +305,7 @@ test.describe("Saisie manuelle : montants nuls", () => {
     const reponse = await appelApi(
       page,
       `mutation($input: CreatePurchaseInvoiceInput!) { createPurchaseInvoice(input: $input) { id amountHT amountTVA vatRate amountTTC } }`,
-      { input: { workspaceId: ORG.toHexString(), supplierName: "Fournisseur Montants Nuls", invoiceNumber: "NUL-001", issueDate: new Date().toISOString().slice(0, 10), amountTTC: 33, amountHT: null, amountTVA: null, vatRate: null, forceCreate: true } },
+      { input: { workspaceId: ORG.toHexString(), supplierName: "Fournisseur Montants Nuls", invoiceNumber: "NUL-001", issueDate: jourParis(), amountTTC: 33, amountHT: null, amountTVA: null, vatRate: null, forceCreate: true } },
       { organisation: ORG.toHexString() },
     );
     expect(reponse.errors).toEqual([]);

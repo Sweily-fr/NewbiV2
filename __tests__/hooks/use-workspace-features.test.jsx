@@ -50,6 +50,7 @@ describe("useWorkspaceFeatures", () => {
               socialPublishing: false,
               emailCampaigns: true,
               transferPayments: true,
+              prospecting: true,
             },
           },
         },
@@ -65,6 +66,7 @@ describe("useWorkspaceFeatures", () => {
     expect(result.current.isEnabled("socialPublishing")).toBe(false);
     expect(result.current.isEnabled("emailCampaigns")).toBe(true);
     expect(result.current.isEnabled("transferPayments")).toBe(true);
+    expect(result.current.isEnabled("prospecting")).toBe(true);
   });
 
   it("reste fermé si l'API répond une erreur", async () => {

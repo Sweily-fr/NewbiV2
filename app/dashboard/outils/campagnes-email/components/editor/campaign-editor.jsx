@@ -610,6 +610,11 @@ export function CampaignEditor({
               variables={variables}
               companyName={companyName}
               companyAddress={settings?.companyAddress}
+              trackingNotice={{
+                opens: campaign.trackOpens,
+                clicks: campaign.trackClicks,
+                privacyPolicyUrl: campaign.privacyPolicyUrl,
+              }}
               canvasRef={canvasRef}
               focusRequest={focusRequest}
               onSelect={setSelectedId}

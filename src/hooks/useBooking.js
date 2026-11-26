@@ -18,6 +18,7 @@ import {
   CHECK_IN_TICKET,
   CREATE_APPOINTMENT_TYPE,
   DELETE_APPOINTMENT_TYPE,
+  MARK_EVENT_REGISTRATION_PAID_ON_SITE,
   UNDO_TICKET_CHECK_IN,
   UPDATE_APPOINTMENT_TYPE,
   UPLOAD_APPOINTMENT_EVENT_IMAGE,
@@ -538,6 +539,12 @@ export function useEventMutations() {
     UNDO_TICKET_CHECK_IN,
     strict,
   );
+  // L'inscription renvoyée remplace celle du cache (onSitePaidAt) : liste,
+  // filtre « Reste à régler » et contrôle suivent sans rechargement
+  const [paidOnSiteMutation, { loading: markingPaidOnSite }] = useMutation(
+    MARK_EVENT_REGISTRATION_PAID_ON_SITE,
+    strict,
+  );
 
   /** Fichier → URL publique, ou { error } (format, taille, réseau). */
   const uploadImage = useCallback(
@@ -602,6 +609,17 @@ export function useEventMutations() {
     [undoMutation, workspaceId],
   );
 
+  /** Reste dû sur place marqué réglé (`paid` vrai) ou non. */
+  const markPaidOnSite = useCallback(
+    async (id, paid) => {
+      const { data } = await paidOnSiteMutation({
+        variables: { workspaceId, id, paid: Boolean(paid) },
+      });
+      return data?.markEventRegistrationPaidOnSite || null;
+    },
+    [paidOnSiteMutation, workspaceId],
+  );
+
   /** Texte CSV de l'export (une ligne par billet confirmé). */
   const fetchRegistrationsCsv = useCallback(
     async (typeId) => {
@@ -621,10 +639,12 @@ export function useEventMutations() {
     cancelRegistration,
     checkIn,
     undoCheckIn,
+    markPaidOnSite,
     fetchRegistrationsCsv,
     uploadingImage,
     cancellingRegistration,
     checkingIn,
     undoingCheckIn,
+    markingPaidOnSite,
   };
 }

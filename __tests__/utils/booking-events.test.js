@@ -7,7 +7,18 @@ import {
   returnRequestFromParams,
   centsToEurosInput,
   checkInOutcome,
+  compactCents,
+  dueOnSiteLabel,
   eurosToCents,
+  eventDepositAmount,
+  eventNeedsOnlinePayment,
+  eventOrderAmounts,
+  eventPaymentMode,
+  eventPaymentNotice,
+  eventPaymentShortLabel,
+  registrationDueOnSite,
+  registrationPaymentLine,
+  registrationSubmitLabel,
   eventFormErrors,
   eventFormToInput,
   eventImageError,
@@ -505,5 +516,407 @@ describe("messages d'une inscription non confirmée", () => {
     expect(
       unconfirmedRegistrationMessage({ paymentStatus: "pending" }).restart,
     ).toBe(false);
+  });
+});
+
+describe("acompte et paiement sur place", () => {
+  const price = { amount: 2000, currency: "EUR" };
+  const base = {
+    ...eventTypeToForm(null),
+    name: "Soirée de lancement",
+    slug: "soiree-de-lancement",
+    startAt: "2026-12-12T19:00",
+    endAt: "2026-12-12T22:00",
+    locationKind: "IN_PERSON",
+    locationValue: "12 rue de la Paix, 75002 Paris",
+    priceText: "20",
+  };
+  const errorsOf = (form) =>
+    eventFormErrors(form, { timeZone: "Europe/Paris" });
+  const nbsp = (text) => text.replace(/[\u00a0\u202f]/g, " ");
+
+  it("mode effectif : gratuit = null, champ absent = ONLINE", () => {
+    expect(
+      eventPaymentMode({ price: null, paymentMode: "ON_SITE" }),
+    ).toBeNull();
+    expect(eventPaymentMode({ price })).toBe("ONLINE");
+    expect(eventPaymentMode({ price, paymentMode: "DEPOSIT" })).toBe("DEPOSIT");
+    expect(eventPaymentMode({ price, paymentMode: "BIZARRE" })).toBe("ONLINE");
+  });
+
+  it("acompte lu seulement en DEPOSIT et s'il est inférieur au prix", () => {
+    expect(
+      eventDepositAmount({ price, paymentMode: "DEPOSIT", depositAmount: 500 }),
+    ).toBe(500);
+    expect(
+      eventDepositAmount({ price, paymentMode: "ONLINE", depositAmount: 500 }),
+    ).toBe(0);
+    expect(
+      eventDepositAmount({
+        price,
+        paymentMode: "DEPOSIT",
+        depositAmount: 2000,
+      }),
+    ).toBe(0);
+  });
+
+  it("montants d'une commande selon le mode", () => {
+    expect(eventOrderAmounts({ price }, 2)).toEqual({
+      mode: "ONLINE",
+      total: 4000,
+      online: 4000,
+      onSite: 0,
+    });
+    expect(
+      eventOrderAmounts(
+        { price, paymentMode: "DEPOSIT", depositAmount: 500 },
+        2,
+      ),
+    ).toEqual({
+      mode: "DEPOSIT",
+      total: 4000,
+      online: 1000,
+      onSite: 3000,
+    });
+    expect(eventOrderAmounts({ price, paymentMode: "ON_SITE" }, 3)).toEqual({
+      mode: "ON_SITE",
+      total: 6000,
+      online: 0,
+      onSite: 6000,
+    });
+    expect(eventOrderAmounts({ price: null }, 2).total).toBe(0);
+    expect(eventNeedsOnlinePayment({ price, paymentMode: "ON_SITE" })).toBe(
+      false,
+    );
+    expect(
+      eventNeedsOnlinePayment({
+        price,
+        paymentMode: "DEPOSIT",
+        depositAmount: 500,
+      }),
+    ).toBe(true);
+    expect(eventNeedsOnlinePayment({ price: null })).toBe(false);
+  });
+
+  it("libellés : carte, page publique, bouton", () => {
+    expect(nbsp(compactCents(500))).toBe("5 €");
+    expect(nbsp(compactCents(550))).toBe("5,50 €");
+    expect(
+      nbsp(
+        eventPaymentShortLabel({
+          price,
+          paymentMode: "DEPOSIT",
+          depositAmount: 500,
+        }),
+      ),
+    ).toBe("acompte 5 €");
+    expect(eventPaymentShortLabel({ price, paymentMode: "ON_SITE" })).toBe(
+      "sur place",
+    );
+    expect(eventPaymentShortLabel({ price })).toBeNull();
+    expect(eventPaymentNotice({ price, paymentMode: "ON_SITE" })).toBe(
+      "Paiement sur place le jour de l'événement",
+    );
+    expect(
+      nbsp(
+        eventPaymentNotice({
+          price,
+          paymentMode: "DEPOSIT",
+          depositAmount: 500,
+        }),
+      ),
+    ).toBe(
+      "Acompte de 5,00 € par place à la réservation, reste 15,00 € sur place",
+    );
+    expect(eventPaymentNotice({ price })).toBeNull();
+    expect(nbsp(registrationSubmitLabel({ price }, 2))).toBe("Payer 40,00 €");
+    expect(
+      nbsp(
+        registrationSubmitLabel(
+          { price, paymentMode: "DEPOSIT", depositAmount: 500 },
+          2,
+        ),
+      ),
+    ).toBe("Payer l'acompte 10,00 €");
+    expect(registrationSubmitLabel({ price, paymentMode: "ON_SITE" }, 1)).toBe(
+      "Je m'inscris",
+    );
+    expect(registrationSubmitLabel({ price, paymentMode: "ON_SITE" }, 3)).toBe(
+      "Réserver 3 places",
+    );
+    expect(registrationSubmitLabel({ price: null }, 1)).toBe("Je m'inscris");
+  });
+
+  it("ligne de paiement d'une inscription, comme les e-mails", () => {
+    const confirmed = { status: "CONFIRMED", currency: "EUR", amount: 2000 };
+    expect(
+      nbsp(
+        registrationPaymentLine({
+          ...confirmed,
+          paymentMode: "ONLINE",
+          amountOnline: 2000,
+          amountDueOnSite: 0,
+        }),
+      ),
+    ).toBe("Payé en ligne : 20,00 €");
+    expect(
+      nbsp(
+        registrationPaymentLine({
+          ...confirmed,
+          paymentMode: "DEPOSIT",
+          amountOnline: 500,
+          amountDueOnSite: 1500,
+        }),
+      ),
+    ).toBe("Acompte payé : 5,00 €. Reste à régler sur place : 15,00 €");
+    expect(
+      nbsp(
+        registrationPaymentLine({
+          ...confirmed,
+          paymentMode: "ON_SITE",
+          amountOnline: 0,
+          amountDueOnSite: 2000,
+        }),
+      ),
+    ).toBe("À régler sur place : 20,00 €");
+    expect(
+      nbsp(
+        registrationPaymentLine({
+          ...confirmed,
+          paymentMode: "ON_SITE",
+          amountOnline: 0,
+          amountDueOnSite: 2000,
+          onSitePaidAt: "2026-12-12T19:00:00.000Z",
+        }),
+      ),
+    ).toBe("Réglé sur place : 20,00 €");
+    expect(registrationPaymentLine({ ...confirmed, amount: 0 })).toBe(
+      "Gratuit",
+    );
+    // Inscription d'avant le choix du mode : repli sur « payé en ligne »
+    expect(
+      nbsp(
+        registrationPaymentLine({ ...confirmed, paymentProvider: "stripe" }),
+      ),
+    ).toBe("Payé en ligne : 20,00 €");
+    expect(
+      nbsp(
+        registrationPaymentLine({
+          status: "PENDING_PAYMENT",
+          currency: "EUR",
+          amount: 2000,
+          paymentMode: "DEPOSIT",
+          amountOnline: 500,
+          amountDueOnSite: 1500,
+        }),
+      ),
+    ).toBe(
+      "Acompte à payer en ligne : 5,00 €. Reste à régler sur place : 15,00 €",
+    );
+  });
+
+  it("acompte réglé : « Reste réglé sur place »", () => {
+    expect(
+      nbsp(
+        registrationPaymentLine({
+          status: "CONFIRMED",
+          currency: "EUR",
+          amount: 2000,
+          paymentMode: "DEPOSIT",
+          amountOnline: 500,
+          amountDueOnSite: 1500,
+          onSitePaidAt: "2026-12-12T19:00:00.000Z",
+        }),
+      ),
+    ).toBe("Acompte payé : 5,00 €. Reste réglé sur place : 15,00 €");
+  });
+
+  it("reste dû : nul une fois réglé sur place", () => {
+    const registration = {
+      status: "CONFIRMED",
+      amount: 2000,
+      paymentMode: "ON_SITE",
+      amountDueOnSite: 2000,
+    };
+    expect(registrationDueOnSite(registration)).toBe(2000);
+    expect(
+      registrationDueOnSite({
+        ...registration,
+        onSitePaidAt: "2026-12-12T19:00:00.000Z",
+      }),
+    ).toBe(0);
+    expect(
+      registrationDueOnSite({
+        status: "CONFIRMED",
+        amount: 2000,
+        paymentProvider: "stripe",
+      }),
+    ).toBe(0);
+  });
+
+  it("contrôle : le reste dû accompagne un billet valable", () => {
+    const registration = {
+      id: "r1",
+      status: "CONFIRMED",
+      amount: 1500,
+      currency: "EUR",
+      paymentMode: "DEPOSIT",
+      amountOnline: 500,
+      amountDueOnSite: 1000,
+    };
+    const outcome = checkInOutcome({
+      result: "VALID",
+      ticket: { number: "EVT-1" },
+      registration,
+    });
+    expect(outcome).toMatchObject({
+      tone: "success",
+      dueOnSite: 1000,
+      registrationId: "r1",
+    });
+    expect(nbsp(dueOnSiteLabel(1000, "EUR"))).toBe(
+      "Reste à régler sur place : 10,00 €",
+    );
+    expect(
+      checkInOutcome({
+        result: "VALID",
+        registration: { ...registration, onSitePaidAt: "2026-12-12" },
+      }),
+    ).not.toHaveProperty("dueOnSite");
+    expect(
+      checkInOutcome({ result: "CANCELLED", registration }),
+    ).not.toHaveProperty("dueOnSite");
+  });
+
+  it("formulaire : mode lu du type, acompte en euros", () => {
+    const form = eventTypeToForm({
+      price,
+      paymentMode: "DEPOSIT",
+      depositAmount: 550,
+    });
+    expect(form.paymentMode).toBe("DEPOSIT");
+    expect(form.depositText).toBe("5,50");
+    expect(eventTypeToForm({ price }).paymentMode).toBe("ONLINE");
+    expect(eventTypeToForm(null).depositText).toBe("");
+  });
+
+  it("validation : acompte obligatoire, inférieur au prix", () => {
+    expect(
+      errorsOf({ ...base, paymentMode: "DEPOSIT", depositText: "" }).deposit,
+    ).toBe("Indiquez le montant de l'acompte");
+    expect(
+      errorsOf({ ...base, paymentMode: "DEPOSIT", depositText: "20" }).deposit,
+    ).toBe("L'acompte doit être inférieur au prix par place");
+    expect(
+      errorsOf({ ...base, paymentMode: "DEPOSIT", depositText: "25" }).deposit,
+    ).toBeDefined();
+    expect(
+      errorsOf({ ...base, paymentMode: "DEPOSIT", depositText: "abc" }).deposit,
+    ).toMatch(/invalide/);
+    expect(
+      errorsOf({ ...base, paymentMode: "DEPOSIT", depositText: "0,20" })
+        .deposit,
+    ).toBe("0,50 € minimum");
+    expect(
+      errorsOf({ ...base, paymentMode: "DEPOSIT", depositText: "5" }),
+    ).toEqual({});
+    expect(
+      errorsOf({ ...base, paymentMode: "ON_SITE", depositText: "abc" }),
+    ).toEqual({});
+    // Gratuit : mode et acompte ignorés
+    expect(
+      errorsOf({
+        ...base,
+        priceText: "",
+        paymentMode: "DEPOSIT",
+        depositText: "",
+      }),
+    ).toEqual({});
+  });
+
+  it("création : prix, mode et acompte envoyés en centimes", () => {
+    const opts = { timeZone: "Europe/Paris", isCreation: true };
+    expect(
+      eventFormToInput(
+        { ...base, paymentMode: "DEPOSIT", depositText: "5,50" },
+        opts,
+      ),
+    ).toMatchObject({
+      price: { amount: 2000, currency: "EUR" },
+      paymentMode: "DEPOSIT",
+      depositAmount: 550,
+    });
+    expect(
+      eventFormToInput(
+        { ...base, paymentMode: "ON_SITE", depositText: "5" },
+        opts,
+      ),
+    ).toMatchObject({
+      paymentMode: "ON_SITE",
+      depositAmount: null,
+    });
+    expect(
+      eventFormToInput(
+        { ...base, priceText: "", paymentMode: "ON_SITE" },
+        opts,
+      ),
+    ).toMatchObject({
+      price: null,
+      paymentMode: null,
+      depositAmount: null,
+    });
+  });
+
+  it("modification : prix, mode et acompte envoyés ensemble, seulement s'ils changent", () => {
+    const initial = {
+      timeZone: "Europe/Paris",
+      initialPriceCents: 2000,
+      initialPaymentMode: "DEPOSIT",
+      initialDepositAmount: 500,
+    };
+    const same = eventFormToInput(
+      { ...base, paymentMode: "DEPOSIT", depositText: "5" },
+      initial,
+    );
+    expect(same).not.toHaveProperty("price");
+    expect(same).not.toHaveProperty("paymentMode");
+    expect(same).not.toHaveProperty("depositAmount");
+
+    const deposit = eventFormToInput(
+      { ...base, paymentMode: "DEPOSIT", depositText: "8" },
+      initial,
+    );
+    expect(deposit).toMatchObject({
+      price: { amount: 2000 },
+      paymentMode: "DEPOSIT",
+      depositAmount: 800,
+    });
+
+    const onSite = eventFormToInput(
+      { ...base, paymentMode: "ON_SITE", depositText: "5" },
+      initial,
+    );
+    expect(onSite).toMatchObject({
+      paymentMode: "ON_SITE",
+      depositAmount: null,
+    });
+
+    // Type d'avant le choix du mode (champ absent) : ONLINE, rien n'est envoyé
+    const legacy = eventFormToInput(
+      { ...eventTypeToForm({ price }), ...base },
+      { timeZone: "Europe/Paris", initialPriceCents: 2000 },
+    );
+    expect(legacy).not.toHaveProperty("paymentMode");
+    expect(legacy).not.toHaveProperty("price");
+
+    const madeFree = eventFormToInput(
+      { ...base, priceText: "", paymentMode: "DEPOSIT" },
+      initial,
+    );
+    expect(madeFree).toMatchObject({
+      price: null,
+      paymentMode: null,
+      depositAmount: null,
+    });
   });
 });

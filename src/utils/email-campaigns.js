@@ -310,16 +310,30 @@ const EXCLUSIONS = [
   ["suppressed", "désinscrit ou exclu", "désinscrits ou exclus"],
   ["duplicates", "doublon", "doublons"],
   ["excludedByList", "dans une liste exclue", "dans une liste exclue"],
+  // Prospects générés : jamais écrits par une campagne, seulement depuis la
+  // boîte mail du membre (Prospection)
+  ["prospects", "prospect généré", "prospects générés"],
 ];
 
-/** Exclusions non nulles : [{ key, count, label }]. */
-export function audienceExclusions(count) {
+/** Complément des prospects générés écartés : où leur écrire. */
+export const PROSPECTS_EXCLUSION_HINT =
+  "à contacter depuis votre boîte, avec la Prospection";
+
+/**
+ * Exclusions non nulles : [{ key, count, label, hint? }]. Compteur absent
+ * ou nul = rien. `prospectsHint` : complément des prospects générés, quand
+ * la Prospection est ouverte à l'espace.
+ */
+export function audienceExclusions(count, { prospectsHint = false } = {}) {
   if (!count) return [];
-  return EXCLUSIONS.filter(([key]) => (count[key] || 0) > 0).map(
+  return EXCLUSIONS.filter(([key]) => (count[key] ?? 0) > 0).map(
     ([key, one, many]) => ({
       key,
       count: count[key],
       label: count[key] >= 2 ? many : one,
+      ...(key === "prospects" && prospectsHint
+        ? { hint: PROSPECTS_EXCLUSION_HINT }
+        : {}),
     }),
   );
 }
@@ -486,3 +500,161 @@ export const SUPPRESSION_REASONS = {
 
 export const suppressionReasonLabel = (reason) =>
   SUPPRESSION_REASONS[reason] || reason;
+
+// ─── Suivi des ouvertures et des clics ───────────────────────────────────
+// Coupé par défaut (recommandation CNIL sur les pixels de suivi : accord
+// préalable de chaque destinataire). Activé, il ne s'applique qu'aux
+// adresses qui l'ont accepté (accords de suivi de l'espace) ; les autres
+// reçoivent le même e-mail sans suivi. L'API l'annonce dans le pied.
+
+/** La campagne suit-elle les ouvertures ou les clics ? */
+export const isCampaignTracked = (campaign) =>
+  Boolean(campaign?.trackOpens || campaign?.trackClicks);
+
+/**
+ * Phrase ajoutée par l'API au pied des e-mails d'une campagne suivie, pour
+ * un destinataire qui a accepté le suivi (même texte que
+ * services/emailCampaigns/render.js), ou null sans suivi.
+ */
+export function trackingNoticeSentence(
+  companyName,
+  { opens = false, clicks = false } = {},
+) {
+  if (!opens && !clicks) return null;
+  const measured =
+    opens && clicks
+      ? "l'ouverture de cet e-mail et les clics sur ses liens"
+      : opens
+        ? "l'ouverture de cet e-mail"
+        : "les clics sur les liens de cet e-mail";
+  return `${companyName || "l'expéditeur"} mesure ${measured}, avec votre accord.`;
+}
+
+/**
+ * Taux d'ouverture et de clics du rapport. Seuls les destinataires qui
+ * avaient accepté le suivi au lancement sont suivis : la base est leur
+ * nombre (`trackedRecipients`). Campagne lancée avant les accords par
+ * contact (trackedRecipients null) : tous étaient suivis, base = e-mails
+ * remis, comme campaignRates.
+ */
+export function trackingRates(campaign) {
+  const stats = campaign?.stats || {};
+  const tracked = campaign?.trackedRecipients;
+  const perContact = tracked !== null && tracked !== undefined;
+  const base = perContact ? Math.max(0, tracked) : campaignRates(stats).reached;
+  return {
+    base,
+    perContact,
+    openRate: ratio(stats.opened || 0, base),
+    clickRate: ratio(stats.clicked || 0, base),
+  };
+}
+
+/** Adresses au plus par ajout d'accords (l'API refuse au-delà). */
+export const MAX_TRACKING_GRANT_EMAILS = 500;
+
+/** Onglets des accords de suivi : filtre `status` de la requête. */
+export const TRACKING_CONSENT_TABS = [
+  { value: "all", label: "Tous", status: null },
+  { value: "granted", label: "Acceptés", status: "GRANTED" },
+  { value: "refused", label: "Refusés", status: "REFUSED" },
+];
+
+/** Origine d'un accord ou d'un refus : le contact lui-même ou l'espace. */
+export function trackingConsentOrigin(consent) {
+  if (consent?.source === "CONTACT") return "Choix du contact";
+  return `Saisi par ${consent?.decidedByName || "un membre de l'espace"}`;
+}
+
+/** Raisons pour lesquelles une adresse n'a pas reçu d'accord. */
+export const TRACKING_SKIP_REASONS = {
+  INVALID: "adresse invalide",
+  CONTACT_REFUSED: "refus du contact, lui seul peut changer d'avis",
+};
+
+export const trackingSkipReasonLabel = (reason) =>
+  TRACKING_SKIP_REASONS[reason] || reason;
+
+const MAX_LISTED_SKIPS = 10;
+
+/**
+ * Résultat d'un ajout d'accords, pour le toast : nombre d'accords
+ * enregistrés, puis adresses écartées avec leur raison (10 au plus).
+ * `invalid` : adresses illisibles écartées avant l'envoi.
+ */
+export function trackingGrantMessage(result, invalid = []) {
+  const granted = result?.granted || 0;
+  const skipped = [
+    ...invalid.map((email) => ({ email, reason: "INVALID" })),
+    ...(result?.skipped || []),
+  ];
+  const lines = skipped
+    .slice(0, MAX_LISTED_SKIPS)
+    .map(
+      ({ email, reason }) => `${email} (${trackingSkipReasonLabel(reason)})`,
+    );
+  if (skipped.length > MAX_LISTED_SKIPS) {
+    lines.push(
+      `et ${plural(skipped.length - MAX_LISTED_SKIPS, "autre", "autres")}`,
+    );
+  }
+  return {
+    ok: granted > 0,
+    title:
+      granted > 0
+        ? plural(granted, "accord enregistré", "accords enregistrés")
+        : "Aucun accord enregistré",
+    description: skipped.length
+      ? [
+          `${plural(skipped.length, "adresse écartée", "adresses écartées")} :`,
+          ...lines,
+        ].join("\n")
+      : granted > 0
+        ? "Ces adresses pourront être suivies dans vos prochaines campagnes."
+        : null,
+  };
+}
+
+/**
+ * Ce que le rapport peut montrer par destinataire : ouvertures et clics
+ * seulement s'ils ont été suivis et pas encore effacés (13 mois).
+ */
+export function recipientTracking(campaign) {
+  const purged = Boolean(campaign?.trackingPurgedAt);
+  return {
+    opens: Boolean(campaign?.trackOpens) && !purged,
+    clicks: Boolean(campaign?.trackClicks) && !purged,
+    purged,
+  };
+}
+
+/** Filtres du tableau des destinataires utiles pour cette campagne. */
+export function recipientFiltersFor(campaign) {
+  const { opens, clicks } = recipientTracking(campaign);
+  return RECIPIENT_FILTERS.filter((item) => {
+    if (item.value === "OPENED" || item.value === "NOT_OPENED") return opens;
+    if (item.value === "CLICKED") return clicks;
+    return true;
+  });
+}
+
+/**
+ * Lien vers une politique de confidentialité : message d'erreur, ou null
+ * (vide permis). L'API n'accepte qu'une adresse web.
+ */
+export function privacyPolicyUrlError(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (
+      ["http:", "https:"].includes(url.protocol) &&
+      url.hostname.includes(".")
+    ) {
+      return null;
+    }
+  } catch {
+    // Adresse illisible : même message
+  }
+  return "Adresse invalide : elle doit commencer par https://";
+}

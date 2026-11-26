@@ -9,6 +9,7 @@ import {
   isBlankHtml,
   resolveStyle,
 } from "@/src/utils/email-campaign-design";
+import { trackingNoticeSentence } from "@/src/utils/email-campaigns";
 import { highlightVariables, sanitizeCampaignHtml } from "./rich-html";
 import { SocialIcon } from "./social-icons";
 
@@ -354,17 +355,28 @@ export function BlockView({
 
 /**
  * Pied de page ajouté par l'API à chaque envoi (identité de l'entreprise,
- * raison de l'envoi, désinscription), sous le cadre : affiché tel quel,
- * jamais modifiable. Adresse manquante : signalée, jamais inventée.
+ * raison de l'envoi, suivi s'il est actif, désinscription), sous le cadre :
+ * affiché tel quel, jamais modifiable. Adresse manquante : signalée, jamais
+ * inventée. Campagne suivie : version d'un destinataire qui a accepté le
+ * suivi (phrase), et lien « Gérer mes préférences » (accepter ou refuser le
+ * suivi) avant la désinscription, comme l'API.
+ *
+ * @param {{ opens?: boolean, clicks?: boolean, privacyPolicyUrl?: string }} [trackingNotice]
  */
 export function EmailFooterView({
   style: rawStyle,
   companyName,
   companyAddress,
   addressMissingHint = false,
+  trackingNotice = null,
 }) {
   const style = rawStyle?.__resolved ? rawStyle : resolveStyle(rawStyle);
   const name = companyName || "l'expéditeur";
+  const trackingSentence = trackingNoticeSentence(
+    companyName,
+    trackingNotice || {},
+  );
+  const tracked = Boolean(trackingNotice?.opens || trackingNotice?.clicks);
   const line = {
     margin: 0,
     fontSize: 12,
@@ -390,7 +402,30 @@ export function EmailFooterView({
       <p style={{ ...line, marginBottom: 12 }}>
         Vous recevez cet e-mail car vous êtes en relation avec {name}.
       </p>
-      <p style={{ ...line, textDecoration: "underline" }}>Se désinscrire</p>
+      {trackingSentence && (
+        <p style={{ ...line, marginBottom: 12 }}>
+          {trackingSentence}
+          {trackingNotice?.privacyPolicyUrl ? (
+            <>
+              {" "}
+              <span style={{ textDecoration: "underline" }}>
+                Politique de confidentialité
+              </span>
+            </>
+          ) : null}
+        </p>
+      )}
+      {tracked ? (
+        <p style={line}>
+          <span style={{ textDecoration: "underline" }}>
+            Gérer mes préférences
+          </span>
+          {" · "}
+          <span style={{ textDecoration: "underline" }}>Se désinscrire</span>
+        </p>
+      ) : (
+        <p style={{ ...line, textDecoration: "underline" }}>Se désinscrire</p>
+      )}
     </div>
   );
 }

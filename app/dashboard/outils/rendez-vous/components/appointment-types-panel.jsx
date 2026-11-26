@@ -36,6 +36,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { durationLabel, locationKindLabel } from "@/src/utils/booking";
 import {
+  eventPaymentShortLabel,
   eventPriceLabel,
   isEventType,
   seatsLabel,
@@ -232,6 +233,9 @@ function EventTypeCard({
           <span className="font-medium tabular-nums">{seatsLabel(type)}</span>
           <span className="text-muted-foreground">
             {eventPriceLabel(type.price)}
+            {eventPaymentShortLabel(type)
+              ? ` · ${eventPaymentShortLabel(type)}`
+              : ""}
           </span>
           {type.checkedInCount > 0 && (
             <span className="text-muted-foreground tabular-nums">

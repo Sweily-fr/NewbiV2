@@ -45,6 +45,7 @@ import {
   formatPercent,
   plural,
   sendProgress,
+  trackingRates,
 } from "@/src/utils/email-campaigns";
 import { CampaignHeader } from "../campaign-header";
 import { PreviewDialog } from "../preview-dialog";
@@ -196,6 +197,7 @@ export function CampaignReport({ campaign, workspaceId, settings }) {
   const canSend = access.canSend && !access.readOnly;
   const stats = campaign.stats || {};
   const rates = campaignRates(stats);
+  const tracking = trackingRates(campaign);
   const progress = sendProgress(stats);
   const sending = campaign.status === "SENDING";
   const paused = campaign.status === "PAUSED";
@@ -289,6 +291,16 @@ export function CampaignReport({ campaign, workspaceId, settings }) {
   );
 
   const reached = rates.reached;
+  // Ouvertures et clics : taux sur les contacts suivis au lancement (ceux
+  // qui avaient accepté), sinon sur les e-mails remis (campagne lancée avant
+  // les accords par contact). Aucun contact suivi : rien n'a été mesuré.
+  const noneTracked = tracking.perContact && tracking.base === 0;
+  const trackedShare = (count) =>
+    tracking.perContact
+      ? `${formatCount(count)} sur ${plural(tracking.base, "contact suivi", "contacts suivis")}`
+      : plural(count, "contact");
+  const opensMeasured = campaign.trackOpens && !noneTracked;
+  const clicksMeasured = campaign.trackClicks && !noneTracked;
   return (
     <div className="h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] overflow-y-auto">
       <div className="mx-auto flex max-w-[1180px] flex-col gap-4 px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
@@ -473,31 +485,35 @@ export function CampaignReport({ campaign, workspaceId, settings }) {
             icon={MailOpen}
             label="Ouvertures uniques"
             value={
-              campaign.trackOpens
-                ? formatPercent(rates.openRate) || "0 %"
+              opensMeasured
+                ? formatPercent(tracking.openRate) || "0 %"
                 : "Non suivies"
             }
             detail={
-              campaign.trackOpens
-                ? `${plural(stats.opened || 0, "contact")} · ${plural(stats.opens || 0, "ouverture")}`
-                : "Suivi désactivé"
+              !campaign.trackOpens
+                ? "Suivi désactivé"
+                : noneTracked
+                  ? "Aucun contact suivi"
+                  : `${trackedShare(stats.opened || 0)} · ${plural(stats.opens || 0, "ouverture")}`
             }
-            ratio={campaign.trackOpens ? rates.openRate : undefined}
+            ratio={opensMeasured ? tracking.openRate : undefined}
           />
           <KpiTile
             icon={MousePointerClick}
             label="Clics uniques"
             value={
-              campaign.trackClicks
-                ? formatPercent(rates.clickRate) || "0 %"
+              clicksMeasured
+                ? formatPercent(tracking.clickRate) || "0 %"
                 : "Non suivis"
             }
             detail={
-              campaign.trackClicks
-                ? `${plural(stats.clicked || 0, "contact")} · ${plural(stats.clicks || 0, "clic")}`
-                : "Suivi désactivé"
+              !campaign.trackClicks
+                ? "Suivi désactivé"
+                : noneTracked
+                  ? "Aucun contact suivi"
+                  : `${trackedShare(stats.clicked || 0)} · ${plural(stats.clicks || 0, "clic")}`
             }
-            ratio={campaign.trackClicks ? rates.clickRate : undefined}
+            ratio={clicksMeasured ? tracking.clickRate : undefined}
             accent="#8b5cf6"
           />
         </div>
@@ -537,7 +553,7 @@ export function CampaignReport({ campaign, workspaceId, settings }) {
 
         <RecipientsTable
           workspaceId={workspaceId}
-          campaignId={campaign.id}
+          campaign={campaign}
           live={sending}
         />
       </div>

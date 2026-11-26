@@ -10,6 +10,7 @@
  */
 import { test, expect, etape } from "../outils.mjs";
 import { base } from "../base.mjs";
+import { jourParis } from "../donnees/base.mjs";
 import { connecte, SESSION_TOKEN_FACTURES_CONTROLES } from "../config.mjs";
 import { AVOIRS_CONTROLES, C, CLIENTS_CONTROLES, ESPACES_FACTURES } from "../donnees/lot-factures.mjs";
 import { appelApiDirect, id, messages } from "../securite.mjs";
@@ -17,7 +18,7 @@ import { appelApiDirect, id, messages } from "../securite.mjs";
 test.use({ storageState: connecte(SESSION_TOKEN_FACTURES_CONTROLES) });
 
 const ORG = id(ESPACES_FACTURES.controles.organisation);
-const jour = (decalage = 0) => new Date(Date.now() + decalage * 86_400_000).toISOString().slice(0, 10);
+const jour = (decalage = 0) => jourParis(decalage);
 const AUJOURDHUI = jour();
 
 const clientDe = (c) => ({

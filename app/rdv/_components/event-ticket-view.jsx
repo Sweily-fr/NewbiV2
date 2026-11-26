@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  formatCents,
+  registrationDueOnSite,
+  registrationPayment,
+  registrationPaymentLine,
+} from "@/src/utils/booking-events";
 import { bookingErrorText, fetchTicket } from "../_lib/booking-api";
 import { useGuestTimeZone } from "../_lib/use-guest-time-zone";
 import { BookingCard, BookingShell, BookingUnavailable } from "./booking-shell";
@@ -57,6 +63,24 @@ export function EventTicketView({ token }) {
 
   const ticket = state.data;
   const event = ticket.event || {};
+  // Paiement de l'inscription : à plat sur le billet, ou sous `registration`.
+  // Billet valable ou utilisé = inscription confirmée ; montant total
+  // reconstitué s'il n'est pas transmis
+  const source = ticket.registration || ticket;
+  const payment = {
+    ...source,
+    amount:
+      source.amount ??
+      (Number(source.amountOnline) || 0) +
+        (Number(source.amountDueOnSite) || 0),
+    currency: source.currency || event.price?.currency || "EUR",
+    status: ["VALID", "CHECKED_IN"].includes(ticket.status)
+      ? "CONFIRMED"
+      : source.status,
+  };
+  const priced = registrationPayment(payment).mode !== null;
+  const due =
+    ticket.status === "CANCELLED" ? 0 : registrationDueOnSite(payment);
   const page = ticket.page || {};
   const eventHref =
     page.slug && ticket.typeSlug
@@ -93,6 +117,21 @@ export function EventTicketView({ token }) {
               className="rounded-xl bg-red-50 px-4 py-3 text-center text-sm text-red-700"
             >
               {STATUS_NOTES[ticket.status]}
+            </p>
+          )}
+
+          {due > 0 && (
+            <p className="rounded-xl bg-amber-50 px-4 py-3 text-center text-base font-medium text-amber-900">
+              Reste à régler sur place :{" "}
+              <span className="whitespace-nowrap">
+                {formatCents(due, payment.currency)}
+              </span>
+            </p>
+          )}
+
+          {priced && due === 0 && (
+            <p className="text-center text-sm text-gray-600">
+              {registrationPaymentLine(payment)}
             </p>
           )}
 

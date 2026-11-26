@@ -12,7 +12,7 @@ import { connecte, SESSION_TOKEN_EDITEUR_ACHATS, SESSION_TOKEN_SAISIE_ACHATS } f
 import { ORGANISATION_BORNES, ORGANISATION_SCENARIOS, PREVISIONS_MENSUELLES, RECURRENCES, SAISIES, SAISIES_SAISIE, SCENARIOS } from "../donnees/lot-achats-banque.mjs";
 import { appelApi, id } from "../securite.mjs";
 import { base } from "../base.mjs";
-import { oid } from "../donnees/base.mjs";
+import { jourParis, oid } from "../donnees/base.mjs";
 import { ORG, ORG_SAISIE, PIEGE, avecSession, connecteAchats, photo, verifierDroits, verifierPiegeInerte } from "../achats-banque.mjs";
 
 /** Données visées : « Achats » (Membre, intrus, visiteur) ou « Saisie Achats » (écritures permises de l'Éditeur). */
@@ -29,7 +29,7 @@ const mois = (n = 0) => {
   d.setUTCMonth(d.getUTCMonth() + n);
   return d.toISOString().slice(0, 7);
 };
-const aujourdhui = () => new Date().toISOString().slice(0, 10);
+const aujourdhui = () => jourParis();
 const orgDe = (w) => new ObjectId(w === ORG_SAISIE ? ORG_SAISIE : ORG);
 
 const LECTURES = [

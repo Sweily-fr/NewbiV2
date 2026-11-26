@@ -74,6 +74,8 @@ export const APPOINTMENT_TYPE_FIELDS = gql`
       amount
       currency
     }
+    paymentMode
+    depositAmount
     registrationsCount
     ticketsCount
     checkedInCount
@@ -199,6 +201,10 @@ export const EVENT_REGISTRATION_FIELDS = gql`
     quantity
     amount
     currency
+    paymentMode
+    amountOnline
+    amountDueOnSite
+    onSitePaidAt
     status
     paymentProvider
     paidAt

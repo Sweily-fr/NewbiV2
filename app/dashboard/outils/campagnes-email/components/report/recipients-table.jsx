@@ -17,11 +17,12 @@ import { useIsMobile } from "@/src/hooks/use-mobile";
 import { cn } from "@/src/lib/utils";
 import { GET_EMAIL_CAMPAIGN_RECIPIENTS } from "@/src/graphql/emailCampaignQueries";
 import {
-  RECIPIENT_FILTERS,
   formatCount,
   formatDateTime,
   recipientActivity,
+  recipientFiltersFor,
   recipientLastActivity,
+  recipientTracking,
 } from "@/src/utils/email-campaigns";
 import { CARD_CLASS, FOCUS_RING, ToneBadge } from "../shared";
 
@@ -38,12 +39,28 @@ function Count({ value }) {
   );
 }
 
+/** Ouvertures ou clics d'un destinataire, « Non suivi » sans son accord. */
+function TrackedCount({ recipient, value }) {
+  return recipient.tracked === false ? (
+    <span className="text-xs whitespace-nowrap text-muted-foreground/60">
+      Non suivi
+    </span>
+  ) : (
+    <Count value={value} />
+  );
+}
+
 /**
  * Destinataires de la campagne, filtrables (ont ouvert, ont cliqué,
  * rejetés…) et cherchables, avec l'activité de chacun. `live` : rafraîchi
- * pendant l'envoi.
+ * pendant l'envoi. Ouvertures et clics : filtres et colonnes seulement
+ * s'ils ont été suivis, et tant que leur détail n'est pas effacé (13 mois) ;
+ * « Non suivi » pour un destinataire qui n'avait pas accepté le suivi.
  */
-export function RecipientsTable({ workspaceId, campaignId, live }) {
+export function RecipientsTable({ workspaceId, campaign, live }) {
+  const campaignId = campaign.id;
+  const tracking = recipientTracking(campaign);
+  const filters = recipientFiltersFor(campaign);
   const isMobile = useIsMobile();
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
@@ -117,7 +134,7 @@ export function RecipientsTable({ workspaceId, campaignId, live }) {
           aria-label="Filtrer les destinataires"
           className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
         >
-          {RECIPIENT_FILTERS.map((item) => {
+          {filters.map((item) => {
             const active = item.value === filter;
             return (
               <button
@@ -139,6 +156,12 @@ export function RecipientsTable({ workspaceId, campaignId, live }) {
             );
           })}
         </div>
+        {tracking.purged && (
+          <p className="text-xs leading-5 text-muted-foreground">
+            Détail des ouvertures et des clics effacé au bout de 13 mois : seuls
+            les totaux de la campagne restent.
+          </p>
+        )}
       </div>
 
       <div className="mt-2">
@@ -204,16 +227,20 @@ export function RecipientsTable({ workspaceId, campaignId, live }) {
             <colgroup>
               <col />
               <col className="w-[150px]" />
-              <col className="w-[110px]" />
-              <col className="w-[80px]" />
+              {tracking.opens && <col className="w-[110px]" />}
+              {tracking.clicks && <col className="w-[80px]" />}
               <col className="w-[200px]" />
             </colgroup>
             <thead>
               <tr className="border-y border-[#EEEFF1] dark:border-[#232323]">
                 <th className={cn(HEAD, "pl-5")}>Contact</th>
                 <th className={HEAD}>Activité</th>
-                <th className={cn(HEAD, "text-right")}>Ouvertures</th>
-                <th className={cn(HEAD, "text-right")}>Clics</th>
+                {tracking.opens && (
+                  <th className={cn(HEAD, "text-right")}>Ouvertures</th>
+                )}
+                {tracking.clicks && (
+                  <th className={cn(HEAD, "text-right")}>Clics</th>
+                )}
                 <th className={cn(HEAD, "pr-5")}>Dernière activité</th>
               </tr>
             </thead>
@@ -245,12 +272,22 @@ export function RecipientsTable({ workspaceId, campaignId, live }) {
                         {activity.label}
                       </ToneBadge>
                     </td>
-                    <td className="px-3 py-2.5 text-right align-middle text-sm">
-                      <Count value={recipient.openCount} />
-                    </td>
-                    <td className="px-3 py-2.5 text-right align-middle text-sm">
-                      <Count value={recipient.clickCount} />
-                    </td>
+                    {tracking.opens && (
+                      <td className="px-3 py-2.5 text-right align-middle text-sm">
+                        <TrackedCount
+                          recipient={recipient}
+                          value={recipient.openCount}
+                        />
+                      </td>
+                    )}
+                    {tracking.clicks && (
+                      <td className="px-3 py-2.5 text-right align-middle text-sm">
+                        <TrackedCount
+                          recipient={recipient}
+                          value={recipient.clickCount}
+                        />
+                      </td>
+                    )}
                     <td className="truncate py-2.5 pr-5 pl-3 align-middle text-sm text-muted-foreground">
                       {last ? formatDateTime(last) : "-"}
                     </td>

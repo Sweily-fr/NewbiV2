@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
+  registrationPayment,
   shortDateTimeLabel,
   unconfirmedRegistrationMessage,
 } from "@/src/utils/booking-events";
@@ -22,7 +23,10 @@ const HEADINGS = {
   EXPIRED: "Inscription expirée",
 };
 
-/** Annulation par le participant (inscription gratuite, avant le début). */
+/**
+ * Annulation par le participant (rien payé en ligne : gratuite ou réglée
+ * sur place ; avant le début).
+ */
 function CancelRegistration({ token, onCancelled }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -226,7 +230,7 @@ export function ManageRegistrationView({ token, embed = false }) {
               />
             ) : (
               <p className="text-center text-sm text-gray-500">
-                {registration.amount > 0
+                {registrationPayment(registration).online > 0
                   ? "Pour annuler, contactez l'organisateur."
                   : "L'événement a commencé : l'inscription ne peut plus être annulée."}
               </p>

@@ -50,7 +50,7 @@ export function TextWithVariables({ text }) {
   );
 }
 
-function UnknownWarning({ keys }) {
+export function UnknownWarning({ keys }) {
   if (!keys.length) return null;
   return (
     <p className="flex items-start gap-1.5 text-xs text-red-700 dark:text-red-400">

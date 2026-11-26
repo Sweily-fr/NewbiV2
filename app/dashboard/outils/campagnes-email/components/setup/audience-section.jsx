@@ -13,6 +13,7 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { useWorkspaceFeatures } from "@/src/hooks/useWorkspaceFeatures";
 import { cn } from "@/src/lib/utils";
 import { GET_CLIENT_LISTS } from "@/src/graphql/queries/clientLists";
 import { GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT } from "@/src/graphql/emailCampaignQueries";
@@ -31,21 +32,29 @@ export const audienceInput = (audience) => ({
   excludeListIds: audience?.excludeListIds || [],
 });
 
-/** Décompte des destinataires d'une audience (direct, à chaque changement). */
-export function useAudienceCount(workspaceId, audience, { skip = false } = {}) {
+/**
+ * Décompte des destinataires d'une audience (direct, à chaque changement).
+ * `query` / `field` : autre décompte de même forme (prospection).
+ */
+export function useAudienceCount(
+  workspaceId,
+  audience,
+  {
+    skip = false,
+    query = GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT,
+    field = "emailCampaignAudienceCount",
+  } = {},
+) {
   const input = audienceInput(audience);
   const key = JSON.stringify(input);
   const debouncedKey = useDebouncedValue(key, 300);
-  const { data, previousData, loading, error } = useQuery(
-    GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT,
-    {
-      variables: { workspaceId, audience: JSON.parse(debouncedKey) },
-      skip: skip || !workspaceId,
-      fetchPolicy: "cache-and-network",
-      context: { skipErrorToast: true },
-    },
-  );
-  const count = (data || previousData)?.emailCampaignAudienceCount || null;
+  const { data, previousData, loading, error } = useQuery(query, {
+    variables: { workspaceId, audience: JSON.parse(debouncedKey) },
+    skip: skip || !workspaceId,
+    fetchPolicy: "cache-and-network",
+    context: { skipErrorToast: true },
+  });
+  const count = (data || previousData)?.[field] || null;
   return {
     count,
     loading: loading || key !== debouncedKey,
@@ -53,7 +62,13 @@ export function useAudienceCount(workspaceId, audience, { skip = false } = {}) {
   };
 }
 
-function ModeCard({ selected, icon: Icon, title, description, onClick }) {
+export function ModeCard({
+  selected,
+  icon: Icon,
+  title,
+  description,
+  onClick,
+}) {
   return (
     <button
       type="button"
@@ -88,7 +103,7 @@ function ModeCard({ selected, icon: Icon, title, description, onClick }) {
   );
 }
 
-function ListPicker({
+export function ListPicker({
   lists,
   selected,
   onToggle,
@@ -142,7 +157,11 @@ function ListPicker({
   );
 }
 
-/** Décompte en direct : destinataires, et pourquoi certains sont écartés. */
+/**
+ * Décompte en direct : destinataires, et pourquoi certains sont écartés.
+ * `exclusions` / `zeroText` : écarts et message propres à la prospection.
+ * `prospectsHint` : dit où écrire aux prospects générés écartés.
+ */
 export function AudienceCountPanel({
   count,
   loading,
@@ -150,8 +169,12 @@ export function AudienceCountPanel({
   quota,
   emptyText,
   className,
+  exclusions: customExclusions,
+  zeroText = "Aucun contact ne peut recevoir cette campagne.",
+  prospectsHint = false,
 }) {
-  const exclusions = audienceExclusions(count);
+  const exclusions =
+    customExclusions ?? audienceExclusions(count, { prospectsHint });
   const overQuota = count && quota && count.sendable > quota.remaining;
   return (
     <div
@@ -202,6 +225,7 @@ export function AudienceCountPanel({
                       {formatCount(item.count)}
                     </span>{" "}
                     {item.label}
+                    {item.hint && <>, {item.hint}</>}
                   </li>
                 ))}
               </ul>
@@ -210,7 +234,7 @@ export function AudienceCountPanel({
           {count.sendable === 0 && (
             <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-800 dark:text-amber-300">
               <TriangleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
-              Aucun contact ne peut recevoir cette campagne.
+              {zeroText}
             </p>
           )}
           {overQuota && (
@@ -262,6 +286,9 @@ export function AudienceSection({
   );
   const lists = useMemo(() => listsData?.clientLists || [], [listsData]);
   const live = useAudienceCount(workspaceId, draft, { skip: !editing });
+  // Prospects générés écartés : renvoyés vers la Prospection si l'espace y
+  // a accès
+  const { isEnabled: isFeatureEnabled } = useWorkspaceFeatures();
 
   const startEdit = () => {
     const current = audienceInput(campaign.audience);
@@ -445,6 +472,7 @@ export function AudienceSection({
           error={noList ? null : live.error}
           quota={quota}
           emptyText="Cochez au moins une liste pour voir le nombre de destinataires."
+          prospectsHint={isFeatureEnabled("prospecting")}
           className="self-start"
         />
       </div>

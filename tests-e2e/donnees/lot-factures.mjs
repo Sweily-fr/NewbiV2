@@ -19,7 +19,7 @@
  * créées en dernier (défaut couvert par factures/volume.spec.mjs), les
  * factures vues à l'écran doivent rester parmi elles.
  */
-import { COMPTES, DANS, MAINTENANT, MEMBRES, oid } from "./base.mjs";
+import { COMPTES, DANS, DANS_HEURES, MAINTENANT, MEMBRES, oid } from "./base.mjs";
 import { articles as avecDefauts, entreprise, ligne, snapshotClient, totaux } from "./documents.mjs";
 import { facture as factureListe } from "./factures-liste.mjs";
 
@@ -764,9 +764,9 @@ const RELANCES = [
     emailSubject: "Rappel de paiement",
     emailBody: "Bonjour",
     status: "SENT",
-    sentAt: DANS(-1 / 24),
-    createdAt: DANS(-1 / 24),
-    updatedAt: DANS(-1 / 24),
+    sentAt: DANS_HEURES(-1),
+    createdAt: DANS_HEURES(-1),
+    updatedAt: DANS_HEURES(-1),
   },
 ];
 
