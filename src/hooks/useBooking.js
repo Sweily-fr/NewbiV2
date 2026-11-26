@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   BOOKING_SLUG_AVAILABLE,
@@ -46,6 +46,34 @@ export function bookingErrorMessage(
   return fallback;
 }
 
+// Réservations prises par les invités pendant que la page est ouverte :
+// relues au retour sur l'onglet du navigateur (au plus toutes les 30 s) et
+// toutes les minutes tant que l'onglet est visible.
+const VISIBLE_REFRESH_MIN_MS = 30 * 1000;
+const BOOKINGS_POLL_MS = 60 * 1000;
+const tabHidden = () =>
+  typeof document !== "undefined" && document.visibilityState === "hidden";
+
+function useRefetchWhenVisible(refetch, skip) {
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
+  useEffect(() => {
+    if (skip || typeof document === "undefined") return undefined;
+    let last = Date.now();
+    const onVisible = () => {
+      if (tabHidden() || Date.now() - last < VISIBLE_REFRESH_MIN_MS) return;
+      last = Date.now();
+      refetchRef.current?.().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [skip]);
+}
+
 /** Page de réservation de l'utilisateur dans l'espace actif (null = pas encore créée). */
 export function useMyBookingPage({ skip = false } = {}) {
   const { workspaceId } = useWorkspace();
@@ -73,6 +101,8 @@ export function useAppointmentTypes({ skip = false } = {}) {
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
   });
+  // Compteur « à venir » de chaque type
+  useRefetchWhenVisible(refetch, skip || !workspaceId);
   const types = data?.appointmentTypes || EMPTY;
   return {
     types,
@@ -95,7 +125,10 @@ export function useBookings(
     skip: skip || !workspaceId,
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
+    pollInterval: BOOKINGS_POLL_MS,
+    skipPollAttempt: tabHidden,
   });
+  useRefetchWhenVisible(refetch, skip || !workspaceId);
   return {
     bookings: data?.bookings?.items || EMPTY,
     totalCount: data?.bookings?.totalCount || 0,
