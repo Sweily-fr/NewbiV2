@@ -11,7 +11,6 @@ import {
   PUSH_EVENT_TO_CALENDAR,
   UPDATE_AUTO_SYNC,
 } from "@/src/graphql/mutations/calendarConnection";
-import { GET_EVENTS } from "@/src/graphql/queries/event";
 import { toast } from "@/src/components/ui/sonner";
 
 /**
@@ -59,7 +58,8 @@ export const useConnectAppleCalendar = () => {
     {
       refetchQueries: [
         { query: GET_CALENDAR_CONNECTIONS },
-        { query: GET_EVENTS },
+        // Par nom : la liste affichée, avec sa période
+        "GetEvents",
       ],
       awaitRefetchQueries: true,
     },
@@ -96,7 +96,8 @@ export const useDisconnectCalendar = () => {
     {
       refetchQueries: [
         { query: GET_CALENDAR_CONNECTIONS },
-        { query: GET_EVENTS },
+        // Par nom : la liste affichée, avec sa période
+        "GetEvents",
       ],
       awaitRefetchQueries: true,
     },
@@ -131,7 +132,8 @@ export const useSyncCalendar = () => {
   const [syncMutation, { loading, error }] = useMutation(SYNC_CALENDAR, {
     refetchQueries: [
       { query: GET_CALENDAR_CONNECTIONS },
-      { query: GET_EVENTS },
+      // Par nom : la liste affichée, avec sa période
+      "GetEvents",
     ],
     awaitRefetchQueries: false,
   });
@@ -167,7 +169,8 @@ export const useSyncAllCalendars = () => {
     {
       refetchQueries: [
         { query: GET_CALENDAR_CONNECTIONS },
-        { query: GET_EVENTS },
+        // Par nom : la liste affichée, avec sa période
+        "GetEvents",
       ],
       awaitRefetchQueries: false,
     },
@@ -202,7 +205,9 @@ export const usePushEventToCalendar = () => {
   const [pushMutation, { loading, error }] = useMutation(
     PUSH_EVENT_TO_CALENDAR,
     {
-      refetchQueries: [{ query: GET_EVENTS }],
+      // Par nom : recharge la liste affichée (avec sa période), pas une
+      // liste sans variables que personne ne regarde
+      refetchQueries: ["GetEvents"],
     },
   );
 
