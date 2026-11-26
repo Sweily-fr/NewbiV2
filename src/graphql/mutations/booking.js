@@ -101,6 +101,25 @@ export const CANCEL_EVENT_REGISTRATION = gql`
   ${EVENT_REGISTRATION_FIELDS}
 `;
 
+// Reste dû sur place réglé (paid: true) ou non : inscription confirmée avec
+// un reste dû seulement
+export const MARK_EVENT_REGISTRATION_PAID_ON_SITE = gql`
+  mutation MarkEventRegistrationPaidOnSite(
+    $workspaceId: ID
+    $id: ID!
+    $paid: Boolean!
+  ) {
+    markEventRegistrationPaidOnSite(
+      workspaceId: $workspaceId
+      id: $id
+      paid: $paid
+    ) {
+      ...EventRegistrationFields
+    }
+  }
+  ${EVENT_REGISTRATION_FIELDS}
+`;
+
 // code : jeton du QR code, URL du billet ou numéro « EVT-XXXXXX »
 export const CHECK_IN_TICKET = gql`
   mutation CheckInTicket($workspaceId: ID, $typeId: ID!, $code: String!) {

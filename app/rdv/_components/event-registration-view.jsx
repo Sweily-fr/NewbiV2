@@ -8,11 +8,14 @@ import { cn } from "@/src/lib/utils";
 import { BOOKING_FORM_LIMITS, validateBookingForm } from "@/src/utils/booking";
 import {
   buildRegistrationPayload,
+  eventNeedsOnlinePayment,
+  eventOrderAmounts,
   formatCents,
   isPaidEvent,
   orderedPaymentMethods,
   PAYMENT_PROVIDER_LABELS,
   quantityChoices,
+  registrationSubmitLabel,
   registrationValidationOutcome,
 } from "@/src/utils/booking-events";
 import { bookingErrorText, registerForEvent } from "../_lib/booking-api";
@@ -66,12 +69,15 @@ function RegistrationClosed({ soldOut }) {
 
 /**
  * Formulaire d'inscription : coordonnées, nombre de places, moyen de
- * paiement si l'événement est payant. Gratuit : billets tout de suite ;
- * payant : redirection vers le paiement du vendeur.
+ * paiement si l'événement se paie en ligne (en entier ou en acompte).
+ * Gratuit ou payé sur place : billets tout de suite ; en ligne :
+ * redirection vers le paiement du vendeur.
  */
 function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
   const event = type.event;
-  const paid = isPaidEvent(event.price);
+  const priced = isPaidEvent(event.price);
+  // « paid » : paiement en ligne à l'inscription (total ou acompte)
+  const paid = eventNeedsOnlinePayment(event);
   const methods = orderedPaymentMethods(event.paymentMethods);
   const choices = quantityChoices(event.maxPerOrder, event.seatsLeft);
   const [values, setValues] = useState({
@@ -95,7 +101,7 @@ function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const total = paid ? event.price.amount * quantity : 0;
+  const order = eventOrderAmounts(event, quantity);
 
   const handleSubmit = async (submitEvent) => {
     submitEvent.preventDefault();
@@ -239,7 +245,9 @@ function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
           {choices.map((value) => (
             <option key={value} value={value}>
               {value} place{value > 1 ? "s" : ""}
-              {paid ? ` · ${formatCents(event.price.amount * value)}` : ""}
+              {priced
+                ? ` · ${formatCents(event.price.amount * value, event.price.currency)}`
+                : ""}
             </option>
           ))}
         </select>
@@ -339,12 +347,15 @@ function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
           ? paid
             ? "Redirection vers le paiement"
             : "Inscription en cours"
-          : paid
-            ? `Payer ${formatCents(total, event.price.currency)}`
-            : quantity > 1
-              ? `Réserver ${quantity} places`
-              : "Je m'inscris"}
+          : registrationSubmitLabel(event, quantity)}
       </button>
+      {order.onSite > 0 && (
+        <p className="text-center text-sm text-gray-600">
+          {order.mode === "DEPOSIT"
+            ? `Reste ${formatCents(order.onSite, event.price.currency)} à régler sur place, le jour de l'événement.`
+            : `${formatCents(order.onSite, event.price.currency)} à régler sur place, le jour de l'événement.`}
+        </p>
+      )}
       <p className="text-center text-xs text-gray-400">
         {paid
           ? "Paiement sécurisé, encaissé directement par l'organisateur. "
