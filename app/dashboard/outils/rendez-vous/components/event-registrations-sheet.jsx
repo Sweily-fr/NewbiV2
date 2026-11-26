@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import QRCode from "react-qr-code";
 import {
   Check,
   ChevronDown,
@@ -9,6 +10,7 @@ import {
   MoreHorizontal,
   ScanLine,
   Search,
+  Smartphone,
   Undo2,
   Users,
   XCircle,
@@ -24,6 +26,11 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { toast } from "@/src/components/ui/sonner";
 import {
   Select,
@@ -116,6 +123,42 @@ function downloadText(text, fileName, type) {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Contrôle sur un téléphone : QR code de la page plein écran du contrôle,
+ * à scanner avec le téléphone (connecté au même compte).
+ */
+function PhoneScannerLink({ typeId }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    setUrl(
+      `${window.location.origin}/dashboard/outils/rendez-vous/controle/${typeId}`,
+    );
+  }, [typeId]);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="cursor-pointer">
+          <Smartphone className="size-3.5" aria-hidden="true" />
+          Sur un téléphone
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 space-y-3">
+        <p className="text-sm font-medium">Contrôler depuis un téléphone</p>
+        <p className="text-xs text-muted-foreground">
+          Scannez ce code avec l&apos;appareil photo du téléphone, connecté à
+          votre compte Newbi, pour ouvrir le contrôle des billets en plein
+          écran.
+        </p>
+        {url && (
+          <div className="flex justify-center rounded-lg bg-white p-3">
+            <QRCode value={url} size={168} level="M" />
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 /** Billets d'une inscription, avec la présence marquée à la main. */
@@ -361,6 +404,7 @@ export function EventRegistrationsSheet({
                     Contrôle des billets
                   </Button>
                 )}
+                {canAct && <PhoneScannerLink typeId={type.id} />}
                 <Button
                   variant="outline"
                   size="sm"
