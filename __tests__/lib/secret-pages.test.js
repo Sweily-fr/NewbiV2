@@ -29,6 +29,9 @@ const SECRETES = [
   "/auth/verify-email?token=abc",
   "/reactivate-account?email=a%40b.fr&token=abc",
   "/rdv/gerer/jeton",
+  "/rdv/billet/jeton",
+  "/rdv/inscription/jeton",
+  "/rdv/page/soiree/retour?rt=jeton&provider=stripe&session_id=cs_1",
   "/auth/login?invitation=abc&email=a%40b.fr",
   "/dashboard/outils/transferts-fichiers/abc?key=xyz",
 ];
@@ -42,6 +45,7 @@ const PUBLIQUES = [
   "/dashboard/outils/transferts-fichiers",
   "/publications",
   "/transfert-de-fichiers",
+  "/rdv/page/soiree",
 ];
 
 describe("Pages à secret : aucune balise tierce", () => {
