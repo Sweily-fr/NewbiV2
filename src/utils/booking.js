@@ -166,7 +166,9 @@ export function groupSlotsByDay(slots, timeZone = DEFAULT_TIME_ZONE) {
   const byDay = {};
   for (const slot of sorted) {
     const key = dayKeyInZone(slot.start, timeZone);
+    // Champs de l'API gardés (bankTransferAvailable d'un créneau payant)
     (byDay[key] ||= []).push({
+      ...slot,
       start: slot.start,
       end: slot.end,
       time: timeInZone(slot.start, timeZone),

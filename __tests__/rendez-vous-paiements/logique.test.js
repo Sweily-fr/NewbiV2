@@ -28,6 +28,7 @@ import {
   bookingListVariables,
   bookingValidationOutcome,
   buildBookingPayload,
+  groupSlotsByDay,
 } from "@/src/utils/booking";
 
 const euros = (text) => text.replace(/ | /g, " ");
@@ -123,6 +124,23 @@ describe("créneau payant, page publique", () => {
     );
     expect(bankTransferUnavailableNote(methods, true)).toBeNull();
     expect(bankTransferUnavailableNote(["stripe"], false)).toBeNull();
+  });
+
+  it("créneaux groupés par jour : bankTransferAvailable gardé", () => {
+    const byDay = groupSlotsByDay(
+      [
+        {
+          start: "2026-12-01T09:00:00.000Z",
+          end: "2026-12-01T09:30:00.000Z",
+          bankTransferAvailable: true,
+        },
+      ],
+      "UTC",
+    );
+    expect(byDay["2026-12-01"][0]).toMatchObject({
+      time: "09:00",
+      bankTransferAvailable: true,
+    });
   });
 
   it("moyens connectés de l'organisateur : tous cités", () => {
