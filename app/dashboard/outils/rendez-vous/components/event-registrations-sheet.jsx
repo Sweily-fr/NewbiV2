@@ -99,7 +99,7 @@ function AmountCell({ registration }) {
     <>
       {formatCents(registration.amount, registration.currency)}
       {registration.status === "CONFIRMED" && due > 0 && (
-        <span className="block text-[11px] text-amber-700 dark:text-amber-400">
+        <span className="block text-[11px] whitespace-nowrap text-amber-700 dark:text-amber-400">
           Reste sur place {formatCents(due, registration.currency)}
         </span>
       )}
@@ -583,7 +583,7 @@ export function EventRegistrationsSheet({
                 </div>
               ) : (
                 <>
-                  <div className="hidden grid-cols-[minmax(0,1.6fr)_56px_112px_150px_76px_36px] gap-3 border-b bg-muted/30 px-6 py-2 text-xs text-muted-foreground md:grid">
+                  <div className="hidden grid-cols-[minmax(0,1.6fr)_56px_128px_150px_76px_36px] gap-3 border-b bg-muted/30 px-6 py-2 text-xs text-muted-foreground md:grid">
                     <span>Participant</span>
                     <span className="text-right">Places</span>
                     <span className="text-right">Montant</span>
@@ -598,7 +598,7 @@ export function EventRegistrationsSheet({
                         `${registration.buyer.firstName} ${registration.buyer.lastName}`.trim();
                       return (
                         <Fragment key={registration.id}>
-                          <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-3 sm:px-6 md:grid-cols-[minmax(0,1.6fr)_56px_112px_150px_76px_36px]">
+                          <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-3 sm:px-6 md:grid-cols-[minmax(0,1.6fr)_56px_128px_150px_76px_36px]">
                             <button
                               type="button"
                               onClick={() =>

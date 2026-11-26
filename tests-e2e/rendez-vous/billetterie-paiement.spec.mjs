@@ -19,6 +19,7 @@ import { COMPTES_RDV, PAGES_RDV } from "../donnees/lot-rendez-vous.mjs";
 import { visiteur } from "../pages-publiques/consentement.mjs";
 import { API_RDV, brancherIp, choisirDateHeure } from "./outils-rdv.mjs";
 
+
 /** « AAAA-MM-JJ » dans douze jours. */
 function dansDouzeJours() {
   const jour = new Date(Date.now() + 12 * 86_400_000);
@@ -48,7 +49,7 @@ async function creerEvenementPayant(page, { titre, slug, paiement, acompte }) {
 async function remplirInscription(page, { prenom, nom, places = 1 }) {
   await page.getByLabel("Prénom").fill(prenom);
   await page.getByLabel("Nom", { exact: true }).fill(nom);
-  await page.getByLabel("Adresse e-mail").fill(`${prenom.toLowerCase()}-${Date.now()}@e2e.test`);
+  await page.getByLabel("Adresse e-mail").fill(`${prenom.normalize("NFD").replace(/[^A-Za-z]/g, "").toLowerCase()}-${Date.now()}@e2e.test`);
   if (places > 1) await page.getByLabel("Nombre de places").selectOption(String(places));
   const consentement = page.getByRole("checkbox");
   if (await consentement.count()) await consentement.first().check();
@@ -122,7 +123,7 @@ test.describe("Billetterie : événement à régler sur place", () => {
 
       await cliquer(page, tiroir.getByRole("button", { name: "Actions pour Inès Surplace" }));
       await cliquer(page, page.getByRole("menuitem", { name: "Annuler le règlement sur place" }));
-      await expect(tiroir.getByText(/Reste sur place\s*20,00\s*€/).first()).toBeVisible({ timeout: 15_000 });
+      await expect(tiroir.getByText(/^Reste sur place\s*20,00\s*€$/)).toBeVisible({ timeout: 15_000 });
     });
   });
 });
