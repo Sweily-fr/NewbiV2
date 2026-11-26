@@ -51,6 +51,7 @@ import {
   RICH_TEXT_TYPES,
   addBlock,
   createBlock,
+  defaultSignatureId,
   duplicateBlock,
   findBlock,
   findBlockIndex,
@@ -63,6 +64,10 @@ import {
 } from "@/src/utils/email-campaign-design";
 import { DEFAULT_VARIABLES } from "@/src/utils/email-campaign-variables";
 import { effectiveSenderEmail } from "@/src/utils/email-sending-domain";
+import {
+  CampaignDataProvider,
+  useCampaignDataValue,
+} from "../email-design/campaign-data";
 import { resolvedStyle } from "../email-design/email-blocks";
 import { PreviewDialog } from "../preview-dialog";
 import { TestEmailDialog } from "../test-email-dialog";
@@ -201,6 +206,18 @@ export function CampaignEditor({
   const style = useMemo(() => resolvedStyle(design.style), [design.style]);
   const variables = settings?.variables;
   const locked = readOnly || editor.blocked;
+  // Signatures et destinations des boutons (autres outils de l'espace)
+  const campaignData = useCampaignDataValue(workspaceId, design);
+  const signaturesRef = useRef(campaignData.signatures);
+  signaturesRef.current = campaignData.signatures;
+  /** Propriétés de départ d'un bloc : signature principale proposée d'office. */
+  const startingProps = useCallback(
+    (type) =>
+      type === "signature"
+        ? { signatureId: defaultSignatureId(signaturesRef.current) }
+        : {},
+    [],
+  );
 
   const [tab, setTab] = useState("blocks");
   const [selectedId, setSelectedId] = useState(null);
@@ -251,13 +268,14 @@ export function CampaignEditor({
         designRef.current,
         type,
         selectedId,
+        startingProps(type),
       );
       commit(next);
       setSelectedId(block.id);
       requestTextFocus(block);
       scrollToBlock(block.id);
     },
-    [locked, full, designRef, selectedId, commit],
+    [locked, full, designRef, selectedId, commit, startingProps],
   );
 
   const handleUpdate = useCallback(
@@ -403,7 +421,8 @@ export function CampaignEditor({
     if (source === "palette") {
       const index = dropIndexRef.current;
       if (over && index !== null && !locked && !full()) {
-        const block = createBlock(active.data.current.type);
+        const type = active.data.current.type;
+        const block = createBlock(type, startingProps(type));
         commit(insertBlock(designRef.current, block, index));
         setSelectedId(block.id);
         requestTextFocus(block);
@@ -445,7 +464,7 @@ export function CampaignEditor({
   const undoLabel = "Annuler (⌘ Z)";
   const redoLabel = "Rétablir (⇧ ⌘ Z)";
 
-  return (
+  const content = (
     <div
       lang="fr"
       className="flex h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] flex-col overflow-hidden bg-white dark:bg-neutral-950"
@@ -699,5 +718,9 @@ export function CampaignEditor({
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+
+  return (
+    <CampaignDataProvider value={campaignData}>{content}</CampaignDataProvider>
   );
 }

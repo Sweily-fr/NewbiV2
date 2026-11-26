@@ -202,6 +202,37 @@ export const GET_EMAIL_CAMPAIGN_TEMPLATES = gql`
   }
 `;
 
+// Signatures proposées au bloc Signature : celles de l'utilisateur, plus
+// celles déjà choisies dans le contenu (`ids`, autre membre de l'espace).
+// html : rendu envoyé dans l'e-mail
+export const GET_EMAIL_CAMPAIGN_SIGNATURES = gql`
+  query EmailCampaignSignatures($workspaceId: ID!, $ids: [ID!]) {
+    emailCampaignSignatures(workspaceId: $workspaceId, ids: $ids) {
+      id
+      name
+      isDefault
+      mine
+      html
+    }
+  }
+`;
+
+// Destinations du bouton (« Lien vers ») : pages de rendez-vous, types et
+// événements publics de l'espace ; vide sans accès à la prise de rendez-vous
+export const GET_EMAIL_CAMPAIGN_LINK_TARGETS = gql`
+  query EmailCampaignLinkTargets($workspaceId: ID!) {
+    emailCampaignLinkTargets(workspaceId: $workspaceId) {
+      id
+      kind
+      label
+      pageId
+      pageTitle
+      url
+      startAt
+    }
+  }
+`;
+
 // Décompte en direct des destinataires d'une audience (avant enregistrement).
 // trackingGranted : destinataires envoyables qui ont accepté le suivi
 export const GET_EMAIL_CAMPAIGN_AUDIENCE_COUNT = gql`

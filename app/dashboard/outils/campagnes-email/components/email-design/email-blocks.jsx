@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Signature } from "lucide-react";
 import {
   HEADING_SIZES,
   blockWithDefaults,
@@ -10,6 +10,8 @@ import {
   resolveStyle,
 } from "@/src/utils/email-campaign-design";
 import { trackingNoticeSentence } from "@/src/utils/email-campaigns";
+import { EmailFrame } from "../email-frame";
+import { useCampaignData } from "./campaign-data";
 import { highlightVariables, sanitizeCampaignHtml } from "./rich-html";
 import { SocialIcon } from "./social-icons";
 
@@ -105,6 +107,90 @@ export function ImagePlaceholder({
 function EmptyText({ children }) {
   return (
     <p style={{ margin: 0, opacity: 0.35, fontStyle: "italic" }}>{children}</p>
+  );
+}
+
+/**
+ * Document d'une signature (HTML rendu par l'API, celui de l'e-mail) dans
+ * sa propre iframe : les styles de l'application ne la déforment pas.
+ */
+function signatureDocument(html, align) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}body{text-align:${align};font-family:Arial,Helvetica,sans-serif;}.nb-sig{display:inline-block;text-align:left;vertical-align:top;}</style></head><body><div class="nb-sig">${html}</div></body></html>`;
+}
+
+/** Signature telle qu'elle partira ; les clics sélectionnent le bloc. */
+function SignatureFrame({ html, align, name }) {
+  const doc = useMemo(() => signatureDocument(html, align), [html, align]);
+  return (
+    <EmailFrame
+      html={doc}
+      title={name ? `Signature ${name}` : "Signature"}
+      fit
+      className="pointer-events-none bg-transparent"
+    />
+  );
+}
+
+/** Bloc Signature pas encore affichable (éditeur seulement). */
+function SignaturePlaceholder({ children, warning = false }) {
+  return (
+    <div
+      className={
+        warning
+          ? "flex items-center gap-2.5 rounded-md border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-[#92400e]"
+          : "flex items-center gap-2.5 rounded-md border border-dashed border-[#c9cbd1] bg-[#f3f4f6] px-4 py-3 text-[#6b7280]"
+      }
+      style={{ fontFamily: "Arial, sans-serif" }}
+    >
+      <Signature size={18} strokeWidth={1.6} aria-hidden className="shrink-0" />
+      <span className="text-[13px] leading-5 font-medium">{children}</span>
+    </div>
+  );
+}
+
+/**
+ * Bloc Signature : la signature choisie, rendue par l'API. Dans l'éditeur,
+ * une invite tant qu'elle n'est pas affichable (rien n'est envoyé).
+ */
+function SignatureBlockView({ block, editor }) {
+  const data = useCampaignData();
+  const signature = block.signatureId
+    ? data?.signaturesById.get(block.signatureId)
+    : null;
+  const padding = paddingStyle(block.padding);
+  if (signature?.html) {
+    return (
+      <div style={{ padding }}>
+        <SignatureFrame
+          html={signature.html}
+          align={block.align}
+          name={signature.name}
+        />
+      </div>
+    );
+  }
+  if (!editor) return null;
+  let message;
+  let warning = false;
+  if (!data) message = "Signature";
+  else if (!data.signaturesLoaded)
+    message = data.signaturesError
+      ? "Signature indisponible pour le moment"
+      : "Chargement de la signature…";
+  else if (!block.signatureId)
+    message = data.signatures.some((item) => item.mine)
+      ? "Choisissez une signature dans le panneau de droite"
+      : "Aucune signature\u00a0: créez-en une dans l'outil Signatures de mail";
+  else if (signature) message = "Cette signature est vide";
+  else {
+    message =
+      "Signature introuvable (supprimée\u00a0?)\u00a0: choisissez-en une autre, sinon ce bloc ne sera pas envoyé";
+    warning = true;
+  }
+  return (
+    <div style={{ padding }}>
+      <SignaturePlaceholder warning={warning}>{message}</SignaturePlaceholder>
+    </div>
   );
 }
 
@@ -348,6 +434,8 @@ export function BlockView({
         </div>
       );
     }
+    case "signature":
+      return <SignatureBlockView block={block} editor={editor} />;
     default:
       return null;
   }
