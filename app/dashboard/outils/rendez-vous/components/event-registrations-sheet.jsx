@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import {
+  BadgeEuro,
   Check,
   ChevronDown,
   Download,
@@ -63,8 +64,12 @@ import {
 import {
   checkInDateLabel,
   checkInOutcome,
+  dueOnSiteLabel,
+  eventPaymentMode,
   eventScheduleLabel,
   formatCents,
+  registrationDueOnSite,
+  registrationPayment,
   registrationsCsvFileName,
   registrationStatusLabel,
   seatsLabel,
@@ -80,6 +85,32 @@ const STATUS_FILTERS = [
   { value: "CANCELLED", label: "Annulées" },
   { value: "EXPIRED", label: "Expirées" },
 ];
+
+// Filtre du site : inscriptions confirmées dont le reste dû sur place n'est
+// pas encore réglé (l'API filtre les confirmées, le site garde celles-là)
+const DUE_FILTER = { value: "DUE_ON_SITE", label: "Reste à régler" };
+
+/** Montant d'une inscription et, dessous, son reste dû ou son règlement. */
+function AmountCell({ registration }) {
+  const payment = registrationPayment(registration);
+  if (!payment.mode) return "Gratuit";
+  const due = registrationDueOnSite(registration);
+  return (
+    <>
+      {formatCents(registration.amount, registration.currency)}
+      {registration.status === "CONFIRMED" && due > 0 && (
+        <span className="block text-[11px] text-amber-700 dark:text-amber-400">
+          Reste sur place {formatCents(due, registration.currency)}
+        </span>
+      )}
+      {payment.paidOnSite && payment.dueOnSite > 0 && (
+        <span className="block text-[11px] text-emerald-700 dark:text-emerald-400">
+          Réglé sur place
+        </span>
+      )}
+    </>
+  );
+}
 
 const STATUS_CLASSES = {
   CONFIRMED:
@@ -298,8 +329,9 @@ export function EventRegistrationsSheet({
     setExpanded(null);
   }, [typeId]);
 
+  const dueFilter = status === DUE_FILTER.value;
   const {
-    registrations,
+    registrations: loadedRegistrations,
     totalCount,
     hasMore,
     loadMore,
@@ -310,10 +342,26 @@ export function EventRegistrationsSheet({
     refetch,
   } = useEventRegistrations(typeId, {
     search: debouncedSearch,
-    status: status === "all" ? null : status,
+    status: status === "all" ? null : dueFilter ? "CONFIRMED" : status,
     pageSize: PAGE_SIZE,
     skip: !open,
   });
+
+  const registrations = dueFilter
+    ? loadedRegistrations.filter(
+        (registration) => registrationDueOnSite(registration) > 0,
+      )
+    : loadedRegistrations;
+  // « Reste à régler » : filtre du site sur les confirmées, toutes les
+  // pages sont chargées pour ne rien cacher
+  useEffect(() => {
+    if (dueFilter && hasMore && !loadingMore && !searching) {
+      loadMore().catch(() => {});
+    }
+  }, [dueFilter, hasMore, loadingMore, searching, loadMore]);
+  const statusFilters = ["DEPOSIT", "ON_SITE"].includes(eventPaymentMode(type))
+    ? [...STATUS_FILTERS.slice(0, 2), DUE_FILTER, ...STATUS_FILTERS.slice(2)]
+    : STATUS_FILTERS;
 
   const canAct = canEdit && !readOnly;
   const schedule = type
@@ -343,7 +391,11 @@ export function EventRegistrationsSheet({
       const result = await mutations.checkIn(type.id, ticket.number);
       const outcome = checkInOutcome(result, { timeZone });
       if (outcome.tone === "success") {
-        toast.success(`${ticket.attendeeName} est marqué présent`);
+        toast.success(`${ticket.attendeeName} est marqué présent`, {
+          description: outcome.dueOnSite
+            ? dueOnSiteLabel(outcome.dueOnSite, outcome.currency)
+            : undefined,
+        });
       } else {
         toast.error(outcome.title, { description: outcome.detail });
       }
@@ -365,13 +417,28 @@ export function EventRegistrationsSheet({
     }
   };
 
+  const handlePaidOnSite = async (registration, paid) => {
+    try {
+      await mutations.markPaidOnSite(registration.id, paid);
+      toast.success(
+        paid
+          ? "Inscription marquée comme réglée sur place"
+          : "Règlement sur place annulé",
+      );
+    } catch (paidError) {
+      toast.error("Modification impossible", {
+        description: bookingErrorMessage(paidError),
+      });
+    }
+  };
+
   const handleCancel = async () => {
     const registration = toCancel;
     try {
       await mutations.cancelRegistration(registration.id, cancelReason);
       toast.success("Inscription annulée, le participant est prévenu", {
         description:
-          registration.amount > 0
+          registrationPayment(registration).online > 0
             ? "Remboursez-le depuis votre compte de paiement si besoin."
             : undefined,
       });
@@ -466,7 +533,7 @@ export function EventRegistrationsSheet({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_FILTERS.map((filter) => (
+                  {statusFilters.map((filter) => (
                     <SelectItem key={filter.value} value={filter.value}>
                       {filter.label}
                     </SelectItem>
@@ -516,7 +583,7 @@ export function EventRegistrationsSheet({
                 </div>
               ) : (
                 <>
-                  <div className="hidden grid-cols-[minmax(0,1.6fr)_56px_88px_150px_76px_36px] gap-3 border-b bg-muted/30 px-6 py-2 text-xs text-muted-foreground md:grid">
+                  <div className="hidden grid-cols-[minmax(0,1.6fr)_56px_112px_150px_76px_36px] gap-3 border-b bg-muted/30 px-6 py-2 text-xs text-muted-foreground md:grid">
                     <span>Participant</span>
                     <span className="text-right">Places</span>
                     <span className="text-right">Montant</span>
@@ -531,7 +598,7 @@ export function EventRegistrationsSheet({
                         `${registration.buyer.firstName} ${registration.buyer.lastName}`.trim();
                       return (
                         <Fragment key={registration.id}>
-                          <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-3 sm:px-6 md:grid-cols-[minmax(0,1.6fr)_56px_88px_150px_76px_36px]">
+                          <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-3 sm:px-6 md:grid-cols-[minmax(0,1.6fr)_56px_112px_150px_76px_36px]">
                             <button
                               type="button"
                               onClick={() =>
@@ -566,6 +633,12 @@ export function EventRegistrationsSheet({
                                         registration.currency,
                                       )
                                     : "Gratuit"}{" "}
+                                  {registration.status === "CONFIRMED" &&
+                                    registrationDueOnSite(registration) > 0 &&
+                                    `· Reste sur place ${formatCents(
+                                      registrationDueOnSite(registration),
+                                      registration.currency,
+                                    )} `}
                                   · Présents {registration.checkedInCount} /{" "}
                                   {registration.tickets.length ||
                                     registration.quantity}
@@ -576,12 +649,7 @@ export function EventRegistrationsSheet({
                               {registration.quantity}
                             </span>
                             <span className="hidden text-right text-sm tabular-nums md:block">
-                              {registration.amount > 0
-                                ? formatCents(
-                                    registration.amount,
-                                    registration.currency,
-                                  )
-                                : "Gratuit"}
+                              <AmountCell registration={registration} />
                             </span>
                             <span className="hidden md:block">
                               <StatusBadge registration={registration} />
@@ -611,6 +679,28 @@ export function EventRegistrationsSheet({
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    {registration.status === "CONFIRMED" &&
+                                      registrationPayment(registration)
+                                        .dueOnSite > 0 && (
+                                        <DropdownMenuItem
+                                          disabled={mutations.markingPaidOnSite}
+                                          onClick={() =>
+                                            handlePaidOnSite(
+                                              registration,
+                                              !registration.onSitePaidAt,
+                                            )
+                                          }
+                                        >
+                                          {registration.onSitePaidAt ? (
+                                            <Undo2 className="size-3.5" />
+                                          ) : (
+                                            <BadgeEuro className="size-3.5" />
+                                          )}
+                                          {registration.onSitePaidAt
+                                            ? "Annuler le règlement sur place"
+                                            : "Marquer comme réglé sur place"}
+                                        </DropdownMenuItem>
+                                      )}
                                     <DropdownMenuItem
                                       onClick={() => {
                                         setCancelReason("");
@@ -645,6 +735,11 @@ export function EventRegistrationsSheet({
                                     }[registration.paymentProvider] ||
                                     registration.paymentProvider
                                   }`}
+                                {registration.onSitePaidAt &&
+                                  ` · Reste réglé sur place ${shortDateTimeLabel(
+                                    registration.onSitePaidAt,
+                                    timeZone,
+                                  )}`}
                                 {registration.refundedAt &&
                                   " · Paiement arrivé sans place disponible, remboursé automatiquement"}
                                 {registration.refundFailed &&
@@ -686,7 +781,8 @@ export function EventRegistrationsSheet({
                         {loadingMore && (
                           <Loader2 className="size-3.5 animate-spin" />
                         )}
-                        Afficher plus ({totalCount - registrations.length})
+                        Afficher plus ({totalCount - loadedRegistrations.length}
+                        )
                       </Button>
                     </div>
                   )}
@@ -714,7 +810,7 @@ export function EventRegistrationsSheet({
                   : "Son billet ne sera plus valable"}{" "}
                 et les places sont remises en vente. Le participant est prévenu
                 par e-mail.
-                {toCancel?.amount > 0
+                {registrationPayment(toCancel).online > 0
                   ? " Le remboursement n'est pas automatique : faites-le depuis votre compte Stripe, PayPal ou SumUp."
                   : ""}
               </AlertDialogDescription>

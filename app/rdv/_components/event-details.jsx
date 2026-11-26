@@ -4,6 +4,7 @@ import { cn } from "@/src/lib/utils";
 import { timeZoneLabel } from "@/src/utils/booking";
 import {
   checkInDateLabel,
+  eventPaymentNotice,
   eventPriceLabel,
   eventScheduleLabel,
   seatsLeftLabel,
@@ -144,17 +145,26 @@ export function EventInfo({ page, type, guestTimeZone }) {
           address={event.address}
           label={type.locationLabel}
         />
-        <div className="flex items-center gap-2.5 text-gray-700">
+        <div className="flex items-start gap-2.5 text-gray-700">
           <Ticket
-            className="size-4 shrink-0 text-gray-400"
+            className="mt-0.5 size-4 shrink-0 text-gray-400"
             aria-hidden="true"
           />
-          <span className="font-medium text-gray-900">
-            {eventPriceLabel(event.price)}
-          </span>
-          {event.price?.amount > 0 && (
-            <span className="text-gray-500">par place, TTC</span>
-          )}
+          <div className="min-w-0">
+            <p>
+              <span className="font-medium text-gray-900">
+                {eventPriceLabel(event.price)}
+              </span>
+              {event.price?.amount > 0 && (
+                <span className="text-gray-500"> par place, TTC</span>
+              )}
+            </p>
+            {eventPaymentNotice(event) && (
+              <p className="mt-0.5 text-gray-600">
+                {eventPaymentNotice(event)}
+              </p>
+            )}
+          </div>
         </div>
         {seats && (
           <div className="flex items-center gap-2.5 text-gray-700">
