@@ -579,11 +579,11 @@ export default function GenerateProspectsDialog({
           {/* Formulaire à gauche, récapitulatif et coût à droite */}
           <div
             className={cn(
-              "grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px]",
+              "grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_320px] md:grid-rows-[minmax(0,1fr)] md:overflow-hidden",
               added && "hidden",
             )}
           >
-            <div className="flex min-w-0 flex-col gap-8 px-5 py-6">
+            <div className="flex min-w-0 flex-col gap-8 px-5 py-6 md:min-h-0 md:overflow-y-auto md:overscroll-contain">
               <Section
                 title="Qui cherchez-vous ?"
                 hint="Un métier courant ou n'importe quelle activité de la nomenclature NAF."
@@ -758,7 +758,7 @@ export default function GenerateProspectsDialog({
             </div>
 
             {/* Récapitulatif */}
-            <aside className="flex min-w-0 flex-col gap-6 border-t border-border/40 bg-[#fafafa] px-5 py-6 md:border-t-0 md:border-l dark:bg-[#141414]">
+            <aside className="flex min-w-0 flex-col gap-6 md:min-h-0 md:overflow-y-auto md:overscroll-contain border-t border-border/40 bg-[#fafafa] px-5 py-6 md:border-t-0 md:border-l dark:bg-[#141414]">
               <CreditsCard
                 quota={quota}
                 available={available}
