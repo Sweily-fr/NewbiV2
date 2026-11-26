@@ -43,6 +43,7 @@ import {
   seatsLabel,
   shortDateTimeLabel,
 } from "@/src/utils/booking-events";
+import { slotPricingSource } from "@/src/utils/booking-payments";
 import { copyText, CopyButton, LocationKindIcon } from "./shared";
 
 /** Menu d'actions d'une carte (créneaux ou événement). */
@@ -317,7 +318,7 @@ function TypeCard({
                 />
                 {locationKindLabel(type.location?.kind)}
               </span>
-              {type.price?.amount > 0 && (
+              {slotPricingSource(type).price && (
                 <span className="inline-flex items-center gap-1">
                   <BadgeEuro className="size-3" aria-hidden="true" />
                   {eventPriceLabel(type.price)}
