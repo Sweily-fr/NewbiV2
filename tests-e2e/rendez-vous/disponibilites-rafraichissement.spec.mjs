@@ -7,6 +7,7 @@ import { test, expect } from "../outils.mjs";
 import { ouvrir, cliquer } from "../navigation.mjs";
 import { connecte } from "../config.mjs";
 import { COMPTES_RDV } from "../donnees/lot-rendez-vous.mjs";
+import { champHeure, choisirHeure } from "./outils-rdv.mjs";
 
 const barre = (page) => page.getByRole("button", { name: "Enregistrer", exact: true });
 
@@ -20,26 +21,26 @@ test.describe("Rendez-vous : Disponibilités suit les changements sans rechargem
 
   test("Ajouter, modifier, retirer une plage et une exception", async ({ page }) => {
     await ouvrir(page, "/dashboard/outils/rendez-vous?onglet=disponibilites");
-    const lundiFin1 = page.getByLabel("Lundi, fin de la plage 1");
+    const lundiFin1 = champHeure(page, "Lundi, fin de la plage 1");
     await expect(lundiFin1).toBeVisible({ timeout: 120_000 });
 
     // Modifier une plage
-    await lundiFin1.fill("12:00");
+    await choisirHeure(page, "Lundi, fin de la plage 1", "12:00");
     await enregistrer(page);
-    await expect(lundiFin1).toHaveValue("12:00");
+    await expect(lundiFin1).toHaveText("12:00");
 
     // Ajouter une plage au lundi
     const lundi = page.getByRole("listitem").filter({ has: lundiFin1 });
     await cliquer(page, lundi.getByRole("button", { name: "Ajouter une plage" }));
-    await page.getByLabel("Lundi, début de la plage 2").fill("14:00");
-    await page.getByLabel("Lundi, fin de la plage 2").fill("17:00");
+    await choisirHeure(page, "Lundi, début de la plage 2", "14:00");
+    await choisirHeure(page, "Lundi, fin de la plage 2", "17:00");
     await enregistrer(page);
-    await expect(page.getByLabel("Lundi, fin de la plage 2")).toHaveValue("17:00");
+    await expect(champHeure(page, "Lundi, fin de la plage 2")).toHaveText("17:00");
 
     // Retirer la plage ajoutée
     await cliquer(page, lundi.getByRole("button", { name: "Retirer la plage 2" }));
     await enregistrer(page);
-    await expect(page.getByLabel("Lundi, fin de la plage 2")).toHaveCount(0);
+    await expect(champHeure(page, "Lundi, fin de la plage 2")).toHaveCount(0);
 
     // Ajouter une exception
     await cliquer(page, page.getByRole("button", { name: "Ajouter une date" }));
@@ -51,7 +52,7 @@ test.describe("Rendez-vous : Disponibilités suit les changements sans rechargem
 
     // État identique après rechargement (témoin)
     await page.reload();
-    await expect(page.getByLabel("Lundi, fin de la plage 1")).toHaveValue("12:00", { timeout: 60_000 });
+    await expect(champHeure(page, "Lundi, fin de la plage 1")).toHaveText("12:00", { timeout: 60_000 });
     await expect(page.getByText("Aucune exception.")).toHaveCount(0);
   });
 });

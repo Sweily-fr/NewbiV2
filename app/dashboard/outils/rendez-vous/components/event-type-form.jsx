@@ -37,6 +37,7 @@ import {
   useEventPaymentMethods,
 } from "@/src/hooks/useBooking";
 import { ColorSwatches, LocationKindIcon } from "./shared";
+import { DateTimeField } from "./date-time-fields";
 
 const PROVIDER_NAMES = { stripe: "Stripe", paypal: "PayPal", sumup: "SumUp" };
 
@@ -255,8 +256,7 @@ export function EventTypeForm({
   };
 
   // Début saisi sans fin : fin proposée deux heures plus tard
-  const handleStart = (event) => {
-    const value = event.target.value;
+  const handleStart = (value) => {
     setForm((prev) => ({
       ...prev,
       startAt: value,
@@ -367,26 +367,32 @@ export function EventTypeForm({
 
         <section className="space-y-4">
           <h3 className="text-sm font-medium">Date et heure</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4">
             <Field
               id="event-startAt"
               label="Début"
               error={visibleErrors.startAt}
             >
-              <Input
+              <DateTimeField
                 id="event-startAt"
-                type="datetime-local"
+                label="Début"
                 value={form.startAt}
+                invalid={Boolean(visibleErrors.startAt)}
                 onChange={handleStart}
               />
             </Field>
             <Field id="event-endAt" label="Fin" error={visibleErrors.endAt}>
-              <Input
+              <DateTimeField
                 id="event-endAt"
-                type="datetime-local"
+                label="Fin"
                 value={form.endAt}
-                min={form.startAt || undefined}
-                onChange={(event) => set("endAt")(event.target.value)}
+                invalid={Boolean(visibleErrors.endAt)}
+                defaultTime={form.startAt?.split("T")[1] || "20:00"}
+                isDisabledDay={(day) =>
+                  Boolean(form.startAt) &&
+                  day < new Date(`${form.startAt.split("T")[0]}T00:00`)
+                }
+                onChange={set("endAt")}
               />
             </Field>
           </div>
@@ -398,15 +404,20 @@ export function EventTypeForm({
             error={visibleErrors.registrationClosesAt}
           >
             <div className="flex gap-2">
-              <Input
-                id="event-registrationClosesAt"
-                type="datetime-local"
-                value={form.registrationClosesAt}
-                max={form.startAt || undefined}
-                onChange={(event) =>
-                  set("registrationClosesAt")(event.target.value)
-                }
-              />
+              <div className="min-w-0 flex-1">
+                <DateTimeField
+                  id="event-registrationClosesAt"
+                  label="Clôture des inscriptions"
+                  value={form.registrationClosesAt}
+                  invalid={Boolean(visibleErrors.registrationClosesAt)}
+                  defaultTime={form.startAt?.split("T")[1] || "18:00"}
+                  isDisabledDay={(day) =>
+                    Boolean(form.startAt) &&
+                    day > new Date(`${form.startAt.split("T")[0]}T23:59`)
+                  }
+                  onChange={set("registrationClosesAt")}
+                />
+              </div>
               {form.registrationClosesAt && (
                 <Button
                   type="button"
