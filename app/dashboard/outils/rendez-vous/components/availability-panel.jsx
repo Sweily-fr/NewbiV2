@@ -17,6 +17,7 @@ import { Calendar } from "@/src/components/ui/calendar";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
 import { Switch } from "@/src/components/ui/switch";
+import { toast } from "@/src/components/ui/sonner";
 import {
   Popover,
   PopoverContent,
@@ -161,6 +162,13 @@ export function AvailabilityPanel({
 
   const disabled = !canEdit || readOnly || saving;
   const dirty = snapshot(state) !== snapshot(initialState(page));
+
+  // Les messages s'affichent en bas à droite, là où se trouve « Enregistrer » :
+  // dès qu'une nouvelle modification ouvre la barre, on les retire, sinon le
+  // clic sur « Enregistrer » tombe sur le message et rien n'est enregistré
+  useEffect(() => {
+    if (dirty) toast.dismiss();
+  }, [dirty]);
   const error = availabilityDraftError(state.draft, state.overrides);
   const zones = useMemo(
     () => listTimeZones([state.timezone]),
