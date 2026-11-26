@@ -10,6 +10,7 @@ import {
   slotNeedsOnlinePayment,
   slotPaymentNotice,
   slotPriceLabel,
+  slotPricingSource,
   slotSubmitLabel,
   unconfirmedBookingMessage,
 } from "@/src/utils/booking-payments";
@@ -240,6 +241,22 @@ describe("prix d'un type Créneaux (tiroir)", () => {
       paymentMode: "DEPOSIT",
       depositText: "10",
     });
+  });
+
+  it("ancien créneau avec un prix sans mode : gratuit, rien réécrit", () => {
+    const ancien = {
+      price: { amount: 2500, currency: "EUR" },
+      paymentMode: null,
+    };
+    expect(slotPricingSource(ancien)).toEqual({
+      price: null,
+      paymentMode: null,
+      depositAmount: null,
+    });
+    const form = pricingToForm(slotPricingSource(ancien));
+    expect(form.priceText).toBe("");
+    expect(pricingInputIfChanged(form, slotPricingSource(ancien))).toEqual({});
+    expect(slotPricingSource(PAYANT("ONLINE")).paymentMode).toBe("ONLINE");
   });
 
   it("validation sans « par place » pour un créneau", () => {

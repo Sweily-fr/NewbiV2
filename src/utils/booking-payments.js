@@ -98,6 +98,24 @@ export function paymentStatus(
   return null;
 }
 
+// --- Créneau payant (tableau de bord) ------------------------------------------
+
+/**
+ * Prix d'un type Créneaux tel que l'API le lit : payant seulement si le mode
+ * est enregistré (un ancien créneau avec un prix sans mode reste gratuit).
+ * Sert au formulaire et à la carte du type.
+ */
+export function slotPricingSource(type) {
+  if (!type?.paymentMode || !(Number(type?.price?.amount) > 0)) {
+    return { price: null, paymentMode: null, depositAmount: null };
+  }
+  return {
+    price: type.price,
+    paymentMode: type.paymentMode,
+    depositAmount: type.depositAmount ?? null,
+  };
+}
+
 // --- Créneau payant (page publique) -------------------------------------------
 
 /** `payment` d'un type public : null ou sans prix = gratuit. */

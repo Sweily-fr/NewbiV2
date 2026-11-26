@@ -49,6 +49,7 @@ import {
   pricingToForm,
   SLOT_KIND,
 } from "@/src/utils/booking-events";
+import { slotPricingSource } from "@/src/utils/booking-payments";
 import { useAppointmentPaymentMethods } from "@/src/hooks/useBooking";
 import { ColorSwatches, LocationKindIcon } from "./shared";
 import { EventTypeForm } from "./event-type-form";
@@ -57,7 +58,7 @@ import { PaymentModeFields } from "./payment-mode-fields";
 /** Type de créneaux → formulaire, prix compris (vide : gratuit). */
 const slotTypeToForm = (type, connections) => ({
   ...appointmentTypeToForm(type, { connections }),
-  ...pricingToForm(type),
+  ...pricingToForm(slotPricingSource(type)),
 });
 
 const KIND_CHOICES = [
@@ -249,7 +250,7 @@ export function AppointmentTypeSheet({
       const saved = await onSave(
         {
           ...appointmentTypeFormToInput(form),
-          ...pricingInputIfChanged(form, type),
+          ...pricingInputIfChanged(form, slotPricingSource(type)),
         },
         type,
       );
