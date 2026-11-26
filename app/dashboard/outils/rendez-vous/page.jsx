@@ -358,6 +358,29 @@ function RendezVousContent() {
         booking={shownBooking}
         timeZone={page.timezone}
         canCancel={canEdit && !isReadOnly}
+        canMarkPaid={canEdit && !isReadOnly}
+        onMarkPaid={async (booking) => {
+          const updated = await runMutation(
+            () => mutations.markBookingPaid(booking.id),
+            "Rendez-vous confirmé, l'invité est prévenu",
+            "Confirmation impossible",
+          );
+          // La fiche suit la réservation confirmée, qui quitte l'onglet
+          // « En attente de paiement »
+          if (updated?.id) setSelectedBooking(updated);
+          return updated;
+        }}
+        onMarkPaidOnSite={async (booking, paid) => {
+          const updated = await runMutation(
+            () => mutations.markBookingPaidOnSite(booking.id, paid),
+            paid
+              ? "Rendez-vous marqué comme réglé sur place"
+              : "Règlement sur place annulé",
+            "Modification impossible",
+          );
+          if (updated?.id) setSelectedBooking(updated);
+          return updated;
+        }}
         onClose={() => setSelectedBooking(null)}
         onCancel={(booking, reason) =>
           runMutation(

@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  BadgeEuro,
   CalendarCheck,
   ExternalLink,
   Loader2,
   Mail,
   Phone,
   TriangleAlert,
+  Undo2,
 } from "lucide-react";
 import {
   Sheet,
@@ -42,7 +44,17 @@ import {
   timeRangeLabel,
   timeZoneLabel,
 } from "@/src/utils/booking";
-import { guestName } from "./bookings-panel";
+import {
+  formatCents,
+  registrationPayment,
+  registrationPaymentLine,
+  shortDateTimeLabel,
+} from "@/src/utils/booking-events";
+import {
+  isAwaitingBankTransfer,
+  PAYMENT_PROVIDER_NAMES,
+} from "@/src/utils/booking-payments";
+import { BookingPaymentChip, guestName } from "./bookings-panel";
 import { LocationKindIcon } from "./shared";
 
 function DetailRow({ label, children }) {
@@ -67,6 +79,9 @@ export function BookingSheet({
   timeZone,
   canCancel,
   onCancel,
+  canMarkPaid = false,
+  onMarkPaid,
+  onMarkPaidOnSite,
 }) {
   // Dernière fiche gardée pendant l'animation de fermeture
   const lastRef = useRef(booking);
@@ -82,6 +97,9 @@ export function BookingSheet({
             timeZone={timeZone}
             canCancel={canCancel}
             onCancel={onCancel}
+            canMarkPaid={canMarkPaid}
+            onMarkPaid={onMarkPaid}
+            onMarkPaidOnSite={onMarkPaidOnSite}
           />
         )}
       </SheetContent>
@@ -89,16 +107,49 @@ export function BookingSheet({
   );
 }
 
-function BookingSheetBody({ booking, timeZone, canCancel, onCancel }) {
+function BookingSheetBody({
+  booking,
+  timeZone,
+  canCancel,
+  onCancel,
+  canMarkPaid,
+  onMarkPaid,
+  onMarkPaidOnSite,
+}) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [paidConfirmOpen, setPaidConfirmOpen] = useState(false);
+  // « paid » (virement reçu) | « onsite » (reste réglé) en cours
+  const [paying, setPaying] = useState(null);
   useEffect(() => {
     setReason("");
     setConfirmOpen(false);
+    setPaidConfirmOpen(false);
   }, [booking.id]);
 
-  const cancelled = booking.status === "CANCELLED";
+  // Expiré (paiement jamais arrivé) : comme annulé, plus rien à faire
+  const cancelled = ["CANCELLED", "EXPIRED"].includes(booking.status);
+  const pending = booking.status === "PENDING_PAYMENT";
+  const awaitingTransfer = isAwaitingBankTransfer(booking);
+  const payment = registrationPayment(booking);
+  const handleMarkPaid = async () => {
+    setPaying("paid");
+    try {
+      const done = await onMarkPaid?.(booking);
+      if (done) setPaidConfirmOpen(false);
+    } finally {
+      setPaying(null);
+    }
+  };
+  const handlePaidOnSite = async () => {
+    setPaying("onsite");
+    try {
+      await onMarkPaidOnSite?.(booking, !booking.onSitePaidAt);
+    } finally {
+      setPaying(null);
+    }
+  };
   const past = new Date(booking.endAt) < new Date();
   const guestZone = booking.guest?.timezone;
   const showGuestTime =
@@ -144,11 +195,17 @@ function BookingSheetBody({ booking, timeZone, canCancel, onCancel }) {
               {booking.typeName}
             </SheetTitle>
             <SheetDescription className="text-xs">
-              {cancelled
-                ? `Annulé ${CANCELLED_BY[booking.cancelledBy] || ""}`.trim()
-                : past
-                  ? "Rendez-vous passé"
-                  : "Rendez-vous confirmé"}
+              {booking.status === "EXPIRED"
+                ? "Expiré, paiement non reçu"
+                : cancelled
+                  ? `Annulé ${CANCELLED_BY[booking.cancelledBy] || ""}`.trim()
+                  : pending
+                    ? awaitingTransfer
+                      ? "Virement en attente"
+                      : "En attente de paiement"
+                    : past
+                      ? "Rendez-vous passé"
+                      : "Rendez-vous confirmé"}
               {" · "}
               {durationLabel(booking.durationMinutes)}
             </SheetDescription>
@@ -257,6 +314,106 @@ function BookingSheetBody({ booking, timeZone, canCancel, onCancel }) {
           )}
         </div>
 
+        {(payment.mode || pending) && (
+          <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium">Paiement</p>
+              <BookingPaymentChip booking={booking} timeZone={timeZone} />
+            </div>
+            {payment.mode && (
+              <>
+                <DetailRow label="Montant">
+                  {formatCents(booking.amount, booking.currency)}
+                </DetailRow>
+                <DetailRow label="Règlement">
+                  {registrationPaymentLine(booking)}
+                </DetailRow>
+              </>
+            )}
+            {booking.paymentProvider && (
+              <DetailRow label="Moyen">
+                {PAYMENT_PROVIDER_NAMES[booking.paymentProvider] ||
+                  booking.paymentProvider}
+                {booking.paidAt &&
+                  ` · payé le ${shortDateTimeLabel(booking.paidAt, timeZone)}`}
+              </DetailRow>
+            )}
+            {booking.paymentReference && (
+              <DetailRow label="Référence">
+                <span className="font-mono text-xs">
+                  {booking.paymentReference}
+                </span>
+              </DetailRow>
+            )}
+            {booking.bankTransferDeclaredAt && pending && (
+              <DetailRow label="Annoncé le">
+                {shortDateTimeLabel(booking.bankTransferDeclaredAt, timeZone)}
+              </DetailRow>
+            )}
+            {pending && booking.expiresAt && (
+              <DetailRow label="Créneau gardé">
+                {`jusqu'au ${shortDateTimeLabel(booking.expiresAt, timeZone)}`}
+              </DetailRow>
+            )}
+            {booking.onSitePaidAt && (
+              <DetailRow label="Réglé sur place">
+                {shortDateTimeLabel(booking.onSitePaidAt, timeZone)}
+              </DetailRow>
+            )}
+            {booking.refundFailed && (
+              <p className="text-xs text-red-700 dark:text-red-300">
+                Paiement arrivé alors que le créneau n&apos;était plus libre :
+                remboursez l&apos;invité depuis votre compte de paiement.
+              </p>
+            )}
+            {booking.refundedAt && (
+              <p className="text-xs text-muted-foreground">
+                Paiement arrivé alors que le créneau n&apos;était plus libre,
+                remboursé automatiquement.
+              </p>
+            )}
+            {pending && (
+              <p className="text-xs text-muted-foreground">
+                Le rendez-vous sera confirmé, ajouté à vos agendas et
+                l&apos;invité prévenu dès la réception du paiement.
+              </p>
+            )}
+            {canMarkPaid && awaitingTransfer && (
+              <Button
+                size="sm"
+                variant="primary"
+                className="w-full cursor-pointer"
+                onClick={() => setPaidConfirmOpen(true)}
+              >
+                <BadgeEuro className="size-3.5" aria-hidden="true" />
+                Marquer comme payé
+              </Button>
+            )}
+            {canMarkPaid &&
+              booking.status === "CONFIRMED" &&
+              payment.dueOnSite > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  disabled={paying === "onsite"}
+                  onClick={handlePaidOnSite}
+                >
+                  {paying === "onsite" ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : booking.onSitePaidAt ? (
+                    <Undo2 className="size-3.5" aria-hidden="true" />
+                  ) : (
+                    <BadgeEuro className="size-3.5" aria-hidden="true" />
+                  )}
+                  {booking.onSitePaidAt
+                    ? "Annuler le règlement sur place"
+                    : "Marquer comme réglé sur place"}
+                </Button>
+              )}
+          </div>
+        )}
+
         {booking.guest?.message && (
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">
@@ -294,6 +451,44 @@ function BookingSheetBody({ booking, timeZone, canCancel, onCancel }) {
       </SheetFooter>
 
       <AlertDialog
+        open={paidConfirmOpen}
+        onOpenChange={(open) => paying !== "paid" && setPaidConfirmOpen(open)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Virement bien reçu ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le rendez-vous de {guestName(booking.guest)} sera confirmé
+              {payment.online > 0
+                ? ` (${formatCents(payment.online, booking.currency)} reçus)`
+                : ""}
+              , ajouté à vos agendas, et l&apos;invité recevra sa confirmation
+              par e-mail.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="cursor-pointer"
+              disabled={paying === "paid"}
+            >
+              Pas encore
+            </AlertDialogCancel>
+            <Button
+              variant="primary"
+              onClick={handleMarkPaid}
+              disabled={paying === "paid"}
+              className="cursor-pointer"
+            >
+              {paying === "paid" && (
+                <Loader2 className="size-3.5 animate-spin" />
+              )}
+              Confirmer le rendez-vous
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
         open={confirmOpen}
         onOpenChange={(open) => !cancelling && setConfirmOpen(open)}
       >
@@ -301,8 +496,12 @@ function BookingSheetBody({ booking, timeZone, canCancel, onCancel }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Annuler ce rendez-vous ?</AlertDialogTitle>
             <AlertDialogDescription>
-              {guestName(booking.guest)} sera prévenu par e-mail et le créneau
-              redeviendra libre. L&apos;événement est retiré de vos agendas.
+              {pending
+                ? "Le créneau redeviendra libre et le paiement en attente sera fermé."
+                : `${guestName(booking.guest)} sera prévenu par e-mail et le créneau redeviendra libre. L'événement est retiré de vos agendas.`}
+              {payment.online > 0 && booking.status === "CONFIRMED"
+                ? " Le paiement en ligne n'est pas remboursé automatiquement : remboursez depuis votre compte de paiement si besoin."
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-1.5">

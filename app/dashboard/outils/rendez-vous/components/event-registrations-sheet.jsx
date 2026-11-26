@@ -75,6 +75,11 @@ import {
   seatsLabel,
   shortDateTimeLabel,
 } from "@/src/utils/booking-events";
+import {
+  isAwaitingBankTransfer,
+  PAYMENT_PROVIDER_NAMES,
+  paymentStatus,
+} from "@/src/utils/booking-payments";
 
 const PAGE_SIZE = 50;
 
@@ -125,8 +130,32 @@ const STATUS_CLASSES = {
  * Statut d'une inscription. Paiement arrivé sans place : remboursé
  * automatiquement, ou à rembourser à la main si le remboursement a échoué.
  */
-function StatusBadge({ registration }) {
+function StatusBadge({ registration, timeZone, withDetail = false }) {
   const { status } = registration;
+  const transfer =
+    isAwaitingBankTransfer(registration) ||
+    (status === "EXPIRED" && registration.paymentProvider === "bank_transfer")
+      ? paymentStatus(registration, { timeZone, feminine: true })
+      : null;
+  if (transfer && !registration.refundFailed && !registration.refundedAt) {
+    return (
+      <span className="inline-flex flex-col items-start gap-0.5">
+        <span
+          className={cn(
+            "inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+            STATUS_CLASSES[status] || "bg-muted text-muted-foreground",
+          )}
+        >
+          {transfer.label}
+        </span>
+        {withDetail && transfer.detail && (
+          <span className="text-[11px] whitespace-nowrap text-muted-foreground">
+            {transfer.detail}
+          </span>
+        )}
+      </span>
+    );
+  }
   if (registration.refundFailed) {
     return (
       <span className="inline-flex shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-red-700 dark:bg-red-950/40 dark:text-red-300">
@@ -144,6 +173,16 @@ function StatusBadge({ registration }) {
       {registration.refundedAt ? "Remboursée" : registrationStatusLabel(status)}
     </span>
   );
+}
+
+/**
+ * « Marquer comme payé » : inscription en attente de virement, ou expirée
+ * faute de virement (l'API confirme s'il reste des places).
+ */
+function canMarkPaid(registration) {
+  if (registration?.paymentProvider !== "bank_transfer") return false;
+  if (registration.refundFailed || registration.refundedAt) return false;
+  return ["PENDING_PAYMENT", "EXPIRED"].includes(registration.status);
 }
 
 function useDebounced(value, delay = 300) {
@@ -316,6 +355,7 @@ export function EventRegistrationsSheet({
   const [status, setStatus] = useState("all");
   const [expanded, setExpanded] = useState(null);
   const [toCancel, setToCancel] = useState(null);
+  const [toMarkPaid, setToMarkPaid] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
   const [exporting, setExporting] = useState(false);
   const debouncedSearch = useDebounced(search);
@@ -413,6 +453,19 @@ export function EventRegistrationsSheet({
     } catch (undoError) {
       toast.error("Modification impossible", {
         description: bookingErrorMessage(undoError),
+      });
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    const registration = toMarkPaid;
+    try {
+      await mutations.markPaid(registration.id);
+      toast.success("Inscription confirmée, les billets sont envoyés");
+      setToMarkPaid(null);
+    } catch (paidError) {
+      toast.error("Confirmation impossible", {
+        description: bookingErrorMessage(paidError),
       });
     }
   };
@@ -652,7 +705,11 @@ export function EventRegistrationsSheet({
                               <AmountCell registration={registration} />
                             </span>
                             <span className="hidden md:block">
-                              <StatusBadge registration={registration} />
+                              <StatusBadge
+                                registration={registration}
+                                timeZone={timeZone}
+                                withDetail
+                              />
                             </span>
                             <span className="hidden text-right text-sm tabular-nums md:block">
                               {registration.checkedInCount} /{" "}
@@ -661,12 +718,16 @@ export function EventRegistrationsSheet({
                             </span>
                             <span className="flex items-center justify-end gap-2">
                               <span className="md:hidden">
-                                <StatusBadge registration={registration} />
+                                <StatusBadge
+                                  registration={registration}
+                                  timeZone={timeZone}
+                                />
                               </span>
                               {canAct &&
-                              ["CONFIRMED", "PENDING_PAYMENT"].includes(
+                              (["CONFIRMED", "PENDING_PAYMENT"].includes(
                                 registration.status,
-                              ) ? (
+                              ) ||
+                                canMarkPaid(registration)) ? (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
@@ -679,6 +740,17 @@ export function EventRegistrationsSheet({
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    {canMarkPaid(registration) && (
+                                      <DropdownMenuItem
+                                        disabled={mutations.markingPaid}
+                                        onClick={() =>
+                                          setToMarkPaid(registration)
+                                        }
+                                      >
+                                        <BadgeEuro className="size-3.5" />
+                                        Marquer comme payé
+                                      </DropdownMenuItem>
+                                    )}
                                     {registration.status === "CONFIRMED" &&
                                       registrationPayment(registration)
                                         .dueOnSite > 0 && (
@@ -701,16 +773,20 @@ export function EventRegistrationsSheet({
                                             : "Marquer comme réglé sur place"}
                                         </DropdownMenuItem>
                                       )}
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setCancelReason("");
-                                        setToCancel(registration);
-                                      }}
-                                      className="text-red-600 focus:text-red-600"
-                                    >
-                                      <XCircle className="size-3.5" />
-                                      Annuler l&apos;inscription
-                                    </DropdownMenuItem>
+                                    {["CONFIRMED", "PENDING_PAYMENT"].includes(
+                                      registration.status,
+                                    ) && (
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setCancelReason("");
+                                          setToCancel(registration);
+                                        }}
+                                        className="text-red-600 focus:text-red-600"
+                                      >
+                                        <XCircle className="size-3.5" />
+                                        Annuler l&apos;inscription
+                                      </DropdownMenuItem>
+                                    )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               ) : (
@@ -727,14 +803,34 @@ export function EventRegistrationsSheet({
                                   timeZone,
                                 )}
                                 {registration.paymentProvider &&
-                                  ` · Payé avec ${
-                                    {
-                                      stripe: "Stripe",
-                                      paypal: "PayPal",
-                                      sumup: "SumUp",
-                                    }[registration.paymentProvider] ||
-                                    registration.paymentProvider
-                                  }`}
+                                  (registration.status === "CONFIRMED" ||
+                                  registration.paidAt
+                                    ? registration.paymentProvider ===
+                                      "bank_transfer"
+                                      ? " · Payé par virement"
+                                      : ` · Payé avec ${
+                                          PAYMENT_PROVIDER_NAMES[
+                                            registration.paymentProvider
+                                          ] || registration.paymentProvider
+                                        }`
+                                    : registration.paymentProvider ===
+                                        "bank_transfer"
+                                      ? " · Virement attendu"
+                                      : "")}
+                                {registration.paymentReference &&
+                                  ` · Référence ${registration.paymentReference}`}
+                                {registration.bankTransferDeclaredAt &&
+                                  registration.status === "PENDING_PAYMENT" &&
+                                  ` · Virement annoncé le ${shortDateTimeLabel(
+                                    registration.bankTransferDeclaredAt,
+                                    timeZone,
+                                  )}`}
+                                {registration.status === "PENDING_PAYMENT" &&
+                                  registration.expiresAt &&
+                                  ` · Places gardées jusqu'au ${shortDateTimeLabel(
+                                    registration.expiresAt,
+                                    timeZone,
+                                  )}`}
                                 {registration.onSitePaidAt &&
                                   ` · Reste réglé sur place ${shortDateTimeLabel(
                                     registration.onSitePaidAt,
@@ -811,7 +907,10 @@ export function EventRegistrationsSheet({
                 et les places sont remises en vente. Le participant est prévenu
                 par e-mail.
                 {registrationPayment(toCancel).online > 0
-                  ? " Le remboursement n'est pas automatique : faites-le depuis votre compte Stripe, PayPal ou SumUp."
+                  ? toCancel?.paymentProvider === "bank_transfer" &&
+                    toCancel?.status === "PENDING_PAYMENT"
+                    ? ""
+                    : " Le remboursement n'est pas automatique : faites-le depuis votre compte Stripe, PayPal ou SumUp, ou par virement."
                   : ""}
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -839,6 +938,53 @@ export function EventRegistrationsSheet({
                   <Loader2 className="size-3.5 animate-spin" />
                 )}
                 Annuler l&apos;inscription
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={Boolean(toMarkPaid)}
+          onOpenChange={(next) =>
+            !next && !mutations.markingPaid && setToMarkPaid(null)
+          }
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Virement bien reçu ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                L&apos;inscription de {toMarkPaid?.buyer.firstName}{" "}
+                {toMarkPaid?.buyer.lastName} sera confirmée
+                {toMarkPaid
+                  ? ` (${formatCents(
+                      registrationPayment(toMarkPaid).online,
+                      toMarkPaid.currency,
+                    )} reçus${
+                      toMarkPaid.paymentReference
+                        ? `, référence ${toMarkPaid.paymentReference}`
+                        : ""
+                    })`
+                  : ""}{" "}
+                et ses billets envoyés par e-mail.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                className="cursor-pointer"
+                disabled={mutations.markingPaid}
+              >
+                Pas encore
+              </AlertDialogCancel>
+              <Button
+                variant="primary"
+                onClick={handleMarkPaid}
+                disabled={mutations.markingPaid}
+                className="cursor-pointer"
+              >
+                {mutations.markingPaid && (
+                  <Loader2 className="size-3.5 animate-spin" />
+                )}
+                Confirmer l&apos;inscription
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
