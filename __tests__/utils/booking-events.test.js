@@ -16,6 +16,7 @@ import {
   eventTypeToForm,
   isoToZonedInput,
   nextReturnPollDelay,
+  unconfirmedRegistrationMessage,
   parseTicketCode,
   quantityChoices,
   registrationsCsvFileName,
@@ -463,5 +464,46 @@ describe("vérification du retour de paiement", () => {
     expect(nextReturnPollDelay(4, 19000)).toBe(15000);
     expect(nextReturnPollDelay(10, 160000)).toBe(15000);
     expect(nextReturnPollDelay(11, 170000)).toBeNull();
+  });
+});
+
+describe("messages d'une inscription non confirmée", () => {
+  it("un message juste par cas", () => {
+    expect(
+      unconfirmedRegistrationMessage({
+        registration: { status: "EXPIRED" },
+        paymentStatus: "paid",
+        refundStatus: "REFUNDED",
+      }).title,
+    ).toBe("Paiement remboursé");
+    const manual = unconfirmedRegistrationMessage({
+      registration: { status: "CANCELLED", refundStatus: "MANUAL" },
+      paymentStatus: "paid",
+      organizerName: "Studio Lumière",
+    });
+    expect(manual.title).toBe("Paiement reçu, inscription non confirmée");
+    expect(manual.text).toContain("Contactez Studio Lumière");
+    expect(manual.text).not.toContain("non effectué");
+    expect(
+      unconfirmedRegistrationMessage({
+        registration: { status: "EXPIRED" },
+        paymentStatus: "unpaid",
+        canceledByPayer: true,
+      }).title,
+    ).toBe("Paiement annulé");
+    expect(
+      unconfirmedRegistrationMessage({
+        registration: { status: "EXPIRED" },
+        paymentStatus: "unpaid",
+      }).title,
+    ).toBe("Paiement non effectué");
+    expect(
+      unconfirmedRegistrationMessage({
+        registration: { status: "CANCELLED", refundStatus: "NONE" },
+      }).title,
+    ).toBe("Inscription annulée");
+    expect(
+      unconfirmedRegistrationMessage({ paymentStatus: "pending" }).restart,
+    ).toBe(false);
   });
 });

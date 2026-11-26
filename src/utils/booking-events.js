@@ -637,3 +637,63 @@ export function nextReturnPollDelay(attempt, elapsedMs) {
   const delay = RETURN_POLL_DELAYS_MS[attempt - 1] ?? RETURN_POLL_EVERY_MS;
   return elapsedMs + delay > RETURN_POLL_MAX_MS ? null : delay;
 }
+
+/**
+ * Inscription non confirmée → titre et texte justes selon le paiement et
+ * son remboursement (`refundStatus` de l'API : NONE | REFUNDED | MANUAL).
+ * `canceledByPayer` : le payeur a annulé chez le prestataire.
+ * `restart` : proposer de recommencer l'inscription.
+ */
+export function unconfirmedRegistrationMessage({
+  registration,
+  paymentStatus = null,
+  refundStatus = null,
+  canceledByPayer = false,
+  organizerName = "",
+} = {}) {
+  const refund = refundStatus || registration?.refundStatus || "NONE";
+  const organizer = organizerName || "l'organisateur";
+  if (refund === "REFUNDED") {
+    return {
+      title: "Paiement remboursé",
+      text: "Votre paiement est arrivé alors que les places n'étaient plus disponibles : il vous a été remboursé automatiquement. Aucun billet n'a été émis.",
+      restart: true,
+    };
+  }
+  if (refund === "MANUAL") {
+    return {
+      title: "Paiement reçu, inscription non confirmée",
+      text: `Votre paiement a bien été reçu, mais l'inscription n'a pas pu être confirmée et aucun billet n'a été émis. Contactez ${organizer} pour être remboursé, en indiquant l'adresse e-mail utilisée.`,
+      restart: false,
+    };
+  }
+  if (
+    paymentStatus === "pending" ||
+    registration?.status === "PENDING_PAYMENT"
+  ) {
+    return {
+      title: "Paiement en attente de confirmation",
+      text: "Vous recevrez vos billets par e-mail dès la confirmation du paiement.",
+      restart: false,
+    };
+  }
+  if (registration?.status === "CANCELLED") {
+    return {
+      title: "Inscription annulée",
+      text: "Cette inscription a été annulée. Ses billets ne sont plus valables.",
+      restart: true,
+    };
+  }
+  if (canceledByPayer) {
+    return {
+      title: "Paiement annulé",
+      text: "Vous avez annulé le paiement : rien n'a été prélevé, votre inscription n'est pas enregistrée et les places ont été libérées.",
+      restart: true,
+    };
+  }
+  return {
+    title: "Paiement non effectué",
+    text: "Le paiement n'a pas abouti : rien n'a été prélevé et aucun billet n'a été émis. Vous pouvez recommencer.",
+    restart: true,
+  };
+}
