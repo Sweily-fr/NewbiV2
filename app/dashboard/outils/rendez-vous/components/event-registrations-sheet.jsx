@@ -90,7 +90,19 @@ const STATUS_CLASSES = {
   EXPIRED: "bg-muted text-muted-foreground",
 };
 
-function StatusBadge({ status }) {
+/**
+ * Statut d'une inscription. Paiement arrivé sans place : remboursé
+ * automatiquement, ou à rembourser à la main si le remboursement a échoué.
+ */
+function StatusBadge({ registration }) {
+  const { status } = registration;
+  if (registration.refundFailed) {
+    return (
+      <span className="inline-flex shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-red-700 dark:bg-red-950/40 dark:text-red-300">
+        À rembourser à la main
+      </span>
+    );
+  }
   return (
     <span
       className={cn(
@@ -98,7 +110,7 @@ function StatusBadge({ status }) {
         STATUS_CLASSES[status] || "bg-muted text-muted-foreground",
       )}
     >
-      {registrationStatusLabel(status)}
+      {registration.refundedAt ? "Remboursée" : registrationStatusLabel(status)}
     </span>
   );
 }
@@ -565,7 +577,7 @@ export function EventRegistrationsSheet({
                                 : "Gratuit"}
                             </span>
                             <span className="hidden md:block">
-                              <StatusBadge status={registration.status} />
+                              <StatusBadge registration={registration} />
                             </span>
                             <span className="hidden text-right text-sm tabular-nums md:block">
                               {registration.checkedInCount} /{" "}
@@ -574,7 +586,7 @@ export function EventRegistrationsSheet({
                             </span>
                             <span className="flex items-center justify-end gap-2">
                               <span className="md:hidden">
-                                <StatusBadge status={registration.status} />
+                                <StatusBadge registration={registration} />
                               </span>
                               {canAct &&
                               ["CONFIRMED", "PENDING_PAYMENT"].includes(
@@ -627,7 +639,9 @@ export function EventRegistrationsSheet({
                                     registration.paymentProvider
                                   }`}
                                 {registration.refundedAt &&
-                                  " · Remboursé automatiquement"}
+                                  " · Paiement arrivé sans place disponible, remboursé automatiquement"}
+                                {registration.refundFailed &&
+                                  " · Paiement arrivé sans place disponible : le remboursement automatique a échoué, remboursez depuis votre compte de paiement"}
                                 {registration.cancelReason &&
                                   ` · Motif : ${registration.cancelReason}`}
                               </div>

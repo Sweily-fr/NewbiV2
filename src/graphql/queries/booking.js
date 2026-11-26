@@ -207,6 +207,7 @@ export const EVENT_REGISTRATION_FIELDS = gql`
     cancelledAt
     cancelReason
     refundedAt
+    refundFailed
     clientId
     tickets {
       ...EventTicketFields
