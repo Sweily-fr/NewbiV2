@@ -91,3 +91,33 @@ export async function reservationEnBase(filtre) {
 /** Heure « HH:MM » d'un instant à Paris (fuseau du navigateur des tests). */
 export const heureParis = (instant) =>
   new Date(instant).toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
+
+/**
+ * Heure choisie dans une liste de la prise de rendez-vous (TimeSelect) :
+ * libellé du champ, valeur « HH:mm » (affichée « 9:00 » avant 10 h).
+ */
+export async function choisirHeure(page, libelle, heure) {
+  const [h, m] = heure.split(":");
+  await page.getByRole("combobox", { name: libelle, exact: true }).click();
+  await page.getByRole("option", { name: `${Number(h)}:${m}`, exact: true }).click();
+}
+
+/** Valeur affichée d'une liste d'heures (« 12:00 »). */
+export const champHeure = (page, libelle) => page.getByRole("combobox", { name: libelle, exact: true });
+
+/**
+ * Date et heure d'un champ DateTimeField (« Début », « Fin »…) : jour
+ * « AAAA-MM-JJ » dans le calendrier (mois suivants parcourus jusqu'au bon
+ * mois, repéré par son titre « décembre 2026 »), puis l'heure.
+ */
+export async function choisirDateHeure(page, libelle, jour, heure) {
+  const [annee, mois, quantieme] = jour.split("-").map(Number);
+  const titre = new Date(annee, mois - 1, 15).toLocaleString("fr-FR", { month: "long", year: "numeric" });
+  await page.getByRole("button", { name: `${libelle}, date`, exact: true }).click();
+  const fenetre = page.locator("[data-slot=popover-content]");
+  for (let i = 0; i < 24 && !(await fenetre.getByText(titre, { exact: true }).count()); i += 1) {
+    await fenetre.locator(".rdp-button_next").click();
+  }
+  await fenetre.locator("button[data-day]", { hasText: new RegExp(`^${quantieme}$`) }).click();
+  await choisirHeure(page, `${libelle}, heure`, heure);
+}

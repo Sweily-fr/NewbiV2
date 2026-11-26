@@ -10,15 +10,16 @@ import { ouvrir, cliquer } from "../navigation.mjs";
 import { connecte } from "../config.mjs";
 import { COMPTES_RDV, PAGES_RDV } from "../donnees/lot-rendez-vous.mjs";
 import { visiteur } from "../pages-publiques/consentement.mjs";
+import { choisirDateHeure } from "./outils-rdv.mjs";
 
 const TITRE = "Atelier billetterie e2e";
 const SLUG = "atelier-billetterie-e2e";
 
-/** « AAAA-MM-JJTHH:MM » dans dix jours, pour un champ datetime-local. */
-function dansDixJours(heure) {
+/** « AAAA-MM-JJ » dans dix jours. */
+function dansDixJours() {
   const jour = new Date(Date.now() + 10 * 86_400_000);
   const pad = (n) => String(n).padStart(2, "0");
-  return `${jour.getFullYear()}-${pad(jour.getMonth() + 1)}-${pad(jour.getDate())}T${heure}`;
+  return `${jour.getFullYear()}-${pad(jour.getMonth() + 1)}-${pad(jour.getDate())}`;
 }
 
 test.describe("Billetterie : de la création au contrôle à l'entrée", () => {
@@ -34,8 +35,8 @@ test.describe("Billetterie : de la création au contrôle à l'entrée", () => {
       await cliquer(page, page.getByRole("radio", { name: /Événement/ }));
       await page.getByLabel("Titre").fill(TITRE);
       await page.locator("#event-slug").fill(SLUG);
-      await page.getByLabel("Début").fill(dansDixJours("18:00"));
-      await page.getByLabel("Fin").fill(dansDixJours("21:00"));
+      await choisirDateHeure(page, "Début", dansDixJours(), "18:00");
+      await choisirDateHeure(page, "Fin", dansDixJours(), "21:00");
       await page.locator("#event-locationValue").fill("3 rue de l’Église, 75011 Paris");
       await page.getByLabel("Nombre de places", { exact: true }).fill("2");
       await cliquer(page, page.getByRole("button", { name: "Créer l'événement" }));
