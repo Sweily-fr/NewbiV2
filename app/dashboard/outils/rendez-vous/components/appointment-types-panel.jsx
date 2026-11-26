@@ -9,7 +9,9 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  ScanLine,
   Trash2,
+  Users,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Switch } from "@/src/components/ui/switch";
@@ -33,7 +35,237 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { cn } from "@/src/lib/utils";
 import { durationLabel, locationKindLabel } from "@/src/utils/booking";
+import {
+  eventPriceLabel,
+  isEventType,
+  seatsLabel,
+  shortDateTimeLabel,
+} from "@/src/utils/booking-events";
 import { copyText, CopyButton, LocationKindIcon } from "./shared";
+
+/** Menu d'actions d'une carte (créneaux ou événement). */
+function TypeActionsMenu({
+  type,
+  canEdit,
+  canDelete,
+  readOnly,
+  onEdit,
+  onDelete,
+  extraItems = null,
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 cursor-pointer"
+          aria-label={`Actions pour ${type.name}`}
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {canEdit && (
+          <DropdownMenuItem onClick={onEdit} disabled={readOnly}>
+            <Pencil className="size-3.5" />
+            Modifier
+          </DropdownMenuItem>
+        )}
+        {extraItems}
+        <DropdownMenuItem onClick={() => copyText(type.publicUrl)}>
+          <Copy className="size-3.5" />
+          Copier le lien
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={type.publicUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="size-3.5" />
+            Ouvrir la page
+          </a>
+        </DropdownMenuItem>
+        {canDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onDelete}
+              disabled={readOnly}
+              className="text-red-600 focus:text-red-600"
+            >
+              <Trash2 className="size-3.5" />
+              Supprimer
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Interrupteur actif / désactivé d'une carte. */
+function ActiveSwitch({ type, readOnly, onToggle, onLabel = "Actif" }) {
+  const [toggling, setToggling] = useState(false);
+  return (
+    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+      <span className="sr-only sm:not-sr-only">
+        {type.isActive ? onLabel : "Désactivé"}
+      </span>
+      <Switch
+        checked={type.isActive}
+        disabled={readOnly || toggling}
+        aria-label={type.isActive ? "Désactiver ce type" : "Activer ce type"}
+        onCheckedChange={async (checked) => {
+          setToggling(true);
+          try {
+            await onToggle(checked);
+          } finally {
+            setToggling(false);
+          }
+        }}
+      />
+    </label>
+  );
+}
+
+/**
+ * Carte d'un événement : image, date, places prises, prix, accès aux
+ * inscrits et au contrôle des billets.
+ */
+function EventTypeCard({
+  type,
+  timeZone,
+  canEdit,
+  canDelete,
+  readOnly,
+  onEdit,
+  onToggle,
+  onDelete,
+  onOpenRegistrations,
+  onOpenScanner,
+}) {
+  const visual = type.imageUrl || type.coverImageUrl;
+  const isPast = type.endAt && new Date(type.endAt) < new Date();
+  const soldOut = type.capacity != null && type.seatsLeft === 0;
+  return (
+    <div
+      className={cn(
+        "flex flex-col overflow-hidden rounded-xl border bg-background transition-opacity",
+        (!type.isActive || isPast) && "opacity-70",
+      )}
+    >
+      <div
+        className="relative h-28 w-full"
+        style={{ backgroundColor: type.color || "#5a50ff" }}
+      >
+        {visual && (
+          // Image R2 d'un domaine quelconque : simple balise
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={visual}
+            alt=""
+            className="size-full object-cover"
+            loading="lazy"
+          />
+        )}
+        <span className="absolute top-2 left-2 rounded-full bg-background/90 px-2 py-0.5 text-[11px] font-medium">
+          {isPast ? "Terminé" : soldOut ? "Complet" : "Événement"}
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={canEdit ? onEdit : undefined}
+              className={cn(
+                "block max-w-full truncate text-left text-sm font-medium",
+                canEdit && "cursor-pointer hover:underline",
+              )}
+            >
+              {type.name}
+            </button>
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <CalendarClock className="size-3" aria-hidden="true" />
+                {shortDateTimeLabel(type.startAt, timeZone)}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <LocationKindIcon
+                  kind={type.location?.kind}
+                  className="size-3"
+                />
+                {type.location?.kind === "CUSTOM_LINK"
+                  ? "En ligne"
+                  : locationKindLabel(type.location?.kind)}
+              </span>
+            </p>
+          </div>
+          {(canEdit || canDelete) && (
+            <TypeActionsMenu
+              type={type}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              readOnly={readOnly}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              extraItems={
+                <>
+                  <DropdownMenuItem onClick={onOpenRegistrations}>
+                    <Users className="size-3.5" />
+                    Inscrits
+                  </DropdownMenuItem>
+                  {canEdit && (
+                    <DropdownMenuItem
+                      onClick={onOpenScanner}
+                      disabled={readOnly}
+                    >
+                      <ScanLine className="size-3.5" />
+                      Contrôle des billets
+                    </DropdownMenuItem>
+                  )}
+                </>
+              }
+            />
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <span className="font-medium tabular-nums">{seatsLabel(type)}</span>
+          <span className="text-muted-foreground">
+            {eventPriceLabel(type.price)}
+          </span>
+          {type.checkedInCount > 0 && (
+            <span className="text-muted-foreground tabular-nums">
+              {type.checkedInCount} / {type.ticketsCount} présents
+            </span>
+          )}
+        </div>
+
+        <div className="mt-auto flex items-center justify-between gap-2 border-t pt-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenRegistrations}
+            className="cursor-pointer"
+          >
+            <Users className="size-3.5" aria-hidden="true" />
+            Inscrits
+          </Button>
+          <div className="flex items-center gap-2">
+            <CopyButton text={type.publicUrl} iconOnly variant="ghost" />
+            {canEdit && (
+              <ActiveSwitch
+                type={type}
+                readOnly={readOnly}
+                onToggle={onToggle}
+                onLabel="Ouvert"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TypeCard({
   type,
@@ -44,7 +276,6 @@ function TypeCard({
   onToggle,
   onDelete,
 }) {
-  const [toggling, setToggling] = useState(false);
   return (
     <div
       className={cn(
@@ -84,53 +315,14 @@ function TypeCard({
             </p>
           </div>
           {(canEdit || canDelete) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 shrink-0 cursor-pointer"
-                  aria-label={`Actions pour ${type.name}`}
-                >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canEdit && (
-                  <DropdownMenuItem onClick={onEdit} disabled={readOnly}>
-                    <Pencil className="size-3.5" />
-                    Modifier
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => copyText(type.publicUrl)}>
-                  <Copy className="size-3.5" />
-                  Copier le lien
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href={type.publicUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="size-3.5" />
-                    Ouvrir la page
-                  </a>
-                </DropdownMenuItem>
-                {canDelete && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={onDelete}
-                      disabled={readOnly}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="size-3.5" />
-                      Supprimer
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <TypeActionsMenu
+              type={type}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              readOnly={readOnly}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           )}
         </div>
 
@@ -149,26 +341,11 @@ function TypeCard({
           <div className="flex items-center gap-2">
             <CopyButton text={type.publicUrl} iconOnly variant="ghost" />
             {canEdit && (
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="sr-only sm:not-sr-only">
-                  {type.isActive ? "Actif" : "Désactivé"}
-                </span>
-                <Switch
-                  checked={type.isActive}
-                  disabled={readOnly || toggling}
-                  aria-label={
-                    type.isActive ? "Désactiver ce type" : "Activer ce type"
-                  }
-                  onCheckedChange={async (checked) => {
-                    setToggling(true);
-                    try {
-                      await onToggle(checked);
-                    } finally {
-                      setToggling(false);
-                    }
-                  }}
-                />
-              </label>
+              <ActiveSwitch
+                type={type}
+                readOnly={readOnly}
+                onToggle={onToggle}
+              />
             )}
           </div>
         </div>
@@ -193,6 +370,9 @@ export function AppointmentTypesPanel({
   onEdit,
   onToggle,
   onDelete,
+  timeZone,
+  onOpenRegistrations,
+  onOpenScanner,
 }) {
   const [toDelete, setToDelete] = useState(null);
 
@@ -200,7 +380,8 @@ export function AppointmentTypesPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Chaque type a sa durée, son lieu et ses règles, et son propre lien.
+          Créneaux à réserver ou événements à date fixe : chacun a ses règles et
+          son propre lien.
         </p>
         {canCreate && (
           <Button
@@ -242,18 +423,34 @@ export function AppointmentTypesPanel({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {types.map((type) => (
-            <TypeCard
-              key={type.id}
-              type={type}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              readOnly={readOnly}
-              onEdit={() => onEdit(type)}
-              onToggle={(checked) => onToggle(type, checked)}
-              onDelete={() => setToDelete(type)}
-            />
-          ))}
+          {types.map((type) =>
+            isEventType(type) ? (
+              <EventTypeCard
+                key={type.id}
+                type={type}
+                timeZone={timeZone}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                readOnly={readOnly}
+                onEdit={() => onEdit(type)}
+                onToggle={(checked) => onToggle(type, checked)}
+                onDelete={() => setToDelete(type)}
+                onOpenRegistrations={() => onOpenRegistrations(type)}
+                onOpenScanner={() => onOpenScanner(type)}
+              />
+            ) : (
+              <TypeCard
+                key={type.id}
+                type={type}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                readOnly={readOnly}
+                onEdit={() => onEdit(type)}
+                onToggle={(checked) => onToggle(type, checked)}
+                onDelete={() => setToDelete(type)}
+              />
+            ),
+          )}
         </div>
       )}
 
@@ -267,11 +464,22 @@ export function AppointmentTypesPanel({
               Supprimer « {toDelete?.name} » ?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Son lien ne permettra plus de réserver.
-              {toDelete?.upcomingCount > 0
-                ? ` Les ${toDelete.upcomingCount} rendez-vous déjà pris sont conservés et restent dans vos agendas.`
-                : ""}{" "}
-              Pour le mettre en pause sans le perdre, désactivez-le plutôt.
+              {isEventType(toDelete) ? (
+                <>
+                  Son lien ne permettra plus de s&apos;inscrire.
+                  {toDelete?.registrationsCount > 0
+                    ? " Un événement à venir qui a des inscrits ne peut pas être supprimé : annulez d'abord les inscriptions, ou désactivez-le."
+                    : ""}
+                </>
+              ) : (
+                <>
+                  Son lien ne permettra plus de réserver.
+                  {toDelete?.upcomingCount > 0
+                    ? ` Les ${toDelete.upcomingCount} rendez-vous déjà pris sont conservés et restent dans vos agendas.`
+                    : ""}{" "}
+                  Pour le mettre en pause sans le perdre, désactivez-le plutôt.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
