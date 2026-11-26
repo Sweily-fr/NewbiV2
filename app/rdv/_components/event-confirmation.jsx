@@ -52,7 +52,12 @@ export function RegistrationSummary({ registration, guestTimeZone }) {
       <p className="text-gray-600">
         {registration.quantity} place{registration.quantity > 1 ? "s" : ""}
         {registration.amount > 0
-          ? ` · ${formatCents(registration.amount, registration.currency)} payés`
+          ? ` · ${formatCents(registration.amount, registration.currency)}${
+              registration.status === "CONFIRMED" ||
+              ["REFUNDED", "MANUAL"].includes(registration.refundStatus)
+                ? " payés"
+                : ""
+            }`
           : " · Gratuit"}
       </p>
     </div>

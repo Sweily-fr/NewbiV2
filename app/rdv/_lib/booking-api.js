@@ -135,6 +135,19 @@ export function confirmEventPayment(
   });
 }
 
+/**
+ * Retour après une annulation chez le prestataire (canceled=1) : l'API
+ * ferme le paiement et rend les places s'il est impayé. Même réponse que
+ * confirmEventPayment.
+ */
+export function cancelEventPayment({ returnToken }, options) {
+  return request("/registrations/return/cancel", {
+    method: "POST",
+    body: { returnToken },
+    ...options,
+  });
+}
+
 /** Inscription par son lien de gestion : RegistrationPayload. */
 export function fetchEventRegistration(token, options) {
   return request(`/registrations/${segment(token)}`, options);

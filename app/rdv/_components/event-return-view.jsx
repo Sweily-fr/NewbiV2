@@ -5,11 +5,39 @@ import { Loader2 } from "lucide-react";
 import {
   nextReturnPollDelay,
   returnRequestFromParams,
+  unconfirmedRegistrationMessage,
 } from "@/src/utils/booking-events";
-import { bookingErrorText, confirmEventPayment } from "../_lib/booking-api";
+import {
+  bookingErrorText,
+  cancelEventPayment,
+  confirmEventPayment,
+} from "../_lib/booking-api";
 import { useGuestTimeZone } from "../_lib/use-guest-time-zone";
 import { BookingCard, BookingShell } from "./booking-shell";
-import { EventConfirmation } from "./event-confirmation";
+import {
+  EventConfirmation,
+  registrationPathFromUrl,
+} from "./event-confirmation";
+
+// Le jeton de retour ne sert plus que 5 minutes après la confirmation :
+// le lien de gestion de la première réponse est gardé pour un rechargement
+const storageKey = (returnToken) => `newbi:rdv:retour:${returnToken}`;
+
+function rememberManageUrl(returnToken, manageUrl) {
+  try {
+    if (manageUrl) sessionStorage.setItem(storageKey(returnToken), manageUrl);
+  } catch {
+    // Stockage indisponible : rien à garder
+  }
+}
+
+function rememberedManageUrl(returnToken) {
+  try {
+    return sessionStorage.getItem(storageKey(returnToken));
+  } catch {
+    return null;
+  }
+}
 
 // Refus passagers : la vérification est retentée plus tard (rythme et
 // durée maximale : nextReturnPollDelay)
@@ -60,9 +88,16 @@ export function EventReturnView({ slug, typeSlug, params }) {
     const check = async () => {
       attempts += 1;
       try {
-        const data = await confirmEventPayment(body, {
-          signal: controller.signal,
-        });
+        // Retour après une annulation chez le prestataire : l'API ferme le
+        // paiement et rend les places (premier appel seulement)
+        const verify =
+          body.canceled && attempts === 1
+            ? cancelEventPayment
+            : confirmEventPayment;
+        const data = await verify(body, { signal: controller.signal });
+        if (data.registration?.status === "CONFIRMED") {
+          rememberManageUrl(body.returnToken, data.manageUrl);
+        }
         if (data.paymentStatus === "pending" && later()) {
           setState({ status: "pending", data });
           return;
@@ -76,6 +111,15 @@ export function EventReturnView({ slug, typeSlug, params }) {
           setState((prev) =>
             prev.status === "pending" ? prev : { status: "loading" },
           );
+          return;
+        }
+        // Jeton déjà utilisé (rechargement après confirmation) : page de
+        // l'inscription
+        const manageUrl =
+          error?.code === "NOT_FOUND" && rememberedManageUrl(body.returnToken);
+        if (manageUrl) {
+          setState({ status: "loading" });
+          window.location.replace(registrationPathFromUrl(manageUrl));
           return;
         }
         setState({ status: "error", error });
@@ -150,30 +194,20 @@ export function EventReturnView({ slug, typeSlug, params }) {
         heading="Paiement confirmé, vous êtes inscrit"
       />
     );
-  } else if (data?.paymentStatus === "pending") {
-    content = (
-      <Message
-        title="Paiement en attente de confirmation"
-        text="Vous recevrez vos billets par e-mail dès la confirmation du paiement."
-      />
-    );
-  } else if (
-    registration?.status === "EXPIRED" &&
-    data?.paymentStatus === "paid"
-  ) {
-    content = (
-      <Message
-        title="Événement complet"
-        text="Votre paiement est arrivé après la fin de la réservation de vos places et l'événement est désormais complet. Il vous sera remboursé."
-        action={restart}
-      />
-    );
   } else {
+    const message = unconfirmedRegistrationMessage({
+      registration,
+      paymentStatus: data?.paymentStatus,
+      refundStatus: data?.refundStatus,
+      canceledByPayer: Boolean(request?.canceled),
+      organizerName:
+        registration?.page?.organizationName || registration?.page?.title,
+    });
     content = (
       <Message
-        title="Paiement non effectué"
-        text="Votre inscription n'est pas confirmée et aucun billet n'a été émis. Vous pouvez recommencer."
-        action={restart}
+        title={message.title}
+        text={message.text}
+        action={message.restart ? restart : null}
       />
     );
   }

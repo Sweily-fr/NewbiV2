@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { shortDateTimeLabel } from "@/src/utils/booking-events";
+import {
+  shortDateTimeLabel,
+  unconfirmedRegistrationMessage,
+} from "@/src/utils/booking-events";
 import {
   bookingErrorText,
   cancelEventRegistration,
@@ -150,6 +153,15 @@ export function ManageRegistrationView({ token, embed = false }) {
   const page = registration.page || {};
   const timeZone = registration.event?.timezone;
   const confirmed = registration.status === "CONFIRMED";
+  // Payée mais non confirmée : remboursée, ou à rembourser par l'organisateur
+  const refundMessage = ["REFUNDED", "MANUAL"].includes(
+    registration.refundStatus,
+  )
+    ? unconfirmedRegistrationMessage({
+        registration,
+        organizerName: page.organizationName || page.title,
+      })
+    : null;
   const eventHref =
     page.slug && registration.typeSlug
       ? `/rdv/${encodeURIComponent(page.slug)}/${encodeURIComponent(registration.typeSlug)}`
@@ -169,31 +181,37 @@ export function ManageRegistrationView({ token, embed = false }) {
           ) : (
             <div className="mx-auto max-w-xl space-y-5 text-center">
               <h1 className="text-2xl font-semibold text-gray-900">
-                {HEADINGS[registration.status] || "Votre inscription"}
+                {refundMessage?.title ||
+                  HEADINGS[registration.status] ||
+                  "Votre inscription"}
               </h1>
               <p className="text-sm text-gray-600">
-                {registration.status === "CANCELLED"
-                  ? `Cette inscription a été annulée${
-                      registration.cancelledAt
-                        ? ` le ${shortDateTimeLabel(registration.cancelledAt, timeZone)}`
-                        : ""
-                    }. Ses billets ne sont plus valables.`
-                  : registration.status === "PENDING_PAYMENT"
-                    ? "Le paiement n'est pas encore confirmé. Vos billets vous seront envoyés par e-mail dès sa confirmation."
-                    : "Le paiement n'a pas abouti à temps : les places ont été libérées et aucun billet n'a été émis."}
+                {refundMessage
+                  ? refundMessage.text
+                  : registration.status === "CANCELLED"
+                    ? `Cette inscription a été annulée${
+                        registration.cancelledAt
+                          ? ` le ${shortDateTimeLabel(registration.cancelledAt, timeZone)}`
+                          : ""
+                      }. Ses billets ne sont plus valables.`
+                    : registration.status === "PENDING_PAYMENT"
+                      ? "Le paiement n'est pas encore confirmé. Vos billets vous seront envoyés par e-mail dès sa confirmation."
+                      : "Le paiement n'a pas abouti à temps : les places ont été libérées et aucun billet n'a été émis."}
               </p>
               <RegistrationSummary
                 registration={registration}
                 guestTimeZone={guestTimeZone}
               />
-              {registration.status === "EXPIRED" && eventHref && (
-                <a
-                  href={eventHref}
-                  className="inline-flex items-center justify-center rounded-xl bg-[var(--rdv-accent)] px-5 py-2.5 text-sm font-medium text-[var(--rdv-on-accent)] hover:opacity-90"
-                >
-                  Revenir à l&apos;événement
-                </a>
-              )}
+              {registration.status === "EXPIRED" &&
+                refundMessage?.restart !== false &&
+                eventHref && (
+                  <a
+                    href={eventHref}
+                    className="inline-flex items-center justify-center rounded-xl bg-[var(--rdv-accent)] px-5 py-2.5 text-sm font-medium text-[var(--rdv-on-accent)] hover:opacity-90"
+                  >
+                    Revenir à l&apos;événement
+                  </a>
+                )}
             </div>
           )}
 
