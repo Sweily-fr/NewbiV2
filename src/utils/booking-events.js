@@ -244,6 +244,19 @@ export function registrationPaymentLine(registration) {
     ? `${payment.mode === "DEPOSIT" ? "Reste réglé" : "Réglé"} sur place : ${money(payment.dueOnSite)}`
     : `${payment.mode === "DEPOSIT" ? "Reste à régler" : "À régler"} sur place : ${money(payment.dueOnSite)}`;
   if (payment.mode === "ON_SITE") return rest;
+  // Virement pas encore reçu : rien n'est payé, la place est tenue
+  const awaitingTransfer =
+    registration.status === "PENDING_PAYMENT" &&
+    registration.paymentProvider === "bank_transfer";
+  if (awaitingTransfer) {
+    const pending =
+      payment.mode === "DEPOSIT"
+        ? `Acompte par virement en attente : ${money(payment.online)}`
+        : `Virement en attente : ${money(payment.online)}`;
+    return payment.mode === "DEPOSIT" && payment.dueOnSite > 0
+      ? `${pending}. ${rest}`
+      : pending;
+  }
   if (payment.mode === "DEPOSIT") {
     const deposit = paid
       ? `Acompte payé : ${money(payment.online)}`
@@ -823,11 +836,12 @@ export const PAYMENT_PROVIDER_LABELS = {
   stripe: "Carte bancaire",
   sumup: "Carte bancaire avec SumUp",
   paypal: "PayPal",
+  bank_transfer: "Virement",
 };
 
-/** Moyens proposés, dans un ordre stable (carte d'abord). */
+/** Moyens proposés, dans un ordre stable (carte d'abord, virement en dernier). */
 export function orderedPaymentMethods(methods) {
-  return ["stripe", "sumup", "paypal"].filter((method) =>
+  return ["stripe", "sumup", "paypal", "bank_transfer"].filter((method) =>
     (methods || []).includes(method),
   );
 }

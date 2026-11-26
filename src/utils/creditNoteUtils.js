@@ -15,7 +15,7 @@ export function hasReachedCreditNoteLimit(invoice, creditNotes) {
 
   // Montant total de la facture
   const invoiceAmount = invoice.finalTotalTTC || 0;
-  
+
   // Si le montant de la facture est 0 ou négatif, pas de limite
   if (invoiceAmount <= 0) {
     return false;
@@ -43,7 +43,7 @@ export function getRemainingCreditNoteAmount(invoice, creditNotes) {
 
   // Montant total de la facture
   const invoiceAmount = invoice.finalTotalTTC || 0;
-  
+
   // Calculer la somme des avoirs existants (valeurs absolues car les avoirs sont négatifs)
   const totalCreditNotesAmount = creditNotes.reduce((sum, creditNote) => {
     return sum + Math.abs(creditNote.finalTotalTTC || 0);

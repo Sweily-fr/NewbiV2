@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_CLIENT_CUSTOM_FIELDS = gql`
   query GetClientCustomFields($workspaceId: ID!) {

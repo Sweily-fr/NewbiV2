@@ -49,7 +49,7 @@ import {
   pricingToForm,
   SLOT_KIND,
 } from "@/src/utils/booking-events";
-import { useEventPaymentMethods } from "@/src/hooks/useBooking";
+import { useAppointmentPaymentMethods } from "@/src/hooks/useBooking";
 import { ColorSwatches, LocationKindIcon } from "./shared";
 import { EventTypeForm } from "./event-type-form";
 import { PaymentModeFields } from "./payment-mode-fields";
@@ -212,7 +212,7 @@ export function AppointmentTypeSheet({
     return found;
   }, [form, otherSlugs]);
   const visibleErrors = showErrors ? errors : {};
-  const { methods, loaded: methodsLoaded } = useEventPaymentMethods({
+  const { methods, loaded: methodsLoaded } = useAppointmentPaymentMethods({
     skip: !open || isEvent,
   });
   const priceCents = eurosToCents(form.priceText);

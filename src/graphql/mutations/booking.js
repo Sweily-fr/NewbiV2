@@ -145,3 +145,35 @@ export const UNDO_TICKET_CHECK_IN = gql`
   }
   ${EVENT_TICKET_FIELDS}
 `;
+
+// Virement reçu hors repérage automatique : inscription en attente de
+// virement (ou expirée s'il reste des places) confirmée, billets émis
+export const MARK_EVENT_REGISTRATION_PAID = gql`
+  mutation MarkEventRegistrationPaid($workspaceId: ID, $id: ID!) {
+    markEventRegistrationPaid(workspaceId: $workspaceId, id: $id) {
+      ...EventRegistrationFields
+    }
+  }
+  ${EVENT_REGISTRATION_FIELDS}
+`;
+
+// Virement reçu : rendez-vous en attente de virement confirmé (agenda,
+// visio, client, e-mails)
+export const MARK_BOOKING_PAID = gql`
+  mutation MarkBookingPaid($workspaceId: ID, $id: ID!) {
+    markBookingPaid(workspaceId: $workspaceId, id: $id) {
+      ...BookingFields
+    }
+  }
+  ${BOOKING_FIELDS}
+`;
+
+// Reste dû sur place d'un rendez-vous confirmé réglé (paid: true) ou non
+export const MARK_BOOKING_PAID_ON_SITE = gql`
+  mutation MarkBookingPaidOnSite($workspaceId: ID, $id: ID!, $paid: Boolean!) {
+    markBookingPaidOnSite(workspaceId: $workspaceId, id: $id, paid: $paid) {
+      ...BookingFields
+    }
+  }
+  ${BOOKING_FIELDS}
+`;

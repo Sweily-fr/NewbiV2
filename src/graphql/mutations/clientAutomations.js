@@ -1,7 +1,10 @@
 import { gql } from "@apollo/client";
 
 export const CREATE_CLIENT_AUTOMATION = gql`
-  mutation CreateClientAutomation($workspaceId: ID!, $input: CreateClientAutomationInput!) {
+  mutation CreateClientAutomation(
+    $workspaceId: ID!
+    $input: CreateClientAutomationInput!
+  ) {
     createClientAutomation(workspaceId: $workspaceId, input: $input) {
       id
       name
@@ -35,7 +38,11 @@ export const CREATE_CLIENT_AUTOMATION = gql`
 `;
 
 export const UPDATE_CLIENT_AUTOMATION = gql`
-  mutation UpdateClientAutomation($workspaceId: ID!, $id: ID!, $input: UpdateClientAutomationInput!) {
+  mutation UpdateClientAutomation(
+    $workspaceId: ID!
+    $id: ID!
+    $input: UpdateClientAutomationInput!
+  ) {
     updateClientAutomation(workspaceId: $workspaceId, id: $id, input: $input) {
       id
       name

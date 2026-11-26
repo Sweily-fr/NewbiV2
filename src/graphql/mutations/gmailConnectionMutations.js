@@ -25,7 +25,10 @@ export const TRIGGER_GMAIL_SYNC = gql`
 
 export const UPDATE_GMAIL_SCAN_PERIOD = gql`
   mutation UpdateGmailScanPeriod($connectionId: ID!, $scanPeriodMonths: Int!) {
-    updateGmailScanPeriod(connectionId: $connectionId, scanPeriodMonths: $scanPeriodMonths) {
+    updateGmailScanPeriod(
+      connectionId: $connectionId
+      scanPeriodMonths: $scanPeriodMonths
+    ) {
       id
       scanPeriodMonths
     }

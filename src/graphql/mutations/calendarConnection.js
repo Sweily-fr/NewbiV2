@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const CONNECT_APPLE_CALENDAR = gql`
   mutation ConnectAppleCalendar($input: ConnectAppleCalendarInput!) {

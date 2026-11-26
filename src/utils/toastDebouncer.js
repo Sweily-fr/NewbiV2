@@ -16,27 +16,29 @@ class ToastDebouncer {
    * @param {string} description - Description optionnelle
    * @returns {boolean} - true si la notification doit être affichée
    */
-  shouldShow(message, type = 'info', description = '') {
+  shouldShow(message, type = "info", description = "") {
     const key = `${type}-${message}-${description}`;
     const now = Date.now();
-    
+
     // Vérifier si cette notification a déjà été affichée récemment
     if (this.notifications.has(key)) {
       const lastTime = this.notifications.get(key);
-      
+
       // Si c'est dans la fenêtre de debouncing, ignorer
       if (now - lastTime < this.debounceTime) {
-        console.log(`🚫 [ToastDebouncer] Notification ignorée (debounce): ${message}`);
+        console.log(
+          `🚫 [ToastDebouncer] Notification ignorée (debounce): ${message}`,
+        );
         return false;
       }
     }
-    
+
     // Enregistrer cette notification
     this.notifications.set(key, now);
-    
+
     // Nettoyer les anciennes entrées (plus de 10 secondes)
     this.cleanup();
-    
+
     console.log(`✅ [ToastDebouncer] Notification autorisée: ${message}`);
     return true;
   }
@@ -47,7 +49,7 @@ class ToastDebouncer {
   cleanup() {
     const now = Date.now();
     const cleanupTime = 10000; // 10 secondes
-    
+
     for (const [key, timestamp] of this.notifications.entries()) {
       if (now - timestamp > cleanupTime) {
         this.notifications.delete(key);
@@ -60,7 +62,7 @@ class ToastDebouncer {
    */
   clear() {
     this.notifications.clear();
-    console.log('🧹 [ToastDebouncer] Cache nettoyé');
+    console.log("🧹 [ToastDebouncer] Cache nettoyé");
   }
 
   /**
@@ -78,11 +80,13 @@ class ToastDebouncer {
     return {
       activeNotifications: this.notifications.size,
       debounceTime: this.debounceTime,
-      notifications: Array.from(this.notifications.entries()).map(([key, timestamp]) => ({
-        key,
-        timestamp,
-        age: Date.now() - timestamp
-      }))
+      notifications: Array.from(this.notifications.entries()).map(
+        ([key, timestamp]) => ({
+          key,
+          timestamp,
+          age: Date.now() - timestamp,
+        }),
+      ),
     };
   }
 }

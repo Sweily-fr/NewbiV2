@@ -1,9 +1,12 @@
-import { gql } from '@apollo/client';
-import { CRM_EMAIL_AUTOMATION_FRAGMENT } from '../queries/crmEmailAutomations';
+import { gql } from "@apollo/client";
+import { CRM_EMAIL_AUTOMATION_FRAGMENT } from "../queries/crmEmailAutomations";
 
 export const CREATE_CRM_EMAIL_AUTOMATION = gql`
   ${CRM_EMAIL_AUTOMATION_FRAGMENT}
-  mutation CreateCrmEmailAutomation($workspaceId: ID!, $input: CreateCrmEmailAutomationInput!) {
+  mutation CreateCrmEmailAutomation(
+    $workspaceId: ID!
+    $input: CreateCrmEmailAutomationInput!
+  ) {
     createCrmEmailAutomation(workspaceId: $workspaceId, input: $input) {
       ...CrmEmailAutomationFragment
     }
@@ -12,8 +15,16 @@ export const CREATE_CRM_EMAIL_AUTOMATION = gql`
 
 export const UPDATE_CRM_EMAIL_AUTOMATION = gql`
   ${CRM_EMAIL_AUTOMATION_FRAGMENT}
-  mutation UpdateCrmEmailAutomation($workspaceId: ID!, $id: ID!, $input: UpdateCrmEmailAutomationInput!) {
-    updateCrmEmailAutomation(workspaceId: $workspaceId, id: $id, input: $input) {
+  mutation UpdateCrmEmailAutomation(
+    $workspaceId: ID!
+    $id: ID!
+    $input: UpdateCrmEmailAutomationInput!
+  ) {
+    updateCrmEmailAutomation(
+      workspaceId: $workspaceId
+      id: $id
+      input: $input
+    ) {
       ...CrmEmailAutomationFragment
     }
   }

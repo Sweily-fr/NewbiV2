@@ -1,7 +1,11 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_COMMUNITY_SUGGESTIONS = gql`
-  query GetCommunitySuggestions($type: SuggestionType, $status: SuggestionStatus, $sortBy: String) {
+  query GetCommunitySuggestions(
+    $type: SuggestionType
+    $status: SuggestionStatus
+    $sortBy: String
+  ) {
     getCommunitySuggestions(type: $type, status: $status, sortBy: $sortBy) {
       id
       type
