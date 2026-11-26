@@ -837,9 +837,9 @@ export function EventRegistrationsSheet({
                                     timeZone,
                                   )}`}
                                 {registration.refundedAt &&
-                                  " · Paiement arrivé sans place disponible, remboursé automatiquement"}
+                                  " · Paiement arrivé trop tard (places reprises ou événement commencé), remboursé automatiquement"}
                                 {registration.refundFailed &&
-                                  " · Paiement arrivé sans place disponible : le remboursement automatique a échoué, remboursez depuis votre compte de paiement"}
+                                  " · Paiement arrivé trop tard (places reprises ou événement commencé) : à rembourser à la main, depuis votre compte de paiement ou par virement"}
                                 {registration.cancelReason &&
                                   ` · Motif : ${registration.cancelReason}`}
                               </div>

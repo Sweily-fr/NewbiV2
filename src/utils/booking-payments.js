@@ -43,12 +43,40 @@ export function paymentMethodLabel(method, methods = []) {
 export function paymentMethodDelay(method, kind = "event") {
   if (method === BANK_TRANSFER) {
     return kind === "slot"
-      ? "Le créneau est gardé 3 jours. Il est confirmé dès que le virement arrive."
-      : "Votre place est gardée 3 jours. Elle est confirmée dès que le virement arrive.";
+      ? "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive."
+      : "Votre place est gardée jusqu'à 3 jours, au plus tard la veille de l'événement. Elle est confirmée dès que le virement arrive.";
   }
   return kind === "slot"
     ? "Rendez-vous confirmé dès le paiement"
     : "Billets envoyés dès le paiement";
+}
+
+/**
+ * Moyens réellement proposés : le virement seulement si l'API le dit
+ * possible pour ce créneau ou cet événement (`bankTransferAvailable` vrai :
+ * début à 48 h au moins), même si `methods` le contient.
+ */
+export function offeredPaymentMethods(methods, bankTransferAvailable) {
+  return (methods || []).filter(
+    (method) => method !== BANK_TRANSFER || bankTransferAvailable === true,
+  );
+}
+
+/**
+ * Phrase sous le choix du moyen quand le virement est connecté mais plus
+ * possible (début trop proche). null s'il n'y a rien à dire.
+ */
+export function bankTransferUnavailableNote(
+  methods,
+  bankTransferAvailable,
+  { kind = "event", minLeadHours = 48 } = {},
+) {
+  if (!(methods || []).includes(BANK_TRANSFER)) return null;
+  if (bankTransferAvailable === true) return null;
+  const hours = Number(minLeadHours) > 0 ? Number(minLeadHours) : 48;
+  return kind === "slot"
+    ? `Le virement n'est possible que jusqu'à ${hours} h avant le rendez-vous.`
+    : `Le virement n'est possible que jusqu'à ${hours} h avant le début de l'événement.`;
 }
 
 /** Réservation ou inscription en attente d'un virement. */
@@ -189,14 +217,14 @@ export function unconfirmedBookingMessage({
   if (refund === "REFUNDED") {
     return {
       title: "Paiement remboursé",
-      text: "Votre paiement est arrivé alors que le créneau n'était plus disponible : il vous a été remboursé automatiquement. Aucun rendez-vous n'a été enregistré.",
+      text: "Votre paiement est arrivé trop tard (créneau repris entre-temps ou rendez-vous déjà commencé) : il vous a été remboursé automatiquement. Aucun rendez-vous n'a été enregistré.",
       restart: true,
     };
   }
   if (refund === "MANUAL") {
     return {
       title: "Paiement reçu, rendez-vous non confirmé",
-      text: `Votre paiement a bien été reçu, mais le rendez-vous n'a pas pu être confirmé. Contactez ${organizer} pour être remboursé, en indiquant l'adresse e-mail utilisée.`,
+      text: `Votre paiement a bien été reçu, mais trop tard : le rendez-vous n'a pas pu être confirmé. ${capitalize(organizer)} va vous rembourser ; contactez-le si besoin, en indiquant l'adresse e-mail utilisée.`,
       restart: false,
     };
   }
@@ -227,6 +255,9 @@ export function unconfirmedBookingMessage({
     restart: true,
   };
 }
+
+const capitalize = (text) =>
+  text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 
 /** Paramètre `kind` de l'adresse de retour : « slot » ou « event ». */
 export function returnKindFromParams(params) {

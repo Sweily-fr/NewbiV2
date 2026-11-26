@@ -20,6 +20,8 @@ export function PaymentMethodChoice({
   onChange,
   kind = "event",
   disabled = false,
+  // Phrase sous la liste (virement plus possible, début trop proche)
+  note = null,
 }) {
   return (
     <fieldset className="space-y-2" disabled={disabled}>
@@ -77,6 +79,7 @@ export function PaymentMethodChoice({
           );
         })
       )}
+      {note && <p className="text-xs text-gray-500">{note}</p>}
     </fieldset>
   );
 }

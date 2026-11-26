@@ -493,7 +493,7 @@ describe("messages d'une inscription non confirmée", () => {
       organizerName: "Studio Lumière",
     });
     expect(manual.title).toBe("Paiement reçu, inscription non confirmée");
-    expect(manual.text).toContain("Contactez Studio Lumière");
+    expect(manual.text).toContain("Studio Lumière va vous rembourser");
     expect(manual.text).not.toContain("non effectué");
     expect(
       unconfirmedRegistrationMessage({

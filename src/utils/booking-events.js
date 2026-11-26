@@ -947,14 +947,14 @@ export function unconfirmedRegistrationMessage({
   if (refund === "REFUNDED") {
     return {
       title: "Paiement remboursé",
-      text: "Votre paiement est arrivé alors que les places n'étaient plus disponibles : il vous a été remboursé automatiquement. Aucun billet n'a été émis.",
+      text: "Votre paiement est arrivé trop tard (places reprises entre-temps ou événement déjà commencé) : il vous a été remboursé automatiquement. Aucun billet n'a été émis.",
       restart: true,
     };
   }
   if (refund === "MANUAL") {
     return {
       title: "Paiement reçu, inscription non confirmée",
-      text: `Votre paiement a bien été reçu, mais l'inscription n'a pas pu être confirmée et aucun billet n'a été émis. Contactez ${organizer} pour être remboursé, en indiquant l'adresse e-mail utilisée.`,
+      text: `Votre paiement a bien été reçu, mais trop tard : l'inscription n'a pas pu être confirmée et aucun billet n'a été émis. ${organizer.charAt(0).toUpperCase()}${organizer.slice(1)} va vous rembourser ; contactez-le si besoin, en indiquant l'adresse e-mail utilisée.`,
       restart: false,
     };
   }
