@@ -15,7 +15,6 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Calendar } from "@/src/components/ui/calendar";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Input } from "@/src/components/ui/input";
 import { Switch } from "@/src/components/ui/switch";
 import { toast } from "@/src/components/ui/sonner";
 import {
@@ -47,6 +46,7 @@ import {
   WEEK_DAYS,
 } from "@/src/utils/booking";
 import { PROVIDER_NAMES, SettingsSection } from "./shared";
+import { TimeSelect } from "./date-time-fields";
 
 const AUTO_WRITE = "auto";
 
@@ -63,26 +63,21 @@ function IntervalsEditor({ intervals, onChange, disabled, label }) {
     <div className="space-y-2">
       {intervals.map((interval, index) => (
         <div key={index} className="flex items-center gap-2">
-          <Input
-            type="time"
-            step={300}
+          <TimeSelect
             value={interval.start}
             disabled={disabled}
-            aria-label={`${label}, début de la plage ${index + 1}`}
-            onChange={(event) => update(index, "start", event.target.value)}
-            className="w-[108px] tabular-nums"
+            ariaLabel={`${label}, début de la plage ${index + 1}`}
+            onChange={(value) => update(index, "start", value)}
           />
           <span className="text-muted-foreground" aria-hidden="true">
             à
           </span>
-          <Input
-            type="time"
-            step={300}
+          <TimeSelect
             value={interval.end}
             disabled={disabled}
-            aria-label={`${label}, fin de la plage ${index + 1}`}
-            onChange={(event) => update(index, "end", event.target.value)}
-            className="w-[108px] tabular-nums"
+            endOfDay
+            ariaLabel={`${label}, fin de la plage ${index + 1}`}
+            onChange={(value) => update(index, "end", value)}
           />
           <Button
             type="button"
