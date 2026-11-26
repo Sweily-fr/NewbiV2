@@ -283,7 +283,6 @@ export function EventRegistrationsSheet({
   const open = Boolean(type);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
-  const [limit, setLimit] = useState(PAGE_SIZE);
   const [expanded, setExpanded] = useState(null);
   const [toCancel, setToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -296,17 +295,25 @@ export function EventRegistrationsSheet({
   useEffect(() => {
     setSearch("");
     setStatus("all");
-    setLimit(PAGE_SIZE);
     setExpanded(null);
   }, [typeId]);
 
-  const { registrations, totalCount, loading, searching, error, refetch } =
-    useEventRegistrations(typeId, {
-      search: debouncedSearch,
-      status: status === "all" ? null : status,
-      limit,
-      skip: !open,
-    });
+  const {
+    registrations,
+    totalCount,
+    hasMore,
+    loadMore,
+    loadingMore,
+    loading,
+    searching,
+    error,
+    refetch,
+  } = useEventRegistrations(typeId, {
+    search: debouncedSearch,
+    status: status === "all" ? null : status,
+    pageSize: PAGE_SIZE,
+    skip: !open,
+  });
 
   const canAct = canEdit && !readOnly;
   const schedule = type
@@ -659,15 +666,26 @@ export function EventRegistrationsSheet({
                       );
                     })}
                   </ul>
-                  {registrations.length < totalCount && (
+                  {hasMore && (
                     <div className="flex justify-center p-4">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setLimit((value) => value + PAGE_SIZE)}
-                        disabled={searching}
+                        onClick={async () => {
+                          try {
+                            await loadMore();
+                          } catch (moreError) {
+                            toast.error("Chargement impossible", {
+                              description: bookingErrorMessage(moreError),
+                            });
+                          }
+                        }}
+                        disabled={searching || loadingMore}
                         className="cursor-pointer"
                       >
+                        {loadingMore && (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        )}
                         Afficher plus ({totalCount - registrations.length})
                       </Button>
                     </div>
