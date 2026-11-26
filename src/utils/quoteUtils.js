@@ -1,4 +1,4 @@
-import { _getNow } from './invoiceUtils';
+import { _getNow } from "./invoiceUtils";
 
 /**
  * Generates a quote prefix based on the current date
@@ -6,7 +6,7 @@ import { _getNow } from './invoiceUtils';
  * @returns {string} Formatted quote prefix (e.g., "D-022025" for February 2025)
  */
 export const generateQuotePrefix = (date = _getNow()) => {
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // 0-11 → 01-12
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // 0-11 → 01-12
   const year = date.getFullYear();
   return `D-${month}${year}`;
 };
@@ -18,20 +18,24 @@ export const generateQuotePrefix = (date = _getNow()) => {
  */
 export const parseQuotePrefix = (prefix) => {
   if (!prefix) return null;
-  
+
   // Match D-MMYYYY or D-MM-YYYY or D-MM/YYYY
   const match = prefix.match(/^D-?(\d{2})[\s-/]?(\d{2,4})?$/);
-  
+
   if (!match) return null;
-  
+
   const [, month, year] = match;
-  
+
   // If year is 2 digits, assume 20XX
-  const fullYear = year ? (year.length === 2 ? `20${year}` : year) : new Date().getFullYear().toString();
-  
+  const fullYear = year
+    ? year.length === 2
+      ? `20${year}`
+      : year
+    : new Date().getFullYear().toString();
+
   return {
-    month: month.padStart(2, '0'),
-    year: fullYear
+    month: month.padStart(2, "0"),
+    year: fullYear,
   };
 };
 
@@ -42,7 +46,7 @@ export const parseQuotePrefix = (prefix) => {
  * @returns {string} Formatted quote prefix (e.g., "D-022025")
  */
 export const formatQuotePrefix = (month, year) => {
-  const formattedMonth = String(month).padStart(2, '0');
+  const formattedMonth = String(month).padStart(2, "0");
   const formattedYear = year.length === 2 ? `20${year}` : year;
   return `D-${formattedMonth}${formattedYear}`;
 };
@@ -54,8 +58,8 @@ export const formatQuotePrefix = (month, year) => {
 export const getCurrentMonthYear = () => {
   const now = _getNow();
   return {
-    month: String(now.getMonth() + 1).padStart(2, '0'),
-    year: String(now.getFullYear())
+    month: String(now.getMonth() + 1).padStart(2, "0"),
+    year: String(now.getFullYear()),
   };
 };
 
@@ -77,8 +81,8 @@ export const validateQuoteNumber = (number) => {
  * @returns {string} Formatted number with leading zeros
  */
 export const formatQuoteNumber = (number, length = 6) => {
-  if (!number) return '';
-  return String(number).padStart(length, '0');
+  if (!number) return "";
+  return String(number).padStart(length, "0");
 };
 
 /**
@@ -88,7 +92,7 @@ export const formatQuoteNumber = (number, length = 6) => {
  * @returns {string} Display string (e.g., "D-022025-000001")
  */
 export const getQuoteDisplayNumber = (prefix, number) => {
-  if (!prefix || !number) return '';
+  if (!prefix || !number) return "";
   return `${prefix}-${number}`;
 };
 
@@ -112,7 +116,7 @@ export const parseFullQuoteNumber = (fullNumber) => {
     prefix,
     number,
     month: prefixParts.month,
-    year: prefixParts.year
+    year: prefixParts.year,
   };
 };
 
@@ -126,7 +130,7 @@ export const parseFullQuoteNumber = (fullNumber) => {
  * @returns {string} Formatted purchase order prefix (e.g., "BC-022025" for February 2025)
  */
 export const generatePurchaseOrderPrefix = (date = new Date()) => {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
   return `BC-${month}${year}`;
 };
@@ -146,11 +150,15 @@ export const parsePurchaseOrderPrefix = (prefix) => {
 
   const [, month, year] = match;
 
-  const fullYear = year ? (year.length === 2 ? `20${year}` : year) : new Date().getFullYear().toString();
+  const fullYear = year
+    ? year.length === 2
+      ? `20${year}`
+      : year
+    : new Date().getFullYear().toString();
 
   return {
-    month: month.padStart(2, '0'),
-    year: fullYear
+    month: month.padStart(2, "0"),
+    year: fullYear,
   };
 };
 
@@ -161,7 +169,7 @@ export const parsePurchaseOrderPrefix = (prefix) => {
  * @returns {string} Formatted purchase order prefix (e.g., "BC-022025")
  */
 export const formatPurchaseOrderPrefix = (month, year) => {
-  const formattedMonth = String(month).padStart(2, '0');
+  const formattedMonth = String(month).padStart(2, "0");
   const formattedYear = year.length === 2 ? `20${year}` : year;
   return `BC-${formattedMonth}${formattedYear}`;
 };

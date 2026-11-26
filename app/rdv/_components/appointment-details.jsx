@@ -1,9 +1,11 @@
-import { Clock, Globe, MapPin, Phone, Video } from "lucide-react";
+import { Clock, Globe, MapPin, Phone, Video, Wallet } from "lucide-react";
 import {
   durationLabel,
   locationKindLabel,
   VIDEO_LOCATION_KINDS,
 } from "@/src/utils/booking";
+import { eventPriceLabel } from "@/src/utils/booking-events";
+import { isPaidSlot, slotPaymentNotice } from "@/src/utils/booking-payments";
 import { OrganizerAvatar } from "./booking-shell";
 
 /** Icône du lieu : visio, appel ou adresse. */
@@ -60,6 +62,22 @@ export function AppointmentTypeInfo({ page, type }) {
           />
           <span className="break-words">{locationText}</span>
         </li>
+        {isPaidSlot(type.payment) && (
+          <li className="flex items-start gap-2.5">
+            <Wallet
+              className="mt-0.5 size-4 shrink-0 text-gray-400"
+              aria-hidden="true"
+            />
+            <span>
+              <span className="block font-medium text-gray-900">
+                {eventPriceLabel(type.payment.price)}
+              </span>
+              <span className="block text-gray-500">
+                {slotPaymentNotice(type.payment)}
+              </span>
+            </span>
+          </li>
+        )}
       </ul>
 
       {type.description && (

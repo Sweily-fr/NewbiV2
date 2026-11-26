@@ -3,13 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronRight, Clock, Ticket } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronRight,
+  Clock,
+  Ticket,
+  Wallet,
+} from "lucide-react";
 import { durationLabel, locationKindLabel } from "@/src/utils/booking";
 import {
   eventPaymentShortLabel,
   eventPriceLabel,
   shortDateTimeLabel,
 } from "@/src/utils/booking-events";
+import { slotPriceLabel } from "@/src/utils/booking-payments";
 import { bookingErrorText, fetchBookingPage } from "../_lib/booking-api";
 import {
   BookingCard,
@@ -138,10 +145,21 @@ export function BookingPageView({ slug, embed = false }) {
                             </span>
                           </>
                         ) : (
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="size-3.5" aria-hidden="true" />
-                            {durationLabel(type.durationMinutes)}
-                          </span>
+                          <>
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="size-3.5" aria-hidden="true" />
+                              {durationLabel(type.durationMinutes)}
+                            </span>
+                            {slotPriceLabel(type.payment) && (
+                              <span className="flex items-center gap-1.5">
+                                <Wallet
+                                  className="size-3.5"
+                                  aria-hidden="true"
+                                />
+                                {slotPriceLabel(type.payment)}
+                              </span>
+                            )}
+                          </>
                         )}
                         <span className="flex items-center gap-1.5">
                           <LocationIcon

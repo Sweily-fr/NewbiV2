@@ -31,6 +31,13 @@ export const COMPTES_RDV = {
   }),
   // Saisie des champs de la page et des types (refus et valeurs réelles).
   champs: compteLot(47, { email: "rdv-champs@e2e.test", name: "Chloé Champs", espace: "Rendez-vous Champs SASU" }),
+  // Créneaux et événements payants (virement : IBAN de l'entreprise renseigné).
+  paiements: compteLot(49, {
+    email: "rdv-paiements@e2e.test",
+    name: "Paula Paiements",
+    espace: "Rendez-vous Paiements SASU",
+    organisation: { bankIban: "FR7630006000011234567890189", bankBic: "AGRIFRPP", bankName: "Crédit Agricole" },
+  }),
 };
 
 // Rôle personnalisé sans la prise de rendez-vous (calendrier et kanban seulement).
@@ -110,6 +117,8 @@ export const PAGES_RDV = {
   }),
   // Page de l'espace « Champs » : les tests de saisie la modifient (retrouvée par son propriétaire, jamais par son adresse).
   champs: pageRdv(8, "chloe-champs-e2e", "Chloé Champs", { compte: COMPTES_RDV.champs }),
+  // Page de l'espace « Paiements » : types payants créés par les tests.
+  paiements: pageRdv(9, "paula-paiements-e2e", "Paula Paiements", { compte: COMPTES_RDV.paiements }),
 };
 
 const typeRdv = (n, page, slug, nom, { location = { kind: "IN_PERSON", value: "Bât. n° 12, 3 rue de l’Église, 75011 Paris" }, ...champs } = {}) => ({

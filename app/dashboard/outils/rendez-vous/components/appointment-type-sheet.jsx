@@ -39,9 +39,27 @@ import {
   SLOT_INTERVAL_OPTIONS,
   uniqueTypeSlug,
 } from "@/src/utils/booking";
-import { EVENT_KIND, isEventType, SLOT_KIND } from "@/src/utils/booking-events";
+import {
+  EVENT_KIND,
+  eurosToCents,
+  formatCents,
+  isEventType,
+  pricingFormErrors,
+  pricingInputIfChanged,
+  pricingToForm,
+  SLOT_KIND,
+} from "@/src/utils/booking-events";
+import { slotPricingSource } from "@/src/utils/booking-payments";
+import { useAppointmentPaymentMethods } from "@/src/hooks/useBooking";
 import { ColorSwatches, LocationKindIcon } from "./shared";
 import { EventTypeForm } from "./event-type-form";
+import { PaymentModeFields } from "./payment-mode-fields";
+
+/** Type de créneaux → formulaire, prix compris (vide : gratuit). */
+const slotTypeToForm = (type, connections) => ({
+  ...appointmentTypeToForm(type, { connections }),
+  ...pricingToForm(slotPricingSource(type)),
+});
 
 const KIND_CHOICES = [
   {
@@ -164,9 +182,7 @@ export function AppointmentTypeSheet({
   // Créneaux ou événement : choisi à la création, figé ensuite
   const [chosenKind, setChosenKind] = useState(SLOT_KIND);
   const isEvent = isEdit ? isEventType(type) : chosenKind === EVENT_KIND;
-  const [form, setForm] = useState(() =>
-    appointmentTypeToForm(type, { connections }),
-  );
+  const [form, setForm] = useState(() => slotTypeToForm(type, connections));
   const [slugTouched, setSlugTouched] = useState(isEdit);
   const [showErrors, setShowErrors] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -174,7 +190,7 @@ export function AppointmentTypeSheet({
   // Nouveau formulaire à chaque ouverture
   useEffect(() => {
     if (!open) return;
-    setForm(appointmentTypeToForm(type, { connections }));
+    setForm(slotTypeToForm(type, connections));
     setSlugTouched(Boolean(type?.id));
     setShowErrors(false);
     if (!type?.id) setChosenKind(SLOT_KIND);
@@ -187,13 +203,20 @@ export function AppointmentTypeSheet({
     [takenSlugs, type],
   );
   const errors = useMemo(() => {
-    const found = appointmentTypeFormErrors(form);
+    const found = {
+      ...appointmentTypeFormErrors(form),
+      ...pricingFormErrors(form, { perSeat: false }),
+    };
     if (!found.slug && otherSlugs.includes(form.slug)) {
       found.slug = "Un autre type utilise déjà cette adresse";
     }
     return found;
   }, [form, otherSlugs]);
   const visibleErrors = showErrors ? errors : {};
+  const { methods, loaded: methodsLoaded } = useAppointmentPaymentMethods({
+    skip: !open || isEvent,
+  });
+  const priceCents = eurosToCents(form.priceText);
   const options = locationOptions(connections);
   const hasVideoAccount = options.some(
     (option) =>
@@ -215,10 +238,22 @@ export function AppointmentTypeSheet({
   const handleSubmit = async (event) => {
     event.preventDefault();
     setShowErrors(true);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      const first = Object.keys(errors)[0];
+      document.getElementById(`type-${first}`)?.focus();
+      return;
+    }
     setSaving(true);
     try {
-      const saved = await onSave(appointmentTypeFormToInput(form), type);
+      // Prix, mode et acompte envoyés seulement s'ils changent : un type
+      // existant n'est jamais réécrit sans modification
+      const saved = await onSave(
+        {
+          ...appointmentTypeFormToInput(form),
+          ...pricingInputIfChanged(form, slotPricingSource(type)),
+        },
+        type,
+      );
       if (saved) onClose();
     } finally {
       setSaving(false);
@@ -581,6 +616,42 @@ export function AppointmentTypeSheet({
                     onCheckedChange={set("requirePhone")}
                   />
                 </label>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium">Prix</h3>
+                <Field
+                  id="type-price"
+                  label="Prix du rendez-vous (TTC)"
+                  hint={
+                    priceCents > 0 ? formatCents(priceCents) : "Vide : gratuit"
+                  }
+                  error={visibleErrors.price}
+                  className="sm:max-w-[calc(50%-0.5rem)]"
+                >
+                  <div className="relative">
+                    <Input
+                      id="type-price"
+                      inputMode="decimal"
+                      value={form.priceText}
+                      onChange={(event) => set("priceText")(event.target.value)}
+                      placeholder="Gratuit"
+                      className="pr-8"
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">
+                      €
+                    </span>
+                  </div>
+                </Field>
+                <PaymentModeFields
+                  kind="slot"
+                  idPrefix="type"
+                  form={form}
+                  set={set}
+                  errors={visibleErrors}
+                  methods={methods}
+                  methodsLoaded={methodsLoaded}
+                />
               </section>
 
               <section className="space-y-3">

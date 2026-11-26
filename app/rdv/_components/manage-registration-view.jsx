@@ -7,11 +7,14 @@ import {
   shortDateTimeLabel,
   unconfirmedRegistrationMessage,
 } from "@/src/utils/booking-events";
+import { isAwaitingBankTransfer } from "@/src/utils/booking-payments";
 import {
   bookingErrorText,
   cancelEventRegistration,
+  declareRegistrationBankTransfer,
   fetchEventRegistration,
 } from "../_lib/booking-api";
+import { BankTransferPanel } from "./bank-transfer-panel";
 import { useGuestTimeZone } from "../_lib/use-guest-time-zone";
 import { BookingCard, BookingShell, BookingUnavailable } from "./booking-shell";
 import { EventConfirmation, RegistrationSummary } from "./event-confirmation";
@@ -175,7 +178,34 @@ export function ManageRegistrationView({ token, embed = false }) {
     <BookingShell embed={embed} accentColor={page.accentColor}>
       <BookingCard className="mx-auto max-w-2xl">
         <div className="space-y-6 px-5 py-8 sm:px-10 sm:py-12">
-          {confirmed ? (
+          {isAwaitingBankTransfer(registration) &&
+          registration.bankTransfer &&
+          !refundMessage ? (
+            <div className="mx-auto max-w-xl space-y-5">
+              <div className="space-y-2 text-center">
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  Inscription en attente de votre virement
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Vos billets vous seront envoyés par e-mail dès la réception du
+                  virement.
+                </p>
+              </div>
+              <RegistrationSummary
+                registration={registration}
+                guestTimeZone={guestTimeZone}
+              />
+              <BankTransferPanel
+                bankTransfer={registration.bankTransfer}
+                kind="event"
+                organizerName={page.organizationName || page.title}
+                timeZone={guestTimeZone}
+                onDeclare={(cancel) =>
+                  declareRegistrationBankTransfer(token, { cancel })
+                }
+              />
+            </div>
+          ) : confirmed ? (
             <EventConfirmation
               registration={registration}
               guestTimeZone={guestTimeZone}
@@ -200,7 +230,9 @@ export function ManageRegistrationView({ token, embed = false }) {
                       }. Ses billets ne sont plus valables.`
                     : registration.status === "PENDING_PAYMENT"
                       ? "Le paiement n'est pas encore confirmé. Vos billets vous seront envoyés par e-mail dès sa confirmation."
-                      : "Le paiement n'a pas abouti à temps : les places ont été libérées et aucun billet n'a été émis."}
+                      : registration.paymentProvider === "bank_transfer"
+                        ? "Le virement n'a pas été reçu à temps : les places ont été libérées et aucun billet n'a été émis."
+                        : "Le paiement n'a pas abouti à temps : les places ont été libérées et aucun billet n'a été émis."}
               </p>
               <RegistrationSummary
                 registration={registration}

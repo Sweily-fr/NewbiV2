@@ -155,6 +155,7 @@ export function TypeBookingView({ slug, typeSlug, embed = false }) {
                     type={type}
                     slot={slot}
                     guestTimeZone={guestTimeZone}
+                    embed={embed}
                     onBack={() => setStep("pick")}
                     onBooked={(result, values) => {
                       setConfirmation({ result, email: values.email.trim() });

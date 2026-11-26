@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   BOOKING_SLUG_AVAILABLE,
+  GET_APPOINTMENT_PAYMENT_METHODS,
   GET_APPOINTMENT_TYPES,
   GET_EVENT_PAYMENT_METHODS,
   GET_EVENT_REGISTRATIONS,
@@ -18,6 +19,9 @@ import {
   CHECK_IN_TICKET,
   CREATE_APPOINTMENT_TYPE,
   DELETE_APPOINTMENT_TYPE,
+  MARK_BOOKING_PAID,
+  MARK_BOOKING_PAID_ON_SITE,
+  MARK_EVENT_REGISTRATION_PAID,
   MARK_EVENT_REGISTRATION_PAID_ON_SITE,
   UNDO_TICKET_CHECK_IN,
   UPDATE_APPOINTMENT_TYPE,
@@ -329,6 +333,17 @@ export function useBookingMutations() {
     },
   );
 
+  // Virement reçu : la réservation passe d'« En attente » à « À venir »,
+  // le compteur de son type monte
+  const [markBookingPaidMutation, { loading: markingBookingPaid }] =
+    useMutation(MARK_BOOKING_PAID, {
+      ...strict,
+      refetchQueries: ["Bookings", "AppointmentTypes"],
+    });
+  // La réservation renvoyée remplace celle du cache (onSitePaidAt)
+  const [bookingPaidOnSiteMutation, { loading: markingBookingPaidOnSite }] =
+    useMutation(MARK_BOOKING_PAID_ON_SITE, strict);
+
   const upsertPage = useCallback(
     async (input, { isCreation = false } = {}) => {
       const { data } = await upsertPageMutation({
@@ -383,12 +398,38 @@ export function useBookingMutations() {
     [cancelBookingMutation, workspaceId],
   );
 
+  /** « Marquer comme payé » : virement reçu, rendez-vous confirmé. */
+  const markBookingPaid = useCallback(
+    async (id) => {
+      const { data } = await markBookingPaidMutation({
+        variables: { workspaceId, id },
+      });
+      return data?.markBookingPaid || null;
+    },
+    [markBookingPaidMutation, workspaceId],
+  );
+
+  /** Reste dû sur place marqué réglé (`paid` vrai) ou non. */
+  const markBookingPaidOnSite = useCallback(
+    async (id, paid) => {
+      const { data } = await bookingPaidOnSiteMutation({
+        variables: { workspaceId, id, paid: Boolean(paid) },
+      });
+      return data?.markBookingPaidOnSite || null;
+    },
+    [bookingPaidOnSiteMutation, workspaceId],
+  );
+
   return {
     upsertPage,
     createType,
     updateType,
     deleteType,
     cancelBooking,
+    markBookingPaid,
+    markBookingPaidOnSite,
+    markingBookingPaid,
+    markingBookingPaidOnSite,
     savingPage,
     creatingType,
     updatingType,
@@ -489,6 +530,25 @@ export function useEventPaymentMethods({ skip = false } = {}) {
   };
 }
 
+/**
+ * Moyens prêts pour encaisser un créneau ou un événement : stripe, paypal,
+ * sumup et bank_transfer (IBAN de l'entreprise renseigné).
+ */
+export function useAppointmentPaymentMethods({ skip = false } = {}) {
+  const { workspaceId } = useWorkspace();
+  const { data, loading } = useQuery(GET_APPOINTMENT_PAYMENT_METHODS, {
+    variables: { workspaceId },
+    skip: skip || !workspaceId,
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+  });
+  return {
+    methods: data?.appointmentPaymentMethods || EMPTY,
+    loaded: data !== undefined,
+    loading: loading && !data,
+  };
+}
+
 /** Ajoute `delta` aux compteurs de présence d'un type et d'une inscription. */
 function shiftCheckedIn(cache, { typeId, registrationId, delta }) {
   const add = (value) => Math.max(0, (Number(value) || 0) + delta);
@@ -544,6 +604,12 @@ export function useEventMutations() {
   const [paidOnSiteMutation, { loading: markingPaidOnSite }] = useMutation(
     MARK_EVENT_REGISTRATION_PAID_ON_SITE,
     strict,
+  );
+
+  // Virement reçu : statut, billets et places prises recalculés par l'API
+  const [markPaidMutation, { loading: markingPaid }] = useMutation(
+    MARK_EVENT_REGISTRATION_PAID,
+    { ...strict, refetchQueries: ["AppointmentTypes", "EventRegistrations"] },
   );
 
   /** Fichier → URL publique, ou { error } (format, taille, réseau). */
@@ -620,6 +686,17 @@ export function useEventMutations() {
     [paidOnSiteMutation, workspaceId],
   );
 
+  /** « Marquer comme payé » : virement reçu, inscription confirmée. */
+  const markPaid = useCallback(
+    async (id) => {
+      const { data } = await markPaidMutation({
+        variables: { workspaceId, id },
+      });
+      return data?.markEventRegistrationPaid || null;
+    },
+    [markPaidMutation, workspaceId],
+  );
+
   /** Texte CSV de l'export (une ligne par billet confirmé). */
   const fetchRegistrationsCsv = useCallback(
     async (typeId) => {
@@ -640,6 +717,8 @@ export function useEventMutations() {
     checkIn,
     undoCheckIn,
     markPaidOnSite,
+    markPaid,
+    markingPaid,
     fetchRegistrationsCsv,
     uploadingImage,
     cancellingRegistration,

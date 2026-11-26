@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 // Récupérer tous les articles
 export const GET_ALL_BLOG_POSTS = gql`

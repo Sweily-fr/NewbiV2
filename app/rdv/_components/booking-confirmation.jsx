@@ -8,6 +8,7 @@ import {
   timeZoneLabel,
   VIDEO_LOCATION_KINDS,
 } from "@/src/utils/booking";
+import { registrationPaymentLine } from "@/src/utils/booking-events";
 import { apiFileUrl } from "../_lib/booking-api";
 import { LocationIcon } from "./appointment-details";
 
@@ -55,7 +56,12 @@ function CalendarLink({ href, download, children }) {
  * Rendez-vous confirmé : récapitulatif dans le fuseau de l'invité, lien de
  * visio s'il existe déjà, ajout à son agenda et lien de gestion.
  */
-export function BookingConfirmation({ result, guestEmail, guestTimeZone }) {
+export function BookingConfirmation({
+  result,
+  guestEmail,
+  guestTimeZone,
+  heading = "Rendez-vous confirmé",
+}) {
   const { booking, manageUrl, icsUrl } = result;
   const event = calendarEventFor(booking, { manageUrl });
   const managePath = managePathFromUrl(manageUrl);
@@ -68,9 +74,7 @@ export function BookingConfirmation({ result, guestEmail, guestTimeZone }) {
         <span className="flex size-14 items-center justify-center rounded-full bg-[var(--rdv-accent)] text-[var(--rdv-on-accent)]">
           <Check className="size-7" aria-hidden="true" />
         </span>
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Rendez-vous confirmé
-        </h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{heading}</h1>
         {guestEmail && (
           <p className="text-sm text-gray-500">
             Un e-mail de confirmation a été envoyé à
@@ -116,6 +120,11 @@ export function BookingConfirmation({ result, guestEmail, guestTimeZone }) {
               Le lien de connexion figure dans l&apos;e-mail de confirmation.
             </p>
           )
+        )}
+        {booking.amount > 0 && (
+          <p className="font-medium text-gray-800">
+            {registrationPaymentLine(booking)}
+          </p>
         )}
         {booking.locationKind === "PHONE" && (
           <p className="text-gray-500">
