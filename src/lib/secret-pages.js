@@ -1,7 +1,8 @@
 /**
  * Pages dont l'adresse porte un secret : lien de transfert et sa clé,
  * tableau public, paiement, invitation, réinitialisation ou vérification,
- * réactivation, gestion d'un rendez-vous, jeton de l'application mobile.
+ * réactivation, gestion d'un rendez-vous, billet et inscription à un
+ * événement, jeton de l'application mobile.
  *
  * Les balises tierces (Google Ads, Google Tag Manager, pixels Meta et
  * TikTok, PostHog) reçoivent l'adresse complète de la page : elles ne sont
@@ -17,6 +18,9 @@ export const SECRET_PATH_PREFIXES = [
   "/auth/verify-email",
   "/reactivate-account",
   "/rdv/gerer/",
+  // Billetterie : billet (QR code) et lien de gestion d'une inscription
+  "/rdv/billet/",
+  "/rdv/inscription/",
   "/pdf-generator/",
   "/banking-callback",
   // Lien de partage d'un transfert, vu par son propriétaire
@@ -34,6 +38,10 @@ export const SECRET_QUERY_KEYS = [
   "email",
   "invitation",
   "accessKey",
+  // Retour du paiement d'une inscription à un événement (jeton de retour,
+  // session Stripe)
+  "rt",
+  "session_id",
 ];
 
 export function isSecretLocation(pathname, search = "") {
@@ -72,6 +80,10 @@ export const RELOAD_QUERY_KEYS = [
   "ott",
   "code",
   "accessKey",
+  // Retour du paiement d'une inscription à un événement (jeton de retour,
+  // session Stripe)
+  "rt",
+  "session_id",
 ];
 
 /**

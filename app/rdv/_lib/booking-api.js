@@ -11,11 +11,13 @@ const apiUrl = () =>
 const base = () => `${apiUrl()}api/public/booking`;
 
 export class BookingApiError extends Error {
-  constructor(code, status, fields = null) {
+  constructor(code, status, fields = null, data = null) {
     super(code);
     this.code = code;
     this.status = status;
     this.fields = fields;
+    // Corps complet de la réponse (ex. seatsLeft d'un SOLD_OUT)
+    this.data = data;
   }
 }
 
@@ -44,6 +46,7 @@ async function request(path, { method = "GET", body, signal } = {}) {
       data?.error || (response.status === 404 ? "NOT_FOUND" : "SERVER"),
       response.status,
       data?.fields || null,
+      data,
     );
   }
   return data;
@@ -100,6 +103,69 @@ export function rescheduleManagedBooking(token, { start, turnstileToken }) {
   });
 }
 
+// --- Billetterie --------------------------------------------------------------
+
+/**
+ * Inscription à un événement. Gratuit : 201 { status: CONFIRMED,
+ * registration, manageUrl } ; payant : 201 { status: PENDING_PAYMENT,
+ * paymentUrl, expiresAt }. 409 REGISTRATION_CLOSED | SOLD_OUT |
+ * PAYMENT_METHOD_UNAVAILABLE ; 502 PAYMENT_START_FAILED.
+ */
+export function registerForEvent(slug, typeSlug, payload) {
+  return request(`/${segment(slug)}/${segment(typeSlug)}/register`, {
+    method: "POST",
+    body: payload,
+  });
+}
+
+/** Retour du paiement : { paymentStatus, registration, manageUrl }. */
+export function confirmEventPayment(
+  { returnToken, provider, sessionId, orderId },
+  options,
+) {
+  return request("/registrations/return", {
+    method: "POST",
+    body: {
+      returnToken,
+      provider,
+      sessionId: sessionId || null,
+      orderId: orderId || null,
+    },
+    ...options,
+  });
+}
+
+/**
+ * Retour après une annulation chez le prestataire (canceled=1) : l'API
+ * ferme le paiement et rend les places s'il est impayé. Même réponse que
+ * confirmEventPayment.
+ */
+export function cancelEventPayment({ returnToken }, options) {
+  return request("/registrations/return/cancel", {
+    method: "POST",
+    body: { returnToken },
+    ...options,
+  });
+}
+
+/** Inscription par son lien de gestion : RegistrationPayload. */
+export function fetchEventRegistration(token, options) {
+  return request(`/registrations/${segment(token)}`, options);
+}
+
+/** 409 NOT_ALLOWED : payante, commencée ou non confirmée. */
+export function cancelEventRegistration(token, reason) {
+  return request(`/registrations/${segment(token)}/cancel`, {
+    method: "POST",
+    body: { reason: reason?.trim() || null },
+  });
+}
+
+/** Billet par son jeton (page du QR code). */
+export function fetchTicket(token, options) {
+  return request(`/tickets/${segment(token)}`, options);
+}
+
 /** Adresse du fichier .ics : chemin renvoyé par l'API (« /api/public/… »). */
 export function apiFileUrl(path) {
   if (!path) return null;
@@ -126,6 +192,16 @@ export function bookingErrorText(error) {
       return "Ce rendez-vous ne peut plus être modifié : il est passé ou déjà annulé.";
     case "UNAVAILABLE":
       return "La réservation n'a pas pu aboutir. Contactez directement votre interlocuteur.";
+    case "REGISTRATION_CLOSED":
+      return "Les inscriptions à cet événement sont closes.";
+    case "SOLD_OUT":
+      return error?.data?.seatsLeft > 0
+        ? `Il ne reste que ${error.data.seatsLeft} place${error.data.seatsLeft > 1 ? "s" : ""}. Réduisez le nombre de places.`
+        : "Cet événement est complet.";
+    case "PAYMENT_METHOD_UNAVAILABLE":
+      return "Ce moyen de paiement n'est plus proposé. Choisissez-en un autre.";
+    case "PAYMENT_START_FAILED":
+      return "Le paiement n'a pas pu démarrer. Réessayez dans un instant.";
     case "NETWORK":
       return "Connexion impossible. Vérifiez votre réseau, puis réessayez.";
     default:

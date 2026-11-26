@@ -1,19 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   BOOKING_SLUG_AVAILABLE,
   GET_APPOINTMENT_TYPES,
+  GET_EVENT_PAYMENT_METHODS,
+  GET_EVENT_REGISTRATIONS,
+  GET_EVENT_REGISTRATIONS_CSV,
   GET_BOOKING,
   GET_BOOKINGS,
   GET_MY_BOOKING_PAGE,
 } from "@/src/graphql/queries/booking";
 import {
   CANCEL_BOOKING,
+  CANCEL_EVENT_REGISTRATION,
+  CHECK_IN_TICKET,
   CREATE_APPOINTMENT_TYPE,
   DELETE_APPOINTMENT_TYPE,
+  UNDO_TICKET_CHECK_IN,
   UPDATE_APPOINTMENT_TYPE,
+  UPLOAD_APPOINTMENT_EVENT_IMAGE,
   UPSERT_BOOKING_PAGE,
 } from "@/src/graphql/mutations/booking";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -46,6 +53,34 @@ export function bookingErrorMessage(
   return fallback;
 }
 
+// Réservations prises par les invités pendant que la page est ouverte :
+// relues au retour sur l'onglet du navigateur (au plus toutes les 30 s) et
+// toutes les minutes tant que l'onglet est visible.
+const VISIBLE_REFRESH_MIN_MS = 30 * 1000;
+const BOOKINGS_POLL_MS = 60 * 1000;
+const tabHidden = () =>
+  typeof document !== "undefined" && document.visibilityState === "hidden";
+
+function useRefetchWhenVisible(refetch, skip) {
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
+  useEffect(() => {
+    if (skip || typeof document === "undefined") return undefined;
+    let last = Date.now();
+    const onVisible = () => {
+      if (tabHidden() || Date.now() - last < VISIBLE_REFRESH_MIN_MS) return;
+      last = Date.now();
+      refetchRef.current?.().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [skip]);
+}
+
 /** Page de réservation de l'utilisateur dans l'espace actif (null = pas encore créée). */
 export function useMyBookingPage({ skip = false } = {}) {
   const { workspaceId } = useWorkspace();
@@ -73,6 +108,8 @@ export function useAppointmentTypes({ skip = false } = {}) {
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
   });
+  // Compteur « à venir » de chaque type
+  useRefetchWhenVisible(refetch, skip || !workspaceId);
   const types = data?.appointmentTypes || EMPTY;
   return {
     types,
@@ -95,7 +132,10 @@ export function useBookings(
     skip: skip || !workspaceId,
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
+    pollInterval: BOOKINGS_POLL_MS,
+    skipPollAttempt: tabHidden,
   });
+  useRefetchWhenVisible(refetch, skip || !workspaceId);
   return {
     bookings: data?.bookings?.items || EMPTY,
     totalCount: data?.bookings?.totalCount || 0,
@@ -226,14 +266,27 @@ export function useBookingMutations() {
       },
     },
   );
+  // Création et suppression : la liste des types est corrigée dans le
+  // cache dès la réponse (affichage immédiat, sans attendre de relecture),
+  // puis relue en arrière-plan (position, compteurs calculés par l'API)
+  const typesQuery = {
+    query: GET_APPOINTMENT_TYPES,
+    variables: { workspaceId },
+  };
   const [createTypeMutation, { loading: creatingType }] = useMutation(
     CREATE_APPOINTMENT_TYPE,
     {
       ...strict,
-      refetchQueries: [
-        { query: GET_APPOINTMENT_TYPES, variables: { workspaceId } },
-      ],
-      awaitRefetchQueries: true,
+      update(cache, { data }) {
+        const created = data?.createAppointmentType;
+        if (!created) return;
+        cache.updateQuery(typesQuery, (existing) => {
+          const list = existing?.appointmentTypes || [];
+          if (list.some((type) => type.id === created.id)) return existing;
+          return { appointmentTypes: [...list, created] };
+        });
+      },
+      refetchQueries: ["AppointmentTypes"],
     },
   );
   const [updateTypeMutation, { loading: updatingType }] = useMutation(
@@ -244,10 +297,25 @@ export function useBookingMutations() {
     DELETE_APPOINTMENT_TYPE,
     {
       ...strict,
-      refetchQueries: [
-        { query: GET_APPOINTMENT_TYPES, variables: { workspaceId } },
-      ],
-      awaitRefetchQueries: true,
+      update(cache, { data }, { variables }) {
+        if (!data?.deleteAppointmentType) return;
+        cache.updateQuery(typesQuery, (existing) =>
+          existing
+            ? {
+                appointmentTypes: existing.appointmentTypes.filter(
+                  (type) => type.id !== variables.id,
+                ),
+              }
+            : existing,
+        );
+        cache.evict({
+          id: cache.identify({
+            __typename: "AppointmentType",
+            id: variables.id,
+          }),
+        });
+        cache.gc();
+      },
     },
   );
   const [cancelBookingMutation, { loading: cancellingBooking }] = useMutation(
@@ -325,5 +393,238 @@ export function useBookingMutations() {
     updatingType,
     deletingType,
     cancellingBooking,
+  };
+}
+
+// --- Billetterie ------------------------------------------------------------
+
+/**
+ * Inscrits d'un événement (recherche : nom, e-mail ou numéro de billet),
+ * par pages de `pageSize` (200 au plus pour l'API) : `loadMore` ajoute la
+ * page suivante (offset = nombre déjà chargé) tant qu'il en reste.
+ */
+export function useEventRegistrations(
+  typeId,
+  { search = "", status = null, pageSize = 50, skip = false } = {},
+) {
+  const { workspaceId } = useWorkspace();
+  const [loadingMore, setLoadingMore] = useState(false);
+  const { data, previousData, loading, error, refetch, fetchMore } = useQuery(
+    GET_EVENT_REGISTRATIONS,
+    {
+      variables: {
+        workspaceId,
+        typeId,
+        search: search.trim() || null,
+        status: status || null,
+        limit: Math.min(pageSize, 200),
+        offset: 0,
+      },
+      skip: skip || !workspaceId || !typeId,
+      fetchPolicy: "cache-and-network",
+      nextFetchPolicy: "cache-first",
+    },
+  );
+  // Pendant une nouvelle recherche, la liste précédente reste affichée
+  const shown = data || previousData;
+  const registrations = shown?.eventRegistrations?.items || EMPTY;
+  const totalCount = shown?.eventRegistrations?.totalCount || 0;
+  const hasMore = Boolean(data) && registrations.length < totalCount;
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      await fetchMore({
+        variables: { offset: registrations.length },
+        updateQuery(previous, { fetchMoreResult }) {
+          const next = fetchMoreResult?.eventRegistrations;
+          if (!next) return previous;
+          const known = new Set(
+            previous.eventRegistrations.items.map((item) => item.id),
+          );
+          return {
+            eventRegistrations: {
+              ...next,
+              items: [
+                ...previous.eventRegistrations.items,
+                ...next.items.filter((item) => !known.has(item.id)),
+              ],
+            },
+          };
+        },
+      });
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loadingMore, fetchMore, registrations.length]);
+
+  return {
+    registrations,
+    totalCount,
+    hasMore,
+    loadMore,
+    loadingMore,
+    loading: loading && !shown,
+    searching: loading && Boolean(shown) && !loadingMore,
+    error,
+    refetch,
+  };
+}
+
+/** Moyens de paiement en ligne prêts pour vendre des billets. */
+export function useEventPaymentMethods({ skip = false } = {}) {
+  const { workspaceId } = useWorkspace();
+  const { data, loading } = useQuery(GET_EVENT_PAYMENT_METHODS, {
+    variables: { workspaceId },
+    skip: skip || !workspaceId,
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+  });
+  return {
+    methods: data?.eventPaymentMethods || EMPTY,
+    loaded: data !== undefined,
+    loading: loading && !data,
+  };
+}
+
+/** Ajoute `delta` aux compteurs de présence d'un type et d'une inscription. */
+function shiftCheckedIn(cache, { typeId, registrationId, delta }) {
+  const add = (value) => Math.max(0, (Number(value) || 0) + delta);
+  if (typeId) {
+    cache.modify({
+      id: cache.identify({ __typename: "AppointmentType", id: typeId }),
+      fields: { checkedInCount: add },
+    });
+  }
+  if (registrationId) {
+    cache.modify({
+      id: cache.identify({
+        __typename: "EventRegistration",
+        id: registrationId,
+      }),
+      fields: { checkedInCount: add },
+    });
+  }
+}
+
+/**
+ * Mutations de la billetterie (errorPolicy « none ») : annulation, contrôle
+ * des billets, envoi d'image, export. Le cache suit chaque réponse : statut,
+ * présence et compteurs s'affichent sans rechargement.
+ */
+export function useEventMutations() {
+  const client = useApolloClient();
+  const { workspaceId } = useWorkspace();
+  const strict = { errorPolicy: "none" };
+
+  const [uploadImageMutation, { loading: uploadingImage }] = useMutation(
+    UPLOAD_APPOINTMENT_EVENT_IMAGE,
+    strict,
+  );
+  const [cancelMutation, { loading: cancellingRegistration }] = useMutation(
+    CANCEL_EVENT_REGISTRATION,
+    {
+      ...strict,
+      // Places rendues et nombre d'inscrits recalculés par l'API
+      refetchQueries: ["AppointmentTypes"],
+    },
+  );
+  const [checkInMutation, { loading: checkingIn }] = useMutation(
+    CHECK_IN_TICKET,
+    strict,
+  );
+  const [undoMutation, { loading: undoingCheckIn }] = useMutation(
+    UNDO_TICKET_CHECK_IN,
+    strict,
+  );
+
+  /** Fichier → URL publique, ou { error } (format, taille, réseau). */
+  const uploadImage = useCallback(
+    async (file, kind) => {
+      try {
+        const { data } = await uploadImageMutation({
+          variables: { workspaceId, file, kind },
+        });
+        const result = data?.uploadAppointmentEventImage;
+        if (!result?.success || !result.url) {
+          return {
+            error: result?.message || "L'image n'a pas pu être envoyée.",
+          };
+        }
+        return { url: result.url };
+      } catch (error) {
+        return {
+          error: bookingErrorMessage(error, "L'image n'a pas pu être envoyée."),
+        };
+      }
+    },
+    [uploadImageMutation, workspaceId],
+  );
+
+  const cancelRegistration = useCallback(
+    async (id, reason) => {
+      const { data } = await cancelMutation({
+        variables: { id, workspaceId, reason: reason?.trim() || null },
+      });
+      return data?.cancelEventRegistration || null;
+    },
+    [cancelMutation, workspaceId],
+  );
+
+  /** Contrôle d'un billet ; VALID : compteurs de présence mis à jour. */
+  const checkIn = useCallback(
+    async (typeId, code) => {
+      const { data } = await checkInMutation({
+        variables: { workspaceId, typeId, code },
+        update(cache, { data: result }) {
+          if (result?.checkInTicket?.result !== "VALID") return;
+          // L'inscription renvoyée porte déjà son compteur à jour
+          shiftCheckedIn(cache, { typeId, delta: 1 });
+        },
+      });
+      return data?.checkInTicket || null;
+    },
+    [checkInMutation, workspaceId],
+  );
+
+  const undoCheckIn = useCallback(
+    async ({ ticketId, typeId, registrationId }) => {
+      const { data } = await undoMutation({
+        variables: { workspaceId, ticketId },
+        update(cache, { data: result }) {
+          if (!result?.undoTicketCheckIn) return;
+          shiftCheckedIn(cache, { typeId, registrationId, delta: -1 });
+        },
+      });
+      return data?.undoTicketCheckIn || null;
+    },
+    [undoMutation, workspaceId],
+  );
+
+  /** Texte CSV de l'export (une ligne par billet confirmé). */
+  const fetchRegistrationsCsv = useCallback(
+    async (typeId) => {
+      const { data } = await client.query({
+        query: GET_EVENT_REGISTRATIONS_CSV,
+        variables: { workspaceId, typeId },
+        fetchPolicy: "network-only",
+        errorPolicy: "none",
+      });
+      return data?.eventRegistrationsCsv || "";
+    },
+    [client, workspaceId],
+  );
+
+  return {
+    uploadImage,
+    cancelRegistration,
+    checkIn,
+    undoCheckIn,
+    fetchRegistrationsCsv,
+    uploadingImage,
+    cancellingRegistration,
+    checkingIn,
+    undoingCheckIn,
   };
 }

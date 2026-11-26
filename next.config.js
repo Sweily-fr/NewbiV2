@@ -341,6 +341,28 @@ const nextConfig = {
         ],
       },
       {
+        // Contrôle des billets (prise de rendez-vous) : le scanner lit les QR
+        // codes avec la caméra du téléphone. Seule exception à camera=() :
+        // ces pages, et pour ce site seulement (self). Placée après la règle
+        // générale, elle la remplace pour cet en-tête.
+        source: "/dashboard/outils/rendez-vous/:path*",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "camera=(self), microphone=(), geolocation=()",
+          },
+        ],
+      },
+      {
+        source: "/dashboard/outils/rendez-vous",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "camera=(self), microphone=(), geolocation=()",
+          },
+        ],
+      },
+      {
         // Images de public/ : servies jusque-là en max-age=0 (chaque visite
         // revalidait chaque image, constat P5 de l'audit du 10/11/2026). Un
         // jour de cache navigateur, puis une semaine de revalidation en

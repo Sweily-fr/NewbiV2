@@ -16,6 +16,10 @@ const MOBILE_BLOCKED_PREFIXES = [
   "/create-workspace",
 ];
 
+// Exceptions : le contrôle des billets d'un événement se fait au téléphone,
+// à l'entrée (page plein écran, caméra)
+const MOBILE_ALLOWED_PREFIXES = ["/dashboard/outils/rendez-vous/controle/"];
+
 // Pages de développement : introuvables dans un build de production. Le
 // notFound() de la page ne suffit pas sous /dashboard, dont le chargement
 // progressif envoie déjà un statut 200
@@ -34,7 +38,10 @@ export function middleware(request) {
     return new NextResponse("Page introuvable", { status: 404 });
   }
 
-  if (MOBILE_BLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (
+    MOBILE_BLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix)) &&
+    !MOBILE_ALLOWED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  ) {
     const { device } = userAgent(request);
     // device.type === "mobile" ne cible que les téléphones (pas les tablettes)
     if (device.type === "mobile") {

@@ -53,6 +53,27 @@ describe("mobile middleware — téléphones bloqués sur l'app", () => {
     expect(res.type).toBe("redirect");
   });
 
+  it("laisse un téléphone contrôler les billets d'un événement", () => {
+    deviceIs("mobile");
+
+    const res = middleware(
+      makeReq(
+        "/dashboard/outils/rendez-vous/controle/66a1b2c3d4e5f6a7b8c9d0e1",
+      ),
+    );
+
+    expect(NextResponseMock.redirect).not.toHaveBeenCalled();
+    expect(res.type).toBe("next");
+  });
+
+  it("bloque toujours le reste de la prise de rendez-vous sur téléphone", () => {
+    deviceIs("mobile");
+
+    middleware(makeReq("/dashboard/outils/rendez-vous"));
+
+    expect(NextResponseMock.redirect).toHaveBeenCalledTimes(1);
+  });
+
   it("laisse passer un desktop (device.type undefined) sur /dashboard", () => {
     deviceIs(undefined);
 

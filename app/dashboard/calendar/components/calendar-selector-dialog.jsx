@@ -26,7 +26,9 @@ export function CalendarSelectorDialog({ isOpen, onClose, connection }) {
   );
 
   const [updateSelectedCalendars, { loading: saving }] = useMutation(UPDATE_SELECTED_CALENDARS, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }],
+    // Les agendas cochés changent les événements affichés : la liste du
+    // Calendrier est rechargée aussi (par nom, avec sa période)
+    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, "GetEvents"],
   });
 
   useEffect(() => {
