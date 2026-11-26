@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  BadgeEuro,
   CalendarClock,
   Clock,
   Copy,
@@ -316,6 +317,15 @@ function TypeCard({
                 />
                 {locationKindLabel(type.location?.kind)}
               </span>
+              {type.price?.amount > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <BadgeEuro className="size-3" aria-hidden="true" />
+                  {eventPriceLabel(type.price)}
+                  {eventPaymentShortLabel(type)
+                    ? ` · ${eventPaymentShortLabel(type)}`
+                    : ""}
+                </span>
+              )}
             </p>
           </div>
           {(canEdit || canDelete) && (
