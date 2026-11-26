@@ -241,7 +241,7 @@ export function registrationPaymentLine(registration) {
     registration.status === "CONFIRMED" ||
     ["REFUNDED", "MANUAL"].includes(registration.refundStatus);
   const rest = payment.paidOnSite
-    ? `Réglé sur place : ${money(payment.dueOnSite)}`
+    ? `${payment.mode === "DEPOSIT" ? "Reste réglé" : "Réglé"} sur place : ${money(payment.dueOnSite)}`
     : `${payment.mode === "DEPOSIT" ? "Reste à régler" : "À régler"} sur place : ${money(payment.dueOnSite)}`;
   if (payment.mode === "ON_SITE") return rest;
   if (payment.mode === "DEPOSIT") {
