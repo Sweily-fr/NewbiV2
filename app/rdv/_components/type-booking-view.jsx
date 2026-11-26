@@ -15,13 +15,14 @@ import { SlotPicker } from "./slot-picker";
 import { BookingForm } from "./booking-form";
 import { BookingConfirmation } from "./booking-confirmation";
 import { RdvPageSkeleton } from "./rdv-page-skeleton";
+import { EventRegistrationView } from "./event-registration-view";
 
 const SLOT_TAKEN_NOTICE =
   "Ce créneau vient d'être réservé, choisissez-en un autre.";
 
 /**
  * /rdv/<adresse>/<type> : infos du type à gauche, créneau puis coordonnées
- * à droite, puis confirmation.
+ * à droite, puis confirmation. Un événement a sa propre page d'inscription.
  */
 export function TypeBookingView({ slug, typeSlug, embed = false }) {
   const [state, setState] = useState({ status: "loading" });
@@ -75,6 +76,20 @@ export function TypeBookingView({ slug, typeSlug, embed = false }) {
   }
 
   const { page, type } = state;
+
+  // Événement (billetterie) : page d'inscription au lieu du choix de créneau
+  if (type.kind === "EVENT" && type.event) {
+    return (
+      <EventRegistrationView
+        slug={slug}
+        page={page}
+        type={type}
+        typesCount={typesCount}
+        embed={embed}
+      />
+    );
+  }
+
   const backHref = `/rdv/${encodeURIComponent(page.slug || slug)}${embed ? "?embed=1" : ""}`;
 
   return (

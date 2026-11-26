@@ -3,6 +3,8 @@ import {
   APPOINTMENT_TYPE_FIELDS,
   BOOKING_FIELDS,
   BOOKING_PAGE_FIELDS,
+  EVENT_REGISTRATION_FIELDS,
+  EVENT_TICKET_FIELDS,
 } from "@/src/graphql/queries/booking";
 
 // Premier appel = création de la page (slug obligatoire) : l'API crée aussi
@@ -56,4 +58,71 @@ export const CANCEL_BOOKING = gql`
     }
   }
   ${BOOKING_FIELDS}
+`;
+
+// --- Billetterie ------------------------------------------------------------
+
+// kind : COVER (image de fond) ou IMAGE (image de l'événement). L'URL
+// renvoyée va ensuite dans coverImageUrl / imageUrl du type. Échec :
+// { success: false, message } sans exception
+export const UPLOAD_APPOINTMENT_EVENT_IMAGE = gql`
+  mutation UploadAppointmentEventImage(
+    $workspaceId: ID
+    $file: Upload!
+    $kind: EventImageKind!
+  ) {
+    uploadAppointmentEventImage(
+      workspaceId: $workspaceId
+      file: $file
+      kind: $kind
+    ) {
+      success
+      url
+      message
+    }
+  }
+`;
+
+// Places rendues, e-mail au participant ; pas de remboursement automatique
+export const CANCEL_EVENT_REGISTRATION = gql`
+  mutation CancelEventRegistration(
+    $id: ID!
+    $workspaceId: ID
+    $reason: String
+  ) {
+    cancelEventRegistration(
+      id: $id
+      workspaceId: $workspaceId
+      reason: $reason
+    ) {
+      ...EventRegistrationFields
+    }
+  }
+  ${EVENT_REGISTRATION_FIELDS}
+`;
+
+// code : jeton du QR code, URL du billet ou numéro « EVT-XXXXXX »
+export const CHECK_IN_TICKET = gql`
+  mutation CheckInTicket($workspaceId: ID, $typeId: ID!, $code: String!) {
+    checkInTicket(workspaceId: $workspaceId, typeId: $typeId, code: $code) {
+      result
+      otherEventName
+      ticket {
+        ...EventTicketFields
+      }
+      registration {
+        ...EventRegistrationFields
+      }
+    }
+  }
+  ${EVENT_REGISTRATION_FIELDS}
+`;
+
+export const UNDO_TICKET_CHECK_IN = gql`
+  mutation UndoTicketCheckIn($workspaceId: ID, $ticketId: ID!) {
+    undoTicketCheckIn(workspaceId: $workspaceId, ticketId: $ticketId) {
+      ...EventTicketFields
+    }
+  }
+  ${EVENT_TICKET_FIELDS}
 `;
