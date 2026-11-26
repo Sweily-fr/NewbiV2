@@ -562,6 +562,15 @@ function baseCheckInOutcome(checkIn, { timeZone } = {}) {
 
 // --- Formulaire de l'organisateur ----------------------------------------------
 
+/** Prix, mode et acompte d'un type → champs du formulaire (euros). */
+export function pricingToForm(type) {
+  return {
+    priceText: centsToEurosInput(type?.price?.amount),
+    paymentMode: eventPaymentMode(type) || "ONLINE",
+    depositText: centsToEurosInput(eventDepositAmount(type)),
+  };
+}
+
 /** Type événement (ou nouveau) → valeurs du formulaire, dates dans le fuseau. */
 export function eventTypeToForm(type, { timeZone = DEFAULT_TIME_ZONE } = {}) {
   const kind = EVENT_LOCATION_KINDS.includes(type?.location?.kind)
@@ -584,9 +593,7 @@ export function eventTypeToForm(type, { timeZone = DEFAULT_TIME_ZONE } = {}) {
     imageUrl: type?.imageUrl || null,
     capacity: type?.capacity ?? null,
     maxPerOrder: type?.maxPerOrder ?? EVENT_LIMITS.defaultMaxPerOrder,
-    priceText: centsToEurosInput(type?.price?.amount),
-    paymentMode: eventPaymentMode(type) || "ONLINE",
-    depositText: centsToEurosInput(eventDepositAmount(type)),
+    ...pricingToForm(type),
     locationKind: kind,
     locationValue: type?.location?.value || "",
     color: type?.color || BOOKING_COLORS[0],
@@ -597,6 +604,43 @@ export function eventTypeToForm(type, { timeZone = DEFAULT_TIME_ZONE } = {}) {
 
 const inRange = (value, min, max) =>
   Number.isInteger(value) && value >= min && value <= max;
+
+/**
+ * Erreurs du prix, du mode de paiement et de l'acompte d'un formulaire
+ * (événement : par place ; créneau : `perSeat` faux). {} si tout est bon.
+ */
+export function pricingFormErrors(form, { perSeat = true } = {}) {
+  const errors = {};
+  const cents = eurosToCents(form.priceText);
+  if (Number.isNaN(cents))
+    errors.price = "Montant invalide, par exemple 15 ou 12,50";
+  else if (cents > 0 && cents < EVENT_LIMITS.minPriceCents)
+    errors.price = perSeat
+      ? "0,50 € minimum, ou laissez vide pour un événement gratuit"
+      : "0,50 € minimum, ou laissez vide pour un rendez-vous gratuit";
+  else if (cents > EVENT_LIMITS.maxPriceCents)
+    errors.price = "10 000 € au maximum";
+
+  if (cents > 0 && !Number.isNaN(cents)) {
+    const mode = form.paymentMode || "ONLINE";
+    if (!EVENT_PAYMENT_MODES.includes(mode))
+      errors.paymentMode = "Choisissez comment le prix est réglé";
+    else if (mode === "DEPOSIT") {
+      const deposit = eurosToCents(form.depositText);
+      if (Number.isNaN(deposit))
+        errors.deposit = "Montant invalide, par exemple 5 ou 7,50";
+      else if (deposit <= 0)
+        errors.deposit = "Indiquez le montant de l'acompte";
+      else if (deposit < EVENT_LIMITS.minPriceCents)
+        errors.deposit = "0,50 € minimum";
+      else if (deposit >= cents)
+        errors.deposit = perSeat
+          ? "L'acompte doit être inférieur au prix par place"
+          : "L'acompte doit être inférieur au prix";
+    }
+  }
+  return errors;
+}
 
 /**
  * Erreurs du formulaire d'événement ({} si tout est bon). `isCreation` :
@@ -656,30 +700,7 @@ export function eventFormErrors(
   if (!inRange(form.maxPerOrder, 1, EVENT_LIMITS.maxPerOrderMax))
     errors.maxPerOrder = "Entre 1 et 10";
 
-  const cents = eurosToCents(form.priceText);
-  if (Number.isNaN(cents))
-    errors.price = "Montant invalide, par exemple 15 ou 12,50";
-  else if (cents > 0 && cents < EVENT_LIMITS.minPriceCents)
-    errors.price = "0,50 € minimum, ou laissez vide pour un événement gratuit";
-  else if (cents > EVENT_LIMITS.maxPriceCents)
-    errors.price = "10 000 € au maximum";
-
-  if (cents > 0 && !Number.isNaN(cents)) {
-    const mode = form.paymentMode || "ONLINE";
-    if (!EVENT_PAYMENT_MODES.includes(mode))
-      errors.paymentMode = "Choisissez comment le prix est réglé";
-    else if (mode === "DEPOSIT") {
-      const deposit = eurosToCents(form.depositText);
-      if (Number.isNaN(deposit))
-        errors.deposit = "Montant invalide, par exemple 5 ou 7,50";
-      else if (deposit <= 0)
-        errors.deposit = "Indiquez le montant de l'acompte";
-      else if (deposit < EVENT_LIMITS.minPriceCents)
-        errors.deposit = "0,50 € minimum";
-      else if (deposit >= cents)
-        errors.deposit = "L'acompte doit être inférieur au prix par place";
-    }
-  }
+  Object.assign(errors, pricingFormErrors(form));
 
   const value = String(form.locationValue || "").trim();
   if (form.locationKind === "CUSTOM_LINK") {
@@ -700,7 +721,7 @@ export function eventFormErrors(
 }
 
 /** Prix, mode et acompte du formulaire tels que l'API les enregistre. */
-function formPricing(form) {
+export function pricingFormToInput(form) {
   const cents = eurosToCents(form.priceText);
   if (!(cents > 0))
     return { price: null, paymentMode: null, depositAmount: null };
@@ -713,6 +734,26 @@ function formPricing(form) {
     depositAmount:
       paymentMode === "DEPOSIT" ? eurosToCents(form.depositText) : null,
   };
+}
+
+/**
+ * Prix, mode et acompte à envoyer : les trois ensemble si l'un d'eux change
+ * par rapport à `initial` (le type enregistré : { price, paymentMode,
+ * depositAmount }), sinon {} (rien n'est réécrit). `always` : création.
+ */
+export function pricingInputIfChanged(form, initial, { always = false } = {}) {
+  const pricing = pricingFormToInput(form);
+  const initialSource = {
+    price: { amount: Number(initial?.price?.amount) || 0 },
+    paymentMode: initial?.paymentMode ?? null,
+    depositAmount: initial?.depositAmount ?? null,
+  };
+  const changed =
+    always ||
+    (pricing.price?.amount || 0) !== initialSource.price.amount ||
+    pricing.paymentMode !== eventPaymentMode(initialSource) ||
+    (pricing.depositAmount || 0) !== eventDepositAmount(initialSource);
+  return changed ? pricing : {};
 }
 
 /**
@@ -732,18 +773,15 @@ export function eventFormToInput(
     initialDepositAmount = null,
   } = {},
 ) {
-  const pricing = formPricing(form);
-  const initialSource = {
-    price: { amount: Number(initialPriceCents) || 0 },
-    paymentMode: initialPaymentMode,
-    depositAmount: initialDepositAmount,
-  };
-  const initialMode = eventPaymentMode(initialSource);
-  const pricingChanged =
-    isCreation ||
-    (pricing.price?.amount || 0) !== initialSource.price.amount ||
-    pricing.paymentMode !== initialMode ||
-    (pricing.depositAmount || 0) !== eventDepositAmount(initialSource);
+  const pricing = pricingInputIfChanged(
+    form,
+    {
+      price: { amount: initialPriceCents },
+      paymentMode: initialPaymentMode,
+      depositAmount: initialDepositAmount,
+    },
+    { always: isCreation },
+  );
   const location = String(form.locationValue || "").trim();
   return {
     ...(isCreation ? { kind: EVENT_KIND } : {}),
@@ -760,7 +798,7 @@ export function eventFormToInput(
     imageUrl: form.imageUrl || null,
     capacity: form.capacity ?? null,
     maxPerOrder: form.maxPerOrder,
-    ...(pricingChanged ? pricing : {}),
+    ...pricing,
     location: { kind: form.locationKind, value: location },
     color: form.color,
     isActive: form.isActive,
