@@ -6,7 +6,8 @@
  *   - Créneau « En ligne » par carte : choix du moyen après le créneau et le
  *     formulaire, jusqu'à la redirection vers le prestataire (clé Stripe
  *     factice : la réponse de la réservation est simulée, après contrôle de ce
- *     que le site envoie).
+ *     que le site envoie). Le premier créneau est à moins de 48 h : le
+ *     virement n'est pas proposé, la raison est donnée.
  *   - Créneau « En ligne » par virement, pour de vrai : panneau (IBAN,
  *     référence, montant), « J'ai fait le virement » (rien de confirmé),
  *     « Marquer comme payé » par l'organisateur, puis confirmation visible
@@ -38,6 +39,8 @@ async function capture(page, nom) {
   const dossier = process.env.CAPTURES_PAIEMENTS;
   if (!dossier) return;
   mkdirSync(dossier, { recursive: true });
+  // Fin des animations d'ouverture (tiroirs, fenêtres)
+  await page.waitForTimeout(800);
   await page.screenshot({ path: `${dossier}/${nom}.png`, fullPage: true });
 }
 
@@ -175,9 +178,9 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       await choisirCreneauEtRemplir(page, { prenom: "Camille", nom: "Carte" });
       await expect(page.getByText("Moyen de paiement")).toBeVisible();
       await expect(page.getByRole("radio", { name: /Carte bancaire/ })).toBeChecked();
-      await expect(
-        page.getByText("Le créneau est gardé 3 jours. Il est confirmé dès que le virement arrive."),
-      ).toBeVisible();
+      // Premier créneau à moins de 48 h : virement connecté mais plus possible
+      await expect(page.getByRole("radio", { name: /Virement/ })).toHaveCount(0);
+      await expect(page.getByText("Le virement n'est possible que jusqu'à 48 h avant le rendez-vous.")).toBeVisible();
       await capture(page, "page-publique-creneau-payant");
       await cliquer(page, page.getByRole("button", { name: /Payer 40,00\s*€/ }));
 
@@ -186,9 +189,19 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
     });
 
     test("Créneau en ligne par virement : panneau, annonce, rien de confirmé", async ({ page }) => {
+      // Préavis de 3 jours : le premier créneau proposé permet le virement
+      await (await base())
+        .collection("appointment_types")
+        .updateOne({ workspaceId: COMPTE.organisation._id, slug: EN_LIGNE.slug }, { $set: { minNoticeMinutes: 4320 } });
       await brancherIp(page);
       await ouvrir(page, `/rdv/${PAGE.slug}/${EN_LIGNE.slug}`);
       emailVirement = await choisirCreneauEtRemplir(page, { prenom: "Victor", nom: "Virement" });
+      await expect(
+        page.getByText(
+          "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive.",
+        ),
+      ).toBeVisible();
+      await capture(page, "page-publique-creneau-virement");
       await cliquer(page, page.getByRole("radio", { name: /Virement/ }));
       await cliquer(page, page.getByRole("button", { name: /Payer 40,00\s*€/ }));
 
@@ -225,7 +238,7 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       await cliquer(page, ligne);
 
       const fiche = page.getByRole("dialog");
-      await expect(fiche.getByText(/^NB-[A-Z0-9]{6}$/)).toBeVisible();
+      await expect(fiche.getByText(/^NB-[A-Z0-9]{6}$/)).toBeVisible({ timeout: 15_000 });
       await expect(fiche.getByText("Annoncé le", { exact: true })).toBeVisible();
       await capture(page, "fiche-reservation-virement");
       await cliquer(page, fiche.getByRole("button", { name: "Marquer comme payé" }));
@@ -285,7 +298,9 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       const consentement = page.getByRole("checkbox");
       if (await consentement.count()) await consentement.first().check();
       await expect(
-        page.getByText("Votre place est gardée 3 jours. Elle est confirmée dès que le virement arrive."),
+        page.getByText(
+          "Votre place est gardée jusqu'à 3 jours, au plus tard la veille de l'événement. Elle est confirmée dès que le virement arrive.",
+        ),
       ).toBeVisible();
       await cliquer(page, page.getByRole("radio", { name: /Virement/ }));
       await cliquer(page, page.getByRole("button", { name: /Payer 15,00\s*€/ }));
