@@ -124,6 +124,7 @@ describe("BookingForm d'un créneau payant", () => {
   const SLOT = {
     start: "2026-12-01T09:00:00.000Z",
     end: "2026-12-01T09:30:00.000Z",
+    bankTransferAvailable: true,
   };
 
   const remplir = () => {
@@ -159,7 +160,7 @@ describe("BookingForm d'un créneau payant", () => {
     );
     expect(
       screen.getByText(
-        "Le créneau est gardé 3 jours. Il est confirmé dès que le virement arrive.",
+        "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive.",
       ),
     ).toBeTruthy();
     remplir();
@@ -170,6 +171,52 @@ describe("BookingForm d'un créneau payant", () => {
     );
     expect(api.bookAppointment.mock.calls[0][2].provider).toBe("bank_transfer");
     expect(onBooked).not.toHaveBeenCalled();
+  });
+
+  it("créneau à moins de 48 h : virement non proposé, raison donnée", () => {
+    render(
+      <BookingForm
+        slug="cabinet"
+        type={{
+          ...TYPE,
+          payment: { ...TYPE.payment, bankTransferMinLeadHours: 48 },
+        }}
+        slot={{ ...SLOT, bankTransferAvailable: false }}
+        guestTimeZone="Europe/Paris"
+        onBack={vi.fn()}
+        onBooked={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("radio", { name: /Virement/ })).toBeNull();
+    expect(
+      screen.getByText(
+        "Le virement n'est possible que jusqu'à 48 h avant le rendez-vous.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("virement refusé trop tard par l'API : message, rien de réservé", async () => {
+    const error = Object.assign(new Error("BANK_TRANSFER_TOO_LATE"), {
+      code: "BANK_TRANSFER_TOO_LATE",
+    });
+    api.bookAppointment.mockRejectedValue(error);
+    render(
+      <BookingForm
+        slug="cabinet"
+        type={TYPE}
+        slot={SLOT}
+        guestTimeZone="Europe/Paris"
+        onBack={vi.fn()}
+        onBooked={vi.fn()}
+      />,
+    );
+    remplir();
+    fireEvent.click(screen.getByRole("radio", { name: /Virement/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Payer 40,00/ }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /plus possible à moins de 48 h/,
+    );
+    expect(assign).not.toHaveBeenCalled();
   });
 
   it("carte : redirection vers le prestataire", async () => {

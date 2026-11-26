@@ -17,6 +17,8 @@ import {
 import { formatCents, orderedPaymentMethods } from "@/src/utils/booking-events";
 import {
   BANK_TRANSFER,
+  bankTransferUnavailableNote,
+  offeredPaymentMethods,
   slotAmounts,
   slotNeedsOnlinePayment,
   slotSubmitLabel,
@@ -101,7 +103,18 @@ export function BookingForm({
   const payment = type.payment || null;
   const paid = slotNeedsOnlinePayment(payment);
   const amounts = slotAmounts(payment);
-  const methods = orderedPaymentMethods(payment?.paymentMethods);
+  // Virement seulement si l'API le permet pour ce créneau (48 h avant au
+  // moins) : `bankTransferAvailable` du créneau choisi
+  const connectedMethods = orderedPaymentMethods(payment?.paymentMethods);
+  const methods = offeredPaymentMethods(
+    connectedMethods,
+    slot?.bankTransferAvailable,
+  );
+  const bankTransferNote = bankTransferUnavailableNote(
+    connectedMethods,
+    slot?.bankTransferAvailable,
+    { kind: "slot", minLeadHours: payment?.bankTransferMinLeadHours },
+  );
   const [provider, setProvider] = useState(methods[0] || null);
   const [values, setValues] = useState({
     firstName: "",
@@ -314,6 +327,7 @@ export function BookingForm({
           methods={methods}
           value={provider}
           onChange={setProvider}
+          note={bankTransferNote}
         />
       )}
 

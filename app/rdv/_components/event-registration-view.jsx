@@ -26,6 +26,10 @@ import {
   registrationPathFromUrl,
 } from "./event-confirmation";
 import { PaymentMethodChoice } from "./payment-method-choice";
+import {
+  bankTransferUnavailableNote,
+  offeredPaymentMethods,
+} from "@/src/utils/booking-payments";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -87,7 +91,17 @@ function EventRegistrationForm({
   const priced = isPaidEvent(event.price);
   // « paid » : paiement en ligne à l'inscription (total ou acompte)
   const paid = eventNeedsOnlinePayment(event);
-  const methods = orderedPaymentMethods(event.paymentMethods);
+  // Virement retiré si l'API ne le permet plus (début à moins de 48 h)
+  const connectedMethods = orderedPaymentMethods(event.paymentMethods);
+  const methods = offeredPaymentMethods(
+    connectedMethods,
+    event.bankTransferAvailable,
+  );
+  const bankTransferNote = bankTransferUnavailableNote(
+    connectedMethods,
+    event.bankTransferAvailable,
+    { kind: "event" },
+  );
   const choices = quantityChoices(event.maxPerOrder, event.seatsLeft);
   const [values, setValues] = useState({
     firstName: "",
@@ -276,6 +290,7 @@ function EventRegistrationForm({
           methods={methods}
           value={provider}
           onChange={setProvider}
+          note={bankTransferNote}
         />
       )}
 

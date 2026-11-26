@@ -1,6 +1,9 @@
 // Paiement des créneaux et virement (créneaux et événements) : logique pure.
 import { describe, it, expect } from "vitest";
+import { connectedMethodsLabel } from "@/app/dashboard/outils/rendez-vous/components/payment-mode-fields";
 import {
+  bankTransferUnavailableNote,
+  offeredPaymentMethods,
   isAwaitingBankTransfer,
   paymentMethodDelay,
   paymentMethodLabel,
@@ -93,14 +96,40 @@ describe("créneau payant, page publique", () => {
     );
     expect(paymentMethodLabel("sumup", ["sumup"])).toBe("Carte bancaire");
     expect(paymentMethodDelay("bank_transfer", "slot")).toBe(
-      "Le créneau est gardé 3 jours. Il est confirmé dès que le virement arrive.",
+      "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive.",
     );
     expect(paymentMethodDelay("bank_transfer", "event")).toBe(
-      "Votre place est gardée 3 jours. Elle est confirmée dès que le virement arrive.",
+      "Votre place est gardée jusqu'à 3 jours, au plus tard la veille de l'événement. Elle est confirmée dès que le virement arrive.",
     );
     expect(paymentMethodDelay("stripe", "slot")).toBe(
       "Rendez-vous confirmé dès le paiement",
     );
+  });
+
+  it("virement proposé seulement si l'API le permet (48 h avant au moins)", () => {
+    const methods = ["stripe", "bank_transfer"];
+    expect(offeredPaymentMethods(methods, true)).toEqual(methods);
+    expect(offeredPaymentMethods(methods, false)).toEqual(["stripe"]);
+    // Drapeau absent (créneau sans virement possible) : pas de virement
+    expect(offeredPaymentMethods(methods, undefined)).toEqual(["stripe"]);
+    expect(
+      bankTransferUnavailableNote(methods, false, {
+        kind: "slot",
+        minLeadHours: 48,
+      }),
+    ).toBe("Le virement n'est possible que jusqu'à 48 h avant le rendez-vous.");
+    expect(bankTransferUnavailableNote(methods, false)).toBe(
+      "Le virement n'est possible que jusqu'à 48 h avant le début de l'événement.",
+    );
+    expect(bankTransferUnavailableNote(methods, true)).toBeNull();
+    expect(bankTransferUnavailableNote(["stripe"], false)).toBeNull();
+  });
+
+  it("moyens connectés de l'organisateur : tous cités", () => {
+    expect(
+      connectedMethodsLabel(["stripe", "paypal", "sumup", "bank_transfer"]),
+    ).toBe("Stripe, PayPal, SumUp et virement");
+    expect(connectedMethodsLabel(["paypal"])).toBe("PayPal");
   });
 
   it("corps de la réservation : moyen seulement s'il est choisi", () => {
@@ -148,7 +177,7 @@ describe("retour d'un créneau non confirmé", () => {
       organizerName: "Cabinet Martin",
     });
     expect(manual.restart).toBe(false);
-    expect(manual.text).toContain("Contactez Cabinet Martin");
+    expect(manual.text).toContain("Cabinet Martin va vous rembourser");
     expect(unconfirmedBookingMessage({}).title).toBe("Paiement non effectué");
   });
 });

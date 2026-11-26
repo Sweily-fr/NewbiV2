@@ -257,6 +257,12 @@ export function bookingErrorText(error) {
         : "Cet événement est complet.";
     case "PAYMENT_METHOD_UNAVAILABLE":
       return "Ce moyen de paiement n'est plus proposé. Choisissez-en un autre.";
+    case "BANK_TRANSFER_TOO_LATE":
+      return "Le virement n'est plus possible à moins de 48 h du début. Choisissez un autre moyen de paiement.";
+    case "TOO_MANY_PENDING_TRANSFERS":
+      return "Vous avez déjà des réservations en attente de virement. Réglez-les ou choisissez un autre moyen de paiement.";
+    case "BANK_TRANSFER_LIMIT":
+      return "Trop de réservations par virement aujourd'hui depuis cette connexion. Choisissez un autre moyen de paiement.";
     case "PAYMENT_START_FAILED":
       return "Le paiement n'a pas pu démarrer. Réessayez dans un instant.";
     case "NETWORK":

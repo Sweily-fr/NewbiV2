@@ -362,14 +362,15 @@ function BookingSheetBody({
             )}
             {booking.refundFailed && (
               <p className="text-xs text-red-700 dark:text-red-300">
-                Paiement arrivé alors que le créneau n&apos;était plus libre :
-                remboursez l&apos;invité depuis votre compte de paiement.
+                Paiement arrivé trop tard (créneau repris ou rendez-vous déjà
+                commencé) : remboursez l&apos;invité depuis votre compte de
+                paiement ou par virement.
               </p>
             )}
             {booking.refundedAt && (
               <p className="text-xs text-muted-foreground">
-                Paiement arrivé alors que le créneau n&apos;était plus libre,
-                remboursé automatiquement.
+                Paiement arrivé trop tard (créneau repris ou rendez-vous déjà
+                commencé), remboursé automatiquement.
               </p>
             )}
             {pending && (
