@@ -15,6 +15,7 @@ import {
   eventScheduleLabel,
   eventTypeToForm,
   isoToZonedInput,
+  nextReturnPollDelay,
   parseTicketCode,
   quantityChoices,
   registrationsCsvFileName,
@@ -190,9 +191,7 @@ describe("analyse du QR code et du numéro saisi", () => {
 describe("places", () => {
   it("libellés", () => {
     expect(seatsLabel({ seatsTaken: 12, capacity: 50 })).toBe("12 / 50 places");
-    expect(seatsLabel({ seatsTaken: 1, capacity: null })).toBe(
-      "1 place prise",
-    );
+    expect(seatsLabel({ seatsTaken: 1, capacity: null })).toBe("1 place prise");
     expect(seatsLeftLabel(0)).toBe("Complet");
     expect(seatsLeftLabel(1)).toBe("Dernière place");
     expect(seatsLeftLabel(7)).toBe("7 places restantes");
@@ -260,10 +259,33 @@ describe("formulaire d'événement", () => {
     });
   });
 
+  it("modification : prix envoyé seulement s'il change", () => {
+    const same = eventFormToInput(
+      { ...valid, priceText: "15,50" },
+      { timeZone: "Europe/Paris", initialPriceCents: 1550 },
+    );
+    expect(same).not.toHaveProperty("price");
+    const changed = eventFormToInput(
+      { ...valid, priceText: "20" },
+      { timeZone: "Europe/Paris", initialPriceCents: 1550 },
+    );
+    expect(changed.price).toEqual({ amount: 2000, currency: "EUR" });
+    const madeFree = eventFormToInput(
+      { ...valid, priceText: "" },
+      { timeZone: "Europe/Paris", initialPriceCents: 1550 },
+    );
+    expect(madeFree.price).toBeNull();
+    const stillFree = eventFormToInput(
+      { ...valid, priceText: "" },
+      { timeZone: "Europe/Paris", initialPriceCents: null },
+    );
+    expect(stillFree).not.toHaveProperty("price");
+  });
+
   it("gratuit : prix null ; modification : pas de kind", () => {
     const input = eventFormToInput(
       { ...valid, priceText: "" },
-      { timeZone: "Europe/Paris" },
+      { timeZone: "Europe/Paris", initialPriceCents: 1500 },
     );
     expect(input.price).toBeNull();
     expect(input).not.toHaveProperty("kind");
@@ -426,9 +448,20 @@ describe("inscription publique", () => {
         PayerID: "P",
       }),
     ).toMatchObject({ orderId: "ORDER1", sessionId: null });
-    expect(
-      returnRequestFromParams({ rt: "abc", canceled: "1" }).canceled,
-    ).toBe(true);
+    expect(returnRequestFromParams({ rt: "abc", canceled: "1" }).canceled).toBe(
+      true,
+    );
     expect(returnRequestFromParams({})).toBeNull();
+  });
+});
+
+describe("vérification du retour de paiement", () => {
+  it("ralentit puis s'arrête après trois minutes", () => {
+    expect(nextReturnPollDelay(1, 0)).toBe(3000);
+    expect(nextReturnPollDelay(2, 3000)).toBe(6000);
+    expect(nextReturnPollDelay(3, 9000)).toBe(10000);
+    expect(nextReturnPollDelay(4, 19000)).toBe(15000);
+    expect(nextReturnPollDelay(10, 160000)).toBe(15000);
+    expect(nextReturnPollDelay(11, 170000)).toBeNull();
   });
 });
