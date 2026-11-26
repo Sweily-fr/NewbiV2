@@ -31,6 +31,9 @@ import { AppointmentTypesPanel } from "./components/appointment-types-panel";
 import { AppointmentTypeSheet } from "./components/appointment-type-sheet";
 import { AvailabilityPanel } from "./components/availability-panel";
 import { MyPagePanel } from "./components/my-page-panel";
+import { EventRegistrationsSheet } from "./components/event-registrations-sheet";
+import { TicketScannerDialog } from "./components/ticket-scanner-dialog";
+import { isEventType } from "@/src/utils/booking-events";
 import { CopyButton, UNDERLINE_TAB_CLASS } from "./components/shared";
 
 const TABS = [
@@ -80,6 +83,13 @@ function RendezVousContent() {
   const bookingsQuery = useBookings(bookingTab, { limit, skip: !page });
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [typeSheet, setTypeSheet] = useState({ open: false, type: null });
+  // Événement dont on regarde les inscrits, ou dont on contrôle les billets :
+  // relu dans la liste des types pour suivre les compteurs du cache
+  const [registrationsTypeId, setRegistrationsTypeId] = useState(null);
+  const [scannerTypeId, setScannerTypeId] = useState(null);
+  const registrationsType =
+    types.find((type) => type.id === registrationsTypeId) || null;
+  const scannerType = types.find((type) => type.id === scannerTypeId) || null;
 
   // Lien « Gérer le rendez-vous » du Calendrier : ?reservation=<id>, ou
   // ?evenement=<id de l'événement> si l'événement ne porte pas la réservation
@@ -196,18 +206,20 @@ function RendezVousContent() {
       "Enregistrement impossible",
     );
 
-  const saveType = (input, existing) =>
-    existing?.id
+  const saveType = (input, existing) => {
+    const isEvent = existing?.id ? isEventType(existing) : isEventType(input);
+    return existing?.id
       ? runMutation(
           () => mutations.updateType(existing.id, input),
-          "Type de rendez-vous enregistré",
+          isEvent ? "Événement enregistré" : "Type de rendez-vous enregistré",
           "Enregistrement impossible",
         )
       : runMutation(
           () => mutations.createType(input),
-          "Type de rendez-vous créé",
+          isEvent ? "Événement créé" : "Type de rendez-vous créé",
           "Création impossible",
         );
+  };
 
   return (
     <div className="flex h-[calc(100vh-64px-var(--dashboard-banners-h,0px))] flex-col overflow-hidden">
@@ -296,17 +308,28 @@ function RendezVousContent() {
             onToggle={(type, isActive) =>
               runMutation(
                 () => mutations.updateType(type.id, { isActive }),
-                isActive ? "Type activé" : "Type désactivé",
+                isEventType(type)
+                  ? isActive
+                    ? "Inscriptions ouvertes"
+                    : "Événement désactivé"
+                  : isActive
+                    ? "Type activé"
+                    : "Type désactivé",
                 "Modification impossible",
               )
             }
             onDelete={(type) =>
               runMutation(
                 () => mutations.deleteType(type.id),
-                "Type de rendez-vous supprimé",
+                isEventType(type)
+                  ? "Événement supprimé"
+                  : "Type de rendez-vous supprimé",
                 "Suppression impossible",
               )
             }
+            timeZone={page.timezone}
+            onOpenRegistrations={(type) => setRegistrationsTypeId(type.id)}
+            onOpenScanner={(type) => setScannerTypeId(type.id)}
           />
         )}
         {tab === "disponibilites" && (
@@ -352,8 +375,24 @@ function RendezVousContent() {
         takenSlugs={types.map((type) => type.slug)}
         pageSlug={page.slug}
         publicBase={prefixFrom(page.publicUrl).replace(/\/$/, "")}
+        timeZone={page.timezone}
         onClose={() => setTypeSheet((prev) => ({ ...prev, open: false }))}
         onSave={saveType}
+      />
+
+      <EventRegistrationsSheet
+        type={registrationsType}
+        timeZone={page.timezone}
+        canEdit={canEdit}
+        readOnly={isReadOnly}
+        onClose={() => setRegistrationsTypeId(null)}
+        onOpenScanner={(type) => setScannerTypeId(type.id)}
+      />
+
+      <TicketScannerDialog
+        type={scannerType}
+        timeZone={page.timezone}
+        onClose={() => setScannerTypeId(null)}
       />
     </div>
   );
