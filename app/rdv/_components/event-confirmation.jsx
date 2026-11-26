@@ -1,6 +1,9 @@
 import { CalendarPlus, Check, Download } from "lucide-react";
 import { googleCalendarUrl } from "@/src/utils/booking";
-import { formatCents } from "@/src/utils/booking-events";
+import {
+  formatCents,
+  registrationPaymentLine,
+} from "@/src/utils/booking-events";
 import { apiFileUrl } from "../_lib/booking-api";
 import { EventLocation, EventSchedule, EventTicketCard } from "./event-details";
 
@@ -52,14 +55,14 @@ export function RegistrationSummary({ registration, guestTimeZone }) {
       <p className="text-gray-600">
         {registration.quantity} place{registration.quantity > 1 ? "s" : ""}
         {registration.amount > 0
-          ? ` · ${formatCents(registration.amount, registration.currency)}${
-              registration.status === "CONFIRMED" ||
-              ["REFUNDED", "MANUAL"].includes(registration.refundStatus)
-                ? " payés"
-                : ""
-            }`
+          ? ` · ${formatCents(registration.amount, registration.currency)}`
           : " · Gratuit"}
       </p>
+      {registration.amount > 0 && (
+        <p className="font-medium text-gray-800">
+          {registrationPaymentLine(registration)}
+        </p>
+      )}
     </div>
   );
 }
