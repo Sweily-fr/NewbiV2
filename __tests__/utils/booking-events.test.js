@@ -715,6 +715,22 @@ describe("acompte et paiement sur place", () => {
     );
   });
 
+  it("acompte réglé : « Reste réglé sur place »", () => {
+    expect(
+      nbsp(
+        registrationPaymentLine({
+          status: "CONFIRMED",
+          currency: "EUR",
+          amount: 2000,
+          paymentMode: "DEPOSIT",
+          amountOnline: 500,
+          amountDueOnSite: 1500,
+          onSitePaidAt: "2026-12-12T19:00:00.000Z",
+        }),
+      ),
+    ).toBe("Acompte payé : 5,00 €. Reste réglé sur place : 15,00 €");
+  });
+
   it("reste dû : nul une fois réglé sur place", () => {
     const registration = {
       status: "CONFIRMED",
