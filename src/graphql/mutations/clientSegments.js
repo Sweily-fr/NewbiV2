@@ -1,7 +1,10 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const CREATE_CLIENT_SEGMENT = gql`
-  mutation CreateClientSegment($workspaceId: String!, $input: CreateClientSegmentInput!) {
+  mutation CreateClientSegment(
+    $workspaceId: String!
+    $input: CreateClientSegmentInput!
+  ) {
     createClientSegment(workspaceId: $workspaceId, input: $input) {
       id
       name
@@ -22,7 +25,11 @@ export const CREATE_CLIENT_SEGMENT = gql`
 `;
 
 export const UPDATE_CLIENT_SEGMENT = gql`
-  mutation UpdateClientSegment($workspaceId: String!, $id: ID!, $input: UpdateClientSegmentInput!) {
+  mutation UpdateClientSegment(
+    $workspaceId: String!
+    $id: ID!
+    $input: UpdateClientSegmentInput!
+  ) {
     updateClientSegment(workspaceId: $workspaceId, id: $id, input: $input) {
       id
       name

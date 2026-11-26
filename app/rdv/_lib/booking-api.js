@@ -77,7 +77,13 @@ export function fetchSlots(
   });
 }
 
-/** 201 { booking, manageUrl, icsUrl } ; 409 SLOT_TAKEN ; 400 VALIDATION */
+/**
+ * Réservation d'un créneau. Gratuit ou sur place : 201 { status: CONFIRMED,
+ * booking, manageUrl, icsUrl } ; carte, PayPal, SumUp : { status:
+ * PENDING_PAYMENT, paymentUrl, expiresAt } ; virement : { status:
+ * PENDING_PAYMENT, booking, manageUrl, expiresAt }. 409 SLOT_TAKEN |
+ * PAYMENT_METHOD_UNAVAILABLE ; 400 VALIDATION ; 502 PAYMENT_START_FAILED.
+ */
 export function bookAppointment(slug, typeSlug, payload) {
   return request(`/${segment(slug)}/${segment(typeSlug)}/book`, {
     method: "POST",
@@ -100,6 +106,46 @@ export function rescheduleManagedBooking(token, { start, turnstileToken }) {
   return request(`/manage/${segment(token)}/reschedule`, {
     method: "POST",
     body: { start, turnstileToken },
+  });
+}
+
+/**
+ * Retour du paiement d'un créneau (adresse de retour avec kind=slot) :
+ * { paymentStatus, refundStatus, booking, manageUrl, icsUrl }.
+ */
+export function confirmBookingPayment(
+  { returnToken, provider, sessionId, orderId },
+  options,
+) {
+  return request("/bookings/return", {
+    method: "POST",
+    body: {
+      returnToken,
+      provider,
+      sessionId: sessionId || null,
+      orderId: orderId || null,
+    },
+    ...options,
+  });
+}
+
+/** Abandon chez le prestataire : paiement fermé, créneau libéré. */
+export function cancelBookingPayment({ returnToken }, options) {
+  return request("/bookings/return/cancel", {
+    method: "POST",
+    body: { returnToken },
+    ...options,
+  });
+}
+
+/**
+ * « J'ai fait le virement » (`cancel` vrai : annonce retirée) sur un
+ * rendez-vous en attente : { declaredAt }. Ne confirme rien.
+ */
+export function declareBookingBankTransfer(token, { cancel = false } = {}) {
+  return request(`/manage/${segment(token)}/bank-transfer`, {
+    method: "POST",
+    body: { cancel: Boolean(cancel) },
   });
 }
 
@@ -158,6 +204,17 @@ export function cancelEventRegistration(token, reason) {
   return request(`/registrations/${segment(token)}/cancel`, {
     method: "POST",
     body: { reason: reason?.trim() || null },
+  });
+}
+
+/** « J'ai fait le virement » sur une inscription : { declaredAt }. */
+export function declareRegistrationBankTransfer(
+  token,
+  { cancel = false } = {},
+) {
+  return request(`/registrations/${segment(token)}/bank-transfer`, {
+    method: "POST",
+    body: { cancel: Boolean(cancel) },
   });
 }
 

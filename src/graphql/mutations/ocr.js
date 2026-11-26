@@ -6,8 +6,16 @@ import { gql } from "@apollo/client";
 
 // Mutation OCR direct — envoie le fichier directement au backend (pas de pré-upload Cloudflare)
 export const PROCESS_DOCUMENT_OCR = gql`
-  mutation ProcessDocumentOcr($file: Upload!, $workspaceId: String!, $options: OcrOptions) {
-    processDocumentOcr(file: $file, workspaceId: $workspaceId, options: $options) {
+  mutation ProcessDocumentOcr(
+    $file: Upload!
+    $workspaceId: String!
+    $options: OcrOptions
+  ) {
+    processDocumentOcr(
+      file: $file
+      workspaceId: $workspaceId
+      options: $options
+    ) {
       success
       extractedText
       financialAnalysis

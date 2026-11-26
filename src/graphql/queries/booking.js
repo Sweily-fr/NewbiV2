@@ -111,6 +111,19 @@ export const BOOKING_FIELDS = gql`
     clientId
     eventId
     createdAt
+    amount
+    currency
+    paymentMode
+    amountOnline
+    amountDueOnSite
+    onSitePaidAt
+    paymentProvider
+    paidAt
+    expiresAt
+    paymentReference
+    bankTransferDeclaredAt
+    refundedAt
+    refundFailed
   }
 `;
 
@@ -207,6 +220,8 @@ export const EVENT_REGISTRATION_FIELDS = gql`
     onSitePaidAt
     status
     paymentProvider
+    paymentReference
+    bankTransferDeclaredAt
     paidAt
     expiresAt
     cancelledBy
@@ -263,5 +278,13 @@ export const GET_EVENT_REGISTRATIONS_CSV = gql`
 export const GET_EVENT_PAYMENT_METHODS = gql`
   query EventPaymentMethods($workspaceId: ID) {
     eventPaymentMethods(workspaceId: $workspaceId)
+  }
+`;
+
+// Moyens prêts pour un créneau ou un événement payant : sous-ensemble ordonné
+// de stripe, paypal, sumup, bank_transfer (virement : IBAN de l'entreprise)
+export const GET_APPOINTMENT_PAYMENT_METHODS = gql`
+  query AppointmentPaymentMethods($workspaceId: ID) {
+    appointmentPaymentMethods(workspaceId: $workspaceId)
   }
 `;

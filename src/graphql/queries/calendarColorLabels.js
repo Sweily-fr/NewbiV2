@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_CALENDAR_COLOR_LABELS = gql`
   query GetCalendarColorLabels($workspaceId: ID) {

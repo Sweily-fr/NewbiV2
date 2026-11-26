@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { ArrowLeft, CreditCard, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { BOOKING_FORM_LIMITS, validateBookingForm } from "@/src/utils/booking";
 import {
@@ -13,7 +13,6 @@ import {
   formatCents,
   isPaidEvent,
   orderedPaymentMethods,
-  PAYMENT_PROVIDER_LABELS,
   quantityChoices,
   registrationSubmitLabel,
   registrationValidationOutcome,
@@ -22,7 +21,11 @@ import { bookingErrorText, registerForEvent } from "../_lib/booking-api";
 import { useGuestTimeZone } from "../_lib/use-guest-time-zone";
 import { BookingCard, BookingShell } from "./booking-shell";
 import { EventCover, EventInfo } from "./event-details";
-import { EventConfirmation } from "./event-confirmation";
+import {
+  EventConfirmation,
+  registrationPathFromUrl,
+} from "./event-confirmation";
+import { PaymentMethodChoice } from "./payment-method-choice";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -73,7 +76,13 @@ function RegistrationClosed({ soldOut }) {
  * Gratuit ou payé sur place : billets tout de suite ; en ligne :
  * redirection vers le paiement du vendeur.
  */
-function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
+function EventRegistrationForm({
+  slug,
+  type,
+  guestTimeZone,
+  embed,
+  onRegistered,
+}) {
   const event = type.event;
   const priced = isPaidEvent(event.price);
   // « paid » : paiement en ligne à l'inscription (total ou acompte)
@@ -140,6 +149,13 @@ function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
       if (result?.status === "PENDING_PAYMENT" && result.paymentUrl) {
         // Paiement chez le prestataire du vendeur ; retour sur /retour
         window.location.assign(result.paymentUrl);
+        return;
+      }
+      if (result?.status === "PENDING_PAYMENT" && result.manageUrl) {
+        // Virement : coordonnées sur la page de l'inscription (lien
+        // permanent, aussi envoyé par e-mail)
+        const path = registrationPathFromUrl(result.manageUrl);
+        window.location.assign(embed ? `${path}?embed=1` : path);
         return;
       }
       onRegistered(result);
@@ -254,48 +270,13 @@ function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
       </Field>
 
       {paid && (
-        <fieldset className="space-y-2">
-          <legend className="mb-1.5 text-sm font-medium text-gray-800">
-            Moyen de paiement
-          </legend>
-          {methods.length === 0 ? (
-            <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Le paiement en ligne n&apos;est pas disponible pour le moment.
-              Contactez l&apos;organisateur.
-            </p>
-          ) : (
-            methods.map((method) => (
-              <label
-                key={method}
-                className={cn(
-                  "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors",
-                  provider === method
-                    ? "border-[var(--rdv-accent)] bg-[color-mix(in_srgb,var(--rdv-accent)_6%,transparent)]"
-                    : "border-gray-200 hover:bg-gray-50",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="evt-provider"
-                  value={method}
-                  checked={provider === method}
-                  onChange={() => setProvider(method)}
-                  className="accent-[var(--rdv-accent)]"
-                />
-                {method === "paypal" ? (
-                  <span className="font-semibold text-[#003087]">PayPal</span>
-                ) : (
-                  <span className="flex items-center gap-2 text-gray-800">
-                    <CreditCard className="size-4" aria-hidden="true" />
-                    {methods.includes("stripe") && method === "sumup"
-                      ? PAYMENT_PROVIDER_LABELS.sumup
-                      : "Carte bancaire"}
-                  </span>
-                )}
-              </label>
-            ))
-          )}
-        </fieldset>
+        <PaymentMethodChoice
+          name="evt-provider"
+          kind="event"
+          methods={methods}
+          value={provider}
+          onChange={setProvider}
+        />
       )}
 
       {/* Pot de miel : invisible pour les personnes, rempli par les robots */}
@@ -344,7 +325,7 @@ function EventRegistrationForm({ slug, type, guestTimeZone, onRegistered }) {
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         )}
         {submitting
-          ? paid
+          ? paid && provider !== "bank_transfer"
             ? "Redirection vers le paiement"
             : "Inscription en cours"
           : registrationSubmitLabel(event, quantity)}
@@ -415,6 +396,7 @@ export function EventRegistrationView({ slug, page, type, typesCount, embed }) {
                       slug={page.slug || slug}
                       type={type}
                       guestTimeZone={guestTimeZone}
+                      embed={embed}
                       onRegistered={setConfirmation}
                     />
                   ) : (

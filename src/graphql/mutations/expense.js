@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 /**
  * Mutation pour créer une dépense
@@ -62,7 +62,10 @@ export const ADD_EXPENSE_FILE = gql`
  * Mutation pour mettre à jour les métadonnées OCR d'une dépense
  */
 export const UPDATE_EXPENSE_OCR_METADATA = gql`
-  mutation UpdateExpenseOCRMetadata($expenseId: ID!, $metadata: OCRMetadataInput!) {
+  mutation UpdateExpenseOCRMetadata(
+    $expenseId: ID!
+    $metadata: OCRMetadataInput!
+  ) {
     updateExpenseOCRMetadata(expenseId: $expenseId, metadata: $metadata) {
       id
       title

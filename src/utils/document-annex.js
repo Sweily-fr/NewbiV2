@@ -39,7 +39,9 @@ export function parseAnnexKey(key) {
 
 export function annexKeyBelongsTo(key, workspaceId) {
   const parsed = parseAnnexKey(key);
-  return Boolean(parsed && workspaceId && parsed.workspaceId === String(workspaceId));
+  return Boolean(
+    parsed && workspaceId && parsed.workspaceId === String(workspaceId),
+  );
 }
 
 /**
