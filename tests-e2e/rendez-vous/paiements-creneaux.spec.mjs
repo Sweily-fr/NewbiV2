@@ -206,8 +206,8 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       await expect(page.getByText("Confirmé", { exact: true })).toHaveCount(0);
 
       const enBase = await (await base()).collection("bookings").findOne({ "guest.email": emailVirement });
-      expect(enBase).toMatchObject({ status: "PENDING_PAYMENT", paymentProvider: "bank_transfer" });
-      expect(enBase.bankTransferDeclaredAt).toBeTruthy();
+      expect(enBase).toMatchObject({ status: "PENDING_PAYMENT", payment: { provider: "bank_transfer" } });
+      expect(enBase.payment?.declaredAt, "annonce enregistrée").toBeTruthy();
     });
   });
 
