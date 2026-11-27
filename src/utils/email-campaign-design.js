@@ -80,6 +80,7 @@ export const BLOCK_TYPES = [
   "divider",
   "spacer",
   "social",
+  "signature",
 ];
 
 export const BLOCK_LABELS = {
@@ -91,6 +92,7 @@ export const BLOCK_LABELS = {
   divider: "Séparateur",
   spacer: "Espace",
   social: "Réseaux sociaux",
+  signature: "Signature",
 };
 
 /** Blocs dont le texte riche se modifie directement dans la toile. */
@@ -130,6 +132,7 @@ export const DEFAULT_PADDING = {
   imageText: pad(16, 32, 16, 32),
   divider: pad(16, 32, 16, 32),
   social: pad(16, 32, 16, 32),
+  signature: pad(16, 32, 16, 32),
 };
 
 /**
@@ -191,6 +194,11 @@ export const BLOCK_DEFAULTS = {
     align: "center",
     iconStyle: "color",
   },
+  // Signature de l'outil Signatures de mail (identifiant), rendue par l'API
+  signature: {
+    signatureId: "",
+    align: "left",
+  },
 };
 
 /** Contenu d'un bloc ajouté depuis l'éditeur : un exemple à remplacer. */
@@ -213,7 +221,35 @@ const STARTER_CONTENT = {
       { network: "linkedin", url: "" },
     ],
   },
+  signature: {},
 };
+
+const OBJECT_ID = /^[a-f0-9]{24}$/i;
+
+/** Identifiant de signature (24 caractères hexadécimaux), vide sinon. */
+export function signatureIdOf(value) {
+  const id = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return OBJECT_ID.test(id) ? id : "";
+}
+
+/** Identifiants des signatures choisies dans un contenu, sans doublon. */
+export function signatureIdsOf(design) {
+  const ids = (design?.blocks || [])
+    .filter((block) => block?.type === "signature")
+    .map((block) => signatureIdOf(block.signatureId))
+    .filter(Boolean);
+  return [...new Set(ids)];
+}
+
+/**
+ * Signature à proposer d'office dans un nouveau bloc : la principale de
+ * l'utilisateur, sinon la plus récente (ordre de l'API) ; vide s'il n'en a
+ * aucune.
+ */
+export function defaultSignatureId(signatures) {
+  const mine = (signatures || []).filter((signature) => signature?.mine);
+  return (mine.find((signature) => signature.isDefault) || mine[0])?.id || "";
+}
 
 let idCounter = 0;
 
@@ -366,6 +402,9 @@ export function blockWithDefaults(block) {
       if (!ICON_STYLES.includes(resolved.iconStyle))
         resolved.iconStyle = "color";
       break;
+    case "signature":
+      resolved.signatureId = signatureIdOf(resolved.signatureId);
+      break;
     default:
       break;
   }
@@ -431,9 +470,10 @@ export function insertBlock(design, block, index) {
 /**
  * Ajoute un bloc du type demandé après `afterId` (le bloc sélectionné), à
  * la fin sinon. Rend le design et le bloc créé (à sélectionner).
+ * `overrides` : propriétés de départ (signature choisie d'office…).
  */
-export function addBlock(design, type, afterId = null) {
-  const block = createBlock(type);
+export function addBlock(design, type, afterId = null, overrides = {}) {
+  const block = createBlock(type, overrides);
   const after = afterId ? findBlockIndex(design, afterId) : -1;
   const index = after >= 0 ? after + 1 : (design.blocks || []).length;
   return { design: insertBlock(design, block, index), block };
