@@ -49,7 +49,12 @@ import {
   pricingToForm,
   SLOT_KIND,
 } from "@/src/utils/booking-events";
-import { slotPricingSource } from "@/src/utils/booking-payments";
+import {
+  paymentMethodsFormError,
+  paymentMethodsInputIfChanged,
+  paymentMethodsToForm,
+  slotPricingSource,
+} from "@/src/utils/booking-payments";
 import { useAppointmentPaymentMethods } from "@/src/hooks/useBooking";
 import { ColorSwatches, LocationKindIcon } from "./shared";
 import { EventTypeForm } from "./event-type-form";
@@ -59,6 +64,8 @@ import { PaymentModeFields } from "./payment-mode-fields";
 const slotTypeToForm = (type, connections) => ({
   ...appointmentTypeToForm(type, { connections }),
   ...pricingToForm(slotPricingSource(type)),
+  // Moyens proposés : null = tous les moyens prêts (rien de choisi)
+  paymentMethods: paymentMethodsToForm(type),
 });
 
 const KIND_CHOICES = [
@@ -202,20 +209,30 @@ export function AppointmentTypeSheet({
     () => (takenSlugs || []).filter((slug) => slug !== type?.slug),
     [takenSlugs, type],
   );
+  const {
+    methods,
+    loaded: methodsLoaded,
+    refetch: refetchMethods,
+  } = useAppointmentPaymentMethods({
+    skip: !open || isEvent,
+  });
   const errors = useMemo(() => {
     const found = {
       ...appointmentTypeFormErrors(form),
       ...pricingFormErrors(form, { perSeat: false }),
     };
+    // Payant en ligne ou en acompte : au moins un moyen choisi et prêt
+    const methodsError =
+      eurosToCents(form.priceText) > 0
+        ? paymentMethodsFormError(form, methods, methodsLoaded)
+        : null;
+    if (methodsError) found.paymentMethods = methodsError;
     if (!found.slug && otherSlugs.includes(form.slug)) {
       found.slug = "Un autre type utilise déjà cette adresse";
     }
     return found;
-  }, [form, otherSlugs]);
+  }, [form, otherSlugs, methods, methodsLoaded]);
   const visibleErrors = showErrors ? errors : {};
-  const { methods, loaded: methodsLoaded } = useAppointmentPaymentMethods({
-    skip: !open || isEvent,
-  });
   const priceCents = eurosToCents(form.priceText);
   const options = locationOptions(connections);
   const hasVideoAccount = options.some(
@@ -251,6 +268,10 @@ export function AppointmentTypeSheet({
         {
           ...appointmentTypeFormToInput(form),
           ...pricingInputIfChanged(form, slotPricingSource(type)),
+          // Moyens proposés : envoyés seulement s'ils ont été changés
+          ...paymentMethodsInputIfChanged(form, type?.paymentMethods, {
+            paid: priceCents > 0,
+          }),
         },
         type,
       );
@@ -651,6 +672,7 @@ export function AppointmentTypeSheet({
                   errors={visibleErrors}
                   methods={methods}
                   methodsLoaded={methodsLoaded}
+                  refetchMethods={refetchMethods}
                 />
               </section>
 

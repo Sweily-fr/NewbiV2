@@ -158,9 +158,10 @@ describe("BookingForm d'un créneau payant", () => {
         onBooked={onBooked}
       />,
     );
+    // Garde : min(maintenant + 3 jours, début), sans délai minimum
     expect(
       screen.getByText(
-        "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive.",
+        /^Le créneau est gardé jusqu'au .+\. Il est confirmé dès que le virement arrive\./,
       ),
     ).toBeTruthy();
     remplir();
@@ -173,26 +174,50 @@ describe("BookingForm d'un créneau payant", () => {
     expect(onBooked).not.toHaveBeenCalled();
   });
 
-  it("créneau à moins de 48 h : virement non proposé, raison donnée", () => {
+  it("créneau proche : virement proposé, garde jusqu'au début, virement instantané conseillé", () => {
+    const start = new Date(Date.now() + 5 * 3600000);
     render(
       <BookingForm
         slug="cabinet"
-        type={{
-          ...TYPE,
-          payment: { ...TYPE.payment, bankTransferMinLeadHours: 48 },
+        type={TYPE}
+        slot={{
+          start: start.toISOString(),
+          end: new Date(start.getTime() + 1800000).toISOString(),
+          bankTransferAvailable: true,
         }}
-        slot={{ ...SLOT, bankTransferAvailable: false }}
         guestTimeZone="Europe/Paris"
         onBack={vi.fn()}
         onBooked={vi.fn()}
       />,
     );
-    expect(screen.queryByRole("radio", { name: /Virement/ })).toBeNull();
+    expect(screen.getByRole("radio", { name: /Virement/ })).toBeTruthy();
     expect(
       screen.getByText(
-        "Le virement n'est possible que jusqu'à 48 h avant le rendez-vous.",
+        /Le rendez-vous approche : faites de préférence un virement instantané\./,
       ),
     ).toBeTruthy();
+    expect(screen.queryByText(/48 h/)).toBeNull();
+  });
+
+  it("aucun moyen prêt : message avec l'organisateur, pas de bouton", () => {
+    render(
+      <BookingForm
+        slug="cabinet"
+        organizerName="Cabinet Martin"
+        type={{ ...TYPE, payment: { ...TYPE.payment, paymentMethods: [] } }}
+        slot={SLOT}
+        guestTimeZone="Europe/Paris"
+        onBack={vi.fn()}
+        onBooked={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "Paiement en ligne indisponible pour le moment. Contactez Cabinet Martin pour réserver.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Payer/ })).toBeNull();
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
   });
 
   it("virement refusé trop tard par l'API : message, rien de réservé", async () => {
@@ -214,7 +239,7 @@ describe("BookingForm d'un créneau payant", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Virement/ }));
     fireEvent.click(screen.getByRole("button", { name: /Payer 40,00/ }));
     expect((await screen.findByRole("alert")).textContent).toMatch(
-      /plus possible à moins de 48 h/,
+      /plus possible pour cette réservation/,
     );
     expect(assign).not.toHaveBeenCalled();
   });

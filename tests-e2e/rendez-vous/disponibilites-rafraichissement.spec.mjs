@@ -44,6 +44,9 @@ test.describe("Rendez-vous : Disponibilités suit les changements sans rechargem
 
     // Ajouter une exception
     await cliquer(page, page.getByRole("button", { name: "Ajouter une date" }));
+    // Mois suivant : en fin de mois, le mois en cours peut n'avoir que
+    // quelques jours encore cliquables
+    await page.locator("[data-slot=popover-content] .rdp-button_next").click();
     const jours = page.locator("[data-slot=popover-content] button[data-day]:not([disabled])");
     await cliquer(page, jours.nth(3));
     await expect(page.getByText("Aucune exception.")).toHaveCount(0);

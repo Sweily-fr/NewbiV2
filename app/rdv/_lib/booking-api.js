@@ -258,7 +258,7 @@ export function bookingErrorText(error) {
     case "PAYMENT_METHOD_UNAVAILABLE":
       return "Ce moyen de paiement n'est plus proposé. Choisissez-en un autre.";
     case "BANK_TRANSFER_TOO_LATE":
-      return "Le virement n'est plus possible à moins de 48 h du début. Choisissez un autre moyen de paiement.";
+      return "Le virement n'est plus possible pour cette réservation. Choisissez un autre moyen de paiement.";
     case "TOO_MANY_PENDING_TRANSFERS":
       return "Vous avez déjà des réservations en attente de virement. Réglez-les ou choisissez un autre moyen de paiement.";
     case "BANK_TRANSFER_LIMIT":

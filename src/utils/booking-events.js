@@ -607,6 +607,10 @@ export function eventTypeToForm(type, { timeZone = DEFAULT_TIME_ZONE } = {}) {
     capacity: type?.capacity ?? null,
     maxPerOrder: type?.maxPerOrder ?? EVENT_LIMITS.defaultMaxPerOrder,
     ...pricingToForm(type),
+    // Moyens proposés : null = tous les moyens prêts (rien de choisi)
+    paymentMethods: Array.isArray(type?.paymentMethods)
+      ? [...type.paymentMethods]
+      : null,
     locationKind: kind,
     locationValue: type?.location?.value || "",
     color: type?.color || BOOKING_COLORS[0],

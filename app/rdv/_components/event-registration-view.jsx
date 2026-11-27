@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { BOOKING_FORM_LIMITS, validateBookingForm } from "@/src/utils/booking";
 import {
@@ -26,10 +26,7 @@ import {
   registrationPathFromUrl,
 } from "./event-confirmation";
 import { PaymentMethodChoice } from "./payment-method-choice";
-import {
-  bankTransferUnavailableNote,
-  offeredPaymentMethods,
-} from "@/src/utils/booking-payments";
+import { offeredPaymentMethods } from "@/src/utils/booking-payments";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -82,6 +79,7 @@ function RegistrationClosed({ soldOut }) {
  */
 function EventRegistrationForm({
   slug,
+  organizerName = "",
   type,
   guestTimeZone,
   embed,
@@ -91,17 +89,13 @@ function EventRegistrationForm({
   const priced = isPaidEvent(event.price);
   // « paid » : paiement en ligne à l'inscription (total ou acompte)
   const paid = eventNeedsOnlinePayment(event);
-  // Virement retiré si l'API ne le permet plus (début à moins de 48 h)
-  const connectedMethods = orderedPaymentMethods(event.paymentMethods);
+  // Moyens choisis par l'organisateur et prêts (l'API ne renvoie qu'eux) ;
+  // virement sans délai minimum, place gardée jusqu'à min(3 jours, début)
   const methods = offeredPaymentMethods(
-    connectedMethods,
+    orderedPaymentMethods(event.paymentMethods),
     event.bankTransferAvailable,
   );
-  const bankTransferNote = bankTransferUnavailableNote(
-    connectedMethods,
-    event.bankTransferAvailable,
-    { kind: "event" },
-  );
+  const noMethod = paid && methods.length === 0;
   const choices = quantityChoices(event.maxPerOrder, event.seatsLeft);
   const [values, setValues] = useState({
     firstName: "",
@@ -260,27 +254,38 @@ function EventRegistrationForm({
       </Field>
 
       <Field id="evt-quantity" label="Nombre de places" error={errors.quantity}>
-        <select
-          id="evt-quantity"
-          value={quantity}
-          onChange={(changeEvent) => {
-            setQuantity(Number(changeEvent.target.value));
-            if (errors.quantity)
-              setErrors((prev) => ({ ...prev, quantity: undefined }));
-          }}
-          aria-invalid={Boolean(errors.quantity)}
-          aria-describedby={describedBy("quantity")}
-          className={cn(inputClass(errors.quantity), "cursor-pointer")}
-        >
-          {choices.map((value) => (
-            <option key={value} value={value}>
-              {value} place{value > 1 ? "s" : ""}
-              {priced
-                ? ` · ${formatCents(event.price.amount * value, event.price.currency)}`
-                : ""}
-            </option>
-          ))}
-        </select>
+        {/* Apparence native retirée (trait sur la valeur sous Opera) : flèche
+            dessinée, mêmes bordure, hauteur et focus que les autres champs */}
+        <div className="relative">
+          <select
+            id="evt-quantity"
+            value={quantity}
+            onChange={(changeEvent) => {
+              setQuantity(Number(changeEvent.target.value));
+              if (errors.quantity)
+                setErrors((prev) => ({ ...prev, quantity: undefined }));
+            }}
+            aria-invalid={Boolean(errors.quantity)}
+            aria-describedby={describedBy("quantity")}
+            className={cn(
+              inputClass(errors.quantity),
+              "cursor-pointer appearance-none pr-10",
+            )}
+          >
+            {choices.map((value) => (
+              <option key={value} value={value}>
+                {value} place{value > 1 ? "s" : ""}
+                {priced
+                  ? ` · ${formatCents(event.price.amount * value, event.price.currency)}`
+                  : ""}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-gray-400"
+            aria-hidden="true"
+          />
+        </div>
       </Field>
 
       {paid && (
@@ -290,7 +295,9 @@ function EventRegistrationForm({
           methods={methods}
           value={provider}
           onChange={setProvider}
-          note={bankTransferNote}
+          startAt={event.startAt}
+          timeZone={guestTimeZone}
+          organizerName={organizerName}
         />
       )}
 
@@ -331,20 +338,22 @@ function EventRegistrationForm({
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting || (paid && methods.length === 0)}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--rdv-accent)] px-6 py-3 text-base font-medium text-[var(--rdv-on-accent)] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-60 sm:text-sm"
-      >
-        {submitting && (
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        )}
-        {submitting
-          ? paid && provider !== "bank_transfer"
-            ? "Redirection vers le paiement"
-            : "Inscription en cours"
-          : registrationSubmitLabel(event, quantity)}
-      </button>
+      {!noMethod && (
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--rdv-accent)] px-6 py-3 text-base font-medium text-[var(--rdv-on-accent)] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-60 sm:text-sm"
+        >
+          {submitting && (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          )}
+          {submitting
+            ? paid && provider !== "bank_transfer"
+              ? "Redirection vers le paiement"
+              : "Inscription en cours"
+            : registrationSubmitLabel(event, quantity)}
+        </button>
+      )}
       {order.onSite > 0 && (
         <p className="text-center text-sm text-gray-600">
           {order.mode === "DEPOSIT"
@@ -409,6 +418,7 @@ export function EventRegistrationView({ slug, page, type, typesCount, embed }) {
                   {event.registrationOpen ? (
                     <EventRegistrationForm
                       slug={page.slug || slug}
+                      organizerName={page.organizationName || page.title}
                       type={type}
                       guestTimeZone={guestTimeZone}
                       embed={embed}

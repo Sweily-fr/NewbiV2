@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { fr } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Globe, Loader2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Globe,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   dayKeyInZone,
@@ -300,18 +306,25 @@ export function SlotPicker({
         <label className="mt-4 flex items-center gap-2 text-sm text-gray-600">
           <Globe className="size-4 shrink-0 text-gray-400" aria-hidden="true" />
           <span className="sr-only">Fuseau horaire</span>
-          <select
-            value={guestTimeZone}
-            onChange={(event) => onGuestTimeZoneChange?.(event.target.value)}
-            className="min-w-0 flex-1 cursor-pointer truncate rounded-lg border-0 bg-transparent py-1 pr-6 text-sm text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-[var(--rdv-accent)] focus:outline-none"
-          >
-            {zones.map((zone) => (
-              <option key={zone} value={zone}>
-                {timeZoneLabel(zone)}
-                {zone.includes("/") ? ` · ${zone.split("/")[0]}` : ""}
-              </option>
-            ))}
-          </select>
+          {/* Apparence native retirée (rendu barré sous Opera) : flèche dessinée */}
+          <span className="relative min-w-0 flex-1">
+            <select
+              value={guestTimeZone}
+              onChange={(event) => onGuestTimeZoneChange?.(event.target.value)}
+              className="w-full min-w-0 cursor-pointer appearance-none truncate rounded-lg border-0 bg-transparent py-1 pr-7 pl-1 text-sm text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-[var(--rdv-accent)] focus:outline-none"
+            >
+              {zones.map((zone) => (
+                <option key={zone} value={zone}>
+                  {timeZoneLabel(zone)}
+                  {zone.includes("/") ? ` · ${zone.split("/")[0]}` : ""}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute top-1/2 right-1.5 size-4 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+          </span>
         </label>
       </div>
 
