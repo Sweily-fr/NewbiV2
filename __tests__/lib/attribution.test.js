@@ -4,8 +4,10 @@ import {
   captureAttributionFromLocation,
   externalReferrer,
   isPublicPath,
+  readCookieChoice,
   readStoredAttribution,
   rememberLastPage,
+  sendAttribution,
 } from "@/src/lib/attribution";
 
 /**
@@ -153,5 +155,76 @@ describe("rememberLastPage", () => {
       }),
     );
     expect(readStoredAttribution()).toBeNull();
+  });
+});
+
+describe("readCookieChoice", () => {
+  const setConsent = (c, date) => {
+    localStorage.setItem("cookie_consent", JSON.stringify(c));
+    if (date) localStorage.setItem("cookie_consent_date", date);
+  };
+
+  it("bandeau sans réponse", () => {
+    expect(readCookieChoice()).toEqual({
+      cookieChoice: "none",
+      cookieMarketing: false,
+    });
+  });
+
+  it("tout accepté, avec la date du choix", () => {
+    setConsent(
+      { necessary: true, functional: true, analytics: true, marketing: true },
+      "2026-11-27T10:00:00.000Z",
+    );
+    expect(readCookieChoice()).toEqual({
+      cookieChoice: "accepted",
+      cookieMarketing: true,
+      cookieChoiceAt: Date.parse("2026-11-27T10:00:00.000Z"),
+    });
+  });
+
+  it("tout refusé", () => {
+    setConsent({ necessary: true, functional: false, analytics: false, marketing: false });
+    expect(readCookieChoice()).toMatchObject({
+      cookieChoice: "refused",
+      cookieMarketing: false,
+    });
+  });
+
+  it("choix détaillé avec marketing", () => {
+    setConsent({ necessary: true, functional: false, analytics: false, marketing: true });
+    expect(readCookieChoice()).toMatchObject({
+      cookieChoice: "custom",
+      cookieMarketing: true,
+    });
+  });
+
+  it("valeur illisible = pas de réponse", () => {
+    localStorage.setItem("cookie_consent", "{oops");
+    expect(readCookieChoice().cookieChoice).toBe("none");
+  });
+});
+
+describe("sendAttribution", () => {
+  it("joint le choix cookies à la provenance envoyée", async () => {
+    visit("/tarifs");
+    captureAttributionFromLocation();
+    localStorage.setItem(
+      "cookie_consent",
+      JSON.stringify({ necessary: true, functional: true, analytics: true, marketing: true }),
+    );
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      expect(await sendAttribution("u1")).toBe(true);
+      const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+      expect(body).toMatchObject({
+        landingPage: "/tarifs",
+        cookieChoice: "accepted",
+        cookieMarketing: true,
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
