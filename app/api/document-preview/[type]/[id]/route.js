@@ -91,12 +91,15 @@ export async function GET(request, { params }) {
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
 
-    const selector = fileId
-      ? `?fileId=${fileId}`
-      : fileIndex
-        ? `?index=${fileIndex}`
-        : "";
-    const upstreamUrl = `${backendUrl}${buildPath(id)}${selector}`;
+    const upstreamParams = new URLSearchParams();
+    if (fileId) upstreamParams.set("fileId", fileId);
+    else if (fileIndex) upstreamParams.set("index", fileIndex);
+    // Bouton « Télécharger » : l'API sert le fichier en pièce jointe
+    if (request.nextUrl.searchParams.get("download") === "1") {
+      upstreamParams.set("download", "1");
+    }
+    const query = upstreamParams.toString();
+    const upstreamUrl = `${backendUrl}${buildPath(id)}${query ? `?${query}` : ""}`;
     const response = await fetch(upstreamUrl, {
       headers: { cookie },
       signal: AbortSignal.timeout(30000),
