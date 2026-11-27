@@ -53,7 +53,7 @@ function BlockTile({ type, onAdd, disabled }) {
 }
 
 /**
- * Onglet « Blocs » : les 8 blocs, à glisser dans l'e-mail ou à ajouter
+ * Onglet « Blocs » : les 9 blocs, à glisser dans l'e-mail ou à ajouter
  * d'un clic sous le bloc sélectionné (à la fin sinon).
  */
 export function BlocksPanel({ onAdd, disabled }) {

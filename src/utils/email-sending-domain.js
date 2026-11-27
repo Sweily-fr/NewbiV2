@@ -80,6 +80,62 @@ export function isFreeEmailDomain(domain) {
   return FREE_EMAIL_DOMAINS.has(value) || FREE_EMAIL_FAMILIES.test(value);
 }
 
+// Nom courant de la messagerie d'une adresse gratuite (texte d'explication)
+const FREE_EMAIL_PROVIDER_NAMES = [
+  [/^(?:gmail|googlemail)\.com$/, "Gmail"],
+  [/^(?:hotmail|outlook|live)\.|^msn\.com$/, "Outlook"],
+  [/^yahoo\.|^ymail\.com$/, "Yahoo"],
+  [/^(?:orange|wanadoo)\.fr$/, "Orange"],
+  [/^(?:icloud|me|mac)\.com$/, "iCloud"],
+  [/^free\.fr$/, "Free"],
+  [/^(?:sfr|neuf)\.fr$/, "SFR"],
+  [/^laposte\.net$/, "La Poste"],
+  [/^(?:proton\.me|protonmail\.com)$/, "Proton"],
+];
+
+/**
+ * Nom de la messagerie gratuite d'un domaine (« Gmail », « Outlook »…),
+ * null si ce n'est pas une messagerie gratuite ou si elle n'a pas de nom
+ * courant.
+ */
+export function freeEmailProviderName(domain) {
+  const value = String(domain ?? "")
+    .trim()
+    .toLowerCase();
+  if (!isFreeEmailDomain(value)) return null;
+  const match = FREE_EMAIL_PROVIDER_NAMES.find(([pattern]) =>
+    pattern.test(value),
+  );
+  return match ? match[1] : null;
+}
+
+/**
+ * Explication affichée quand l'adresse saisie est celle d'une messagerie
+ * gratuite (Gmail, Orange, Outlook, Yahoo…) : ce n'est pas une panne, les
+ * campagnes partent déjà de l'adresse Newbi au nom de l'entreprise.
+ * `{ title, before, newbiSenderEmail, after }` (l'adresse Newbi est mise en
+ * valeur entre `before` et `after`), null pour une autre adresse.
+ */
+export function freeEmailExplanation(email, { newbiSenderEmail } = {}) {
+  const domain = emailDomainOf(
+    String(email ?? "")
+      .trim()
+      .toLowerCase(),
+  );
+  if (!domain || !isFreeEmailDomain(domain)) return null;
+  const name = freeEmailProviderName(domain);
+  return {
+    title: name
+      ? `Pas besoin de connecter une adresse ${name}`
+      : "Pas besoin de connecter cette adresse",
+    before: "Vos campagnes partent déjà de ",
+    newbiSenderEmail: newbiSenderEmail || "l'adresse Newbi de votre espace",
+    after: frenchSpacing(
+      ", avec le nom de votre entreprise, et les réponses de vos contacts arrivent sur votre adresse : vous la choisissez dans «\u00a0Adresse de réponse\u00a0» de chaque campagne. Connecter un domaine sert seulement à envoyer depuis une adresse à votre nom de domaine (ex. contact@votre-entreprise.fr).",
+    ),
+  };
+}
+
 const NEWBI_DOMAINS = ["newbi.fr", "sweily.fr"];
 
 /** Domaine de Newbi (ou sous-domaine) : jamais connectable par un client. */
@@ -99,7 +155,7 @@ const ERROR_TEXTS = {
   INVALID_SENDER_EMAIL:
     "Cette adresse n'est pas valide. Vérifiez-la, par exemple contact@votre-entreprise.fr.",
   FREE_EMAIL_PROVIDER:
-    "Les adresses Gmail, Orange, Yahoo… ne peuvent pas être connectées : seul leur fournisseur peut les authentifier. Utilisez une adresse de votre propre domaine.",
+    "Pas besoin de connecter une adresse Gmail, Orange, Outlook ou Yahoo : vos campagnes partent déjà de l'adresse Newbi de votre espace, avec le nom de votre entreprise, et les réponses arrivent sur votre adresse. Connecter un domaine sert seulement à envoyer depuis une adresse à votre nom de domaine (ex. contact@votre-entreprise.fr).",
   RESERVED_DOMAIN:
     "Cette adresse appartient à Newbi. Utilisez une adresse de votre propre domaine.",
   DOMAIN_ALREADY_CONNECTED:

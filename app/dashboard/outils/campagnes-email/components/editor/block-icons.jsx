@@ -7,6 +7,7 @@ import {
   RectangleHorizontal,
   SeparatorHorizontal,
   Share2,
+  Signature,
 } from "lucide-react";
 
 /** Icône de chaque type de bloc (palette, panneau de réglages). */
@@ -19,6 +20,7 @@ export const BLOCK_ICONS = {
   divider: SeparatorHorizontal,
   spacer: MoveVertical,
   social: Share2,
+  signature: Signature,
 };
 
 /** Description courte de chaque bloc (infobulle de la palette). */
@@ -31,4 +33,5 @@ export const BLOCK_HINTS = {
   divider: "Une ligne pour séparer deux parties",
   spacer: "Un espace vide réglable",
   social: "Les liens vers vos réseaux",
+  signature: "Une de vos signatures de mail",
 };

@@ -6,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   CopyPlus,
+  ExternalLink,
   Plus,
   Trash2,
   TriangleAlert,
@@ -16,7 +17,9 @@ import { Input } from "@/src/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
@@ -30,7 +33,14 @@ import {
   blockWithDefaults,
 } from "@/src/utils/email-campaign-design";
 import { checkLink } from "@/src/utils/email-campaigns";
+import {
+  CUSTOM_LINK,
+  findLinkTarget,
+  groupLinkTargets,
+  linkTargetLabel,
+} from "@/src/utils/email-campaign-links";
 import { unknownVariables } from "@/src/utils/email-campaign-variables";
+import { useCampaignData } from "../email-design/campaign-data";
 import { SocialIcon } from "../email-design/social-icons";
 import { VariableMenu, insertIntoField } from "../variable-menu";
 import { BLOCK_ICONS } from "./block-icons";
@@ -102,6 +112,147 @@ function LinkField({
       />
       <LinkMessage url={value} required={required} />
     </Row>
+  );
+}
+
+/**
+ * « Lien vers » : page de prise de rendez-vous, type de rendez-vous ou
+ * événement de l'espace, dont l'adresse publique remplit le lien. Absent si
+ * l'espace n'en a pas (ou n'a pas accès à la prise de rendez-vous).
+ */
+function LinkTargetSelect({ id, url, onChange }) {
+  const targets = useCampaignData()?.linkTargets || [];
+  const groups = groupLinkTargets(targets);
+  if (!groups.length) return null;
+  const current = findLinkTarget(targets, url);
+  return (
+    <Row
+      label="Lien vers"
+      htmlFor={id}
+      hint={
+        current
+          ? "L'adresse de la page est remplie ci-dessous."
+          : "Choisissez une page de rendez-vous ou un événement, ou saisissez l'adresse ci-dessous."
+      }
+    >
+      <Select
+        value={current?.id || CUSTOM_LINK}
+        onValueChange={(value) => {
+          if (value === CUSTOM_LINK) {
+            // Adresse à saisir : on repart d'un champ prêt à remplir
+            if (current) onChange("https://");
+            return;
+          }
+          const target = targets.find((item) => item.id === value);
+          if (target) onChange(target.url);
+        }}
+      >
+        <SelectTrigger id={id} className="w-full min-w-0">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={CUSTOM_LINK}>Une adresse web</SelectItem>
+          {groups.map((group) => (
+            <SelectGroup key={group.pageId}>
+              <SelectLabel>{group.title}</SelectLabel>
+              {group.targets.map((target) => (
+                <SelectItem key={target.id} value={target.id}>
+                  {linkTargetLabel(target)}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ))}
+        </SelectContent>
+      </Select>
+    </Row>
+  );
+}
+
+const SIGNATURES_URL = "/dashboard/outils/signatures-mail";
+
+const TOOL_LINK_CLASS =
+  "inline-flex items-center gap-1 font-medium text-[#5a50ff] hover:underline dark:text-[#8b7fff]";
+
+/**
+ * Choix de la signature (outil Signatures de mail) : celles de
+ * l'utilisateur, et celle d'un autre membre si elle est déjà choisie. Sans
+ * signature, invitation à en créer une (dans un nouvel onglet : l'éditeur
+ * reste ouvert et la liste se met à jour au retour).
+ */
+function SignaturePicker({ value, onChange }) {
+  const data = useCampaignData();
+  if (!data?.signaturesLoaded) {
+    return (
+      <p className="text-xs leading-5 text-muted-foreground">
+        {data?.signaturesError
+          ? "Vos signatures n'ont pas pu être chargées. Réessayez dans un instant."
+          : "Chargement de vos signatures…"}
+      </p>
+    );
+  }
+  const current = value ? data.signaturesById.get(value) : null;
+  const options = data.signatures.filter(
+    (signature) => signature.mine || signature.id === current?.id,
+  );
+  if (!options.length) {
+    return (
+      <div className="flex flex-col items-start gap-2 rounded-xl border border-dashed border-[#d4d5da] p-4 dark:border-[#2E2E32]">
+        <p className="text-sm font-medium">
+          Aucune signature pour l&apos;instant
+        </p>
+        <p className="text-xs leading-5 text-muted-foreground">
+          Créez votre signature de mail (nom, poste, coordonnées, logo, réseaux)
+          dans l&apos;outil Signatures de mail&nbsp;: elle apparaîtra ici.
+        </p>
+        <Button asChild variant="outline" size="sm" className="mt-1">
+          <a href={SIGNATURES_URL} target="_blank" rel="noopener noreferrer">
+            Créer une signature
+            <ExternalLink className="size-3.5" aria-hidden />
+          </a>
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <>
+      <Row label="Signature" htmlFor="signature-select">
+        <Select value={current?.id || ""} onValueChange={onChange}>
+          <SelectTrigger id="signature-select" className="w-full min-w-0">
+            <SelectValue placeholder="Choisir une signature" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((signature) => (
+              <SelectItem key={signature.id} value={signature.id}>
+                {signature.name}
+                {signature.isDefault && signature.mine ? " (principale)" : ""}
+                {signature.mine ? "" : " (d'un autre membre)"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {value && !current && (
+          <p className="flex items-start gap-1.5 text-xs leading-5 text-amber-700 dark:text-amber-400">
+            <TriangleAlert className="mt-0.5 size-3 shrink-0" aria-hidden />
+            Cette signature n&apos;existe plus&nbsp;: choisissez-en une autre,
+            sinon ce bloc ne sera pas envoyé.
+          </p>
+        )}
+      </Row>
+      <p className="text-xs leading-5 text-muted-foreground">
+        Pour la modifier, ouvrez{" "}
+        <a
+          href={SIGNATURES_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={TOOL_LINK_CLASS}
+        >
+          Signatures de mail
+          <ExternalLink className="size-3" aria-hidden />
+        </a>
+        &nbsp;: vos changements s&apos;appliquent à cette campagne jusqu&apos;à
+        son envoi.
+      </p>
+    </>
   );
 }
 
@@ -350,6 +501,11 @@ export function BlockSettings({
               placeholder="Ex. : Découvrir l'offre"
               onChange={(label) => set({ label }, "label")}
             />
+            <LinkTargetSelect
+              id="button-target"
+              url={block.url}
+              onChange={(url) => set({ url })}
+            />
             <LinkField
               id="button-url"
               label="Lien"
@@ -518,13 +674,20 @@ export function BlockSettings({
               onChange={(buttonLabel) => set({ buttonLabel }, "buttonLabel")}
             />
             {block.buttonLabel ? (
-              <LinkField
-                id="image-text-button-url"
-                label="Lien du bouton"
-                value={block.buttonUrl}
-                required
-                onChange={(buttonUrl) => set({ buttonUrl }, "buttonUrl")}
-              />
+              <>
+                <LinkTargetSelect
+                  id="image-text-button-target"
+                  url={block.buttonUrl}
+                  onChange={(buttonUrl) => set({ buttonUrl })}
+                />
+                <LinkField
+                  id="image-text-button-url"
+                  label="Lien du bouton"
+                  value={block.buttonUrl}
+                  required
+                  onChange={(buttonUrl) => set({ buttonUrl }, "buttonUrl")}
+                />
+              </>
             ) : null}
           </PanelSection>
           {padding}
@@ -598,6 +761,27 @@ export function BlockSettings({
                 ]}
               />
             </Row>
+            <Row label="Alignement">
+              <Choice
+                label="Alignement"
+                value={block.align}
+                onChange={(align) => set({ align })}
+                options={ALIGN_OPTIONS}
+              />
+            </Row>
+          </PanelSection>
+          {padding}
+        </>
+      );
+      break;
+    case "signature":
+      body = (
+        <>
+          <PanelSection title="Signature">
+            <SignaturePicker
+              value={block.signatureId}
+              onChange={(signatureId) => set({ signatureId })}
+            />
             <Row label="Alignement">
               <Choice
                 label="Alignement"
