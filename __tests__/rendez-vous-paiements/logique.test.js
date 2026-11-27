@@ -2,7 +2,13 @@
 import { describe, it, expect } from "vitest";
 import { connectedMethodsLabel } from "@/app/dashboard/outils/rendez-vous/components/payment-mode-fields";
 import {
-  bankTransferUnavailableNote,
+  bankTransferDueAt,
+  chosenPaymentMethods,
+  instantTransferAdvised,
+  noPaymentMethodMessage,
+  paymentMethodsFormError,
+  paymentMethodsInputIfChanged,
+  paymentMethodsToForm,
   offeredPaymentMethods,
   isAwaitingBankTransfer,
   paymentMethodDelay,
@@ -97,33 +103,104 @@ describe("créneau payant, page publique", () => {
     );
     expect(paymentMethodLabel("sumup", ["sumup"])).toBe("Carte bancaire");
     expect(paymentMethodDelay("bank_transfer", "slot")).toBe(
-      "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive.",
+      "Le créneau est gardé jusqu'à 3 jours, au plus tard jusqu'au début du rendez-vous. Il est confirmé dès que le virement arrive.",
     );
     expect(paymentMethodDelay("bank_transfer", "event")).toBe(
-      "Votre place est gardée jusqu'à 3 jours, au plus tard la veille de l'événement. Elle est confirmée dès que le virement arrive.",
+      "Votre place est gardée jusqu'à 3 jours, au plus tard jusqu'au début de l'événement. Elle est confirmée dès que le virement arrive.",
+    );
+    // Début connu : date de fin de la garde, conseil si le début est proche
+    const now = new Date("2026-11-27T10:00:00.000Z");
+    expect(
+      paymentMethodDelay("bank_transfer", "slot", {
+        startAt: "2026-11-27T15:00:00.000Z",
+        now,
+        timeZone: "Europe/Paris",
+      }),
+    ).toBe(
+      "Le créneau est gardé jusqu'au 27 nov. 2026, 16:00. Il est confirmé dès que le virement arrive. Le rendez-vous approche : faites de préférence un virement instantané.",
+    );
+    expect(
+      paymentMethodDelay("bank_transfer", "event", {
+        startAt: "2026-12-20T15:00:00.000Z",
+        now,
+        timeZone: "Europe/Paris",
+      }),
+    ).toBe(
+      "Votre place est gardée jusqu'au 30 nov. 2026, 11:00. Elle est confirmée dès que le virement arrive.",
     );
     expect(paymentMethodDelay("stripe", "slot")).toBe(
       "Rendez-vous confirmé dès le paiement",
     );
   });
 
-  it("virement proposé seulement si l'API le permet (48 h avant au moins)", () => {
+  it("virement sans délai minimum : proposé dès que l'API le renvoie", () => {
     const methods = ["stripe", "bank_transfer"];
     expect(offeredPaymentMethods(methods, true)).toEqual(methods);
+    expect(offeredPaymentMethods(methods, undefined)).toEqual(methods);
+    // Ancienne réponse qui le dit indisponible : respectée
     expect(offeredPaymentMethods(methods, false)).toEqual(["stripe"]);
-    // Drapeau absent (créneau sans virement possible) : pas de virement
-    expect(offeredPaymentMethods(methods, undefined)).toEqual(["stripe"]);
+    const now = new Date("2026-11-27T10:00:00.000Z");
     expect(
-      bankTransferUnavailableNote(methods, false, {
-        kind: "slot",
-        minLeadHours: 48,
-      }),
-    ).toBe("Le virement n'est possible que jusqu'à 48 h avant le rendez-vous.");
-    expect(bankTransferUnavailableNote(methods, false)).toBe(
-      "Le virement n'est possible que jusqu'à 48 h avant le début de l'événement.",
+      bankTransferDueAt("2026-11-27T15:00:00.000Z", now).toISOString(),
+    ).toBe("2026-11-27T15:00:00.000Z");
+    expect(
+      bankTransferDueAt("2026-12-20T15:00:00.000Z", now).toISOString(),
+    ).toBe("2026-11-30T10:00:00.000Z");
+    expect(instantTransferAdvised("2026-11-29T10:00:00.000Z", now)).toBe(true);
+    expect(instantTransferAdvised("2026-12-01T10:00:00.000Z", now)).toBe(false);
+    expect(noPaymentMethodMessage("Cabinet Martin")).toBe(
+      "Paiement en ligne indisponible pour le moment. Contactez Cabinet Martin pour réserver.",
     );
-    expect(bankTransferUnavailableNote(methods, true)).toBeNull();
-    expect(bankTransferUnavailableNote(["stripe"], false)).toBeNull();
+    expect(noPaymentMethodMessage()).toBe(
+      "Paiement en ligne indisponible pour le moment. Contactez l'organisateur pour réserver.",
+    );
+  });
+
+  it("moyens choisis par l'organisateur (comme les transferts)", () => {
+    const usable = ["stripe", "bank_transfer"];
+    // Rien de choisi : tous les moyens prêts, rien envoyé à l'API
+    expect(chosenPaymentMethods(null, usable)).toEqual(usable);
+    expect(paymentMethodsToForm({ paymentMethods: null })).toBeNull();
+    expect(paymentMethodsToForm({ paymentMethods: ["paypal"] })).toEqual([
+      "paypal",
+    ]);
+    expect(
+      paymentMethodsInputIfChanged({ paymentMethods: null }, null),
+    ).toEqual({});
+    expect(
+      paymentMethodsInputIfChanged(
+        { paymentMethods: ["bank_transfer", "stripe"] },
+        null,
+      ),
+    ).toEqual({ paymentMethods: ["stripe", "bank_transfer"] });
+    expect(
+      paymentMethodsInputIfChanged(
+        { paymentMethods: ["bank_transfer", "stripe"] },
+        ["stripe", "bank_transfer"],
+      ),
+    ).toEqual({});
+    expect(
+      paymentMethodsInputIfChanged({ paymentMethods: ["stripe"] }, null, {
+        paid: false,
+      }),
+    ).toEqual({});
+    // Au moins un moyen choisi et prêt, hors paiement sur place
+    expect(
+      paymentMethodsFormError({ paymentMethods: ["paypal"] }, usable, true),
+    ).toBe("Choisissez au moins un moyen de paiement.");
+    expect(
+      paymentMethodsFormError(
+        { paymentMethods: [], paymentMode: "ON_SITE" },
+        usable,
+        true,
+      ),
+    ).toBeNull();
+    expect(
+      paymentMethodsFormError({ paymentMethods: null }, usable, true),
+    ).toBeNull();
+    expect(
+      paymentMethodsFormError({ paymentMethods: [] }, usable, false),
+    ).toBeNull();
   });
 
   it("créneaux groupés par jour : bankTransferAvailable gardé", () => {
@@ -245,6 +322,21 @@ describe("statut de paiement pour l'organisateur", () => {
       "Remboursé",
     );
     expect(paymentStatus({ status: "CONFIRMED" })).toBeNull();
+    // Virement repéré après la garde ou le début : à valider
+    expect(
+      paymentStatus(
+        {
+          status: "EXPIRED",
+          paymentProvider: "bank_transfer",
+          bankTransferReceivedAt: "2026-11-27T09:00:00.000Z",
+        },
+        { timeZone: "Europe/Paris" },
+      ),
+    ).toEqual({
+      label: "Virement reçu, à valider",
+      tone: "danger",
+      detail: "Reçu le 27 nov. 2026, 10:00",
+    });
   });
 
   it("ligne de paiement : virement en attente, jamais « payé »", () => {

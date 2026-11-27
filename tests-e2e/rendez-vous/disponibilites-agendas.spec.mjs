@@ -60,6 +60,9 @@ test.describe("Rendez-vous : Disponibilités avec agendas connectés", () => {
 
     // Exception avec horaires spéciaux
     await cliquer(page, page.getByRole("button", { name: "Ajouter une date" }));
+    // Mois suivant : en fin de mois, le mois en cours peut n'avoir que
+    // quelques jours encore cliquables
+    await page.locator("[data-slot=popover-content] .rdp-button_next").click();
     await cliquer(page, page.locator("[data-slot=popover-content] button[data-day]:not([disabled])").nth(4));
     await enregistrer(page);
     const special = page.getByRole("switch", { name: /horaires spéciaux/ });

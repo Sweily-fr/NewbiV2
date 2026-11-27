@@ -17,7 +17,6 @@ import {
 import { formatCents, orderedPaymentMethods } from "@/src/utils/booking-events";
 import {
   BANK_TRANSFER,
-  bankTransferUnavailableNote,
   offeredPaymentMethods,
   slotAmounts,
   slotNeedsOnlinePayment,
@@ -90,6 +89,7 @@ export function SelectedSlotSummary({ slot, guestTimeZone, onBack }) {
  */
 export function BookingForm({
   slug,
+  organizerName = "",
   type,
   slot,
   guestTimeZone,
@@ -103,18 +103,13 @@ export function BookingForm({
   const payment = type.payment || null;
   const paid = slotNeedsOnlinePayment(payment);
   const amounts = slotAmounts(payment);
-  // Virement seulement si l'API le permet pour ce créneau (48 h avant au
-  // moins) : `bankTransferAvailable` du créneau choisi
-  const connectedMethods = orderedPaymentMethods(payment?.paymentMethods);
+  // Moyens choisis par l'organisateur et prêts (l'API ne renvoie qu'eux) ;
+  // virement sans délai minimum, créneau gardé jusqu'à min(3 jours, début)
   const methods = offeredPaymentMethods(
-    connectedMethods,
+    orderedPaymentMethods(payment?.paymentMethods),
     slot?.bankTransferAvailable,
   );
-  const bankTransferNote = bankTransferUnavailableNote(
-    connectedMethods,
-    slot?.bankTransferAvailable,
-    { kind: "slot", minLeadHours: payment?.bankTransferMinLeadHours },
-  );
+  const noMethod = paid && methods.length === 0;
   const [provider, setProvider] = useState(methods[0] || null);
   const [values, setValues] = useState({
     firstName: "",
@@ -327,7 +322,9 @@ export function BookingForm({
           methods={methods}
           value={provider}
           onChange={setProvider}
-          note={bankTransferNote}
+          startAt={slot?.start}
+          timeZone={guestTimeZone}
+          organizerName={organizerName}
         />
       )}
 
@@ -368,20 +365,22 @@ export function BookingForm({
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting || (paid && methods.length === 0)}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--rdv-accent)] px-6 py-3 text-base font-medium text-[var(--rdv-on-accent)] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-60 sm:text-sm"
-      >
-        {submitting && (
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        )}
-        {submitting
-          ? paid && provider !== BANK_TRANSFER
-            ? "Redirection vers le paiement"
-            : "Réservation en cours"
-          : slotSubmitLabel(payment)}
-      </button>
+      {!noMethod && (
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--rdv-accent)] px-6 py-3 text-base font-medium text-[var(--rdv-on-accent)] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-60 sm:text-sm"
+        >
+          {submitting && (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          )}
+          {submitting
+            ? paid && provider !== BANK_TRANSFER
+              ? "Redirection vers le paiement"
+              : "Réservation en cours"
+            : slotSubmitLabel(payment)}
+        </button>
+      )}
       {amounts.onSite > 0 && (
         <p className="text-center text-sm text-gray-600">
           {amounts.mode === "DEPOSIT"
