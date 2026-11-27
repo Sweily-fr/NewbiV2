@@ -97,6 +97,22 @@ plusieurs machines et rassemblés en un rapport (vidéo de chaque test).
 Toujours ouvrir avec `ouvrir()` et cliquer avec `cliquer()` (`navigation.mjs`) : ils
 attendent que la page soit hydratée et que les requêtes Next et GraphQL soient finies.
 
+## Quand ils tournent (depuis le 27/11/2026)
+
+- **Sur une PR vers `main`** (release ou hotfix) : seulement les dossiers des
+  fonctionnalités touchées par la PR, plus `socle.spec.mjs` (connexion), choisis
+  par `tests-e2e/choisir-tests.mjs` à partir des fichiers modifiés. Toute la
+  suite si un fichier du socle change (dépendances, `next.config.js`,
+  middleware, gabarits racine, client GraphQL, authentification, outils communs
+  des tests). Les machines sans tests répondent tout de suite : `main` exige
+  toujours les 16 vérifications « Tests E2E (machine N) ».
+- **Toute la suite deux fois par jour**, site et API sur `develop` : 6 h et
+  18 h UTC (7 h et 19 h à Paris en hiver). Le rapport arrive dans l'admin
+  comme les autres lancements (« Suite complète (matin ou soir) »).
+- Un nouveau dossier de tests est pris en compte tout seul quand son nom
+  apparaît dans le chemin des fichiers de l'application ; sinon, ajouter ses
+  chemins à `CHEMINS` dans `choisir-tests.mjs`.
+
 ## Lancer en local
 
 Le lancement **refuse** un dossier qui contient un fichier `.env` (le site et l'API
