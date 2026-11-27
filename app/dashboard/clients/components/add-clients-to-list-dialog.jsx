@@ -132,7 +132,7 @@ export default function AddClientsToListDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <div className="relative">
             <Input
               className={cn("w-full ps-9", search && "pe-9")}
@@ -181,7 +181,7 @@ export default function AddClientsToListDialog({
             </div>
           )}
 
-          <ScrollArea className="h-[320px] rounded-md border">
+          <ScrollArea className="h-[320px] rounded-md border [&_[data-slot=scroll-area-viewport]>div]:!block">
             {loading ? (
               <div className="flex items-center justify-center h-[320px]">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
