@@ -78,6 +78,7 @@ export default function InvoiceSettingsView({
     watch,
     setValue,
     register,
+    trigger,
     formState: { errors },
   } = useFormContext();
   const data = watch();
@@ -441,7 +442,12 @@ export default function InvoiceSettingsView({
     onCancel();
   };
 
-  const handleSaveClick = () => {
+  const handleSaveClick = async () => {
+    // Une saisie refusée (notes d'en-tête au-delà de 1 000 caractères, limite
+    // aussi tenue par l'API) garde le panneau ouvert avec son message, sans
+    // annonce de succès : sinon le refus n'arrivait qu'à la création du
+    // document, panneau déjà refermé.
+    if (!(await trigger("headerNotes"))) return;
     // Mettre à jour les valeurs de référence après la sauvegarde
     initialValuesRef.current = {
       prefix: data.prefix,

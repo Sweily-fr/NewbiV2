@@ -130,6 +130,17 @@ export function useInvoiceEditor({
     resolver: async (values) => {
       const errors = {};
 
+      // Notes d'en-tête : même limite que l'API (1 000 caractères). Le
+      // resolver remplace les règles de register() : sans ce contrôle, le
+      // panneau Paramètres acceptait une saisie que l'API refuse ensuite.
+      if ((values.headerNotes || "").length > 1000) {
+        errors.headerNotes = {
+          type: "maxLength",
+          message:
+            "Les notes d'en-tête ne doivent pas dépasser 1000 caractères",
+        };
+      }
+
       // Validation du client
       if (!values.client || !values.client.id) {
         errors.client = {
