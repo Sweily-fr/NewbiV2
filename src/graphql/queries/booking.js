@@ -76,6 +76,7 @@ export const APPOINTMENT_TYPE_FIELDS = gql`
     }
     paymentMode
     depositAmount
+    paymentMethods
     registrationsCount
     ticketsCount
     checkedInCount
@@ -122,6 +123,8 @@ export const BOOKING_FIELDS = gql`
     expiresAt
     paymentReference
     bankTransferDeclaredAt
+    bankTransferReceivedAt
+    bankTransferReceivedAmount
     refundedAt
     refundFailed
   }
@@ -222,6 +225,8 @@ export const EVENT_REGISTRATION_FIELDS = gql`
     paymentProvider
     paymentReference
     bankTransferDeclaredAt
+    bankTransferReceivedAt
+    bankTransferReceivedAmount
     paidAt
     expiresAt
     cancelledBy

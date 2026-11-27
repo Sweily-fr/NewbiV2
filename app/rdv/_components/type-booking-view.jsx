@@ -152,6 +152,7 @@ export function TypeBookingView({ slug, typeSlug, embed = false }) {
                 ) : (
                   <BookingForm
                     slug={page.slug || slug}
+                    organizerName={page.organizationName || page.title}
                     type={type}
                     slot={slot}
                     guestTimeZone={guestTimeZone}

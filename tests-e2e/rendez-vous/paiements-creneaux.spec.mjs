@@ -6,13 +6,16 @@
  *   - Créneau « En ligne » par carte : choix du moyen après le créneau et le
  *     formulaire, jusqu'à la redirection vers le prestataire (clé Stripe
  *     factice : la réponse de la réservation est simulée, après contrôle de ce
- *     que le site envoie). Le premier créneau est à moins de 48 h : le
- *     virement n'est pas proposé, la raison est donnée.
+ *     que le site envoie). Le premier créneau est proche : le virement
+ *     reste proposé (aucun délai minimum), virement instantané conseillé.
  *   - Créneau « En ligne » par virement, pour de vrai : panneau (IBAN,
  *     référence, montant), « J'ai fait le virement » (rien de confirmé),
  *     « Marquer comme payé » par l'organisateur, puis confirmation visible
  *     par l'invité.
  *   - Événement payé par virement : même parcours avec les inscrits.
+ *   - Moyens choisis par l'organisateur (comme les transferts) : liste des
+ *     moyens et leur état dans le tiroir, moyen décoché absent de la page
+ *     publique, aucun moyen utilisable : message au lieu du bouton.
  *
  * Espace « Paiements » du lot (IBAN renseigné) ; compte Stripe « prêt » posé
  * en base le temps de ces tests.
@@ -116,7 +119,15 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       await page.getByLabel("Prix du rendez-vous (TTC)").fill("40");
       await cliquer(page, page.getByRole("radio", { name: /Acompte en ligne, le reste sur place/ }));
       await page.getByLabel("Acompte (TTC)").fill("40");
-      await expect(page.getByText(/Virement/i).first()).toBeVisible();
+      // Moyens proposés, comme les transferts : une case et un état chacun
+      await expect(page.getByText("Moyens de paiement proposés")).toBeVisible();
+      await expect(page.getByRole("checkbox", { name: "Carte bancaire (Stripe)" })).toBeChecked({ timeout: 15_000 });
+      await expect(page.getByRole("checkbox", { name: "Virement bancaire" })).toBeChecked();
+      await expect(page.getByRole("checkbox", { name: "Carte bancaire (SumUp)" })).toBeVisible();
+      await expect(page.getByRole("checkbox", { name: "PayPal" })).toBeVisible();
+      await expect(page.getByText(/Sur votre compte Stripe/)).toBeVisible();
+      await expect(page.getByText(/Votre client voit votre IBAN/)).toBeVisible();
+      await page.getByRole("checkbox", { name: "Virement bancaire" }).scrollIntoViewIfNeeded();
       await capture(page, "tiroir-creneau-payant");
       await cliquer(page, page.getByRole("button", { name: "Créer le type" }));
       await expect(page.getByText("L'acompte doit être inférieur au prix")).toBeVisible();
@@ -178,9 +189,11 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       await choisirCreneauEtRemplir(page, { prenom: "Camille", nom: "Carte" });
       await expect(page.getByText("Moyen de paiement")).toBeVisible();
       await expect(page.getByRole("radio", { name: /Carte bancaire/ })).toBeChecked();
-      // Premier créneau à moins de 48 h : virement connecté mais plus possible
-      await expect(page.getByRole("radio", { name: /Virement/ })).toHaveCount(0);
-      await expect(page.getByText("Le virement n'est possible que jusqu'à 48 h avant le rendez-vous.")).toBeVisible();
+      // Premier créneau proche : virement proposé quand même (virement
+      // instantané conseillé), aucune règle des 48 h
+      await expect(page.getByRole("radio", { name: /Virement/ })).toHaveCount(1);
+      await expect(page.getByText(/faites de préférence un virement instantané/)).toBeVisible();
+      await expect(page.getByText(/48 h/)).toHaveCount(0);
       await capture(page, "page-publique-creneau-payant");
       await cliquer(page, page.getByRole("button", { name: /Payer 40,00\s*€/ }));
 
@@ -196,10 +209,9 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       await brancherIp(page);
       await ouvrir(page, `/rdv/${PAGE.slug}/${EN_LIGNE.slug}`);
       emailVirement = await choisirCreneauEtRemplir(page, { prenom: "Victor", nom: "Virement" });
+      // Début à plus de 3 jours : garde de 3 jours, pas de conseil
       await expect(
-        page.getByText(
-          "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive.",
-        ),
+        page.getByText(/^Le créneau est gardé jusqu'au .+\. Il est confirmé dès que le virement arrive\.$/),
       ).toBeVisible();
       await capture(page, "page-publique-creneau-virement");
       await cliquer(page, page.getByRole("radio", { name: /Virement/ }));
@@ -298,10 +310,13 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       const consentement = page.getByRole("checkbox");
       if (await consentement.count()) await consentement.first().check();
       await expect(
-        page.getByText(
-          "Votre place est gardée jusqu'à 3 jours, au plus tard la veille de l'événement. Elle est confirmée dès que le virement arrive.",
-        ),
+        page.getByText(/^Votre place est gardée jusqu'au .+\. Elle est confirmée dès que le virement arrive\.$/),
       ).toBeVisible();
+      // Liste « Nombre de places » : vrai <select>, flèche dessinée
+      await page.getByLabel("Nombre de places").selectOption("2");
+      await expect(page.getByLabel("Nombre de places")).toHaveValue("2");
+      await page.getByLabel("Nombre de places").selectOption("1");
+      await capture(page, "page-publique-evenement");
       await cliquer(page, page.getByRole("radio", { name: /Virement/ }));
       await cliquer(page, page.getByRole("button", { name: /Payer 15,00\s*€/ }));
 
@@ -346,6 +361,60 @@ test.describe("Prise de rendez-vous : créneaux et événements payants", () => 
       await ouvrir(page, inscriptionVirement);
       await expect(page.getByRole("heading", { name: "Vos billets" })).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(/Payé en ligne :\s*15,00\s*€/)).toBeVisible();
+    });
+  });
+
+  test.describe("Moyens choisis : organisateur", () => {
+    test.use({ storageState: connecte(COMPTE.token) });
+
+    test("Décocher le virement d'un créneau payant : enregistré, carte seule", async ({ page }) => {
+      await ouvrir(page, "/dashboard/outils/rendez-vous?onglet=types");
+      await cliquer(page, page.getByRole("button", { name: new RegExp(`Actions pour ${EN_LIGNE.nom}`) }));
+      await cliquer(page, page.getByRole("menuitem", { name: "Modifier" }));
+      const virement = page.getByRole("checkbox", { name: "Virement bancaire" });
+      await expect(virement).toBeChecked({ timeout: 15_000 });
+      await cliquer(page, virement);
+      await expect(virement).not.toBeChecked();
+      await virement.scrollIntoViewIfNeeded();
+      await capture(page, "tiroir-moyens-choisis");
+      await cliquer(page, page.getByRole("button", { name: "Enregistrer" }));
+      await expect
+        .poll(
+          async () =>
+            (
+              await (await base())
+                .collection("appointment_types")
+                .findOne({ workspaceId: COMPTE.organisation._id, slug: EN_LIGNE.slug })
+            )?.paymentMethods,
+          { timeout: 15_000 },
+        )
+        .toEqual(["stripe"]);
+    });
+  });
+
+  test.describe("Moyens choisis : invité", () => {
+    test.use({ storageState: visiteur() });
+
+    test("Seuls les moyens choisis et prêts ; aucun : message au lieu du bouton", async ({ page }) => {
+      await brancherIp(page);
+      await ouvrir(page, `/rdv/${PAGE.slug}/${EN_LIGNE.slug}`);
+      await choisirCreneauEtRemplir(page, { prenom: "Clara", nom: "Choix" });
+      await expect(page.getByRole("radio", { name: /Carte bancaire/ })).toBeChecked();
+      await expect(page.getByRole("radio", { name: /Virement/ })).toHaveCount(0);
+
+      // Seul moyen choisi non prêt (PayPal non connecté) : rien à proposer
+      await (await base())
+        .collection("appointment_types")
+        .updateOne(
+          { workspaceId: COMPTE.organisation._id, slug: EN_LIGNE.slug },
+          { $set: { paymentMethods: ["paypal"] } },
+        );
+      await ouvrir(page, `/rdv/${PAGE.slug}/${EN_LIGNE.slug}`);
+      await choisirCreneauEtRemplir(page, { prenom: "Clara", nom: "Choix" });
+      await expect(page.getByText(/^Paiement en ligne indisponible pour le moment\. Contactez .+ pour réserver\.$/)).toBeVisible();
+      await expect(page.getByRole("button", { name: /Payer/ })).toHaveCount(0);
+      await expect(page.getByRole("radio")).toHaveCount(0);
+      await capture(page, "page-publique-aucun-moyen");
     });
   });
 });

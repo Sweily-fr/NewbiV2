@@ -36,15 +36,52 @@ export function paymentMethodLabel(method, methods = []) {
   return "Carte bancaire";
 }
 
+/** Garde d'un virement : 3 jours au plus, jusqu'au début au plus tard. */
+export const BANK_TRANSFER_HOLD_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** Fin de la garde d'un virement : min(maintenant + 3 jours, début). */
+export function bankTransferDueAt(startAt, now = new Date()) {
+  const hold = new Date(now).getTime() + BANK_TRANSFER_HOLD_MS;
+  const start = startAt ? Date.parse(startAt) : NaN;
+  return new Date(Number.isFinite(start) ? Math.min(hold, start) : hold);
+}
+
+/** Début à moins de 3 jours : virement instantané conseillé. */
+export function instantTransferAdvised(startAt, now = new Date()) {
+  const start = startAt ? Date.parse(startAt) : NaN;
+  return (
+    Number.isFinite(start) &&
+    start - new Date(now).getTime() < BANK_TRANSFER_HOLD_MS
+  );
+}
+
 /**
  * Délai annoncé sous chaque moyen, avant le choix. `kind` : « slot »
- * (créneau) ou « event ».
+ * (créneau) ou « event ». Virement : `startAt` (début du créneau ou de
+ * l'événement) donne la fin de la garde, min(3 jours, début), et le
+ * conseil du virement instantané quand le début est proche.
  */
-export function paymentMethodDelay(method, kind = "event") {
+export function paymentMethodDelay(
+  method,
+  kind = "event",
+  { startAt = null, now = new Date(), timeZone = DEFAULT_TIME_ZONE } = {},
+) {
   if (method === BANK_TRANSFER) {
-    return kind === "slot"
-      ? "Le créneau est gardé jusqu'à 3 jours, au plus tard la veille du rendez-vous. Il est confirmé dès que le virement arrive."
-      : "Votre place est gardée jusqu'à 3 jours, au plus tard la veille de l'événement. Elle est confirmée dès que le virement arrive.";
+    const slot = kind === "slot";
+    const kept = slot ? "Le créneau est gardé" : "Votre place est gardée";
+    const until = startAt
+      ? `jusqu'au ${shortDateTimeLabel(bankTransferDueAt(startAt, now).toISOString(), timeZone)}`
+      : slot
+        ? "jusqu'à 3 jours, au plus tard jusqu'au début du rendez-vous"
+        : "jusqu'à 3 jours, au plus tard jusqu'au début de l'événement";
+    const confirmed = slot
+      ? "Il est confirmé dès que le virement arrive."
+      : "Elle est confirmée dès que le virement arrive.";
+    const advice =
+      startAt && instantTransferAdvised(startAt, now)
+        ? ` ${slot ? "Le rendez-vous" : "L'événement"} approche : faites de préférence un virement instantané.`
+        : "";
+    return `${kept} ${until}. ${confirmed}${advice}`;
   }
   return kind === "slot"
     ? "Rendez-vous confirmé dès le paiement"
@@ -52,31 +89,78 @@ export function paymentMethodDelay(method, kind = "event") {
 }
 
 /**
- * Moyens réellement proposés : le virement seulement si l'API le dit
- * possible pour ce créneau ou cet événement (`bankTransferAvailable` vrai :
- * début à 48 h au moins), même si `methods` le contient.
+ * Moyens réellement proposés : ceux que l'API renvoie (moyens choisis par
+ * l'organisateur et prêts). Le virement n'a plus de délai minimum ; une
+ * ancienne réponse qui le dit indisponible (`false`) est encore respectée.
  */
 export function offeredPaymentMethods(methods, bankTransferAvailable) {
   return (methods || []).filter(
-    (method) => method !== BANK_TRANSFER || bankTransferAvailable === true,
+    (method) => method !== BANK_TRANSFER || bankTransferAvailable !== false,
   );
 }
 
 /**
- * Phrase sous le choix du moyen quand le virement est connecté mais plus
- * possible (début trop proche). null s'il n'y a rien à dire.
+ * Paiement en ligne impossible (aucun moyen prêt) : message à la place du
+ * bouton, avec le nom de l'organisateur s'il est connu.
  */
-export function bankTransferUnavailableNote(
-  methods,
-  bankTransferAvailable,
-  { kind = "event", minLeadHours = 48 } = {},
+export function noPaymentMethodMessage(organizerName = "") {
+  const who = String(organizerName || "").trim();
+  return `Paiement en ligne indisponible pour le moment. Contactez ${who || "l'organisateur"} pour réserver.`;
+}
+
+/** Ordre d'affichage des moyens choisis par l'organisateur. */
+export const APPOINTMENT_PAYMENT_METHODS = [
+  "stripe",
+  "paypal",
+  "sumup",
+  BANK_TRANSFER,
+];
+
+/**
+ * Moyens cochés dans le tiroir d'un type payant : le choix enregistré, ou
+ * (choix absent : `null`) tous les moyens prêts de l'espace.
+ */
+export function chosenPaymentMethods(value, usable = []) {
+  return Array.isArray(value) ? value : [...usable];
+}
+
+/** Choix enregistré d'un type → champ du formulaire (null = tous). */
+export const paymentMethodsToForm = (type) =>
+  Array.isArray(type?.paymentMethods) ? [...type.paymentMethods] : null;
+
+/**
+ * Erreur du choix des moyens d'un type payant en ligne ou en acompte : au
+ * moins un moyen choisi ET prêt (null si bon, ou si les moyens prêts ne
+ * sont pas encore connus, ou si aucun n'est prêt : message à part).
+ */
+export function paymentMethodsFormError(form, usable = [], loaded = false) {
+  if (!loaded || usable.length === 0) return null;
+  if (form.paymentMode === "ON_SITE") return null;
+  const chosen = chosenPaymentMethods(form.paymentMethods, usable);
+  return chosen.some((method) => usable.includes(method))
+    ? null
+    : "Choisissez au moins un moyen de paiement.";
+}
+
+/**
+ * Moyens à envoyer à l'API : seulement si l'organisateur a choisi et que
+ * le choix diffère de celui enregistré (`initial`, null = tous), jamais
+ * pour un type gratuit (rien n'est réécrit sans modification réelle).
+ */
+export function paymentMethodsInputIfChanged(
+  form,
+  initial,
+  { paid = true } = {},
 ) {
-  if (!(methods || []).includes(BANK_TRANSFER)) return null;
-  if (bankTransferAvailable === true) return null;
-  const hours = Number(minLeadHours) > 0 ? Number(minLeadHours) : 48;
-  return kind === "slot"
-    ? `Le virement n'est possible que jusqu'à ${hours} h avant le rendez-vous.`
-    : `Le virement n'est possible que jusqu'à ${hours} h avant le début de l'événement.`;
+  if (!paid || !Array.isArray(form.paymentMethods)) return {};
+  const next = APPOINTMENT_PAYMENT_METHODS.filter((method) =>
+    form.paymentMethods.includes(method),
+  );
+  const before = Array.isArray(initial)
+    ? APPOINTMENT_PAYMENT_METHODS.filter((method) => initial.includes(method))
+    : null;
+  if (before && before.join() === next.join()) return {};
+  return { paymentMethods: next };
 }
 
 /** Réservation ou inscription en attente d'un virement. */
@@ -100,6 +184,14 @@ export function paymentStatus(
   }
   if (item.refundedAt) {
     return { label: `Remboursé${e}`, tone: "muted", detail: null };
+  }
+  // Virement repéré après la garde ou le début : l'organisateur décide
+  if (item.bankTransferReceivedAt && !item.paidAt) {
+    return {
+      label: "Virement reçu, à valider",
+      tone: "danger",
+      detail: `Reçu le ${shortDateTimeLabel(item.bankTransferReceivedAt, timeZone)}`,
+    };
   }
   if (item.status === "PENDING_PAYMENT") {
     if (item.paymentProvider === BANK_TRANSFER) {
