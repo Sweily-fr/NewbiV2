@@ -85,4 +85,33 @@ describe("GET /api/document-preview : validation", () => {
       new RegExp(`/documents/imported/importedInvoice/${ID}/file$`),
     );
   });
+
+  it("transmet ?download=1 à l'API et garde la pièce jointe", async () => {
+    const FILE = "650000000000000000000002";
+    fetchMock.mockResolvedValue(
+      new Response("%PDF", {
+        status: 200,
+        headers: {
+          "content-type": "application/pdf",
+          "content-disposition": 'attachment; filename="facture-42.pdf"',
+        },
+      }),
+    );
+    const res = await call("purchaseInvoice", ID, `?fileId=${FILE}&download=1`);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toMatch(
+      new RegExp(
+        `/documents/imported/purchaseInvoice/${ID}/file\\?fileId=${FILE}&download=1$`,
+      ),
+    );
+    expect(res.headers.get("content-disposition")).toBe(
+      'attachment; filename="facture-42.pdf"',
+    );
+  });
+
+  it("n'envoie pas download pour une autre valeur", async () => {
+    await call("purchaseInvoice", ID, "?download=oui");
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/file$/);
+  });
 });
