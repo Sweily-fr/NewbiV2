@@ -37,6 +37,7 @@ import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferenc
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import { CalendarDigestPreference } from "@/src/components/settings/calendar-digest-preference";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { NotificationIcon } from "@/src/components/notifications/notification-icon";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,7 +56,6 @@ import {
   Activity,
   ExternalLink,
   FileText as FileTextIcon,
-  Landmark,
 } from "lucide-react";
 import {
   Dialog,
@@ -878,12 +878,6 @@ export function NotificationsSection({ onClose }) {
           ) : (
             <div>
               {activityNotifications.map((notification, index) => {
-                const initialSource =
-                  notification.data?.actorName ||
-                  notification.data?.supplierName;
-                const initial = initialSource
-                  ? initialSource.charAt(0).toUpperCase()
-                  : "?";
                 const isLast = index === activityNotifications.length - 1;
 
                 return (
@@ -915,34 +909,9 @@ export function NotificationsSection({ onClose }) {
                       }
                     }}
                   >
-                    {/* Avatar */}
+                    {/* Logo de l'outil concerné */}
                     <div className="relative flex-shrink-0">
-                      {notification.type === "FISCAL_DEADLINE" ? (
-                        <div className="w-8 h-8 rounded-lg bg-[#5b4fff]/10 flex items-center justify-center text-[#5b4fff]">
-                          <Landmark className="w-4 h-4" aria-hidden="true" />
-                        </div>
-                      ) : notification.type === "TRANSFER_PAID" ? (
-                        // Paiement d'un transfert reçu : pas d'auteur
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                          <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                      ) : notification.type === "TRANSFER_BANK_DECLARED" ? (
-                        // Virement annoncé par le destinataire d'un transfert
-                        // (pas encore reçu) : pas d'auteur
-                        <div className="w-8 h-8 rounded-lg bg-[#5b4fff]/10 flex items-center justify-center text-[#5b4fff]">
-                          <Landmark className="w-4 h-4" aria-hidden="true" />
-                        </div>
-                      ) : notification.data?.actorImage ? (
-                        <img
-                          src={notification.data.actorImage}
-                          alt={notification.data.actorName}
-                          className="w-8 h-8 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-lg bg-[#5b4fff]/10 flex items-center justify-center text-xs font-medium text-[#5b4fff]">
-                          {initial}
-                        </div>
-                      )}
+                      <NotificationIcon notification={notification} />
                       {!notification.read && (
                         <div className="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-[#5b4eff] border-2 border-white dark:border-[#141414]" />
                       )}
@@ -950,14 +919,8 @@ export function NotificationsSection({ onClose }) {
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
-                      {notification.type === "PURCHASE_INVOICE_RECEIVED" ||
-                      notification.type === "DOCUMENT_IMPORTED" ||
-                      notification.type === "TRANSFER_PAID" ||
-                      notification.type === "TRANSFER_BANK_DECLARED" ||
-                      notification.type === "ACCESS_REQUESTED" ||
-                      notification.type === "FISCAL_DEADLINE" ||
-                      notification.type === "SOCIAL_POST_PUBLISHED" ||
-                      notification.type === "SOCIAL_POST_FAILED" ? (
+                      {notification.type !== "TASK_ASSIGNED" &&
+                      notification.type !== "MENTION" ? (
                         <>
                           <p className="text-sm truncate max-w-[600px] font-medium">
                             {notification.title || "Nouvelle facture reçue"}
