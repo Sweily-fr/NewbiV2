@@ -40,6 +40,10 @@ const attributionSchema = z
     lastPage: z.string().trim().max(500).optional(),
     capturedAt: z.number().int().positive().optional(),
     lastPageAt: z.number().int().positive().optional(),
+    // Choix du bandeau cookies au moment de l'inscription (readCookieChoice).
+    cookieChoice: z.enum(["accepted", "refused", "custom", "none"]).optional(),
+    cookieMarketing: z.boolean().optional(),
+    cookieChoiceAt: z.number().int().positive().optional(),
   })
   .strict();
 
@@ -62,8 +66,17 @@ async function handler(request) {
 
   // Une visite sans campagne (Google naturel, accès direct…) n'a qu'une page
   // d'arrivée, un site d'origine ou une dernière page : c'est une donnée.
+  // Le choix cookies seul n'est pas une provenance.
   const hasContent = Object.keys(data).some(
-    (k) => !["hadClickId", "capturedAt", "lastPageAt"].includes(k),
+    (k) =>
+      ![
+        "hadClickId",
+        "capturedAt",
+        "lastPageAt",
+        "cookieChoice",
+        "cookieMarketing",
+        "cookieChoiceAt",
+      ].includes(k),
   );
   if (!hasContent && !data.hadClickId) {
     return apiError(400, "Aucune donnée d'attribution");
@@ -73,6 +86,9 @@ async function handler(request) {
     ...data,
     capturedAt: data.capturedAt ? new Date(data.capturedAt) : undefined,
     lastPageAt: data.lastPageAt ? new Date(data.lastPageAt) : undefined,
+    cookieChoiceAt: data.cookieChoiceAt
+      ? new Date(data.cookieChoiceAt)
+      : undefined,
     recordedAt: new Date(),
   };
 
@@ -87,7 +103,7 @@ async function handler(request) {
   const recorded = result.modifiedCount === 1;
   if (recorded) {
     console.log(
-      `✅ [ATTRIBUTION] ${sessionUser.email}: ${data.utm_source || data.referrer || "direct"} / ${data.utm_campaign || data.lastPage || "?"}${data.gclid ? " (gclid)" : ""}`,
+      `✅ [ATTRIBUTION] ${sessionUser.email}: ${data.utm_source || data.referrer || "direct"} / ${data.utm_campaign || data.lastPage || "?"}${data.gclid ? " (gclid)" : ""}${data.cookieChoice ? ` [cookies: ${data.cookieChoice}]` : ""}`,
     );
   }
 
