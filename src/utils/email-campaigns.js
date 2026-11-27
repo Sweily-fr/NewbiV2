@@ -429,7 +429,7 @@ export function checkTarget(id) {
     return { section: "objet" };
   if (key.startsWith("audience")) return { section: "destinataires" };
   if (key.startsWith("legal")) return { settings: true };
-  if (/^(content|images|links|html_size|variables)/.test(key))
+  if (/^(content|images|links|html_size|variables|signature)/.test(key))
     return { editor: true };
   return null;
 }

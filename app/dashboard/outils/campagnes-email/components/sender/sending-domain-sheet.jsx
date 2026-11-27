@@ -49,6 +49,7 @@ import {
   expiryNotice,
   formatCheckTime,
   formatFullDay,
+  freeEmailExplanation,
   hostLabel,
   isExpiredSendingDomain,
   sendingDomainBadge,
@@ -170,7 +171,14 @@ function ConnectView({
   }, [suggestion]);
 
   const problem = checkSenderEmail(email, { newbiSenderEmail });
-  const error = serverError || (touched && problem ? problem.message : null);
+  // Adresse Gmail, Orange, Outlook… : une explication, pas une erreur,
+  // affichée dès que l'adresse est reconnue
+  const freeEmail =
+    problem?.code === "FREE_EMAIL_PROVIDER"
+      ? freeEmailExplanation(email, { newbiSenderEmail })
+      : null;
+  const error =
+    serverError || (touched && problem && !freeEmail ? problem.message : null);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -249,6 +257,13 @@ function ConnectView({
             {error ||
               "Une adresse de votre propre domaine, par exemple contact@votre-entreprise.fr."}
           </p>
+          {freeEmail && (
+            <Notice title={freeEmail.title} className="mt-1">
+              {freeEmail.before}
+              <Strong>{freeEmail.newbiSenderEmail}</Strong>
+              {freeEmail.after}
+            </Notice>
+          )}
         </form>
       ) : (
         <Notice>
