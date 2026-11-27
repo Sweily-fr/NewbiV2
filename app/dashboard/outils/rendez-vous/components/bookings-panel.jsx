@@ -18,10 +18,51 @@ import {
   longDateLabel,
   timeRangeLabel,
 } from "@/src/utils/booking";
+import { formatCents, registrationDueOnSite } from "@/src/utils/booking-events";
+import { paymentStatus } from "@/src/utils/booking-payments";
 import { CopyButton, LocationKindIcon } from "./shared";
+
+const CHIP_TONES = {
+  danger: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+  warning:
+    "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+  muted: "bg-muted text-muted-foreground",
+};
+
+/**
+ * Pastille de paiement d'une réservation payante : virement ou paiement en
+ * attente, à rembourser, reste à régler sur place. Rien pour un rendez-vous
+ * gratuit ou entièrement réglé.
+ */
+export function BookingPaymentChip({ booking, timeZone }) {
+  const status = paymentStatus(booking, { timeZone });
+  if (status) {
+    return (
+      <span
+        className={cn(
+          "inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+          CHIP_TONES[status.tone] || CHIP_TONES.muted,
+        )}
+      >
+        {status.label}
+      </span>
+    );
+  }
+  const due =
+    booking?.status === "CONFIRMED" ? registrationDueOnSite(booking) : 0;
+  if (due > 0) {
+    return (
+      <span className="inline-flex shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+        Reste sur place {formatCents(due, booking.currency)}
+      </span>
+    );
+  }
+  return null;
+}
 
 export const BOOKING_TABS = [
   { value: "upcoming", label: "À venir" },
+  { value: "pending", label: "En attente de paiement" },
   { value: "past", label: "Passées" },
   { value: "cancelled", label: "Annulées" },
 ];
@@ -30,6 +71,10 @@ const EMPTY_TEXT = {
   upcoming: {
     title: "Aucun rendez-vous à venir",
     text: "Partagez le lien de votre page : les réservations apparaîtront ici et dans votre Calendrier.",
+  },
+  pending: {
+    title: "Aucun paiement en attente",
+    text: "Les rendez-vous payants dont le paiement n'est pas encore arrivé (virement notamment) apparaissent ici.",
   },
   past: { title: "Aucun rendez-vous passé", text: null },
   cancelled: { title: "Aucun rendez-vous annulé", text: null },
@@ -79,11 +124,16 @@ function BookingRow({ booking, timeZone, onOpen }) {
           <span className="block truncate text-xs text-muted-foreground">
             {booking.guest?.email}
           </span>
+          <span className="mt-1 flex empty:hidden">
+            <BookingPaymentChip booking={booking} timeZone={timeZone} />
+          </span>
         </span>
         <span className="hidden min-w-0 md:block">
           <span className="block truncate text-sm">{booking.typeName}</span>
           <span className="block text-xs text-muted-foreground">
             {durationLabel(booking.durationMinutes)}
+            {booking.amount > 0 &&
+              ` · ${formatCents(booking.amount, booking.currency)}`}
           </span>
         </span>
         <span className="hidden min-w-0 items-center gap-1.5 text-sm text-muted-foreground md:flex">

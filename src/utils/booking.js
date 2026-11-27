@@ -166,7 +166,9 @@ export function groupSlotsByDay(slots, timeZone = DEFAULT_TIME_ZONE) {
   const byDay = {};
   for (const slot of sorted) {
     const key = dayKeyInZone(slot.start, timeZone);
+    // Champs de l'API gardés (bankTransferAvailable d'un créneau payant)
     (byDay[key] ||= []).push({
+      ...slot,
       start: slot.start,
       end: slot.end,
       time: timeInZone(slot.start, timeZone),
@@ -441,10 +443,10 @@ export function validateBookingForm(
   return errors;
 }
 
-/** Corps de POST /book, champs nettoyés. */
+/** Corps de POST /book, champs nettoyés (`provider` : créneau payant). */
 export function buildBookingPayload(
   values,
-  { start, timezone, turnstileToken = "", website = "" },
+  { start, timezone, provider = null, turnstileToken = "", website = "" },
 ) {
   const clean = (value) => String(value || "").trim();
   return {
@@ -457,6 +459,7 @@ export function buildBookingPayload(
       message: clean(values.message) || null,
     },
     timezone,
+    ...(provider ? { provider } : {}),
     turnstileToken,
     website,
   };
@@ -484,10 +487,11 @@ export function mapApiFieldErrors(fields) {
  * timezone, turnstileToken.
  */
 export function bookingValidationOutcome(fields) {
-  const { turnstileToken, start, timezone, ...inputs } =
+  const { turnstileToken, start, timezone, provider, ...inputs } =
     mapApiFieldErrors(fields);
   let message = "Certaines informations sont à corriger.";
   if (turnstileToken) message = turnstileToken;
+  else if (provider) message = provider;
   else if (start)
     message = "Ce créneau n'est plus réservable. Choisissez-en un autre.";
   else if (!Object.keys(inputs).length && timezone) message = timezone;
@@ -548,6 +552,8 @@ export function bookingListVariables(tab) {
   switch (tab) {
     case "past":
       return { scope: "past", status: "CONFIRMED" };
+    case "pending":
+      return { scope: "all", status: "PENDING_PAYMENT" };
     case "cancelled":
       return { scope: "all", status: "CANCELLED" };
     default:

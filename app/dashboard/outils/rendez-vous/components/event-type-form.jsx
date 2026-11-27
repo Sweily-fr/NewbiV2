@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  CalendarCheck,
-  CreditCard,
-  ImagePlus,
-  Info,
-  Loader2,
-  Trash2,
-  WalletCards,
-} from "lucide-react";
+import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import {
   SheetDescription,
   SheetFooter,
@@ -41,34 +33,13 @@ import {
   formatCents,
 } from "@/src/utils/booking-events";
 
-const PAYMENT_MODE_OPTIONS = [
-  {
-    value: "ONLINE",
-    title: "En ligne à l'inscription",
-    text: "Le participant paie tout en réservant",
-    Icon: CreditCard,
-  },
-  {
-    value: "DEPOSIT",
-    title: "Acompte en ligne, le reste sur place",
-    text: "Un acompte à la réservation, le solde le jour J",
-    Icon: WalletCards,
-  },
-  {
-    value: "ON_SITE",
-    title: "Sur place, le jour de l'événement",
-    text: "Inscription confirmée sans paiement en ligne",
-    Icon: CalendarCheck,
-  },
-];
 import {
   useEventMutations,
   useEventPaymentMethods,
 } from "@/src/hooks/useBooking";
 import { ColorSwatches, LocationKindIcon } from "./shared";
 import { DateTimeField } from "./date-time-fields";
-
-const PROVIDER_NAMES = { stripe: "Stripe", paypal: "PayPal", sumup: "SumUp" };
+import { PaymentModeFields } from "./payment-mode-fields";
 
 function Field({ id, label, hint, error, children, className }) {
   return (
@@ -298,13 +269,6 @@ export function EventTypeForm({
 
   const cents = eurosToCents(form.priceText);
   const isPaid = cents > 0;
-  const paysOnline = isPaid && form.paymentMode !== "ON_SITE";
-  const noPaymentMethod = paysOnline && methodsLoaded && methods.length === 0;
-  const depositCents = eurosToCents(form.depositText);
-  const depositHint =
-    isPaid && depositCents > 0 && depositCents < cents
-      ? `${formatCents(depositCents)} payés en ligne, ${formatCents(cents - depositCents)} sur place, par place`
-      : "Par place, payé en ligne à l'inscription";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -642,107 +606,15 @@ export function EventTypeForm({
               </div>
             </Field>
           </div>
-          {isPaid && (
-            <div className="space-y-2">
-              <p className="text-sm">Paiement</p>
-              <div
-                role="radiogroup"
-                aria-label="Paiement"
-                className="grid gap-2"
-              >
-                {PAYMENT_MODE_OPTIONS.map(({ value, title, text, Icon }) => {
-                  const selected = form.paymentMode === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => set("paymentMode")(value)}
-                      className={cn(
-                        "flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 text-left transition-colors",
-                        selected
-                          ? "border-[#5a50ff] bg-[#5a50ff]/5"
-                          : "hover:bg-muted/50",
-                      )}
-                    >
-                      <Icon
-                        className={cn(
-                          "mt-0.5 size-4 shrink-0",
-                          selected ? "text-[#5a50ff]" : "text-muted-foreground",
-                        )}
-                        aria-hidden="true"
-                      />
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium">
-                          {title}
-                        </span>
-                        <span className="block text-xs text-muted-foreground">
-                          {text}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {form.paymentMode === "DEPOSIT" && (
-                <Field
-                  id="event-deposit"
-                  label="Acompte par place (TTC)"
-                  hint={depositHint}
-                  error={visibleErrors.deposit}
-                  className="pt-2 sm:max-w-[calc(50%-0.5rem)]"
-                >
-                  <div className="relative">
-                    <Input
-                      id="event-deposit"
-                      inputMode="decimal"
-                      value={form.depositText}
-                      onChange={(event) =>
-                        set("depositText")(event.target.value)
-                      }
-                      placeholder="5"
-                      className="pr-8"
-                    />
-                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">
-                      €
-                    </span>
-                  </div>
-                </Field>
-              )}
-            </div>
-          )}
-          {isPaid && !paysOnline && (
-            <p className="flex gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-              <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              <span>
-                Aucun moyen de paiement connecté n&apos;est nécessaire. Vous
-                encaissez sur place, puis marquez l&apos;inscription réglée dans
-                la liste des inscrits ou au contrôle des billets.
-              </span>
-            </p>
-          )}
-          {paysOnline && (
-            <p
-              className={cn(
-                "flex gap-2 rounded-lg px-3 py-2 text-xs",
-                noPaymentMethod
-                  ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "bg-muted/50 text-muted-foreground",
-              )}
-            >
-              <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              <span>
-                {noPaymentMethod
-                  ? "Connectez Stripe, PayPal ou SumUp (Paramètres > Applications) pour vendre des billets."
-                  : methods.length > 0
-                    ? `Paiement encaissé directement sur votre compte ${methods
-                        .map((method) => PROVIDER_NAMES[method] || method)
-                        .join(", ")}, sans commission Newbi.`
-                    : "Paiement encaissé directement sur votre compte, sans commission Newbi."}
-              </span>
-            </p>
-          )}
+          <PaymentModeFields
+            kind="event"
+            idPrefix="event"
+            form={form}
+            set={set}
+            errors={visibleErrors}
+            methods={methods}
+            methodsLoaded={methodsLoaded}
+          />
           <label className="flex items-center justify-between gap-4 rounded-lg border p-3">
             <span>
               <span className="block text-sm">

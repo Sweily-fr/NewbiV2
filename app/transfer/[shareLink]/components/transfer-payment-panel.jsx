@@ -3,7 +3,6 @@
 import { useId, useState } from "react";
 import {
   ChevronDown,
-  Copy,
   CreditCard,
   Landmark,
   LoaderCircle,
@@ -13,8 +12,8 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
+import { BankTransferDetails } from "@/src/components/payments/bank-transfer-details";
 
 const KNOWN_METHODS = ["stripe", "sumup", "paypal", "bank_transfer"];
 
@@ -60,91 +59,12 @@ export function formatPaymentAmount(amount, currency = "EUR") {
   }
 }
 
-const formatIban = (iban) =>
-  String(iban || "")
-    .replace(/\s/g, "")
-    .toUpperCase()
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
-
-function DetailRow({ label, value, copyValue, highlight = false }) {
-  if (!value) return null;
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(String(copyValue ?? value));
-      toast.success(`${label} copié`);
-    } catch {
-      toast.error("Copie impossible, sélectionnez le texte à la main");
-    }
-  };
-  return (
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        <p className="text-[11px] text-gray-500">{label}</p>
-        <p
-          className={`text-xs break-all ${
-            highlight ? "font-semibold text-gray-900" : "text-gray-800"
-          }`}
-        >
-          {value}
-        </p>
-      </div>
-      {copyValue !== undefined && (
-        <button
-          type="button"
-          onClick={copy}
-          aria-label={`Copier ${label.toLowerCase()}`}
-          className="mt-1 flex-shrink-0 p-1 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
-        >
-          <Copy className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
-  );
-}
-
 // Délai d'accès annoncé sous le bouton d'un moyen de paiement
 function MethodDelay({ id, children }) {
   return (
     <p id={id} className="text-center text-[11px] text-gray-400">
       {children}
     </p>
-  );
-}
-
-// Coordonnées du virement du vendeur, avec la référence à indiquer
-function BankTransferDetails({ details, amount, formattedAmount, children }) {
-  return (
-    <div className="space-y-2.5 rounded-xl border border-gray-200 bg-gray-50 p-3 text-left">
-      <DetailRow label="Titulaire" value={details?.holder} />
-      <DetailRow
-        label="IBAN"
-        value={formatIban(details?.iban)}
-        copyValue={String(details?.iban || "").replace(/\s/g, "")}
-      />
-      <DetailRow
-        label="BIC"
-        value={details?.bic}
-        copyValue={details?.bic || undefined}
-      />
-      <DetailRow label="Banque" value={details?.bankName} />
-      <DetailRow
-        label="Référence à indiquer"
-        value={details?.reference}
-        copyValue={details?.reference || undefined}
-        highlight
-      />
-      <DetailRow
-        label="Montant"
-        value={formattedAmount}
-        copyValue={(Number(amount) || 0).toFixed(2).replace(".", ",")}
-      />
-      <p className="pt-1 text-[11px] leading-relaxed text-gray-500">
-        Indiquez la référence dans le libellé du virement : elle permet de
-        reconnaître votre paiement.
-      </p>
-      {children}
-    </div>
   );
 }
 

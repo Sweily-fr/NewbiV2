@@ -1,7 +1,10 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const CREATE_PRODUCT_CUSTOM_FIELD = gql`
-  mutation CreateProductCustomField($workspaceId: ID!, $input: CreateProductCustomFieldInput!) {
+  mutation CreateProductCustomField(
+    $workspaceId: ID!
+    $input: CreateProductCustomFieldInput!
+  ) {
     createProductCustomField(workspaceId: $workspaceId, input: $input) {
       id
       name
@@ -23,8 +26,16 @@ export const CREATE_PRODUCT_CUSTOM_FIELD = gql`
 `;
 
 export const UPDATE_PRODUCT_CUSTOM_FIELD = gql`
-  mutation UpdateProductCustomField($workspaceId: ID!, $id: ID!, $input: UpdateProductCustomFieldInput!) {
-    updateProductCustomField(workspaceId: $workspaceId, id: $id, input: $input) {
+  mutation UpdateProductCustomField(
+    $workspaceId: ID!
+    $id: ID!
+    $input: UpdateProductCustomFieldInput!
+  ) {
+    updateProductCustomField(
+      workspaceId: $workspaceId
+      id: $id
+      input: $input
+    ) {
       id
       name
       fieldType

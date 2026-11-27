@@ -8,8 +8,14 @@ import {
   unconfirmedRegistrationMessage,
 } from "@/src/utils/booking-events";
 import {
+  returnKindFromParams,
+  unconfirmedBookingMessage,
+} from "@/src/utils/booking-payments";
+import {
   bookingErrorText,
+  cancelBookingPayment,
   cancelEventPayment,
+  confirmBookingPayment,
   confirmEventPayment,
 } from "../_lib/booking-api";
 import { useGuestTimeZone } from "../_lib/use-guest-time-zone";
@@ -18,6 +24,7 @@ import {
   EventConfirmation,
   registrationPathFromUrl,
 } from "./event-confirmation";
+import { BookingConfirmation, managePathFromUrl } from "./booking-confirmation";
 
 // Le jeton de retour ne sert plus que 5 minutes après la confirmation :
 // le lien de gestion de la première réponse est gardé pour un rechargement
@@ -60,12 +67,15 @@ function Message({ title, text, action, busy }) {
 }
 
 /**
- * /rdv/<adresse>/<événement>/retour : retour du paiement. L'inscription
- * n'est confirmée qu'après vérification du paiement par l'API.
+ * /rdv/<adresse>/<type>/retour : retour du paiement d'une inscription à un
+ * événement, ou d'un créneau (kind=slot). L'inscription ou le rendez-vous
+ * n'est confirmé qu'après vérification du paiement par l'API.
  */
 export function EventReturnView({ slug, typeSlug, params }) {
   const [guestTimeZone] = useGuestTimeZone();
   const [state, setState] = useState({ status: "loading" });
+  const kind = returnKindFromParams(params);
+  const isSlot = kind === "slot";
   const request = returnRequestFromParams(params);
   const requestKey = JSON.stringify(request);
 
@@ -90,12 +100,15 @@ export function EventReturnView({ slug, typeSlug, params }) {
       try {
         // Retour après une annulation chez le prestataire : l'API ferme le
         // paiement et rend les places (premier appel seulement)
+        const [confirmPayment, cancelPayment] = isSlot
+          ? [confirmBookingPayment, cancelBookingPayment]
+          : [confirmEventPayment, cancelEventPayment];
         const verify =
-          body.canceled && attempts === 1
-            ? cancelEventPayment
-            : confirmEventPayment;
+          body.canceled && attempts === 1 ? cancelPayment : confirmPayment;
         const data = await verify(body, { signal: controller.signal });
-        if (data.registration?.status === "CONFIRMED") {
+        if (
+          (isSlot ? data.booking : data.registration)?.status === "CONFIRMED"
+        ) {
           rememberManageUrl(body.returnToken, data.manageUrl);
         }
         if (data.paymentStatus === "pending" && later()) {
@@ -119,7 +132,11 @@ export function EventReturnView({ slug, typeSlug, params }) {
           error?.code === "NOT_FOUND" && rememberedManageUrl(body.returnToken);
         if (manageUrl) {
           setState({ status: "loading" });
-          window.location.replace(registrationPathFromUrl(manageUrl));
+          window.location.replace(
+            isSlot
+              ? managePathFromUrl(manageUrl)
+              : registrationPathFromUrl(manageUrl),
+          );
           return;
         }
         setState({ status: "error", error });
@@ -130,7 +147,7 @@ export function EventReturnView({ slug, typeSlug, params }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [requestKey]);
+  }, [requestKey, isSlot]);
 
   const restartHref = `/rdv/${encodeURIComponent(slug)}/${encodeURIComponent(typeSlug)}`;
   const restart = (
@@ -138,12 +155,13 @@ export function EventReturnView({ slug, typeSlug, params }) {
       href={restartHref}
       className="mt-2 inline-flex items-center justify-center rounded-xl bg-[var(--rdv-accent)] px-5 py-2.5 text-sm font-medium text-[var(--rdv-on-accent)] transition-opacity hover:opacity-90"
     >
-      Revenir à l&apos;événement
+      {isSlot ? "Choisir un créneau" : "Revenir à l'événement"}
     </a>
   );
 
   const data = state.data;
   const registration = data?.registration;
+  const booking = data?.booking;
   let content;
   if (state.status === "loading") {
     content = (
@@ -179,10 +197,39 @@ export function EventReturnView({ slug, typeSlug, params }) {
         }
         text={
           state.error?.code === "NOT_FOUND"
-            ? "Si vous avez payé, vos billets vous ont été envoyés par e-mail."
+            ? isSlot
+              ? "Si vous avez payé, la confirmation du rendez-vous vous a été envoyée par e-mail."
+              : "Si vous avez payé, vos billets vous ont été envoyés par e-mail."
             : bookingErrorText(state.error)
         }
         action={restart}
+      />
+    );
+  } else if (isSlot && booking?.status === "CONFIRMED") {
+    content = (
+      <BookingConfirmation
+        result={{
+          booking,
+          manageUrl: data.manageUrl,
+          icsUrl: data.icsUrl,
+        }}
+        guestTimeZone={guestTimeZone}
+        heading="Paiement confirmé, rendez-vous réservé"
+      />
+    );
+  } else if (isSlot) {
+    const message = unconfirmedBookingMessage({
+      booking,
+      paymentStatus: data?.paymentStatus,
+      refundStatus: data?.refundStatus,
+      canceledByPayer: Boolean(request?.canceled),
+      organizerName: booking?.page?.organizationName || booking?.page?.title,
+    });
+    content = (
+      <Message
+        title={message.title}
+        text={message.text}
+        action={message.restart ? restart : null}
       />
     );
   } else if (registration?.status === "CONFIRMED") {
@@ -213,7 +260,9 @@ export function EventReturnView({ slug, typeSlug, params }) {
   }
 
   return (
-    <BookingShell accentColor={registration?.page?.accentColor}>
+    <BookingShell
+      accentColor={(isSlot ? booking : registration)?.page?.accentColor}
+    >
       <BookingCard className="mx-auto max-w-2xl">
         <div className="px-5 py-8 sm:px-10 sm:py-12">{content}</div>
       </BookingCard>

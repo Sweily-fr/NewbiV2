@@ -14,7 +14,18 @@ import {
   timeZoneLabel,
   validateBookingForm,
 } from "@/src/utils/booking";
+import { formatCents, orderedPaymentMethods } from "@/src/utils/booking-events";
+import {
+  BANK_TRANSFER,
+  bankTransferUnavailableNote,
+  offeredPaymentMethods,
+  slotAmounts,
+  slotNeedsOnlinePayment,
+  slotSubmitLabel,
+} from "@/src/utils/booking-payments";
 import { bookAppointment, bookingErrorText } from "../_lib/booking-api";
+import { managePathFromUrl } from "./booking-confirmation";
+import { PaymentMethodChoice } from "./payment-method-choice";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -82,11 +93,29 @@ export function BookingForm({
   type,
   slot,
   guestTimeZone,
+  embed = false,
   onBack,
   onBooked,
   onSlotTaken,
 }) {
   const phoneRequired = isPhoneRequired(type);
+  // Créneau payant : paiement en ligne (total ou acompte) avant confirmation
+  const payment = type.payment || null;
+  const paid = slotNeedsOnlinePayment(payment);
+  const amounts = slotAmounts(payment);
+  // Virement seulement si l'API le permet pour ce créneau (48 h avant au
+  // moins) : `bankTransferAvailable` du créneau choisi
+  const connectedMethods = orderedPaymentMethods(payment?.paymentMethods);
+  const methods = offeredPaymentMethods(
+    connectedMethods,
+    slot?.bankTransferAvailable,
+  );
+  const bankTransferNote = bankTransferUnavailableNote(
+    connectedMethods,
+    slot?.bankTransferAvailable,
+    { kind: "slot", minLeadHours: payment?.bankTransferMinLeadHours },
+  );
+  const [provider, setProvider] = useState(methods[0] || null);
   const [values, setValues] = useState({
     firstName: "",
     lastName: "",
@@ -122,6 +151,10 @@ export function BookingForm({
       document.getElementById(`rdv-${first}`)?.focus();
       return;
     }
+    if (paid && !provider) {
+      setFormError("Choisissez un moyen de paiement.");
+      return;
+    }
     if (TURNSTILE_SITE_KEY && !turnstileToken) {
       setFormError(
         "Patientez pendant la vérification anti-robot, puis réessayez.",
@@ -130,6 +163,9 @@ export function BookingForm({
     }
 
     setSubmitting(true);
+    // Départ vers le paiement : le bouton reste en attente jusqu'au changement
+    // de page
+    let leaving = false;
     try {
       const result = await bookAppointment(
         slug,
@@ -137,10 +173,25 @@ export function BookingForm({
         buildBookingPayload(values, {
           start: slot.start,
           timezone: guestTimeZone,
+          provider: paid ? provider : null,
           turnstileToken,
           website: honeypot,
         }),
       );
+      if (result?.status === "PENDING_PAYMENT" && result.paymentUrl) {
+        // Paiement chez le prestataire de l'organisateur ; retour sur /retour
+        leaving = true;
+        window.location.assign(result.paymentUrl);
+        return;
+      }
+      if (result?.status === "PENDING_PAYMENT" && result.manageUrl) {
+        // Virement : coordonnées sur la page du rendez-vous (lien permanent,
+        // aussi envoyé par e-mail)
+        leaving = true;
+        const path = managePathFromUrl(result.manageUrl);
+        window.location.assign(embed ? `${path}?embed=1` : path);
+        return;
+      }
       onBooked?.(result, values);
     } catch (error) {
       resetTurnstile();
@@ -156,7 +207,7 @@ export function BookingForm({
       }
       setFormError(bookingErrorText(error));
     } finally {
-      setSubmitting(false);
+      if (!leaving) setSubmitting(false);
     }
   };
 
@@ -269,6 +320,17 @@ export function BookingForm({
         />
       </Field>
 
+      {paid && (
+        <PaymentMethodChoice
+          name="rdv-provider"
+          kind="slot"
+          methods={methods}
+          value={provider}
+          onChange={setProvider}
+          note={bankTransferNote}
+        />
+      )}
+
       {/* Pot de miel : invisible pour les personnes, rempli par les robots */}
       <div
         style={{ position: "absolute", left: "-9999px", top: "-9999px" }}
@@ -308,15 +370,29 @@ export function BookingForm({
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || (paid && methods.length === 0)}
         className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--rdv-accent)] px-6 py-3 text-base font-medium text-[var(--rdv-on-accent)] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-60 sm:text-sm"
       >
         {submitting && (
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         )}
-        {submitting ? "Réservation en cours" : "Confirmer le rendez-vous"}
+        {submitting
+          ? paid && provider !== BANK_TRANSFER
+            ? "Redirection vers le paiement"
+            : "Réservation en cours"
+          : slotSubmitLabel(payment)}
       </button>
+      {amounts.onSite > 0 && (
+        <p className="text-center text-sm text-gray-600">
+          {amounts.mode === "DEPOSIT"
+            ? `Reste ${formatCents(amounts.onSite, payment.price.currency)} à régler sur place, au rendez-vous.`
+            : `${formatCents(amounts.onSite, payment.price.currency)} à régler sur place, au rendez-vous.`}
+        </p>
+      )}
       <p className="text-center text-xs text-gray-400">
+        {paid
+          ? "Paiement sécurisé, encaissé directement par votre interlocuteur. "
+          : ""}
         Vos coordonnées sont transmises à votre interlocuteur uniquement pour ce
         rendez-vous.
       </p>

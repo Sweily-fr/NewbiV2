@@ -1,7 +1,10 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const CREATE_CLIENT_CUSTOM_FIELD = gql`
-  mutation CreateClientCustomField($workspaceId: ID!, $input: ClientCustomFieldInput!) {
+  mutation CreateClientCustomField(
+    $workspaceId: ID!
+    $input: ClientCustomFieldInput!
+  ) {
     createClientCustomField(workspaceId: $workspaceId, input: $input) {
       id
       name
@@ -24,7 +27,11 @@ export const CREATE_CLIENT_CUSTOM_FIELD = gql`
 `;
 
 export const UPDATE_CLIENT_CUSTOM_FIELD = gql`
-  mutation UpdateClientCustomField($workspaceId: ID!, $id: ID!, $input: ClientCustomFieldInput!) {
+  mutation UpdateClientCustomField(
+    $workspaceId: ID!
+    $id: ID!
+    $input: ClientCustomFieldInput!
+  ) {
     updateClientCustomField(workspaceId: $workspaceId, id: $id, input: $input) {
       id
       name

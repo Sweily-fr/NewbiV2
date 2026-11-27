@@ -19,8 +19,17 @@ import {
   timeZoneLabel,
 } from "@/src/utils/booking";
 import {
+  registrationPayment,
+  registrationPaymentLine,
+} from "@/src/utils/booking-events";
+import {
+  isAwaitingBankTransfer,
+  unconfirmedBookingMessage,
+} from "@/src/utils/booking-payments";
+import {
   bookingErrorText,
   cancelManagedBooking,
+  declareBookingBankTransfer,
   fetchAppointmentType,
   fetchManagedBooking,
   manageIcsUrl,
@@ -32,6 +41,7 @@ import { LocationIcon } from "./appointment-details";
 import { SlotPicker } from "./slot-picker";
 import { SelectedSlotSummary } from "./booking-form";
 import { RdvPageSkeleton } from "./rdv-page-skeleton";
+import { BankTransferPanel } from "./bank-transfer-panel";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -52,6 +62,22 @@ function StatusBadge({ booking, guestTimeZone }) {
       </span>
     );
   }
+  if (booking.status === "PENDING_PAYMENT") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+        {isAwaitingBankTransfer(booking)
+          ? "Virement en attente"
+          : "Paiement en attente"}
+      </span>
+    );
+  }
+  if (booking.status === "EXPIRED") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+        Expiré
+      </span>
+    );
+  }
   const past = new Date(booking.endAt) < new Date();
   return (
     <span
@@ -68,7 +94,7 @@ function StatusBadge({ booking, guestTimeZone }) {
 }
 
 function BookingSummary({ booking, guestTimeZone }) {
-  const cancelled = booking.status === "CANCELLED";
+  const cancelled = ["CANCELLED", "EXPIRED"].includes(booking.status);
   return (
     <div className="space-y-3 rounded-2xl border border-gray-200 p-5 text-sm">
       <p className="text-base font-medium text-gray-900">
@@ -92,6 +118,11 @@ function BookingSummary({ booking, guestTimeZone }) {
           {booking.locationLabel || locationKindLabel(booking.locationKind)}
         </span>
       </div>
+      {booking.amount > 0 && (
+        <p className="font-medium text-gray-800">
+          {registrationPaymentLine(booking)}
+        </p>
+      )}
       {!cancelled && booking.meetingUrl && (
         <a
           href={booking.meetingUrl}
@@ -156,6 +187,33 @@ export function ManageBookingView({ token, embed = false }) {
 
   const { booking } = state;
   const page = booking.page || {};
+
+  const organizerName = page.organizationName || page.title;
+  // Payé en ligne (total ou acompte) : annulation par l'organisateur seul
+  const paidOnline = registrationPayment(booking).online > 0;
+  const awaitingTransfer =
+    isAwaitingBankTransfer(booking) &&
+    Boolean(booking.bankTransfer) &&
+    !["REFUNDED", "MANUAL"].includes(booking.refundStatus);
+  // En attente (hors virement), expiré, ou payé sans rendez-vous
+  let unconfirmedNotice = null;
+  if (["REFUNDED", "MANUAL"].includes(booking.refundStatus)) {
+    unconfirmedNotice = unconfirmedBookingMessage({ booking, organizerName });
+  } else if (booking.status === "PENDING_PAYMENT" && !awaitingTransfer) {
+    unconfirmedNotice = unconfirmedBookingMessage({ booking, organizerName });
+  } else if (booking.status === "EXPIRED") {
+    unconfirmedNotice = {
+      title:
+        booking.paymentProvider === "bank_transfer"
+          ? "Virement non reçu à temps"
+          : "Paiement non abouti à temps",
+      text:
+        booking.paymentProvider === "bank_transfer"
+          ? "Le virement n'est pas arrivé avant l'échéance : le créneau a été libéré et le rendez-vous n'est pas enregistré."
+          : "Le paiement n'a pas abouti à temps : le créneau a été libéré et le rendez-vous n'est pas enregistré.",
+      restart: true,
+    };
+  }
 
   // Rendez-vous passé ou annulé entre-temps (NOT_ALLOWED) : état relu
   const refreshBooking = () =>
@@ -298,6 +356,27 @@ export function ManageBookingView({ token, embed = false }) {
             <>
               <BookingSummary booking={booking} guestTimeZone={guestTimeZone} />
 
+              {unconfirmedNotice && (
+                <div className="space-y-1 rounded-xl bg-gray-50 px-4 py-3 text-sm">
+                  <p className="font-medium text-gray-900">
+                    {unconfirmedNotice.title}
+                  </p>
+                  <p className="text-gray-600">{unconfirmedNotice.text}</p>
+                </div>
+              )}
+
+              {awaitingTransfer && (
+                <BankTransferPanel
+                  bankTransfer={booking.bankTransfer}
+                  kind="slot"
+                  organizerName={organizerName}
+                  timeZone={guestTimeZone}
+                  onDeclare={(cancel) =>
+                    declareBookingBankTransfer(token, { cancel })
+                  }
+                />
+              )}
+
               {actionError && (
                 <p
                   role="alert"
@@ -351,6 +430,15 @@ export function ManageBookingView({ token, embed = false }) {
                 )}
 
               {booking.status === "CONFIRMED" &&
+                !booking.canCancel &&
+                booking.canReschedule &&
+                paidOnline && (
+                  <p className="text-sm text-gray-500">
+                    Pour annuler, contactez l&apos;organisateur.
+                  </p>
+                )}
+
+              {booking.status === "CONFIRMED" &&
                 new Date(booking.endAt) > new Date() && (
                   <a
                     href={manageIcsUrl(token)}
@@ -362,17 +450,20 @@ export function ManageBookingView({ token, embed = false }) {
                   </a>
                 )}
 
-              {booking.status === "CANCELLED" && page.slug && (
-                <a
-                  href={`/rdv/${encodeURIComponent(page.slug)}${embed ? "?embed=1" : ""}`}
-                  className={cn(
-                    buttonBase,
-                    "bg-[var(--rdv-accent)] text-[var(--rdv-on-accent)] hover:opacity-90",
-                  )}
-                >
-                  Prendre un nouveau rendez-vous
-                </a>
-              )}
+              {(booking.status === "CANCELLED" ||
+                (booking.status === "EXPIRED" &&
+                  unconfirmedNotice?.restart !== false)) &&
+                page.slug && (
+                  <a
+                    href={`/rdv/${encodeURIComponent(page.slug)}${embed ? "?embed=1" : ""}`}
+                    className={cn(
+                      buttonBase,
+                      "bg-[var(--rdv-accent)] text-[var(--rdv-on-accent)] hover:opacity-90",
+                    )}
+                  >
+                    Prendre un nouveau rendez-vous
+                  </a>
+                )}
             </>
           )}
 
