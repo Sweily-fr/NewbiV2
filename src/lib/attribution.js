@@ -181,6 +181,40 @@ export function rememberLastPage(pathname) {
   writeStoredAttribution(record);
 }
 
+// Choix fait dans le bandeau cookies au moment de l'inscription, joint à la
+// provenance pour savoir, dans l'admin, quelle part des inscrits a accepté
+// les cookies marketing (sans eux, Google Ads ne voit la conversion qu'en
+// modélisation). Lu au moment de l'envoi, pas à l'arrivée : la personne a pu
+// répondre au bandeau entre les deux.
+//   accepted : tout accepté ; refused : tout refusé (hors nécessaires) ;
+//   custom : choix détaillé depuis /cookies ; none : bandeau sans réponse.
+export function readCookieChoice() {
+  let consent = null;
+  let decidedAt;
+  try {
+    const raw = localStorage.getItem("cookie_consent");
+    consent = raw ? JSON.parse(raw) : null;
+    const date = Date.parse(localStorage.getItem("cookie_consent_date") || "");
+    if (Number.isFinite(date) && date > 0) decidedAt = date;
+  } catch {
+    consent = null;
+  }
+  if (!consent || typeof consent !== "object") {
+    return { cookieChoice: "none", cookieMarketing: false };
+  }
+  const optional = ["functional", "analytics", "marketing"].map(
+    (k) => consent[k] === true,
+  );
+  let cookieChoice = "custom";
+  if (optional.every(Boolean)) cookieChoice = "accepted";
+  else if (!optional.some(Boolean)) cookieChoice = "refused";
+  return {
+    cookieChoice,
+    cookieMarketing: consent.marketing === true,
+    ...(decidedAt ? { cookieChoiceAt: decidedAt } : {}),
+  };
+}
+
 // Envoie l'attribution stockée pour le compte fraîchement créé. Une seule
 // fois par utilisateur (clé locale), et seulement s'il y a quelque chose.
 export async function sendAttribution(userId) {
@@ -198,7 +232,7 @@ export async function sendAttribution(userId) {
     const res = await fetch("/api/attribution", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(stored),
+      body: JSON.stringify({ ...stored, ...readCookieChoice() }),
       keepalive: true,
     });
     if (!res.ok) return false;

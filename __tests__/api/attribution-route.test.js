@@ -70,6 +70,34 @@ describe("POST /api/attribution", () => {
     expect(updateOne).toHaveBeenCalledTimes(1);
   });
 
+  it("enregistre le choix cookies de l'inscription", async () => {
+    const res = await post({
+      gclid: "abc",
+      landingPage: "/lp/facture",
+      cookieChoice: "accepted",
+      cookieMarketing: true,
+      cookieChoiceAt: 1761900000000,
+    });
+    expect(res.status).toBe(200);
+    const [, update] = updateOne.mock.calls[0];
+    expect(update.$set.acquisition).toMatchObject({
+      cookieChoice: "accepted",
+      cookieMarketing: true,
+    });
+    expect(update.$set.acquisition.cookieChoiceAt).toBeInstanceOf(Date);
+  });
+
+  it("refuse un choix cookies seul, sans provenance", async () => {
+    const res = await post({ cookieChoice: "none", cookieMarketing: false });
+    expect(res.status).toBe(400);
+    expect(updateOne).not.toHaveBeenCalled();
+  });
+
+  it("refuse un choix cookies inconnu", async () => {
+    const res = await post({ lastPage: "/tarifs", cookieChoice: "yes" });
+    expect(res.status).toBe(400);
+  });
+
   it("refuse un envoi sans aucune donnée", async () => {
     const res = await post({ capturedAt: 1761900000000, lastPageAt: 1 });
     expect(res.status).toBe(400);
