@@ -841,6 +841,16 @@
   --color-rose-950: var(--cb-danger-950);
 }
 
+/* Bulles de compteur rouges (Accueil : « Factures en retard »,
+   « Notifications non lues ») : mêmes couleurs que les badges négatifs
+   existants (statuts Annulé/Rejeté : bg-red-100 text-red-700).
+   Dans @layer utilities : un !important hors couche perd contre le
+   !important de Tailwind (ordre des couches inversé pour !important). */
+@layer utilities {
+  .colorblind-mode .\!bg-red-500\/15 { background-color: var(--cb-danger-100) !important; }
+  .colorblind-mode .\!text-red-600 { color: var(--cb-danger-700) !important; }
+}
+
 /* --- Toaster Sonner ------------------------------------------------------ */
 .colorblind-mode [data-sonner-toast][data-type="success"] {
   --normal-bg: var(--cb-success-50);
