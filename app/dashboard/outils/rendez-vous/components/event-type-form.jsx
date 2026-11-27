@@ -32,6 +32,10 @@ import {
   eventTypeToForm,
   formatCents,
 } from "@/src/utils/booking-events";
+import {
+  paymentMethodsFormError,
+  paymentMethodsInputIfChanged,
+} from "@/src/utils/booking-payments";
 
 import {
   useEventMutations,
@@ -215,7 +219,11 @@ export function EventTypeForm({
   const [slugTouched, setSlugTouched] = useState(isEdit);
   const [showErrors, setShowErrors] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { methods, loaded: methodsLoaded } = useEventPaymentMethods({
+  const {
+    methods,
+    loaded: methodsLoaded,
+    refetch: refetchMethods,
+  } = useEventPaymentMethods({
     skip: !open,
   });
 
@@ -236,11 +244,17 @@ export function EventTypeForm({
       isCreation: !isEdit,
       seatsTaken: type?.seatsTaken || 0,
     });
+    // Payant en ligne ou en acompte : au moins un moyen choisi et prêt
+    const methodsError =
+      eurosToCents(form.priceText) > 0
+        ? paymentMethodsFormError(form, methods, methodsLoaded)
+        : null;
+    if (methodsError) found.paymentMethods = methodsError;
     if (!found.slug && otherSlugs.includes(form.slug)) {
       found.slug = "Un autre type utilise déjà cette adresse";
     }
     return found;
-  }, [form, otherSlugs, timeZone, isEdit, type]);
+  }, [form, otherSlugs, timeZone, isEdit, type, methods, methodsLoaded]);
   const visibleErrors = showErrors ? errors : {};
 
   const set = (key) => (value) =>
@@ -281,13 +295,20 @@ export function EventTypeForm({
     setSaving(true);
     try {
       const saved = await onSave(
-        eventFormToInput(form, {
-          timeZone,
-          isCreation: !isEdit,
-          initialPriceCents: type?.price?.amount,
-          initialPaymentMode: type?.paymentMode,
-          initialDepositAmount: type?.depositAmount,
-        }),
+        {
+          ...eventFormToInput(form, {
+            timeZone,
+            isCreation: !isEdit,
+            initialPriceCents: type?.price?.amount,
+            initialPaymentMode: type?.paymentMode,
+            initialDepositAmount: type?.depositAmount,
+          }),
+          // Moyens proposés : envoyés seulement si l'organisateur les a
+          // changés (absent = tous les moyens prêts)
+          ...paymentMethodsInputIfChanged(form, type?.paymentMethods, {
+            paid: isPaid,
+          }),
+        },
         type,
       );
       if (saved) onClose();
@@ -614,6 +635,7 @@ export function EventTypeForm({
             errors={visibleErrors}
             methods={methods}
             methodsLoaded={methodsLoaded}
+            refetchMethods={refetchMethods}
           />
           <label className="flex items-center justify-between gap-4 rounded-lg border p-3">
             <span>

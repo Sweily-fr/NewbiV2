@@ -4,6 +4,7 @@ import { CreditCard, Landmark } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   BANK_TRANSFER,
+  noPaymentMethodMessage,
   paymentMethodDelay,
   paymentMethodLabel,
 } from "@/src/utils/booking-payments";
@@ -11,7 +12,9 @@ import {
 /**
  * Choix du moyen de paiement (événement ou créneau payant) : un bouton
  * radio par moyen connecté de l'organisateur, avec le délai annoncé dessous
- * (immédiat en ligne, 3 jours de tenue pour un virement).
+ * (immédiat en ligne ; virement : garde jusqu'à min(3 jours, début) et
+ * virement instantané conseillé quand le début est proche). Aucun moyen
+ * prêt : message à la place de la liste (le bouton est retiré).
  */
 export function PaymentMethodChoice({
   name,
@@ -20,8 +23,11 @@ export function PaymentMethodChoice({
   onChange,
   kind = "event",
   disabled = false,
-  // Phrase sous la liste (virement plus possible, début trop proche)
-  note = null,
+  // Début du créneau ou de l'événement : fin de la garde d'un virement
+  startAt = null,
+  timeZone,
+  // Aucun moyen prêt : message avec le nom de l'organisateur
+  organizerName = "",
 }) {
   return (
     <fieldset className="space-y-2" disabled={disabled}>
@@ -30,8 +36,7 @@ export function PaymentMethodChoice({
       </legend>
       {methods.length === 0 ? (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Le paiement en ligne n&apos;est pas disponible pour le moment.
-          Contactez l&apos;organisateur.
+          {noPaymentMethodMessage(organizerName)}
         </p>
       ) : (
         methods.map((method) => {
@@ -72,14 +77,16 @@ export function PaymentMethodChoice({
                   id={delayId}
                   className="mt-0.5 block text-xs text-gray-500"
                 >
-                  {paymentMethodDelay(method, kind)}
+                  {paymentMethodDelay(method, kind, {
+                    startAt,
+                    ...(timeZone ? { timeZone } : {}),
+                  })}
                 </span>
               </span>
             </label>
           );
         })
       )}
-      {note && <p className="text-xs text-gray-500">{note}</p>}
     </fieldset>
   );
 }

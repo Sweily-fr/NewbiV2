@@ -5,6 +5,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { cn } from "@/src/lib/utils";
 import { eurosToCents, formatCents } from "@/src/utils/booking-events";
+import { PaymentMethodsField } from "./payment-methods-field";
 
 export const PROVIDER_NAMES = {
   stripe: "Stripe",
@@ -68,8 +69,10 @@ export function connectedMethodsLabel(methods) {
 
 /**
  * Mode de paiement d'un type payant (en ligne, acompte, sur place), acompte
- * et rappel des moyens connectés. `kind` : « event » (montants par place)
- * ou « slot ». Le champ du prix reste dans chaque formulaire.
+ * et moyens proposés au payeur (cases à cocher, comme les transferts
+ * payants). `kind` : « event » (montants par place) ou « slot ». Le champ
+ * du prix reste dans chaque formulaire. `methods` : moyens prêts de
+ * l'espace ; `refetchMethods` : relecture au retour sur l'onglet.
  */
 export function PaymentModeFields({
   kind = "event",
@@ -79,6 +82,7 @@ export function PaymentModeFields({
   errors = {},
   methods = [],
   methodsLoaded = false,
+  refetchMethods,
 }) {
   const perSeat = kind === "event";
   const cents = eurosToCents(form.priceText);
@@ -173,6 +177,18 @@ export function PaymentModeFields({
         </p>
       )}
       {paysOnline && (
+        <PaymentMethodsField
+          kind={kind}
+          idPrefix={idPrefix}
+          form={form}
+          set={set}
+          error={errors.paymentMethods}
+          usable={methods}
+          usableLoaded={methodsLoaded}
+          refetchUsable={refetchMethods}
+        />
+      )}
+      {paysOnline && (
         <p
           className={cn(
             "flex gap-2 rounded-lg px-3 py-2 text-xs",
@@ -187,9 +203,7 @@ export function PaymentModeFields({
               ? perSeat
                 ? "Connectez Stripe, PayPal ou SumUp (Paramètres > Applications), ou renseignez votre IBAN, pour vendre des billets."
                 : "Connectez Stripe, PayPal ou SumUp (Paramètres > Applications), ou renseignez votre IBAN, pour encaisser en ligne."
-              : methods.length > 0
-                ? `Paiement encaissé directement sur votre compte (${connectedMethodsLabel(methods)}), sans commission Newbi.`
-                : "Paiement encaissé directement sur votre compte, sans commission Newbi."}
+              : "Paiement encaissé directement sur votre compte, sans commission Newbi."}
           </span>
         </p>
       )}
