@@ -4,7 +4,7 @@ import { CreditCard, LoaderCircle } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
-import { Checkbox } from "@/src/components/ui/checkbox";
+import { PaymentMethodsChecklist } from "@/src/components/payments/payment-methods-checklist";
 import {
   Select,
   SelectContent,
@@ -70,57 +70,6 @@ export function defaultTransferPaymentMethods(availableMethods = []) {
   return availableMethods.includes("bank_transfer") ? ["bank_transfer"] : [];
 }
 
-function ConnectLink({ onClick, children, disabled }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="text-xs font-medium text-[#5b4fff] hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer"
-    >
-      {children}
-    </button>
-  );
-}
-
-function MethodRow({
-  id,
-  label,
-  checked,
-  disabled,
-  onCheckedChange,
-  children,
-}) {
-  return (
-    <div
-      className={cn(
-        "flex items-start gap-3 rounded-lg border px-3 py-2.5",
-        disabled ? "bg-muted/40" : "bg-background",
-      )}
-    >
-      <Checkbox
-        id={id}
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={(value) => onCheckedChange(value === true)}
-        className="mt-0.5"
-      />
-      <div className="min-w-0 space-y-0.5">
-        <Label
-          htmlFor={id}
-          className={cn(
-            "text-sm font-normal",
-            disabled ? "text-muted-foreground" : "cursor-pointer",
-          )}
-        >
-          {label}
-        </Label>
-        <div className="text-xs text-muted-foreground">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 /**
  * Option « Demander un paiement » d'un nouveau transfert : montant, devise
  * et moyens proposés au destinataire. Les fichiers se débloquent une fois
@@ -146,12 +95,6 @@ export function TransferPaymentOptions({
   const currency =
     TRANSFER_PAYMENT_CURRENCIES.find((c) => c.code === value.paymentCurrency) ||
     TRANSFER_PAYMENT_CURRENCIES[0];
-  const stripe = connections.stripe;
-  const paypal = connections.paypal;
-  // Réponse d'une API sans SumUp : rien à proposer
-  const sumup = connections.sumup || {};
-  const sumupUsable = availableMethods.includes("sumup");
-  const bank = connections.bankTransfer;
 
   const toggleMethod = (method, checked) => {
     const next = checked
@@ -188,147 +131,6 @@ export function TransferPaymentOptions({
     value.isPaymentRequired &&
     !connectionsLoading &&
     selected.filter((m) => availableMethods.includes(m)).length === 0;
-
-  // Rôle sans « Gérer les applications » : il ne peut pas connecter un moyen
-  const askAdmin = (
-    <span>Demandez à un administrateur de l&apos;espace de le connecter.</span>
-  );
-
-  const stripeHint = (() => {
-    if (stripe.ready) {
-      return (
-        <span>
-          Sur votre compte Stripe
-          {stripe.displayName || stripe.accountEmail
-            ? ` ${stripe.displayName || stripe.accountEmail}`
-            : ""}
-          .
-        </span>
-      );
-    }
-    if (!stripe.oauthAvailable) {
-      return <span>Bientôt disponible pour votre espace.</span>;
-    }
-    if (stripe.connected && !stripe.legacy) {
-      return (
-        <span className="flex flex-wrap items-center gap-x-1.5">
-          Terminez l&apos;activation de votre compte sur Stripe.
-          {onOpenStripeDashboard && (
-            <ConnectLink onClick={onOpenStripeDashboard}>
-              Ouvrir Stripe
-            </ConnectLink>
-          )}
-        </span>
-      );
-    }
-    if (!canManageConnections) return askAdmin;
-    return (
-      <span className="flex flex-wrap items-center gap-x-1.5">
-        {stripe.legacy
-          ? "Reconnectez votre propre compte Stripe pour encaisser vos transferts."
-          : "Connectez votre compte Stripe."}
-        <ConnectLink onClick={onConnectStripe} disabled={isConnectingStripe}>
-          {isConnectingStripe ? (
-            <span className="inline-flex items-center gap-1">
-              <LoaderCircle className="size-3 animate-spin" />
-              Connexion…
-            </span>
-          ) : stripe.legacy ? (
-            "Reconnecter"
-          ) : (
-            "Connecter"
-          )}
-        </ConnectLink>
-      </span>
-    );
-  })();
-
-  const connectSumupLink = (label) => (
-    <ConnectLink onClick={onConnectSumup} disabled={isConnectingSumup}>
-      {isConnectingSumup ? (
-        <span className="inline-flex items-center gap-1">
-          <LoaderCircle className="size-3 animate-spin" />
-          Connexion…
-        </span>
-      ) : (
-        label
-      )}
-    </ConnectLink>
-  );
-
-  // SumUp : compte marchand du vendeur, connecté par OAuth ; une seule
-  // devise encaissable (celle du compte)
-  const sumupHint = (() => {
-    if (sumup.connected && sumup.needsReconnect) {
-      if (!canManageConnections) {
-        return (
-          <span>
-            La connexion SumUp a expiré. Demandez à un administrateur de
-            l&apos;espace de la renouveler.
-          </span>
-        );
-      }
-      return (
-        <span className="flex flex-wrap items-center gap-x-1.5">
-          La connexion à votre compte SumUp a expiré.
-          {connectSumupLink("Reconnecter")}
-        </span>
-      );
-    }
-    if (sumup.connected) {
-      if (!sumupUsable && sumup.currency) {
-        return (
-          <span>
-            Votre compte SumUp encaisse uniquement en {sumup.currency}.
-          </span>
-        );
-      }
-      const label = sumup.businessName || sumup.email;
-      return (
-        <span className="break-all">
-          Sur votre compte SumUp{label ? ` ${label}` : ""}.
-        </span>
-      );
-    }
-    if (!canManageConnections) return askAdmin;
-    return (
-      <span className="flex flex-wrap items-center gap-x-1.5">
-        Connectez votre compte SumUp.
-        {connectSumupLink("Connecter")}
-      </span>
-    );
-  })();
-
-  const paypalHint = paypal.connected ? (
-    <span className="break-all">Sur votre compte {paypal.email}.</span>
-  ) : !canManageConnections ? (
-    askAdmin
-  ) : (
-    <span className="flex flex-wrap items-center gap-x-1.5">
-      Connectez votre compte PayPal Business.
-      <ConnectLink onClick={onConnectPaypal}>Connecter</ConnectLink>
-    </span>
-  );
-
-  // Compte bancaire relié à Newbi (autoDetect) : le virement reçu débloque
-  // le transfert tout seul ; sinon le vendeur le débloque à la main
-  const bankHint = bank.available ? (
-    <span>
-      Votre client voit votre IBAN
-      {bank.ibanLast4 ? ` se terminant par ${bank.ibanLast4}` : ""} et une
-      référence.{" "}
-      {bank.autoDetect
-        ? "Le transfert se débloque tout seul dès que le virement arrive sur votre compte bancaire connecté, en général sous 1 jour ouvré."
-        : "À réception du virement, débloquez le transfert avec « Marquer comme payé »."}
-    </span>
-  ) : (
-    <span className="flex flex-wrap items-center gap-x-1.5">
-      Ajoutez l&apos;IBAN de votre entreprise.
-      {onAddIban && (
-        <ConnectLink onClick={onAddIban}>Ajouter votre IBAN</ConnectLink>
-      )}
-    </span>
-  );
 
   return (
     <div className="space-y-4">
@@ -425,54 +227,21 @@ export function TransferPaymentOptions({
                 Chargement de vos moyens de paiement…
               </div>
             ) : (
-              <div className="space-y-2">
-                <MethodRow
-                  id="transfer-payment-stripe"
-                  label="Carte bancaire (Stripe)"
-                  checked={stripe.ready && selected.includes("stripe")}
-                  disabled={!stripe.ready}
-                  onCheckedChange={(checked) => toggleMethod("stripe", checked)}
-                >
-                  {stripeHint}
-                </MethodRow>
-                {sumup.available && (
-                  <MethodRow
-                    id="transfer-payment-sumup"
-                    label="Carte bancaire (SumUp)"
-                    checked={sumupUsable && selected.includes("sumup")}
-                    disabled={!sumupUsable}
-                    onCheckedChange={(checked) =>
-                      toggleMethod("sumup", checked)
-                    }
-                  >
-                    {sumupHint}
-                  </MethodRow>
-                )}
-                {paypal.available && (
-                  <MethodRow
-                    id="transfer-payment-paypal"
-                    label="PayPal"
-                    checked={paypal.connected && selected.includes("paypal")}
-                    disabled={!paypal.connected}
-                    onCheckedChange={(checked) =>
-                      toggleMethod("paypal", checked)
-                    }
-                  >
-                    {paypalHint}
-                  </MethodRow>
-                )}
-                <MethodRow
-                  id="transfer-payment-bank"
-                  label="Virement bancaire"
-                  checked={bank.available && selected.includes("bank_transfer")}
-                  disabled={!bank.available}
-                  onCheckedChange={(checked) =>
-                    toggleMethod("bank_transfer", checked)
-                  }
-                >
-                  {bankHint}
-                </MethodRow>
-              </div>
+              <PaymentMethodsChecklist
+                idPrefix="transfer-payment"
+                connections={connections}
+                availableMethods={availableMethods}
+                selected={selected}
+                onToggle={toggleMethod}
+                canManageConnections={canManageConnections}
+                onConnectStripe={onConnectStripe}
+                isConnectingStripe={isConnectingStripe}
+                onOpenStripeDashboard={onOpenStripeDashboard}
+                onConnectSumup={onConnectSumup}
+                isConnectingSumup={isConnectingSumup}
+                onConnectPaypal={onConnectPaypal}
+                onAddIban={onAddIban}
+              />
             )}
             {noMethod && (
               <p className="text-xs text-amber-600">

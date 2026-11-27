@@ -176,11 +176,13 @@ function StatusBadge({ registration, timeZone, withDetail = false }) {
 }
 
 /**
- * « Marquer comme payé » : inscription en attente de virement, ou expirée
- * faute de virement (l'API confirme s'il reste des places).
+ * « Marquer comme payé », libre comme pour les transferts : inscription en
+ * attente de virement, ou expirée (l'API confirme s'il reste des places ;
+ * événement commencé : confirmée sans e-mail).
  */
 function canMarkPaid(registration) {
   if (registration?.paymentProvider !== "bank_transfer") return false;
+  if (registration.paidAt) return false;
   if (registration.refundFailed || registration.refundedAt) return false;
   return ["PENDING_PAYMENT", "EXPIRED"].includes(registration.status);
 }
@@ -356,6 +358,9 @@ export function EventRegistrationsSheet({
   const [expanded, setExpanded] = useState(null);
   const [toCancel, setToCancel] = useState(null);
   const [toMarkPaid, setToMarkPaid] = useState(null);
+  const eventStarted = Boolean(
+    type?.startAt && new Date(type.startAt).getTime() <= Date.now(),
+  );
   const [cancelReason, setCancelReason] = useState("");
   const [exporting, setExporting] = useState(false);
   const debouncedSearch = useDebounced(search);
@@ -836,6 +841,16 @@ export function EventRegistrationsSheet({
                                     registration.onSitePaidAt,
                                     timeZone,
                                   )}`}
+                                {registration.bankTransferReceivedAt &&
+                                  !registration.paidAt &&
+                                  ` · Virement${
+                                    registration.bankTransferReceivedAmount
+                                      ? ` de ${formatCents(registration.bankTransferReceivedAmount, registration.currency)}`
+                                      : ""
+                                  } reçu le ${shortDateTimeLabel(
+                                    registration.bankTransferReceivedAt,
+                                    timeZone,
+                                  )}, après la fin de la garde ou le début : rien n'a été confirmé automatiquement. Confirmez avec « Marquer comme payé », ou remboursez le participant depuis votre banque`}
                                 {registration.refundedAt &&
                                   " · Paiement arrivé trop tard (places reprises ou événement commencé), remboursé automatiquement"}
                                 {registration.refundFailed &&
@@ -957,7 +972,8 @@ export function EventRegistrationsSheet({
                 {toMarkPaid?.buyer.lastName} sera confirmée
                 {toMarkPaid
                   ? ` (${formatCents(
-                      registrationPayment(toMarkPaid).online,
+                      toMarkPaid.bankTransferReceivedAmount ??
+                        registrationPayment(toMarkPaid).online,
                       toMarkPaid.currency,
                     )} reçus${
                       toMarkPaid.paymentReference
@@ -965,7 +981,9 @@ export function EventRegistrationsSheet({
                         : ""
                     })`
                   : ""}{" "}
-                et ses billets envoyés par e-mail.
+                {eventStarted
+                  ? "avec ses billets. L'événement a déjà commencé : aucun e-mail n'est envoyé au participant."
+                  : "et ses billets envoyés par e-mail."}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

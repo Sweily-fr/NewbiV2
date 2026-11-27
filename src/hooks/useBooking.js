@@ -517,7 +517,7 @@ export function useEventRegistrations(
 /** Moyens de paiement en ligne prêts pour vendre des billets. */
 export function useEventPaymentMethods({ skip = false } = {}) {
   const { workspaceId } = useWorkspace();
-  const { data, loading } = useQuery(GET_EVENT_PAYMENT_METHODS, {
+  const { data, loading, refetch } = useQuery(GET_EVENT_PAYMENT_METHODS, {
     variables: { workspaceId },
     skip: skip || !workspaceId,
     fetchPolicy: "cache-and-network",
@@ -527,6 +527,7 @@ export function useEventPaymentMethods({ skip = false } = {}) {
     methods: data?.eventPaymentMethods || EMPTY,
     loaded: data !== undefined,
     loading: loading && !data,
+    refetch,
   };
 }
 
@@ -536,7 +537,7 @@ export function useEventPaymentMethods({ skip = false } = {}) {
  */
 export function useAppointmentPaymentMethods({ skip = false } = {}) {
   const { workspaceId } = useWorkspace();
-  const { data, loading } = useQuery(GET_APPOINTMENT_PAYMENT_METHODS, {
+  const { data, loading, refetch } = useQuery(GET_APPOINTMENT_PAYMENT_METHODS, {
     variables: { workspaceId },
     skip: skip || !workspaceId,
     fetchPolicy: "cache-and-network",
@@ -546,6 +547,7 @@ export function useAppointmentPaymentMethods({ skip = false } = {}) {
     methods: data?.appointmentPaymentMethods || EMPTY,
     loaded: data !== undefined,
     loading: loading && !data,
+    refetch,
   };
 }
 

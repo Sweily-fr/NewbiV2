@@ -73,6 +73,12 @@ const CANCELLED_BY = { GUEST: "par l'invité", HOST: "par vous" };
  * fuseau diffère), lieu et lien de visio, message, client CRM, annulation
  * avec motif facultatif.
  */
+/** « (40,00 € reçus) » : montant du virement repéré, sinon montant attendu. */
+const receivedAmountText = (booking, payment) => {
+  const cents = booking.bankTransferReceivedAmount ?? payment.online;
+  return cents > 0 ? ` (${formatCents(cents, booking.currency)} reçus)` : "";
+};
+
 export function BookingSheet({
   booking,
   onClose,
@@ -132,6 +138,17 @@ function BookingSheetBody({
   const cancelled = ["CANCELLED", "EXPIRED"].includes(booking.status);
   const pending = booking.status === "PENDING_PAYMENT";
   const awaitingTransfer = isAwaitingBankTransfer(booking);
+  // « Marquer comme payé » libre, comme pour les transferts : en attente,
+  // ou expiré (créneau encore libre, ou rendez-vous déjà commencé)
+  const canConfirmTransfer =
+    booking.paymentProvider === "bank_transfer" &&
+    !booking.paidAt &&
+    !booking.refundFailed &&
+    !booking.refundedAt &&
+    ["PENDING_PAYMENT", "EXPIRED"].includes(booking.status);
+  const started = new Date(booking.startAt).getTime() <= Date.now();
+  const receivedLate =
+    Boolean(booking.bankTransferReceivedAt) && !booking.paidAt;
   const payment = registrationPayment(booking);
   const handleMarkPaid = async () => {
     setPaying("paid");
@@ -360,6 +377,19 @@ function BookingSheetBody({
                 {shortDateTimeLabel(booking.onSitePaidAt, timeZone)}
               </DetailRow>
             )}
+            {receivedLate && (
+              <p className="rounded-md bg-red-50 px-2.5 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                Virement
+                {booking.bankTransferReceivedAmount
+                  ? ` de ${formatCents(booking.bankTransferReceivedAmount, booking.currency)}`
+                  : ""}{" "}
+                reçu le{" "}
+                {shortDateTimeLabel(booking.bankTransferReceivedAt, timeZone)},
+                après la fin de la garde ou le début : rien n&apos;a été
+                confirmé automatiquement. Confirmez avec « Marquer comme payé »,
+                ou remboursez l&apos;invité depuis votre banque.
+              </p>
+            )}
             {booking.refundFailed && (
               <p className="text-xs text-red-700 dark:text-red-300">
                 Paiement arrivé trop tard (créneau repris ou rendez-vous déjà
@@ -379,7 +409,7 @@ function BookingSheetBody({
                 l&apos;invité prévenu dès la réception du paiement.
               </p>
             )}
-            {canMarkPaid && awaitingTransfer && (
+            {canMarkPaid && canConfirmTransfer && (
               <Button
                 size="sm"
                 variant="primary"
@@ -459,12 +489,22 @@ function BookingSheetBody({
           <AlertDialogHeader>
             <AlertDialogTitle>Virement bien reçu ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Le rendez-vous de {guestName(booking.guest)} sera confirmé
-              {payment.online > 0
-                ? ` (${formatCents(payment.online, booking.currency)} reçus)`
-                : ""}
-              , ajouté à vos agendas, et l&apos;invité recevra sa confirmation
-              par e-mail.
+              {started ? (
+                <>
+                  Le rendez-vous de {guestName(booking.guest)} a déjà commencé :
+                  il sera marqué payé et confirmé
+                  {receivedAmountText(booking, payment)}, sans être ajouté à vos
+                  agendas ni prévenir l&apos;invité par e-mail.
+                </>
+              ) : (
+                <>
+                  Le rendez-vous de {guestName(booking.guest)} sera confirmé
+                  {receivedAmountText(booking, payment)}, ajouté à vos agendas,
+                  et l&apos;invité recevra sa confirmation par e-mail.
+                  {booking.status === "EXPIRED" &&
+                    " Si le créneau a été repris entre-temps, il ne pourra pas être confirmé."}
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
