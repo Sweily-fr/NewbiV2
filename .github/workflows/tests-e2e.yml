@@ -200,8 +200,14 @@ jobs:
           key: e2e-build-${{ runner.os }}-${{ github.sha }}
           restore-keys: e2e-build-${{ runner.os }}-
 
+      # Le dépôt apt de Microsoft (préinstallé sur le runner, inutile à
+      # Chromium) répond parfois 403 : apt-get update échouait et la machine
+      # tombait avant le premier test (PR #1705, machine 11). Il est retiré, et
+      # l'installation retentée une fois en cas de coupure réseau.
       - name: Installer Chromium
-        run: npx playwright install --with-deps chromium
+        run: |
+          sudo grep -l "packages.microsoft.com" /etc/apt/sources.list.d/* 2>/dev/null | xargs -r sudo rm -f
+          npx playwright install --with-deps chromium || { sleep 15; npx playwright install --with-deps chromium; }
 
       # Chaque machine prend sa part des tests (--shard) et garde ses
       # résultats bruts (blob), rassemblés par le job « Rapport ».

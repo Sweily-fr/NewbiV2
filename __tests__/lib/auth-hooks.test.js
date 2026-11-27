@@ -312,3 +312,51 @@ describe("beforeSignInHook : proxy d'autorisation de l'application mobile", () =
     ).resolves.toBeUndefined();
   });
 });
+
+describe("beforeSignInHook : espace actif sur une session révoquée", () => {
+  const contexte = ({ token = "jeton", session = null, path = "/organization/set-active" } = {}) => {
+    const findSession = vi.fn().mockResolvedValue(session);
+    return {
+      findSession,
+      ctx: {
+        path,
+        body: { organizationId: "org-1" },
+        getSignedCookie: vi.fn().mockResolvedValue(token),
+        context: {
+          secret: "secret",
+          authCookies: { sessionToken: { name: "better-auth.session_token" } },
+          internalAdapter: { findSession },
+        },
+      },
+    };
+  };
+
+  it("session supprimée en base (cache de cookie encore valide) : 401 au lieu d'une erreur 500", async () => {
+    const { ctx } = contexte({ session: null });
+    await expect(beforeSignInHook(ctx)).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("session présente en base : la requête passe", async () => {
+    const { ctx, findSession } = contexte({ session: { session: { token: "jeton" }, user: { id: "u1" } } });
+    await expect(beforeSignInHook(ctx)).resolves.toBeUndefined();
+    expect(findSession).toHaveBeenCalledWith("jeton");
+  });
+
+  it("sans cookie de session : laissée à Better Auth", async () => {
+    const { ctx, findSession } = contexte({ token: null });
+    await expect(beforeSignInHook(ctx)).resolves.toBeUndefined();
+    expect(findSession).not.toHaveBeenCalled();
+  });
+
+  it("base illisible : pas de refus à l'aveugle", async () => {
+    const { ctx, findSession } = contexte();
+    findSession.mockRejectedValue(new Error("Mongo indisponible"));
+    await expect(beforeSignInHook(ctx)).resolves.toBeUndefined();
+  });
+
+  it("autres routes : session non relue", async () => {
+    const { ctx, findSession } = contexte({ path: "/organization/list" });
+    await expect(beforeSignInHook(ctx)).resolves.toBeUndefined();
+    expect(findSession).not.toHaveBeenCalled();
+  });
+});
