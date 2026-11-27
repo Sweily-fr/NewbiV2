@@ -66,6 +66,7 @@ import {
   Loader2,
   ExternalLink,
   ScanSearch,
+  Download,
 } from "lucide-react";
 import { PurchaseOcrComparisonDialog } from "./ocr-comparison-dialog";
 import {
@@ -406,6 +407,55 @@ export function PurchaseInvoiceDetailDrawer({
   }));
   const togglePreview = (idx) =>
     setPreviewIndex((current) => (current === idx ? null : idx));
+
+  // Facture reçue via la plateforme agréée (SuperPDP) dont le PDF n'a pas été
+  // rattaché à la réception : l'API le lit chez SuperPDP à la demande.
+  const isReceivedEInvoice =
+    invoice?.source === "SUPERPDP" && Boolean(invoice?.superPdpInvoiceId);
+
+  // Téléchargement via le proxy same-origin (?download=1 : pièce jointe).
+  // Lu en blob pour signaler une erreur au lieu d'enregistrer la page
+  // d'erreur comme fichier.
+  const [downloadingFileId, setDownloadingFileId] = useState(null);
+  const handleDownloadReceipt = async (file) => {
+    if (!invoice?.id) return;
+    const key = file?.id || "einvoice";
+    setDownloadingFileId(key);
+    try {
+      const params = new URLSearchParams({ download: "1" });
+      if (file?.id) params.set("fileId", file.id);
+      const response = await fetch(
+        `/api/document-preview/purchaseInvoice/${invoice.id}?${params}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!response.ok) throw new Error(String(response.status));
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") || "";
+      const utf8Name = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+      const plainName = disposition.match(/filename="([^"]+)"/i)?.[1];
+      const filename =
+        (utf8Name && decodeURIComponent(utf8Name)) ||
+        plainName ||
+        file?.originalFilename ||
+        `facture-${invoice.invoiceNumber || invoice.id}.pdf`;
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch {
+      toast.error(
+        file
+          ? "Impossible de télécharger ce justificatif"
+          : "Le PDF de cette facture n'est pas disponible auprès de la plateforme agréée",
+      );
+    } finally {
+      setDownloadingFileId(null);
+    }
+  };
 
   // Relance OCR : la proposition est comparée aux valeurs actuelles dans un
   // dialogue, puis les champs cochés sont enregistrés (updatePurchaseInvoice)
@@ -1841,11 +1891,43 @@ export function PurchaseInvoiceDetailDrawer({
                     </div>
                   )}
                 </div>
-                {!invoice?.files?.length && !canAddReceipts && (
-                  <p className="text-sm text-muted-foreground">
-                    Aucun justificatif
-                  </p>
+                {!invoice?.files?.length && isReceivedEInvoice && (
+                  <div className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2.5">
+                    <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                      <FileText className="h-4 w-4 text-red-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-normal text-foreground">
+                        Facture électronique reçue
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        PDF lu auprès de la plateforme agréée
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 font-normal gap-1.5 text-xs"
+                      disabled={downloadingFileId === "einvoice"}
+                      onClick={() => handleDownloadReceipt(null)}
+                    >
+                      {downloadingFileId === "einvoice" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5" />
+                      )}
+                      Télécharger
+                    </Button>
+                  </div>
                 )}
+                {!invoice?.files?.length &&
+                  !canAddReceipts &&
+                  !isReceivedEInvoice && (
+                    <p className="text-sm text-muted-foreground">
+                      Aucun justificatif
+                    </p>
+                  )}
                 {!invoice?.files?.length && canAddReceipts && (
                   <button
                     type="button"
@@ -1960,6 +2042,24 @@ export function PurchaseInvoiceDetailDrawer({
                             )}
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground"
+                          title="Télécharger"
+                          aria-label="Télécharger ce justificatif"
+                          disabled={downloadingFileId === file.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadReceipt(file);
+                          }}
+                        >
+                          {downloadingFileId === file.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
