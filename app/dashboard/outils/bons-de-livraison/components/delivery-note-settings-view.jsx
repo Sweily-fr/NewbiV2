@@ -78,6 +78,7 @@ export default function DeliveryNoteSettingsView({
     watch,
     setValue,
     register,
+    trigger,
     formState: { errors },
   } = useFormContext();
   const data = watch();
@@ -150,7 +151,12 @@ export default function DeliveryNoteSettingsView({
     onCancel();
   };
 
-  const handleSaveClick = () => {
+  const handleSaveClick = async () => {
+    // Une saisie refusée (notes d'en-tête au-delà de 1 000 caractères, limite
+    // aussi tenue par l'API) garde le panneau ouvert avec son message, sans
+    // annonce de succès : sinon le refus n'arrivait qu'à la création du
+    // document, panneau déjà refermé.
+    if (!(await trigger("headerNotes"))) return;
     initialValuesRef.current = snapshot();
     setHasUnsavedChanges(false);
     onSave();
