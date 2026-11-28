@@ -4,7 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { ArrowUpRight } from "lucide-react";
-import { PLANS_DISPLAY, planLabel } from "@/src/lib/plans-display";
+import {
+  PLANS_DISPLAY,
+  formatAmount,
+  planLabel,
+} from "@/src/lib/plans-display";
 import { cn } from "@/src/lib/utils";
 
 // Version condensée des tarifs (home + LP) : essai gratuit, offre Freelance,
@@ -13,9 +17,7 @@ import { cn } from "@/src/lib/utils";
 // l'offre, description, liste à puces, lien fléché en bas.
 // Le prix Freelance vient du module central (plans-display.js).
 const freelancePlan = PLANS_DISPLAY.find((p) => p.key === "freelance");
-const freelancePrice = `${freelancePlan.monthlyPrice
-  .toFixed(2)
-  .replace(".", ",")}€`;
+const freelancePrice = `${formatAmount(freelancePlan.monthlyPrice)}€`;
 
 const TRIAL_HIGHLIGHTS = [
   "Toutes les fonctionnalités de l'offre choisie",

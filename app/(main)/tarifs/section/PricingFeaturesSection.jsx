@@ -35,7 +35,7 @@ const COLONNES = [
     id: "freelance",
     cle: "freelance",
     nom: planLabel("freelance"),
-    cta: { href: "/auth/signup", label: "Commencer gratuitement" },
+    cta: { href: "/auth/signup", label: "Essayer 7 jours gratuits" },
     lien: { href: "/contact", label: "parler à un conseiller" },
   },
   {
@@ -43,14 +43,14 @@ const COLONNES = [
     cle: "pme",
     nom: planLabel("pme"),
     enAvant: true,
-    cta: { href: "/auth/signup", label: "Commencer gratuitement" },
+    cta: { href: "/auth/signup", label: "Essayer 7 jours gratuits" },
     lien: { href: "/contact", label: "parler à un conseiller" },
   },
   {
     id: "entreprise",
     cle: "entreprise",
     nom: planLabel("entreprise"),
-    cta: { href: "/auth/signup", label: "Commencer gratuitement" },
+    cta: { href: "/auth/signup", label: "Essayer 7 jours gratuits" },
     lien: { href: "/contact", label: "parler à un conseiller" },
   },
 ];

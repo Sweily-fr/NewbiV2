@@ -23,10 +23,12 @@ import {
   Gift,
   X,
   AlertTriangle,
+  Bell,
+  CreditCard,
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
-import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { PLANS_DISPLAY, formatAmount } from "@/src/lib/plans-display";
 import { SignupPlanPicker } from "@/src/components/pricing/signup-plan-picker";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
@@ -96,6 +98,53 @@ const OAUTH_ERROR_MESSAGES = {
   unable_to_create_user:
     "Impossible de créer le compte. Réessayez ou utilisez l'inscription par e-mail.",
 };
+
+// Pastille de l'essai gratuit (étapes « plan » et « recap »).
+function TrialBadge({ children }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#5A50FF]/10 px-3 py-1 text-[12px] font-medium text-[#5A50FF] text-center">
+      <Gift className="size-3.5 shrink-0" aria-hidden="true" />
+      {children}
+    </span>
+  );
+}
+
+// Une étape du déroulé de l'essai, sur le récapitulatif.
+function TrialStep({
+  icon: Icon,
+  title,
+  text,
+  highlight = false,
+  last = false,
+}) {
+  return (
+    <li className="relative flex gap-3">
+      {!last && (
+        <span
+          aria-hidden="true"
+          className="absolute left-[13px] top-7 bottom-[-16px] w-px bg-border"
+        />
+      )}
+      <span
+        className={`flex size-7 shrink-0 items-center justify-center rounded-full ${
+          highlight
+            ? "bg-[#5A50FF] text-white"
+            : "bg-white border border-border text-muted-foreground"
+        }`}
+      >
+        <Icon className="size-3.5" aria-hidden="true" />
+      </span>
+      <div className="pt-0.5">
+        <p
+          className={`text-[14px] font-medium ${highlight ? "text-[#5A50FF]" : "text-foreground"}`}
+        >
+          {title}
+        </p>
+        <p className="text-[13px] text-muted-foreground leading-5">{text}</p>
+      </div>
+    </li>
+  );
+}
 
 export default function SignUpPage() {
   return (
@@ -573,7 +622,7 @@ function SignUpPageContent() {
     email: "Quelle est votre adresse email ?",
     workspace: "Créez votre espace de travail",
     plan: "Choisissez votre abonnement",
-    recap: "Lancez votre essai gratuit",
+    recap: `Commencez votre essai gratuit de ${SIGNUP_TRIAL_DAYS} jours`,
   };
 
   const steps = ["signup", "email", "workspace", "plan", "recap"];
@@ -909,10 +958,13 @@ function SignUpPageContent() {
               gratuit (annoncé juste au-dessus), en mise en page compacte. */}
           {view === "plan" && (
             <div className="w-full max-w-5xl">
-              {/* Subtitle + trial */}
-              <p className="text-[13px] text-muted-foreground text-center mb-6">
-                {SIGNUP_TRIAL_DAYS} jours d'essai gratuit, sans engagement
-              </p>
+              {/* Essai gratuit : rappelé avant le choix de l'offre */}
+              <div className="mb-6 flex justify-center">
+                <TrialBadge>
+                  {SIGNUP_TRIAL_DAYS} jours gratuits · 0 € aujourd'hui · sans
+                  engagement
+                </TrialBadge>
+              </div>
 
               <SignupPlanPicker
                 annuel={isAnnual}
@@ -937,54 +989,75 @@ function SignUpPageContent() {
                   ? plan.annualPrice
                   : plan.monthlyPrice
                 : 0;
+              const chargeLabel = isAnnual
+                ? `${formatAmount(price * 12)} €/an`
+                : `${formatAmount(price)} €/mois`;
               return (
                 <div className="w-full max-w-[420px]">
+                  <div className="mb-4 flex justify-center">
+                    <TrialBadge>
+                      {SIGNUP_TRIAL_DAYS} jours offerts sur le plan {plan?.name}
+                    </TrialBadge>
+                  </div>
+
                   {/* Subtitle */}
-                  <p className="text-[14px] text-muted-foreground text-center mb-10 leading-relaxed">
-                    Profitez de {SIGNUP_TRIAL_DAYS} jours pour explorer toutes
-                    les fonctionnalités de Newbi. Aucun prélèvement avant le{" "}
-                    <span className="whitespace-nowrap">{chargeDateLabel}</span>
-                    , résiliable à tout moment.
+                  <p className="text-[14px] text-muted-foreground text-center mb-8 leading-relaxed">
+                    Vous ne payez rien aujourd'hui. Toutes les fonctionnalités
+                    sont ouvertes pendant {SIGNUP_TRIAL_DAYS} jours, résiliable
+                    à tout moment.
                   </p>
 
+                  {/* Déroulé de l'essai. Le rappel est l'e-mail envoyé sur
+                      `customer.subscription.trial_will_end`, que Stripe
+                      émet 3 jours avant la fin de l'essai. */}
+                  <ol className="mb-8 space-y-4">
+                    <TrialStep
+                      icon={Gift}
+                      highlight
+                      title="Aujourd'hui : 0 €"
+                      text={`Accès complet au plan ${plan?.name ?? ""}, sans prélèvement.`}
+                    />
+                    <TrialStep
+                      icon={Bell}
+                      title="3 jours avant la fin"
+                      text="Un e-mail vous rappelle la date du premier prélèvement."
+                    />
+                    <TrialStep
+                      icon={CreditCard}
+                      title={`Le ${chargeDateLabel}`}
+                      text={`Premier prélèvement de ${chargeLabel}, sauf si vous résiliez avant.`}
+                      last
+                    />
+                  </ol>
+
                   {/* Recap lines */}
-                  <div className="space-y-4 mb-10">
+                  <div className="space-y-3 mb-8 rounded-xl border border-border/60 bg-white p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-[14px] text-foreground">
-                        Plan {plan?.name}
+                      <span className="text-[13px] text-muted-foreground">
+                        Plan
                       </span>
-                      <span className="text-[14px] text-foreground font-medium">
-                        {price.toFixed(2).replace(".", ",")}€
-                        <span className="text-muted-foreground font-normal">
-                          /mois
-                        </span>
+                      <span className="text-[13px] text-foreground">
+                        {plan?.name} ·{" "}
+                        {isAnnual
+                          ? "facturation annuelle"
+                          : "facturation mensuelle"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[14px] text-foreground">
-                        Facturation
+                      <span className="text-[13px] text-muted-foreground">
+                        À partir du {chargeDateLabel}
                       </span>
-                      <span className="text-[14px] text-muted-foreground">
-                        {isAnnual ? "Annuelle" : "Mensuelle"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[14px] text-foreground">
-                        Aujourd'hui
-                      </span>
-                      <span className="text-[14px] text-foreground font-medium">
-                        0,00€
+                      <span className="text-[13px] text-foreground">
+                        {chargeLabel}
                       </span>
                     </div>
                     <div className="border-t border-border/40" />
                     <div className="flex items-center justify-between">
-                      <span className="text-[14px] text-foreground font-medium">
-                        À partir du {chargeDateLabel}
+                      <span className="text-[15px] text-foreground font-medium">
+                        À payer aujourd'hui
                       </span>
-                      <span className="text-[14px] text-foreground font-medium">
-                        {isAnnual
-                          ? `${(price * 12).toFixed(2).replace(".", ",")}€/an`
-                          : `${price.toFixed(2).replace(".", ",")}€/mois`}
+                      <span className="text-[18px] font-semibold text-[#5A50FF]">
+                        0 €
                       </span>
                     </div>
                   </div>
@@ -998,13 +1071,14 @@ function SignUpPageContent() {
                     {loadingPlan ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      "Démarrer l'essai gratuit"
+                      `Commencer mon essai gratuit de ${SIGNUP_TRIAL_DAYS} jours`
                     )}
                   </Button>
 
-                  <p className="text-[11px] text-muted-foreground/50 mt-4 text-center">
-                    Carte demandée sur la page sécurisée de Stripe. Résiliez
-                    avant le {chargeDateLabel} : aucun prélèvement.
+                  <p className="text-[12px] text-muted-foreground mt-4 text-center leading-5">
+                    Carte demandée sur la page sécurisée de Stripe pour activer
+                    l'essai. Résiliez avant le {chargeDateLabel} : aucun
+                    prélèvement.
                   </p>
                 </div>
               );

@@ -12,7 +12,11 @@ import { withErrorHandler } from "@/src/lib/security";
 import { findManagerPaidSubscription } from "@/src/lib/manager-billing";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
-import { getPlanDisplay, planLabel } from "@/src/lib/plans-display";
+import {
+  formatAmount,
+  getPlanDisplay,
+  planLabel,
+} from "@/src/lib/plans-display";
 import {
   formatChangeDate,
   phaseItemsOf,
@@ -560,9 +564,7 @@ async function handler(request) {
         ? newPlanDisplay?.annualMonthlyPrice
         : newPlanDisplay?.monthlyPrice;
       const formattedPrice =
-        typeof priceAmount === "number"
-          ? `${priceAmount.toFixed(2).replace(".", ",")}€`
-          : "—";
+        typeof priceAmount === "number" ? `${formatAmount(priceAmount)}€` : "—";
       await sendSubscriptionChangedEmail({
         to: customer.email,
         customerName: customer.name || customer.email,
