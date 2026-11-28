@@ -16,11 +16,11 @@ import { toast } from "@/src/components/ui/sonner";
 import { useQuery } from "@apollo/client";
 import { LOOKUP_USERS_BY_EMAILS } from "@/src/graphql/queries/user";
 import { PLANS } from "@/src/components/create-workspace/plan-form";
-import { getPlanPricingStrings } from "@/src/lib/plans-display";
+import { formatAmount, getPlanPricingStrings } from "@/src/lib/plans-display";
 import { capture } from "@/src/lib/analytics";
 import { PREDEFINED_ROLE_LABELS } from "@/src/lib/role-labels";
 
-const formatPrice = (amount) => amount.toFixed(2).replace(".", ",");
+const formatPrice = formatAmount;
 
 export function ConfirmationForm({
   companyName,

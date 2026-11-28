@@ -62,7 +62,7 @@ describe("/tarifs : grille des offres", () => {
     // Plus d'interrupteur dans chaque colonne.
     expect(screen.queryAllByRole("switch")).toHaveLength(0);
     // Mensuel par défaut : 18 € TTC, le prix de référence.
-    expect(within(colonne("freelance")).getByText(/18,00\s€/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/18\s€/)).toBeTruthy();
     expect(
       within(colonne("freelance")).getByText("Facturé chaque mois"),
     ).toBeTruthy();
@@ -70,10 +70,10 @@ describe("/tarifs : grille des offres", () => {
     await user.click(screen.getByRole("button", { name: /^Annuel/ }));
 
     expect(within(colonne("freelance")).getByText(/16,17\s€/)).toBeTruthy();
-    expect(within(colonne("tpe")).getByText(/45,00\s€/)).toBeTruthy();
-    expect(within(colonne("entreprise")).getByText(/180,00\s€/)).toBeTruthy();
+    expect(within(colonne("tpe")).getByText(/45\s€/)).toBeTruthy();
+    expect(within(colonne("entreprise")).getByText(/180\s€/)).toBeTruthy();
     expect(
-      within(colonne("entreprise")).getByText(/Facturé 2\s160,00\s€ par an/),
+      within(colonne("entreprise")).getByText(/Facturé 2\s160\s€ par an/),
     ).toBeTruthy();
     // L'essai reste à 0 €.
     expect(within(colonne("essai")).getByText("0 €")).toBeTruthy();

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  formatAmount,
   getAnnualTotalAmount,
   getPlanDisplay,
   planLabel,
@@ -21,10 +22,8 @@ import { SIGNUP_TRIAL_DAYS } from "@/src/lib/signup-trial";
 export const FILET = "rgba(16,16,32,0.09)";
 
 // Montants issus de plans-display.js, source unique du site.
-const eur = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-});
+// Sans centimes quand le montant est rond : « 18 € », « 16,17 € ».
+const eur = { format: (n) => `${formatAmount(n)}\u00a0€` };
 
 /**
  * Prix mensuel affiché et rythme de facturation d'une offre, au format des

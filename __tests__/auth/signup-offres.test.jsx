@@ -79,9 +79,9 @@ describe("Inscription : choix de l'offre", () => {
     expect(screen.queryByText("Essai gratuit")).toBeNull();
 
     // Prix mensuels TTC et avantages de la grille /tarifs.
-    expect(within(colonne("freelance")).getByText(/^18,00\s€$/)).toBeTruthy();
-    expect(within(colonne("tpe")).getByText(/^50,00\s€$/)).toBeTruthy();
-    expect(within(colonne("entreprise")).getByText(/^200,00\s€$/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/^18\s€$/)).toBeTruthy();
+    expect(within(colonne("tpe")).getByText(/^50\s€$/)).toBeTruthy();
+    expect(within(colonne("entreprise")).getByText(/^200\s€$/)).toBeTruthy();
     expect(
       within(colonne("freelance")).getByText("Devis et factures illimités"),
     ).toBeTruthy();
@@ -134,7 +134,7 @@ describe("Inscription : choix de l'offre", () => {
     expect(mensuel).toHaveAttribute("aria-pressed", "false");
     expect(within(colonne("freelance")).getByText(/^16,17\s€$/)).toBeTruthy();
     expect(
-      within(colonne("freelance")).getByText(/Facturé 194,00\s€ par an/),
+      within(colonne("freelance")).getByText(/Facturé 194\s€ par an/),
     ).toBeTruthy();
 
     await user.click(
@@ -156,7 +156,7 @@ describe("Inscription : choix de l'offre", () => {
     ).toBeInTheDocument();
     // Essai mis en avant au moment de payer : 0 € aujourd'hui et bouton
     // explicite.
-    expect(screen.getByText("Aujourd'hui : 0,00 €")).toBeInTheDocument();
+    expect(screen.getByText("Aujourd'hui : 0 €")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
         name: "Commencer mon essai gratuit de 7 jours",

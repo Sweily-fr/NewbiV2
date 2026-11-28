@@ -55,7 +55,7 @@ import { useEsignatureQuota } from "@/src/hooks/useESignature";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { PLAN_LIMITS } from "@/src/lib/plan-limits";
-import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { PLANS_DISPLAY, formatAmount } from "@/src/lib/plans-display";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 
 // Map dérivée du module central — garantit nom (Premium pour pme) + prix
@@ -139,9 +139,7 @@ export default function FacturationSection({
     });
   };
 
-  const formatPrice = (amount) => {
-    return amount?.toFixed(2).replace(".", ",") || "0,00";
-  };
+  const formatPrice = (amount) => formatAmount(amount ?? 0);
 
   const getDaysRemaining = () => {
     if (!subscription?.periodEnd) return 0;

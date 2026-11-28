@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
-import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { PLANS_DISPLAY, formatAmount } from "@/src/lib/plans-display";
 import { SignupPlanPicker } from "@/src/components/pricing/signup-plan-picker";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
@@ -990,8 +990,8 @@ function SignUpPageContent() {
                   : plan.monthlyPrice
                 : 0;
               const chargeLabel = isAnnual
-                ? `${(price * 12).toFixed(2).replace(".", ",")} €/an`
-                : `${price.toFixed(2).replace(".", ",")} €/mois`;
+                ? `${formatAmount(price * 12)} €/an`
+                : `${formatAmount(price)} €/mois`;
               return (
                 <div className="w-full max-w-[420px]">
                   <div className="mb-4 flex justify-center">
@@ -1014,7 +1014,7 @@ function SignUpPageContent() {
                     <TrialStep
                       icon={Gift}
                       highlight
-                      title="Aujourd'hui : 0,00 €"
+                      title="Aujourd'hui : 0 €"
                       text={`Accès complet au plan ${plan?.name ?? ""}, sans prélèvement.`}
                     />
                     <TrialStep
@@ -1057,7 +1057,7 @@ function SignUpPageContent() {
                         À payer aujourd'hui
                       </span>
                       <span className="text-[18px] font-semibold text-[#5A50FF]">
-                        0,00 €
+                        0 €
                       </span>
                     </div>
                   </div>
