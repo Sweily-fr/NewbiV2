@@ -113,7 +113,7 @@ describe("Inscription sans SIRET", () => {
     // Inscription avec carte (18/11/2026) : l'étape suivante est le choix
     // de l'offre, avec l'essai de 7 jours.
     expect(
-      await screen.findByText("7 jours d'essai gratuit, sans engagement"),
+      await screen.findByText("7 jours gratuits · 0 € aujourd'hui · sans engagement"),
     ).toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalledWith("/onboarding/success");
   });

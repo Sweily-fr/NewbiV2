@@ -2,11 +2,13 @@
 
 import { Loader2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { SIGNUP_TRIAL_DAYS } from "@/src/lib/signup-trial";
 import {
   BasculeFacturation,
   COLONNES_OFFRES,
   ContenuOffre,
   FILET,
+  prixOffre,
 } from "./pricing-offers";
 
 /* Choix de l'offre à l'inscription : mêmes offres, avantages, prix et
@@ -68,20 +70,26 @@ export function SignupPlanPicker({
               // Nouvel onglet : l'inscription reste ouverte à cette étape.
               lienConseiller={{ target: "_blank", rel: "noopener" }}
               action={
-                <Button
-                  type="button"
-                  size="md"
-                  variant={col.enAvant ? "primary" : "outline"}
-                  className="h-9 w-full justify-center px-4"
-                  onClick={() => onChoisir(col.cle)}
-                  disabled={desactive}
-                >
-                  {enCours === col.cle ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    "Commencer gratuitement"
-                  )}
-                </Button>
+                <>
+                  <p className="mb-2.5 text-xs font-medium text-[#5A50FF]">
+                    0 € pendant {SIGNUP_TRIAL_DAYS} jours, puis{" "}
+                    {prixOffre(col.cle, annuel).prix}/mois
+                  </p>
+                  <Button
+                    type="button"
+                    size="md"
+                    variant={col.enAvant ? "primary" : "outline"}
+                    className="h-9 w-full justify-center px-4"
+                    onClick={() => onChoisir(col.cle)}
+                    disabled={desactive}
+                  >
+                    {enCours === col.cle ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      `Essayer ${SIGNUP_TRIAL_DAYS} jours gratuits`
+                    )}
+                  </Button>
+                </>
               }
             />
           </section>
