@@ -103,3 +103,71 @@ describe("Proxy d'autorisation de l'application mobile", () => {
     expect(isAllowedAuthorizationURL(url)).toBe(false);
   });
 });
+
+describe("Origines du déploiement (staging, prévisualisation)", () => {
+  const STAGING = {
+    ...PREVIEW,
+    BETTER_AUTH_URL: "https://staging.newbi.fr/",
+    NEXT_PUBLIC_BETTER_AUTH_URL: "https://staging.newbi.fr",
+    NEXT_PUBLIC_SITE_URL: "https://staging.newbi.fr/",
+    VERCEL_URL: "newbi-v2-abc123.vercel.app",
+    VERCEL_BRANCH_URL: "newbi-v2-git-develop-sweily.vercel.app",
+  };
+
+  it("l'URL déclarée du site est de confiance (barre finale ignorée)", () => {
+    expect(buildTrustedOrigins(requete(), STAGING)).toContain(
+      "https://staging.newbi.fr",
+    );
+  });
+
+  it("hors production : les adresses Vercel du déploiement sont de confiance", () => {
+    const origines = buildTrustedOrigins(requete(), STAGING);
+    expect(origines).toContain("https://newbi-v2-abc123.vercel.app");
+    expect(origines).toContain(
+      "https://newbi-v2-git-develop-sweily.vercel.app",
+    );
+  });
+
+  it("production : les adresses Vercel du déploiement ne sont pas ajoutées", () => {
+    const origines = buildTrustedOrigins(requete(), {
+      ...PROD,
+      BETTER_AUTH_URL: "https://www.newbi.fr",
+      VERCEL_URL: "newbi-v2-abc123.vercel.app",
+    });
+    expect(origines).not.toContain("https://newbi-v2-abc123.vercel.app");
+  });
+
+  it("l'en-tête Origin de la requête n'est jamais ajouté", () => {
+    expect(
+      buildTrustedOrigins(
+        requete({ origin: "https://exemple.invalid" }),
+        STAGING,
+      ),
+    ).not.toContain("https://exemple.invalid");
+  });
+
+  it("valeurs invalides ou non http(s) ignorées", () => {
+    const origines = buildTrustedOrigins(requete(), {
+      ...PREVIEW,
+      BETTER_AUTH_URL: "pas une url",
+      NEXT_PUBLIC_SITE_URL: "javascript:alert(1)",
+    });
+    expect(origines).not.toContain("pas une url");
+    expect(origines.some((o) => o.startsWith("javascript:"))).toBe(false);
+  });
+
+  it("ADDITIONAL_TRUSTED_ORIGINS : adresses ramenées à leur origine, motifs gardés", () => {
+    const origines = buildTrustedOrigins(requete(), {
+      ...PREVIEW,
+      ADDITIONAL_TRUSTED_ORIGINS:
+        "https://staging.newbi.fr/, https://a.test/chemin,https://*.vercel.app",
+    });
+    expect(origines).toEqual(
+      expect.arrayContaining([
+        "https://staging.newbi.fr",
+        "https://a.test",
+        "https://*.vercel.app",
+      ]),
+    );
+  });
+});
