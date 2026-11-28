@@ -67,7 +67,9 @@ describe("Inscription : choix de l'offre", () => {
     render(<SignUpPage />);
 
     expect(
-      await screen.findByText("7 jours d'essai gratuit, sans engagement"),
+      await screen.findByText(
+        "7 jours gratuits · 0 € aujourd'hui · sans engagement",
+      ),
     ).toBeInTheDocument();
 
     const offres = screen
@@ -77,9 +79,9 @@ describe("Inscription : choix de l'offre", () => {
     expect(screen.queryByText("Essai gratuit")).toBeNull();
 
     // Prix mensuels TTC et avantages de la grille /tarifs.
-    expect(within(colonne("freelance")).getByText(/18,00\s€/)).toBeTruthy();
-    expect(within(colonne("tpe")).getByText(/50,00\s€/)).toBeTruthy();
-    expect(within(colonne("entreprise")).getByText(/200,00\s€/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/^18,00\s€$/)).toBeTruthy();
+    expect(within(colonne("tpe")).getByText(/^50,00\s€$/)).toBeTruthy();
+    expect(within(colonne("entreprise")).getByText(/^200,00\s€$/)).toBeTruthy();
     expect(
       within(colonne("freelance")).getByText("Devis et factures illimités"),
     ).toBeTruthy();
@@ -88,14 +90,16 @@ describe("Inscription : choix de l'offre", () => {
     ).toBeTruthy();
 
     expect(
-      screen.getAllByRole("button", { name: "Commencer gratuitement" }),
+      screen.getAllByRole("button", { name: "Essayer 7 jours gratuits" }),
     ).toHaveLength(3);
   });
 
   it("propose un conseiller sous chaque offre, Standard compris", async () => {
     mockFetch();
     render(<SignUpPage />);
-    await screen.findByText("7 jours d'essai gratuit, sans engagement");
+    await screen.findByText(
+      "7 jours gratuits · 0 € aujourd'hui · sans engagement",
+    );
 
     for (const id of ["freelance", "tpe", "entreprise"]) {
       const lien = within(colonne(id)).getByRole("link", {
@@ -111,7 +115,9 @@ describe("Inscription : choix de l'offre", () => {
     const fetchMock = mockFetch();
     const user = userEvent.setup();
     render(<SignUpPage />);
-    await screen.findByText("7 jours d'essai gratuit, sans engagement");
+    await screen.findByText(
+      "7 jours gratuits · 0 € aujourd'hui · sans engagement",
+    );
 
     // Une seule bascule au-dessus des offres, plus d'interrupteur par
     // colonne comme sur /tarifs.
@@ -126,14 +132,14 @@ describe("Inscription : choix de l'offre", () => {
     await user.click(annuel);
     expect(annuel).toHaveAttribute("aria-pressed", "true");
     expect(mensuel).toHaveAttribute("aria-pressed", "false");
-    expect(within(colonne("freelance")).getByText(/16,17\s€/)).toBeTruthy();
+    expect(within(colonne("freelance")).getByText(/^16,17\s€$/)).toBeTruthy();
     expect(
       within(colonne("freelance")).getByText(/Facturé 194,00\s€ par an/),
     ).toBeTruthy();
 
     await user.click(
       within(colonne("freelance")).getByRole("button", {
-        name: "Commencer gratuitement",
+        name: "Essayer 7 jours gratuits",
       }),
     );
 
@@ -145,7 +151,16 @@ describe("Inscription : choix de l'offre", () => {
     });
 
     // Récapitulatif avec l'offre et le rythme de facturation.
-    expect(await screen.findByText("Plan Standard")).toBeInTheDocument();
-    expect(screen.getByText("Annuelle")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Standard · facturation annuelle"),
+    ).toBeInTheDocument();
+    // Essai mis en avant au moment de payer : 0 € aujourd'hui et bouton
+    // explicite.
+    expect(screen.getByText("Aujourd'hui : 0,00 €")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Commencer mon essai gratuit de 7 jours",
+      }),
+    ).toBeInTheDocument();
   });
 });

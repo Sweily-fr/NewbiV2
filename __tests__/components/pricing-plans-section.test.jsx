@@ -26,7 +26,10 @@ describe("/tarifs : grille des offres", () => {
     ]);
     expect(
       screen.getAllByRole("link", { name: "Commencer gratuitement" }),
-    ).toHaveLength(4);
+    ).toHaveLength(1);
+    expect(
+      screen.getAllByRole("link", { name: "Essayer 7 jours gratuits" }),
+    ).toHaveLength(3);
     // « Tout Standard, plus : » ouvre la liste de Premium.
     const puces = within(colonne("tpe"))
       .getAllByRole("listitem")

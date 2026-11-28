@@ -6,6 +6,7 @@ import {
   getPlanDisplay,
   planLabel,
 } from "@/src/lib/plans-display";
+import { SIGNUP_TRIAL_DAYS } from "@/src/lib/signup-trial";
 
 /* Offres affichées sur la page /tarifs, à l'étape « Choisissez votre
    abonnement » de l'inscription et à l'étape d'offre de /create-workspace,
@@ -41,6 +42,10 @@ export function prixOffre(cle, annuel) {
   };
 }
 
+// Bouton des offres payantes : l'essai gratuit est rappelé sur chaque offre,
+// pas seulement dans la colonne d'essai.
+const ESSAI_CTA = `Essayer ${SIGNUP_TRIAL_DAYS} jours gratuits`;
+
 const CONSEILLER = { href: "/contact", label: "parler à un conseiller" };
 
 // Colonne d'essai gratuit : sur /tarifs seulement. À l'inscription, l'essai
@@ -49,8 +54,8 @@ export const COLONNE_ESSAI = {
   id: "essai",
   nom: "Essai gratuit",
   prix: "0 €",
-  suffixe: "pendant 7 jours",
-  mention: "Aucun prélèvement pendant 7 jours",
+  suffixe: `pendant ${SIGNUP_TRIAL_DAYS} jours`,
+  mention: `Aucun prélèvement pendant ${SIGNUP_TRIAL_DAYS} jours`,
   features: [
     "Toutes les fonctionnalités de l'offre choisie",
     "Sans engagement",
@@ -79,7 +84,7 @@ export const COLONNES_OFFRES = [
       "Campagnes e-mail · 500 par mois",
       "100 Go de stockage",
     ],
-    cta: { href: "/auth/signup", label: "Commencer gratuitement" },
+    cta: { href: "/auth/signup", label: ESSAI_CTA },
     ctaSecondaire: CONSEILLER,
   },
   {
@@ -100,7 +105,7 @@ export const COLONNES_OFFRES = [
       "Support prioritaire",
       "500 Go de stockage",
     ],
-    cta: { href: "/auth/signup", label: "Commencer gratuitement" },
+    cta: { href: "/auth/signup", label: ESSAI_CTA },
     ctaSecondaire: CONSEILLER,
   },
   {
@@ -118,7 +123,7 @@ export const COLONNES_OFFRES = [
       "Calendriers connectés illimités",
       "5 To de stockage (+50 Go à 2,99 €/mois)",
     ],
-    cta: { href: "/auth/signup", label: "Commencer gratuitement" },
+    cta: { href: "/auth/signup", label: ESSAI_CTA },
     ctaSecondaire: CONSEILLER,
   },
 ];
