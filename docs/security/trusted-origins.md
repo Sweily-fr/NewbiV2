@@ -18,6 +18,15 @@ Ces origines sont toujours valables, quel que soit l'environnement :
 | http://localhost:3000       | Developpement local          |
 | newbi://                    | App mobile Expo              |
 
+## Origines du deploiement (deduites de la configuration)
+
+Chaque deploiement fait aussi confiance a sa propre adresse, lue dans sa configuration (jamais dans la requete) :
+
+- `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL`, `NEXT_PUBLIC_SITE_URL` (ramenees a leur origine, barre finale ignoree)
+- hors production uniquement : `VERCEL_URL` et `VERCEL_BRANCH_URL` (variables systeme Vercel)
+
+Sur staging, il suffit donc que `BETTER_AUTH_URL` et `NEXT_PUBLIC_BETTER_AUTH_URL` valent l'adresse du staging (ex. `https://staging.newbi.fr`) : sinon l'inscription et la connexion repondent « Invalid origin ».
+
 ## Origines additionnelles (variable d'environnement)
 
 La variable `ADDITIONAL_TRUSTED_ORIGINS` permet d'ajouter des origines supplementaires sans modifier le code.

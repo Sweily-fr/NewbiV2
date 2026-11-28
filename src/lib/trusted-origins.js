@@ -41,14 +41,64 @@ export function isAcceptedExpoOrigin(value, env = process.env) {
   return mobileSchemes(env).some((scheme) => value.startsWith(scheme));
 }
 
+/** Origine http(s) d'une adresse (« https://x.fr/chemin/ » → « https://x.fr »), sinon null. */
+function httpOrigin(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.origin
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Adresses du déploiement lui-même, telles que sa configuration les déclare :
+ * l'URL du site (BETTER_AUTH_URL, NEXT_PUBLIC_BETTER_AUTH_URL,
+ * NEXT_PUBLIC_SITE_URL) et, hors production, les adresses Vercel du
+ * déploiement (VERCEL_URL, VERCEL_BRANCH_URL). Sans elles, un environnement
+ * servi sur un autre domaine que www.newbi.fr (staging, prévisualisation)
+ * refusait l'inscription et la connexion par « Invalid origin » dès que
+ * BETTER_AUTH_URL ne correspondait pas exactement à l'adresse ouverte.
+ * Aucune valeur de la requête n'est lue ici.
+ */
+export function deploymentOrigins(env = process.env) {
+  const declared = [
+    env.BETTER_AUTH_URL,
+    env.NEXT_PUBLIC_BETTER_AUTH_URL,
+    env.NEXT_PUBLIC_SITE_URL,
+  ];
+  const vercel = isProductionDeployment(env)
+    ? []
+    : [env.VERCEL_URL, env.VERCEL_BRANCH_URL]
+        .filter(Boolean)
+        .map((host) => (/^https?:\/\//.test(host) ? host : `https://${host}`));
+  return [...declared, ...vercel].map(httpOrigin).filter(Boolean);
+}
+
+/**
+ * ADDITIONAL_TRUSTED_ORIGINS, séparées par des virgules. Une adresse http(s)
+ * est ramenée à son origine : « https://staging.newbi.fr/ » (barre finale)
+ * ou une adresse avec chemin ne correspondait jamais à l'en-tête Origin.
+ * Les motifs (« https://*.vercel.app ») et les schemes restent tels quels.
+ */
+function additionalOrigins(env) {
+  return (env.ADDITIONAL_TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .map((o) => httpOrigin(o) ?? o.replace(/\/+$/, ""));
+}
+
 export function buildTrustedOrigins(request, env = process.env) {
   const origins = [
     ...BASE_ORIGINS,
     ...(isProductionDeployment(env) ? [] : [LOCAL_ORIGIN]),
     ...mobileSchemes(env).filter((s) => !BASE_ORIGINS.includes(s)),
-    ...(env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
-      .map((o) => o.trim())
-      .filter(Boolean) ?? []),
+    ...deploymentOrigins(env),
+    ...additionalOrigins(env),
   ];
 
   // Le plugin @better-auth/expo envoie "expo-origin" au lieu de "Origin".
@@ -66,7 +116,7 @@ export function buildTrustedOrigins(request, env = process.env) {
     }
   }
 
-  return origins;
+  return [...new Set(origins)];
 }
 
 /**
