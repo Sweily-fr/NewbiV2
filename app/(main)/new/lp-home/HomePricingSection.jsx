@@ -10,6 +10,7 @@ import {
   planLabel,
 } from "@/src/lib/plans-display";
 import { cn } from "@/src/lib/utils";
+import { BadgeEssai } from "@/src/components/pricing/pricing-offers";
 
 // Version condensée des tarifs (home + LP) : essai gratuit, offre Freelance,
 // et renvoi vers /tarifs pour le comparatif complet. Disposition en 3
@@ -157,6 +158,12 @@ export default function HomePricingSection({
             <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
               Essai gratuit
             </h3>
+            {/* Même hauteur que la pastille « 7 jours gratuits » des autres
+                colonnes : côte à côte, les textes restent alignés. */}
+            <span
+              aria-hidden="true"
+              className="mt-2 hidden h-[22px] md:block"
+            />
             <p className="mt-8 text-[15px] text-gray-800 dark:text-gray-200">
               Pour tester Newbi sans risque :
             </p>
@@ -176,6 +183,7 @@ export default function HomePricingSection({
             <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
               {freelancePlan.displayName}
             </h3>
+            <BadgeEssai className="mt-2" />
             <p className="mt-8 text-[15px] text-gray-800 dark:text-gray-200">
               {freelancePlan.description}
             </p>
@@ -191,6 +199,7 @@ export default function HomePricingSection({
             <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
               {`${planLabel("pme")}, ${planLabel("entreprise")} et comparatif détaillé`}
             </h3>
+            <BadgeEssai className="mt-2" />
             <p className="mt-8 text-[15px] text-gray-800 dark:text-gray-200">
               Tu as une équipe ou plusieurs comptes bancaires ?
             </p>

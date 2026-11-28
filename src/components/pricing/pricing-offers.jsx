@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Gift } from "lucide-react";
 import {
   formatAmount,
   getAnnualTotalAmount,
@@ -188,6 +189,23 @@ export function BasculeFacturation({ annuel, onChange, className = "" }) {
 }
 
 /**
+ * Pastille « 7 jours gratuits » placée sous le nom de chaque offre payante
+ * (/tarifs, inscription, grille condensée de la home et des LP) : l'essai
+ * se voit sur toutes les offres, y compris quand elles sont empilées sur
+ * téléphone, loin de la colonne d'essai.
+ */
+export function BadgeEssai({ className = "" }) {
+  return (
+    <span
+      className={`inline-flex w-fit items-center gap-1 rounded-full bg-[#5A50FF]/10 px-2 py-0.5 text-[12px] font-medium text-[#5A50FF] ${className}`}
+    >
+      <Gift className="size-3" aria-hidden="true" />
+      {SIGNUP_TRIAL_DAYS} jours gratuits
+    </span>
+  );
+}
+
+/**
  * Contenu d'une colonne : nom, prix, facturation, bouton, lien vers un
  * conseiller, avantages. À placer dans un conteneur `flex flex-col`.
  * @param {object} props
@@ -210,6 +228,7 @@ export function ContenuOffre({ colonne, annuel, action, lienConseiller }) {
       >
         {colonne.nom}
       </h3>
+      {plan && <BadgeEssai className="mt-2" />}
 
       <p className="mt-3 flex items-baseline gap-1.5">
         <span className="text-[28px] font-semibold leading-none tracking-[-0.02em] text-gray-950">
