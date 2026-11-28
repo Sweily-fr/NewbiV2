@@ -257,7 +257,8 @@ export const PLAN_FEATURES_SECTIONS = [
       },
       {
         name: "Campagnes e-mail",
-        tooltip: "Envoyez des campagnes e-mail à vos clients et à vos prospects.",
+        tooltip:
+          "Envoyez des campagnes e-mail à vos clients et à vos prospects.",
         freelance: "500 e-mails/mois",
         pme: "2 500 e-mails/mois",
         entreprise: "10 000 e-mails/mois",
@@ -372,11 +373,24 @@ export function planLabel(key) {
 }
 
 /**
- * Formate un nombre en prix français : 17.99 → "17,99 €"
+ * Montant à la française, sans symbole : sans centimes quand le montant est
+ * rond (18 → "18"), sinon avec deux décimales (16.1666 → "16,17").
+ */
+export function formatAmount(amount) {
+  if (typeof amount !== "number" || Number.isNaN(amount)) return "—";
+  const rond = Math.round(amount * 100) % 100 === 0;
+  return new Intl.NumberFormat("fr-FR", {
+    minimumFractionDigits: rond ? 0 : 2,
+    maximumFractionDigits: rond ? 0 : 2,
+  }).format(amount);
+}
+
+/**
+ * Formate un nombre en prix français : 17.99 → "17,99 €", 18 → "18 €"
  */
 export function formatPrice(amount) {
   if (typeof amount !== "number" || Number.isNaN(amount)) return "—";
-  return `${amount.toFixed(2).replace(".", ",")} ${CURRENCY_SYMBOL}`;
+  return `${formatAmount(amount)} ${CURRENCY_SYMBOL}`;
 }
 
 /**
@@ -411,7 +425,7 @@ export function getPlanPricingStrings(key, opts = {}) {
   if (!plan) return null;
   const ttc = opts.includeTtc !== false ? ` ${PRICE_QUALIFIER}` : "";
   const annualTotalAmount = getAnnualTotalAmount(plan);
-  const fmt = (n) => `${n.toFixed(2).replace(".", ",")} ${CURRENCY_SYMBOL}`;
+  const fmt = formatPrice;
   return {
     key: plan.key,
     displayName: plan.displayName,

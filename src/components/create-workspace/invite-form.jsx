@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { getPlanLimits, getSeatPrice } from "@/src/lib/plan-limits";
+import { formatAmount } from "@/src/lib/plans-display";
 import {
   DEFAULT_INVITE_ROLE,
   PREDEFINED_ROLE_LABELS,
@@ -215,7 +216,7 @@ export function InviteForm({
               className={`text-xs whitespace-nowrap ${isTotalLimitReached ? "text-red-500" : "text-muted-foreground"}`}
             >
               {isFreelance
-                ? `${usedUsers} / ${userSeatLimit} utilisateur${userSeatLimit > 1 ? "s" : ""} (${getSeatPrice(selectedPlan).toFixed(2).replace(".", ",")}€/mois) · ${usedAccountants} / ${limits.accountants} accès comptable`
+                ? `${usedUsers} / ${userSeatLimit} utilisateur${userSeatLimit > 1 ? "s" : ""} (${formatAmount(getSeatPrice(selectedPlan))}€/mois) · ${usedAccountants} / ${limits.accountants} accès comptable`
                 : `${usedUsers} / ${userSeatLimit} sièges${limits.accountants > 0 ? ` · ${usedAccountants} / ${limits.accountants} accès comptable${limits.accountants > 1 ? "s" : ""}` : ""}`}
             </span>
           </div>

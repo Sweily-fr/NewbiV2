@@ -26,6 +26,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { cn } from "@/src/lib/utils";
 import {
+  formatAmount,
   PLANS_DISPLAY,
   PLAN_FEATURES_SECTIONS,
   getAnnualTotalAmount,
@@ -362,9 +363,7 @@ export function SubscriptionSection({
     }
   };
 
-  const formatPrice = (amount) => {
-    return amount.toFixed(2).replace(".", ",");
-  };
+  const formatPrice = formatAmount;
 
   const currentPlanConfig = PLANS_CONFIG.find(
     (p) => p.key === subscription?.plan,

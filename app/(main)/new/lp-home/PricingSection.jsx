@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Check, MoveRight, ChevronDown, Info } from "lucide-react";
 import {
+  formatAmount,
   PLANS_DISPLAY,
   PLAN_FEATURES_SECTIONS,
   getPlanPricingStrings,
@@ -96,11 +97,9 @@ const PLAN_UI_EXTRA = {
 const plans = PLANS_DISPLAY.map((p) => {
   const strings = getPlanPricingStrings(p.key, { includeTtc: false });
   // Format compact pour la landing : "17,99€" sans espace ni suffixe.
-  const compactMonthly = `${p.monthlyPrice.toFixed(2).replace(".", ",")}€`;
-  const compactAnnual = `${p.annualMonthlyPrice.toFixed(2).replace(".", ",")}€`;
-  const compactAnnualTotal = `${strings.annualTotalAmount
-    .toFixed(2)
-    .replace(".", ",")}€/an`;
+  const compactMonthly = `${formatAmount(p.monthlyPrice)}€`;
+  const compactAnnual = `${formatAmount(p.annualMonthlyPrice)}€`;
+  const compactAnnualTotal = `${formatAmount(strings.annualTotalAmount)}€/an`;
   return {
     id: p.key,
     name: p.displayName,

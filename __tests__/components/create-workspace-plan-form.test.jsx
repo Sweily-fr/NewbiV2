@@ -46,16 +46,16 @@ describe("Création d'espace : étape d'offre", () => {
   it("affiche les prix mensuels TTC et le rythme de facturation", () => {
     render(<PlanForm {...props} />);
     expect(
-      screen.getByText(/18,00\s€\/mois TTC · Facturé chaque mois/),
+      screen.getByText(/18\s€\/mois TTC · Facturé chaque mois/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/50,00\s€\/mois TTC/)).toBeInTheDocument();
+    expect(screen.getByText(/50\s€\/mois TTC/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continuer" })).toBeDisabled();
   });
 
   it("affiche les prix à l'année avec le total facturé", () => {
     render(<PlanForm {...props} isAnnual />);
     expect(
-      screen.getByText(/16,17\s€\/mois TTC · Facturé 194,00\s€ par an/),
+      screen.getByText(/16,17\s€\/mois TTC · Facturé 194\s€ par an/),
     ).toBeInTheDocument();
   });
 
