@@ -195,6 +195,9 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
   // ── 2 bis. Plafonds de l'offre : rôles, sièges, espaces ──
   await checkPlanLimits(ctx);
 
+  // ── 2 ter. Changement d'espace actif sur une session révoquée ──
+  await checkSetActiveSession(ctx);
+
   // ── 3. Rôles des espaces : membres, organisation, définition des rôles ──
   await checkOrganizationRoles(ctx);
 
@@ -218,6 +221,44 @@ const MEMBER_MANAGEMENT_PATHS = new Set([
   "/organization/remove-member",
   "/organization/cancel-invitation",
 ]);
+
+/**
+ * /organization/set-active sur une session déjà supprimée en base (compte
+ * désactivé, sessions fermées, déconnexion depuis un autre appareil).
+ *
+ * Avec le cache de session en cookie (cookieCache, 1 minute), Better Auth
+ * accepte encore la session sans la relire, puis met à jour une session
+ * absente : updateSession renvoie null et la route plante en erreur 500
+ * (lecture de `session.token` sur null). Vu par les e2e : requête partie
+ * pendant la désactivation du compte (parametres/parcours.spec.mjs:361, PR
+ * #1625 et #1689). La session est relue ici : absente, la requête est
+ * refusée en 401 comme pour une session expirée.
+ */
+async function checkSetActiveSession(ctx) {
+  if (ctx.path !== "/organization/set-active") return;
+  const cookie = ctx.context?.authCookies?.sessionToken?.name;
+  if (!cookie || typeof ctx.getSignedCookie !== "function") return;
+
+  let revoked = false;
+  try {
+    const token = await ctx.getSignedCookie(cookie, ctx.context.secret);
+    // Pas de cookie : Better Auth refusera lui-même la requête
+    if (!token) return;
+    const found = await ctx.context.internalAdapter.findSession(token);
+    revoked = !found?.session;
+  } catch (error) {
+    // Lecture impossible : Better Auth garde la main (pas de refus à l'aveugle)
+    console.error("⚠️ [setActive] session non relue :", error?.message);
+    return;
+  }
+
+  if (revoked) {
+    const { APIError } = await import("better-auth/api");
+    throw new APIError("UNAUTHORIZED", {
+      message: "Session expirée, veuillez vous reconnecter.",
+    });
+  }
+}
 
 async function forbid(message) {
   const { APIError } = await import("better-auth/api");
