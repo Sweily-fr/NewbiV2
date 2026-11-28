@@ -785,6 +785,72 @@
   --destructive-foreground: #ffffff;
 }
 
+/* --- Palette Tailwind elle-même ------------------------------------------
+   Les remaps par classe ci-dessus ne couvrent ni les variantes
+   (group-hover:text-red-500, hover:bg-red-50, dark:…), ni le modificateur
+   important (!text-red-600, !bg-red-500/15), ni les opacités non listées.
+   Tailwind v4 lit ses couleurs dans des variables (--color-red-500…) :
+   les redéfinir ici remappe toutes les classes rouge/vert d'un coup. */
+.colorblind-mode {
+  --color-green-50: var(--cb-success-50);
+  --color-green-100: var(--cb-success-100);
+  --color-green-200: var(--cb-success-200);
+  --color-green-300: var(--cb-success-300);
+  --color-green-400: var(--cb-success-400);
+  --color-green-500: var(--cb-success-500);
+  --color-green-600: var(--cb-success-600);
+  --color-green-700: var(--cb-success-700);
+  --color-green-800: var(--cb-success-800);
+  --color-green-900: var(--cb-success-900);
+  --color-green-950: var(--cb-success-950);
+
+  --color-emerald-50: var(--cb-success-50);
+  --color-emerald-100: var(--cb-success-100);
+  --color-emerald-200: var(--cb-success-200);
+  --color-emerald-300: var(--cb-success-300);
+  --color-emerald-400: var(--cb-success-400);
+  --color-emerald-500: var(--cb-success-500);
+  --color-emerald-600: var(--cb-success-600);
+  --color-emerald-700: var(--cb-success-700);
+  --color-emerald-800: var(--cb-success-800);
+  --color-emerald-900: var(--cb-success-900);
+  --color-emerald-950: var(--cb-success-950);
+
+  --color-red-50: var(--cb-danger-50);
+  --color-red-100: var(--cb-danger-100);
+  --color-red-200: var(--cb-danger-200);
+  --color-red-300: var(--cb-danger-300);
+  --color-red-400: var(--cb-danger-400);
+  --color-red-500: var(--cb-danger-500);
+  --color-red-600: var(--cb-danger-600);
+  --color-red-700: var(--cb-danger-700);
+  --color-red-800: var(--cb-danger-800);
+  --color-red-900: var(--cb-danger-900);
+  --color-red-950: var(--cb-danger-950);
+
+  --color-rose-50: var(--cb-danger-50);
+  --color-rose-100: var(--cb-danger-100);
+  --color-rose-200: var(--cb-danger-200);
+  --color-rose-300: var(--cb-danger-300);
+  --color-rose-400: var(--cb-danger-400);
+  --color-rose-500: var(--cb-danger-500);
+  --color-rose-600: var(--cb-danger-600);
+  --color-rose-700: var(--cb-danger-700);
+  --color-rose-800: var(--cb-danger-800);
+  --color-rose-900: var(--cb-danger-900);
+  --color-rose-950: var(--cb-danger-950);
+}
+
+/* Bulles de compteur rouges (Accueil : « Factures en retard »,
+   « Notifications non lues ») : mêmes couleurs que les badges négatifs
+   existants (statuts Annulé/Rejeté : bg-red-100 text-red-700).
+   Dans @layer utilities : un !important hors couche perd contre le
+   !important de Tailwind (ordre des couches inversé pour !important). */
+@layer utilities {
+  .colorblind-mode .\!bg-red-500\/15 { background-color: var(--cb-danger-100) !important; }
+  .colorblind-mode .\!text-red-600 { color: var(--cb-danger-700) !important; }
+}
+
 /* --- Toaster Sonner ------------------------------------------------------ */
 .colorblind-mode [data-sonner-toast][data-type="success"] {
   --normal-bg: var(--cb-success-50);
