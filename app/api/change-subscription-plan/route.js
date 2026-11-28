@@ -564,9 +564,7 @@ async function handler(request) {
         ? newPlanDisplay?.annualMonthlyPrice
         : newPlanDisplay?.monthlyPrice;
       const formattedPrice =
-        typeof priceAmount === "number"
-          ? `${formatAmount(priceAmount)}€`
-          : "—";
+        typeof priceAmount === "number" ? `${formatAmount(priceAmount)}€` : "—";
       await sendSubscriptionChangedEmail({
         to: customer.email,
         customerName: customer.name || customer.email,
